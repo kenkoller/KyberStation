@@ -1,0 +1,53 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@bladeforge/engine": [
+        "../../packages/engine/src"
+      ],
+      "@bladeforge/codegen": [
+        "../../packages/codegen/src"
+      ],
+      "@bladeforge/presets": [
+        "../../packages/presets/src"
+      ],
+      "@bladeforge/sound": [
+        "../../packages/sound/src"
+      ],
+      "@bladeforge/boards": [
+        "../../packages/boards/src"
+      ]
+    },
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "composite": false,
+    "allowJs": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

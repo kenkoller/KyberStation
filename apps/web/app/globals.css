@@ -1,0 +1,547 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-deep: #06060a;
+  --bg-primary: #0a0a10;
+  --bg-secondary: #0e0e16;
+  --bg-surface: #14141e;
+  --bg-card: #181824;
+  --accent: #4a9eff;
+  --accent-dim: rgba(74, 158, 255, 0.08);
+  --accent-border: rgba(74, 158, 255, 0.20);
+  --accent-warm: #ff6b35;
+  --text-primary: #d0d4dc;
+  --text-secondary: #8a8f9a;
+  --text-muted: #4a4e58;
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-light: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Canvas touch handling */
+.blade-canvas {
+  touch-action: none;
+}
+
+/* Custom range slider styles */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-deep);
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 6px rgba(74, 158, 255, 0.3);
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 6px rgba(74, 158, 255, 0.3);
+}
+
+/* Ignite button animations */
+@keyframes ignite-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(74, 158, 255, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(74, 158, 255, 0.5); }
+}
+@keyframes retract-breathe {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 60, 60, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(255, 60, 60, 0.4); }
+}
+.ignite-btn-off { animation: ignite-pulse 2s ease-in-out infinite; }
+.ignite-btn-on { animation: retract-breathe 1.5s ease-in-out infinite; }
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Star Wars Typography ─── */
+
+/* Cinematic title font (Orbitron — angular, sci-fi, Star Wars feel) */
+.font-cinematic {
+  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  letter-spacing: 0.15em;
+}
+
+/* Secondary cinematic font */
+.font-sw-body {
+  font-family: 'Exo 2', 'IBM Plex Mono', sans-serif;
+}
+
+/* Crawl text styling (opening crawl feel) */
+.sw-crawl-text {
+  font-family: 'Exo 2', sans-serif;
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  color: #ffd700;
+}
+
+/* Aurebesh decorative text */
+.sw-aurebesh {
+  font-family: 'FT Aurebesh', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Section headers with Star Wars flair */
+.sw-header {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Sith-style text */
+.sw-sith-text {
+  font-family: 'Orbitron', sans-serif;
+  background: linear-gradient(180deg, #ff2020 0%, #8b0000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Jedi-style text */
+.sw-jedi-text {
+  font-family: 'Orbitron', sans-serif;
+  background: linear-gradient(180deg, #4a9eff 0%, #0044cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gallery card glow on hover */
+.gallery-card {
+  transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.gallery-card:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Blade color glow behind gallery cards */
+.blade-glow {
+  position: relative;
+}
+.blade-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  background: var(--glow-color, transparent);
+  opacity: 0;
+  filter: blur(12px);
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+.blade-glow:hover::before {
+  opacity: 0.4;
+}
+
+/* Vertical blade shimmer animation */
+@keyframes blade-shimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
+}
+.blade-shimmer {
+  background-size: 100% 200%;
+  animation: blade-shimmer 3s ease-in-out infinite;
+}
+
+/* Era badge colors */
+.era-prequel { color: #ffd700; }
+.era-original { color: #4a9eff; }
+.era-sequel { color: #ff4444; }
+.era-animated { color: #00cc88; }
+.era-eu { color: #cc66ff; }
+.era-legends { color: #ff8c00; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AMBIENT IN-UNIVERSE ANIMATIONS
+   Atmospheric Star Wars-inspired CSS effects for starship console / Jedi
+   temple aesthetics. All pure CSS, designed to be subtle and non-competing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ambient-intensity: 1;
+  --crystal-color: #4a9eff;
+}
+
+/* Kill all ambient animations when user prefers or class is set */
+.ambient-off .holo-scanline::after,
+.ambient-off .particle-drift::before,
+.ambient-off .console-blink,
+.ambient-off .console-breathe,
+.ambient-off .console-alert,
+.ambient-off .data-stream::before,
+.ambient-off .energy-border,
+.ambient-off .kyber-glow::before,
+.ambient-off .hyperspace::before,
+.ambient-off .holo-grid::before {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+/* Also respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .holo-scanline::after,
+  .particle-drift::before,
+  .console-blink,
+  .console-breathe,
+  .console-alert,
+  .data-stream::before,
+  .energy-border,
+  .kyber-glow::before,
+  .hyperspace::before,
+  .holo-grid::before {
+    animation: none !important;
+  }
+}
+
+/* ─── 1. Holographic Scan Line ─── */
+
+@keyframes holo-scan {
+  0% { top: -2px; }
+  100% { top: 100%; }
+}
+
+.holo-scanline {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(74, 158, 255, 0.06) 20%,
+    rgba(74, 158, 255, 0.12) 50%,
+    rgba(74, 158, 255, 0.06) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.05);
+  opacity: calc(1 * var(--ambient-intensity));
+  animation: holo-scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ─── 2. Ambient Particle Drift ─── */
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: calc(0.08 * var(--ambient-intensity));
+  }
+  90% {
+    opacity: calc(0.08 * var(--ambient-intensity));
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.particle-drift {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle-drift::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  box-shadow:
+    12px 90% 0 0.5px rgba(180, 200, 255, 0.5),
+    45px 80% 0 0.3px rgba(180, 200, 255, 0.4),
+    78px 95% 0 0.5px rgba(180, 200, 255, 0.3),
+    120px 85% 0 0.4px rgba(180, 200, 255, 0.5),
+    200px 92% 0 0.3px rgba(180, 200, 255, 0.4),
+    260px 88% 0 0.5px rgba(180, 200, 255, 0.3),
+    310px 96% 0 0.4px rgba(180, 200, 255, 0.5),
+    380px 82% 0 0.3px rgba(180, 200, 255, 0.4),
+    430px 91% 0 0.5px rgba(180, 200, 255, 0.3),
+    500px 87% 0 0.4px rgba(180, 200, 255, 0.5),
+    550px 94% 0 0.3px rgba(180, 200, 255, 0.4),
+    620px 89% 0 0.5px rgba(180, 200, 255, 0.3);
+  opacity: calc(1 * var(--ambient-intensity));
+  animation: particle-float 20s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── 3. Console Blink / Breathe / Alert ─── */
+
+@keyframes console-fast-blink {
+  0%, 49% { opacity: calc(0.15 * var(--ambient-intensity)); }
+  50%, 100% { opacity: calc(0.03 * var(--ambient-intensity)); }
+}
+
+@keyframes console-slow-breathe {
+  0%, 100% { opacity: calc(0.04 * var(--ambient-intensity)); }
+  50% { opacity: calc(0.15 * var(--ambient-intensity)); }
+}
+
+@keyframes console-alert-pulse {
+  0%, 100% { opacity: calc(0.05 * var(--ambient-intensity)); box-shadow: 0 0 2px currentColor; }
+  50% { opacity: calc(0.15 * var(--ambient-intensity)); box-shadow: 0 0 6px currentColor; }
+}
+
+.console-blink {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: console-fast-blink 1s step-end infinite;
+}
+
+.console-breathe {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #00cc88;
+  animation: console-slow-breathe 3s ease-in-out infinite;
+}
+
+.console-alert {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff4444;
+  animation: console-alert-pulse 0.5s ease-in-out infinite;
+}
+
+/* ─── 4. Data Stream (Aurebesh-like vertical scroll) ─── */
+
+@keyframes data-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.data-stream {
+  position: relative;
+  overflow: hidden;
+}
+
+.data-stream::before {
+  content:
+    'AUREK BESH CRESH DORN ESK FORN GREK HERF ISK JENTH KRILL LETH MERN '
+    'NERN OREK PETH QHEK RESH SENTH TRILL USK VEV WESK XESH YIRT ZEREK '
+    'AUREK BESH CRESH DORN ESK FORN GREK HERF ISK JENTH KRILL LETH MERN '
+    'NERN OREK PETH QHEK RESH SENTH TRILL USK VEV WESK XESH YIRT ZEREK';
+  position: absolute;
+  top: 0;
+  right: 6px;
+  width: 10px;
+  font-size: 6px;
+  line-height: 1.6;
+  letter-spacing: 0.15em;
+  font-family: monospace;
+  color: rgba(74, 158, 255, 0.06);
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  opacity: calc(1 * var(--ambient-intensity));
+  animation: data-scroll 30s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── 5. Energy Border Pulse ─── */
+
+@keyframes energy-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 200%; }
+}
+
+.energy-border {
+  border: 1px solid transparent;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-image:
+    linear-gradient(var(--bg-surface), var(--bg-surface)),
+    linear-gradient(
+      135deg,
+      rgba(74, 158, 255, 0.03) 0%,
+      rgba(74, 158, 255, 0.12) 25%,
+      rgba(74, 158, 255, 0.03) 50%,
+      rgba(74, 158, 255, 0.12) 75%,
+      rgba(74, 158, 255, 0.03) 100%
+    );
+  background-size: 100% 100%, 200% 200%;
+  opacity: calc(1 * var(--ambient-intensity));
+  animation: energy-flow 6s linear infinite;
+}
+
+/* ─── 6. Kyber Crystal Glow ─── */
+
+@keyframes kyber-pulse {
+  0%, 100% {
+    opacity: calc(0.04 * var(--ambient-intensity));
+    transform: scale(1);
+  }
+  50% {
+    opacity: calc(0.1 * var(--ambient-intensity));
+    transform: scale(1.05);
+  }
+}
+
+.kyber-glow {
+  position: relative;
+}
+
+.kyber-glow::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    var(--crystal-color) 0%,
+    transparent 70%
+  );
+  opacity: calc(0.06 * var(--ambient-intensity));
+  animation: kyber-pulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ─── 7. Hyperspace Streaks ─── */
+
+@keyframes hyperspace-streak {
+  0% {
+    transform: translateZ(0) scaleY(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: calc(0.12 * var(--ambient-intensity));
+  }
+  100% {
+    transform: translateZ(0) scaleY(40);
+    opacity: 0;
+  }
+}
+
+.hyperspace {
+  position: relative;
+  overflow: hidden;
+}
+
+.hyperspace::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(200, 220, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 45%, rgba(200, 220, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 15%, rgba(200, 220, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 60%, rgba(200, 220, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 35%, rgba(200, 220, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 75%, rgba(200, 220, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 80%, rgba(200, 220, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 50%, rgba(200, 220, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 10%, rgba(200, 220, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 90%, rgba(200, 220, 255, 0.3) 0%, transparent 100%);
+  opacity: calc(0.1 * var(--ambient-intensity));
+  animation: hyperspace-streak 2s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+  transform-origin: center center;
+}
+
+/* ─── 8. Holographic Grid Overlay ─── */
+
+.holo-grid {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      rgba(74, 158, 255, 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(74, 158, 255, 0.03) 1px,
+      transparent 1px
+    );
+  background-size: 24px 24px;
+  opacity: calc(1 * var(--ambient-intensity));
+  pointer-events: none;
+  z-index: 1;
+}

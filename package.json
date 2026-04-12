@@ -1,0 +1,35 @@
+{
+  "name": "bladeforge",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:local": "node scripts/local-dev.mjs",
+    "build": "turbo build",
+    "build:local": "node scripts/local-build.mjs",
+    "test": "turbo test",
+    "test:engine": "turbo test --filter=@bladeforge/engine",
+    "test:codegen": "turbo test --filter=@bladeforge/codegen",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean",
+    "serve": "node scripts/local-serve.mjs"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "b",
+      "d",
+      "e",
+      "esbuild",
+      "i",
+      "l",
+      "s",
+      "u"
+    ]
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0"
+  }
+}

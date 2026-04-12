@@ -1,0 +1,15 @@
+[req]
+default_bits = 2048
+prompt = no
+distinguished_name = dn
+x509_extensions = v3_req
+
+[dn]
+C = US
+ST = Local
+L = Local
+O = BladeForge
+CN = localhost
+
+[v3_req]
+subjectAltName = DNS:localhost,IP:192.168.1.172,IP:192.168.1.213,IP:10.10.10.1,IP:127.0.0.1
