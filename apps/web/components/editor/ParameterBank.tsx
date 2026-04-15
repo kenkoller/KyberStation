@@ -405,6 +405,21 @@ export function ParameterBank() {
               />
             );
           })}
+          {/* Pattern Direction — quick-access select */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="quick-direction" className="text-ui-base text-text-secondary w-24 shrink-0 truncate">Direction</label>
+            <select
+              id="quick-direction"
+              value={(config.spatialDirection as string) ?? 'hilt-to-tip'}
+              onChange={(e) => updateConfig({ spatialDirection: e.target.value as 'hilt-to-tip' | 'tip-to-hilt' | 'center-out' | 'edges-in' })}
+              className="flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-base text-text-primary touch-target"
+            >
+              <option value="hilt-to-tip">Hilt → Tip</option>
+              <option value="tip-to-hilt">Tip → Hilt</option>
+              <option value="center-out">Center Out</option>
+              <option value="edges-in">Edges In</option>
+            </select>
+          </div>
         </div>
       </div>
 

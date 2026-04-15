@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import type { BladeConfig } from '@bladeforge/engine';
 
@@ -571,4 +571,37 @@ export function Randomizer() {
       </div>
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Standalone hook — used by DesignPanel for the top-level shortcut button
+// ---------------------------------------------------------------------------
+
+/**
+ * Provides a single "surprise me" action that generates a random config using
+ * the default "random" theme (no locks). Intended for the prominent shortcut
+ * button at the top of the Design tab.
+ */
+export function useSurpriseMe() {
+  const config = useBladeStore((s) => s.config);
+  const setConfig = useBladeStore((s) => s.setConfig);
+
+  // Keep a small undo stack local to this hook instance so the full
+  // Randomizer panel undo still works independently.
+  const historyRef = useRef<BladeConfig[]>([]);
+
+  const surprise = useCallback(() => {
+    historyRef.current = [config, ...historyRef.current].slice(0, 30);
+    const theme = THEMES.random;
+    setConfig(generateConfig(theme));
+  }, [config, setConfig]);
+
+  const undo = useCallback(() => {
+    if (historyRef.current.length === 0) return;
+    const [prev, ...rest] = historyRef.current;
+    historyRef.current = rest;
+    setConfig(prev);
+  }, [setConfig]);
+
+  return { surprise, undo, canUndo: historyRef.current.length > 0 };
 }

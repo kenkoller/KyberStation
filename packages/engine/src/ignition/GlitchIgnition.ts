@@ -1,4 +1,5 @@
 import { BaseIgnition } from './BaseIgnition.js';
+import type { IgnitionContext } from '../types.js';
 
 /**
  * GlitchIgnition — digital glitch / broken-crystal ignition.
@@ -16,15 +17,17 @@ export class GlitchIgnition extends BaseIgnition {
     return x - Math.floor(x);
   }
 
-  getMask(position: number, progress: number): number {
+  getMask(position: number, progress: number, context?: IgnitionContext): number {
+    const density = ((context?.config?.glitchDensity as number | undefined) ?? 3) / 100;
+    const intensity = ((context?.config?.glitchIntensity as number | undefined) ?? 100) / 100;
     const base = position <= progress ? 1 : 0;
 
     // Random glitch pixels — use deterministic noise based on position + progress
     // to avoid true Math.random() non-determinism while keeping the glitch aesthetic
     if (progress < 0.9) {
       const glitchChance = this.pseudoRandom(position * 1000 + progress * 7777);
-      if (glitchChance < 0.03) {
-        return this.pseudoRandom(position * 3333 + progress * 9999);
+      if (glitchChance < density) {
+        return this.pseudoRandom(position * 3333 + progress * 9999) * intensity;
       }
     }
 

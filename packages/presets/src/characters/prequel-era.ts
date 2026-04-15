@@ -8,6 +8,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Obi-Wan Kenobi',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Obi-Wan\'s first lightsaber as a Padawan, wielded during the Battle of Naboo against Darth Maul.',
     hiltNotes: 'Slim cylindrical hilt with ridged grip section and thin neck.',
@@ -24,6 +26,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 280,
       shimmer: 0.05,
       ledCount: 132,
+      swingFxIntensity: 0.3,
+      swingColorShift: { r: 0, g: 255, b: 60 },
     },
   },
 
@@ -34,6 +38,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Obi-Wan Kenobi',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Obi-Wan\'s third lightsaber, used throughout the Clone Wars and the duel on Mustafar.',
     hiltNotes:
@@ -44,6 +50,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 255, b: 200 },
+      dragColor: { r: 255, g: 160, b: 0 },
       style: 'stable',
       ignition: 'standard',
       retraction: 'standard',
@@ -51,6 +58,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 300,
       shimmer: 0.05,
       ledCount: 132,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -61,6 +69,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Qui-Gon Jinn',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'The maverick Jedi Master\'s lightsaber, used in the fateful duel against Darth Maul on Naboo.',
     hiltNotes: 'Simple, utilitarian hilt with ribbed grip and flat pommel.',
@@ -70,6 +80,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 255, b: 200 },
+      dragColor: { r: 255, g: 180, b: 0 },
       style: 'stable',
       ignition: 'standard',
       retraction: 'standard',
@@ -77,6 +88,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 300,
       shimmer: 0.04,
       ledCount: 132,
+      swingFxIntensity: 0.25,
+      noiseLevel: 0.02,
     },
   },
 
@@ -87,6 +100,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Anakin Skywalker',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Anakin\'s second lightsaber, later passed to Luke. The most iconic hilt in Star Wars.',
     hiltNotes:
@@ -97,6 +112,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 255, b: 200 },
+      dragColor: { r: 255, g: 150, b: 0 },
       style: 'stable',
       ignition: 'standard',
       retraction: 'standard',
@@ -104,6 +120,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 300,
       shimmer: 0.06,
       ledCount: 132,
+      swingFxIntensity: 0.4,
+      noiseLevel: 0.03,
     },
   },
 
@@ -114,6 +132,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Mace Windu',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'The only purple lightsaber of the Jedi Order, reflecting Windu\'s unique Vaapad fighting style.',
     hiltNotes:
@@ -124,6 +144,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 200, g: 150, b: 255 },
+      dragColor: { r: 255, g: 160, b: 50 },
       style: 'pulse',
       ignition: 'spark',
       retraction: 'standard',
@@ -133,6 +154,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       ledCount: 132,
       pulseSpeed: 1.2,
       pulseMinBright: 0.5,
+      swingFxIntensity: 0.5,
+      noiseLevel: 0.05,
     },
   },
 
@@ -143,6 +166,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Yoda',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Grand Master Yoda\'s short-bladed lightsaber, sized for his diminutive form but devastating in combat.',
     hiltNotes: 'Compact shoto-length hilt with rounded pommel and simple design.',
@@ -161,6 +186,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       ledCount: 132,
       pulseSpeed: 0.6,
       pulseMinBright: 0.6,
+      swingFxIntensity: 0.55,
     },
   },
 
@@ -171,6 +197,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Count Dooku',
     era: 'prequel',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'The elegant curved-hilt lightsaber of the Sith Lord and former Jedi, optimized for Form II Makashi.',
     hiltNotes:
@@ -181,6 +209,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 128, b: 128 },
+      dragColor: { r: 255, g: 100, b: 0 },
       style: 'stable',
       ignition: 'scroll',
       retraction: 'scroll',
@@ -188,6 +217,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 320,
       shimmer: 0.04,
       ledCount: 132,
+      noiseLevel: 0.02,
     },
   },
 
@@ -198,6 +228,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Darth Maul',
     era: 'prequel',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Darth Maul\'s iconic double-bladed lightsaber, a weapon of terror and acrobatic combat.',
     hiltNotes: 'Long staff hilt with emitters on both ends. Can be split into two single sabers.',
@@ -208,6 +240,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 100, b: 100 },
+      dragColor: { r: 255, g: 80, b: 0 },
       style: 'fire',
       ignition: 'spark',
       retraction: 'standard',
@@ -218,6 +251,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       fireSize: 0.6,
       sparkRate: 0.5,
       heatSpread: 0.7,
+      swingFxIntensity: 0.45,
     },
   },
 
@@ -228,6 +262,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Kit Fisto',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'The Nautolan Jedi Master\'s lightsaber, designed to function underwater on his homeworld.',
     hiltNotes: 'Hilt with dual activation switches and waterproof design.',
@@ -244,6 +280,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 280,
       shimmer: 0.05,
       ledCount: 132,
+      swingFxIntensity: 0.3,
     },
   },
 
@@ -254,6 +291,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Plo Koon',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Jedi Master Plo Koon\'s lightsaber, wielded by the Kel Dor pilot and Council member.',
     hiltNotes: 'Gauntlet-style hilt adapted for his clawed Kel Dor hands.',
@@ -263,6 +302,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 200, g: 220, b: 255 },
+      dragColor: { r: 255, g: 180, b: 0 },
       style: 'stable',
       ignition: 'standard',
       retraction: 'standard',
@@ -270,6 +310,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       retractionMs: 300,
       shimmer: 0.05,
       ledCount: 132,
+      swingFxIntensity: 0.3,
     },
   },
 
@@ -280,6 +321,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Aayla Secura',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Twi\'lek Jedi Knight Aayla Secura\'s lightsaber, carried through the Clone Wars until Order 66.',
     hiltNotes: 'Slim cylindrical hilt with tapered emitter and blue accents.',
@@ -306,6 +349,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Luminara Unduli',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Mirialan Jedi Master Luminara Unduli\'s lightsaber, reflecting her disciplined and graceful combat style.',
     hiltNotes: 'Ornate hilt with stepped emitter and decorative grip patterns.',
@@ -332,6 +377,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Barriss Offee',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Padawan Barriss Offee\'s lightsaber, wielded before her fall to the dark side and betrayal of the Jedi.',
     hiltNotes: 'Slender hilt similar in design to her master Luminara\'s.',
@@ -358,6 +405,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Shaak Ti',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Togruta Jedi Master Shaak Ti\'s lightsaber, carried during the defense of Kamino and beyond.',
     hiltNotes: 'Curved-neck hilt with flared emitter, designed for her Ataru and Makashi techniques.',
@@ -384,6 +433,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Ki-Adi-Mundi',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Cerean Jedi Master Ki-Adi-Mundi\'s lightsaber, carried from Geonosis through the Outer Rim Sieges.',
     hiltNotes: 'Long hilt with stepped emitter and ribbed grip section.',
@@ -410,6 +461,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Depa Billaba',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Jedi Master Depa Billaba\'s lightsaber, later passed to her Padawan Caleb Dume (Kanan Jarrus).',
     hiltNotes: 'Elegant hilt with gold accents, reflecting her position on the Jedi Council.',
@@ -436,6 +489,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Savage Opress',
     era: 'prequel',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'The Nightbrother warrior\'s double-bladed lightsaber with a distinctive yellow-green blade.',
     hiltNotes: 'Heavy double-bladed hilt with a brutalist, primitive design.',
@@ -446,6 +501,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 220, g: 255, b: 150 },
+      dragColor: { r: 200, g: 180, b: 0 },
       style: 'unstable',
       ignition: 'spark',
       retraction: 'standard',
@@ -454,6 +510,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       shimmer: 0.35,
       ledCount: 132,
       flicker: 0.7,
+      noiseLevel: 0.15,
+      swingFxIntensity: 0.5,
     },
   },
 
@@ -464,6 +522,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Asajj Ventress',
     era: 'prequel',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Ventress\'s paired curved-hilt lightsabers that can connect at the pommels to form a double-blade.',
     hiltNotes:
@@ -475,6 +535,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 100, b: 100 },
+      dragColor: { r: 255, g: 120, b: 0 },
       style: 'unstable',
       ignition: 'stutter',
       retraction: 'fadeout',
@@ -483,6 +544,9 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       shimmer: 0.3,
       ledCount: 132,
       flicker: 0.5,
+      stutterCount: 3,
+      noiseLevel: 0.1,
+      swingFxIntensity: 0.4,
     },
   },
 
@@ -493,6 +557,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'General Grievous',
     era: 'prequel',
     affiliation: 'other',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Trophies stolen from defeated Jedi. Grievous wields up to four sabers simultaneously — blue and green blades collected from his victims.',
     hiltNotes:
@@ -521,6 +587,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     character: 'Palpatine / Darth Sidious',
     era: 'prequel',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'The Sith Lord\'s concealed lightsaber, an elegant Phrik-alloy weapon hidden within the Supreme Chancellor\'s robes.',
     hiltNotes:
@@ -531,12 +599,153 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 200, b: 0 },
       blastColor: { r: 255, g: 100, b: 100 },
+      dragColor: { r: 200, g: 0, b: 200 },
       style: 'cinder',
       ignition: 'glitch',
       retraction: 'fadeout',
       ignitionMs: 220,
       retractionMs: 260,
       shimmer: 0.18,
+      ledCount: 132,
+      noiseLevel: 0.08,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ─── Anakin Skywalker (Episode II) ───
+  {
+    id: 'prequel-anakin-ep2',
+    name: 'Anakin Skywalker (Ep. II)',
+    character: 'Anakin Skywalker',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Anakin\'s first lightsaber, destroyed in the Geonosis droid factory. A youthful, slightly brighter blue than his later saber.',
+    hiltNotes: 'Wider, bulkier hilt with visible green and red wiring. Built as a Padawan.',
+    config: {
+      name: 'AnakinEp2',
+      baseColor: { r: 0, g: 140, b: 255 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 200, b: 0 },
+      blastColor: { r: 200, g: 230, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 280,
+      shimmer: 0.05,
+      ledCount: 132,
+    },
+  },
+
+  // ─── Agen Kolar ───
+  {
+    id: 'prequel-agen-kolar',
+    name: 'Agen Kolar',
+    character: 'Agen Kolar',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Zabrak Jedi Master Agen Kolar\'s blue lightsaber. Accompanied Mace Windu to arrest Palpatine.',
+    hiltNotes: 'Standard Jedi Council hilt with ribbed grip.',
+    config: {
+      name: 'AgenKolar',
+      baseColor: { r: 0, g: 110, b: 255 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 200, b: 0 },
+      blastColor: { r: 200, g: 220, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 280,
+      shimmer: 0.04,
+      ledCount: 132,
+    },
+  },
+
+  // ─── Saesee Tiin ───
+  {
+    id: 'prequel-saesee-tiin',
+    name: 'Saesee Tiin',
+    character: 'Saesee Tiin',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'The Iktotchi Jedi Master\'s green lightsaber. An ace pilot and swordsman on the Jedi Council.',
+    hiltNotes: 'Rugged hilt design built for aggressive combat.',
+    config: {
+      name: 'SaeseeTiin',
+      baseColor: { r: 0, g: 200, b: 30 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 200, b: 0 },
+      blastColor: { r: 200, g: 255, b: 200 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 260,
+      retractionMs: 280,
+      shimmer: 0.04,
+      ledCount: 132,
+    },
+  },
+
+  // ─── Eeth Koth ───
+  {
+    id: 'prequel-eeth-koth',
+    name: 'Eeth Koth',
+    character: 'Eeth Koth',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Zabrak Jedi Master Eeth Koth\'s green lightsaber. Known for his exceptional resilience and pain tolerance.',
+    config: {
+      name: 'EethKoth',
+      baseColor: { r: 0, g: 210, b: 30 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 200, b: 0 },
+      blastColor: { r: 200, g: 255, b: 200 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 300,
+      shimmer: 0.04,
+      ledCount: 132,
+    },
+  },
+
+  // ─── Stass Allie ───
+  {
+    id: 'prequel-stass-allie',
+    name: 'Stass Allie',
+    character: 'Stass Allie',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Jedi Master Stass Allie\'s green lightsaber. A healer and Council member killed during Order 66 on Saleucami.',
+    config: {
+      name: 'StassAllie',
+      baseColor: { r: 0, g: 220, b: 35 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 200, b: 0 },
+      blastColor: { r: 200, g: 255, b: 200 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 300,
+      shimmer: 0.03,
       ledCount: 132,
     },
   },

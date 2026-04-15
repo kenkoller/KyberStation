@@ -517,8 +517,8 @@ export function buildAST(config: BladeConfig, options?: BuildOptions): StyleNode
 
 // ─── Edit Mode Wrapping ───
 
-// Map of Rgb<r,g,b> color signatures to their RgbArg index.
-// Only the first occurrence of each unique color gets an index.
+// Each entry gets its own unique RgbArg index (1-based), even if
+// two config colors have the same RGB value.
 const EDIT_COLOR_ORDER = [
   'baseColor',    // ARG 1
   'blastColor',   // ARG 2
@@ -526,44 +526,55 @@ const EDIT_COLOR_ORDER = [
   'lockupColor',  // ARG 4
 ];
 
+interface ColorArgEntry {
+  key: string; // "r,g,b"
+  argIndex: number;
+  consumed: boolean;
+}
+
 function colorKey(node: StyleNode): string | null {
   if (node.name !== 'Rgb' || node.args.length !== 3) return null;
   return node.args.map((a) => a.name).join(',');
 }
 
 function wrapEditModeArgs(root: StyleNode, config: BladeConfig): StyleNode {
-  // Build a map of color values → arg index
-  const colorToIndex = new Map<string, number>();
+  // Build an ordered list of color entries; each position gets its own
+  // arg index regardless of whether the RGB value is shared with another.
+  const entries: ColorArgEntry[] = [];
   let nextIndex = 1;
 
-  // Assign standard indices to known config colors
-  for (const key of EDIT_COLOR_ORDER) {
-    const color = config[key] as RGB | undefined;
+  for (const field of EDIT_COLOR_ORDER) {
+    const color = config[field] as RGB | undefined;
     if (color) {
-      const k = `${color.r},${color.g},${color.b}`;
-      if (!colorToIndex.has(k)) {
-        colorToIndex.set(k, nextIndex);
-      }
-      nextIndex++;
+      entries.push({
+        key: `${color.r},${color.g},${color.b}`,
+        argIndex: nextIndex,
+        consumed: false,
+      });
     }
+    nextIndex++;
   }
 
-  // Recursively wrap Rgb nodes
-  return wrapNode(root, colorToIndex);
+  // Recursively wrap Rgb nodes, consuming entries in order so that
+  // duplicate color values each get their own unique arg index.
+  return wrapNode(root, entries);
 }
 
-function wrapNode(node: StyleNode, colorToIndex: Map<string, number>): StyleNode {
-  // Check if this is an Rgb<r,g,b> node
+function wrapNode(node: StyleNode, entries: ColorArgEntry[]): StyleNode {
+  // Check if this is an Rgb<r,g,b> node that matches an unconsumed entry
   const ck = colorKey(node);
-  if (ck !== null && colorToIndex.has(ck)) {
-    const argIndex = colorToIndex.get(ck)!;
-    // RgbArg<index, Rgb<r,g,b>>
-    return templateNode('color', 'RgbArg', intNode(argIndex), node);
+  if (ck !== null) {
+    const match = entries.find((e) => !e.consumed && e.key === ck);
+    if (match) {
+      match.consumed = true;
+      // RgbArg<index, Rgb<r,g,b>>
+      return templateNode('color', 'RgbArg', intNode(match.argIndex), node);
+    }
   }
 
   // Recurse into children
   if (node.args.length === 0) return node;
-  const newArgs = node.args.map((a) => wrapNode(a, colorToIndex));
+  const newArgs = node.args.map((a) => wrapNode(a, entries));
   return { ...node, args: newArgs };
 }
 

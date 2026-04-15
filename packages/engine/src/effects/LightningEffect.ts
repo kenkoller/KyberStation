@@ -1,6 +1,6 @@
 import type { EffectType, EffectParams, EffectContext, RGB } from '../types.js';
 import { lerpColor } from '../LEDArray.js';
-import { noise } from '../noise.js';
+import { noise, directionalPosition } from '../noise.js';
 import { BaseEffect } from './BaseEffect.js';
 
 /**
@@ -27,7 +27,9 @@ export class LightningEffect extends BaseEffect {
     if (!this.active) return color;
 
     const fadeOut = this.getFadeOut(context.progress);
-    const arc = noise(position * 60 + context.time * 0.03, context.time * 0.005);
+    const dir = context.config.spatialDirection ?? 'hilt-to-tip';
+    const pos = directionalPosition(position, dir);
+    const arc = noise(pos * 60 + context.time * 0.03, context.time * 0.005);
 
     if (arc > 0.75) {
       const strength = (arc - 0.75) * 4 * fadeOut;

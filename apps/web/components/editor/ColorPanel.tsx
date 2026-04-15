@@ -8,6 +8,7 @@ import {
   getHarmonyColors,
 } from '@bladeforge/engine';
 import type { HarmonyType } from '@bladeforge/engine';
+import { getSaberColorName } from '@/lib/saberColorNames';
 
 // ─── Canon saber color presets ───
 
@@ -202,7 +203,7 @@ export function ColorPanel() {
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Color Channel
-          <HelpTooltip text="Select which effect color to edit. Each channel controls a different combat interaction — clash for blade impacts, blast for blaster deflections, lockup for sustained blade contact." />
+          <HelpTooltip text="Select which effect color to edit. Each channel controls a different combat interaction — clash for blade impacts, blast for blaster deflections, lockup for sustained blade contact. See also: Effect Panel for effect trigger configuration." proffie="Rgb<r,g,b> / RgbArg<>" />
         </h3>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_CHANNELS.map((ch) => {
@@ -311,6 +312,9 @@ export function ColorPanel() {
               className="w-20 px-1.5 py-0.5 rounded text-ui-xs font-mono bg-bg-deep border border-border-subtle text-text-secondary focus:border-accent focus:text-accent focus:outline-none transition-colors"
             />
           </div>
+          <div className="text-ui-sm text-accent/70 italic leading-tight">
+            {getSaberColorName(activeColor.r, activeColor.g, activeColor.b)}
+          </div>
           <div className="text-ui-sm text-text-muted font-mono">
             Rgb&lt;{activeColor.r},{activeColor.g},{activeColor.b}&gt;
           </div>
@@ -324,7 +328,7 @@ export function ColorPanel() {
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           HSL Adjustment
-          <HelpTooltip text="Hue, Saturation, Lightness — an intuitive way to fine-tune colors. Hue picks the color, Saturation controls vibrancy, Lightness sets brightness." />
+          <HelpTooltip text="Hue, Saturation, Lightness — an intuitive way to fine-tune colors. Hue picks the color, Saturation controls vibrancy, Lightness sets brightness. ProffieOS uses RGB internally, but HSL is easier for color design." proffie="RotateColorsX<Int<hue>, Rgb<...>>" />
         </h3>
         <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           {/* Hue */}
@@ -379,8 +383,9 @@ export function ColorPanel() {
 
       {/* ── RGB sliders ── */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           RGB Values
+          <HelpTooltip text="Direct red/green/blue channel values (0-255). These map directly to ProffieOS Rgb<> template arguments. Tip: pure blue (0,0,255) draws less power than white (255,255,255)." proffie="Rgb<r,g,b>" />
         </h3>
         <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           {(['r', 'g', 'b'] as const).map((ch) => (
@@ -638,8 +643,8 @@ function ColorHarmonySection({
                   key={i}
                   onClick={() => setColor(activeChannel, hc)}
                   className="touch-target group relative"
-                  aria-label={`Apply harmony color Rgb ${hc.r},${hc.g},${hc.b} to ${activeChannel}`}
-                  title={`Apply Rgb<${hc.r},${hc.g},${hc.b}> to ${activeChannel}`}
+                  aria-label={`Apply harmony color ${getSaberColorName(hc.r, hc.g, hc.b)} to ${activeChannel}`}
+                  title={`${getSaberColorName(hc.r, hc.g, hc.b)} — Rgb<${hc.r},${hc.g},${hc.b}>`}
                 >
                   <span
                     className="block w-7 h-7 rounded border border-white/15 group-hover:border-accent transition-colors"

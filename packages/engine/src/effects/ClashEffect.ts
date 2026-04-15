@@ -22,7 +22,7 @@ export class ClashEffect extends BaseEffect {
     // Clash is not sustained — it fires and decays
   }
 
-  apply(color: RGB, _position: number, context: EffectContext): RGB {
+  apply(color: RGB, position: number, context: EffectContext): RGB {
     if (!this.active) return color;
 
     const fadeOut = this.getFadeOut(context.progress);
@@ -33,8 +33,17 @@ export class ClashEffect extends BaseEffect {
       return color;
     }
 
-    // Full-blade flash: intensity decays rapidly from 1 → 0
-    const intensity = fadeOut;
+    // Clash location: 0-100 config maps to 0-1 blade position (default 50 = center)
+    const clashLoc = (context.config.clashLocation ?? 50) / 100;
+    // Clash intensity: 0-100 config maps to 0-1 strength (default 75)
+    const maxIntensity = (context.config.clashIntensity ?? 75) / 100;
+
+    // Distance-based falloff from the clash point — wider radius at higher intensity
+    const dist = Math.abs(position - clashLoc);
+    const radius = 0.15 + maxIntensity * 0.35; // 0.15 to 0.50 blade-lengths
+    const spatial = dist < radius ? 1 - dist / radius : 0;
+
+    const intensity = spatial * maxIntensity * fadeOut;
     const clashColor = context.config.clashColor;
 
     return lerpColor(color, clashColor, intensity);

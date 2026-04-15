@@ -8,6 +8,7 @@ import {
   getCategories,
   getTemplatesByCategory,
 } from '@bladeforge/engine';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 const EASING_OPTIONS: EasingCurve[] = [
   'linear', 'ease-in-quad', 'ease-out-quad', 'ease-in-out-quad',
@@ -298,8 +299,9 @@ export function TimelinePanel() {
     <div className="space-y-3">
       {/* Header: title + duration */}
       <div className="flex items-center justify-between">
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
           Sequencer
+          <HelpTooltip text="Choreograph a sequence of blade effects over time. Click the track to place events, drag to reposition, resize from the right edge. Use templates below for preset combos. See also: Effect Panel for individual effect settings." />
         </h3>
         <div className="flex items-center gap-2">
           <label htmlFor="timeline-duration" className="text-ui-sm text-text-muted">Duration</label>
@@ -634,8 +636,9 @@ export function TimelinePanel() {
             <div className="grid grid-cols-1 desktop:grid-cols-3 gap-3">
               {/* Duration */}
               <div>
-                <label htmlFor={`event-duration-${evt.id}`} className="block text-ui-xs text-text-muted uppercase tracking-wider mb-1">
+                <label htmlFor={`event-duration-${evt.id}`} className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 flex items-center gap-1">
                   Duration
+                  <HelpTooltip text="How long the effect lasts in seconds. Instant events (ignite/retract) use the timing set in the Effect Panel instead." position="bottom" />
                 </label>
                 <div className="flex items-center gap-1">
                   <input
@@ -655,8 +658,9 @@ export function TimelinePanel() {
 
               {/* Easing Curve */}
               <div>
-                <label htmlFor={`event-easing-${evt.id}`} className="block text-ui-xs text-text-muted uppercase tracking-wider mb-1">
+                <label htmlFor={`event-easing-${evt.id}`} className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 flex items-center gap-1">
                   Easing
+                  <HelpTooltip text="Acceleration curve for the effect animation. Linear = constant speed. Ease Out = fast start, slow end (natural). Bounce/Elastic add spring physics." proffie="TrEaseX<>" position="bottom" />
                 </label>
                 <select
                   id={`event-easing-${evt.id}`}
@@ -673,8 +677,9 @@ export function TimelinePanel() {
 
               {/* Intensity */}
               <div>
-                <label htmlFor={`event-intensity-${evt.id}`} className="block text-ui-xs text-text-muted uppercase tracking-wider mb-1">
+                <label htmlFor={`event-intensity-${evt.id}`} className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 flex items-center gap-1">
                   Intensity
+                  <HelpTooltip text="Strength of the visual effect. Lower intensity makes the event subtler. At 100%, the effect renders at full brightness/size." proffie="Scale<>" position="bottom" />
                 </label>
                 <div className="flex items-center gap-1.5">
                   <input

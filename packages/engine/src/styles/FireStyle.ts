@@ -1,6 +1,6 @@
 import { BaseStyle } from './BaseStyle.js';
 import type { RGB, StyleContext } from '../types.js';
-import { noise } from '../noise.js';
+import { noise, directionalPosition } from '../noise.js';
 import { lerpColor } from '../LEDArray.js';
 
 export class FireStyle extends BaseStyle {
@@ -10,7 +10,8 @@ export class FireStyle extends BaseStyle {
 
   getColor(position: number, time: number, context: StyleContext): RGB {
     const base = context.config.baseColor;
-    const pos = position;
+    const dir = context.config.spatialDirection ?? 'hilt-to-tip';
+    const pos = directionalPosition(position, dir);
     const t = time;
     const fireSize = (context.config.fireSize as number | undefined) ?? 0.5;
     const sparkRate = (context.config.sparkRate as number | undefined) ?? 0.3;

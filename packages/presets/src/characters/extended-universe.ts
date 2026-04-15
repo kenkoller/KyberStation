@@ -8,6 +8,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Cal Kestis',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Cal Kestis with a vivid green kyber crystal. A classic Jedi hue for the Fallen Order survivor.',
     hiltNotes: 'Customizable hilt rebuilt on Bogano, multiple material options.',
@@ -32,6 +33,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Cal Kestis',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Cal Kestis with a rare orange kyber crystal. A warm amber glow unique among Jedi.',
     config: {
@@ -55,6 +57,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Cal Kestis',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Cal Kestis with a purple kyber crystal. A rich violet blade straddling the line between light and dark.',
     config: {
@@ -78,6 +81,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Cal Kestis',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'Cal Kestis in a dark-side alternate path. Bleeding red crystal with unstable, crackling energy.',
     config: {
@@ -86,12 +90,79 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 200, b: 160 },
       lockupColor: { r: 255, g: 100, b: 60 },
       blastColor: { r: 255, g: 70, b: 40 },
+      dragColor: { r: 200, g: 0, b: 0 },
       style: 'unstable',
       ignition: 'glitch',
       retraction: 'shatter',
       ignitionMs: 250,
       retractionMs: 300,
       shimmer: 0.35,
+      ledCount: 144,
+      flicker: 0.6,
+      noiseLevel: 0.15,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  // ── Cal Kestis (Survivor — Crossguard) ──
+  {
+    id: 'eu-cal-kestis-crossguard',
+    name: 'Cal Kestis (Crossguard)',
+    character: 'Cal Kestis',
+    era: 'expanded-universe',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
+    description:
+      'Cal\'s crossguard stance from Jedi: Survivor. A heavier, more powerful fighting style with lateral energy vents.',
+    hiltNotes: 'Rebuilt hilt with crossguard emitters, unlocked from High Republic tomb on Jedha.',
+    topologyNotes: 'Main blade with two crossguard quillons.',
+    config: {
+      name: 'CalKestisCrossguard',
+      baseColor: { r: 0, g: 160, b: 255 },
+      clashColor: { r: 220, g: 240, b: 255 },
+      lockupColor: { r: 160, g: 200, b: 255 },
+      blastColor: { r: 120, g: 190, b: 255 },
+      dragColor: { r: 255, g: 180, b: 0 },
+      style: 'photon',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 400,
+      retractionMs: 420,
+      shimmer: 0.08,
+      ledCount: 144,
+      crossguard: true,
+      quillonLength: 44,
+      sparkSize: 0.6,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  // ── Cal Kestis (Survivor — Double-Bladed) ──
+  {
+    id: 'eu-cal-kestis-double',
+    name: 'Cal Kestis (Double-Bladed)',
+    character: 'Cal Kestis',
+    era: 'expanded-universe',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Cal\'s double-bladed configuration. Wide sweeping attacks with dual cyan blades extending from a staff hilt.',
+    hiltNotes: 'Split hilt with dual emitters, can switch between single and double-bladed modes.',
+    topologyNotes: 'Double-bladed staff saber.',
+    config: {
+      name: 'CalKestisDouble',
+      baseColor: { r: 0, g: 160, b: 255 },
+      clashColor: { r: 200, g: 230, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 255 },
+      blastColor: { r: 100, g: 180, b: 255 },
+      style: 'stable',
+      ignition: 'center',
+      retraction: 'center',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.08,
       ledCount: 144,
     },
   },
@@ -103,6 +174,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Merrin',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Merrin\'s green-tinged blade from Jedi: Survivor. Infused with Nightsister magick, the blade has an eerie, spectral quality.',
     hiltNotes: 'Lightsaber constructed with Nightsister-influenced components.',
@@ -112,6 +185,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 180, g: 255, b: 180 },
       lockupColor: { r: 100, g: 240, b: 120 },
       blastColor: { r: 80, g: 255, b: 100 },
+      dragColor: { r: 0, g: 150, b: 80 },
       style: 'plasma',
       ignition: 'spark',
       retraction: 'fadeout',
@@ -120,6 +194,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       shimmer: 0.22,
       ledCount: 144,
       magickGlow: true,
+      noiseLevel: 0.08,
+      swingFxIntensity: 0.3,
     },
   },
 
@@ -130,6 +206,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Stellan Gios',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description:
       'Stellan Gios\'s blue crossguard lightsaber from the High Republic era. A noble, radiant azure blade.',
     hiltNotes: 'Ornate crossguard hilt of High Republic Jedi design, predating Kylo Ren\'s by centuries.',
@@ -140,6 +217,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 200, g: 220, b: 255 },
       lockupColor: { r: 140, g: 180, b: 255 },
       blastColor: { r: 100, g: 160, b: 255 },
+      dragColor: { r: 255, g: 200, b: 0 },
       style: 'photon',
       ignition: 'scroll',
       retraction: 'scroll',
@@ -148,6 +226,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       shimmer: 0.06,
       ledCount: 144,
       crossguard: true,
+      swingFxIntensity: 0.25,
     },
   },
 
@@ -158,6 +237,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Vernestra Rwoh',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description:
       'Vernestra Rwoh\'s unique purple lightsaber that can convert into a lightwhip. A vibrant violet with fluid motion.',
     hiltNotes: 'Modified hilt with lightwhip conversion mechanism, youngest Jedi Knight in a generation.',
@@ -176,6 +256,9 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       shimmer: 0.18,
       ledCount: 144,
       lightwhipMode: true,
+      pulseSpeed: 1.0,
+      pulseMinBright: 0.4,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -186,6 +269,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Kelleran Beq',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Kelleran Beq\'s blue lightsaber. The Sabered Hand, champion of the Jedi Temple training grounds who rescued Grogu during Order 66.',
     hiltNotes: 'Dual-wielder with standard Jedi hilts.',
@@ -212,6 +297,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Shin Hati',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Shin Hati\'s orange lightsaber. A sharp, intense amber-orange blade wielded by Baylan Skoll\'s apprentice.',
     hiltNotes: 'Simple, functional hilt reflecting her pragmatic training under Baylan.',
@@ -221,6 +308,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 225, b: 160 },
       lockupColor: { r: 255, g: 170, b: 70 },
       blastColor: { r: 255, g: 150, b: 30 },
+      dragColor: { r: 200, g: 80, b: 0 },
       style: 'fire',
       ignition: 'scroll',
       retraction: 'scroll',
@@ -231,6 +319,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       fireSize: 0.5,
       sparkRate: 0.6,
       heatSpread: 0.4,
+      swingFxIntensity: 0.4,
     },
   },
 
@@ -241,6 +330,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Marrok',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Marrok\'s red lightsaber. A sinister, smoky crimson wielded by the mysterious dark-side mercenary. Upon death, green Nightsister magick was released.',
     hiltNotes: 'Inquisitor-style hilt beneath dark armor.',
@@ -250,6 +341,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 190, b: 140 },
       lockupColor: { r: 255, g: 90, b: 50 },
       blastColor: { r: 255, g: 70, b: 30 },
+      dragColor: { r: 180, g: 0, b: 0 },
       style: 'fire',
       ignition: 'stutter',
       retraction: 'fadeout',
@@ -257,6 +349,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       retractionMs: 400,
       shimmer: 0.25,
       ledCount: 144,
+      noiseLevel: 0.1,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -267,6 +361,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Trilla Suduri',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'base',
+    screenAccurate: true,
     description:
       'Trilla Suduri\'s red double-bladed lightsaber as the Second Sister in Jedi: Fallen Order. A controlled, lethal crimson.',
     hiltNotes: 'Inquisitor spinning double-bladed hilt.',
@@ -293,6 +389,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Dagan Gera',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Dagan Gera\'s corrupted red lightsaber from Jedi: Survivor. Once a High Republic Jedi, his blade now burns with betrayal and obsession.',
     hiltNotes: 'Ancient High Republic hilt design, single and crossguard modes.',
@@ -302,6 +400,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 210, b: 170 },
       lockupColor: { r: 255, g: 110, b: 70 },
       blastColor: { r: 255, g: 90, b: 40 },
+      dragColor: { r: 200, g: 0, b: 0 },
       style: 'unstable',
       ignition: 'glitch',
       retraction: 'shatter',
@@ -309,6 +408,9 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       retractionMs: 280,
       shimmer: 0.3,
       ledCount: 144,
+      flicker: 0.7,
+      noiseLevel: 0.12,
+      swingFxIntensity: 0.45,
     },
   },
 
@@ -319,6 +421,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Bode Akuna',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Bode Akuna\'s revealed red lightsaber from Jedi: Survivor. A hidden Jedi turned ISB agent, his blade reflects his betrayal.',
     hiltNotes: 'Concealed standard hilt, dual-wielded with a blaster.',
@@ -328,6 +432,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 200, b: 160 },
       lockupColor: { r: 255, g: 105, b: 65 },
       blastColor: { r: 255, g: 80, b: 45 },
+      dragColor: { r: 200, g: 0, b: 0 },
       style: 'plasma',
       ignition: 'stutter',
       retraction: 'fadeout',
@@ -337,6 +442,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       ledCount: 144,
       frequency: 1.2,
       phaseSpeed: 0.8,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -347,6 +453,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Taron Malicos',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
     description:
       'Taron Malicos\'s dual red lightsabers from Dathomir. A fallen Jedi Master corrupted by the dark side and Nightbrother influence.',
     hiltNotes: 'Dual standard hilts, scarred and weathered from years on Dathomir.',
@@ -356,6 +464,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 175, b: 130 },
       lockupColor: { r: 255, g: 80, b: 45 },
       blastColor: { r: 255, g: 55, b: 25 },
+      dragColor: { r: 200, g: 0, b: 0 },
       style: 'fire',
       ignition: 'stutter',
       retraction: 'standard',
@@ -363,6 +472,11 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       retractionMs: 320,
       shimmer: 0.28,
       ledCount: 144,
+      fireSize: 0.6,
+      sparkRate: 0.5,
+      heatSpread: 0.6,
+      noiseLevel: 0.12,
+      swingFxIntensity: 0.4,
     },
   },
 
@@ -373,6 +487,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Avar Kriss',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Avar Kriss\'s green lightsaber from the High Republic. A brilliant, inspiring emerald blade befitting the Hero of Hetzal.',
     hiltNotes: 'Elegant High Republic hilt design, convertible to a lightwhip configuration.',
@@ -397,6 +512,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Keeve Trennis',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description: 'High Republic Jedi Knight with a green blade that shimmers like the aurora borealis.',
     config: {
       name: 'KeeveTrennis',
@@ -413,6 +529,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       ledCount: 144,
       waveCount: 3,
       driftSpeed: 0.5,
+      swingFxIntensity: 0.3,
     },
   },
   {
@@ -421,6 +538,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Loden Greatstorm',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description: 'High Republic Jedi Master — a brilliant blue photon blade radiating calm strength.',
     config: {
       name: 'LodenGreatstorm',
@@ -443,6 +561,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Marchion Ro',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description: 'The Eye of the Nihil — a fractured, corrupted blade symbolizing his war against the Jedi.',
     config: {
       name: 'MarchionRo',
@@ -450,6 +569,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 100, b: 100 },
       lockupColor: { r: 200, g: 50, b: 50 },
       blastColor: { r: 255, g: 150, b: 100 },
+      dragColor: { r: 150, g: 0, b: 0 },
       style: 'crystalShatter',
       ignition: 'glitch',
       retraction: 'shatter',
@@ -457,6 +577,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       retractionMs: 300,
       shimmer: 0.2,
       ledCount: 144,
+      noiseLevel: 0.15,
+      swingFxIntensity: 0.4,
     },
   },
   {
@@ -465,6 +587,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Elzar Mann',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description: 'Unconventional High Republic Jedi. Plasma arcs dance along his blue-purple blade.',
     config: {
       name: 'ElzarMann',
@@ -481,6 +604,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       ledCount: 144,
       frequency: 1.0,
       phaseSpeed: 1.2,
+      swingFxIntensity: 0.35,
     },
   },
   {
@@ -489,6 +613,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Orla Jareni',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description: 'Independent Wayseeker who left the traditional Jedi path. White prismatic blade.',
     config: {
       name: 'OrlaJareni',
@@ -505,6 +630,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       ledCount: 144,
       facets: 5,
       rotationSpeed: 1.0,
+      swingFxIntensity: 0.2,
     },
   },
   {
@@ -513,6 +639,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     character: 'Burryaga',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description: 'Rare Wookiee Jedi of the High Republic era. Oversized green blade with slow, powerful ignition.',
     config: {
       name: 'Burryaga',

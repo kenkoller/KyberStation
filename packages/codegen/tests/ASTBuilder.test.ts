@@ -91,14 +91,14 @@ describe('buildAST', () => {
       expect(lockups).toHaveLength(4);
     });
 
-    it('has LOCKUP_NORMAL, LOCKUP_DRAG, LOCKUP_LIGHTNING_BLOCK, LOCKUP_MELT identifiers', () => {
+    it('has SaberBase::LOCKUP_NORMAL, LOCKUP_DRAG, LOCKUP_LIGHTNING_BLOCK, LOCKUP_MELT identifiers', () => {
       const ast = buildAST(makeConfig());
       const rawNodes = findNodes(ast, (n) => n.type === 'raw');
       const rawNames = rawNodes.map((n) => n.name);
-      expect(rawNames).toContain('LOCKUP_NORMAL');
-      expect(rawNames).toContain('LOCKUP_DRAG');
-      expect(rawNames).toContain('LOCKUP_LIGHTNING_BLOCK');
-      expect(rawNames).toContain('LOCKUP_MELT');
+      expect(rawNames).toContain('SaberBase::LOCKUP_NORMAL');
+      expect(rawNames).toContain('SaberBase::LOCKUP_DRAG');
+      expect(rawNames).toContain('SaberBase::LOCKUP_LIGHTNING_BLOCK');
+      expect(rawNames).toContain('SaberBase::LOCKUP_MELT');
     });
 
     it('includes InOutTrL layer as the last child of Layers', () => {
@@ -280,11 +280,11 @@ describe('buildAST', () => {
       expect(ignitionTr.args[0].name).toBe('600');
     });
 
-    it('spark ignition maps to TrWipeSparkTipL', () => {
+    it('spark ignition maps to TrWipeSparkTip', () => {
       const ast = buildAST(makeConfig({ ignition: 'spark' }));
       const inOut = findByName(ast, 'InOutTrL');
       const ignitionTr = inOut!.args[0];
-      expect(ignitionTr.name).toBe('TrWipeSparkTipL');
+      expect(ignitionTr.name).toBe('TrWipeSparkTip');
     });
 
     it('center ignition maps to TrCenterWipeIn', () => {

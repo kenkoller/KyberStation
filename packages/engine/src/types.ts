@@ -291,6 +291,25 @@ export interface BladeConfig {
   retractionUp?: string;
   retractionDown?: string;
 
+  // ── Ignition/Retraction Parameters ──
+  stutterFullExtend?: boolean;            // Stutter: blade always reaches full length (default true)
+  stutterCount?: number;                  // Stutter: oscillation cycles (5-60, default 30)
+  stutterAmplitude?: number;              // Stutter: oscillation depth (1-30%, default 10)
+  glitchDensity?: number;                 // Glitch: pixel glitch probability (1-20%, default 3)
+  glitchIntensity?: number;               // Glitch: glitch brightness range (10-100%, default 100)
+  sparkSize?: number;                     // Spark: spark tip width (1-15%, default 5)
+  sparkTrail?: number;                    // Spark: trail behind fill edge (1-20%, default 5)
+  wipeSoftness?: number;                  // Wipe: edge gradient width (1-20%, default 3)
+  shatterScale?: number;                  // Shatter: fragment noise scale (5-50, default 20)
+  shatterDimSpeed?: number;               // Shatter: fragment fade speed (10-100%, default 100)
+
+  // ── Effect Customization ──
+  clashLocation?: number;         // Where on blade the clash hits (0-100, default 50)
+  clashIntensity?: number;        // How bright/large the flash is (0-100, default 75)
+  blastCount?: number;            // How many blast marks appear (1-5, default 1)
+  blastSpread?: number;           // How spread out along the blade (0-100, default 50)
+  stabDepth?: number;             // How far the stab effect extends (0-100, default 80)
+
   // ── Custom Ignition Curve ──
   ignitionCurve?: [number, number, number, number]; // cubic bezier [x1, y1, x2, y2]
   retractionCurve?: [number, number, number, number];

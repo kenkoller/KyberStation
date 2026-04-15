@@ -17,7 +17,9 @@ export class StutterIgnition extends BaseIgnition {
 
   getMask(position: number, progress: number, context?: IgnitionContext): number {
     const fullExtend = (context?.config?.stutterFullExtend as boolean | undefined) ?? true;
-    const stutter = Math.sin(progress * 30) * 0.1;
+    const count = (context?.config?.stutterCount as number | undefined) ?? 30;
+    const amplitude = ((context?.config?.stutterAmplitude as number | undefined) ?? 10) / 100;
+    const stutter = Math.sin(progress * count) * amplitude;
     const threshold = fullExtend
       ? Math.max(progress, progress + stutter)
       : Math.max(0, progress + stutter);

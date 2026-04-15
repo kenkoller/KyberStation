@@ -3,6 +3,31 @@
  * Ported from the working prototype's noise implementation.
  */
 
+import type { LayerDirection } from './types.js';
+
+/**
+ * Transform a blade position (0 = hilt, 1 = tip) based on pattern direction.
+ * This remaps the noise coordinate system so patterns can flow in different
+ * directions along the blade.
+ */
+export function directionalPosition(
+  position: number,
+  direction: LayerDirection = 'hilt-to-tip',
+): number {
+  switch (direction) {
+    case 'hilt-to-tip':
+      return position;
+    case 'tip-to-hilt':
+      return 1 - position;
+    case 'center-out':
+      return Math.abs(position - 0.5) * 2;
+    case 'edges-in':
+      return 1 - Math.abs(position - 0.5) * 2;
+    default:
+      return position;
+  }
+}
+
 /** Simple 1D hash-based noise. Returns 0-1. */
 export function noise(x: number, seed: number = 1): number {
   return Math.sin(x * 12.9898 + seed * 78.233) * 0.5 + 0.5;

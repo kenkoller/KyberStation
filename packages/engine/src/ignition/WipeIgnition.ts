@@ -1,4 +1,5 @@
 import { BaseIgnition } from './BaseIgnition.js';
+import type { IgnitionContext } from '../types.js';
 
 /**
  * WipeIgnition — smooth-edged wipe from hilt to tip.
@@ -10,9 +11,9 @@ export class WipeIgnition extends BaseIgnition {
   readonly id = 'wipe';
   readonly name = 'Wipe';
 
-  getMask(position: number, progress: number): number {
+  getMask(position: number, progress: number, context?: IgnitionContext): number {
     const edge = progress;
-    const softness = 0.03;
+    const softness = ((context?.config?.wipeSoftness as number | undefined) ?? 3) / 100;
     return Math.max(0, Math.min(1, (edge - position) / softness));
   }
 }

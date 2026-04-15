@@ -5,14 +5,18 @@ const IGNITION_IDS = ['standard', 'scroll', 'spark', 'center', 'wipe', 'stutter'
 const RETRACTION_IDS = ['standard', 'scroll', 'center', 'fadeout', 'shatter'] as const;
 
 describe('createIgnition', () => {
-  it('throws for unknown ignition ID', () => {
-    expect(() => createIgnition('nonexistent')).toThrow('Unknown ignition type');
+  it('falls back to standard for unknown ignition ID', () => {
+    const ignition = createIgnition('nonexistent');
+    expect(ignition).toBeDefined();
+    expect(ignition.id).toBe('standard');
   });
 });
 
 describe('createRetraction', () => {
-  it('throws for unknown retraction ID', () => {
-    expect(() => createRetraction('nonexistent')).toThrow('Unknown retraction type');
+  it('falls back to standard for unknown retraction ID', () => {
+    const retraction = createRetraction('nonexistent');
+    expect(retraction).toBeDefined();
+    expect(retraction.id).toBe('standard');
   });
 });
 

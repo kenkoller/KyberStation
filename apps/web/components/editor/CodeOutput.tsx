@@ -8,6 +8,7 @@ import type { ReconstructedConfig } from '@bladeforge/codegen';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
 import { generateQRDataUrl, downloadQR } from '@/lib/qrCode';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 /** Maps user-facing board names to Proffie config board IDs */
 const PROFFIE_BOARD_MAP: Record<string, 'proffieboard_v2' | 'proffieboard_v3'> = {
@@ -184,8 +185,9 @@ export function CodeOutput() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
           {isMultiPreset ? `Full Config (${presetListEntries.length} presets)` : `Generated ${isProffie ? 'ProffieOS' : profileBoard} Code`}
+          <HelpTooltip text="AST-validated ProffieOS C++ code generated from your current configuration. Copy and paste into your config.h presets[] array, or download as a .h file. Multi-preset mode generates a complete config.h ready to flash." proffie="StylePtr<Layers<...>>" />
         </h3>
         <div className="flex gap-2">
           <button
@@ -244,8 +246,9 @@ export function CodeOutput() {
                 onChange={(e) => setEditMode(e.target.checked)}
                 className="w-3 h-3 rounded border-border-subtle accent-[var(--color-accent)]"
               />
-              <span className="text-ui-sm font-medium text-text-secondary">
+              <span className="text-ui-sm font-medium text-text-secondary flex items-center gap-1">
                 Fett263 Edit Mode
+                <HelpTooltip text="Wraps color values in RgbArg<>/IntArg<> so you can change colors directly on the saber without re-uploading config. Requires Fett263 prop file. See also: Gesture Control Panel for button mapping." proffie="FETT263_EDIT_MODE_MENU" />
               </span>
             </label>
           </div>
@@ -276,8 +279,9 @@ export function CodeOutput() {
 
       {/* Import / Export / Share */}
       <div className="mt-4 pt-4 border-t border-border-subtle">
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Import / Export / Share
+          <HelpTooltip text="Export your config as a .bladeforge.json file for backup, share via URL (Kyber Code), or generate a QR code. Import loads a previously exported config or one shared by another user." />
         </h3>
         <div className="flex flex-wrap gap-2">
           <button
@@ -367,8 +371,9 @@ export function CodeOutput() {
       {/* C++ Style Import */}
       <div className="mt-4 pt-4 border-t border-border-subtle">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
             Import C++ Style
+            <HelpTooltip text="Paste existing ProffieOS C++ style code to reverse-engineer it into BladeForge. The parser extracts colors, style type, ignition, and retraction settings. Confidence score indicates how complete the reconstruction is." proffie="StylePtr<...>" />
           </h3>
           <button
             onClick={() => setShowCppImport(!showCppImport)}

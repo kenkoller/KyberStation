@@ -74,16 +74,125 @@ export function EffectPanel() {
             </button>
           ))}
         </div>
+        {/* Stutter parameters */}
         {config.ignition === 'stutter' && (
-          <label className="flex items-center gap-2 mt-2 text-ui-xs text-text-secondary cursor-pointer">
-            <input
-              type="checkbox"
-              checked={(config.stutterFullExtend as boolean | undefined) ?? true}
-              onChange={(e) => updateConfig({ stutterFullExtend: e.target.checked })}
-              className="accent-accent"
-            />
-            Full extend (blade always reaches full length)
-          </label>
+          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+            <label className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer">
+              <input
+                type="checkbox"
+                checked={(config.stutterFullExtend as boolean | undefined) ?? true}
+                onChange={(e) => updateConfig({ stutterFullExtend: e.target.checked })}
+                className="accent-accent"
+              />
+              Full extend (blade always reaches full length)
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Flicker Count</span>
+              <input
+                type="range" min={5} max={60} step={1}
+                value={(config.stutterCount as number | undefined) ?? 30}
+                onChange={(e) => updateConfig({ stutterCount: Number(e.target.value) })}
+                aria-label="Stutter flicker count"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.stutterCount as number | undefined) ?? 30}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Amplitude</span>
+              <input
+                type="range" min={1} max={30} step={1}
+                value={(config.stutterAmplitude as number | undefined) ?? 10}
+                onChange={(e) => updateConfig({ stutterAmplitude: Number(e.target.value) })}
+                aria-label="Stutter amplitude"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.stutterAmplitude as number | undefined) ?? 10}%
+              </span>
+            </div>
+          </div>
+        )}
+        {/* Glitch parameters */}
+        {config.ignition === 'glitch' && (
+          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Density</span>
+              <input
+                type="range" min={1} max={20} step={1}
+                value={(config.glitchDensity as number | undefined) ?? 3}
+                onChange={(e) => updateConfig({ glitchDensity: Number(e.target.value) })}
+                aria-label="Glitch pixel density"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.glitchDensity as number | undefined) ?? 3}%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Intensity</span>
+              <input
+                type="range" min={10} max={100} step={5}
+                value={(config.glitchIntensity as number | undefined) ?? 100}
+                onChange={(e) => updateConfig({ glitchIntensity: Number(e.target.value) })}
+                aria-label="Glitch intensity"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.glitchIntensity as number | undefined) ?? 100}%
+              </span>
+            </div>
+          </div>
+        )}
+        {/* Spark parameters */}
+        {config.ignition === 'spark' && (
+          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Spark Size</span>
+              <input
+                type="range" min={1} max={15} step={1}
+                value={(config.sparkSize as number | undefined) ?? 5}
+                onChange={(e) => updateConfig({ sparkSize: Number(e.target.value) })}
+                aria-label="Spark tip size"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.sparkSize as number | undefined) ?? 5}%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Trail</span>
+              <input
+                type="range" min={1} max={20} step={1}
+                value={(config.sparkTrail as number | undefined) ?? 5}
+                onChange={(e) => updateConfig({ sparkTrail: Number(e.target.value) })}
+                aria-label="Spark trail length"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.sparkTrail as number | undefined) ?? 5}%
+              </span>
+            </div>
+          </div>
+        )}
+        {/* Wipe parameters */}
+        {config.ignition === 'wipe' && (
+          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Softness</span>
+              <input
+                type="range" min={1} max={20} step={1}
+                value={(config.wipeSoftness as number | undefined) ?? 3}
+                onChange={(e) => updateConfig({ wipeSoftness: Number(e.target.value) })}
+                aria-label="Wipe edge softness"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.wipeSoftness as number | undefined) ?? 3}%
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -109,6 +218,37 @@ export function EffectPanel() {
             </button>
           ))}
         </div>
+        {/* Shatter retraction parameters */}
+        {config.retraction === 'shatter' && (
+          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Fragment Size</span>
+              <input
+                type="range" min={5} max={50} step={1}
+                value={(config.shatterScale as number | undefined) ?? 20}
+                onChange={(e) => updateConfig({ shatterScale: Number(e.target.value) })}
+                aria-label="Shatter fragment scale"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.shatterScale as number | undefined) ?? 20}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Fade Speed</span>
+              <input
+                type="range" min={10} max={100} step={5}
+                value={(config.shatterDimSpeed as number | undefined) ?? 100}
+                onChange={(e) => updateConfig({ shatterDimSpeed: Number(e.target.value) })}
+                aria-label="Shatter fade speed"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.shatterDimSpeed as number | undefined) ?? 100}%
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Duration sliders */}
@@ -157,7 +297,7 @@ export function EffectPanel() {
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Easing Curves
-          <HelpTooltip text="Controls the acceleration profile. Linear = constant speed. Ease In = starts slow. Ease Out = ends slow. Bounce/Elastic add physical spring effects." />
+          <HelpTooltip text="Controls the acceleration profile of ignition/retraction animations. Linear = constant speed. Ease In = starts slow. Ease Out = ends slow. Bounce/Elastic add physical spring effects." proffie="TrEaseX<TrWipe<300>, 5>" />
         </h3>
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
           <div className="flex items-center gap-3">
@@ -193,7 +333,7 @@ export function EffectPanel() {
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Dual-Mode Ignition
-          <HelpTooltip text="When enabled, blade angle selects between two different ignition/retraction animations. Tilt up for one, tilt down for another." />
+          <HelpTooltip text="When enabled, blade angle selects between two different ignition/retraction animations. Tilt up for one, tilt down for another. See also: Motion Simulation panel to test angle values." proffie="TrSelect<BladeAngle<>, TrWipe<>, TrWipeIn<>>" />
         </h3>
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
           <label className="touch-target flex items-center gap-2 cursor-pointer">
@@ -280,6 +420,95 @@ export function EffectPanel() {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      {/* Effect Customization */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          Effect Customization
+          <HelpTooltip text="Fine-tune the visual behavior of clash, blast, and stab effects. These settings control location, intensity, count, spread, and depth." />
+        </h3>
+        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-4">
+          {/* Clash controls */}
+          <div className="space-y-2">
+            <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Clash</span>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Location</span>
+              <input
+                type="range" min={0} max={100} step={1}
+                value={(config.clashLocation as number | undefined) ?? 50}
+                onChange={(e) => updateConfig({ clashLocation: Number(e.target.value) })}
+                aria-label="Clash location on blade"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.clashLocation as number | undefined) ?? 50}%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Intensity</span>
+              <input
+                type="range" min={0} max={100} step={1}
+                value={(config.clashIntensity as number | undefined) ?? 75}
+                onChange={(e) => updateConfig({ clashIntensity: Number(e.target.value) })}
+                aria-label="Clash intensity"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.clashIntensity as number | undefined) ?? 75}%
+              </span>
+            </div>
+          </div>
+
+          {/* Blast controls */}
+          <div className="space-y-2">
+            <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Blast</span>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Count</span>
+              <input
+                type="range" min={1} max={5} step={1}
+                value={(config.blastCount as number | undefined) ?? 1}
+                onChange={(e) => updateConfig({ blastCount: Number(e.target.value) })}
+                aria-label="Blast mark count"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.blastCount as number | undefined) ?? 1}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Spread</span>
+              <input
+                type="range" min={0} max={100} step={1}
+                value={(config.blastSpread as number | undefined) ?? 50}
+                onChange={(e) => updateConfig({ blastSpread: Number(e.target.value) })}
+                aria-label="Blast mark spread"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.blastSpread as number | undefined) ?? 50}%
+              </span>
+            </div>
+          </div>
+
+          {/* Stab controls */}
+          <div className="space-y-2">
+            <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Stab</span>
+            <div className="flex items-center gap-2">
+              <span className="text-ui-xs text-text-muted w-20 shrink-0">Depth</span>
+              <input
+                type="range" min={0} max={100} step={1}
+                value={(config.stabDepth as number | undefined) ?? 80}
+                onChange={(e) => updateConfig({ stabDepth: Number(e.target.value) })}
+                aria-label="Stab effect depth"
+                className="flex-1"
+              />
+              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
+                {(config.stabDepth as number | undefined) ?? 80}%
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

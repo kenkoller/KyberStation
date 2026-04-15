@@ -16,6 +16,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Jedi Temple Guard',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
     description: 'The Jedi Temple Guard\'s rotating pike blade. Warm authoritative yellow with a solemn, steady pulse. Clash produces a blinding flash of golden white.',
     hiltNotes: 'Double-bladed pike with masked guard hilt design.',
     config: {
@@ -39,6 +40,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Darksaber',
     era: 'animated',
     affiliation: 'neutral',
+    tier: 'detailed',
     description: 'Jet-black core with a crackling white edge. High shimmer creates the irregular, living energy the Darksaber is known for. The blade fights you.',
     hiltNotes: 'Ancient Mandalorian hilt with angular crossguard shape.',
     config: {
@@ -62,6 +64,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Corrupted Crystal',
     era: 'prequel',
     affiliation: 'sith',
+    tier: 'detailed',
     description: 'A Jedi crystal being corrupted by the dark side. Starts pure blue, slowly bleeds to crimson. Each clash accelerates the corruption. The fall made visible.',
     config: {
       name: 'KyberBleeding',
@@ -84,6 +87,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Redeemed Crystal',
     era: 'animated',
     affiliation: 'jedi',
+    tier: 'detailed',
     description: 'Red healing to brilliant white. The inverse of bleeding — a crystal redeemed through the Force. Clash reveals the white light breaking through.',
     config: {
       name: 'CrystalPurification',
@@ -106,6 +110,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Ancient Sith',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description: 'Ancient dark-side forge blade. Deep arterial red with roiling plasma texture. Lockup summons violet Sith lightning. This blade was never meant to exist.',
     config: {
       name: 'SithAlchemy',
@@ -128,6 +133,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Youngling',
     era: 'prequel',
     affiliation: 'jedi',
+    tier: 'detailed',
     description: 'A youngling\'s shaky first ignition. High instability, nervous flicker, long hesitant startup. The blade sputters and wavers but holds. Everyone starts somewhere.',
     config: {
       name: 'FirstLightsaber',
@@ -150,6 +156,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Mandalorian',
     era: 'animated',
     affiliation: 'neutral',
+    tier: 'detailed',
     description: 'Mandalorian-wielded blade with metallic silver-blue sheen. Prismatic light plays across the surface like beskar catching firelight. Clash sparks orange like forged metal.',
     config: {
       name: 'BeskarReflection',
@@ -177,6 +184,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Artisan Baker',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Artisan bread from hilt to tip. Golden-brown crust gradient with a warm bready glow. Clash sends flour everywhere. Oui oui.',
     config: {
       name: 'BaguetteBlade',
@@ -199,6 +207,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'PC Master Race',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Maximum RGB at all times. Fast rainbow cycle with clash triggering the Blue Screen of Death. Your FPS has not improved.',
     config: {
       name: 'RGBGamer',
@@ -221,6 +230,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Low Power',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Starts full green. Slowly yellows, then reds, then flickers desperately. Retraction is a long, sad fadeout. Charge your saber, you fool.',
     config: {
       name: 'BatteryAnxiety',
@@ -243,6 +253,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Disco Ball',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Sound-reactive color explosions. The blade IS the dance floor. Clash drops the beat. Best paired with a Disco font.',
     config: {
       name: 'DiscoInferno',
@@ -265,6 +276,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Raver',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'UV purple with strobe-on-swing. High shimmer creates relentless pulse. Bring glow sticks.',
     config: {
       name: 'RaveSaber',
@@ -287,6 +299,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Surprise',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Ignites pure white. First clash reveals pink, lockup reveals blue. Less property damage than the alternatives.',
     config: {
       name: 'GenderReveal',
@@ -309,6 +322,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Error',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Digital corruption made physical. Pixelated blocks, glitch artifacts, random color tearing. The blade renders incorrectly and that IS the point.',
     config: {
       name: '404NotFound',
@@ -331,6 +345,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Holiday',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Alternating red and green with gold lockup like tinsel. Blast sends snowflakes. Festive and aggressive.',
     config: {
       name: 'ChristmasClassic',
@@ -353,6 +368,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Halloween',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Jack-o-lantern orange fire with purple clash and ghostly green blast. Slow fadeout like a candle dying. Boo.',
     config: {
       name: 'SpookySeason',
@@ -380,6 +396,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Covenant',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Split cyan-blue plasma blade inspired by alien energy weapons. Center ignition blooms outward. Clean, alien, lethal.',
     config: {
       name: 'EnergySword',
@@ -402,6 +419,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Ice & Fire',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Icy obsidian white-blue with fiery orange clash. Shatter retraction looks like glass breaking. Winter is handled.',
     config: {
       name: 'DragonGlass',
@@ -424,6 +442,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Retro Sci-Fi',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Warm amber filament glow like a vintage vacuum tube. Cinder particles rise like old-tech energy. Retro sci-fi pulp magazine aesthetic.',
     config: {
       name: 'Protosaber',
@@ -446,6 +465,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Digital World',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Razor-sharp cyan with zero shimmer. Perfectly clean lines for that hard geometric digital aesthetic. The Grid demands precision.',
     config: {
       name: 'GridRunner',
@@ -468,6 +488,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'The Matrix',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Cascading green aurora-wave down the blade like falling code. There is no spoon, but there is this saber.',
     config: {
       name: 'DigitalRain',
@@ -490,6 +511,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Cyberpunk',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description: 'Hot pink fading to cyan at the tip. Cyberpunk neon in a rain-soaked alley. Clash inverts the gradient. Chrome and attitude.',
     config: {
       name: 'NeonNoir',
@@ -512,6 +534,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Dark Fantasy',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description: 'Deep violet-black plasma with chain lightning lockup. Dark fantasy energy blade for those who serve a darker power.',
     config: {
       name: 'DarkEnergy',
@@ -534,6 +557,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Heroic Warrior',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Regal gold with silver clash. Dual-tone heroic blade. Simple, bold, legendary.',
     config: {
       name: 'PowerGrayskull',
@@ -556,6 +580,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Portal',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Orange blade, blue clash. The cake is a lie but the style is real.',
     config: {
       name: 'CompanionCube',
@@ -578,6 +603,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Block World',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Aqua diamond crystal shatter pattern. Blocky, chunky, satisfying. Blast sparkles like dropped XP.',
     config: {
       name: 'PixelMiner',
@@ -605,6 +631,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Northern Lights',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description: 'Shifting green-cyan-purple waves. Slow, mesmerizing aurora movement along the blade. Best viewed in the dark with awe.',
     config: {
       name: 'AuroraBorealis',
@@ -627,6 +654,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Volcanic',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description: 'Black-red-orange with rising ember particles. The blade looks like cooled lava cracking to reveal molten fury beneath. Clash erupts in yellow fire.',
     config: {
       name: 'MagmaCore',
@@ -649,6 +677,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Deep Ocean',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Crushing deep-ocean blue with bioluminescent cyan pulses. Slow pulsing like something alive in the deep. Clash triggers a jellyfish flash.',
     config: {
       name: 'Abyssal',
@@ -671,6 +700,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Tempest',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description: 'White-purple with extreme instability creating constant crackling. High shimmer makes this blade feel like barely-contained electricity.',
     config: {
       name: 'LightningStorm',
@@ -693,6 +723,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Ice',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Icy pale blue with crystalline fracture patterns. Clash creates white flash like ice cracking. Shatter retraction breaks the frozen blade.',
     config: {
       name: 'Permafrost',
@@ -715,6 +746,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Sun',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Blinding yellow-white fire with orange corona. Solar prominence dynamics. Look directly at this blade and regret it.',
     config: {
       name: 'SolarFlare',
@@ -737,6 +769,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Cosmos',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description: 'Deep purple-pink-cyan cosmic gradient with slow rotational drift. Extremely long ignition scroll like a nebula forming. Meditative.',
     config: {
       name: 'Nebula',
@@ -764,6 +797,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Classic Split',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description: 'Red base fading to blue at the tip. The community classic that never gets old. Clash inverts to blue, lockup blends to purple.',
     config: {
       name: 'FireAndIce',
@@ -786,6 +820,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Radioactive',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Toxic radioactive green with heavy unstable flicker. The blade looks like it is actively dangerous to hold. It probably is.',
     config: {
       name: 'Kryptonite',
@@ -808,6 +843,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Spectral',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Dim, translucent spectral blade. Barely visible, hauntingly beautiful. Clash triggers a bright spectral flash that fades fast.',
     config: {
       name: 'Ghostblade',
@@ -830,6 +866,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Crystal Glitter',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'base',
     description: 'Maximum prismatic shimmer on a white-lavender base. Pure crystalline glitter. Impractical, gorgeous, unapologetic.',
     config: {
       name: 'SparkleBlade',
@@ -852,6 +889,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Tatooine',
     era: 'original-trilogy',
     affiliation: 'jedi',
+    tier: 'base',
     description: 'Warm orange-gold fading to dusky purple at the tip. The Tatooine sky at dusk. Williams plays in your head automatically.',
     config: {
       name: 'BinarySunset',
@@ -874,6 +912,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'The Void',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description: 'Near-black violet plasma that drinks light. The blade is a wound in space. Clash erupts in violent purple. For the edgelords, and they are right to love it.',
     config: {
       name: 'VoidWalker',
@@ -896,6 +935,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'base',
     description: 'Maximum prismatic refraction — a blade of pure light split into every color, spinning wildly.',
     config: {
       name: 'QuantumFlux',
@@ -920,6 +960,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'detailed',
     description: 'Chaotic plasma energy from a dying star. Deep purple arcs crackle unpredictably.',
     config: {
       name: 'NebulaCore',
@@ -944,6 +985,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'base',
     description: 'An ethereal blade that flickers in and out of existence, like a transmission from another dimension.',
     config: {
       name: 'GhostSignal',
@@ -966,6 +1008,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'detailed',
     description: 'A blade that could explode at any moment. Maximum fire intensity — blindingly hot orange-yellow.',
     config: {
       name: 'ThermalDetonator',
@@ -991,6 +1034,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'detailed',
     description: 'Deep ocean energy captured in blade form. Slow, mesmerizing aurora waves in deep blue-teal.',
     config: {
       name: 'TidalWave',
@@ -1015,6 +1059,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description: 'A deep crimson blade that pulses like a heartbeat — slow, rhythmic, almost alive.',
     config: {
       name: 'Heartbeat',
@@ -1039,6 +1084,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description: 'A pure white blade that fractures into crystalline segments, each twinkling like distant stars.',
     config: {
       name: 'Starfield',
@@ -1061,6 +1107,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'base',
     description: 'Dying ember blade — dark with glowing hot spots that shift like molten magma.',
     config: {
       name: 'MoltenCore',
@@ -1083,6 +1130,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     character: 'Custom',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'base',
     description: 'Old-school green phosphor display effect — the original rotoscope look from 1977, cranked up.',
     config: {
       name: 'RetroCRT',

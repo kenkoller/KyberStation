@@ -251,8 +251,9 @@ export function StylePanel() {
 
       {/* Colors */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Colors
+          <HelpTooltip text="Quick color pickers for base blade and effect trigger colors. For advanced color editing with HSL sliders, harmony wheels, and canon presets, use the full Color Panel." proffie="Rgb<r,g,b>" />
         </h3>
         <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           <ColorPickerRow label="Base" colorKey="baseColor" color={config.baseColor} />
@@ -280,7 +281,7 @@ export function StylePanel() {
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Hardware
-          <HelpTooltip text="LED brightness and count. These should match your physical blade setup for accurate simulation." proffie="MaxLedsPerStrip" />
+          <HelpTooltip text="LED brightness and count. These should match your physical blade setup for accurate simulation. See also: Blade Hardware panel for topology and strip config, Power Draw for battery estimates." proffie="MaxLedsPerStrip" />
         </h3>
         <div className="space-y-4 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           <div className="flex items-center gap-3">

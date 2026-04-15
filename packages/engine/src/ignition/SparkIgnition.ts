@@ -1,4 +1,5 @@
 import { BaseIgnition } from './BaseIgnition.js';
+import type { IgnitionContext } from '../types.js';
 
 /**
  * SparkIgnition — standard extension with leading spark tip.
@@ -10,11 +11,13 @@ export class SparkIgnition extends BaseIgnition {
   readonly id = 'spark';
   readonly name = 'Spark Tip';
 
-  getMask(position: number, progress: number): number {
+  getMask(position: number, progress: number, context?: IgnitionContext): number {
+    const trail = ((context?.config?.sparkTrail as number | undefined) ?? 5) / 100;
+    const size = ((context?.config?.sparkSize as number | undefined) ?? 5) / 100;
     const base = position <= progress ? 1 : 0;
 
-    // Spark at the leading edge: small bright region ahead of fill
-    if (position > progress - 0.05 && position < progress + 0.02) {
+    // Spark at the leading edge: bright region around fill position
+    if (position > progress - trail && position < progress + size) {
       return 1;
     }
 

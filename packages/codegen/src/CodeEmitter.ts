@@ -21,10 +21,10 @@ const COMMENT_MAP: Record<string, string> = {
 
 // Lockup type comment suffixes
 const LOCKUP_COMMENTS: Record<string, string> = {
-  LOCKUP_NORMAL: 'Normal Lockup',
-  LOCKUP_DRAG: 'Drag Lockup',
-  LOCKUP_LIGHTNING_BLOCK: 'Lightning Block Lockup',
-  LOCKUP_MELT: 'Melt Lockup',
+  'SaberBase::LOCKUP_NORMAL': 'Normal Lockup',
+  'SaberBase::LOCKUP_DRAG': 'Drag Lockup',
+  'SaberBase::LOCKUP_LIGHTNING_BLOCK': 'Lightning Block Lockup',
+  'SaberBase::LOCKUP_MELT': 'Melt Lockup',
 };
 
 /**

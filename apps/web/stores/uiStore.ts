@@ -4,6 +4,7 @@ export type ViewMode = 'blade' | 'angle' | 'strip' | 'cross' | 'uv-unwrap';
 export type RenderMode = 'photorealistic' | 'pixel';
 export type CanvasMode = '2d' | '3d';
 export type ActiveTab = 'design' | 'dynamics' | 'audio' | 'gallery' | 'output';
+export type LayoutMode = 'sidebar' | 'horizontal';
 
 export interface UIStore {
   viewMode: ViewMode;
@@ -18,6 +19,28 @@ export interface UIStore {
   activeColorChannel: string;
   /** Analyze mode shows pixel strip + RGB graph; clean mode hides them for cinematic view */
   analyzeMode: boolean;
+  /** Vertical canvas panel width ratios — blade, pixel strip, RGB graph (sum to 1.0) */
+  verticalPanelWidths: { blade: number; strip: number; graph: number };
+
+  // ── Layout & Panel Visibility ──
+  /** Sidebar width in pixels (resizable via drag handle) */
+  sidebarWidth: number;
+  /** Show/hide the hilt graphic in the blade panel */
+  showHilt: boolean;
+  /** Individual panel visibility toggles */
+  showBladePanel: boolean;
+  showPixelPanel: boolean;
+  showGraphPanel: boolean;
+  /** Global animation pause — freezes engine updates while keeping the last frame visible */
+  animationPaused: boolean;
+  /** Battery preset index for power draw estimation */
+  batteryPresetIdx: number;
+  /** Per-tab section ordering — maps tab → ordered array of section IDs */
+  sectionOrder: Partial<Record<ActiveTab, string[]>>;
+  /** Layout mode — sidebar (vertical blade, side tabs) or horizontal (blade on top, tabs below) */
+  layoutMode: LayoutMode;
+  /** Custom tab order for desktop tab bar (empty = default order) */
+  tabOrder: string[];
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -29,6 +52,17 @@ export interface UIStore {
   toggleEffectComparison: () => void;
   setActiveColorChannel: (channel: string) => void;
   toggleAnalyzeMode: () => void;
+  setVerticalPanelWidths: (widths: { blade: number; strip: number; graph: number }) => void;
+  setSidebarWidth: (width: number) => void;
+  toggleShowHilt: () => void;
+  toggleBladePanel: () => void;
+  togglePixelPanel: () => void;
+  toggleGraphPanel: () => void;
+  toggleAnimationPaused: () => void;
+  setBatteryPresetIdx: (idx: number) => void;
+  setSectionOrder: (tab: ActiveTab, order: string[]) => void;
+  setLayoutMode: (mode: LayoutMode) => void;
+  setTabOrder: (order: string[]) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -42,6 +76,19 @@ export const useUIStore = create<UIStore>((set) => ({
   showEffectComparison: false,
   activeColorChannel: 'baseColor',
   analyzeMode: true,
+  verticalPanelWidths: { blade: 0.50, strip: 0.12, graph: 0.38 },
+
+  // Layout defaults
+  sidebarWidth: 380,
+  showHilt: true,
+  showBladePanel: true,
+  showPixelPanel: true,
+  showGraphPanel: true,
+  animationPaused: false,
+  batteryPresetIdx: 0,
+  sectionOrder: {},
+  layoutMode: 'sidebar',
+  tabOrder: [],
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -53,4 +100,17 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleEffectComparison: () => set((state) => ({ showEffectComparison: !state.showEffectComparison })),
   setActiveColorChannel: (activeColorChannel) => set({ activeColorChannel }),
   toggleAnalyzeMode: () => set((state) => ({ analyzeMode: !state.analyzeMode })),
+  setVerticalPanelWidths: (verticalPanelWidths) => set({ verticalPanelWidths }),
+  setSidebarWidth: (sidebarWidth) => set({ sidebarWidth: Math.max(280, Math.min(600, sidebarWidth)) }),
+  toggleShowHilt: () => set((state) => ({ showHilt: !state.showHilt })),
+  toggleBladePanel: () => set((state) => ({ showBladePanel: !state.showBladePanel })),
+  togglePixelPanel: () => set((state) => ({ showPixelPanel: !state.showPixelPanel })),
+  toggleGraphPanel: () => set((state) => ({ showGraphPanel: !state.showGraphPanel })),
+  toggleAnimationPaused: () => set((state) => ({ animationPaused: !state.animationPaused })),
+  setBatteryPresetIdx: (batteryPresetIdx) => set({ batteryPresetIdx }),
+  setSectionOrder: (tab, order) => set((state) => ({
+    sectionOrder: { ...state.sectionOrder, [tab]: order },
+  })),
+  setLayoutMode: (layoutMode) => set({ layoutMode }),
+  setTabOrder: (tabOrder) => set({ tabOrder }),
 }));

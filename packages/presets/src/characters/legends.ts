@@ -8,6 +8,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Revan',
     era: 'expanded-universe',
     affiliation: 'neutral',
+    tier: 'detailed',
     description:
       'Revan\'s iconic purple lightsaber. The blade of the Prodigal Knight straddles light and dark — a deep, regal violet that has become one of the most recognized sabers in all of Star Wars.',
     hiltNotes: 'Distinctive hilt with angled emitter shroud, often paired with his Mandalorian mask.',
@@ -17,6 +18,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 220, g: 180, b: 255 },
       lockupColor: { r: 180, g: 80, b: 255 },
       blastColor: { r: 170, g: 60, b: 255 },
+      dragColor: { r: 120, g: 0, b: 200 },
       style: 'unstable',
       ignition: 'spark',
       retraction: 'shatter',
@@ -25,6 +27,41 @@ export const LEGENDS_PRESETS: Preset[] = [
       shimmer: 0.3,
       ledCount: 144,
       flicker: 0.5,
+      noiseLevel: 0.12,
+      swingFxIntensity: 0.45,
+    },
+  },
+
+  // ── Darth Revan (Red) ──
+  {
+    id: 'legends-darth-revan-red',
+    name: 'Darth Revan (Red - Sith Lord)',
+    character: 'Darth Revan',
+    era: 'expanded-universe',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Revan as Sith Lord during the Jedi Civil War. A deep, commanding crimson blade wielded by the Dark Lord before his redemption.',
+    hiltNotes: 'Same distinctive hilt, now with a bled kyber crystal.',
+    config: {
+      name: 'RevanSith',
+      baseColor: { r: 200, g: 0, b: 10 },
+      clashColor: { r: 255, g: 180, b: 130 },
+      lockupColor: { r: 255, g: 80, b: 50 },
+      blastColor: { r: 255, g: 60, b: 30 },
+      dragColor: { r: 180, g: 0, b: 0 },
+      style: 'fire',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 350,
+      shimmer: 0.2,
+      ledCount: 144,
+      fireSize: 0.55,
+      sparkRate: 0.5,
+      heatSpread: 0.6,
+      noiseLevel: 0.1,
+      swingFxIntensity: 0.4,
     },
   },
 
@@ -35,6 +72,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Bastila Shan',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description:
       'Bastila Shan\'s golden yellow double-bladed lightsaber. The warm, radiant blade of the Jedi Sentinel who wielded Battle Meditation.',
     hiltNotes: 'Long double-bladed hilt, saberstaff configuration.',
@@ -44,6 +82,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 180 },
       lockupColor: { r: 255, g: 240, b: 100 },
       blastColor: { r: 255, g: 235, b: 60 },
+      dragColor: { r: 200, g: 170, b: 0 },
       style: 'stable',
       ignition: 'center',
       retraction: 'center',
@@ -51,6 +90,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       retractionMs: 350,
       shimmer: 0.1,
       ledCount: 144,
+      swingFxIntensity: 0.3,
     },
   },
 
@@ -61,6 +101,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Nihilus',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'The Lord of Hunger\'s red lightsaber. A deep, consuming crimson that seems to devour the light around it, mirroring Nihilus\'s insatiable hunger through the Force.',
     hiltNotes: 'Standard Sith hilt, though Nihilus rarely relied on his saber over his devastating Force drain.',
@@ -70,6 +111,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 140, b: 100 },
       lockupColor: { r: 220, g: 50, b: 30 },
       blastColor: { r: 200, g: 30, b: 15 },
+      dragColor: { r: 100, g: 0, b: 0 },
       style: 'fire',
       ignition: 'glitch',
       retraction: 'fadeout',
@@ -81,6 +123,8 @@ export const LEGENDS_PRESETS: Preset[] = [
       fireSize: 0.8,
       sparkRate: 0.7,
       heatSpread: 0.9,
+      noiseLevel: 0.15,
+      swingFxIntensity: 0.2,
     },
   },
 
@@ -91,6 +135,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Sion',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'The Lord of Pain\'s red lightsaber. A harsh, angry crimson — cracked and raw like Sion\'s own shattered body held together by sheer rage.',
     config: {
@@ -99,6 +144,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 180, b: 130 },
       lockupColor: { r: 240, g: 70, b: 30 },
       blastColor: { r: 230, g: 50, b: 15 },
+      dragColor: { r: 180, g: 0, b: 0 },
       style: 'unstable',
       ignition: 'stutter',
       retraction: 'standard',
@@ -107,6 +153,8 @@ export const LEGENDS_PRESETS: Preset[] = [
       shimmer: 0.32,
       ledCount: 144,
       flicker: 0.8,
+      noiseLevel: 0.18,
+      swingFxIntensity: 0.5,
     },
   },
 
@@ -117,6 +165,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Malak',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'Darth Malak\'s red lightsaber. A bold, domineering scarlet wielded by Revan\'s fallen apprentice and the Dark Lord of the Sith during the Jedi Civil War.',
     hiltNotes: 'Large hilt matching Malak\'s imposing stature.',
@@ -126,6 +175,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 200, b: 160 },
       lockupColor: { r: 255, g: 90, b: 50 },
       blastColor: { r: 255, g: 70, b: 30 },
+      dragColor: { r: 200, g: 0, b: 0 },
       style: 'fire',
       ignition: 'scroll',
       retraction: 'standard',
@@ -136,6 +186,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       fireSize: 0.7,
       sparkRate: 0.4,
       heatSpread: 0.6,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -146,6 +197,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Meetra Surik',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'The Jedi Exile\'s cyan lightsaber. A tranquil, piercing icy-blue blade rebuilt after the Mandalorian Wars. Color is configurable in-game — cyan is the canonical default.',
     hiltNotes: 'Rebuilt hilt after years without a lightsaber following Malachor V.',
@@ -172,6 +224,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Galen Marek',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description:
       'Starkiller\'s blue lightsaber after turning to the light. A brilliant cobalt blade wielded with raw, unbridled power by Vader\'s secret apprentice turned rebel hero.',
     hiltNotes: 'Compact hilt with reverse grip. Kento Marek\'s original lightsaber.',
@@ -181,6 +234,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 200, g: 215, b: 255 },
       lockupColor: { r: 140, g: 170, b: 255 },
       blastColor: { r: 100, g: 150, b: 255 },
+      dragColor: { r: 255, g: 180, b: 0 },
       style: 'photon',
       ignition: 'spark',
       retraction: 'standard',
@@ -188,6 +242,9 @@ export const LEGENDS_PRESETS: Preset[] = [
       retractionMs: 280,
       shimmer: 0.18,
       ledCount: 144,
+      sparkSize: 0.7,
+      swingFxIntensity: 0.55,
+      noiseLevel: 0.06,
     },
   },
 
@@ -198,6 +255,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Galen Marek',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'Starkiller\'s red lightsabers from the dark-side path. Dual-wielded crimson blades burning with unchecked fury.',
     hiltNotes: 'Dual reverse-grip hilts for the Sith Stalker armor configuration.',
@@ -207,6 +265,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 200, b: 150 },
       lockupColor: { r: 255, g: 100, b: 55 },
       blastColor: { r: 255, g: 75, b: 35 },
+      dragColor: { r: 200, g: 0, b: 0 },
       style: 'unstable',
       ignition: 'glitch',
       retraction: 'shatter',
@@ -215,6 +274,8 @@ export const LEGENDS_PRESETS: Preset[] = [
       shimmer: 0.35,
       ledCount: 144,
       flicker: 0.7,
+      noiseLevel: 0.18,
+      swingFxIntensity: 0.6,
     },
   },
 
@@ -225,6 +286,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Mara Jade',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description:
       'Mara Jade\'s purple lightsaber. The Emperor\'s Hand turned Jedi Master and wife of Luke Skywalker. A magenta-tinged violet reflecting her complex journey.',
     hiltNotes: 'Sleek, functional hilt. Later used Luke\'s spare blue saber as well.',
@@ -234,6 +296,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 230, g: 180, b: 255 },
       lockupColor: { r: 210, g: 100, b: 240 },
       blastColor: { r: 200, g: 80, b: 230 },
+      dragColor: { r: 150, g: 0, b: 180 },
       style: 'prism',
       ignition: 'spark',
       retraction: 'standard',
@@ -243,6 +306,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       ledCount: 144,
       facets: 6,
       rotationSpeed: 1.5,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -253,6 +317,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Kyle Katarn',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Kyle Katarn\'s green lightsaber from the Jedi Knight series. A dependable emerald blade wielded by the mercenary turned Jedi Battlemaster.',
     hiltNotes: 'Rahn\'s lightsaber, passed to Kyle. Simple, rugged design befitting a soldier.',
@@ -279,6 +344,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Jaina Solo',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Jaina Solo\'s purple lightsaber. The Sword of the Jedi — daughter of Han and Leia, twin of Jacen, ace pilot, and the one who brought down Darth Caedus.',
     config: {
@@ -304,6 +370,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Jacen Solo',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'base',
     description:
       'Darth Caedus\'s red lightsaber. Once Jacen Solo with a blue blade, now the Sith Lord whose fall echoes Anakin\'s — a deep arterial red reflecting his tragic descent.',
     config: {
@@ -329,8 +396,9 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Corran Horn',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'detailed',
     description:
-      'Corran Horn\'s distinctive silver-white lightsaber, unique among Jedi. Built from a speeder bike throttle with a dual-phase mechanism. The CorSec detective turned Rogue Squadron pilot turned Jedi.',
+      'Corran Horn\'s distinctive silver-white lightsaber, unique among Jedi. Built from a speeder bike throttle with a dual-phase mechanism.',
     hiltNotes: 'Constructed from a speeder bike throttle. Dual-phase: standard and extended reach.',
     config: {
       name: 'CorranHorn',
@@ -346,6 +414,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       shimmer: 0.06,
       ledCount: 144,
       dualPhase: true,
+      swingFxIntensity: 0.3,
     },
   },
 
@@ -356,6 +425,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Exar Kun',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'Exar Kun\'s double-bladed blue lightsaber — the first known saberstaff. A vivid, sinister azure wielded by the Dark Lord who nearly destroyed the Jedi 4,000 years before Yavin.',
     hiltNotes: 'The original double-bladed lightsaber design, modified from a standard Jedi hilt using Sith knowledge.',
@@ -365,6 +435,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 180, g: 200, b: 255 },
       lockupColor: { r: 120, g: 155, b: 255 },
       blastColor: { r: 90, g: 140, b: 255 },
+      dragColor: { r: 100, g: 0, b: 200 },
       style: 'plasma',
       ignition: 'center',
       retraction: 'center',
@@ -374,6 +445,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       ledCount: 144,
       frequency: 2.0,
       phaseSpeed: 1.5,
+      swingFxIntensity: 0.4,
     },
   },
 
@@ -384,6 +456,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Nomi Sunrider',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
       'Nomi Sunrider\'s green lightsaber. Grand Master of the Jedi Order during the Great Sith War, her verdant blade symbolizes her reluctant but powerful rise to leadership.',
     config: {
@@ -409,8 +482,9 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Ulic Qel-Droma',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
-      'Ulic Qel-Droma\'s blue lightsaber. The tragic Jedi Knight who fell to the dark side as Exar Kun\'s Sith apprentice before redeeming himself at the cost of his connection to the Force.',
+      'Ulic Qel-Droma\'s blue lightsaber. The tragic Jedi Knight who fell to the dark side as Exar Kun\'s Sith apprentice before redeeming himself.',
     config: {
       name: 'UlicQelDroma',
       baseColor: { r: 40, g: 100, b: 255 },
@@ -434,6 +508,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Bane',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
       'Darth Bane\'s red lightsaber. The creator of the Rule of Two — a molten, menacing crimson blade wielded by the Sith who reshaped the dark side forever.',
     hiltNotes: 'Curved hilt design. Bane later encased himself in orbalisks that served as living armor.',
@@ -443,6 +518,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 170, b: 120 },
       lockupColor: { r: 240, g: 60, b: 30 },
       blastColor: { r: 225, g: 40, b: 15 },
+      dragColor: { r: 180, g: 0, b: 0 },
       style: 'fire',
       ignition: 'scroll',
       retraction: 'standard',
@@ -453,6 +529,8 @@ export const LEGENDS_PRESETS: Preset[] = [
       fireSize: 0.6,
       sparkRate: 0.5,
       heatSpread: 0.7,
+      noiseLevel: 0.1,
+      swingFxIntensity: 0.35,
     },
   },
 
@@ -463,8 +541,9 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Plagueis',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
-      'Darth Plagueis\'s red lightsaber. The Wise — Sidious\'s master who could manipulate midi-chlorians to create life. A dark, measured crimson reflecting cold, scientific mastery of the Force.',
+      'Darth Plagueis\'s red lightsaber. The Wise — Sidious\'s master who could manipulate midi-chlorians to create life.',
     hiltNotes: 'Elegant Muun-proportioned hilt.',
     config: {
       name: 'DarthPlagueis',
@@ -472,6 +551,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 160, b: 120 },
       lockupColor: { r: 220, g: 50, b: 30 },
       blastColor: { r: 200, g: 30, b: 15 },
+      dragColor: { r: 120, g: 0, b: 0 },
       style: 'pulse',
       ignition: 'standard',
       retraction: 'fadeout',
@@ -481,6 +561,8 @@ export const LEGENDS_PRESETS: Preset[] = [
       ledCount: 144,
       pulseSpeed: 0.8,
       pulseMinBright: 0.3,
+      noiseLevel: 0.05,
+      swingFxIntensity: 0.2,
     },
   },
 
@@ -491,6 +573,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Talon',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'base',
     description:
       'Darth Talon\'s red lightsaber. The Twi\'lek Sith Lady from the Legacy era — a fierce, vivid scarlet blade matching her striking tattooed appearance.',
     config: {
@@ -516,8 +599,9 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Darth Krayt',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
-      'Darth Krayt\'s red lightsaber. Once A\'Sharad Hett the Tusken Jedi, now the founder of the One Sith. A wrathful, volcanic crimson — dual-wielded blades dripping with centuries of fury.',
+      'Darth Krayt\'s red lightsaber. Once A\'Sharad Hett the Tusken Jedi, now the founder of the One Sith.',
     hiltNotes: 'Dual lightsabers, coral-encrusted Yuuzhan Vong-influenced hilts.',
     config: {
       name: 'DarthKrayt',
@@ -525,6 +609,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 180, b: 130 },
       lockupColor: { r: 245, g: 70, b: 35 },
       blastColor: { r: 235, g: 50, b: 20 },
+      dragColor: { r: 180, g: 0, b: 0 },
       style: 'cinder',
       ignition: 'stutter',
       retraction: 'shatter',
@@ -532,6 +617,8 @@ export const LEGENDS_PRESETS: Preset[] = [
       retractionMs: 300,
       shimmer: 0.3,
       ledCount: 144,
+      noiseLevel: 0.12,
+      swingFxIntensity: 0.45,
     },
   },
 
@@ -542,8 +629,9 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Cade Skywalker',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
-      'Cade Skywalker\'s blue lightsaber. The reluctant Legacy-era descendant of Luke Skywalker — a rough-edged, restless blue blade wielded by a bounty hunter who couldn\'t escape his bloodline.',
+      'Cade Skywalker\'s blue lightsaber. The reluctant Legacy-era descendant of Luke Skywalker — a rough-edged, restless blue blade.',
     config: {
       name: 'CadeSkywalker',
       baseColor: { r: 30, g: 90, b: 255 },
@@ -567,9 +655,10 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Maris Brood',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'base',
     description:
-      'Maris Brood\'s red tonfa-style lightsabers. Unique guard shoto configuration — the Zabrak Padawan fell to the dark side on Felucia under Shaak Ti\'s watch.',
-    hiltNotes: 'Paired tonfa-grip lightsabers with perpendicular handles, unique among all known sabers.',
+      'Maris Brood\'s red tonfa-style lightsabers. Unique guard shoto configuration — the Zabrak Padawan fell to the dark side on Felucia.',
+    hiltNotes: 'Paired tonfa-grip lightsabers with perpendicular handles.',
     config: {
       name: 'MarisBrood',
       baseColor: { r: 240, g: 10, b: 20 },
@@ -594,9 +683,10 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Rahm Kota',
     era: 'expanded-universe',
     affiliation: 'jedi',
+    tier: 'base',
     description:
-      'General Rahm Kota\'s green lightsaber. The grizzled Clone Wars veteran and militia leader — a weathered, battle-hardened emerald blade with a katana-like fighting style.',
-    hiltNotes: 'Katana-inspired hilt with wrapped grip, reflecting his samurai-like martial philosophy.',
+      'General Rahm Kota\'s green lightsaber. The grizzled Clone Wars veteran and militia leader — a weathered, battle-hardened emerald blade.',
+    hiltNotes: 'Katana-inspired hilt with wrapped grip.',
     config: {
       name: 'RahmKota',
       baseColor: { r: 10, g: 190, b: 35 },
@@ -620,8 +710,9 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'PROXY',
     era: 'expanded-universe',
     affiliation: 'other',
+    tier: 'detailed',
     description:
-      'PROXY\'s holographic lightsaber — constantly shifting color and form as the droid mimics various Jedi and Sith combatants. A rainbow prism effect reflects his shapeshifting holographic disguise module.',
+      'PROXY\'s holographic lightsaber — constantly shifting color and form as the droid mimics various Jedi and Sith combatants.',
     hiltNotes: 'Holographic projection, changes to match whatever combatant PROXY is imitating.',
     config: {
       name: 'PROXY',
@@ -640,6 +731,7 @@ export const LEGENDS_PRESETS: Preset[] = [
       colorShiftSpeed: 2.0,
       facets: 8,
       rotationSpeed: 2.5,
+      swingFxIntensity: 0.5,
     },
   },
 
@@ -650,15 +742,17 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Kreia',
     era: 'expanded-universe',
     affiliation: 'sith',
+    tier: 'detailed',
     description:
-      'Darth Traya\'s purple lightsaber — or rather, lightsabers, as she wielded three simultaneously through the Force. A muted, ashen violet reflecting the Betrayer\'s philosophy that the Force itself is the enemy.',
-    hiltNotes: 'Three lightsabers controlled telekinetically. Traya wielded them without hands through pure Force manipulation.',
+      'Darth Traya\'s purple lightsaber — or rather, lightsabers, as she wielded three simultaneously through the Force.',
+    hiltNotes: 'Three lightsabers controlled telekinetically.',
     config: {
       name: 'DarthTraya',
       baseColor: { r: 120, g: 40, b: 180 },
       clashColor: { r: 200, g: 170, b: 240 },
       lockupColor: { r: 160, g: 90, b: 210 },
       blastColor: { r: 150, g: 70, b: 200 },
+      dragColor: { r: 100, g: 20, b: 150 },
       style: 'aurora',
       ignition: 'center',
       retraction: 'fadeout',
@@ -669,6 +763,64 @@ export const LEGENDS_PRESETS: Preset[] = [
       telekinetic: true,
       waveCount: 6,
       driftSpeed: 0.4,
+      noiseLevel: 0.08,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Visas Marr ──
+  {
+    id: 'legends-visas-marr-red',
+    name: 'Visas Marr (Red)',
+    character: 'Visas Marr',
+    era: 'expanded-universe',
+    affiliation: 'sith',
+    tier: 'base',
+    description:
+      'Visas Marr\'s red lightsaber. The blind Miraluka Sith assassin who found redemption through the Jedi Exile.',
+    hiltNotes: 'Standard Sith hilt, later swapped for a Jedi crystal if redeemed.',
+    config: {
+      name: 'VisasMarr',
+      baseColor: { r: 200, g: 0, b: 15 },
+      clashColor: { r: 255, g: 170, b: 130 },
+      lockupColor: { r: 240, g: 60, b: 40 },
+      blastColor: { r: 220, g: 40, b: 20 },
+      style: 'stable',
+      ignition: 'scroll',
+      retraction: 'fadeout',
+      ignitionMs: 320,
+      retractionMs: 400,
+      shimmer: 0.1,
+      ledCount: 144,
+    },
+  },
+
+  // ── Darth Vitiate / Valkorion ──
+  {
+    id: 'legends-darth-vitiate-red',
+    name: 'Darth Vitiate / Valkorion (Red)',
+    character: 'Darth Vitiate',
+    era: 'expanded-universe',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'The Sith Emperor who lived for over a thousand years. A blade of ancient, terrifying power — deep blood-red with an aura of consumed worlds.',
+    config: {
+      name: 'DarthVitiate',
+      baseColor: { r: 180, g: 0, b: 0 },
+      clashColor: { r: 255, g: 150, b: 100 },
+      lockupColor: { r: 220, g: 40, b: 20 },
+      blastColor: { r: 200, g: 20, b: 10 },
+      dragColor: { r: 100, g: 0, b: 50 },
+      style: 'cinder',
+      ignition: 'glitch',
+      retraction: 'fadeout',
+      ignitionMs: 300,
+      retractionMs: 600,
+      shimmer: 0.28,
+      ledCount: 144,
+      noiseLevel: 0.15,
+      swingFxIntensity: 0.3,
     },
   },
 ];

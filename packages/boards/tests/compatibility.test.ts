@@ -50,8 +50,8 @@ const COMPLEX_CONFIG = {
 // ──────────────────────────────────────────────
 
 describe('Board Profile Loading', () => {
-  it('BOARD_PROFILES contains exactly 14 boards', () => {
-    expect(Object.keys(BOARD_PROFILES)).toHaveLength(14);
+  it('BOARD_PROFILES contains exactly 16 boards', () => {
+    expect(Object.keys(BOARD_PROFILES)).toHaveLength(16);
   });
 
   it.each(ALL_BOARD_IDS)('profile "%s" loads correctly via getBoardProfile', (id) => {
@@ -161,13 +161,13 @@ describe('getBoardsByTier', () => {
     expect(ids).toContain('darkwolf');
   });
 
-  it('all 14 boards are assigned to a tier', () => {
+  it('all boards are assigned to a tier', () => {
     const allTiered = [
       ...getBoardsByTier(1),
       ...getBoardsByTier(2),
       ...getBoardsByTier(3),
     ];
-    expect(allTiered).toHaveLength(14);
+    expect(allTiered).toHaveLength(16);
   });
 });
 

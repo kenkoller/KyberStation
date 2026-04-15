@@ -20,7 +20,7 @@ import {
   type DetectedBoard,
   type ExistingPreset,
 } from '@/lib/cardDetector';
-// generateStyleCode available from @bladeforge/codegen if needed
+import { generateStyleCode } from '@bladeforge/codegen';
 
 // ─── Preset Registry ───
 // Same presets used in PresetBrowser, kept minimal here for the card writer.
@@ -70,6 +70,13 @@ interface StatusMessage {
   text: string;
 }
 
+// ─── Validation Types ───
+
+interface ValidationNotice {
+  type: 'error' | 'warning' | 'info';
+  text: string;
+}
+
 // ─── Component ───
 
 export function CardWriter() {
@@ -86,6 +93,9 @@ export function CardWriter() {
 
   // Backup toggle
   const [autoBackup, setAutoBackup] = useState(true);
+
+  // Post-export instructions
+  const [showPostExport, setShowPostExport] = useState(false);
 
   // Write state
   const [phase, setPhase] = useState<WritePhase>('idle');
@@ -162,6 +172,85 @@ export function CardWriter() {
     return presets;
   }, [resolvedEntries, selectedPresets, config]);
 
+  // ─── Pre-export Validation ───
+
+  const validationNotices = useMemo((): ValidationNotice[] => {
+    const notices: ValidationNotice[] = [];
+    const presets = buildExportPresets();
+
+    // No presets
+    if (presets.length === 0) {
+      notices.push({
+        type: 'error',
+        text: "No presets added. Click '+ Add to Card' to add your current design first.",
+      });
+      return notices;
+    }
+
+    // LED count mismatch (Proffie default maxLedsPerStrip is 144)
+    if (boardId === 'proffie') {
+      const maxLeds = 144;
+      for (const preset of presets) {
+        if (preset.config.ledCount !== maxLeds) {
+          notices.push({
+            type: 'warning',
+            text: `Your blade has ${preset.config.ledCount} LEDs but maxLedsPerStrip is set to ${maxLeds}. This works but wastes memory. Consider matching them.`,
+          });
+          break; // Only warn once
+        }
+      }
+    }
+
+    // Empty sound fonts
+    const hasAnySoundFiles = presets.some((p) => p.soundFiles && p.soundFiles.length > 0);
+    if (!hasAnySoundFiles) {
+      notices.push({
+        type: 'info',
+        text: 'Sound font folders will contain placeholder files. Copy your sound font files (e.g., from your SD card backup) into each font folder after extracting.',
+      });
+    }
+
+    return notices;
+  }, [buildExportPresets, boardId]);
+
+  // ─── Config Summary ───
+
+  const configSummary = useMemo(() => {
+    const presets = buildExportPresets();
+    const fontFolders = presets.map(
+      (p, i) =>
+        p.fontName ??
+        (p.name ?? 'custom').replace(/\s+/g, '_').toLowerCase() ??
+        `font${i + 1}`,
+    );
+
+    // Estimate config.h size: generate the style code for each preset + overhead
+    let estimatedSize = 0;
+    if (boardId === 'proffie') {
+      // ~500 bytes of config boilerplate + per-preset style code
+      estimatedSize = 500;
+      for (const preset of presets) {
+        try {
+          const code = generateStyleCode(preset.config, { comments: false });
+          estimatedSize += code.length + 100; // +100 for preset wrapper boilerplate
+        } catch {
+          estimatedSize += 400; // fallback estimate per preset
+        }
+      }
+    }
+
+    const editModeEnabled =
+      boardId === 'proffie'; // zipExporter always includes FETT263_EDIT_MODE_MENU for proffie
+
+    return {
+      presetCount: presets.length,
+      boardLabel: BOARDS[boardId].label,
+      estimatedSize,
+      fontFolders,
+      editModeEnabled,
+    };
+  }, [buildExportPresets, boardId]);
+
   // ─── Download ZIP ───
 
   const handleDownloadZip = useCallback(async () => {
@@ -190,6 +279,7 @@ export function CardWriter() {
 
       setProgress(100);
       setPhase('done');
+      setShowPostExport(true);
       addStatus({
         type: 'success',
         text: `ZIP downloaded with ${presets.length} preset(s) for ${BOARDS[boardId].label}.`,
@@ -362,6 +452,7 @@ export function CardWriter() {
 
       setProgress(100);
       setPhase('done');
+      setShowPostExport(true);
       addStatus({
         type: 'success',
         text: `SD card write complete. ${presets.length} preset(s) written for ${BOARDS[boardId].label}.`,
@@ -586,6 +677,79 @@ export function CardWriter() {
         </div>
       )}
 
+      {/* Pre-export Validation Notices */}
+      {validationNotices.length > 0 && (
+        <div className="mb-4 space-y-1.5">
+          {validationNotices.map((notice, i) => (
+            <div
+              key={i}
+              className={`text-ui-xs px-3 py-2 rounded flex items-start gap-2 ${
+                notice.type === 'error'
+                  ? 'bg-red-900/20 text-red-400 border border-red-800/30'
+                  : notice.type === 'warning'
+                    ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-800/30'
+                    : 'bg-blue-900/20 text-blue-400 border border-blue-800/30'
+              }`}
+            >
+              <span className="shrink-0 mt-px">
+                {notice.type === 'error' ? '\u2717' : notice.type === 'warning' ? '\u26A0' : '\u2139'}
+              </span>
+              <span>{notice.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Config Summary */}
+      {configSummary.presetCount > 0 && (
+        <div className="mb-4 bg-bg-surface rounded-panel border border-border-subtle p-3">
+          <h4 className="text-ui-xs text-text-muted uppercase tracking-wider mb-2">
+            Export Summary
+          </h4>
+          <div className="space-y-1 text-ui-xs">
+            <div className="flex justify-between">
+              <span className="text-text-muted">Presets</span>
+              <span className="text-text-primary">{configSummary.presetCount}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-muted">Target Board</span>
+              <span className="text-text-primary">{configSummary.boardLabel}</span>
+            </div>
+            {configSummary.estimatedSize > 0 && (
+              <div className="flex justify-between">
+                <span className="text-text-muted">Est. config.h size</span>
+                <span className="text-text-primary">
+                  {configSummary.estimatedSize < 1024
+                    ? `${configSummary.estimatedSize} B`
+                    : `${(configSummary.estimatedSize / 1024).toFixed(1)} KB`}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-text-muted">Edit Mode (Fett263)</span>
+              <span className={configSummary.editModeEnabled ? 'text-green-400' : 'text-text-muted'}>
+                {configSummary.editModeEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            {configSummary.fontFolders.length > 0 && (
+              <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
+                <span className="text-text-muted block mb-1">Font folders:</span>
+                <div className="flex flex-wrap gap-1">
+                  {configSummary.fontFolders.map((folder, i) => (
+                    <span
+                      key={i}
+                      className="inline-block px-1.5 py-0.5 rounded bg-bg-primary/50 text-text-secondary font-mono text-ui-xs"
+                    >
+                      {folder}/
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Action Button */}
       <button
         onClick={outputMethod === 'zip' ? handleDownloadZip : handleWriteToCard}
@@ -664,12 +828,56 @@ export function CardWriter() {
             clearStatus();
             setDetectedBoard(null);
             setExistingPresets([]);
+            setShowPostExport(false);
           }}
           className="touch-target mt-3 w-full py-1.5 rounded text-ui-xs font-medium transition-colors border
             bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light"
         >
           Reset
         </button>
+      )}
+
+      {/* Post-Export Instructions */}
+      {showPostExport && phase === 'done' && (
+        <div className="mt-3 bg-bg-surface rounded-panel border border-accent-border/30 overflow-hidden">
+          <button
+            onClick={() => setShowPostExport((prev) => !prev)}
+            className="w-full flex items-center justify-between px-3 py-2 text-ui-xs font-medium text-accent
+              hover:bg-accent-dim/30 transition-colors"
+          >
+            <span>What&apos;s Next?</span>
+            <span className="text-text-muted">{showPostExport ? '\u25B2' : '\u25BC'}</span>
+          </button>
+          <div className="px-3 pb-3">
+            <ol className="list-decimal list-inside space-y-1.5 text-ui-xs text-text-secondary">
+              {outputMethod === 'zip' ? (
+                <>
+                  <li>Extract the ZIP to your SD card root</li>
+                  <li>Copy your sound font files into each font folder</li>
+                  <li>
+                    Verify <span className="font-mono text-accent">{BOARDS[boardId].configFileName}</span> is at the SD card root
+                  </li>
+                  <li>Insert card into your saber and power on</li>
+                </>
+              ) : (
+                <>
+                  <li>Copy your sound font files into each font folder on the card</li>
+                  <li>
+                    Verify <span className="font-mono text-accent">{BOARDS[boardId].configFileName}</span> is at the card root
+                  </li>
+                  <li>Safely eject the SD card</li>
+                  <li>Insert card into your saber and power on</li>
+                </>
+              )}
+            </ol>
+            {boardId === 'proffie' && (
+              <p className="text-ui-xs text-text-muted mt-2 border-t border-border-subtle pt-2">
+                Tip: Edit Mode (Fett263) is enabled &mdash; you can fine-tune colors and effects directly on the saber
+                using button combinations. Check the Fett263 prop documentation for details.
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Info Footer */}

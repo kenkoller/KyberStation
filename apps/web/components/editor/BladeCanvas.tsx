@@ -16,6 +16,8 @@ interface BladeCanvasProps {
   mobileFullscreen?: boolean;
   renderMode?: RenderMode;
   compact?: boolean;
+  /** When true, renders blade only — no inline strip/graph/resize handles (used inside CanvasLayout) */
+  panelMode?: boolean;
 }
 
 // ─── Design-space constants (scaled at render time) ───
@@ -25,7 +27,6 @@ const DESIGN_W = 1200;
 const DESIGN_H = 600;
 
 // Blade placement (design-space)
-const EMITTER_W = 14;
 const BLADE_START = 274; // hilt area ends here
 const BLADE_LEN = 830;
 const BLADE_Y = DESIGN_H / 2;
@@ -264,7 +265,7 @@ const VIEW_MODE_LABELS: Record<string, string> = {
 
 // ─── Component ───
 
-export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = false, renderMode = 'photorealistic', compact = false }: BladeCanvasProps) {
+export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = false, renderMode = 'photorealistic', compact = false, panelMode = false }: BladeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
@@ -288,6 +289,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const brightness = useUIStore((s) => s.brightness);
   const canvasTheme = useUIStore((s) => s.canvasTheme);
   const analyzeMode = useUIStore((s) => s.analyzeMode);
+  const verticalPanelWidths = useUIStore((s) => s.verticalPanelWidths);
+  const showHilt = useUIStore((s) => s.showHilt);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
   const theme = useMemo(() => getThemeById(canvasTheme), [canvasTheme]);
 
@@ -299,8 +302,79 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const [hiltStyle, setHiltStyle] = useState<string>('minimal');
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
-  const [zoom, setZoom] = useState<number>(1.25);
-  const [panX, setPanX] = useState<number>(0); // pan offset in design-space pixels
+  // ─── Zoom constants ───
+  const ZOOM_MIN = 0.8;
+  const ZOOM_MAX = 2.0;
+  const ZOOM_STEP = 0.15; // button increment
+
+  // Auto-fit zoom: compute zoom so the blade fills ~85% of the blade-length axis.
+  // Base scale is height-only, so for horizontal mode we fit within canvas width,
+  // for vertical mode we fit within canvas height (blade runs vertically).
+  const computeFitZoom = useCallback((): number => {
+    const { w, h, dpr } = sizeRef.current;
+    if (w < 1 || h < 1) return 1.0;
+    const cw = w * dpr;
+    const ch = h * dpr;
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const bladeExtentDS = BLADE_START + scaledBladeLenDS + 40;
+
+    if (vertical) {
+      // Vertical: blade length runs along canvas height, base scale = ch / DESIGN_W
+      const baseScale = ch / DESIGN_W;
+      const fitZoom = (ch * 0.85) / (bladeExtentDS * baseScale);
+      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
+    } else {
+      // Horizontal: base scale is ch / designH (height-only), blade runs along width
+      const baseScale = ch / layoutRef.current.designH;
+      const fitZoom = (cw * 0.85) / (bladeExtentDS * baseScale);
+      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
+    }
+  }, [bladeLength, vertical]);
+
+  const [zoom, setZoom] = useState<number>(() => 1.0);
+  const [panX, setPanX] = useState<number>(0);
+  const hasAutoFitRef = useRef(false);
+
+  // Editable zoom input state
+  const [zoomInputValue, setZoomInputValue] = useState(String(Math.round(zoom * 100)));
+  useEffect(() => {
+    setZoomInputValue(String(Math.round(zoom * 100)));
+  }, [zoom]);
+  const applyZoomInput = useCallback(() => {
+    const parsed = parseInt(zoomInputValue, 10);
+    if (isNaN(parsed)) {
+      setZoomInputValue(String(Math.round(zoom * 100)));
+      return;
+    }
+    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, parsed / 100));
+    setZoom(newZoom);
+    setZoomInputValue(String(Math.round(newZoom * 100)));
+  }, [zoomInputValue, zoom]);
+
+  // Auto-fit on first meaningful resize
+  useEffect(() => {
+    const { w, h } = sizeRef.current;
+    if (w > 1 && h > 1 && !hasAutoFitRef.current) {
+      hasAutoFitRef.current = true;
+      setZoom(computeFitZoom());
+      setPanX(0);
+    }
+  });
+
+  // Re-fit when blade length changes
+  useEffect(() => {
+    if (hasAutoFitRef.current) {
+      setZoom(computeFitZoom());
+      setPanX(0);
+    }
+  }, [bladeLength, computeFitZoom]);
+
+  // Panel resize drag state
+  const dragRef = useRef<{ handle: 'blade-strip' | 'strip-graph'; startX: number; startWidths: { blade: number; strip: number; graph: number } } | null>(null);
+
+  // Keep a ref to computeFitZoom so the ResizeObserver always uses the latest
+  const computeFitZoomRef = useRef(computeFitZoom);
+  computeFitZoomRef.current = computeFitZoom;
 
   // Shimmer state for organic animation
   const shimmerRef = useRef<number>(1.0);
@@ -333,11 +407,65 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     };
 
-    const observer = new ResizeObserver(resize);
+    const observer = new ResizeObserver(() => {
+      resize();
+      // Re-fit zoom to new panel size
+      if (hasAutoFitRef.current) {
+        setZoom(computeFitZoomRef.current());
+        setPanX(0);
+      }
+    });
     observer.observe(container);
     resize(); // initial
 
     return () => observer.disconnect();
+  }, []);
+
+  // ─── Panel resize drag handling ───
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      const container = containerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const fraction = (e.clientX - rect.left) / rect.width;
+
+      if (drag.handle === 'blade-strip') {
+        const newBlade = clamp(fraction, 0.25, 0.70);
+        const totalData = 1 - newBlade;
+        // Keep strip/graph ratio from drag start
+        const origDataRatio = drag.startWidths.strip / (drag.startWidths.strip + drag.startWidths.graph);
+        const newStrip = clamp(totalData * origDataRatio, 0.05, 0.25);
+        const newGraph = totalData - newStrip;
+        if (newGraph >= 0.15) {
+          useUIStore.getState().setVerticalPanelWidths({ blade: newBlade, strip: newStrip, graph: newGraph });
+        }
+      } else {
+        const bladeW = drag.startWidths.blade;
+        const newStripEnd = clamp(fraction, bladeW + 0.05, 0.85);
+        const newStrip = newStripEnd - bladeW;
+        const newGraph = 1 - bladeW - newStrip;
+        if (newGraph >= 0.15 && newStrip >= 0.05) {
+          useUIStore.getState().setVerticalPanelWidths({ blade: bladeW, strip: newStrip, graph: newGraph });
+        }
+      }
+    };
+
+    const onPointerUp = () => {
+      if (dragRef.current) {
+        dragRef.current = null;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
   }, []);
 
   // ─── Offscreen canvas (lazy, matches main size) ───
@@ -353,14 +481,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   }, []);
 
   // ─── Scale factors: maps design-space → actual canvas pixels ───
-  // Base scale: fits design space into canvas without zoom
+  // Base scale: height-only — blade size is driven purely by panel height.
+  // Panel width never shrinks the blade; horizontal overflow is handled by panning.
   const getBaseScale = useCallback(() => {
-    const { w, h, dpr } = sizeRef.current;
-    const cw = w * dpr;
+    const { h, dpr } = sizeRef.current;
     const ch = h * dpr;
-    const sx = cw / DESIGN_W;
-    const sy = ch / layoutRef.current.designH;
-    return Math.min(sx, sy);
+    return ch / layoutRef.current.designH;
   }, []);
 
   // Zoomed scale: used for blade/hilt/glow rendering
@@ -466,6 +592,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   }, [showGrid, bladeLength, panX, getScale, theme]);
 
   // ─── Draw vignette ───
+  // Inner radius pushed out to 0.55 so the vignette only darkens the far
+  // corners — blade tip (at the canvas edge in vertical mode) stays clean.
   const drawVignette = useCallback((ctx: CanvasRenderingContext2D) => {
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;
@@ -473,15 +601,17 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cx = cw / 2;
     const cy = ch / 2;
     const radius = Math.sqrt(cx * cx + cy * cy);
-    const grad = ctx.createRadialGradient(cx, cy, radius * 0.35, cx, cy, radius);
+    const grad = ctx.createRadialGradient(cx, cy, radius * 0.55, cx, cy, radius);
     grad.addColorStop(0, `rgba(${theme.vignetteColor},0)`);
-    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity})`);
+    grad.addColorStop(0.6, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.3})`);
+    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.7})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, cw, ch);
   }, [theme]);
 
   // ─── Draw metallic hilt (uses selected hilt style) ───
   const drawHilt = useCallback((ctx: CanvasRenderingContext2D, bladeColor: { r: number; g: number; b: number } | null, scale: number) => {
+    if (!showHilt) return; // Hilt visibility toggle
     const hs = HILT_STYLES.find(h => h.id === hiltStyle) ?? HILT_STYLES[0];
 
     // Compute hilt geometry from style
@@ -611,7 +741,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(bladeColor.r, bladeColor.g, bladeColor.b, 0.06);
       ctx.fillRect(curX, hiltTop - flare, emW, hiltH + flare * 2);
     }
-  }, [hiltStyle, panX]);
+  }, [hiltStyle, panX, showHilt]);
 
   // ─── Draw blade (photorealistic enhanced) ───
   const drawBladePhotorealistic = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
@@ -638,7 +768,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const coreH = baseCoreH;
 
     const visibleLen = bladeLenPx * extendProgress;
-    const visibleEnd = bladeStartPx + visibleLen;
     const segW = bladeLenPx / ledCount + 0.5 * scale;
 
     // Multi-strip brightness boost (non-linear due to diffusion overlap)
@@ -720,6 +849,77 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
+    // ── Draw rounded tip cap on offscreen buffer ──
+    // Ensures bloom passes wrap glow around the tip naturally
+    // instead of producing a flat rectangular cutoff.
+    if (activeCount > 0 && maxLitT > 0) {
+      const tipEndX = bladeStartPx + maxLitT * bladeLenPx;
+      const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
+      let capR: number, capG: number, capB: number;
+      if (isInHilt) {
+        const falloff = Math.pow(1 - maxLitT, 1.8);
+        capR = avgR * falloff * shimmer;
+        capG = avgG * falloff * shimmer;
+        capB = avgB * falloff * shimmer;
+      } else {
+        capR = leds.getR(tipIdx) * effectiveBri * shimmer;
+        capG = leds.getG(tipIdx) * effectiveBri * shimmer;
+        capB = leds.getB(tipIdx) * effectiveBri * shimmer;
+      }
+      if (capR + capG + capB > 0.5) {
+        // Semicircular cap matching blade core height
+        offCtx.fillStyle = rgbStr(capR, capG, capB);
+        offCtx.beginPath();
+        offCtx.arc(tipEndX, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
+        offCtx.fill();
+
+        // Wider soft glow cap for bloom seed — extends well beyond core
+        // so outermost bloom passes have enough "fuel" for smooth wrap
+        const glowCapRadius = coreH * 2.0;
+        const capGrad = offCtx.createRadialGradient(
+          tipEndX, bladeYPx, 0,
+          tipEndX, bladeYPx, glowCapRadius,
+        );
+        capGrad.addColorStop(0, rgbStr(capR, capG, capB, 0.8));
+        capGrad.addColorStop(0.15, rgbStr(capR, capG, capB, 0.55));
+        capGrad.addColorStop(0.35, rgbStr(capR, capG, capB, 0.3));
+        capGrad.addColorStop(0.6, rgbStr(capR, capG, capB, 0.1));
+        capGrad.addColorStop(0.85, rgbStr(capR, capG, capB, 0.03));
+        capGrad.addColorStop(1, rgbStr(capR, capG, capB, 0));
+        offCtx.fillStyle = capGrad;
+        offCtx.beginPath();
+        offCtx.arc(tipEndX, bladeYPx, glowCapRadius, 0, Math.PI * 2);
+        offCtx.fill();
+      }
+
+      // Rounded cap at emitter end for symmetry
+      const emitterX = bladeStartPx;
+      const emR = isInHilt ? avgR * shimmer : leds.getR(0) * effectiveBri * shimmer;
+      const emG = isInHilt ? avgG * shimmer : leds.getG(0) * effectiveBri * shimmer;
+      const emB = isInHilt ? avgB * shimmer : leds.getB(0) * effectiveBri * shimmer;
+      offCtx.fillStyle = rgbStr(emR, emG, emB);
+      offCtx.beginPath();
+      offCtx.arc(emitterX, bladeYPx, coreH / 2, Math.PI / 2, -Math.PI / 2);
+      offCtx.fill();
+
+      // Emitter glow seed — mirrors tip for smooth bloom wrapping
+      if (emR + emG + emB > 0.5) {
+        const emGlowR = coreH * 1.5;
+        const emGrad = offCtx.createRadialGradient(
+          emitterX, bladeYPx, 0,
+          emitterX, bladeYPx, emGlowR,
+        );
+        emGrad.addColorStop(0, rgbStr(emR, emG, emB, 0.6));
+        emGrad.addColorStop(0.3, rgbStr(emR, emG, emB, 0.25));
+        emGrad.addColorStop(0.65, rgbStr(emR, emG, emB, 0.06));
+        emGrad.addColorStop(1, rgbStr(emR, emG, emB, 0));
+        offCtx.fillStyle = emGrad;
+        offCtx.beginPath();
+        offCtx.arc(emitterX, bladeYPx, emGlowR, 0, Math.PI * 2);
+        offCtx.fill();
+      }
+    }
+
     // ── Apply diffusion blur to offscreen if needed ──
     if (diffusion.blurKernel > 0) {
       offCtx.save();
@@ -734,43 +934,41 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       offCtx.restore();
     }
 
+    // ── Draw hilt BEFORE bloom so glow overlaps it naturally ──
+    const bladeColor = activeCount > 0 ? { r: satR, g: satG, b: satB } : null;
+    drawHilt(ctx, bladeColor, scale);
+
     // ══════════════════════════════════════════════════
     // ── SMOOTH BLOOM PIPELINE ──
-    // Graduated blur passes with exponential alpha
-    // falloff for seamless glow without visible steps.
+    // Graduated blur passes with continuous exponential
+    // alpha falloff for seamless glow without visible steps.
     // ══════════════════════════════════════════════════
 
     const br = glow.bloomRadius;
     const bi = glow.bloomIntensity;
 
-    // Bloom layers from widest (ambient) to tightest (edge),
-    // each with progressively smaller radius and higher alpha.
-    const bloomPasses: Array<[number, number]> = [
-      [90,  0.025],  // ambient room glow
-      [70,  0.04],   // outer atmospheric haze
-      [52,  0.06],   // wide corona
-      [38,  0.09],   // mid corona
-      [26,  0.13],   // color corona
-      [18,  0.18],   // inner glow
-      [12,  0.24],   // tight glow
-      [7,   0.32],   // near-blade softness
-      [3.5, 0.42],   // blade edge blend
-    ];
-
-    for (const [radius, alpha] of bloomPasses) {
+    // Continuous bloom: 14 passes with geometric radius progression.
+    // Each overlaps its neighbors significantly → no visible banding.
+    const passCount = 14;
+    for (let i = 0; i < passCount; i++) {
+      const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
+      // Radius: exponential from 2px to 100px
+      const radius = 2 + 98 * Math.pow(t, 1.4);
+      // Alpha: tighter passes are more opaque, wider are subtle
+      const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
       ctx.save();
       ctx.filter = `blur(${radius * scale * br}px)`;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = alpha * bi * shimmer;
+      ctx.globalAlpha = alpha;
       ctx.drawImage(offscreen, 0, 0);
       ctx.restore();
     }
 
-    // Pass 5.5: Bridge glow — soft additive layer to fill gap between bloom and blade body
+    // Bridge glow — soft additive fill between bloom and blade body
     ctx.save();
-    ctx.filter = `blur(${1.5 * scale * br}px)`;
+    ctx.filter = `blur(${2.5 * scale * br}px)`;
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.5 * bi * shimmer;
+    ctx.globalAlpha = 0.35 * bi * shimmer;
     ctx.drawImage(offscreen, 0, 0);
     ctx.restore();
 
@@ -793,21 +991,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       if (r + g + b < 0.5) continue; // skip unlit LEDs
 
       const grad = ctx.createLinearGradient(x, bladeYPx - coreH / 2, x, bladeYPx + coreH / 2);
-      // Softer edge dimming — avoids dark band between bloom and blade body
-      const edgeDim = 0.72;
-      // Center: slightly boosted
-      const centerBoost = 1.15;
-      const rW = clamp(r * centerBoost + 40, 0, 255);
-      const gW = clamp(g * centerBoost + 40, 0, 255);
-      const bW = clamp(b * centerBoost + 40, 0, 255);
+      // Gentle edge dimming — smoother transition into bloom halo
+      const edgeDim = 0.82;
+      // Center: slightly boosted for depth
+      const centerBoost = 1.12;
+      const rW = clamp(r * centerBoost + 35, 0, 255);
+      const gW = clamp(g * centerBoost + 35, 0, 255);
+      const bW = clamp(b * centerBoost + 35, 0, 255);
 
-      grad.addColorStop(0, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim));
-      grad.addColorStop(0.15, rgbStr(r * 0.88, g * 0.88, b * 0.88));
-      grad.addColorStop(0.35, rgbStr(r, g, b));
+      grad.addColorStop(0, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
+      grad.addColorStop(0.08, rgbStr(r * 0.88, g * 0.88, b * 0.88));
+      grad.addColorStop(0.2, rgbStr(r * 0.95, g * 0.95, b * 0.95));
+      grad.addColorStop(0.4, rgbStr(r, g, b));
       grad.addColorStop(0.5, rgbStr(rW, gW, bW));
-      grad.addColorStop(0.65, rgbStr(r, g, b));
-      grad.addColorStop(0.85, rgbStr(r * 0.88, g * 0.88, b * 0.88));
-      grad.addColorStop(1, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim));
+      grad.addColorStop(0.6, rgbStr(r, g, b));
+      grad.addColorStop(0.8, rgbStr(r * 0.95, g * 0.95, b * 0.95));
+      grad.addColorStop(0.92, rgbStr(r * 0.88, g * 0.88, b * 0.88));
+      grad.addColorStop(1, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
 
       ctx.fillStyle = grad;
       ctx.fillRect(x, bladeYPx - coreH / 2, segW, coreH);
@@ -947,10 +1147,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(satR, satG, satB, ambientAlpha);
       ctx.fillRect(0, 0, cw, ch);
     }
-
-    // ── Draw hilt with blade illumination ──
-    const bladeColor = activeCount > 0 ? { r: satR, g: satG, b: satB } : null;
-    drawHilt(ctx, bladeColor, scale);
 
     // ── Hilt illumination: blade light washes over the metal ──
     if (bladeColor) {
@@ -1583,6 +1779,154 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.fillText('RGB', graphLeft + 2 * scale, graphTop + 10 * scale);
   }, [config.ledCount, getScale, bladeLength, panX, theme]);
 
+  // ─── Vertical Pixel Strip (native screen-space, bottom → top) ───
+  const drawVerticalStrip = useCallback((
+    ctx: CanvasRenderingContext2D,
+    engine: BladeEngine,
+    topY: number,
+    bottomY: number,
+    startX: number,
+    stripW: number,
+  ) => {
+    const pixels = engine.getPixels();
+    const bufferLeds = Math.floor(pixels.length / 3);
+    const ledCount = Math.min(config.ledCount, bufferLeds);
+    if (ledCount <= 0) return;
+
+    const { dpr } = sizeRef.current;
+    const bri = brightness / 100;
+    const stripH = bottomY - topY;
+    const cellH = stripH / ledCount;
+
+    // Background panel
+    const pad = 3 * dpr;
+    ctx.fillStyle = theme.stripBg;
+    ctx.fillRect(startX - pad, topY - pad, stripW + pad * 2, stripH + pad * 2);
+    ctx.strokeStyle = theme.stripBorder;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(startX - pad, topY - pad, stripW + pad * 2, stripH + pad * 2);
+
+    // LED pixels — LED 0 at bottom, last LED at top
+    for (let i = 0; i < ledCount; i++) {
+      const r = (pixels[i * 3] ?? 0) * bri;
+      const g = (pixels[i * 3 + 1] ?? 0) * bri;
+      const b = (pixels[i * 3 + 2] ?? 0) * bri;
+      const y = bottomY - (i + 1) * cellH;
+      ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
+      ctx.fillRect(startX, y, stripW, Math.max(cellH - 0.3, 0.5));
+    }
+
+    // "PIXEL" label rotated along left edge
+    ctx.save();
+    ctx.translate(startX - pad - 2 * dpr, bottomY);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = `${7 * dpr}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillText('PIXEL', 4 * dpr, 0);
+    ctx.restore();
+
+    // LED index labels every 24 LEDs (to the right of strip)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.font = `${7 * dpr}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < ledCount; i += 24) {
+      const y = bottomY - (i + 0.5) * cellH;
+      ctx.fillText(String(i), startX + stripW + 4 * dpr, y);
+    }
+    ctx.textBaseline = 'alphabetic';
+  }, [config.ledCount, brightness, theme]);
+
+  // ─── Vertical RGB Line Graph (native screen-space, bottom → top) ───
+  const drawVerticalRGBGraph = useCallback((
+    ctx: CanvasRenderingContext2D,
+    engine: BladeEngine,
+    topY: number,
+    bottomY: number,
+    startX: number,
+    graphW: number,
+  ) => {
+    const pixels = engine.getPixels();
+    const bufferLeds = Math.floor(pixels.length / 3);
+    const ledCount = Math.min(config.ledCount, bufferLeds);
+    if (ledCount <= 0) return;
+
+    const { dpr } = sizeRef.current;
+    const graphH = bottomY - topY;
+
+    // Background panel
+    const pad = 4 * dpr;
+    ctx.fillStyle = theme.graphBg;
+    ctx.fillRect(startX - pad, topY - pad, graphW + pad * 2, graphH + pad * 2);
+    ctx.strokeStyle = theme.graphBorder;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(startX - pad, topY - pad, graphW + pad * 2, graphH + pad * 2);
+
+    // Reserve bottom for value labels
+    const labelH = 14 * dpr;
+    const innerTop = topY;
+    const innerBottom = bottomY - labelH;
+    const innerH = innerBottom - innerTop;
+    if (innerH <= 0) return;
+
+    // Vertical grid lines at value marks (X axis = 0–255)
+    ctx.lineWidth = 0.5 * dpr;
+    ctx.font = `${7 * dpr}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (const val of [0, 64, 128, 192, 255]) {
+      const gx = startX + (val / 255) * graphW;
+      if (val > 0 && val < 255) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+        ctx.beginPath();
+        ctx.moveTo(gx, innerTop);
+        ctx.lineTo(gx, innerBottom);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.30)';
+      ctx.fillText(String(val), gx, innerBottom + 2 * dpr);
+    }
+    ctx.textBaseline = 'alphabetic';
+
+    // Horizontal guide lines (Y = LED position fractions)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.lineWidth = 0.5 * dpr;
+    for (const frac of [0, 0.25, 0.5, 0.75, 1]) {
+      const y = innerBottom - frac * innerH;
+      ctx.beginPath();
+      ctx.moveTo(startX, y);
+      ctx.lineTo(startX + graphW, y);
+      ctx.stroke();
+    }
+
+    // R, G, B lines — Y = LED position (bottom → top), X = value
+    const channels = [
+      { offset: 0, color: 'rgba(255, 60, 60, 0.90)' },
+      { offset: 1, color: 'rgba(60, 255, 60, 0.90)' },
+      { offset: 2, color: 'rgba(80, 130, 255, 0.90)' },
+    ];
+    ctx.lineWidth = 1.5 * dpr;
+    for (const ch of channels) {
+      ctx.strokeStyle = ch.color;
+      ctx.beginPath();
+      for (let i = 0; i < ledCount; i++) {
+        const val = pixels[i * 3 + ch.offset] ?? 0;
+        const x = startX + (val / 255) * graphW;
+        const y = innerBottom - (i / Math.max(ledCount - 1, 1)) * innerH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // "RGB" label
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.font = `${8 * dpr}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillText('RGB', startX + 2 * dpr, topY + 12 * dpr);
+  }, [config.ledCount, theme]);
+
   // ─── Main render loop (throttled to 2fps when reduced motion is on) ───
   useAnimationFrame((deltaMs) => {
     const engine = engineRef.current;
@@ -1596,7 +1940,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cw = w * dpr;
     const ch = h * dpr;
 
-    engine.update(deltaMs, config);
+    // Skip engine updates when paused — keeps last frame frozen
+    const animPaused = useUIStore.getState().animationPaused;
+    if (!animPaused) {
+      engine.update(deltaMs, config);
+    }
 
     // FPS tracking
     const now = performance.now();
@@ -1609,55 +1957,122 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     ctx.clearRect(0, 0, cw, ch);
 
-    // Vertical mode: rotate 90° CCW so blade points upward, centered
     if (vertical && viewMode === 'blade') {
-      // Fill entire actual canvas with background first (before rotation)
+      // ══════════════════════════════════════════════════
+      // ── VERTICAL BLADE MODE ──
+      // Blade renders via 90° CCW rotation (hilt at bottom,
+      // tip at top). Pixel strip + RGB graph render natively
+      // (unrotated) to the right of the blade column.
+      // ══════════════════════════���═══════════════════════
+
       ctx.fillStyle = theme.bgColor;
       ctx.fillRect(0, 0, cw, ch);
 
+      // Panel zone geometry (from resizable store)
+      const showDataPanels = !panelMode && !mobileFullscreen && analyzeMode && w > 500;
+      const bladeEndX = showDataPanels ? cw * verticalPanelWidths.blade : cw;
+
+      // Rotation geometry — blade length fits canvas height; width never constrains
+      const rotatedW = ch;          // design-space W → canvas height
+      const rotatedH = bladeEndX;   // design-space H → blade panel width (for centering only)
+      const baseScale = rotatedW / DESIGN_W;
+      const rScale = baseScale * zoom;
+      const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+      const renderedH = layoutRef.current.designH * baseScale;
+
+      // Position blade within its panel: bias toward left (35% of remaining space)
+      const centerOffsetY = showDataPanels
+        ? Math.max(0, (bladeEndX - renderedH) * 0.35)
+        : Math.max(0, (cw - renderedH) / 2);
+      // Push hilt slightly toward bottom of screen
+      const verticalBias = showDataPanels ? ch * 0.06 : 0;
+
+      // Blade screen-space bounds (for positioning data panels)
+      const hiltScreenY = ch - (BLADE_START + panX) * rScale + verticalBias;
+      const tipScreenY = ch - (BLADE_START + panX + scaledBladeLenDS) * rScale + verticalBias;
+
+      // Apply rotation transform
+      const savedSize = { ...sizeRef.current };
       ctx.save();
-
-      // After rotation, effective drawing area is ch × cw (swapped)
-      const rotatedW = ch; // device px
-      const rotatedH = cw; // device px
-      const scale = Math.min(rotatedW / DESIGN_W, rotatedH / layoutRef.current.designH);
-      const renderedH = layoutRef.current.designH * scale;
-      const centerOffsetY = (rotatedH - renderedH) / 2;
-
       ctx.translate(0, ch);
       ctx.rotate(-Math.PI / 2);
-      // Center the design vertically (blade left-right on screen)
-      ctx.translate(0, centerOffsetY);
-
+      ctx.translate(-verticalBias, centerOffsetY);
       const curDpr = window.devicePixelRatio || 1;
       sizeRef.current = { w: Math.floor(rotatedW / curDpr), h: Math.floor(rotatedH / curDpr), dpr: curDpr };
-    }
 
-    drawBackground(ctx);
+      // Draw blade + background in rotated space
+      drawBackground(ctx);
+      drawBladeView(ctx, engine);
 
-    switch (viewMode) {
-      case 'blade': drawBladeView(ctx, engine); break;
-      case 'angle': drawAngleView(ctx, engine); break;
-      case 'strip': drawStripView(ctx, engine); break;
-      case 'cross': drawCrossSection(ctx, engine); break;
-    }
-
-    // Vignette drawn BEFORE data readouts so it doesn't dim them
-    drawVignette(ctx);
-
-    // Draw pixel strip + RGB graph in blade view when analyze mode is on
-    if (viewMode === 'blade' && !mobileFullscreen && analyzeMode) {
-      drawInlineStrip(ctx, engine);
-      drawRGBGraph(ctx, engine);
-    }
-
-    drawViewLabel(ctx, viewMode);
-
-    if (vertical && viewMode === 'blade') {
+      // Restore rotation and original dimensions
       ctx.restore();
-      // Restore actual canvas dimensions
-      const deviceDpr = window.devicePixelRatio || 1;
-      sizeRef.current = { w: Math.floor(canvas.width / deviceDpr), h: Math.floor(canvas.height / deviceDpr), dpr: deviceDpr };
+      sizeRef.current = savedSize;
+
+      // Vignette + data panels in native screen space
+      drawVignette(ctx);
+
+      if (showDataPanels) {
+        const padY = 20 * dpr;
+        const topY = Math.max(padY, Math.min(tipScreenY, ch * 0.04));
+        const botY = Math.min(ch - padY, Math.max(hiltScreenY, ch * 0.96));
+
+        if (botY - topY > 80 * dpr) {
+          // Strip zone (from panel widths)
+          const stripZoneStart = cw * verticalPanelWidths.blade;
+          const stripZoneEnd = stripZoneStart + cw * verticalPanelWidths.strip;
+          const stripPad = 10 * dpr;
+          const stripX = stripZoneStart + stripPad;
+          const stripW = Math.max(14 * dpr, Math.min(30 * dpr, (stripZoneEnd - stripZoneStart) * 0.5));
+
+          // Graph zone (from panel widths)
+          const graphZoneStart = stripZoneEnd;
+          const graphPad = 12 * dpr;
+          const graphX = graphZoneStart + graphPad;
+          const graphW = Math.max(50 * dpr, cw - graphZoneStart - graphPad * 2 - 12 * dpr);
+
+          // Panel divider lines
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(stripZoneStart, topY - 8 * dpr);
+          ctx.lineTo(stripZoneStart, botY + 8 * dpr);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(stripZoneEnd, topY - 8 * dpr);
+          ctx.lineTo(stripZoneEnd, botY + 8 * dpr);
+          ctx.stroke();
+
+          drawVerticalStrip(ctx, engine, topY, botY, stripX, stripW);
+          if (graphW > 50 * dpr) {
+            drawVerticalRGBGraph(ctx, engine, topY, botY, graphX, graphW);
+          }
+        }
+      }
+
+      drawViewLabel(ctx, viewMode);
+
+    } else {
+      // ══════════════════════════════════════════════════
+      // ── HORIZONTAL / OTHER VIEW MODES ──
+      // ══════════════════════════════════════════════════
+
+      drawBackground(ctx);
+
+      switch (viewMode) {
+        case 'blade': drawBladeView(ctx, engine); break;
+        case 'angle': drawAngleView(ctx, engine); break;
+        case 'strip': drawStripView(ctx, engine); break;
+        case 'cross': drawCrossSection(ctx, engine); break;
+      }
+
+      drawVignette(ctx);
+
+      if (viewMode === 'blade' && !panelMode && !mobileFullscreen && analyzeMode) {
+        drawInlineStrip(ctx, engine);
+        drawRGBGraph(ctx, engine);
+      }
+
+      drawViewLabel(ctx, viewMode);
     }
   }, { maxFps: reducedMotion ? 2 : undefined });
 
@@ -1822,26 +2237,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           className="blade-canvas absolute inset-0 w-full h-full"
           role="img"
           aria-label="Blade style preview visualizer"
-          onWheel={(e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            setZoom((prevZoom) => {
-              const newZoom = Math.max(0.5, Math.min(3.0, prevZoom + delta));
-              // Auto-center: keep blade midpoint at same screen position
-              const bs = getBaseScale();
-              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-              setPanX(clampPanX(newPanX, newZoom));
-              return newZoom;
-            });
-          }}
         />
         {/* Zoom controls overlay */}
         <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
           <button
             onClick={() => setZoom((prevZoom) => {
-              const newZoom = Math.max(0.5, prevZoom - 0.25);
+              const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
               const bs = getBaseScale();
               const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
               const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
@@ -1854,12 +2255,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           >
             −
           </button>
-          <span className="text-ui-xs text-text-muted tabular-nums w-10 text-center">
-            {Math.round(zoom * 100)}%
-          </span>
+          <input
+            type="text"
+            className="text-ui-xs text-text-muted tabular-nums w-10 text-center bg-transparent border-none outline-none focus:text-text-primary"
+            value={zoomInputValue}
+            onChange={(e) => setZoomInputValue(e.target.value)}
+            onFocus={(e) => e.target.select()}
+            onBlur={() => applyZoomInput()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyZoomInput();
+              if (e.key === 'Escape') setZoomInputValue(String(Math.round(zoom * 100)));
+            }}
+            aria-label="Zoom percentage"
+          />
+          <span className="text-ui-xs text-text-muted">%</span>
           <button
             onClick={() => setZoom((prevZoom) => {
-              const newZoom = Math.min(3.0, prevZoom + 0.25);
+              const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
               const bs = getBaseScale();
               const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
               const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
@@ -1872,31 +2284,62 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           >
             +
           </button>
-          {zoom !== 1.25 && (
-            <button
-              onClick={() => { setZoom(1.25); setPanX(0); }}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
-              aria-label="Reset zoom"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-        {/* Analyze / Clean mode toggle */}
-        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
           <button
-            onClick={() => useUIStore.getState().toggleAnalyzeMode()}
-            className={`touch-target text-ui-xs px-1.5 py-0.5 rounded transition-colors ${analyzeMode ? 'text-accent bg-accent/15' : 'text-text-muted hover:text-text-primary'}`}
-            aria-label={analyzeMode ? 'Switch to clean view' : 'Switch to analyze view'}
-            title={analyzeMode ? 'Hide pixel strip & RGB graph' : 'Show pixel strip & RGB graph'}
+            onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
+            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
+            aria-label="Fit blade to panel"
           >
-            {analyzeMode ? 'Analyze' : 'Clean'}
+            Fit
           </button>
         </div>
+        {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles) */}
+        {!panelMode && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
+            <button
+              onClick={() => useUIStore.getState().toggleAnalyzeMode()}
+              className={`touch-target text-ui-xs px-1.5 py-0.5 rounded transition-colors ${analyzeMode ? 'text-accent bg-accent/15' : 'text-text-muted hover:text-text-primary'}`}
+              aria-label={analyzeMode ? 'Switch to clean view' : 'Switch to analyze view'}
+              title={analyzeMode ? 'Hide pixel strip & RGB graph' : 'Show pixel strip & RGB graph'}
+            >
+              {analyzeMode ? 'Analyze' : 'Clean'}
+            </button>
+          </div>
+        )}
         {/* Blade length label */}
         <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
           {bladeLength}" blade
         </div>
+        {/* Panel resize handles (vertical analyze mode only — hidden in panelMode) */}
+        {!panelMode && vertical && analyzeMode && viewMode === 'blade' && (
+          <>
+            {/* Blade ↔ Strip handle */}
+            <div
+              className="absolute top-0 bottom-0 w-[6px] cursor-col-resize z-10 group"
+              style={{ left: `${verticalPanelWidths.blade * 100}%`, transform: 'translateX(-50%)' }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                dragRef.current = { handle: 'blade-strip', startX: e.clientX, startWidths: { ...verticalPanelWidths } };
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+              }}
+            >
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-white/10 group-hover:bg-white/30 transition-colors" />
+            </div>
+            {/* Strip ↔ Graph handle */}
+            <div
+              className="absolute top-0 bottom-0 w-[6px] cursor-col-resize z-10 group"
+              style={{ left: `${(verticalPanelWidths.blade + verticalPanelWidths.strip) * 100}%`, transform: 'translateX(-50%)' }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                dragRef.current = { handle: 'strip-graph', startX: e.clientX, startWidths: { ...verticalPanelWidths } };
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+              }}
+            >
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-white/10 group-hover:bg-white/30 transition-colors" />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

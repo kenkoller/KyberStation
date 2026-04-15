@@ -1,5 +1,6 @@
 'use client';
 import { useBladeStore } from '@/stores/bladeStore';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 export function MotionSimPanel() {
   const motionSim = useBladeStore((s) => s.motionSim);
@@ -9,15 +10,16 @@ export function MotionSimPanel() {
     <div className="space-y-6">
       {/* Motion sliders */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Motion Parameters
+          <HelpTooltip text="Simulate the Proffieboard's IMU sensor data. These sliders drive motion-reactive styles in real time. See also: Style Panel for motion-responsive styles like AudioFlicker." proffie="SwingSpeed<>, BladeAngle<>, TwistAngle<>" />
         </h3>
 
         <div className="bg-bg-surface rounded-panel p-4 border border-border-subtle space-y-5">
           {/* Swing Speed */}
           <div>
             <div className="flex items-center gap-3">
-              <label htmlFor="motion-swing" className="text-ui-xs text-text-secondary w-24 shrink-0">Swing Speed</label>
+              <label htmlFor="motion-swing" className="text-ui-xs text-text-secondary w-24 shrink-0 flex items-center gap-1">Swing Speed <HelpTooltip text="How fast the saber is being swung. Drives AudioFlicker intensity and SmoothSwing crossfade. 0 = still, 100 = full swing." proffie="SwingSpeed<>" position="right" /></label>
               <input
                 id="motion-swing"
                 type="range"
@@ -40,7 +42,7 @@ export function MotionSimPanel() {
           {/* Blade Angle */}
           <div>
             <div className="flex items-center gap-3">
-              <label htmlFor="motion-angle" className="text-ui-xs text-text-secondary w-24 shrink-0">Blade Angle</label>
+              <label htmlFor="motion-angle" className="text-ui-xs text-text-secondary w-24 shrink-0 flex items-center gap-1">Blade Angle <HelpTooltip text="Tilt of the blade relative to the ground. Used by angle-responsive styles and Dual-Mode Ignition. See also: Effect Panel for angle-based ignition switching." proffie="BladeAngle<>" position="right" /></label>
               <input
                 id="motion-angle"
                 type="range"
@@ -64,7 +66,7 @@ export function MotionSimPanel() {
           {/* Twist */}
           <div>
             <div className="flex items-center gap-3">
-              <label htmlFor="motion-twist" className="text-ui-xs text-text-secondary w-24 shrink-0">Twist</label>
+              <label htmlFor="motion-twist" className="text-ui-xs text-text-secondary w-24 shrink-0 flex items-center gap-1">Twist <HelpTooltip text="Rotational twist of the hilt. Used by twist-on ignition and twist-responsive effects. Negative = counter-clockwise, positive = clockwise." proffie="TwistAngle<>" position="right" /></label>
               <input
                 id="motion-twist"
                 type="range"
@@ -89,8 +91,9 @@ export function MotionSimPanel() {
 
       {/* Auto modes */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Auto Modes
+          <HelpTooltip text="Automated motion and combat simulation for hands-free previewing. Auto-Swing oscillates swing speed; Auto-Duel triggers random clash, blast, and lockup effects." />
         </h3>
 
         <div className="bg-bg-surface rounded-panel p-4 border border-border-subtle space-y-4">

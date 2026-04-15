@@ -606,8 +606,9 @@ export function SoundFontPanel() {
 
           {/* Sound event playback */}
           <div>
-            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
               Sound Events
+              <HelpTooltip text="Preview individual sound files from the loaded font. Each event corresponds to a saber action. Grayed-out events have no audio files in this font." />
             </h4>
             <div className="grid grid-cols-2 gap-1.5">
               {SOUND_EVENTS.map((event) => {
@@ -643,8 +644,9 @@ export function SoundFontPanel() {
         <div className="space-y-4">
           {/* EQ Section */}
           <div>
-            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
               Equalizer
+              <HelpTooltip text="Three-band EQ to shape the font's tone. Boost bass for a deeper hum, cut treble for a warmer sound. These are preview-only and do not affect the actual saber." />
             </h4>
             <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
               {MIXER_CONTROLS.filter(c => c.category === 'eq').map((ctrl) => (
@@ -670,8 +672,9 @@ export function SoundFontPanel() {
 
           {/* Effects Section */}
           <div>
-            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
               Effects
+              <HelpTooltip text="Audio effects applied to the font preview. Distortion adds grit (great for unstable blades), Reverb adds space, Bitcrusher creates lo-fi character. Use Effect Presets tab for quick combos." />
             </h4>
             <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
               {MIXER_CONTROLS.filter(c => c.category === 'effects').map((ctrl) => (
@@ -697,8 +700,9 @@ export function SoundFontPanel() {
 
           {/* Master Section */}
           <div>
-            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
               Master
+              <HelpTooltip text="Master output volume for the audio preview. Does not affect the saber's actual volume setting in config.h." proffie="#define VOLUME 2000" />
             </h4>
             <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
               {MIXER_CONTROLS.filter(c => c.category === 'master').map((ctrl) => (
@@ -739,8 +743,9 @@ export function SoundFontPanel() {
       {/* ── Effect Presets ── */}
       {activeSection === 'presets' && (
         <div className="space-y-3">
-          <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+          <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
             Effect Chain Presets
+            <HelpTooltip text="One-click audio effect combos for common saber sounds. Each preset sets multiple EQ and effects sliders at once. Switch to the EQ/Effects tab to fine-tune after applying." />
           </h4>
           <div className="grid grid-cols-1 gap-2">
             {EFFECT_PRESETS.map((preset) => {

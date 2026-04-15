@@ -399,7 +399,19 @@ input[type='range']::-moz-range-thumb {
 .ambient-off .energy-border,
 .ambient-off .kyber-glow::before,
 .ambient-off .hyperspace::before,
-.ambient-off .holo-grid::before {
+.ambient-off .holo-grid::before,
+.ambient-off .scan-sweep-beam,
+.ambient-off .grid-pulse-overlay,
+.ambient-off .holo-flicker,
+.ambient-off .corner-bracket-glow::before,
+.ambient-off .corner-bracket-glow::after,
+.ambient-off .energy-conduit,
+.ambient-off .hud-scan-sweep,
+.ambient-off .hud-corner-bracket,
+.ambient-off .hud-aurebesh-scroll,
+.ambient-off .hud-data-ticker,
+.ambient-off .hud-console-indicator,
+.ambient-off .hud-holo-flicker {
   animation: none !important;
   opacity: 0 !important;
 }
@@ -415,7 +427,19 @@ input[type='range']::-moz-range-thumb {
   .energy-border,
   .kyber-glow::before,
   .hyperspace::before,
-  .holo-grid::before {
+  .holo-grid::before,
+  .scan-sweep-beam,
+  .grid-pulse-overlay,
+  .holo-flicker,
+  .corner-bracket-glow::before,
+  .corner-bracket-glow::after,
+  .energy-conduit,
+  .hud-scan-sweep,
+  .hud-corner-bracket,
+  .hud-aurebesh-scroll,
+  .hud-data-ticker,
+  .hud-console-indicator,
+  .hud-holo-flicker {
     animation: none !important;
   }
 }
@@ -676,4 +700,596 @@ input[type='range']::-moz-range-thumb {
   opacity: calc(1 * var(--ambient-intensity));
   pointer-events: none;
   z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HUD COMPONENT KEYFRAMES
+   Animations used by the reusable React HUD components in components/hud/.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Scan sweep radar rotation — used by ScanSweep.tsx */
+@keyframes hud-scan-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Corner bracket opacity pulse — used by CornerBrackets.tsx */
+@keyframes hud-bracket-pulse {
+  0%, 100% { opacity: calc(0.6 * var(--ambient-intensity, 1)); }
+  50% { opacity: calc(1 * var(--ambient-intensity, 1)); }
+}
+
+/* Aurebesh vertical scroll — used by AurebeshScroll.tsx */
+@keyframes hud-aurebesh-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+/* Horizontal ticker scroll — used by DataTicker.tsx */
+@keyframes hud-ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Holographic flicker dip — used by HoloFlicker.tsx */
+@keyframes hud-holo-flicker {
+  0%, 48%, 52%, 100% { opacity: 1; }
+  49% { opacity: 0.78; }
+  50% { opacity: 0.85; }
+  51% { opacity: 0.92; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MATERIAL SURFACE STYLES
+   CSS-only surface treatments for faction themes. Applied per-panel to give
+   matte, satin, or gloss finishes without WebGL.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Matte — flat, no reflections, clean and understated */
+.material-matte {
+  background: rgb(var(--bg-card));
+  border: 1px solid var(--border-subtle);
+}
+
+/* Satin — subtle directional gradient, hint of depth */
+.material-satin {
+  background: linear-gradient(
+    145deg,
+    rgb(var(--bg-card)) 0%,
+    rgb(var(--bg-surface)) 55%,
+    rgb(var(--bg-card)) 100%
+  );
+  border: 1px solid var(--border-light);
+}
+
+/* Gloss — reflective highlight, glassmorphism */
+.material-gloss {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 35%,
+    rgb(var(--bg-card)) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CORNER STYLES
+   Faction-themed corner treatments for panels and cards.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.corner-rounded { border-radius: 6px; }
+.corner-angular { border-radius: 2px; }
+.corner-clipped {
+  clip-path: polygon(
+    8px 0%, 100% 0%, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 0% 100%, 0% 8px
+  );
+  border-radius: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BORDER STYLES
+   Faction-themed border treatments.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.border-subtle {
+  border: 1px solid var(--border-subtle);
+}
+
+.border-lined {
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.border-glow {
+  border: 1px solid rgb(var(--accent) / 0.15);
+  box-shadow: 0 0 6px rgb(var(--accent) / 0.06), inset 0 0 6px rgb(var(--accent) / 0.03);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUREBESH TOGGLE
+   Full UI font override when Aurebesh mode is active. Underlying text
+   remains English for accessibility — only the visual font-face changes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Labels-only mode: headers and navigation render in Aurebesh */
+html.aurebesh-labels .panel-title,
+html.aurebesh-labels .nav-label,
+html.aurebesh-labels .section-header,
+html.aurebesh-labels .tab-label,
+html.aurebesh-labels .sidebar-label,
+html.aurebesh-labels [data-aurebesh] {
+  font-family: 'FT Aurebesh', 'Exo 2', sans-serif;
+  letter-spacing: 0.06em;
+}
+
+/* Full mode: everything renders in Aurebesh */
+html.aurebesh-full body {
+  font-family: 'FT Aurebesh', 'Exo 2', sans-serif;
+}
+html.aurebesh-full .font-cinematic {
+  font-family: 'FT Aurebesh', 'Orbitron', sans-serif;
+}
+
+/* Exclusions — never render in Aurebesh regardless of mode */
+html.aurebesh-labels .no-aurebesh,
+html.aurebesh-full .no-aurebesh,
+html.aurebesh-full code,
+html.aurebesh-full pre,
+html.aurebesh-full .font-mono,
+html.aurebesh-full kbd,
+html.aurebesh-full input,
+html.aurebesh-full textarea,
+html.aurebesh-full .code-output,
+html.aurebesh-full .error-message,
+html.aurebesh-full .keyboard-shortcut,
+html.aurebesh-full [data-no-aurebesh] {
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DOT-MATRIX / SEGMENTED DISPLAY TEXT
+   Secondary readout style for HUD data panels.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dot-matrix {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: calc(8px * var(--font-scale));
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(var(--accent) / 0.6);
+}
+
+.dot-matrix-bright {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: calc(8px * var(--font-scale));
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(var(--accent));
+  text-shadow: 0 0 4px rgb(var(--accent) / 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEW AMBIENT ANIMATIONS
+   Additional atmospheric effects for the Star Wars HUD aesthetic.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 9. Scan Sweep (Radar) ─── */
+
+@keyframes scan-sweep-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.scan-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-sweep-beam {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgb(var(--accent) / 0.08) 15deg,
+    rgb(var(--accent) / 0.03) 40deg,
+    transparent 60deg,
+    transparent 360deg
+  );
+  opacity: calc(1 * var(--ambient-intensity));
+  animation: scan-sweep-rotate 8s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* ─── 10. Grid Pulse ─── */
+
+@keyframes grid-pulse-wave {
+  0%, 100% {
+    opacity: calc(0.02 * var(--ambient-intensity));
+  }
+  50% {
+    opacity: calc(0.08 * var(--ambient-intensity));
+  }
+}
+
+.grid-pulse-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(var(--accent) / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--accent) / 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: grid-pulse-wave 5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── 11. Holographic Flicker ─── */
+
+@keyframes holo-flicker-anim {
+  0%, 4%, 6%, 100% {
+    opacity: 1;
+  }
+  5% {
+    opacity: 0.75;
+  }
+  42%, 44% {
+    opacity: 1;
+  }
+  43% {
+    opacity: 0.82;
+  }
+  78%, 80% {
+    opacity: 1;
+  }
+  79% {
+    opacity: 0.7;
+  }
+}
+
+.holo-flicker {
+  animation: holo-flicker-anim 12s ease-in-out infinite;
+}
+
+/* ─── 12. Corner Bracket Glow ─── */
+
+@keyframes corner-bracket-pulse {
+  0%, 100% {
+    opacity: calc(0.15 * var(--ambient-intensity));
+  }
+  50% {
+    opacity: calc(0.4 * var(--ambient-intensity));
+  }
+}
+
+/* Container — apply to a panel to get corner brackets */
+.corner-brackets {
+  position: relative;
+}
+
+/* Top-left and top-right brackets */
+.corner-brackets::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgb(var(--accent) / 0.2);
+  clip-path: polygon(
+    /* top-left bracket */
+    0 0, 16px 0, 16px 1px, 1px 1px, 1px 16px, 0 16px,
+    /* top-right bracket */
+    0 0, 100% 0, 100% 16px, calc(100% - 1px) 16px, calc(100% - 1px) 1px, calc(100% - 16px) 1px, calc(100% - 16px) 0,
+    /* close top-left */
+    0 0
+  );
+  animation: corner-bracket-pulse 5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Bottom-left and bottom-right brackets */
+.corner-brackets::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgb(var(--accent) / 0.2);
+  clip-path: polygon(
+    /* bottom-left bracket */
+    0 100%, 16px 100%, 16px calc(100% - 1px), 1px calc(100% - 1px), 1px calc(100% - 16px), 0 calc(100% - 16px),
+    /* bottom-right bracket */
+    0 100%, 100% 100%, 100% calc(100% - 16px), calc(100% - 1px) calc(100% - 16px), calc(100% - 1px) calc(100% - 1px), calc(100% - 16px) calc(100% - 1px), calc(100% - 16px) 100%,
+    /* close bottom-left */
+    0 100%
+  );
+  animation: corner-bracket-pulse 5s ease-in-out infinite;
+  animation-delay: 2.5s;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ─── 13. Energy Conduit Lines ─── */
+
+@keyframes conduit-flow {
+  0% { stroke-dashoffset: 40; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.energy-conduit {
+  stroke: rgb(var(--accent) / 0.15);
+  stroke-width: 1;
+  stroke-dasharray: 8 4;
+  fill: none;
+  animation: conduit-flow 3s linear infinite;
+  opacity: calc(1 * var(--ambient-intensity));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRANSITION ANIMATIONS
+   Panel, modal, and tab transition effects.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Panel Wipe (ignition-style) ─── */
+
+@keyframes panel-wipe-in {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.5;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes panel-wipe-in-vertical {
+  0% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.5;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+.panel-wipe-enter {
+  animation: panel-wipe-in 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.panel-wipe-enter-vertical {
+  animation: panel-wipe-in-vertical 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ─── Modal Hologram Entry ─── */
+
+@keyframes modal-holo-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+    filter: brightness(1.5) saturate(0.5);
+  }
+  50% {
+    filter: brightness(1.1) saturate(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+.modal-holo-enter {
+  animation: modal-holo-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Sidebar Slide ─── */
+
+@keyframes sidebar-slide-in-left {
+  0% {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sidebar-slide-in-right {
+  0% {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.sidebar-enter-left {
+  animation: sidebar-slide-in-left 250ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.sidebar-enter-right {
+  animation: sidebar-slide-in-right 250ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Content fade-in after container arrives */
+.sidebar-content-enter {
+  animation: sidebar-slide-in-left 200ms ease both;
+  animation-delay: 100ms;
+  opacity: 0;
+}
+
+/* ─── Toast / Comm Channel Entry ─── */
+
+@keyframes comm-incoming {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  20% {
+    filter: brightness(1.3);
+  }
+  30% {
+    filter: brightness(1);
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+.toast-comm-enter {
+  animation: comm-incoming 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MICRO-INTERACTIONS
+   Subtle hover, focus, and active state enhancements.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Button hover — saber hum glow */
+.btn-hum {
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+.btn-hum:hover {
+  box-shadow: 0 0 8px rgb(var(--accent) / 0.25);
+  border-color: rgb(var(--accent) / 0.3);
+}
+.btn-hum:active {
+  box-shadow: 0 0 4px rgb(var(--accent) / 0.15);
+}
+
+/* Toggle switch — ignite/retract animation */
+.toggle-ignite {
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+.toggle-ignite[data-active='true'],
+.toggle-ignite.active {
+  box-shadow: 0 0 6px rgb(var(--accent) / 0.3);
+}
+
+/* Slider active pulse (when focused/dragging) */
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  animation: kyber-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgb(var(--accent) / 0.4);
+}
+input[type='range']:focus-visible::-moz-range-thumb {
+  animation: kyber-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgb(var(--accent) / 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PERFORMANCE TIERS
+   CSS overrides for Medium and Lite performance tiers.
+   Applied as classes on <html> by the performance tier setting.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Medium Tier: reduce animation complexity ─── */
+html.perf-medium .scan-sweep-beam {
+  animation: none;
+  opacity: calc(0.04 * var(--ambient-intensity));
+}
+html.perf-medium .particle-drift::before {
+  animation-duration: 40s;
+}
+html.perf-medium .holo-flicker {
+  animation-duration: 24s;
+}
+html.perf-medium .corner-brackets::before,
+html.perf-medium .corner-brackets::after {
+  animation: none;
+  opacity: calc(0.2 * var(--ambient-intensity));
+}
+html.perf-medium .energy-conduit {
+  animation: none;
+}
+html.perf-medium .material-gloss {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html.perf-medium .panel-wipe-enter {
+  animation-name: none;
+  opacity: 1;
+  clip-path: none;
+}
+html.perf-medium .panel-wipe-enter-vertical {
+  animation-name: none;
+  opacity: 1;
+  clip-path: none;
+}
+
+/* ─── Lite Tier: strip all ambient, minimal transitions ─── */
+html.perf-lite .scan-sweep-beam,
+html.perf-lite .grid-pulse-overlay,
+html.perf-lite .holo-flicker,
+html.perf-lite .particle-drift::before,
+html.perf-lite .data-stream::before,
+html.perf-lite .energy-border,
+html.perf-lite .kyber-glow::before,
+html.perf-lite .hyperspace::before,
+html.perf-lite .corner-brackets::before,
+html.perf-lite .corner-brackets::after,
+html.perf-lite .energy-conduit,
+html.perf-lite .console-blink,
+html.perf-lite .console-breathe,
+html.perf-lite .console-alert,
+html.perf-lite .hud-scan-sweep,
+html.perf-lite .hud-corner-bracket,
+html.perf-lite .hud-aurebesh-scroll,
+html.perf-lite .hud-data-ticker,
+html.perf-lite .hud-console-indicator,
+html.perf-lite .hud-holo-flicker {
+  animation: none !important;
+  opacity: 0 !important;
+}
+html.perf-lite .material-gloss {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgb(var(--bg-card));
+}
+html.perf-lite .material-satin {
+  background: rgb(var(--bg-card));
+}
+html.perf-lite .border-glow {
+  box-shadow: none;
+  border-color: var(--border-light);
+}
+html.perf-lite .panel-wipe-enter,
+html.perf-lite .panel-wipe-enter-vertical,
+html.perf-lite .modal-holo-enter,
+html.perf-lite .sidebar-enter-left,
+html.perf-lite .sidebar-enter-right,
+html.perf-lite .sidebar-content-enter,
+html.perf-lite .toast-comm-enter {
+  animation: none !important;
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+  filter: none;
+}
+html.perf-lite .btn-hum:hover {
+  box-shadow: none;
+}
+html.perf-lite .gallery-card:hover {
+  transform: none;
 }

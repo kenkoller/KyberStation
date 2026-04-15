@@ -8,6 +8,7 @@ import type { BladeConfig } from '@bladeforge/engine';
 import { downloadConfigAsFile, downloadCollection, readCollectionFile } from '@/lib/bladeConfigIO';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { CommunityGallery } from './CommunityGallery';
 import {
   ALL_PRESETS,
   PREQUEL_ERA_PRESETS,
@@ -16,6 +17,7 @@ import {
   ANIMATED_SERIES_PRESETS,
   EXTENDED_UNIVERSE_PRESETS,
   LEGENDS_PRESETS,
+  CREATIVE_COMMUNITY_PRESETS,
 } from '@bladeforge/presets';
 import type { Preset, Era, Affiliation } from '@bladeforge/presets';
 
@@ -145,6 +147,17 @@ function GalleryCard({
           {getEraLabel(preset.era)}
         </div>
 
+        {/* Screen-accuracy badge */}
+        {preset.screenAccurate ? (
+          <div className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded text-teal-400 bg-teal-900/60">
+            On-Screen
+          </div>
+        ) : CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) ? (
+          <div className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded text-orange-400 bg-orange-900/60">
+            Creative
+          </div>
+        ) : null}
+
         {/* Legends badge */}
         {isLegendsPreset && (
           <div className="absolute top-1 right-1.5 text-ui-xs font-bold uppercase tracking-wider text-yellow-500 bg-yellow-900/60 px-1 rounded">
@@ -248,6 +261,16 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
           }`}>
             {preset.affiliation.toUpperCase()}
           </span>
+          {preset.screenAccurate && (
+            <span className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium bg-teal-900/30 text-teal-400 border border-teal-700/40">
+              On-Screen
+            </span>
+          )}
+          {CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) && (
+            <span className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium bg-orange-900/30 text-orange-400 border border-orange-700/40">
+              Creative
+            </span>
+          )}
         </div>
         <button onClick={onClose} aria-label="Close preset detail panel" className="text-text-muted hover:text-text-primary text-ui-sm touch-target">
           x
@@ -302,13 +325,49 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
           Hilt: {preset.hiltNotes}
         </p>
       )}
+
+      {/* Detailed-tier extras */}
+      {preset.tier === 'detailed' && (
+        <div className="mt-2 pt-2 border-t border-border-subtle">
+          <span className="text-ui-xs font-medium text-text-secondary">Extended Parameters</span>
+          <div className="grid grid-cols-2 tablet:grid-cols-3 gap-x-3 gap-y-1 mt-1 text-ui-xs text-text-muted">
+            {typeof preset.config.shimmer === 'number' && preset.config.shimmer > 0 && (
+              <div><span className="text-text-secondary">Shimmer:</span> {preset.config.shimmer}</div>
+            )}
+            {typeof preset.config.swingFxIntensity === 'number' && (
+              <div><span className="text-text-secondary">Swing FX:</span> {String(preset.config.swingFxIntensity)}</div>
+            )}
+            {typeof preset.config.noiseLevel === 'number' && (
+              <div><span className="text-text-secondary">Noise:</span> {String(preset.config.noiseLevel)}</div>
+            )}
+            {(() => {
+              const dc = preset.config.dragColor;
+              if (dc && typeof dc === 'object' && 'r' in dc && 'g' in dc && 'b' in dc) {
+                const c = dc as { r: number; g: number; b: number };
+                return (
+                  <div className="flex items-center gap-1">
+                    <span className="text-text-secondary">Drag:</span>
+                    <div className="w-3 h-3 rounded-full border border-white/10" style={{
+                      backgroundColor: rgbToHex(c.r, c.g, c.b),
+                    }} />
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            {typeof preset.config.swingColorShift === 'number' && (
+              <div><span className="text-text-secondary">Color Shift:</span> {String(preset.config.swingColorShift)}</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Save Preset Modal ───
 
-type GalleryTab = 'gallery' | 'my-presets';
+type GalleryTab = 'gallery' | 'my-presets' | 'community';
 type MyPresetSort = 'newest' | 'alphabetical' | 'modified';
 
 function formatRelativeDate(ts: number): string {
@@ -490,6 +549,7 @@ export function PresetGallery() {
   const [selectedAffiliation, setSelectedAffiliation] = useState<Affiliation | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showLegends, setShowLegends] = useState(false);
+  const [selectedOrigin, setSelectedOrigin] = useState<'all' | 'on-screen' | 'creative'>('all');
   const [sortMode, setSortMode] = useState<SortMode>('name');
   const [detailPreset, setDetailPreset] = useState<Preset | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -597,6 +657,13 @@ export function PresetGallery() {
     if (selectedAffiliation !== 'all') {
       presets = presets.filter((p) => p.affiliation === selectedAffiliation);
     }
+    if (selectedOrigin !== 'all') {
+      if (selectedOrigin === 'on-screen') {
+        presets = presets.filter((p) => p.screenAccurate === true);
+      } else {
+        presets = presets.filter((p) => !p.screenAccurate);
+      }
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       presets = presets.filter(
@@ -629,7 +696,7 @@ export function PresetGallery() {
     }
 
     return presets;
-  }, [selectedEra, selectedAffiliation, searchQuery, showLegends, sortMode]);
+  }, [selectedEra, selectedAffiliation, selectedOrigin, searchQuery, showLegends, sortMode]);
 
   const handleSelect = useCallback(
     (preset: Preset) => {
@@ -663,7 +730,17 @@ export function PresetGallery() {
         >
           My Presets ({userPresets.length})
         </button>
-        <HelpTooltip text="Your saved presets. Save the current editor state, organize with tags, and export/import collections." />
+        <button
+          onClick={() => setActiveTab('community')}
+          className={`px-3 py-1 rounded text-ui-sm font-semibold transition-colors border ${
+            activeTab === 'community'
+              ? 'bg-accent-dim border-accent-border text-accent'
+              : 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
+          }`}
+        >
+          Community
+        </button>
+        <HelpTooltip text="Your saved presets, community shared styles, and the full character preset gallery." />
         <button
           onClick={() => setShowSaveModal(true)}
           className="ml-auto px-2.5 py-1 rounded text-ui-xs font-medium transition-colors border
@@ -755,6 +832,9 @@ export function PresetGallery() {
         </div>
       )}
 
+      {/* ─── Community Tab ─── */}
+      {activeTab === 'community' && <CommunityGallery />}
+
       {/* ─── Gallery Tab ─── */}
       {activeTab === 'gallery' && (
         <div>
@@ -801,6 +881,26 @@ export function PresetGallery() {
             }`}
           >
             {aff.label}
+          </button>
+        ))}
+
+        {/* Origin filter */}
+        <span className="text-text-muted/40 px-0.5">|</span>
+        {(['all', 'on-screen', 'creative'] as const).map((origin) => (
+          <button
+            key={origin}
+            onClick={() => setSelectedOrigin(origin)}
+            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
+              selectedOrigin === origin
+                ? origin === 'on-screen'
+                  ? 'bg-teal-900/30 border-teal-700/50 text-teal-400'
+                  : origin === 'creative'
+                    ? 'bg-orange-900/30 border-orange-700/50 text-orange-400'
+                    : 'bg-accent-dim border-accent-border text-accent'
+                : 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
+            }`}
+          >
+            {origin === 'all' ? 'All' : origin === 'on-screen' ? 'On-Screen' : 'Creative'}
           </button>
         ))}
 

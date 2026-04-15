@@ -3,7 +3,7 @@ export { BladeEngine } from './BladeEngine.js';
 export { LEDArray, lerpColor, scaleColor, hslToRgb, blendAdd, blendScreen, blendMultiply, clampColor } from './LEDArray.js';
 export { MotionSimulator } from './motion/MotionSimulator.js';
 export { createEasingFunction, getEasingPresetNames, EASING_PRESETS } from './easing.js';
-export { noise, noise2d, fbm } from './noise.js';
+export { noise, noise2d, fbm, directionalPosition } from './noise.js';
 
 // ─── Color Theory ───
 export {

@@ -1,6 +1,6 @@
 import { BaseStyle } from './BaseStyle.js';
 import type { RGB, StyleContext } from '../types.js';
-import { noise } from '../noise.js';
+import { noise, directionalPosition } from '../noise.js';
 import { lerpColor } from '../LEDArray.js';
 
 export class CinderStyle extends BaseStyle {
@@ -10,7 +10,8 @@ export class CinderStyle extends BaseStyle {
 
   getColor(position: number, time: number, context: StyleContext): RGB {
     const base = context.config.baseColor;
-    const pos = position;
+    const dir = context.config.spatialDirection ?? 'hilt-to-tip';
+    const pos = directionalPosition(position, dir);
     const t = time;
 
     const ember = noise(pos * 25 + t * 2, t * 0.5);

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BladeState } from '@bladeforge/engine';
 import { useBladeEngine } from '@/hooks/useBladeEngine';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -7,26 +7,27 @@ import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useDeviceMotion } from '@/hooks/useDeviceMotion';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useUIStore } from '@/stores/uiStore';
-import type { ActiveTab, RenderMode, CanvasMode } from '@/stores/uiStore';
+import type { ActiveTab } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
-import { BladeCanvas3D } from '@/components/editor/BladeCanvas3DWrapper';
+
+import { CanvasLayout } from '@/components/editor/CanvasLayout';
 import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
+import { EffectColumn } from '@/components/editor/EffectColumn';
 import { PresetGallery } from '@/components/editor/PresetGallery';
 import { DesignPanel } from '@/components/editor/DesignPanel';
 import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
-import { CanvasToolbar } from '@/components/editor/CanvasToolbar';
 import { EffectComparisonPanel } from '@/components/editor/EffectComparisonPanel';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
 import { useAccessibilityApplier } from '@/hooks/useAccessibilityApplier';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { usePresetListStore } from '@/stores/presetListStore';
-import Link from 'next/link';
 import { AccessibilityPanel } from '@/components/editor/AccessibilityPanel';
 import { SaberProfileSwitcher } from '@/components/editor/SaberProfileSwitcher';
+import Link from 'next/link';
 
 const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
   { id: 'design', label: 'Design', shortLabel: 'Design' },
@@ -37,6 +38,34 @@ const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
 ];
 
 type BladeOrientation = 'vertical' | 'horizontal';
+
+// ─── Tab Reorder Hook (desktop only) ───
+
+function useOrderedTabs() {
+  const tabOrder = useUIStore((s) => s.tabOrder);
+
+  return useMemo(() => {
+    if (!tabOrder || tabOrder.length === 0) return TABS;
+
+    const byId = new Map(TABS.map((t) => [t.id, t]));
+    const ordered: typeof TABS = [];
+
+    for (const id of tabOrder) {
+      const t = byId.get(id as ActiveTab);
+      if (t) {
+        ordered.push(t);
+        byId.delete(id as ActiveTab);
+      }
+    }
+
+    // Append any tabs not in saved order (e.g. newly added tabs)
+    for (const t of byId.values()) {
+      ordered.push(t);
+    }
+
+    return ordered;
+  }, [tabOrder]);
+}
 
 function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   switch (activeTab) {
@@ -54,20 +83,22 @@ function TabContent({ activeTab }: { activeTab: ActiveTab }) {
 }
 
 export function AppShell() {
-  const { engineRef, toggle, triggerEffect } = useBladeEngine();
+  const { engineRef, toggle, triggerEffect, releaseEffect } = useBladeEngine();
   const audio = useAudioEngine();
   useThemeApplier();
   useAccessibilityApplier();
   usePresetListSync();
   const presetListCount = usePresetListStore((s) => s.entries.length);
   const renderMode = useUIStore((s) => s.renderMode);
-  const setRenderMode = useUIStore((s) => s.setRenderMode);
-  const canvasMode = useUIStore((s) => s.canvasMode);
-  const setCanvasMode = useUIStore((s) => s.setCanvasMode);
   const activeTab = useUIStore((s) => s.activeTab);
   const setActiveTab = useUIStore((s) => s.setActiveTab);
   const showEffectComparison = useUIStore((s) => s.showEffectComparison);
   const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
+  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
+  const layoutMode = useUIStore((s) => s.layoutMode);
+  const setLayoutMode = useUIStore((s) => s.setLayoutMode);
+  const setTabOrder = useUIStore((s) => s.setTabOrder);
   const isOn = useBladeStore((s) => s.isOn);
   const bladeState = useBladeStore((s) => s.bladeState);
   const fps = useBladeStore((s) => s.fps);
@@ -101,10 +132,90 @@ export function AppShell() {
     audioMap[type]?.();
   }, [triggerEffect, audio]);
 
-  const { isMobile, isTablet, isWide } = useBreakpoint();
+  const { isMobile, isTablet } = useBreakpoint();
   const [showPanel, setShowPanel] = useState(false);
   const [showA11yPanel, setShowA11yPanel] = useState(false);
   const [bladeOrientation, setBladeOrientation] = useState<BladeOrientation>('horizontal');
+
+  // ── Desktop tab reorder state ──
+  const orderedTabs = useOrderedTabs();
+  const [tabDragId, setTabDragId] = useState<string | null>(null);
+  const [tabDragOverId, setTabDragOverId] = useState<string | null>(null);
+
+  const handleTabDragStart = useCallback((e: React.DragEvent, id: string) => {
+    setTabDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    if (e.currentTarget instanceof HTMLElement) {
+      requestAnimationFrame(() => {
+        (e.currentTarget as HTMLElement).style.opacity = '0.4';
+      });
+    }
+  }, []);
+
+  const handleTabDragEnd = useCallback((e: React.DragEvent) => {
+    setTabDragId(null);
+    setTabDragOverId(null);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '';
+    }
+  }, []);
+
+  const handleTabDragOver = useCallback((e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id !== tabDragId) {
+      setTabDragOverId(id);
+    }
+  }, [tabDragId]);
+
+  const handleTabDragLeave = useCallback(() => {
+    setTabDragOverId(null);
+  }, []);
+
+  const handleTabDrop = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === targetId) {
+      setTabDragOverId(null);
+      return;
+    }
+
+    const currentOrder = orderedTabs.map((t) => t.id);
+    const sourceIdx = currentOrder.indexOf(sourceId as ActiveTab);
+    const targetIdx = currentOrder.indexOf(targetId as ActiveTab);
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    const newOrder = [...currentOrder];
+    newOrder.splice(sourceIdx, 1);
+    newOrder.splice(targetIdx, 0, sourceId as ActiveTab);
+
+    setTabOrder(newOrder);
+    setTabDragOverId(null);
+  }, [orderedTabs, setTabOrder]);
+
+  // ── Sidebar resize handling ──
+  const sidebarDragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!sidebarDragRef.current) return;
+      const delta = e.clientX - sidebarDragRef.current.startX;
+      setSidebarWidth(sidebarDragRef.current.startWidth + delta);
+    };
+    const onUp = () => {
+      if (!sidebarDragRef.current) return;
+      sidebarDragRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, [setSidebarWidth]);
   const { motionData, permissionState, requestPermission, isSupported } = useDeviceMotion();
 
   // Feed gyro data into the engine's motion simulator + smooth-swing audio
@@ -135,8 +246,8 @@ export function AppShell() {
   }, [audio]);
 
   const handlers = useMemo(
-    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio }),
-    [toggleWithAudio, triggerEffectWithAudio],
+    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
+    [toggleWithAudio, triggerEffectWithAudio, releaseEffect],
   );
 
   useKeyboardShortcuts(handlers);
@@ -279,25 +390,6 @@ export function AppShell() {
 
           <div className="flex items-center gap-2">
             <SaberProfileSwitcher />
-            {/* Canvas mode toggle (2D / 3D) */}
-            <div className="flex items-center gap-0.5 bg-bg-deep rounded-full p-0.5 border border-border-subtle">
-              {([
-                { id: '2d' as CanvasMode, label: '2D' },
-                { id: '3d' as CanvasMode, label: '3D' },
-              ]).map((mode) => (
-                <button
-                  key={mode.id}
-                  onClick={() => setCanvasMode(mode.id)}
-                  className={`touch-target px-2.5 py-1 rounded-full text-ui-xs font-medium transition-colors ${
-                    canvasMode === mode.id
-                      ? 'bg-accent-dim text-accent border border-accent-border'
-                      : 'text-text-muted hover:text-text-secondary border border-transparent'
-                  }`}
-                >
-                  {mode.label}
-                </button>
-              ))}
-            </div>
             {/* Audio mute toggle */}
             <button
               onClick={audio.toggleMute}
@@ -337,11 +429,7 @@ export function AppShell() {
           {/* ── Canvas Strip ── */}
           <div className="shrink-0 h-[180px] border-b border-border-subtle" role="region" aria-label="Blade preview">
             <div className="h-full p-1">
-              {canvasMode === '3d' ? (
-                <BladeCanvas3D className="w-full h-full rounded-lg overflow-hidden" />
-              ) : (
-                <BladeCanvas engineRef={engineRef} compact vertical={false} renderMode={renderMode} />
-              )}
+              <BladeCanvas engineRef={engineRef} compact vertical={false} renderMode={renderMode} />
             </div>
           </div>
 
@@ -453,44 +541,6 @@ export function AppShell() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Canvas mode toggle (2D / 3D) */}
-          <div className="flex items-center gap-0.5 bg-bg-deep rounded-full p-0.5 border border-border-subtle">
-            {([
-              { id: '2d' as CanvasMode, label: '2D' },
-              { id: '3d' as CanvasMode, label: '3D' },
-            ]).map((mode) => (
-              <button
-                key={mode.id}
-                onClick={() => setCanvasMode(mode.id)}
-                className={`px-2 py-0.5 rounded-full text-ui-xs font-medium transition-colors ${
-                  canvasMode === mode.id
-                    ? 'bg-accent-dim text-accent border border-accent-border'
-                    : 'text-text-muted hover:text-text-secondary border border-transparent'
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-          {/* Render mode toggle */}
-          <div className="flex items-center gap-0.5 bg-bg-deep rounded-full p-0.5 border border-border-subtle">
-            {([
-              { id: 'photorealistic' as RenderMode, label: 'Photo' },
-              { id: 'pixel' as RenderMode, label: 'Pixel' },
-            ]).map((mode) => (
-              <button
-                key={mode.id}
-                onClick={() => setRenderMode(mode.id)}
-                className={`px-2 py-0.5 rounded-full text-ui-xs font-medium transition-colors ${
-                  renderMode === mode.id
-                    ? 'bg-accent-dim text-accent border border-accent-border'
-                    : 'text-text-muted hover:text-text-secondary border border-transparent'
-                }`}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
           {/* Audio mute toggle */}
           <button
             onClick={audio.toggleMute}
@@ -502,6 +552,18 @@ export function AppShell() {
             title={audio.muted ? 'Unmute audio' : 'Mute audio'}
           >
             {audio.muted ? 'Sound OFF' : 'Sound ON'}
+          </button>
+          {/* Layout mode toggle */}
+          <button
+            onClick={() => setLayoutMode(layoutMode === 'sidebar' ? 'horizontal' : 'sidebar')}
+            className={`hidden wide:inline-flex px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
+              layoutMode === 'horizontal'
+                ? 'border-accent-border/40 text-accent bg-accent-dim/30'
+                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
+            }`}
+            title={layoutMode === 'sidebar' ? 'Switch to horizontal blade layout' : 'Switch to sidebar layout'}
+          >
+            {layoutMode === 'sidebar' ? '⬒ Horiz' : '⬓ Sidebar'}
           </button>
           {/* Effect Comparison toggle */}
           <button
@@ -515,6 +577,14 @@ export function AppShell() {
           >
             FX Compare
           </button>
+          {/* Docs link */}
+          <Link
+            href="/docs"
+            target="_blank"
+            className="hidden desktop:inline-flex px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
+          >
+            Docs
+          </Link>
           {/* Accessibility settings */}
           <button
             onClick={() => setShowA11yPanel(true)}
@@ -539,25 +609,87 @@ export function AppShell() {
         </div>
       </header>
 
-      {/* ── Main Content (sidebar + canvas split) ── */}
+      {/* ── Main Content ── */}
+      {layoutMode === 'horizontal' ? (
+        /* ═══════════════════════════════════════════════
+         * HORIZONTAL LAYOUT: Canvas on top, tabs below
+         * ═══════════════════════════════════════════════ */
+        <div id="main-content" className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Top: Blade canvas (horizontal, ~35% height) + effect column */}
+          <div className="flex border-b border-border-subtle" style={{ height: '35%' }}>
+            <EffectColumn onTrigger={triggerEffectWithAudio} onRelease={releaseEffect} />
+            <div className="flex-1 min-w-0 p-1" role="region" aria-label="Blade preview">
+              <CanvasLayout engineRef={engineRef} />
+            </div>
+          </div>
+          {/* Bottom: Full-width tabs + content */}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Tab bar */}
+            <div className="flex border-b border-border-subtle shrink-0 px-2 pt-1.5 bg-bg-secondary/50" role="tablist">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  id={`tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={`panel-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'text-accent'
+                      : 'text-text-muted hover:text-text-secondary'
+                  }`}
+                >
+                  {tab.label}
+                  {tab.id === 'output' && presetListCount > 0 && (
+                    <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
+                  )}
+                  {activeTab === tab.id && (
+                    <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-accent rounded-t" />
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Panel content — multi-column for wider screens */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+              <div className="max-w-4xl mx-auto">
+                <TabContent activeTab={activeTab} />
+              </div>
+            </div>
+          </div>
+          {showEffectComparison && <EffectComparisonPanel />}
+        </div>
+      ) : (
+        /* ═══════════════════════════════════════════════
+         * SIDEBAR LAYOUT: Sidebar left, canvas right
+         * ═══════════════════════════════════════════════ */
       <div id="main-content" className="flex-1 min-h-0 flex overflow-hidden">
         {/* ── Left Sidebar (tabs + panel content) ── */}
-        <aside className="w-[380px] wide:w-[420px] shrink-0 flex flex-col border-r border-border-subtle bg-bg-secondary/50 overflow-hidden">
-          {/* Tab bar */}
+        <aside
+          className="shrink-0 flex flex-col border-r border-border-subtle bg-bg-secondary/50 overflow-hidden relative"
+          style={{ width: `${sidebarWidth}px` }}
+        >
+          {/* Tab bar (drag-to-reorder) */}
           <div className="flex border-b border-border-subtle shrink-0 px-1 pt-1.5 overflow-x-auto" role="tablist">
-            {TABS.map((tab) => (
+            {orderedTabs.map((tab) => (
               <button
                 key={tab.id}
                 id={`tab-${tab.id}`}
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 aria-controls={`panel-${tab.id}`}
+                draggable
+                onDragStart={(e) => handleTabDragStart(e, tab.id)}
+                onDragEnd={handleTabDragEnd}
+                onDragOver={(e) => handleTabDragOver(e, tab.id)}
+                onDragLeave={handleTabDragLeave}
+                onDrop={(e) => handleTabDrop(e, tab.id)}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-2.5 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
+                className={`px-2.5 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap cursor-grab active:cursor-grabbing ${
                   activeTab === tab.id
                     ? 'text-accent'
                     : 'text-text-muted hover:text-text-secondary'
-                }`}
+                } ${tabDragOverId === tab.id && tabDragId !== tab.id ? 'border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'}`}
               >
                 {tab.label}
                 {tab.id === 'output' && presetListCount > 0 && (
@@ -592,28 +724,35 @@ export function AppShell() {
               + Add to Card
             </button>
           </div>
+          {/* Sidebar resize handle */}
+          <div
+            className="absolute top-0 bottom-0 right-0 w-[6px] cursor-col-resize z-20 group"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              sidebarDragRef.current = { startX: e.clientX, startWidth: sidebarWidth };
+              document.body.style.cursor = 'col-resize';
+              document.body.style.userSelect = 'none';
+            }}
+          >
+            <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-accent/40 transition-colors" />
+          </div>
         </aside>
 
-        {/* ── Right: Canvas + Effects ── */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Effect trigger bar */}
-          <div className="shrink-0 border-b border-border-subtle">
-            <EffectTriggerBar onTrigger={triggerEffectWithAudio} compact />
-          </div>
+        {/* ── Effect Column (between sidebar and canvas) ── */}
+        <EffectColumn onTrigger={triggerEffectWithAudio} onRelease={releaseEffect} />
 
-          {/* Canvas (fills all remaining space) */}
+        {/* ── Right: Canvas ── */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* Canvas panels (fills all remaining space) */}
           <div className="flex-1 min-h-0 p-1" role="region" aria-label="Blade preview">
-            {canvasMode === '3d' ? (
-              <BladeCanvas3D className="w-full h-full rounded-lg overflow-hidden" />
-            ) : (
-              <BladeCanvas engineRef={engineRef} vertical={false} renderMode={renderMode} />
-            )}
+            <CanvasLayout engineRef={engineRef} />
           </div>
 
           {/* Effect Comparison (togglable, below canvas) */}
           {showEffectComparison && <EffectComparisonPanel />}
         </div>
       </div>
+      )}
 
       {/* ── Status Bar ── */}
       <footer className="flex items-center justify-between px-4 py-1.5 border-t border-border-subtle bg-bg-secondary text-ui-sm text-text-muted shrink-0">

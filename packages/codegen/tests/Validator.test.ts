@@ -70,7 +70,7 @@ describe('validateAST', () => {
     });
 
     it('validates lockup type raw values', () => {
-      const lockupTypes = ['LOCKUP_NORMAL', 'LOCKUP_DRAG', 'LOCKUP_LIGHTNING_BLOCK', 'LOCKUP_MELT'];
+      const lockupTypes = ['SaberBase::LOCKUP_NORMAL', 'SaberBase::LOCKUP_DRAG', 'SaberBase::LOCKUP_LIGHTNING_BLOCK', 'SaberBase::LOCKUP_MELT'];
       for (const lockup of lockupTypes) {
         const node: StyleNode = { type: 'raw', name: lockup, args: [] };
         const wrapper: StyleNode = { type: 'wrapper', name: 'StylePtr', args: [node] };

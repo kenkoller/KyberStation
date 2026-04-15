@@ -1,4 +1,4 @@
-export type { Era, Affiliation, PresetMetadata, Preset, PresetConfig } from './types.js';
+export type { Era, Affiliation, PresetTier, PresetMetadata, Preset, PresetConfig } from './types.js';
 
 export { PREQUEL_ERA_PRESETS } from './characters/prequel-era.js';
 export { ORIGINAL_TRILOGY_PRESETS } from './characters/original-trilogy.js';
