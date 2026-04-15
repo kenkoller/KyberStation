@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { usePresetListStore } from '@/stores/presetListStore';
+import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import {
   exportMultiPresetZip,
   BOARDS,
@@ -18,18 +20,10 @@ import {
   type DetectedBoard,
   type ExistingPreset,
 } from '@/lib/cardDetector';
-import { generateStyleCode } from '@bladeforge/codegen';
+// generateStyleCode available from @bladeforge/codegen if needed
 
 // ─── Preset Registry ───
 // Same presets used in PresetBrowser, kept minimal here for the card writer.
-
-interface LocalPreset {
-  id: string;
-  name: string;
-  style: string;
-  baseColor: { r: number; g: number; b: number };
-  fontName?: string;
-}
 
 const STYLE_LABELS: Record<string, string> = {
   stable: 'Stable',
@@ -97,7 +91,7 @@ export function CardWriter() {
   const [phase, setPhase] = useState<WritePhase>('idle');
   const [progress, setProgress] = useState(0);
   const [statusMessages, setStatusMessages] = useState<StatusMessage[]>([]);
-  const [detectedBoard, setDetectedBoard] = useState<DetectedBoard | null>(null);
+  const [, setDetectedBoard] = useState<DetectedBoard | null>(null);
   const [existingPresets, setExistingPresets] = useState<ExistingPreset[]>([]);
 
   // Directory handle ref for card writing
@@ -113,7 +107,50 @@ export function CardWriter() {
     setStatusMessages([]);
   }, []);
 
+  const presetListEntries = usePresetListStore((s) => s.entries);
+  const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
+  const profiles = useSaberProfileStore((s) => s.profiles);
+
+  // Resolve which entries to use: active card config > preset list > current editor config
+  const resolvedEntries = useMemo(() => {
+    // Prefer active profile's active card config
+    if (activeProfileId) {
+      const profile = profiles.find((p) => p.id === activeProfileId);
+      if (profile) {
+        const cc = profile.cardConfigs.find((c) => c.id === profile.activeCardConfigId) ?? profile.cardConfigs[0];
+        if (cc && cc.entries.length > 0) {
+          return cc.entries.map((e) => ({
+            id: e.id,
+            presetName: e.presetName,
+            fontName: e.fontName,
+            config: e.config,
+            style: e.config.style,
+          }));
+        }
+      }
+    }
+    // Fall back to preset list
+    if (presetListEntries.length > 0) {
+      return presetListEntries.map((e) => ({
+        id: e.id,
+        presetName: e.presetName,
+        fontName: e.fontName,
+        config: e.config,
+        style: e.config.style,
+      }));
+    }
+    return null; // Will use current editor config
+  }, [activeProfileId, profiles, presetListEntries]);
+
   const buildExportPresets = useCallback((): ExportPreset[] => {
+    if (resolvedEntries) {
+      return resolvedEntries.map((entry) => ({
+        name: entry.presetName,
+        config: entry.config,
+        fontName: entry.fontName,
+      }));
+    }
+    // Fallback: single-preset from current editor config
     const presets: ExportPreset[] = [];
     if (selectedPresets.has('current')) {
       presets.push({
@@ -123,7 +160,7 @@ export function CardWriter() {
       });
     }
     return presets;
-  }, [selectedPresets, config]);
+  }, [resolvedEntries, selectedPresets, config]);
 
   // ─── Download ZIP ───
 
@@ -183,7 +220,7 @@ export function CardWriter() {
 
     let dirHandle: FileSystemDirectoryHandle;
     try {
-      dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      dirHandle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
       dirHandleRef.current = dirHandle;
     } catch {
       setPhase('idle');
@@ -263,12 +300,23 @@ export function CardWriter() {
       const totalEntries = entries.length;
       let written = 0;
 
+      const SAFE_PATH_PART = /^[a-zA-Z0-9._-]+$/;
       for (const path of entries) {
         const entry = zip.files[path];
+
+        // Security: reject path traversal, absolute paths, and unsafe characters
+        if (path.includes('..') || path.startsWith('/') || path.startsWith('\\')) {
+          addStatus({ type: 'warning', text: `Skipped unsafe path: ${path}` });
+          continue;
+        }
 
         if (entry.dir) {
           // Create directory
           const parts = path.replace(/\/$/, '').split('/');
+          if (!parts.every((p) => SAFE_PATH_PART.test(p))) {
+            addStatus({ type: 'warning', text: `Skipped directory with invalid name: ${path}` });
+            continue;
+          }
           let current = dirHandle;
           for (const part of parts) {
             current = await ensureDirectory(current, part);
@@ -277,6 +325,10 @@ export function CardWriter() {
           // Write file
           const parts = path.split('/');
           const fileName = parts.pop()!;
+          if (!parts.every((p) => SAFE_PATH_PART.test(p)) || !SAFE_PATH_PART.test(fileName)) {
+            addStatus({ type: 'warning', text: `Skipped file with invalid name: ${path}` });
+            continue;
+          }
           let current = dirHandle;
           for (const part of parts) {
             current = await ensureDirectory(current, part);
@@ -353,20 +405,21 @@ export function CardWriter() {
 
   return (
     <div>
-      <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-4">
+      <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-4">
         SD Card Writer
       </h3>
 
       {/* Target Board Selector */}
       <div className="mb-4">
-        <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1.5">
+        <label htmlFor="card-writer-board" className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
           Target Board
         </label>
         <select
+          id="card-writer-board"
           value={boardId}
           onChange={(e) => setBoardId(e.target.value as BoardId)}
           disabled={isWorking}
-          className="w-full bg-bg-surface border border-border-subtle rounded px-3 py-2 text-xs
+          className="touch-target w-full bg-bg-surface border border-border-subtle rounded px-3 py-2 text-ui-xs
             text-text-primary focus:outline-none focus:border-accent transition-colors
             disabled:opacity-50"
         >
@@ -376,86 +429,113 @@ export function CardWriter() {
             </option>
           ))}
         </select>
-        <p className="text-[9px] text-text-muted mt-1">
+        <p className="text-ui-xs text-text-muted mt-1">
           Config file: <span className="text-text-secondary">{BOARDS[boardId].configFileName}</span>
         </p>
       </div>
 
       {/* Preset Selector */}
       <div className="mb-4">
-        <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1.5">
+        <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
           Presets to Include
         </label>
-        <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1">
-          {/* Current config */}
-          <label className="flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
-            <input
-              type="checkbox"
-              checked={selectedPresets.has('current')}
-              onChange={() => togglePreset('current')}
-              disabled={isWorking}
-              className="accent-[var(--color-accent)] w-3.5 h-3.5"
-            />
-            <div
-              className="w-3 h-3 rounded-sm shrink-0"
-              style={{ backgroundColor: currentPresetColor }}
-            />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-text-primary truncate block">
-                {config.name ?? 'Current Style'}
-              </span>
-              <span className="text-[9px] text-text-muted">
-                {STYLE_LABELS[config.style] ?? config.style}
-              </span>
-            </div>
-          </label>
-        </div>
-        <p className="text-[9px] text-text-muted mt-1">
-          {selectedPresets.size} preset(s) selected
-        </p>
+        {resolvedEntries ? (
+          <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1">
+            {resolvedEntries.map((entry, i) => {
+              const entryHex = rgbToHex(entry.config.baseColor.r, entry.config.baseColor.g, entry.config.baseColor.b);
+              return (
+                <div key={entry.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded bg-bg-primary/30">
+                  <span className="text-ui-sm text-text-muted tabular-nums w-4 text-right shrink-0">{i + 1}.</span>
+                  <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: entryHex }} />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-ui-xs text-text-primary truncate block">{entry.presetName}</span>
+                    <span className="text-ui-xs text-text-muted font-mono">{entry.fontName}/</span>
+                  </div>
+                  <span className="text-ui-xs text-text-muted shrink-0">
+                    {STYLE_LABELS[entry.style] ?? entry.style}
+                  </span>
+                </div>
+              );
+            })}
+            <p className="text-ui-xs text-accent mt-1 px-2">
+              Using {resolvedEntries.length} preset(s) from {activeProfileId ? 'active card config' : 'Saber Preset List'} (in order)
+            </p>
+          </div>
+        ) : (
+          <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1">
+            <label className="touch-target flex items-center gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                checked={selectedPresets.has('current')}
+                onChange={() => togglePreset('current')}
+                disabled={isWorking}
+                aria-label="Include current style preset in export"
+                className="accent-[var(--color-accent)] w-3.5 h-3.5"
+              />
+              <div
+                className="w-3 h-3 rounded-sm shrink-0"
+                style={{ backgroundColor: currentPresetColor }}
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-ui-xs text-text-primary truncate block">
+                  {config.name ?? 'Current Style'}
+                </span>
+                <span className="text-ui-xs text-text-muted">
+                  {STYLE_LABELS[config.style] ?? config.style}
+                </span>
+              </div>
+            </label>
+            <p className="text-ui-xs text-text-muted mt-1 px-2">
+              {selectedPresets.size} preset(s) selected &mdash; add presets from the Gallery to export multiple
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Font Folder Preview */}
       <div className="mb-4">
-        <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1.5">
+        <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
           Font Folders
         </label>
         <div className="bg-black/30 rounded border border-border-subtle p-3">
-          {selectedPresets.size === 0 ? (
-            <p className="text-[10px] text-text-muted italic">No presets selected</p>
-          ) : (
-            <div className="space-y-1">
-              {Array.from(selectedPresets).map((id, i) => {
-                const name = id === 'current'
-                  ? (config.name ?? 'custom').replace(/\s+/g, '_').toLowerCase()
-                  : id;
-                return (
-                  <div key={id} className="flex items-center gap-2 text-[10px] font-mono">
+          {(() => {
+            const exportPresets = resolvedEntries
+              ? resolvedEntries.map((e) => ({ id: e.id, name: e.fontName }))
+              : selectedPresets.has('current')
+                ? [{ id: 'current', name: (config.name ?? 'custom').replace(/\s+/g, '_').toLowerCase() }]
+                : [];
+            if (exportPresets.length === 0) {
+              return <p className="text-ui-sm text-text-muted italic">No presets selected</p>;
+            }
+            return (
+              <div className="space-y-1">
+                {exportPresets.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 text-ui-sm font-mono">
                     <span className="text-text-muted">/</span>
-                    <span className="text-text-secondary">{name}/</span>
+                    <span className="text-text-secondary">{p.name}/</span>
                     <span className="text-text-muted">sound font folder</span>
                   </div>
-                );
-              })}
-              <div className="flex items-center gap-2 text-[10px] font-mono mt-1 pt-1 border-t border-border-subtle">
-                <span className="text-text-muted">/</span>
-                <span className="text-accent">{BOARDS[boardId].configFileName}</span>
+                ))}
+                <div className="flex items-center gap-2 text-ui-sm font-mono mt-1 pt-1 border-t border-border-subtle">
+                  <span className="text-text-muted">/</span>
+                  <span className="text-accent">{BOARDS[boardId].configFileName}</span>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
       {/* Output Method */}
       <div className="mb-4">
-        <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1.5">
+        <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
           Output Method
         </label>
         <div className="flex gap-2">
           <button
             onClick={() => setOutputMethod('zip')}
             disabled={isWorking}
-            className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors border ${
+            className={`touch-target flex-1 px-3 py-2 rounded text-ui-xs font-medium transition-colors border ${
               outputMethod === 'zip'
                 ? 'bg-accent-dim border-accent-border text-accent'
                 : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
@@ -471,7 +551,7 @@ export function CardWriter() {
                 ? 'Write directly to SD card'
                 : 'File System Access API not available (Chrome/Edge only)'
             }
-            className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors border ${
+            className={`touch-target flex-1 px-3 py-2 rounded text-ui-xs font-medium transition-colors border ${
               outputMethod === 'card'
                 ? 'bg-accent-dim border-accent-border text-accent'
                 : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
@@ -479,7 +559,7 @@ export function CardWriter() {
           >
             Write to Card
             {!fsApiAvailable && (
-              <span className="block text-[8px] text-text-muted font-normal mt-0.5">
+              <span className="block text-ui-xs text-text-muted font-normal mt-0.5">
                 Chrome/Edge only
               </span>
             )}
@@ -490,15 +570,16 @@ export function CardWriter() {
       {/* Backup Toggle (card mode only) */}
       {outputMethod === 'card' && (
         <div className="mb-4">
-          <label className="flex items-center gap-2.5 cursor-pointer">
+          <label className="touch-target flex items-center gap-2.5 cursor-pointer">
             <input
               type="checkbox"
               checked={autoBackup}
               onChange={(e) => setAutoBackup(e.target.checked)}
               disabled={isWorking}
+              aria-label="Auto-backup existing config before overwriting"
               className="accent-[var(--color-accent)] w-3.5 h-3.5"
             />
-            <span className="text-xs text-text-secondary">
+            <span className="text-ui-xs text-text-secondary">
               Auto-backup existing config before overwriting
             </span>
           </label>
@@ -509,7 +590,7 @@ export function CardWriter() {
       <button
         onClick={outputMethod === 'zip' ? handleDownloadZip : handleWriteToCard}
         disabled={!canWrite}
-        className={`w-full py-2.5 rounded text-sm font-semibold transition-colors border ${
+        className={`w-full py-2.5 rounded text-ui-sm font-semibold transition-colors border ${
           canWrite
             ? 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 active:bg-accent/30'
             : 'bg-bg-surface border-border-subtle text-text-muted cursor-not-allowed'
@@ -525,13 +606,20 @@ export function CardWriter() {
       {/* Progress Bar */}
       {isWorking && (
         <div className="mt-3">
-          <div className="w-full h-1.5 bg-bg-surface rounded-full overflow-hidden border border-border-subtle">
+          <div
+            className="w-full h-1.5 bg-bg-surface rounded-full overflow-hidden border border-border-subtle"
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="SD card write progress"
+          >
             <div
               className="h-full bg-accent transition-all duration-300 ease-out rounded-full"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-[9px] text-text-muted mt-1 text-right">{progress}%</p>
+          <p className="text-ui-xs text-text-muted mt-1 text-right">{progress}%</p>
         </div>
       )}
 
@@ -541,7 +629,7 @@ export function CardWriter() {
           {statusMessages.map((msg, i) => (
             <div
               key={i}
-              className={`text-[10px] px-2.5 py-1.5 rounded flex items-start gap-1.5 ${statusColorClasses(msg.type)}`}
+              className={`text-ui-sm px-2.5 py-1.5 rounded flex items-start gap-1.5 ${statusColorClasses(msg.type)}`}
             >
               <span className="shrink-0 mt-px">{statusIcon(msg.type)}</span>
               <span>{msg.text}</span>
@@ -553,12 +641,12 @@ export function CardWriter() {
       {/* Existing Presets on Card (shown after detection) */}
       {existingPresets.length > 0 && phase !== 'idle' && (
         <div className="mt-3 bg-bg-surface rounded-panel border border-border-subtle p-3">
-          <h4 className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5">
+          <h4 className="text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
             Existing Presets on Card
           </h4>
           <div className="space-y-0.5">
             {existingPresets.map((p, i) => (
-              <div key={i} className="text-[10px] text-text-secondary flex items-center gap-2">
+              <div key={i} className="text-ui-sm text-text-secondary flex items-center gap-2">
                 <span className="text-text-muted font-mono">{p.fontFolder}/</span>
                 <span>{p.name}</span>
               </div>
@@ -577,7 +665,7 @@ export function CardWriter() {
             setDetectedBoard(null);
             setExistingPresets([]);
           }}
-          className="mt-3 w-full py-1.5 rounded text-xs font-medium transition-colors border
+          className="touch-target mt-3 w-full py-1.5 rounded text-ui-xs font-medium transition-colors border
             bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light"
         >
           Reset
@@ -585,7 +673,7 @@ export function CardWriter() {
       )}
 
       {/* Info Footer */}
-      <p className="text-[9px] text-text-muted mt-3">
+      <p className="text-ui-xs text-text-muted mt-3">
         {outputMethod === 'zip'
           ? 'Downloads a ZIP file containing the board config and font folder structure. Extract to your SD card.'
           : 'Writes files directly to your SD card using the File System Access API. Requires Chrome or Edge.'}

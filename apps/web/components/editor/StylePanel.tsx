@@ -3,6 +3,11 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { ParameterBank } from './ParameterBank';
 import { Randomizer } from './Randomizer';
+import { GradientBuilder } from './GradientBuilder';
+import { GradientMixer } from './GradientMixer';
+import { BladePainter } from './BladePainter';
+import { ImageScrollPanel } from './ImageScrollPanel';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 const BLADE_STYLES = [
   { id: 'stable', label: 'Stable', desc: 'Classic solid blade' },
@@ -17,6 +22,8 @@ const BLADE_STYLES = [
   { id: 'aurora', label: 'Aurora', desc: 'Northern lights shimmer' },
   { id: 'cinder', label: 'Cinder', desc: 'Dying ember trail' },
   { id: 'prism', label: 'Prism', desc: 'Rainbow refraction' },
+  { id: 'painted', label: 'Painted', desc: 'Hand-painted blade colors' },
+  { id: 'imageScroll', label: 'Image Scroll', desc: 'Scroll an image for light painting' },
 ];
 
 function rgbToHex(r: number, g: number, b: number): string {
@@ -46,21 +53,98 @@ interface ColorPickerRowProps {
 function ColorPickerRow({ label, colorKey, color }: ColorPickerRowProps) {
   const setColor = useBladeStore((s) => s.setColor);
 
+  const inputId = `color-${colorKey}`;
+
   return (
     <div className="flex items-center justify-between gap-2">
-      <label className="text-xs text-text-secondary whitespace-nowrap">{label}</label>
+      <label htmlFor={inputId} className="text-ui-xs text-text-secondary whitespace-nowrap">{label}</label>
       <div className="flex items-center gap-2">
         <input
+          id={inputId}
           type="color"
           value={rgbToHex(color.r, color.g, color.b)}
           onChange={(e) => setColor(colorKey, hexToRgb(e.target.value))}
           className="w-8 h-6 rounded cursor-pointer border border-border-subtle bg-transparent"
           style={{ width: '32px', height: '24px' }}
         />
-        <span className="text-[10px] text-text-muted font-mono w-[120px]">
+        <span className="text-ui-sm text-text-muted font-mono w-[120px]">
           Rgb&lt;{color.r},{color.g},{color.b}&gt;
         </span>
       </div>
+    </div>
+  );
+}
+
+// ─── Style-Specific Parameter Definitions ───
+
+interface StyleParamDef {
+  key: string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  defaultValue: number;
+}
+
+const STYLE_PARAMS: Record<string, StyleParamDef[]> = {
+  fire: [
+    { key: 'fireSize', label: 'Fire Size', min: 0, max: 1, step: 0.05, defaultValue: 0.5 },
+    { key: 'sparkRate', label: 'Spark Rate', min: 0, max: 1, step: 0.05, defaultValue: 0.3 },
+    { key: 'heatSpread', label: 'Heat Spread', min: 0, max: 1, step: 0.05, defaultValue: 0.5 },
+  ],
+  aurora: [
+    { key: 'waveCount', label: 'Wave Count', min: 1, max: 8, step: 1, defaultValue: 3 },
+    { key: 'driftSpeed', label: 'Drift Speed', min: 0, max: 2, step: 0.1, defaultValue: 0.5 },
+  ],
+  plasma: [
+    { key: 'frequency', label: 'Frequency', min: 0.5, max: 5, step: 0.1, defaultValue: 1 },
+    { key: 'phaseSpeed', label: 'Phase Speed', min: 0, max: 3, step: 0.1, defaultValue: 1 },
+  ],
+  prism: [
+    { key: 'facets', label: 'Facets', min: 2, max: 12, step: 1, defaultValue: 6 },
+    { key: 'rotationSpeed', label: 'Rotation Speed', min: 0, max: 5, step: 0.1, defaultValue: 1 },
+  ],
+  gradient: [
+    { key: 'gradientSpeed', label: 'Scroll Speed', min: 0, max: 3, step: 0.1, defaultValue: 0.5 },
+  ],
+  pulse: [
+    { key: 'pulseSpeed', label: 'Pulse Speed', min: 0.5, max: 5, step: 0.1, defaultValue: 1 },
+    { key: 'pulseMinBright', label: 'Min Brightness', min: 0, max: 1, step: 0.05, defaultValue: 0.3 },
+  ],
+  unstable: [
+    { key: 'flicker', label: 'Flicker Intensity', min: 0, max: 1, step: 0.05, defaultValue: 0.5 },
+  ],
+  painted: [],
+  imageScroll: [],
+};
+
+function StyleParamSlider({
+  param,
+  value,
+  onChange,
+}: {
+  param: StyleParamDef;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const inputId = `style-param-${param.key}`;
+
+  return (
+    <div className="flex items-center gap-3">
+      <label htmlFor={inputId} className="text-ui-xs text-text-secondary w-24 shrink-0">{param.label}</label>
+      <input
+        id={inputId}
+        type="range"
+        min={param.min}
+        max={param.max}
+        step={param.step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="flex-1"
+      />
+      <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
+        {value.toFixed(param.step < 1 ? (param.step < 0.1 ? 2 : 1) : 0)}
+      </span>
     </div>
   );
 }
@@ -102,11 +186,12 @@ export function StylePanel() {
   const showEdgeColor = config.style === 'plasma';
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Style buttons */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Blade Style
+          <HelpTooltip text="Choose the base animation style. Each style has a unique visual character and may expose its own tunable parameters below." proffie="StylePtr<...>" />
         </h3>
         <div className="grid grid-cols-2 gap-2">
           {BLADE_STYLES.map((style) => {
@@ -115,30 +200,58 @@ export function StylePanel() {
               <button
                 key={style.id}
                 onClick={() => setStyle(style.id)}
-                className={`text-left px-3 py-2.5 rounded text-xs transition-colors border-l-[4px] border-r border-t border-b ${
+                title={style.desc}
+                className={`text-left px-2 py-1.5 rounded text-ui-xs transition-colors border-l-[3px] border-r border-t border-b ${
                   isActive
                     ? 'border-l-accent bg-accent-dim border-r-accent-border border-t-accent-border border-b-accent-border text-accent'
                     : 'border-l-transparent bg-bg-surface border-r-border-subtle border-t-border-subtle border-b-border-subtle text-text-secondary hover:text-text-primary hover:border-l-border-light'
                 }`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <StyleDot
                     styleId={style.id}
                     baseColor={config.baseColor}
                     gradientEnd={config.gradientEnd}
                   />
-                  <span className="font-medium">{style.label}</span>
+                  <span className="font-medium text-ui-base">{style.label}</span>
                 </div>
-                <div className="text-[10px] text-text-muted mt-0.5 ml-4">{style.desc}</div>
               </button>
             );
           })}
         </div>
       </div>
 
+      {/* Style-Specific Parameters */}
+      {STYLE_PARAMS[config.style] && (
+        <div>
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+            Style Parameters
+            <HelpTooltip text="Fine-tune the selected style's behavior. These sliders are specific to the current style — switching styles may show different parameters." />
+          </h3>
+          <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
+            {STYLE_PARAMS[config.style].map((param) => (
+              <StyleParamSlider
+                key={param.key}
+                param={param}
+                value={(config[param.key] as number | undefined) ?? param.defaultValue}
+                onChange={(val) => updateConfig({ [param.key]: val })}
+              />
+            ))}
+            {config.style === 'gradient' && (
+              <>
+                <GradientBuilder />
+                <GradientMixer />
+              </>
+            )}
+            {config.style === 'painted' && <BladePainter />}
+            {config.style === 'imageScroll' && <ImageScrollPanel />}
+          </div>
+        </div>
+      )}
+
       {/* Colors */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
           Colors
         </h3>
         <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
@@ -165,13 +278,15 @@ export function StylePanel() {
 
       {/* Core Parameters (brightness, LED count) */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Hardware
+          <HelpTooltip text="LED brightness and count. These should match your physical blade setup for accurate simulation." proffie="MaxLedsPerStrip" />
         </h3>
         <div className="space-y-4 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           <div className="flex items-center gap-3">
-            <label className="text-xs text-text-secondary w-20 shrink-0">Brightness</label>
+            <label htmlFor="hw-brightness" className="text-ui-xs text-text-secondary w-20 shrink-0">Brightness</label>
             <input
+              id="hw-brightness"
               type="range"
               min={10}
               max={100}
@@ -179,13 +294,14 @@ export function StylePanel() {
               onChange={(e) => setBrightness(Number(e.target.value))}
               className="flex-1"
             />
-            <span className="text-[10px] text-text-muted font-mono w-10 text-right">
+            <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
               {brightness}%
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-xs text-text-secondary w-20 shrink-0">LED Count</label>
+            <label htmlFor="hw-led-count" className="text-ui-xs text-text-secondary w-20 shrink-0">LED Count</label>
             <input
+              id="hw-led-count"
               type="range"
               min={36}
               max={288}
@@ -194,7 +310,7 @@ export function StylePanel() {
               onChange={(e) => updateConfig({ ledCount: Number(e.target.value) })}
               className="flex-1"
             />
-            <span className="text-[10px] text-text-muted font-mono w-10 text-right">
+            <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
               {config.ledCount}
             </span>
           </div>

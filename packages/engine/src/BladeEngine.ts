@@ -10,6 +10,7 @@ import type {
   EffectParams,
   EffectType,
   IgnitionAnimation,
+  IgnitionContext,
   LayerDirection,
   RGB,
   StyleContext,
@@ -173,6 +174,19 @@ export class BladeEngine {
     }
   }
 
+  /**
+   * Replay the ignition animation — retract quickly then re-ignite.
+   * Useful for previewing ignition/retraction style changes.
+   */
+  replayIgnition(): void {
+    this._state = BladeState.OFF;
+    this._extendProgress = 0;
+    this.segmentDelayProgress.clear();
+    this.leds.clear();
+    // Start igniting from scratch
+    this._state = BladeState.IGNITING;
+  }
+
   // ─── Effect controls ───
 
   /**
@@ -183,8 +197,25 @@ export class BladeEngine {
    * (only segments with `effectScoping: 'independent'` that match will see it).
    * If omitted, the effect is global and applies to all `'mirror-main'` segments.
    */
+  // One-shot effect types that cancel each other when triggered
+  private static readonly ONE_SHOT_EFFECTS: ReadonlySet<EffectType> = new Set([
+    'clash', 'blast', 'stab', 'force',
+  ]);
+
   triggerEffect(type: EffectType, params?: EffectParams): void {
     const segmentId = params?.segmentId ?? '_global';
+
+    // Cancel other active one-shot effects to prevent stacking
+    if (BladeEngine.ONE_SHOT_EFFECTS.has(type)) {
+      for (const [key, existing] of this.effectPool.entries()) {
+        if (!key.startsWith(`${segmentId}-`)) continue;
+        const effectType = key.split('-').slice(1).join('-') as EffectType;
+        if (effectType !== type && BladeEngine.ONE_SHOT_EFFECTS.has(effectType) && existing.isActive()) {
+          existing.reset();
+        }
+      }
+    }
+
     const effect = this.getEffect(type, segmentId);
     effect.trigger(params ?? { position: 0.5 });
   }
@@ -258,9 +289,14 @@ export class BladeEngine {
       config,
     };
 
-    // (f) Render each segment
+    // (f) Render each segment (guarded so a single style crash
+    //     doesn't blank the entire blade)
     for (const segment of this._topology.segments) {
-      this.renderSegment(segment, styleContext, config);
+      try {
+        this.renderSegment(segment, styleContext, config);
+      } catch (err) {
+        console.warn(`Render failed for segment ${segment.startLED}-${segment.endLED}:`, err);
+      }
     }
 
     // (g) Clean up expired effects
@@ -355,9 +391,43 @@ export class BladeEngine {
     // Compute per-segment ignition progress, accounting for delay
     const segmentProgress = this.getSegmentExtendProgress(segment, config);
 
-    // Get the ignition and retraction animations for this segment
-    const ignition = this.getIgnition(segment.ignition);
-    const retraction = this.getRetraction(segment.retraction);
+    // Get the ignition and retraction animations for this segment.
+    // Use config values (from the UI) rather than segment defaults,
+    // so that changing ignition/retraction style in the UI is immediately visible.
+    let ignitionId = config.ignition ?? segment.ignition;
+    let retractionId = config.retraction ?? segment.retraction;
+
+    // Dual-mode ignition: select ignition/retraction based on blade angle
+    if (config.dualModeIgnition) {
+      const angleThreshold = config.ignitionAngleThreshold ?? 0.3;
+      const isUp = styleContext.bladeAngle > angleThreshold;
+      if (isUp) {
+        ignitionId = config.ignitionUp ?? ignitionId;
+        retractionId = config.retractionUp ?? retractionId;
+      } else {
+        ignitionId = config.ignitionDown ?? ignitionId;
+        retractionId = config.retractionDown ?? retractionId;
+      }
+    }
+
+    const ignition = this.getIgnition(ignitionId);
+    const retraction = this.getRetraction(retractionId);
+
+    // Configure custom curve ignition with control points from config
+    if (ignitionId === 'custom-curve' && config.ignitionCurve && 'setControlPoints' in ignition) {
+      (ignition as { setControlPoints(p: [number, number, number, number]): void }).setControlPoints(config.ignitionCurve);
+    }
+    if (retractionId === 'custom-curve' && config.retractionCurve && 'setControlPoints' in retraction) {
+      (retraction as { setControlPoints(p: [number, number, number, number]): void }).setControlPoints(config.retractionCurve);
+    }
+
+    // Build ignition context for motion-reactive ignition types
+    const ignitionCtx: IgnitionContext = {
+      bladeAngle: styleContext.bladeAngle,
+      swingSpeed: styleContext.swingSpeed,
+      twistAngle: styleContext.twistAngle,
+      config,
+    };
 
     // Choose the active ignition animation based on state
     const activeIgnition =
@@ -395,12 +465,15 @@ export class BladeEngine {
       let finalColor: RGB = { r: 0, g: 0, b: 0 };
       let hasBase = false;
 
-      for (const layer of layers) {
+      for (let layerIdx = 0; layerIdx < layers.length; layerIdx++) {
+        const layer = layers[layerIdx];
         // Transform position based on layer direction
         const transformedPos = transformPosition(stylePos, layer.direction);
 
-        // Get the style for this layer
-        const style = this.getStyle(layer.style);
+        // For the base layer (index 0), use config.style from the UI
+        // so that changing the style selector is immediately visible.
+        const styleId = (layerIdx === 0 && config.style) ? config.style : layer.style;
+        const style = this.getStyle(styleId);
         const layerColor = style.getColor(transformedPos, this._elapsedTime, styleContext);
 
         if (!hasBase) {
@@ -423,7 +496,7 @@ export class BladeEngine {
       }
 
       // ─── Apply ignition/retraction mask ───
-      const mask = activeIgnition.getMask(pos, easedProgress);
+      const mask = activeIgnition.getMask(pos, easedProgress, ignitionCtx);
       if (mask < 1) {
         finalColor = scaleColor(finalColor, mask);
       }

@@ -129,6 +129,14 @@ export async function decodeConfig(hash: string): Promise<BladeConfig> {
 
   const compressed = fromBase64Url(hash);
   const decompressed = await decompress(compressed);
+
+  // Guard against decompression bombs — a small compressed payload
+  // could expand to an enormous string and cause OOM / DoS.
+  const MAX_DECOMPRESSED_SIZE = 100_000; // 100 KB
+  if (decompressed.length > MAX_DECOMPRESSED_SIZE) {
+    throw new Error('Share link payload exceeds maximum allowed size');
+  }
+
   const json = new TextDecoder().decode(decompressed);
 
   let parsed: Record<string, unknown>;

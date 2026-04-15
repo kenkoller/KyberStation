@@ -9,6 +9,9 @@ out/
 # turbo
 .turbo/
 
+# launcher log
+.bladeforge.log
+
 # env
 .env
 .env.local
@@ -33,3 +36,9 @@ coverage/
 # misc
 *.tsbuildinfo
 next-env.d.ts
+
+# generated app bundle (machine-specific)
+BladeForge.app/
+BladeForge.iconset/
+.icon-tmp/
+BladeForge-icon.svg

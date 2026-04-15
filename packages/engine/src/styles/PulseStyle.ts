@@ -11,8 +11,11 @@ export class PulseStyle extends BaseStyle {
     const pos = position;
     const t = time;
 
-    const wave = Math.sin(t * 4 - pos * 8) * 0.5 + 0.5;
-    const bright = 0.6 + wave * 0.4;
+    const pulseSpeed = (context.config.pulseSpeed as number | undefined) ?? 1;
+    const pulseMinBright = (context.config.pulseMinBright as number | undefined) ?? 0.3;
+
+    const wave = Math.sin(t * (4 * pulseSpeed) - pos * 8) * 0.5 + 0.5;
+    const bright = pulseMinBright + wave * (1 - pulseMinBright);
 
     return {
       r: base.r * bright,

@@ -13,7 +13,7 @@ const DEFAULT_CONFIG: BladeConfig = {
   ignition: 'standard',
   retraction: 'standard',
   ignitionMs: 300,
-  retractionMs: 500,
+  retractionMs: 800,
   shimmer: 0.1,
   ledCount: 132,
 };
@@ -41,9 +41,14 @@ export interface BladeStore {
   // Effect log
   effectLog: string[];
 
+  // A/B comparison
+  candidateConfig: BladeConfig | null;
+
   // Actions
   updateConfig: (partial: Partial<BladeConfig>) => void;
   setConfig: (config: BladeConfig) => void;
+  setCandidateConfig: (config: BladeConfig | null) => void;
+  applyCandidateConfig: () => void;
   setStyle: (styleId: string) => void;
   setColor: (key: string, color: { r: number; g: number; b: number }) => void;
   setIgnition: (id: string) => void;
@@ -73,6 +78,15 @@ export const useBladeStore = create<BladeStore>((set) => ({
     autoDuel: false,
   },
   effectLog: [],
+  candidateConfig: null,
+
+  setCandidateConfig: (config) => set({ candidateConfig: config }),
+
+  applyCandidateConfig: () =>
+    set((state) => {
+      if (!state.candidateConfig) return state;
+      return { config: { ...state.candidateConfig }, candidateConfig: null };
+    }),
 
   updateConfig: (partial) =>
     set((state) => ({ config: { ...state.config, ...partial } })),
@@ -109,5 +123,21 @@ export const useBladeStore = create<BladeStore>((set) => ({
 
   setActiveSegment: (segmentId) => set({ activeSegmentId: segmentId }),
 
-  loadPreset: (config) => set({ config }),
+  loadPreset: (config) =>
+    set((state) => {
+      // If the preset's ledCount differs from the current topology, rebuild
+      // the topology so the engine's LEDArray matches the expected LED count.
+      if (config.ledCount && config.ledCount !== state.topology.totalLEDs) {
+        const newEndLED = config.ledCount - 1;
+        const updatedTopology: BladeTopology = {
+          ...state.topology,
+          totalLEDs: config.ledCount,
+          segments: state.topology.segments.map((seg, i) =>
+            i === 0 ? { ...seg, endLED: newEndLED } : seg,
+          ),
+        };
+        return { config, topology: updatedTopology };
+      }
+      return { config };
+    }),
 }));

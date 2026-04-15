@@ -13,9 +13,11 @@ export class PlasmaStyle extends BaseStyle {
     const pos = position;
     const t = time;
     const swingInfluence = context.swingSpeed;
+    const frequency = (context.config.frequency as number | undefined) ?? 1;
+    const phaseSpeed = (context.config.phaseSpeed as number | undefined) ?? 1;
 
-    const p1 = noise(pos * 8 + t * 5, t);
-    const p2 = noise(pos * 15 - t * 3, t * 1.5);
+    const p1 = noise(pos * (8 * frequency) + t * (5 * phaseSpeed), t);
+    const p2 = noise(pos * (15 * frequency) - t * (3 * phaseSpeed), t * 1.5);
     const arc = p1 * p2;
     const isEdge = pos < 0.02 || pos > 0.98;
     const edge: RGB = context.config.edgeColor || { r: 200, g: 200, b: 255 };

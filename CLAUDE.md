@@ -58,8 +58,11 @@ bladeforge/
 │   │   │   │   ├── TimelinePanel.tsx       # Effect timeline / sequencer
 │   │   │   │   ├── LayerStack.tsx          # Visual layer compositor
 │   │   │   │   ├── CodeOutput.tsx          # Generated code + export
-│   │   │   │   ├── PresetBrowser.tsx       # Preset library browser
-│   │   │   │   ├── SoundFontPanel.tsx      # Sound font preview + mapping
+│   │   │   │   ├── PresetGallery.tsx       # Preset gallery + user presets (My Presets)
+│   │   │   │   ├── SoundFontPanel.tsx      # Sound font preview + font library
+│   │   │   │   ├── SaberProfileManager.tsx # Saber profiles + card preset composer
+│   │   │   │   ├── CardWriter.tsx          # SD card ZIP generation + writer
+│   │   │   │   ├── StorageBudgetPanel.tsx  # Flash memory budget estimation
 │   │   │   │   └── OLEDPreview.tsx         # OLED display preview
 │   │   │   ├── hilt/
 │   │   │   │   ├── HiltSelector.tsx        # Hilt model picker
@@ -69,6 +72,8 @@ bladeforge/
 │   │   │   │   ├── Select.tsx
 │   │   │   │   ├── Toggle.tsx
 │   │   │   │   ├── Tooltip.tsx
+│   │   │   │   ├── HelpTooltip.tsx         # Hover tooltip for feature help
+│   │   │   │   ├── CollapsibleSection.tsx  # Collapsible panel wrapper
 │   │   │   │   ├── Modal.tsx
 │   │   │   │   ├── Tabs.tsx
 │   │   │   │   └── Toast.tsx
@@ -80,9 +85,25 @@ bladeforge/
 │   │   ├── hooks/
 │   │   │   ├── useBladeEngine.ts
 │   │   │   ├── useAnimationFrame.ts
-│   │   │   ├── useAudioContext.ts
+│   │   │   ├── useAudioEngine.ts
 │   │   │   ├── useKeyboardShortcuts.ts
-│   │   │   └── useProjectPersistence.ts
+│   │   │   ├── useDeviceMotion.ts
+│   │   │   ├── useSharedConfig.ts          # Kyber Code share link handler
+│   │   │   └── useAccessibilityApplier.ts  # OS reduced-motion sync
+│   │   ├── stores/
+│   │   │   ├── bladeStore.ts               # Blade config, topology, state
+│   │   │   ├── uiStore.ts                  # View mode, tabs, canvas theme
+│   │   │   ├── userPresetStore.ts          # User preset CRUD + IndexedDB
+│   │   │   ├── saberProfileStore.ts        # Saber profiles + card configs
+│   │   │   ├── presetListStore.ts          # Legacy preset list
+│   │   │   ├── audioFontStore.ts           # Sound fonts + library
+│   │   │   ├── audioMixerStore.ts          # EQ/effects mixer state
+│   │   │   └── accessibilityStore.ts       # A11y settings + OS sync
+│   │   ├── lib/
+│   │   │   ├── bladeConfigIO.ts            # Config/collection/card template I/O
+│   │   │   ├── configUrl.ts                # Kyber Code URL encoding
+│   │   │   ├── fontDB.ts                   # IndexedDB schema (Dexie v3)
+│   │   │   └── cardDetector.ts             # SD card detection
 │   │   └── styles/
 │   │       └── globals.css
 │   └── electron/                     # Future: Electron shell
@@ -173,8 +194,11 @@ bladeforge/
 │   │   │   │   ├── original-trilogy.ts
 │   │   │   │   ├── sequel-era.ts
 │   │   │   │   ├── animated-series.ts
-│   │   │   │   └── expanded-universe.ts
-│   │   │   ├── community/            # Community-submitted styles
+│   │   │   │   ├── extended-universe.ts
+│   │   │   │   ├── legends.ts
+│   │   │   │   └── creative-community.ts
+│   │   │   ├── templates/
+│   │   │   │   └── card-templates.ts # 4 built-in card preset templates
 │   │   │   └── types.ts
 │   │   └── package.json
 │   └── sound/                        # Sound font utilities

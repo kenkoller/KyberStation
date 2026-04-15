@@ -6,6 +6,10 @@ import { SparkIgnition } from './SparkIgnition.js';
 import { WipeIgnition } from './WipeIgnition.js';
 import { StutterIgnition } from './StutterIgnition.js';
 import { GlitchIgnition } from './GlitchIgnition.js';
+import { TwistIgnition } from './TwistIgnition.js';
+import { SwingIgnition } from './SwingIgnition.js';
+import { StabIgnition } from './StabIgnition.js';
+import { CustomCurveIgnition } from './CustomCurveIgnition.js';
 import { FadeoutRetraction } from './FadeoutRetraction.js';
 import { ShatterRetraction } from './ShatterRetraction.js';
 
@@ -17,6 +21,10 @@ export { SparkIgnition } from './SparkIgnition.js';
 export { WipeIgnition } from './WipeIgnition.js';
 export { StutterIgnition } from './StutterIgnition.js';
 export { GlitchIgnition } from './GlitchIgnition.js';
+export { TwistIgnition } from './TwistIgnition.js';
+export { SwingIgnition } from './SwingIgnition.js';
+export { StabIgnition } from './StabIgnition.js';
+export { CustomCurveIgnition } from './CustomCurveIgnition.js';
 export { FadeoutRetraction } from './FadeoutRetraction.js';
 export { ShatterRetraction } from './ShatterRetraction.js';
 
@@ -29,6 +37,10 @@ export const IGNITION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   wipe: () => new WipeIgnition(),
   stutter: () => new StutterIgnition(),
   glitch: () => new GlitchIgnition(),
+  twist: () => new TwistIgnition(),
+  swing: () => new SwingIgnition(),
+  stab: () => new StabIgnition(),
+  'custom-curve': () => new CustomCurveIgnition(),
 };
 
 /** Registry mapping retraction style IDs to their constructors. */
@@ -38,13 +50,15 @@ export const RETRACTION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   center: () => new CenterIgnition(),
   fadeout: () => new FadeoutRetraction(),
   shatter: () => new ShatterRetraction(),
+  'custom-curve': () => new CustomCurveIgnition(),
 };
 
 /** Create a new ignition animation instance by ID. */
 export function createIgnition(id: string): IgnitionAnimation {
   const factory = IGNITION_REGISTRY[id];
   if (!factory) {
-    throw new Error(`Unknown ignition type: ${id}`);
+    console.warn(`Unknown ignition type: "${id}", falling back to standard`);
+    return new StandardIgnition();
   }
   return factory();
 }
@@ -53,7 +67,8 @@ export function createIgnition(id: string): IgnitionAnimation {
 export function createRetraction(id: string): IgnitionAnimation {
   const factory = RETRACTION_REGISTRY[id];
   if (!factory) {
-    throw new Error(`Unknown retraction type: ${id}`);
+    console.warn(`Unknown retraction type: "${id}", falling back to standard`);
+    return new StandardIgnition();
   }
   return factory();
 }

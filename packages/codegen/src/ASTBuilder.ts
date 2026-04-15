@@ -244,6 +244,46 @@ function buildBaseStyle(config: BladeConfig): StyleNode {
     case 'prism':
       return rawNode('Rainbow');
 
+    case 'imageScroll': {
+      // Sample image at evenly-spaced columns, emit as multi-stop Gradient<>
+      const imgData = config.imageData as Uint8Array | undefined;
+      const imgW = (config.imageWidth as number) ?? 0;
+      const imgH = (config.imageHeight as number) ?? 0;
+      if (!imgData || imgW === 0 || imgH === 0) {
+        return templateNode('color', 'Gradient', base, gradEnd);
+      }
+      // Sample ~12 evenly-spaced columns at the blade midpoint row
+      const sampleCount = Math.min(12, imgW);
+      const midRow = Math.floor(imgH / 2);
+      const sampleColors: StyleNode[] = [];
+      for (let i = 0; i < sampleCount; i++) {
+        const col = Math.floor((i / (sampleCount - 1)) * (imgW - 1));
+        const idx = (midRow * imgW + col) * 3;
+        const color: RGB = {
+          r: imgData[idx] ?? 0,
+          g: imgData[idx + 1] ?? 0,
+          b: imgData[idx + 2] ?? 0,
+        };
+        sampleColors.push(rgbNode(color));
+      }
+      return templateNode('color', 'Gradient', ...sampleColors);
+    }
+
+    case 'painted': {
+      // Map colorPositions to a multi-stop Gradient<>
+      const colorPositions = (config.colorPositions as Array<{ position: number; color: RGB; width: number }>) ?? [];
+      if (colorPositions.length === 0) {
+        return templateNode('color', 'Gradient', base, gradEnd);
+      }
+      const sorted = [...colorPositions].sort((a, b) => a.position - b.position);
+      const gradientArgs: StyleNode[] = sorted.map((cp) => rgbNode(cp.color));
+      if (gradientArgs.length === 1) {
+        // Single region — solid color
+        return gradientArgs[0];
+      }
+      return templateNode('color', 'Gradient', ...gradientArgs);
+    }
+
     default:
       // Default to stable style
       return templateNode(
@@ -284,7 +324,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
       templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
       rawNode('TrInstant'),
       templateNode('transition', 'TrFade', intNode(300)),
-      rawNode('LOCKUP_NORMAL'),
+      rawNode('SaberBase::LOCKUP_NORMAL'),
     ),
   );
 
@@ -297,7 +337,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
       templateNode('template', 'AudioFlickerL', rgbNode(dragColor)),
       rawNode('TrInstant'),
       templateNode('transition', 'TrFade', intNode(400)),
-      rawNode('LOCKUP_DRAG'),
+      rawNode('SaberBase::LOCKUP_DRAG'),
     ),
   );
 
@@ -318,7 +358,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
       ),
       rawNode('TrInstant'),
       templateNode('transition', 'TrFade', intNode(500)),
-      rawNode('LOCKUP_LIGHTNING_BLOCK'),
+      rawNode('SaberBase::LOCKUP_LIGHTNING_BLOCK'),
     ),
   );
 
@@ -347,7 +387,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
       ),
       rawNode('TrInstant'),
       templateNode('transition', 'TrFade', intNode(500)),
-      rawNode('LOCKUP_MELT'),
+      rawNode('SaberBase::LOCKUP_MELT'),
     ),
   );
 
@@ -366,7 +406,7 @@ function buildIgnitionTransition(config: BladeConfig): StyleNode {
     case 'spark':
       return templateNode(
         'transition',
-        'TrWipeSparkTipL',
+        'TrWipeSparkTip',
         rawNode('White'),
         intNode(ms),
       );
@@ -432,7 +472,12 @@ function buildRetractionTransition(config: BladeConfig): StyleNode {
  *     >
  *   >()
  */
-export function buildAST(config: BladeConfig): StyleNode {
+export interface BuildOptions {
+  /** Enable Fett263 Edit Mode wrapping (RgbArg/IntArg) */
+  editMode?: boolean;
+}
+
+export function buildAST(config: BladeConfig, options?: BuildOptions): StyleNode {
   const baseStyle = buildBaseStyle(config);
   const effectLayers = buildEffectLayers(config);
   const ignitionTr = buildIgnitionTransition(config);
@@ -456,13 +501,70 @@ export function buildAST(config: BladeConfig): StyleNode {
   );
 
   // StylePtr<Layers<...>>()
-  const stylePtrNode: StyleNode = {
+  let stylePtrNode: StyleNode = {
     type: 'wrapper',
     name: 'StylePtr',
     args: [layersNode],
   };
 
+  // Wrap colors in RgbArg for Edit Mode
+  if (options?.editMode) {
+    stylePtrNode = wrapEditModeArgs(stylePtrNode, config);
+  }
+
   return stylePtrNode;
+}
+
+// ─── Edit Mode Wrapping ───
+
+// Map of Rgb<r,g,b> color signatures to their RgbArg index.
+// Only the first occurrence of each unique color gets an index.
+const EDIT_COLOR_ORDER = [
+  'baseColor',    // ARG 1
+  'blastColor',   // ARG 2
+  'clashColor',   // ARG 3
+  'lockupColor',  // ARG 4
+];
+
+function colorKey(node: StyleNode): string | null {
+  if (node.name !== 'Rgb' || node.args.length !== 3) return null;
+  return node.args.map((a) => a.name).join(',');
+}
+
+function wrapEditModeArgs(root: StyleNode, config: BladeConfig): StyleNode {
+  // Build a map of color values → arg index
+  const colorToIndex = new Map<string, number>();
+  let nextIndex = 1;
+
+  // Assign standard indices to known config colors
+  for (const key of EDIT_COLOR_ORDER) {
+    const color = config[key] as RGB | undefined;
+    if (color) {
+      const k = `${color.r},${color.g},${color.b}`;
+      if (!colorToIndex.has(k)) {
+        colorToIndex.set(k, nextIndex);
+      }
+      nextIndex++;
+    }
+  }
+
+  // Recursively wrap Rgb nodes
+  return wrapNode(root, colorToIndex);
+}
+
+function wrapNode(node: StyleNode, colorToIndex: Map<string, number>): StyleNode {
+  // Check if this is an Rgb<r,g,b> node
+  const ck = colorKey(node);
+  if (ck !== null && colorToIndex.has(ck)) {
+    const argIndex = colorToIndex.get(ck)!;
+    // RgbArg<index, Rgb<r,g,b>>
+    return templateNode('color', 'RgbArg', intNode(argIndex), node);
+  }
+
+  // Recurse into children
+  if (node.args.length === 0) return node;
+  const newArgs = node.args.map((a) => wrapNode(a, colorToIndex));
+  return { ...node, args: newArgs };
 }
 
 export type { BladeConfig, RGB };

@@ -12,8 +12,10 @@ export class PrismStyle extends BaseStyle {
     const shimmer = context.config.shimmer;
     const pos = position;
     const t = time;
+    const facets = (context.config.facets as number | undefined) ?? 6;
+    const rotationSpeed = (context.config.rotationSpeed as number | undefined) ?? 1;
 
-    const hue = ((pos * 360 + t * 60) % 360 + 360) % 360;
+    const hue = ((pos * (360 / 6 * facets) + t * (60 * rotationSpeed)) % 360 + 360) % 360;
     const c = hslToRgb(hue, 90, 55);
     const fl = 1 - shimmer * noise(pos * 8 + t * 4);
 

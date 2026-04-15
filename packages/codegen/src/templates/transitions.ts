@@ -68,9 +68,9 @@ export const transitionTemplates: Map<string, TemplateDefinition> = new Map([
     },
   ],
   [
-    'TrWipeSparkTipL',
+    'TrWipeSparkTip',
     {
-      name: 'TrWipeSparkTipL',
+      name: 'TrWipeSparkTip',
       argTypes: ['COLOR', 'INTEGER'],
       description: 'Wipe with spark effect at the tip, color + duration',
     },

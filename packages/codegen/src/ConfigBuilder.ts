@@ -3,6 +3,24 @@
 
 import type { ConfigOptions, BladeHardwareConfig } from './types.js';
 
+/** Sanitize a string for safe interpolation into C++ string literals. */
+function sanitizeCppString(value: string, maxLen = 64): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '')
+    .replace(/\r/g, '')
+    .slice(0, maxLen);
+}
+
+/** Sanitize a file path for safe use in #include directives. */
+function sanitizeCppPath(value: string): string {
+  return value
+    .replace(/[^a-zA-Z0-9_\-./]/g, '')
+    .replace(/\.\./g, '')
+    .slice(0, 64);
+}
+
 /**
  * Build a complete ProffieOS config.h file string.
  */
@@ -10,6 +28,9 @@ export function buildConfigFile(options: ConfigOptions): string {
   const sections: string[] = [];
 
   sections.push(buildConfigTop(options));
+  if (options.propFile) {
+    sections.push(buildConfigProp(options));
+  }
   sections.push(buildConfigPresets(options));
   sections.push(buildConfigButtons(options));
 
@@ -28,6 +49,7 @@ function buildConfigTop(options: ConfigOptions): string {
       ? 'proffieboard_v3_config.h'
       : 'proffieboard_v2_config.h';
   lines.push(`#include "${boardHeader}"`);
+  lines.push(`const unsigned int maxLedsPerStrip = ${options.maxLedsPerStrip ?? 144};`);
 
   // Core defines
   lines.push(`#define NUM_BLADES ${options.numBlades}`);
@@ -48,11 +70,25 @@ function buildConfigTop(options: ConfigOptions): string {
   if (options.fett263Defines && options.fett263Defines.length > 0) {
     lines.push('');
     lines.push('// Fett263 prop defines');
+    // EDIT_MODE_MENU requires ENABLE_ALL_EDIT_OPTIONS
+    if (options.fett263Defines.some(d => d.includes('EDIT_MODE_MENU'))) {
+      lines.push('#define ENABLE_ALL_EDIT_OPTIONS');
+    }
     for (const def of options.fett263Defines) {
       lines.push(`#define ${def}`);
     }
   }
 
+  lines.push('#endif');
+  return lines.join('\n');
+}
+
+// ─── CONFIG_PROP ───
+
+function buildConfigProp(options: ConfigOptions): string {
+  const lines: string[] = [];
+  lines.push('#ifdef CONFIG_PROP');
+  lines.push(`#include "../props/${sanitizeCppPath(options.propFile!)}"`);
   lines.push('#endif');
   return lines.join('\n');
 }
@@ -63,22 +99,16 @@ function buildConfigPresets(options: ConfigOptions): string {
   const lines: string[] = [];
   lines.push('#ifdef CONFIG_PRESETS');
 
-  // Prop file include
-  if (options.propFile) {
-    lines.push(`#include "../props/${options.propFile}"`);
-    lines.push('');
-  }
-
   // Presets array
   lines.push('Preset presets[] = {');
   for (const preset of options.presets) {
-    const trackPart = preset.trackFile ? `"${preset.trackFile}"` : '"tracks/track.wav"';
-    lines.push(`  { "${preset.fontName}", ${trackPart},`);
+    const trackPart = preset.trackFile ? `"${sanitizeCppPath(preset.trackFile)}"` : '"tracks/track.wav"';
+    lines.push(`  { "${sanitizeCppString(preset.fontName)}", ${trackPart},`);
     for (let i = 0; i < preset.styleCodes.length; i++) {
       const comma = i < preset.styleCodes.length - 1 ? ',' : ',';
       lines.push(`    ${preset.styleCodes[i]}${comma}`);
     }
-    lines.push(`    "${preset.presetName}"`);
+    lines.push(`    "${sanitizeCppString(preset.presetName)}"`);
     lines.push('  },');
   }
   lines.push('};');

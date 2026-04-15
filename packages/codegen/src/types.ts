@@ -85,6 +85,7 @@ export interface ConfigOptions {
   volume: number;
   clashThresholdG: number;
   maxClashStrength: number;
+  maxLedsPerStrip?: number;
   fett263Defines?: string[];
   presets: PresetEntry[];
   bladeConfig: BladeHardwareConfig[];

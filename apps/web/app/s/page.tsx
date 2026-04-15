@@ -13,7 +13,7 @@ export default function ShareRedirect() {
 
   return (
     <div className="h-screen flex items-center justify-center bg-bg-primary text-text-primary font-mono">
-      <p className="text-text-muted text-sm">Loading shared configuration...</p>
+      <p className="text-text-muted text-ui-sm">Loading shared configuration...</p>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import type { BladeConfig, RGB } from '@bladeforge/engine';
+import type { UserPreset } from '@/lib/fontDB';
+import type { CardConfig } from '@/stores/saberProfileStore';
 
 const SCHEMA_ID = 'bladeforge-config';
 const SCHEMA_VERSION = 1;
@@ -113,13 +115,198 @@ export function downloadConfigAsFile(config: BladeConfig): void {
   URL.revokeObjectURL(url);
 }
 
+const MAX_CONFIG_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
 export function readConfigFromFile(file: File): Promise<BladeConfig> {
   return new Promise((resolve, reject) => {
+    if (file.size > MAX_CONFIG_FILE_SIZE) {
+      reject(new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 5 MB.`));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const config = deserializeConfig(reader.result as string);
         resolve(config);
+      } catch (err) {
+        reject(err instanceof Error ? err : new Error(String(err)));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+}
+
+// ─── Collection Import/Export ───
+
+const COLLECTION_SCHEMA = 'bladeforge-collection';
+const COLLECTION_VERSION = 1;
+
+interface CollectionFile {
+  $schema: string;
+  version: number;
+  presets: UserPreset[];
+  exportedAt: string;
+  exportedFrom: string;
+}
+
+export function serializeCollection(presets: UserPreset[]): string {
+  const file: CollectionFile = {
+    $schema: COLLECTION_SCHEMA,
+    version: COLLECTION_VERSION,
+    presets,
+    exportedAt: new Date().toISOString(),
+    exportedFrom: 'BladeForge v0.1.0',
+  };
+  return JSON.stringify(file, null, 2);
+}
+
+export function deserializeCollection(json: string): UserPreset[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error('Invalid JSON');
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('Expected a JSON object');
+  }
+
+  const file = parsed as Record<string, unknown>;
+
+  if (file.$schema !== COLLECTION_SCHEMA || !Array.isArray(file.presets)) {
+    throw new Error('Not a valid BladeForge collection file');
+  }
+
+  // Validate each preset has at least name and config
+  const presets = (file.presets as unknown[]).filter((p): p is UserPreset => {
+    if (typeof p !== 'object' || p === null) return false;
+    const obj = p as Record<string, unknown>;
+    return typeof obj.name === 'string' && validateBladeConfig(obj.config);
+  });
+
+  return presets;
+}
+
+export function downloadCollection(presets: UserPreset[], filename?: string): void {
+  const json = serializeCollection(presets);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename ?? `presets.bladeforge-collection.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function readCollectionFile(file: File): Promise<UserPreset[]> {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_CONFIG_FILE_SIZE) {
+      reject(new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 5 MB.`));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const presets = deserializeCollection(reader.result as string);
+        resolve(presets);
+      } catch (err) {
+        reject(err instanceof Error ? err : new Error(String(err)));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsText(file);
+  });
+}
+
+// ─── Card Preset Template Export/Import ───
+
+const CARD_TEMPLATE_SCHEMA = 'bladeforge-card';
+const CARD_TEMPLATE_VERSION = 1;
+
+interface CardTemplateFile {
+  $schema: string;
+  version: number;
+  name: string;
+  entries: Array<{
+    presetName: string;
+    fontName: string;
+    config: BladeConfig;
+    source: { type: string; presetId?: string; userPresetId?: string };
+  }>;
+  exportedAt: string;
+  exportedFrom: string;
+}
+
+export function serializeCardTemplate(cardConfig: CardConfig): string {
+  const file: CardTemplateFile = {
+    $schema: CARD_TEMPLATE_SCHEMA,
+    version: CARD_TEMPLATE_VERSION,
+    name: cardConfig.name,
+    entries: cardConfig.entries.map((e) => ({
+      presetName: e.presetName,
+      fontName: e.fontName,
+      config: e.config,
+      source: e.source,
+    })),
+    exportedAt: new Date().toISOString(),
+    exportedFrom: 'BladeForge v0.1.0',
+  };
+  return JSON.stringify(file, null, 2);
+}
+
+export function deserializeCardTemplate(json: string): { name: string; entries: CardTemplateFile['entries'] } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error('Invalid JSON');
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('Expected a JSON object');
+  }
+
+  const file = parsed as Record<string, unknown>;
+  if (file.$schema !== CARD_TEMPLATE_SCHEMA || !Array.isArray(file.entries)) {
+    throw new Error('Not a valid BladeForge card template file');
+  }
+
+  const entries = (file.entries as unknown[]).filter((e): e is CardTemplateFile['entries'][0] => {
+    if (typeof e !== 'object' || e === null) return false;
+    const obj = e as Record<string, unknown>;
+    return typeof obj.presetName === 'string' && typeof obj.fontName === 'string' && validateBladeConfig(obj.config);
+  });
+
+  return {
+    name: typeof file.name === 'string' ? file.name : 'Imported Template',
+    entries,
+  };
+}
+
+export function downloadCardTemplate(cardConfig: CardConfig, filename?: string): void {
+  const json = serializeCardTemplate(cardConfig);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename ?? `${cardConfig.name.replace(/\s+/g, '_')}.bladeforge-card.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function readCardTemplateFile(file: File): Promise<{ name: string; entries: CardTemplateFile['entries'] }> {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_CONFIG_FILE_SIZE) {
+      reject(new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 5 MB.`));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const result = deserializeCardTemplate(reader.result as string);
+        resolve(result);
       } catch (err) {
         reject(err instanceof Error ? err : new Error(String(err)));
       }

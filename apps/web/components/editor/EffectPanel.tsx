@@ -1,5 +1,24 @@
 'use client';
 import { useBladeStore } from '@/stores/bladeStore';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
+
+const EASING_PRESETS = [
+  { id: 'linear', label: 'Linear' },
+  { id: 'ease-in-quad', label: 'Ease In (Quad)' },
+  { id: 'ease-out-quad', label: 'Ease Out (Quad)' },
+  { id: 'ease-in-out-quad', label: 'Ease In-Out (Quad)' },
+  { id: 'ease-in-cubic', label: 'Ease In (Cubic)' },
+  { id: 'ease-out-cubic', label: 'Ease Out (Cubic)' },
+  { id: 'ease-in-out-cubic', label: 'Ease In-Out (Cubic)' },
+  { id: 'ease-in-quart', label: 'Ease In (Quart)' },
+  { id: 'ease-out-quart', label: 'Ease Out (Quart)' },
+  { id: 'ease-in-out-quart', label: 'Ease In-Out (Quart)' },
+  { id: 'ease-in-expo', label: 'Ease In (Expo)' },
+  { id: 'ease-out-expo', label: 'Ease Out (Expo)' },
+  { id: 'bounce', label: 'Bounce' },
+  { id: 'elastic', label: 'Elastic' },
+  { id: 'snap', label: 'Snap' },
+];
 
 const IGNITION_STYLES = [
   { id: 'standard', label: 'Standard', desc: 'Classic linear ignition' },
@@ -9,6 +28,10 @@ const IGNITION_STYLES = [
   { id: 'wipe', label: 'Wipe', desc: 'Soft wipe reveal' },
   { id: 'stutter', label: 'Stutter', desc: 'Flickering unstable ignition' },
   { id: 'glitch', label: 'Glitch', desc: 'Digital glitch effect' },
+  { id: 'twist', label: 'Twist', desc: 'Spiral ignition driven by twist' },
+  { id: 'swing', label: 'Swing', desc: 'Speed-reactive swing ignition' },
+  { id: 'stab', label: 'Stab', desc: 'Rapid center-out burst' },
+  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
 ];
 
 const RETRACTION_STYLES = [
@@ -16,7 +39,8 @@ const RETRACTION_STYLES = [
   { id: 'scroll', label: 'Scroll', desc: 'Scrolling retract' },
   { id: 'fadeout', label: 'Fade Out', desc: 'Fading retraction' },
   { id: 'center', label: 'Center In', desc: 'Retracts to center' },
-  { id: 'run', label: 'Run', desc: 'Running retraction' },
+  { id: 'shatter', label: 'Shatter', desc: 'Shattering retraction' },
+  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
 ];
 
 export function EffectPanel() {
@@ -27,48 +51,61 @@ export function EffectPanel() {
   const effectLog = useBladeStore((s) => s.effectLog);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Ignition */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Ignition Style
+          <HelpTooltip text="How the blade extends when activated. Controls the visual transition from off to on." proffie="InOutTrL<TrWipe<300>>" />
         </h3>
         <div className="grid grid-cols-2 gap-1.5">
           {IGNITION_STYLES.map((style) => (
             <button
               key={style.id}
               onClick={() => setIgnition(style.id)}
-              className={`text-left px-3 py-2 rounded text-xs transition-colors border ${
+              title={style.desc}
+              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
                 config.ignition === style.id
                   ? 'bg-accent-dim border-accent-border text-accent'
                   : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
               }`}
             >
-              <div className="font-medium">{style.label}</div>
-              <div className="text-[10px] text-text-muted mt-0.5">{style.desc}</div>
+              {style.label}
             </button>
           ))}
         </div>
+        {config.ignition === 'stutter' && (
+          <label className="flex items-center gap-2 mt-2 text-ui-xs text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={(config.stutterFullExtend as boolean | undefined) ?? true}
+              onChange={(e) => updateConfig({ stutterFullExtend: e.target.checked })}
+              className="accent-accent"
+            />
+            Full extend (blade always reaches full length)
+          </label>
+        )}
       </div>
 
       {/* Retraction */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Retraction Style
+          <HelpTooltip text="How the blade retracts when deactivated. Controls the visual transition from on to off." proffie="InOutTrL<..., TrWipeIn<300>>" />
         </h3>
         <div className="grid grid-cols-2 gap-1.5">
           {RETRACTION_STYLES.map((style) => (
             <button
               key={style.id}
               onClick={() => setRetraction(style.id)}
-              className={`text-left px-3 py-2 rounded text-xs transition-colors border ${
+              title={style.desc}
+              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
                 config.retraction === style.id
                   ? 'bg-accent-dim border-accent-border text-accent'
                   : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
               }`}
             >
-              <div className="font-medium">{style.label}</div>
-              <div className="text-[10px] text-text-muted mt-0.5">{style.desc}</div>
+              {style.label}
             </button>
           ))}
         </div>
@@ -76,13 +113,15 @@ export function EffectPanel() {
 
       {/* Duration sliders */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Timing
+          <HelpTooltip text="Duration in milliseconds for ignition and retraction animations. Lower = faster, higher = more dramatic. Typical range: 200-800ms." />
         </h3>
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-4">
           <div className="flex items-center gap-3">
-            <label className="text-xs text-text-secondary w-28 shrink-0">Ignition</label>
+            <label htmlFor="timing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
             <input
+              id="timing-ignition"
               type="range"
               min={100}
               max={1500}
@@ -91,13 +130,14 @@ export function EffectPanel() {
               onChange={(e) => updateConfig({ ignitionMs: Number(e.target.value) })}
               className="flex-1"
             />
-            <span className="text-[10px] text-text-muted font-mono w-14 text-right">
+            <span className="text-ui-sm text-text-muted font-mono w-14 text-right">
               {config.ignitionMs}ms
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-xs text-text-secondary w-28 shrink-0">Retraction</label>
+            <label htmlFor="timing-retraction" className="text-ui-xs text-text-secondary w-28 shrink-0">Retraction</label>
             <input
+              id="timing-retraction"
               type="range"
               min={100}
               max={1500}
@@ -106,21 +146,220 @@ export function EffectPanel() {
               onChange={(e) => updateConfig({ retractionMs: Number(e.target.value) })}
               className="flex-1"
             />
-            <span className="text-[10px] text-text-muted font-mono w-14 text-right">
+            <span className="text-ui-sm text-text-muted font-mono w-14 text-right">
               {config.retractionMs}ms
             </span>
           </div>
         </div>
       </div>
 
+      {/* Easing */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          Easing Curves
+          <HelpTooltip text="Controls the acceleration profile. Linear = constant speed. Ease In = starts slow. Ease Out = ends slow. Bounce/Elastic add physical spring effects." />
+        </h3>
+        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+          <div className="flex items-center gap-3">
+            <label htmlFor="easing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
+            <select
+              id="easing-ignition"
+              value={config.ignitionEasing?.type === 'preset' ? config.ignitionEasing.name : 'linear'}
+              onChange={(e) => updateConfig({ ignitionEasing: { type: 'preset', name: e.target.value } })}
+              className="touch-target flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-primary"
+            >
+              {EASING_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-3">
+            <label htmlFor="easing-retraction" className="text-ui-xs text-text-secondary w-28 shrink-0">Retraction</label>
+            <select
+              id="easing-retraction"
+              value={config.retractionEasing?.type === 'preset' ? config.retractionEasing.name : 'linear'}
+              onChange={(e) => updateConfig({ retractionEasing: { type: 'preset', name: e.target.value } })}
+              className="touch-target flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-primary"
+            >
+              {EASING_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Dual-Mode Ignition */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          Dual-Mode Ignition
+          <HelpTooltip text="When enabled, blade angle selects between two different ignition/retraction animations. Tilt up for one, tilt down for another." />
+        </h3>
+        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+          <label className="touch-target flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!config.dualModeIgnition}
+              onChange={(e) => updateConfig({ dualModeIgnition: e.target.checked })}
+              className="w-3 h-3 rounded border-border-subtle accent-[var(--color-accent)]"
+            />
+            <span className="text-ui-xs text-text-secondary">Enable angle-based ignition switching</span>
+          </label>
+
+          {config.dualModeIgnition && (
+            <>
+              <div className="flex items-center gap-3">
+                <label htmlFor="dual-angle-threshold" className="text-ui-xs text-text-secondary w-28 shrink-0">Angle Threshold</label>
+                <input
+                  id="dual-angle-threshold"
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={(config.ignitionAngleThreshold ?? 0.3) * 100}
+                  onChange={(e) => updateConfig({ ignitionAngleThreshold: Number(e.target.value) / 100 })}
+                  className="flex-1"
+                />
+                <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
+                  {Math.round((config.ignitionAngleThreshold ?? 0.3) * 100)}%
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="dual-ignition-up" className="text-ui-xs text-text-muted uppercase mb-1 block">Ignition Up</label>
+                  <select
+                    id="dual-ignition-up"
+                    value={config.ignitionUp ?? config.ignition}
+                    onChange={(e) => updateConfig({ ignitionUp: e.target.value })}
+                    className="touch-target w-full bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-xs text-text-primary"
+                  >
+                    {IGNITION_STYLES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="dual-ignition-down" className="text-ui-xs text-text-muted uppercase mb-1 block">Ignition Down</label>
+                  <select
+                    id="dual-ignition-down"
+                    value={config.ignitionDown ?? config.ignition}
+                    onChange={(e) => updateConfig({ ignitionDown: e.target.value })}
+                    className="touch-target w-full bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-xs text-text-primary"
+                  >
+                    {IGNITION_STYLES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="dual-retraction-up" className="text-ui-xs text-text-muted uppercase mb-1 block">Retraction Up</label>
+                  <select
+                    id="dual-retraction-up"
+                    value={config.retractionUp ?? config.retraction}
+                    onChange={(e) => updateConfig({ retractionUp: e.target.value })}
+                    className="touch-target w-full bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-xs text-text-primary"
+                  >
+                    {RETRACTION_STYLES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="dual-retraction-down" className="text-ui-xs text-text-muted uppercase mb-1 block">Retraction Down</label>
+                  <select
+                    id="dual-retraction-down"
+                    value={config.retractionDown ?? config.retraction}
+                    onChange={(e) => updateConfig({ retractionDown: e.target.value })}
+                    className="touch-target w-full bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-xs text-text-primary"
+                  >
+                    {RETRACTION_STYLES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Custom Curve Controls */}
+      {(config.ignition === 'custom-curve' || config.retraction === 'custom-curve') && (
+        <div>
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+            Curve Controls
+            <HelpTooltip text="Adjust the cubic Bezier control points to shape the ignition/retraction profile. X controls timing, Y controls intensity." />
+          </h3>
+          <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+            {config.ignition === 'custom-curve' && (
+              <div>
+                <label className="text-ui-xs text-text-muted uppercase mb-1.5 block">Ignition Curve</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['x1', 'y1', 'x2', 'y2'].map((label, i) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <span className="text-ui-xs text-text-muted w-6">{label}</span>
+                      <input
+                        type="range"
+                        aria-label={`Ignition curve control point ${label}`}
+                        min={0}
+                        max={100}
+                        value={(config.ignitionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100}
+                        onChange={(e) => {
+                          const curve = [...(config.ignitionCurve ?? [0.25, 0.1, 0.25, 1.0])] as [number, number, number, number];
+                          curve[i] = Number(e.target.value) / 100;
+                          updateConfig({ ignitionCurve: curve });
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="text-ui-xs text-text-muted font-mono w-8">
+                        {((config.ignitionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100).toFixed(0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {config.retraction === 'custom-curve' && (
+              <div>
+                <label className="text-ui-xs text-text-muted uppercase mb-1.5 block">Retraction Curve</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['x1', 'y1', 'x2', 'y2'].map((label, i) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <span className="text-ui-xs text-text-muted w-6">{label}</span>
+                      <input
+                        type="range"
+                        aria-label={`Retraction curve control point ${label}`}
+                        min={0}
+                        max={100}
+                        value={(config.retractionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100}
+                        onChange={(e) => {
+                          const curve = [...(config.retractionCurve ?? [0.25, 0.1, 0.25, 1.0])] as [number, number, number, number];
+                          curve[i] = Number(e.target.value) / 100;
+                          updateConfig({ retractionCurve: curve });
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="text-ui-xs text-text-muted font-mono w-8">
+                        {((config.retractionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100).toFixed(0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Effect log */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Effect Log
+          <HelpTooltip text="Chronological record of triggered effects during this session. Use keyboard shortcuts or toolbar buttons to trigger effects." />
         </h3>
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle max-h-[250px] overflow-y-auto">
           {effectLog.length === 0 ? (
-            <p className="text-xs text-text-muted italic">
+            <p className="text-ui-xs text-text-muted italic">
               No effects triggered yet. Use keyboard shortcuts or buttons to trigger effects.
             </p>
           ) : (
@@ -128,7 +367,7 @@ export function EffectPanel() {
               {effectLog.map((entry, i) => (
                 <div
                   key={`${entry}-${i}`}
-                  className="text-[11px] font-mono text-text-secondary py-0.5 border-b border-border-subtle last:border-0"
+                  className="text-ui-base font-mono text-text-secondary py-0.5 border-b border-border-subtle last:border-0"
                 >
                   {entry}
                 </div>
@@ -140,10 +379,10 @@ export function EffectPanel() {
 
       {/* Keyboard shortcuts */}
       <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
-        <h4 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-2">
+        <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
           Keyboard Shortcuts
         </h4>
-        <div className="grid grid-cols-2 gap-1 text-[10px]">
+        <div className="grid grid-cols-2 gap-1 text-ui-sm">
           <span className="text-text-muted">SPACE</span>
           <span className="text-text-secondary">Ignite/Retract</span>
           <span className="text-text-muted">C</span>

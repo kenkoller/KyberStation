@@ -23,7 +23,8 @@ export type {
 } from './types.js';
 
 export { buildAST } from './ASTBuilder.js';
-export type { BladeConfig, RGB } from './ASTBuilder.js';
+export type { BladeConfig, RGB, BuildOptions } from './ASTBuilder.js';
+export { EditArgManager, STANDARD_COLOR_ARGS } from './EditArgManager.js';
 export { emitCode } from './CodeEmitter.js';
 export { buildConfigFile } from './ConfigBuilder.js';
 export { validateAST } from './Validator.js';
@@ -49,10 +50,15 @@ export {
   listEmitterBoards,
 } from './emitters/index.js';
 
+// ─── C++ Style Parser ───
+
+export { parseStyleCode, tokenize, filterTokens, reconstructConfig } from './parser/index.js';
+export type { ParseResult, ParseError, ReconstructedConfig, Token, TokenType } from './parser/index.js';
+
 // ─── Convenience ───
 
 import type { EmitOptions } from './types.js';
-import type { BladeConfig } from './ASTBuilder.js';
+import type { BladeConfig, BuildOptions } from './ASTBuilder.js';
 import { buildAST } from './ASTBuilder.js';
 import { emitCode } from './CodeEmitter.js';
 
@@ -61,8 +67,8 @@ import { emitCode } from './CodeEmitter.js';
  */
 export function generateStyleCode(
   config: BladeConfig,
-  options?: EmitOptions,
+  options?: EmitOptions & BuildOptions,
 ): string {
-  const ast = buildAST(config);
+  const ast = buildAST(config, { editMode: options?.editMode });
   return emitCode(ast, options);
 }

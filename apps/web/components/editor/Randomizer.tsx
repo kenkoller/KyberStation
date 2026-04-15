@@ -18,7 +18,7 @@ const ALL_IGNITIONS = [
 ] as const;
 
 const ALL_RETRACTIONS = [
-  'standard', 'scroll', 'spark', 'center', 'wipe', 'stutter', 'glitch',
+  'standard', 'scroll', 'center', 'fadeout', 'shatter',
 ] as const;
 
 const STYLE_LABELS: Record<string, string> = {
@@ -156,16 +156,26 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
   };
 }
 
+/** Minimum brightness: at least one RGB channel must reach this value */
+const MIN_BRIGHTNESS = 80;
+
 function randomColorFromTheme(theme: ThemeDef): { r: number; g: number; b: number } {
   const range = pick(theme.hueRanges);
   const h = randRange(range[0], range[1]) % 360;
   const s = randRange(theme.satRange[0], theme.satRange[1]);
   const l = randRange(theme.lightRange[0], theme.lightRange[1]);
-  return hslToRgb(h, s, l);
-}
+  const color = hslToRgb(h, s, l);
 
-function randomColor(): { r: number; g: number; b: number } {
-  return randomColorFromTheme(THEMES.random);
+  // Enforce minimum brightness so blades are always visible
+  const maxChannel = Math.max(color.r, color.g, color.b);
+  if (maxChannel < MIN_BRIGHTNESS) {
+    const boost = MIN_BRIGHTNESS / Math.max(maxChannel, 1);
+    color.r = Math.min(255, Math.round(color.r * boost));
+    color.g = Math.min(255, Math.round(color.g * boost));
+    color.b = Math.min(255, Math.round(color.b * boost));
+  }
+
+  return color;
 }
 
 /** Generate a full random BladeConfig for a given theme. */
@@ -321,11 +331,11 @@ function MiniPreviewCard({
         <div className="w-3" style={{ backgroundColor: lockupHex }} />
       </div>
       {/* Style name */}
-      <span className="text-[10px] text-text-secondary truncate w-full text-center">
+      <span className="text-ui-sm text-text-secondary truncate w-full text-center">
         {STYLE_LABELS[config.style] ?? config.style}
       </span>
       {/* Timing info */}
-      <span className="text-[9px] text-text-muted font-mono">
+      <span className="text-ui-xs text-text-muted font-mono">
         {config.ignitionMs}ms / {config.retractionMs}ms
       </span>
     </button>
@@ -418,13 +428,13 @@ export function Randomizer() {
     <div className="space-y-5">
       {/* Surprise Me */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
           Style Generator
         </h3>
         <div className="flex gap-2">
           <button
             onClick={handleSurpriseMe}
-            className="relative flex-1 px-4 py-2.5 rounded text-sm font-medium transition-all border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent active:scale-[0.97] font-cinematic overflow-hidden group"
+            className="relative flex-1 px-4 py-2.5 rounded text-ui-sm font-medium transition-all border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent active:scale-[0.97] font-cinematic overflow-hidden group"
           >
             {/* Kyber glow pulse */}
             <span className="absolute inset-0 rounded bg-accent/5 animate-pulse pointer-events-none" />
@@ -433,7 +443,7 @@ export function Randomizer() {
           <button
             onClick={handleUndo}
             disabled={history.length === 0}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
+            className={`px-3 py-1.5 rounded text-ui-xs font-medium transition-colors border ${
               history.length > 0
                 ? 'border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
                 : 'border-border-subtle/50 text-text-muted/50 cursor-not-allowed'
@@ -447,7 +457,7 @@ export function Randomizer() {
 
       {/* Theme Presets */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
           Theme
         </h3>
         <div className="flex flex-wrap gap-1.5">
@@ -455,7 +465,7 @@ export function Randomizer() {
             <button
               key={key}
               onClick={() => setActiveTheme(key)}
-              className={`px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
+              className={`px-3 py-1.5 rounded text-ui-xs font-medium transition-colors border ${
                 activeTheme === key
                   ? 'border-accent bg-accent-dim text-accent'
                   : 'border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
@@ -469,7 +479,7 @@ export function Randomizer() {
 
       {/* Constrained Randomizer Locks */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
           Lock Parameters
         </h3>
         <div className="grid grid-cols-2 gap-2">
@@ -479,13 +489,13 @@ export function Randomizer() {
               <button
                 key={key}
                 onClick={() => toggleLock(key)}
-                className={`flex items-center gap-2 px-3 py-2 rounded text-xs transition-colors border ${
+                className={`flex items-center gap-2 px-3 py-2 rounded text-ui-xs transition-colors border ${
                   isLocked
                     ? 'border-accent/60 bg-accent-dim text-accent'
                     : 'border-border-subtle bg-bg-surface text-text-secondary hover:text-text-primary hover:border-border-light'
                 }`}
               >
-                <span className="text-sm">{isLocked ? '\u{1F512}' : '\u{1F513}'}</span>
+                <span className="text-ui-sm">{isLocked ? '\u{1F512}' : '\u{1F513}'}</span>
                 <span className="font-medium">{label}</span>
               </button>
             );
@@ -495,35 +505,35 @@ export function Randomizer() {
 
       {/* Mutation Mode */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
           Mutation Mode
         </h3>
         <button
           onClick={handleMutate}
-          className="w-full px-3 py-2 rounded text-xs font-medium transition-colors border border-border-subtle bg-bg-surface text-text-secondary hover:text-text-primary hover:border-border-light"
+          className="w-full px-3 py-2 rounded text-ui-xs font-medium transition-colors border border-border-subtle bg-bg-surface text-text-secondary hover:text-text-primary hover:border-border-light"
         >
           Nudge Current Config
         </button>
-        <p className="text-[10px] text-text-muted mt-1.5">
+        <p className="text-ui-sm text-text-muted mt-1.5">
           Randomly tweaks 2-4 parameters by small amounts. Great for iterating.
         </p>
       </div>
 
       {/* Batch Preview */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
           Batch Preview
         </h3>
         <button
           onClick={handleGenerateBatch}
-          className="w-full px-3 py-2 rounded text-xs font-medium transition-colors border border-border-subtle bg-bg-surface text-text-secondary hover:text-text-primary hover:border-border-light mb-3"
+          className="w-full px-3 py-2 rounded text-ui-xs font-medium transition-colors border border-border-subtle bg-bg-surface text-text-secondary hover:text-text-primary hover:border-border-light mb-3"
         >
           Generate 6 Variations
         </button>
 
         {showBatch && batchConfigs.length > 0 && (
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-2">
               {batchConfigs.map((bc, idx) => (
                 <MiniPreviewCard
                   key={idx}
@@ -537,7 +547,7 @@ export function Randomizer() {
               <button
                 onClick={handleApplyBatch}
                 disabled={selectedBatchIdx === null}
-                className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
+                className={`flex-1 px-3 py-1.5 rounded text-ui-xs font-medium transition-colors border ${
                   selectedBatchIdx !== null
                     ? 'border-accent bg-accent-dim text-accent hover:bg-accent/20'
                     : 'border-border-subtle/50 text-text-muted/50 cursor-not-allowed'
@@ -551,7 +561,7 @@ export function Randomizer() {
                   setBatchConfigs([]);
                   setSelectedBatchIdx(null);
                 }}
-                className="px-3 py-1.5 rounded text-xs font-medium transition-colors border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light"
+                className="px-3 py-1.5 rounded text-ui-xs font-medium transition-colors border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light"
               >
                 Dismiss
               </button>

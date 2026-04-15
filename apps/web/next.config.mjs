@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  // CSP is enforced via <meta httpEquiv> in layout.tsx for production builds.
+  // headers() is not served with output: 'export' and actively breaks
+  // dev mode by blocking Next.js inline scripts, so it is removed.
   transpilePackages: [
     '@bladeforge/engine',
     '@bladeforge/codegen',

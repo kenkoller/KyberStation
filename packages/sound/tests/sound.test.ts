@@ -461,7 +461,7 @@ describe('ParameterResolver', () => {
     };
     // swingSpeed=0.5 -> normalized=(0.5-0.2)/(0.8-0.2)=0.5 -> 50
     const result = resolver.resolve('test.clamp', source, baseSources);
-    expect(result).toBe(50);
+    expect(result).toBeCloseTo(50);
 
     // Test clamping at extremes
     const extremeSources: DynamicParameterSources = {

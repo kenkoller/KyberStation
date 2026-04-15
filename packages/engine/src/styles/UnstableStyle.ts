@@ -14,10 +14,12 @@ export class UnstableStyle extends BaseStyle {
     const pos = position;
     const t = time;
 
-    const crack = noise(pos * 30 + t * 8, t * 2);
+    const flicker = (context.config.flicker as number | undefined) ?? 0.5;
+
+    const crack = noise(pos * (20 + flicker * 20) + t * (6 + flicker * 4), t * 2);
     const spike = crack > 0.7 ? (crack - 0.7) * 3.33 : 0;
-    const jitter = noise(pos * 50 + t * 12) * shimmer * 2;
-    const bright = Math.min(1, 1 - shimmer + jitter);
+    const jitter = noise(pos * 50 + t * 12) * shimmer * flicker * 4;
+    const bright = Math.min(1, 1 - shimmer * flicker + jitter);
 
     let c: RGB = {
       r: Math.min(255, base.r * bright),

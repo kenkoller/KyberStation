@@ -8,6 +8,15 @@ export { EXTENDED_UNIVERSE_PRESETS } from './characters/extended-universe.js';
 export { LEGENDS_PRESETS } from './characters/legends.js';
 export { CREATIVE_COMMUNITY_PRESETS } from './characters/creative-community.js';
 
+export type { CardTemplate, CardTemplateEntry } from './templates/card-templates.js';
+export {
+  CARD_TEMPLATES,
+  ORIGINAL_TRILOGY_ESSENTIALS,
+  PREQUEL_COLLECTION,
+  DARK_SIDE_PACK,
+  DUELING_MINIMALIST,
+} from './templates/card-templates.js';
+
 import type { Preset } from './types.js';
 import { PREQUEL_ERA_PRESETS } from './characters/prequel-era.js';
 import { ORIGINAL_TRILOGY_PRESETS } from './characters/original-trilogy.js';

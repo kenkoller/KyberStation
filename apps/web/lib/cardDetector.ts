@@ -27,18 +27,6 @@ async function fileExists(
   }
 }
 
-async function directoryExists(
-  dirHandle: FileSystemDirectoryHandle,
-  dirName: string,
-): Promise<boolean> {
-  try {
-    await dirHandle.getDirectoryHandle(dirName);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function readFileText(
   dirHandle: FileSystemDirectoryHandle,
   fileName: string,
@@ -56,7 +44,7 @@ async function listDirectoryNames(
   dirHandle: FileSystemDirectoryHandle,
 ): Promise<string[]> {
   const names: string[] = [];
-  for await (const [name, handle] of dirHandle.entries()) {
+  for await (const [name, handle] of (dirHandle as any).entries()) {
     if (handle.kind === 'directory') {
       names.push(name);
     }
@@ -68,7 +56,7 @@ async function listFileNames(
   dirHandle: FileSystemDirectoryHandle,
 ): Promise<string[]> {
   const names: string[] = [];
-  for await (const [name, handle] of dirHandle.entries()) {
+  for await (const [name, handle] of (dirHandle as any).entries()) {
     if (handle.kind === 'file') {
       names.push(name);
     }
@@ -170,13 +158,18 @@ export async function detectBoardFromDirectory(
     if (content) {
       try {
         const parsed = JSON.parse(content);
-        const isXeno =
-          parsed.profiles !== undefined ||
-          parsed.generator !== undefined ||
-          (typeof parsed === 'object' && 'version' in parsed);
-        if (isXeno) {
-          evidence.push('config.json contains Xenopixel-style structure');
-          return { boardId: 'xenopixel', confidence: 'high', evidence };
+        // Validate parsed JSON is a plain object before accessing properties
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          evidence.push('config.json is not a valid object');
+        } else {
+          const isXeno =
+            'profiles' in parsed ||
+            'generator' in parsed ||
+            'version' in parsed;
+          if (isXeno) {
+            evidence.push('config.json contains Xenopixel-style structure');
+            return { boardId: 'xenopixel', confidence: 'high', evidence };
+          }
         }
       } catch {
         // Invalid JSON

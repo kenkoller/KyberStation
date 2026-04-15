@@ -25,3 +25,7 @@ export { AudioFilterChain } from './filters/AudioFilterChain.js';
 export { FILTER_CHAIN_PRESETS } from './filters/presets.js';
 
 export { FontPlayer } from './FontPlayer.js';
+export { SmoothSwingEngine } from './SmoothSwingEngine.js';
+
+export { parseFileList, extractFontName, decodeFilesByCategory, scanDirectoryHandle, loadFontFromDirectoryHandle } from './FontParser.js';
+export type { LibraryFontEntry } from './FontParser.js';

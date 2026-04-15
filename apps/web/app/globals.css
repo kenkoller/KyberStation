@@ -7,32 +7,179 @@
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-deep: #06060a;
-  --bg-primary: #0a0a10;
-  --bg-secondary: #0e0e16;
-  --bg-surface: #14141e;
-  --bg-card: #181824;
-  --accent: #4a9eff;
+  /* Channel-format: space-separated RGB for Tailwind opacity modifiers */
+  --bg-deep: 6 6 10;
+  --bg-primary: 10 10 16;
+  --bg-secondary: 14 14 22;
+  --bg-surface: 20 20 30;
+  --bg-card: 24 24 36;
+  --accent: 74 158 255;
+  --accent-warm: 255 107 53;
+  --text-primary: 208 212 220;
+  --text-secondary: 138 143 154;
+  --text-muted: 74 78 88;
+  /* Full-value: rgba with baked-in alpha */
   --accent-dim: rgba(74, 158, 255, 0.08);
   --accent-border: rgba(74, 158, 255, 0.20);
-  --accent-warm: #ff6b35;
-  --text-primary: #d0d4dc;
-  --text-secondary: #8a8f9a;
-  --text-muted: #4a4e58;
   --border-subtle: rgba(255, 255, 255, 0.04);
   --border-light: rgba(255, 255, 255, 0.08);
+  /* Ambient + crystal */
+  --ambient-intensity: 1;
+  --crystal-color: #4a9eff;
+  /* ─── Status Colors (colorblind-overridable) ─── */
+  --status-ok: 34 197 94;
+  --status-warn: 234 179 8;
+  --status-error: 239 68 68;
+  --status-info: 59 130 246;
+  /* ─── Font Scale ─── */
+  --font-scale: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Scalable UI Text Classes
+   All components use these instead of hardcoded text-[Xpx].
+   Font scale is driven by --font-scale (set by useAccessibilityApplier).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.text-ui-xs   { font-size: calc(9px * var(--font-scale));  line-height: 1.4; }
+.text-ui-sm   { font-size: calc(10px * var(--font-scale)); line-height: 1.4; }
+.text-ui-base { font-size: calc(11px * var(--font-scale)); line-height: 1.5; }
+.text-ui-md   { font-size: calc(12px * var(--font-scale)); line-height: 1.5; }
+.text-ui-lg   { font-size: calc(13px * var(--font-scale)); line-height: 1.5; }
+.text-ui-xl   { font-size: calc(14px * var(--font-scale)); line-height: 1.5; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: High Contrast Mode
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.high-contrast {
+  --bg-deep: 0 0 0;
+  --bg-primary: 0 0 0;
+  --bg-secondary: 10 10 10;
+  --bg-surface: 20 20 20;
+  --bg-card: 25 25 25;
+  --text-primary: 255 255 255;
+  --text-secondary: 220 220 220;
+  --text-muted: 180 180 180;
+  --accent: 100 180 255;
+  --border-subtle: rgba(255, 255, 255, 0.15);
+  --border-light: rgba(255, 255, 255, 0.25);
+  --accent-dim: rgba(100, 180, 255, 0.15);
+  --accent-border: rgba(100, 180, 255, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Colorblind-Safe Palettes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Deuteranopia (red-green, most common ~6% males) */
+.cb-deuteranopia {
+  --status-ok: 59 130 246;
+  --status-warn: 234 179 8;
+  --status-error: 249 115 22;
+}
+
+/* Protanopia (red-weak) */
+.cb-protanopia {
+  --status-ok: 59 130 246;
+  --status-warn: 234 179 8;
+  --status-error: 249 115 22;
+}
+
+/* Tritanopia (blue-yellow, rare) */
+.cb-tritanopia {
+  --status-ok: 34 197 94;
+  --status-warn: 249 115 22;
+  --status-error: 239 68 68;
+  --status-info: 168 85 247;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Reduced Motion (user toggle override)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Touch Targets (WCAG 2.5.5 — 44px minimum on touch devices)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+    margin-top: -12px;
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Focus & Screen Reader
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+*:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* Smooth theme transitions — colors animate when switching scene themes */
+*,
+*::before,
+*::after {
+  transition-property: background-color, color, border-color, fill, stroke;
+  transition-duration: 300ms;
+  transition-timing-function: ease;
+}
+
+/* Exclude canvases and elements with explicit Tailwind transitions from the global rule */
+canvas {
+  transition: none;
+}
+
 html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: rgb(var(--bg-primary));
+  color: rgb(var(--text-primary));
   font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -68,27 +215,36 @@ input[type='range'] {
   appearance: none;
   height: 4px;
   border-radius: 2px;
-  background: var(--bg-deep);
+  background: rgb(var(--bg-deep));
   outline: none;
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
+  position: relative;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--accent);
+  background: rgb(var(--accent));
   cursor: pointer;
-  border: 2px solid var(--bg-secondary);
-  box-shadow: 0 0 6px rgba(74, 158, 255, 0.3);
+  border: 2px solid rgb(var(--bg-secondary));
+  box-shadow: 0 0 6px rgb(var(--accent) / 0.3);
+  margin-top: -6px;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
 }
 input[type='range']::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  position: relative;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--accent);
+  background: rgb(var(--accent));
   cursor: pointer;
-  border: 2px solid var(--bg-secondary);
-  box-shadow: 0 0 6px rgba(74, 158, 255, 0.3);
+  border: 2px solid rgb(var(--bg-secondary));
+  box-shadow: 0 0 6px rgb(var(--accent) / 0.3);
 }
 
 /* Ignite button animations */
@@ -110,6 +266,17 @@ input[type='range']::-moz-range-thumb {
 .card-hover:hover {
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Disable hover transforms under reduced motion */
+.reduced-motion .card-hover:hover {
+  transform: none;
+}
+.reduced-motion .gallery-card:hover {
+  transform: none;
+}
+.reduced-motion .blade-glow:hover::before {
+  opacity: 0;
 }
 
 /* ─── Star Wars Typography ─── */
@@ -220,10 +387,7 @@ input[type='range']::-moz-range-thumb {
    temple aesthetics. All pure CSS, designed to be subtle and non-competing.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-:root {
-  --ambient-intensity: 1;
-  --crystal-color: #4a9eff;
-}
+/* ambient-intensity and crystal-color are in the main :root block above */
 
 /* Kill all ambient animations when user prefers or class is set */
 .ambient-off .holo-scanline::after,
@@ -256,39 +420,7 @@ input[type='range']::-moz-range-thumb {
   }
 }
 
-/* ─── 1. Holographic Scan Line ─── */
-
-@keyframes holo-scan {
-  0% { top: -2px; }
-  100% { top: 100%; }
-}
-
-.holo-scanline {
-  position: relative;
-  overflow: hidden;
-}
-
-.holo-scanline::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -2px;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(74, 158, 255, 0.06) 20%,
-    rgba(74, 158, 255, 0.12) 50%,
-    rgba(74, 158, 255, 0.06) 80%,
-    transparent 100%
-  );
-  box-shadow: 0 0 8px rgba(74, 158, 255, 0.05);
-  opacity: calc(1 * var(--ambient-intensity));
-  animation: holo-scan 8s linear infinite;
-  pointer-events: none;
-  z-index: 10;
-}
+/* ─── 1. Holographic Scan Line (removed — distracting) ─── */
 
 /* ─── 2. Ambient Particle Drift ─── */
 
@@ -360,7 +492,7 @@ input[type='range']::-moz-range-thumb {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--accent);
+  background: rgb(var(--accent));
   animation: console-fast-blink 1s step-end infinite;
 }
 
@@ -408,7 +540,7 @@ input[type='range']::-moz-range-thumb {
   line-height: 1.6;
   letter-spacing: 0.15em;
   font-family: monospace;
-  color: rgba(74, 158, 255, 0.06);
+  color: rgb(var(--accent) / 0.06);
   writing-mode: vertical-rl;
   white-space: nowrap;
   opacity: calc(1 * var(--ambient-intensity));
@@ -429,14 +561,14 @@ input[type='range']::-moz-range-thumb {
   background-origin: border-box;
   background-clip: padding-box, border-box;
   background-image:
-    linear-gradient(var(--bg-surface), var(--bg-surface)),
+    linear-gradient(rgb(var(--bg-surface)), rgb(var(--bg-surface))),
     linear-gradient(
       135deg,
-      rgba(74, 158, 255, 0.03) 0%,
-      rgba(74, 158, 255, 0.12) 25%,
-      rgba(74, 158, 255, 0.03) 50%,
-      rgba(74, 158, 255, 0.12) 75%,
-      rgba(74, 158, 255, 0.03) 100%
+      rgb(var(--accent) / 0.03) 0%,
+      rgb(var(--accent) / 0.12) 25%,
+      rgb(var(--accent) / 0.03) 50%,
+      rgb(var(--accent) / 0.12) 75%,
+      rgb(var(--accent) / 0.03) 100%
     );
   background-size: 100% 100%, 200% 200%;
   opacity: calc(1 * var(--ambient-intensity));
@@ -532,12 +664,12 @@ input[type='range']::-moz-range-thumb {
   inset: 0;
   background-image:
     linear-gradient(
-      rgba(74, 158, 255, 0.03) 1px,
+      rgb(var(--accent) / 0.03) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(74, 158, 255, 0.03) 1px,
+      rgb(var(--accent) / 0.03) 1px,
       transparent 1px
     );
   background-size: 24px 24px;

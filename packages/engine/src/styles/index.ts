@@ -11,6 +11,8 @@ import { CrystalShatterStyle } from './CrystalShatterStyle.js';
 import { AuroraStyle } from './AuroraStyle.js';
 import { CinderStyle } from './CinderStyle.js';
 import { PrismStyle } from './PrismStyle.js';
+import { PaintedStyle } from './PaintedStyle.js';
+import { ImageScrollStyle } from './ImageScrollStyle.js';
 
 export { BaseStyle } from './BaseStyle.js';
 export { StableStyle } from './StableStyle.js';
@@ -25,6 +27,8 @@ export { CrystalShatterStyle } from './CrystalShatterStyle.js';
 export { AuroraStyle } from './AuroraStyle.js';
 export { CinderStyle } from './CinderStyle.js';
 export { PrismStyle } from './PrismStyle.js';
+export { PaintedStyle } from './PaintedStyle.js';
+export { ImageScrollStyle } from './ImageScrollStyle.js';
 
 /** Registry of all available blade styles, keyed by style ID. */
 export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
@@ -40,6 +44,8 @@ export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
   aurora: () => new AuroraStyle(),
   cinder: () => new CinderStyle(),
   prism: () => new PrismStyle(),
+  painted: () => new PaintedStyle(),
+  imageScroll: () => new ImageScrollStyle(),
 };
 
 /**

@@ -16,7 +16,8 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 ### Code Generation
 - AST-based ProffieOS C++ code emitter — balanced angle brackets, valid template nesting
 - Full config.h generation with Layers<>, BlastL<>, InOutTrL<>, transitions, functions
-- Guaranteed compilable output for Arduino IDE with Proffieboard board manager
+- ProffieOS 7.x compilation validated via arduino-cli (23-preset config, 264 KB / 52% flash)
+- Correct `SaberBase::` enum prefixes, `maxLedsPerStrip` placement, `CONFIG_PROP` section separation
 
 ### Multi-Board Support (14 boards)
 - Proffieboard V2.2, V3.9, Lite, and Clone variants
@@ -35,8 +36,50 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - Dynamic filter parameters driven by swing speed, blade angle, twist, LFO, or noise
 - 6 built-in filter chain presets
 
+### User Presets & Collections
+- Save any blade configuration as a reusable preset in your personal library
+- Tag, search, sort, duplicate, and organize presets
+- Export/import preset collections as `.bladeforge-collection.json` bundles
+- Thumbnail auto-capture from the blade canvas
+
+### Font Library
+- Directory picker scans your local sound font collection (Chromium browsers)
+- Auto-detects format (Proffie, CFX, Generic), SmoothSwing pairs, completeness
+- Load, pair with presets, and persist folder selection across sessions via IndexedDB
+
+### Saber Profiles & Card Presets
+- Create named saber profiles with multiple card configs ("Dueling Set", "Display Set")
+- Card Preset Composer — add from Gallery, My Presets, or current editor state
+- 4 built-in starter templates (OT Essentials, Prequel Collection, Dark Side Pack, Dueling Minimalist)
+- Storage budget estimation per preset entry with real font sizes when library connected
+- SD Card Writer — generate a ZIP with config.h and font directories, ready to extract
+
 ### Sharing
 - Kyber Code system — compact config URLs with deflate compression + base64url encoding
+- Single config, preset collection, and card template import/export
+
+### Accessibility
+- Reduced motion auto-sync from OS `prefers-reduced-motion`
+- Keyboard-only drag-and-drop alternative (Alt+Arrow keys)
+- ARIA labels, focus traps, and color-only indicator text fallbacks
+- Responsive grid layouts, 44px minimum touch targets
+- 9 scene themes for full UI theming
+
+## Status
+
+### Phase 1 Bug Fixes (Complete)
+- Stutter ignition timing corrected
+- Crystal Shatter retraction animation fixed
+- Photon/pixel render sync resolved
+- Responsive breakpoints tuned for mobile and tablet viewports
+- Hex color input added to the color panel
+- Gallery preset tag contrast improved for readability
+- Canvas RGB graph improvements: Y-axis labels, consistent spacing
+
+### ProffieOS Codegen Validation (Complete)
+- Generated config.h compiles against ProffieOS 7.x without modification
+- 23-preset config compiled successfully (264 KB, 52% of available flash)
+- Validated via `arduino-cli` with Proffieboard V3 FQBN
 
 ## Quick Start
 
@@ -88,7 +131,8 @@ bladeforge/
 │   ├── app/               # Pages: landing, editor, share link handler
 │   ├── components/        # Editor panels, shared UI, layout
 │   ├── hooks/             # useBladeEngine, useAnimationFrame, etc.
-│   └── lib/               # Zustand store, config I/O, Kyber Code encoding
+│   ├── stores/            # Zustand stores (blade, UI, presets, profiles, audio, accessibility)
+│   └── lib/               # Config I/O, Kyber Code encoding, IndexedDB
 ├── packages/engine/       # Headless blade simulation engine
 │   ├── styles/            # 12 style implementations
 │   ├── effects/           # 8 effect types
@@ -114,7 +158,7 @@ bladeforge/
 | Rendering | HTML5 Canvas 2D |
 | Audio | Web Audio API |
 | Code Generation | Custom AST → C++ emitter |
-| Storage | IndexedDB (via Dexie.js) |
+| Storage | IndexedDB (Dexie.js) — fonts, presets, profiles, library handles |
 | Testing | Vitest + React Testing Library |
 | Build | pnpm workspaces (Turborepo optional) |
 

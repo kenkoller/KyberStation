@@ -181,13 +181,15 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   // Scale: shimmer is 0-1 in config but 0-100 in UI
   const isShimmer = param.key === 'shimmer';
   const displayValue = isShimmer ? Math.round(value * 100) : value;
+  const inputId = `param-slider-${param.key}`;
 
   return (
     <div className="flex items-center gap-2">
-      <label className="text-[11px] text-text-secondary w-24 shrink-0 truncate" title={param.description}>
+      <label htmlFor={inputId} className="text-ui-base text-text-secondary w-24 shrink-0 truncate" title={param.description}>
         {param.label}
       </label>
       <input
+        id={inputId}
         type="range"
         min={param.min}
         max={param.max}
@@ -198,8 +200,11 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
           onChange(isShimmer ? v / 100 : v);
         }}
         className="flex-1 min-w-0"
+        aria-valuemin={param.min}
+        aria-valuemax={param.max}
+        aria-valuenow={displayValue}
       />
-      <span className="text-[10px] text-text-muted font-mono w-10 text-right shrink-0">
+      <span className="text-ui-sm text-text-muted font-mono w-10 text-right shrink-0">
         {displayValue}{param.unit || ''}
       </span>
     </div>
@@ -208,16 +213,18 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
 
 function ColorControl({ param, value, onChange }: { param: ColorParam; value?: { r: number; g: number; b: number }; onChange: (v: { r: number; g: number; b: number }) => void }) {
   const color = value ?? { r: 255, g: 255, b: 255 };
+  const inputId = `param-color-${param.key}`;
   return (
     <div className="flex items-center gap-2">
-      <label className="text-[11px] text-text-secondary w-24 shrink-0">{param.label}</label>
+      <label htmlFor={inputId} className="text-ui-base text-text-secondary w-24 shrink-0">{param.label}</label>
       <input
+        id={inputId}
         type="color"
         value={rgbToHex(color.r, color.g, color.b)}
         onChange={(e) => onChange(hexToRgb(e.target.value))}
-        className="w-8 h-6 rounded cursor-pointer border border-border-subtle bg-transparent"
+        className="w-8 h-6 rounded cursor-pointer border border-border-subtle bg-transparent touch-target"
       />
-      <span className="text-[10px] text-text-muted font-mono">
+      <span className="text-ui-sm text-text-muted font-mono">
         {color.r},{color.g},{color.b}
       </span>
     </div>
@@ -225,13 +232,15 @@ function ColorControl({ param, value, onChange }: { param: ColorParam; value?: {
 }
 
 function SelectControl({ param, value, onChange }: { param: SelectParam; value: string; onChange: (v: string) => void }) {
+  const inputId = `param-select-${param.key}`;
   return (
     <div className="flex items-center gap-2">
-      <label className="text-[11px] text-text-secondary w-24 shrink-0">{param.label}</label>
+      <label htmlFor={inputId} className="text-ui-base text-text-secondary w-24 shrink-0">{param.label}</label>
       <select
+        id={inputId}
         value={value ?? param.default}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1 text-[11px] text-text-primary"
+        className="flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-base text-text-primary touch-target"
       >
         {param.options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -264,22 +273,24 @@ function ParamGroupAccordion({ group, isOpen, onToggle }: { group: ParamGroup; i
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-2 px-3 py-2.5 bg-bg-surface hover:bg-bg-card transition-colors text-left"
+        aria-expanded={isOpen}
+        aria-controls={`param-group-${group.id}`}
       >
-        <span className="text-[10px] text-text-muted font-mono w-6">{group.icon}</span>
-        <span className="text-xs font-medium text-text-primary flex-1">{group.label}</span>
+        <span className="text-ui-sm text-text-muted font-mono w-6" aria-hidden="true">{group.icon}</span>
+        <span className="text-ui-xs font-medium text-text-primary flex-1">{group.label}</span>
         {activeCount > 0 && (
-          <span className="text-[9px] bg-accent-dim text-accent px-1.5 py-0.5 rounded-full border border-accent-border">
+          <span className="text-ui-xs bg-accent-dim text-accent px-1.5 py-0.5 rounded-full border border-accent-border" aria-label={`${activeCount} active parameter${activeCount !== 1 ? 's' : ''}`}>
             {activeCount}
           </span>
         )}
-        <span className={`text-text-muted text-xs transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+        <span className={`text-text-muted text-ui-xs transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true">
           ▾
         </span>
       </button>
 
       {isOpen && (
-        <div className="px-3 py-3 space-y-2.5 bg-bg-deep/50 border-t border-border-subtle">
-          <p className="text-[9px] text-text-muted mb-2">{group.description}</p>
+        <div id={`param-group-${group.id}`} className="px-3 py-3 space-y-2.5 bg-bg-deep/50 border-t border-border-subtle">
+          <p className="text-ui-xs text-text-muted mb-2">{group.description}</p>
           {group.params.map((param) => {
             const val = config[param.key as keyof typeof config];
             if (param.type === 'slider') {
@@ -326,7 +337,7 @@ function ParamGroupAccordion({ group, isOpen, onToggle }: { group: ParamGroup; i
               }
               updateConfig(reset);
             }}
-            className="text-[10px] text-text-muted hover:text-red-400 transition-colors mt-1"
+            className="text-ui-sm text-text-muted hover:text-red-400 transition-colors mt-1 touch-target"
           >
             Reset group
           </button>
@@ -367,14 +378,16 @@ export function ParameterBank() {
       {/* Quick-Access Slider Bank */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold">
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
             Quick Parameters
           </h3>
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`text-[10px] font-medium transition-colors ${
+            className={`text-ui-sm font-medium transition-colors touch-target ${
               showAdvanced ? 'text-accent' : 'text-text-muted hover:text-text-secondary'
             }`}
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-params-section"
           >
             {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
           </button>
@@ -397,21 +410,21 @@ export function ParameterBank() {
 
       {/* Advanced Parameter Groups (accordion) */}
       {showAdvanced && (
-        <div>
+        <div id="advanced-params-section">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold">
+            <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
               Advanced Parameters
             </h3>
             <div className="flex gap-2">
               <button
                 onClick={expandAll}
-                className="text-[9px] text-text-muted hover:text-text-secondary transition-colors"
+                className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors touch-target"
               >
                 Expand all
               </button>
               <button
                 onClick={collapseAll}
-                className="text-[9px] text-text-muted hover:text-text-secondary transition-colors"
+                className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors touch-target"
               >
                 Collapse all
               </button>
@@ -442,7 +455,7 @@ export function ParameterBank() {
               }
               updateConfig(reset);
             }}
-            className="mt-3 text-[10px] text-text-muted hover:text-red-400 transition-colors"
+            className="mt-3 text-ui-sm text-text-muted hover:text-red-400 transition-colors touch-target"
           >
             Reset all advanced parameters
           </button>

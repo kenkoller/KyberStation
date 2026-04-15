@@ -34,7 +34,7 @@ No circular dependencies. Engine is the leaf — everything depends on it, it de
 The simulation core. 42 source files, 398 tests.
 
 **Key classes:**
-- `BladeEngine` — Main engine. Owns an `LEDArray`, `MotionSimulator`, active style/effects/ignition instances. Call `update(deltaMs, config)` each frame, then `getPixels()` for the LED color array.
+- `BladeEngine` — Main engine. Owns an `LEDArray`, `MotionSimulator`, active style/effects/ignition instances. Call `update(deltaMs, config)` each frame, then `getPixels()` for the LED color array. Segment rendering is wrapped in try-catch for error recovery — a failing segment does not blank the entire blade.
 - `LEDArray` — LED buffer management. Provides color utilities: `lerpColor`, `scaleColor`, `hslToRgb`, blend modes (add, screen, multiply).
 - `MotionSimulator` — IMU emulation. Produces swing speed, blade angle, and twist values for the `StyleContext`.
 
@@ -47,7 +47,8 @@ The simulation core. 42 source files, 398 tests.
 - `BladeState` enum: OFF, IGNITING, ON, RETRACTING
 - `BladeStyle` interface: `getColor(position, time, context): RGB`
 - `BladeEffect` interface: `apply()`, `isActive()`, `trigger()`, `release()`, `reset()`
-- `IgnitionAnimation` interface: `getMask(position, progress): number` (0–1)
+- `IgnitionAnimation` interface: `getMask(position, progress, context?): number` (0–1)
+- `IgnitionContext` — bladeAngle, swingSpeed, twistAngle, config (optional BladeConfig reference for configurable ignitions like StutterIgnition's `stutterFullExtend`)
 - `StyleContext` — time, swingSpeed, bladeAngle, twistAngle, soundLevel, batteryLevel, config
 - `BladeTopology` — segments, total LED count, topology type
 - `BladeSegment` — startLED, endLED, direction, layers, ignition config, segment role
@@ -63,15 +64,22 @@ Converts `BladeConfig` objects into valid ProffieOS C++ code.
 
 **Key files:**
 - `types.ts` — `StyleNode` with type (template | color | integer | function | transition | wrapper | mix | raw), name, and args array.
-- `ASTBuilder.ts` — `buildAST(config)` maps style/effect/ignition settings to the correct ProffieOS template nesting.
+- `ASTBuilder.ts` — `buildAST(config)` maps style/effect/ignition settings to the correct ProffieOS template nesting. Uses `SaberBase::` prefixed lockup types (`LOCKUP_NORMAL`, `LOCKUP_DRAG`, `LOCKUP_LIGHTNING_BLOCK`, `LOCKUP_MELT`) and correct transition names (`TrWipeSparkTip`, not `TrSparkWipeTip`).
 - `CodeEmitter.ts` — `emitCode(ast, options)` walks the AST and emits formatted C++ with proper angle bracket balancing.
-- `Validator.ts` — `validateAST(ast)` checks template argument counts, type compatibility, nesting depth.
-- `ConfigBuilder.ts` — `buildConfigFile(options)` generates a complete `config.h` with `#ifdef`s, blade arrays, preset arrays, and prop file includes.
+- `Validator.ts` — `validateAST(ast)` checks template argument counts, type compatibility, nesting depth. Validates `SaberBase::` enum prefixes.
+- `ConfigBuilder.ts` — `buildConfigFile(options)` generates a complete `config.h` with `#ifdef`s, blade arrays, preset arrays, and prop file includes. Emits `maxLedsPerStrip` as a top-level constant (required by ProffieOS) and separates `CONFIG_PROP` into its own `#ifdef` section as required by the ProffieOS preprocessor.
 - `templates/` — Template definitions for colors, functions, layers, transitions, and wrappers. Each maps a ProffieOS template name to its expected argument types.
+
+**ProffieOS compilation requirements:** The codegen output has been validated against ProffieOS 7.x via `arduino-cli`. Key requirements enforced by the pipeline:
+- `maxLedsPerStrip` declared before blade arrays (ProffieOS global, not inside a config section).
+- `SaberBase::LOCKUP_*` enum values use the fully qualified `SaberBase::` prefix.
+- `CONFIG_PROP` section separated from `CONFIG_PRESETS` (ProffieOS processes them in distinct passes).
+- Transition template names match ProffieOS headers exactly (e.g. `TrWipeSparkTip`, not `TrSparkWipeTip`).
+- A 23-preset config compiled successfully at 264 KB (52% of available flash).
 
 ### packages/boards
 
-14 board profiles with capability matrices.
+14 board profiles with capability matrices. Each profile declares supported features, LED limits, color profile count, and sub-blade support. Used by the UI to filter presets and by the codegen to select the correct board header and compilation options.
 
 **Tier system:**
 - **Tier 1** — Full custom styles (Proffieboard V2, V3): unlimited color profiles, custom everything, layer compositing, sub-blade support.
@@ -96,15 +104,107 @@ Static, Swing Speed, Blade Angle, Twist Angle, Sound Level, Battery Level, Ignit
 
 ### packages/presets
 
-Character preset library organized by era: Prequel, Original Trilogy, Sequel, Animated Series, Expanded Universe. Each preset is a `BladeConfig` with metadata (character name, era, affiliation, description).
+Character preset library organized by era: Prequel, Original Trilogy, Sequel, Animated Series, Expanded Universe, Legends, Creative Community. Each preset is a `BladeConfig` with metadata (character name, era, affiliation, description).
+
+**Card preset templates** (`templates/card-templates.ts`): 4 built-in card preset collections for quick saber profile setup:
+- Original Trilogy Essentials (6 presets)
+- Prequel Collection (7 presets)
+- Dark Side Pack (6 presets)
+- Dueling Minimalist (4 presets)
+
+Each template entry has a `presetName`, `fontName`, `source: { type: 'builtin', presetId }`, and a full inline `BladeConfig`.
 
 ## Web App Architecture
 
 ### State Management
 
-Two Zustand stores:
+Seven Zustand stores:
 - **bladeStore** — Blade config, topology, active segment, blade state, motion sim parameters, effect log. All engine-facing state.
-- **uiStore** — View mode (blade/angle/strip/cross), active tab, brightness, HUD toggle. All UI-facing state.
+- **uiStore** — View mode (blade/angle/strip/cross/uv-unwrap), render mode (photorealistic/pixel), canvas mode (2d/3d), active tab, brightness, HUD toggle, canvas theme, effect comparison toggle, active color channel, analyze mode (toggle pixel strip + RGB graph visibility for clean/analyze view).
+- **userPresetStore** — User-created preset collection. Hydrates from IndexedDB on mount. CRUD operations: save, update, delete, duplicate, reorder. Import/export for `.bladeforge-collection.json` bundles.
+- **saberProfileStore** — Saber profiles, card configs, and card preset entries. Each profile has multiple named card configs; each config has an ordered list of `CardPresetEntry` objects. Persists to IndexedDB.
+- **presetListStore** — Legacy preset list management (predates card configs). Still used by older export paths.
+- **audioFontStore** — Sound font state: loaded font data, playback, and font library. Library state includes `libraryHandle` (persisted `FileSystemDirectoryHandle`), `libraryFonts` (scanned `LibraryFontEntry[]`), `libraryPath`, scanning progress.
+- **accessibilityStore** — Text size, reduced motion (auto-syncs from OS `prefers-reduced-motion` on first load), touch target sizing, high contrast mode.
+
+### IndexedDB Schema (Dexie.js, version 3)
+
+```
+fonts        — name (primary key)           // decoded sound font audio buffers
+settings     — key (primary key)            // app settings, library directory handle
+userPresets  — id, name, createdAt, updatedAt // user-saved blade presets
+libraryHandles — id                         // persisted FileSystemDirectoryHandle
+libraryFonts   — name                       // cached font scan results
+```
+
+### Key Data Models
+
+**UserPreset** (stored in IndexedDB `userPresets` table):
+```typescript
+interface UserPreset {
+  id: string;                   // crypto.randomUUID()
+  name: string;
+  description?: string;
+  tags: string[];
+  config: BladeConfig;
+  fontAssociation?: string;     // font folder name to auto-load
+  sourcePresetId?: string;      // if derived from a built-in preset
+  createdAt: number;
+  updatedAt: number;
+  thumbnail?: string;           // base64 data URL ~200x40px
+}
+```
+
+**SaberProfile → CardConfig → CardPresetEntry** (stored in IndexedDB via saberProfileStore):
+```typescript
+interface CardPresetEntry {
+  id: string;
+  order: number;
+  presetName: string;
+  fontName: string;
+  source:
+    | { type: 'builtin'; presetId: string }
+    | { type: 'custom'; userPresetId: string }
+    | { type: 'inline' };
+  config: BladeConfig;
+  fontAssociation?: string;
+}
+
+interface CardConfig {
+  id: string;
+  name: string;
+  entries: CardPresetEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SaberProfile {
+  id: string;
+  name: string;
+  boardId: string;
+  bladeCount: number;
+  cardConfigs: CardConfig[];
+  activeCardConfigId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**LibraryFontEntry** (cached in IndexedDB `libraryFonts` table):
+```typescript
+interface LibraryFontEntry {
+  name: string;
+  format: 'proffie' | 'cfx' | 'generic';
+  fileCount: number;
+  totalSizeBytes: number;
+  categories: Record<string, number>;
+  hasSmoothSwing: boolean;
+  smoothSwingPairCount: number;
+  completeness: 'complete' | 'partial' | 'minimal';
+  missingCategories: string[];
+  lastScanned: number;
+}
+```
 
 ### Rendering Pipeline
 
@@ -121,5 +221,7 @@ Two Zustand stores:
 
 ### Config I/O
 
-- `bladeConfigIO.ts` — Serialize/deserialize configs to JSON, validate, download as file, read from file.
+- `bladeConfigIO.ts` — Serialize/deserialize configs to JSON, validate, download as file, read from file. Also handles:
+  - **Collection I/O** — `downloadCollection()` / `readCollectionFile()` for `.bladeforge-collection.json` bundles (array of `UserPreset` objects with thumbnails).
+  - **Card Template I/O** — `downloadCardTemplate()` / `readCardTemplateFile()` for `.bladeforge-card.json` files (card config entries stripped of personal font paths).
 - `configUrl.ts` — Encode configs to compact URL-safe strings (JSON → deflate-raw → base64url) for Kyber Code sharing.

@@ -11,6 +11,8 @@ import {
   VERSO,
   PROFFIE_LITE,
   PROFFIE_CLONE,
+  SNPIXEL_V4,
+  S_RGB,
 } from './budget-boards.js';
 
 export const BOARD_PROFILES: Record<BoardId, BoardProfile> = {
@@ -28,6 +30,8 @@ export const BOARD_PROFILES: Record<BoardId, BoardProfile> = {
   asteria: ASTERIA,
   darkwolf: DARKWOLF,
   damiensaber: DAMIENSABER,
+  'snpixel-v4': SNPIXEL_V4,
+  's-rgb': S_RGB,
 };
 
 export function getBoardProfile(id: BoardId): BoardProfile {
@@ -57,4 +61,6 @@ export {
   VERSO,
   PROFFIE_LITE,
   PROFFIE_CLONE,
+  SNPIXEL_V4,
+  S_RGB,
 } from './budget-boards.js';

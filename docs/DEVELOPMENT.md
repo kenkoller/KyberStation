@@ -57,14 +57,14 @@ The local build script handles dependency ordering automatically:
 ```
 bladeforge/
 ├── apps/web/              # Next.js 14 App Router
-│   ├── app/               # Pages (/, /editor, /s)
+│   ├── app/               # Pages (/, /editor, /s, /docs)
 │   ├── components/        # React components
 │   │   ├── editor/        # Editor panels (canvas, style, effects, etc.)
 │   │   ├── layout/        # App shell, toolbar
 │   │   └── shared/        # Reusable UI primitives
 │   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Config I/O, URL encoding
-│   └── stores/            # Zustand stores (bladeStore, uiStore)
+│   ├── lib/               # Config I/O, URL encoding, IndexedDB (fontDB)
+│   └── stores/            # Zustand stores (blade, UI, userPreset, saberProfile, presetList, audioFont, accessibility, audioMixer)
 ├── packages/engine/       # Blade simulation engine (zero DOM deps)
 ├── packages/codegen/      # AST-based ProffieOS C++ generator
 ├── packages/presets/      # Character preset library
@@ -114,6 +114,67 @@ Test coverage by package:
 Don't use `taskkill /F /IM node.exe` — it will kill everything including your IDE and Claude Code. Instead:
 - Kill by port: `npx kill-port 3000`
 - Kill by PID: find with `netstat -ano | findstr :3000`, then `taskkill /F /PID <pid>`
+
+## Firmware Compilation (ProffieOS)
+
+BladeForge generates ProffieOS config.h files, but these must be compiled and flashed to the Proffieboard. The toolchain:
+
+### Prerequisites
+
+```bash
+# Install arduino-cli
+brew install arduino-cli
+
+# Add Proffieboard board manager
+arduino-cli config init
+arduino-cli config add board_manager.additional_urls \
+  https://profezzorn.github.io/arduino-proffieboard/package_proffieboard_index.json
+
+# Install Proffieboard core
+arduino-cli core update-index
+arduino-cli core install proffieboard:stm32l4
+```
+
+### Clone ProffieOS
+
+```bash
+git clone --depth 1 https://github.com/profezzorn/ProffieOS.git
+```
+
+### Compile a config
+
+1. Copy generated config.h to `ProffieOS/config/my_config.h`
+2. In `ProffieOS/ProffieOS.ino`, add: `#define CONFIG_FILE "config/my_config.h"`
+3. Compile:
+
+```bash
+cd ProffieOS
+arduino-cli compile \
+  --fqbn "proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmmc1,speed=80,opt=os" .
+```
+
+### Board FQBNs
+
+| Board | FQBN |
+|-------|------|
+| Proffieboard V1 | `proffieboard:stm32l4:Proffieboard-L433CC` |
+| Proffieboard V2 | `proffieboard:stm32l4:ProffieboardV2-L433CC` |
+| Proffieboard V3 | `proffieboard:stm32l4:ProffieboardV3-L452RE` |
+
+### Required board options
+
+- `dosfs=sdmmc1` — SDIO High Speed (required for SD card)
+- `speed=80` — 80 MHz CPU
+- `opt=os` — Smallest Code optimization
+
+### Flash via USB
+
+```bash
+arduino-cli upload --fqbn "proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmmc1" \
+  --port /dev/cu.usbmodemXXXX .
+```
+
+The board must be in DFU/bootloader mode (hold BOOT button while powering on, or use the serial command).
 
 ## Conventions
 

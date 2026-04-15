@@ -1,6 +1,13 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useUIStore } from '@/stores/uiStore';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import {
+  rgbToHsl as engineRgbToHsl,
+  getHarmonyColors,
+} from '@bladeforge/engine';
+import type { HarmonyType } from '@bladeforge/engine';
 
 // ─── Canon saber color presets ───
 
@@ -63,7 +70,7 @@ function suggestClashColor(base: { r: number; g: number; b: number }): { r: numb
   return { r: 255, g: 255, b: 255 };
 }
 
-function suggestLockupColor(base: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
+function suggestLockupColor(_base: { r: number; g: number; b: number }): { r: number; g: number; b: number } {
   // Lockup is typically warm orange/yellow
   return { r: 255, g: 200, b: 80 };
 }
@@ -131,12 +138,36 @@ const COLOR_CHANNELS: Array<{ key: string; label: string; description: string }>
 export function ColorPanel() {
   const config = useBladeStore((s) => s.config);
   const setColor = useBladeStore((s) => s.setColor);
-  const [activeChannel, setActiveChannel] = useState<string>('baseColor');
+  const activeChannel = useUIStore((s) => s.activeColorChannel);
+  const setActiveChannel = useUIStore((s) => s.setActiveColorChannel);
   const [presetFilter, setPresetFilter] = useState<string>('all');
+
+  const [hexInput, setHexInput] = useState('');
+  const [hexFocused, setHexFocused] = useState(false);
 
   const activeColor = (config as Record<string, unknown>)[activeChannel] as { r: number; g: number; b: number } | undefined
     ?? { r: 128, g: 128, b: 128 };
   const hsl = rgbToHsl(activeColor.r, activeColor.g, activeColor.b);
+  const currentHex = rgbToHex(activeColor.r, activeColor.g, activeColor.b).toUpperCase();
+
+  // Sync hex input when color changes externally (slider, preset, etc.)
+  useEffect(() => {
+    if (!hexFocused) {
+      setHexInput(currentHex);
+    }
+  }, [currentHex, hexFocused]);
+
+  const handleHexSubmit = useCallback((value: string) => {
+    const cleaned = value.trim().replace(/^#?/, '#');
+    if (/^#[a-fA-F0-9]{6}$/.test(cleaned)) {
+      const rgb = hexToRgb(cleaned);
+      setColor(activeChannel, rgb);
+      if (activeChannel === 'baseColor') {
+        setColor('clashColor', suggestClashColor(rgb));
+        setColor('lockupColor', suggestLockupColor(rgb));
+      }
+    }
+  }, [activeChannel, setColor]);
 
   const handleHSLChange = useCallback((field: 'h' | 's' | 'l', value: number) => {
     const newHsl = { ...hsl, [field]: value };
@@ -169,8 +200,9 @@ export function ColorPanel() {
     <div className="space-y-4">
       {/* ── Active channel selector ── */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-2">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Color Channel
+          <HelpTooltip text="Select which effect color to edit. Each channel controls a different combat interaction — clash for blade impacts, blast for blaster deflections, lockup for sustained blade contact." />
         </h3>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_CHANNELS.map((ch) => {
@@ -182,7 +214,7 @@ export function ColorPanel() {
               <button
                 key={ch.key}
                 onClick={() => setActiveChannel(ch.key)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border transition-colors ${
+                className={`touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border transition-colors ${
                   isActive
                     ? 'border-accent bg-accent-dim text-accent'
                     : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
@@ -200,7 +232,7 @@ export function ColorPanel() {
           {showGradientEnd && (
             <button
               onClick={() => setActiveChannel('gradientEnd')}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border transition-colors ${
+              className={`touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border transition-colors ${
                 activeChannel === 'gradientEnd'
                   ? 'border-accent bg-accent-dim text-accent'
                   : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
@@ -220,7 +252,7 @@ export function ColorPanel() {
           {showEdgeColor && (
             <button
               onClick={() => setActiveChannel('edgeColor')}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border transition-colors ${
+              className={`touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border transition-colors ${
                 activeChannel === 'edgeColor'
                   ? 'border-accent bg-accent-dim text-accent'
                   : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
@@ -255,16 +287,34 @@ export function ColorPanel() {
                 const rgb = hexToRgb(e.target.value);
                 setColor(activeChannel, rgb);
               }}
-              className="w-6 h-6 rounded cursor-pointer border border-border-subtle bg-transparent"
+              aria-label={`Pick color for ${activeChannel}`}
+              className="touch-target w-6 h-6 rounded cursor-pointer border border-border-subtle bg-transparent"
             />
-            <span className="text-xs text-text-secondary font-mono">
-              {rgbToHex(activeColor.r, activeColor.g, activeColor.b).toUpperCase()}
-            </span>
+            <input
+              type="text"
+              value={hexInput}
+              onChange={(e) => setHexInput(e.target.value.toUpperCase())}
+              onFocus={() => setHexFocused(true)}
+              onBlur={(e) => {
+                setHexFocused(false);
+                handleHexSubmit(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleHexSubmit(hexInput);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              maxLength={7}
+              spellCheck={false}
+              aria-label={`Hex color for ${activeChannel}`}
+              className="w-20 px-1.5 py-0.5 rounded text-ui-xs font-mono bg-bg-deep border border-border-subtle text-text-secondary focus:border-accent focus:text-accent focus:outline-none transition-colors"
+            />
           </div>
-          <div className="text-[10px] text-text-muted font-mono">
+          <div className="text-ui-sm text-text-muted font-mono">
             Rgb&lt;{activeColor.r},{activeColor.g},{activeColor.b}&gt;
           </div>
-          <div className="text-[10px] text-text-muted font-mono">
+          <div className="text-ui-sm text-text-muted font-mono">
             HSL({Math.round(hsl.h)}, {Math.round(hsl.s)}%, {Math.round(hsl.l)}%)
           </div>
         </div>
@@ -272,14 +322,16 @@ export function ColorPanel() {
 
       {/* ── HSL sliders ── */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-2">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           HSL Adjustment
+          <HelpTooltip text="Hue, Saturation, Lightness — an intuitive way to fine-tune colors. Hue picks the color, Saturation controls vibrancy, Lightness sets brightness." />
         </h3>
         <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           {/* Hue */}
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-text-secondary w-6">H</label>
+            <label htmlFor="hsl-hue" className="text-ui-sm text-text-secondary w-6">H</label>
             <input
+              id="hsl-hue"
               type="range"
               min={0}
               max={360}
@@ -290,13 +342,14 @@ export function ColorPanel() {
                 background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
               }}
             />
-            <span className="text-[10px] text-text-muted font-mono w-8 text-right">{Math.round(hsl.h)}</span>
+            <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{Math.round(hsl.h)}</span>
           </div>
 
           {/* Saturation */}
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-text-secondary w-6">S</label>
+            <label htmlFor="hsl-saturation" className="text-ui-sm text-text-secondary w-6">S</label>
             <input
+              id="hsl-saturation"
               type="range"
               min={0}
               max={100}
@@ -304,13 +357,14 @@ export function ColorPanel() {
               onChange={(e) => handleHSLChange('s', Number(e.target.value))}
               className="flex-1"
             />
-            <span className="text-[10px] text-text-muted font-mono w-8 text-right">{Math.round(hsl.s)}%</span>
+            <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{Math.round(hsl.s)}%</span>
           </div>
 
           {/* Lightness */}
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-text-secondary w-6">L</label>
+            <label htmlFor="hsl-lightness" className="text-ui-sm text-text-secondary w-6">L</label>
             <input
+              id="hsl-lightness"
               type="range"
               min={0}
               max={100}
@@ -318,21 +372,22 @@ export function ColorPanel() {
               onChange={(e) => handleHSLChange('l', Number(e.target.value))}
               className="flex-1"
             />
-            <span className="text-[10px] text-text-muted font-mono w-8 text-right">{Math.round(hsl.l)}%</span>
+            <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{Math.round(hsl.l)}%</span>
           </div>
         </div>
       </div>
 
       {/* ── RGB sliders ── */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-2">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
           RGB Values
         </h3>
         <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           {(['r', 'g', 'b'] as const).map((ch) => (
             <div key={ch} className="flex items-center gap-2">
-              <label className="text-[10px] text-text-secondary w-6 uppercase">{ch}</label>
+              <label htmlFor={`rgb-${ch}`} className="text-ui-sm text-text-secondary w-6 uppercase">{ch}</label>
               <input
+                id={`rgb-${ch}`}
                 type="range"
                 min={0}
                 max={255}
@@ -340,23 +395,31 @@ export function ColorPanel() {
                 onChange={(e) => handleRGBChange(ch, Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="text-[10px] text-text-muted font-mono w-8 text-right">{activeColor[ch]}</span>
+              <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{activeColor[ch]}</span>
             </div>
           ))}
         </div>
       </div>
 
+      {/* ── Color Harmony ── */}
+      <ColorHarmonySection
+        activeColor={activeColor}
+        activeChannel={activeChannel}
+        setColor={setColor}
+      />
+
       {/* ── Canon saber color presets ── */}
       <div>
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-2">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Canon Presets
+          <HelpTooltip text="Film-accurate lightsaber colors from Star Wars characters. Click any preset to apply it to the currently selected color channel." />
         </h3>
         <div className="flex gap-1.5 mb-2">
           {['all', 'jedi', 'sith', 'neutral'].map((cat) => (
             <button
               key={cat}
               onClick={() => setPresetFilter(cat)}
-              className={`px-2 py-0.5 rounded text-[10px] border transition-colors capitalize ${
+              className={`touch-target px-2 py-0.5 rounded text-ui-sm border transition-colors capitalize ${
                 presetFilter === cat
                   ? 'border-accent bg-accent-dim text-accent'
                   : 'border-border-subtle text-text-muted hover:text-text-secondary'
@@ -377,7 +440,7 @@ export function ColorPanel() {
               <button
                 key={preset.id}
                 onClick={() => handlePresetClick(preset)}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded text-left text-[10px] border transition-colors ${
+                className={`touch-target flex items-center gap-2 px-2 py-1.5 rounded text-left text-ui-sm border transition-colors ${
                   isMatch
                     ? 'border-accent bg-accent-dim text-accent'
                     : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
@@ -397,10 +460,11 @@ export function ColorPanel() {
       {/* ── Auto-suggest ── */}
       {activeChannel === 'baseColor' && (
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
-          <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold mb-2">
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
             Auto-Suggest
+            <HelpTooltip text="Generates complementary clash and lockup colors based on your base color. Blue blades get warm orange clashes, green blades get white/yellow, etc." />
           </h3>
-          <p className="text-[10px] text-text-muted mb-2">
+          <p className="text-ui-sm text-text-muted mb-2">
             Click to apply complementary colors for effects:
           </p>
           <div className="flex gap-2">
@@ -409,7 +473,7 @@ export function ColorPanel() {
                 const clash = suggestClashColor(activeColor);
                 setColor('clashColor', clash);
               }}
-              className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border border-border-subtle bg-bg-deep text-text-secondary hover:border-accent transition-colors"
+              className="touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border border-border-subtle bg-bg-deep text-text-secondary hover:border-accent transition-colors"
             >
               <span
                 className="w-3 h-3 rounded-full border border-white/20"
@@ -422,7 +486,7 @@ export function ColorPanel() {
                 const lockup = suggestLockupColor(activeColor);
                 setColor('lockupColor', lockup);
               }}
-              className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border border-border-subtle bg-bg-deep text-text-secondary hover:border-accent transition-colors"
+              className="touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border border-border-subtle bg-bg-deep text-text-secondary hover:border-accent transition-colors"
             >
               <span
                 className="w-3 h-3 rounded-full border border-white/20"
@@ -433,6 +497,169 @@ export function ColorPanel() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Color Harmony Section ───
+
+const HARMONY_TYPES: Array<{ id: HarmonyType; label: string; description: string }> = [
+  { id: 'complementary', label: 'Comp', description: 'Opposite on the color wheel (high contrast)' },
+  { id: 'analogous', label: 'Analog', description: 'Adjacent hues (harmonious, low contrast)' },
+  { id: 'triadic', label: 'Triad', description: 'Three evenly spaced hues (vibrant, balanced)' },
+  { id: 'split-complementary', label: 'Split', description: 'Two colors adjacent to the complement (balanced contrast)' },
+  { id: 'tetradic', label: 'Tetra', description: 'Four evenly spaced hues (rich, complex)' },
+];
+
+const EFFECT_CHANNELS = ['clashColor', 'lockupColor', 'blastColor', 'dragColor', 'meltColor', 'lightningColor'] as const;
+
+function ColorHarmonySection({
+  activeColor,
+  activeChannel,
+  setColor,
+}: {
+  activeColor: { r: number; g: number; b: number };
+  activeChannel: string;
+  setColor: (channel: string, color: { r: number; g: number; b: number }) => void;
+}) {
+  const [harmonyType, setHarmonyType] = useState<HarmonyType>('complementary');
+  const wheelRef = useRef<HTMLCanvasElement>(null);
+
+  const harmonyColors = getHarmonyColors(activeColor, harmonyType);
+  const activeHsl = engineRgbToHsl(activeColor);
+
+  // Draw color wheel
+  useEffect(() => {
+    const canvas = wheelRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = canvas.width;
+    const center = size / 2;
+    const radius = center - 4;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Draw hue ring
+    for (let angle = 0; angle < 360; angle++) {
+      const rad = (angle - 90) * (Math.PI / 180);
+      ctx.beginPath();
+      ctx.moveTo(center + (radius - 16) * Math.cos(rad), center + (radius - 16) * Math.sin(rad));
+      ctx.lineTo(center + radius * Math.cos(rad), center + radius * Math.sin(rad));
+      ctx.strokeStyle = `hsl(${angle}, 100%, 50%)`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Draw active color dot on wheel
+    const activeRad = (activeHsl.h - 90) * (Math.PI / 180);
+    const dotR = radius - 8;
+    ctx.beginPath();
+    ctx.arc(center + dotR * Math.cos(activeRad), center + dotR * Math.sin(activeRad), 5, 0, Math.PI * 2);
+    ctx.fillStyle = rgbToHex(activeColor.r, activeColor.g, activeColor.b);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw harmony dots
+    harmonyColors.forEach((hc) => {
+      const hcHsl = engineRgbToHsl(hc);
+      const hcRad = (hcHsl.h - 90) * (Math.PI / 180);
+      ctx.beginPath();
+      ctx.arc(center + dotR * Math.cos(hcRad), center + dotR * Math.sin(hcRad), 4, 0, Math.PI * 2);
+      ctx.fillStyle = rgbToHex(hc.r, hc.g, hc.b);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // Draw lines connecting active to harmony dots
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    harmonyColors.forEach((hc) => {
+      const hcHsl = engineRgbToHsl(hc);
+      const hcRad = (hcHsl.h - 90) * (Math.PI / 180);
+      ctx.beginPath();
+      ctx.moveTo(center + dotR * Math.cos(activeRad), center + dotR * Math.sin(activeRad));
+      ctx.lineTo(center + dotR * Math.cos(hcRad), center + dotR * Math.sin(hcRad));
+      ctx.stroke();
+    });
+  }, [activeColor, activeHsl.h, harmonyColors]);
+
+  const applyToEffects = useCallback(() => {
+    // Distribute harmony colors across effect channels
+    const channelsToFill = EFFECT_CHANNELS.slice(0, harmonyColors.length);
+    channelsToFill.forEach((ch, i) => {
+      setColor(ch, harmonyColors[i]);
+    });
+  }, [harmonyColors, setColor]);
+
+  return (
+    <div>
+      <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        Color Harmony
+        <HelpTooltip text="Generate complementary, analogous, or triadic colors from your active color. Apply them to effect channels for cohesive blade styling." />
+      </h3>
+      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+        {/* Harmony type buttons */}
+        <div className="flex flex-wrap gap-1">
+          {HARMONY_TYPES.map((ht) => (
+            <button
+              key={ht.id}
+              onClick={() => setHarmonyType(ht.id)}
+              className={`touch-target px-2 py-1 rounded text-ui-sm font-medium transition-colors border ${
+                harmonyType === ht.id
+                  ? 'bg-accent-dim border-accent-border text-accent'
+                  : 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
+              }`}
+              title={ht.description}
+            >
+              {ht.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Wheel + swatches row */}
+        <div className="flex items-start gap-3">
+          <canvas
+            ref={wheelRef}
+            width={100}
+            height={100}
+            className="shrink-0 rounded"
+          />
+          <div className="flex-1 space-y-2">
+            <div className="text-ui-xs text-text-muted">Generated colors:</div>
+            <div className="flex flex-wrap gap-1.5">
+              {harmonyColors.map((hc, i) => (
+                <button
+                  key={i}
+                  onClick={() => setColor(activeChannel, hc)}
+                  className="touch-target group relative"
+                  aria-label={`Apply harmony color Rgb ${hc.r},${hc.g},${hc.b} to ${activeChannel}`}
+                  title={`Apply Rgb<${hc.r},${hc.g},${hc.b}> to ${activeChannel}`}
+                >
+                  <span
+                    className="block w-7 h-7 rounded border border-white/15 group-hover:border-accent transition-colors"
+                    style={{ backgroundColor: rgbToHex(hc.r, hc.g, hc.b) }}
+                  />
+                </button>
+              ))}
+            </div>
+            {activeChannel === 'baseColor' && harmonyColors.length > 0 && (
+              <button
+                onClick={applyToEffects}
+                className="touch-target text-ui-xs px-2 py-1 rounded border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors"
+                title="Auto-assign harmony colors to clash, lockup, blast, etc."
+              >
+                Apply to effects
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

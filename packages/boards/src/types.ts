@@ -12,7 +12,9 @@ export type BoardId =
   | 'lgt-baselit'
   | 'asteria'
   | 'darkwolf'
-  | 'damiensaber';
+  | 'damiensaber'
+  | 'snpixel-v4'
+  | 's-rgb';
 
 export type BoardTier = 1 | 2 | 3;
 

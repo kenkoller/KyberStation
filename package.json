@@ -14,7 +14,10 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "clean": "turbo clean",
-    "serve": "node scripts/local-serve.mjs"
+    "serve": "node scripts/local-serve.mjs",
+    "launch": "node scripts/local-dev.mjs",
+    "generate-icon": "node scripts/generate-icon.mjs",
+    "install-app": "ln -sf \"$(pwd)/BladeForge.app\" ~/Applications/BladeForge.app && echo 'BladeForge.app installed to ~/Applications'"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

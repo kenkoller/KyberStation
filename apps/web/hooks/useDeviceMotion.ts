@@ -55,13 +55,22 @@ export function useDeviceMotion() {
   });
 
   const isListening = useRef(false);
+  const handlerRef = useRef<((e: DeviceMotionEvent) => void) | null>(null);
 
-  // Check if DeviceMotion is available
+  // Check if DeviceMotion is available + cleanup on unmount
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!('DeviceMotionEvent' in window)) {
       setPermissionState('unavailable');
     }
+    return () => {
+      // Cleanup: remove listener on unmount
+      if (handlerRef.current) {
+        window.removeEventListener('devicemotion', handlerRef.current);
+        handlerRef.current = null;
+        isListening.current = false;
+      }
+    };
   }, []);
 
   // Request permission (iOS requires explicit permission)
@@ -133,15 +142,21 @@ export function useDeviceMotion() {
       });
     };
 
+    handlerRef.current = handleMotion;
     window.addEventListener('devicemotion', handleMotion, { passive: true });
 
     return () => {
       window.removeEventListener('devicemotion', handleMotion);
+      handlerRef.current = null;
       isListening.current = false;
     };
   }, []);
 
   const stopListening = useCallback(() => {
+    if (handlerRef.current) {
+      window.removeEventListener('devicemotion', handlerRef.current);
+      handlerRef.current = null;
+    }
     isListening.current = false;
     setMotionData(prev => ({ ...prev, isActive: false }));
   }, []);

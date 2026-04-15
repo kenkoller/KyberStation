@@ -84,6 +84,14 @@ export const functionTemplates: Map<string, TemplateDefinition> = new Map([
     },
   ],
   [
+    'IntArg',
+    {
+      name: 'IntArg',
+      argTypes: ['INTEGER', 'INTEGER'],
+      description: 'Argument-switchable integer with index and default value (for Edit Mode)',
+    },
+  ],
+  [
     'IncrementModuloF',
     {
       name: 'IncrementModuloF',

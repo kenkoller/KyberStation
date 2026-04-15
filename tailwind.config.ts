@@ -6,26 +6,26 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          deep: '#06060a',
-          primary: '#0a0a10',
-          secondary: '#0e0e16',
-          surface: '#14141e',
-          card: '#181824',
+          deep: 'rgb(var(--bg-deep) / <alpha-value>)',
+          primary: 'rgb(var(--bg-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--bg-secondary) / <alpha-value>)',
+          surface: 'rgb(var(--bg-surface) / <alpha-value>)',
+          card: 'rgb(var(--bg-card) / <alpha-value>)',
         },
         accent: {
-          DEFAULT: '#4a9eff',
-          dim: 'rgba(74, 158, 255, 0.08)',
-          border: 'rgba(74, 158, 255, 0.20)',
-          warm: '#ff6b35',
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          dim: 'var(--accent-dim)',
+          border: 'var(--accent-border)',
+          warm: 'rgb(var(--accent-warm) / <alpha-value>)',
         },
         text: {
-          primary: '#d0d4dc',
-          secondary: '#8a8f9a',
-          muted: '#4a4e58',
+          primary: 'rgb(var(--text-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
+          muted: 'rgb(var(--text-muted) / <alpha-value>)',
         },
         border: {
-          subtle: 'rgba(255, 255, 255, 0.04)',
-          light: 'rgba(255, 255, 255, 0.08)',
+          subtle: 'var(--border-subtle)',
+          light: 'var(--border-light)',
         },
       },
       fontFamily: {

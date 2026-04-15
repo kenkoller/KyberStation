@@ -74,11 +74,18 @@ export interface BladeEffect {
 
 // ─── Ignition System ───
 
+export interface IgnitionContext {
+  bladeAngle: number;   // -1 to 1
+  swingSpeed: number;   // 0-1
+  twistAngle: number;   // -1 to 1
+  config?: BladeConfig;
+}
+
 export interface IgnitionAnimation {
   id: string;
   name: string;
   /** Returns visibility mask (0-1) for a position at a given progress (0-1) */
-  getMask(position: number, progress: number): number;
+  getMask(position: number, progress: number, context?: IgnitionContext): number;
 }
 
 // ─── Layer System ───
@@ -221,6 +228,10 @@ export interface BladeConfig {
   // Style-specific params
   gradientEnd?: RGB;
   edgeColor?: RGB;
+  gradientInterpolation?: 'linear' | 'smooth' | 'step';
+
+  // Blade painting
+  colorPositions?: Array<{ position: number; color: RGB; width: number }>;
 
   // ── Noise Parameters ──
   noiseScale?: number;          // Perlin noise spatial scale (1-100, default 30)
@@ -263,6 +274,31 @@ export interface BladeConfig {
   tipFade?: number;                 // Smoothness of tip transition (0-100, default 50)
   emitterFlare?: number;            // Brightness boost at emitter end (0-100, default 20)
   emitterFlareWidth?: number;       // Width of emitter flare (0-50, default 5)
+
+  // ── Image Scroll (Light Painting) ──
+  imageData?: Uint8Array;           // RGB pixel data (3 bytes per pixel, row-major)
+  imageWidth?: number;              // Image width in pixels (columns = scroll frames)
+  imageHeight?: number;             // Image height in pixels (rows = blade LEDs)
+  scrollSpeed?: number;             // Pixels per second (default 30)
+  scrollDirection?: 'left-to-right' | 'right-to-left' | 'bidirectional';
+  scrollRepeatMode?: 'once' | 'loop' | 'pingpong';
+
+  // ── Dual-Mode Ignition ──
+  dualModeIgnition?: boolean;
+  ignitionUp?: string;              // ignition ID when blade angled up
+  ignitionDown?: string;            // ignition ID when blade angled down
+  ignitionAngleThreshold?: number;  // 0-1, default 0.3
+  retractionUp?: string;
+  retractionDown?: string;
+
+  // ── Custom Ignition Curve ──
+  ignitionCurve?: [number, number, number, number]; // cubic bezier [x1, y1, x2, y2]
+  retractionCurve?: [number, number, number, number];
+
+  // ── Blade Hardware ──
+  stripType?: 'single' | 'dual-neo' | 'tri-neo' | 'quad-neo' | 'penta-neo' | 'tri-cree' | 'quad-cree' | 'penta-cree';
+  bladeType?: 'neopixel' | 'in-hilt-led';
+  customLedCount?: number | null; // override auto-calculated count
 
   // Extensible
   [key: string]: unknown;

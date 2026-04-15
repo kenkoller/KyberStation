@@ -1,63 +1,88 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTimelineStore } from '@/stores/timelineStore';
+import type { TimelineEventType, EasingCurve } from '@/stores/timelineStore';
+import {
+  ANIMATION_TEMPLATES,
+  getCategories,
+  getTemplatesByCategory,
+} from '@bladeforge/engine';
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
+const EASING_OPTIONS: EasingCurve[] = [
+  'linear', 'ease-in-quad', 'ease-out-quad', 'ease-in-out-quad',
+  'ease-in-cubic', 'ease-out-cubic', 'bounce', 'elastic',
+];
 
-type EffectType = 'ignition' | 'clash' | 'lockup' | 'blast' | 'drag' | 'force';
-
-interface TimelineMarker {
-  id: string;
-  type: EffectType;
-  /** Start time in seconds */
-  time: number;
-  /** Optional end time for range-based effects (lockup, ignition) */
-  endTime?: number;
-}
-
-const EFFECT_COLORS: Record<EffectType, string> = {
-  ignition: '#22d3ee',   // cyan
-  clash:    '#f59e0b',   // amber
-  lockup:   '#ef4444',   // red
-  blast:    '#a855f7',   // purple
-  drag:     '#f97316',   // orange
-  force:    '#3b82f6',   // blue
+const EASING_LABELS: Record<EasingCurve, string> = {
+  'linear': 'Linear',
+  'ease-in-quad': 'Ease In',
+  'ease-out-quad': 'Ease Out',
+  'ease-in-out-quad': 'Ease In/Out',
+  'ease-in-cubic': 'Cubic In',
+  'ease-out-cubic': 'Cubic Out',
+  'bounce': 'Bounce',
+  'elastic': 'Elastic',
 };
 
-const EFFECT_LABELS: Record<EffectType, string> = {
-  ignition: 'Ignition',
-  clash:    'Clash',
-  lockup:   'Lockup',
-  blast:    'Blast',
-  drag:     'Drag',
-  force:    'Force',
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+const EVENT_COLORS: Record<TimelineEventType, string> = {
+  ignite:    '#22c55e', // green
+  retract:   '#ef4444', // red
+  clash:     '#ffffff', // white
+  blast:     '#eab308', // yellow
+  stab:      '#f97316', // orange
+  lockup:    '#f59e0b', // amber
+  lightning: '#818cf8', // indigo
+  drag:      '#a855f7', // purple
+  melt:      '#fb923c', // orange-light
+  force:     '#3b82f6', // blue
 };
+
+const EVENT_LABELS: Record<TimelineEventType, string> = {
+  ignite:    'Ignite',
+  retract:   'Retract',
+  clash:     'Clash',
+  blast:     'Blast',
+  stab:      'Stab',
+  lockup:    'Lockup',
+  lightning: 'Lightning',
+  drag:      'Drag',
+  melt:      'Melt',
+  force:     'Force',
+};
+
+const ALL_EVENT_TYPES: TimelineEventType[] = [
+  'ignite', 'retract', 'clash', 'blast', 'stab',
+  'lockup', 'lightning', 'drag', 'melt', 'force',
+];
 
 const SPEED_OPTIONS = [0.25, 0.5, 1, 2] as const;
 
-const RANGE_EFFECTS: EffectType[] = ['ignition', 'lockup'];
+/** Visual width of each event block in pixels */
+const EVENT_BLOCK_WIDTH = 36;
+const EVENT_BLOCK_HEIGHT = 24;
+
+/** Pixels per second at zoom=1 */
+const BASE_PX_PER_SEC = 80;
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-let _idCounter = 0;
-function uid(): string {
-  return `tm_${Date.now()}_${++_idCounter}`;
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   const whole = Math.floor(s);
-  const ms = Math.round((s - whole) * 1000);
-  return `${String(m).padStart(2, '0')}:${String(whole).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
+  const ms = Math.round((s - whole) * 100);
+  return `${String(m).padStart(2, '0')}:${String(whole).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -65,202 +90,116 @@ function clamp(value: number, min: number, max: number) {
 /* ------------------------------------------------------------------ */
 
 export function TimelinePanel() {
-  /* ----- state ----- */
-  const [markers, setMarkers] = useState<TimelineMarker[]>([
-    { id: uid(), type: 'ignition', time: 0.0, endTime: 0.4 },
-  ]);
-  const [duration, setDuration] = useState(10); // total seconds
-  const [currentTime, setCurrentTime] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [loop, setLoop] = useState(true);
-  const [speed, setSpeed] = useState<number>(1);
-  const [zoom, setZoom] = useState(1); // 1 = fit all, higher = zoomed in
-  const [scrollOffset, setScrollOffset] = useState(0); // in seconds
-  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
-  const [addMenuPos, setAddMenuPos] = useState<{ x: number; time: number } | null>(null);
+  /* ----- store ----- */
+  const events = useTimelineStore((s) => s.events);
+  const duration = useTimelineStore((s) => s.duration);
+  const isPlaying = useTimelineStore((s) => s.isPlaying);
+  const currentTime = useTimelineStore((s) => s.currentTime);
+  const loop = useTimelineStore((s) => s.loop);
+  const playbackSpeed = useTimelineStore((s) => s.playbackSpeed);
+  const addEvent = useTimelineStore((s) => s.addEvent);
+  const removeEvent = useTimelineStore((s) => s.removeEvent);
+  const moveEvent = useTimelineStore((s) => s.moveEvent);
+  const updateEventDuration = useTimelineStore((s) => s.updateEventDuration);
+  const updateEventEasing = useTimelineStore((s) => s.updateEventEasing);
+  const updateEventIntensity = useTimelineStore((s) => s.updateEventIntensity);
+  const setDuration = useTimelineStore((s) => s.setDuration);
+  const setPlaying = useTimelineStore((s) => s.setPlaying);
+  const setCurrentTime = useTimelineStore((s) => s.setCurrentTime);
+  const setLoop = useTimelineStore((s) => s.setLoop);
+  const setPlaybackSpeed = useTimelineStore((s) => s.setPlaybackSpeed);
+  const clearAll = useTimelineStore((s) => s.clearAll);
+
+  /* ----- local UI state ----- */
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [addMenuPos, setAddMenuPos] = useState<{ x: number; y: number; time: number } | null>(null);
   const [dragging, setDragging] = useState<{
-    markerId: string;
-    handle: 'start' | 'end';
-    startX: number;
+    eventId: string;
+    startMouseX: number;
     startTime: number;
+  } | null>(null);
+  const [resizing, setResizing] = useState<{
+    eventId: string;
+    startMouseX: number;
+    startDuration: number;
   } | null>(null);
 
   /* ----- refs ----- */
   const trackRef = useRef<HTMLDivElement>(null);
-  const animRef = useRef<number | null>(null);
-  const prevTs = useRef<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  /* ----- derived ----- */
-  const visibleDuration = duration / zoom;
-  const visibleStart = scrollOffset;
-  const visibleEnd = scrollOffset + visibleDuration;
+  /* ----- derived layout ----- */
+  const pxPerSec = BASE_PX_PER_SEC;
+  const totalTrackWidth = duration * pxPerSec;
 
-  /* ----- pixel <-> time helpers ----- */
-  const timeToPercent = useCallback(
-    (t: number) => ((t - visibleStart) / visibleDuration) * 100,
-    [visibleStart, visibleDuration],
+  /* ----- pixel <-> time ----- */
+  const timeToX = useCallback(
+    (t: number) => t * pxPerSec,
+    [pxPerSec],
   );
 
-  const pxToTime = useCallback(
-    (px: number) => {
+  const xToTime = useCallback(
+    (clientX: number) => {
       const track = trackRef.current;
       if (!track) return 0;
       const rect = track.getBoundingClientRect();
-      const ratio = clamp((px - rect.left) / rect.width, 0, 1);
-      return visibleStart + ratio * visibleDuration;
+      const localX = clientX - rect.left;
+      return clamp(localX / pxPerSec, 0, duration);
     },
-    [visibleStart, visibleDuration],
+    [pxPerSec, duration],
   );
 
-  /* ----- playback ----- */
-  const tick = useCallback(
-    (ts: number) => {
-      if (prevTs.current !== null) {
-        const dt = ((ts - prevTs.current) / 1000) * speed;
-        setCurrentTime((prev) => {
-          let next = prev + dt;
-          if (next >= duration) {
-            if (loop) {
-              next = next % duration;
-            } else {
-              next = duration;
-              setPlaying(false);
-            }
-          }
-          return next;
-        });
-      }
-      prevTs.current = ts;
-      animRef.current = requestAnimationFrame(tick);
-    },
-    [duration, loop, speed],
-  );
-
-  useEffect(() => {
-    if (playing) {
-      prevTs.current = null;
-      animRef.current = requestAnimationFrame(tick);
-    } else if (animRef.current !== null) {
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    }
-    return () => {
-      if (animRef.current !== null) cancelAnimationFrame(animRef.current);
-    };
-  }, [playing, tick]);
-
-  /* ----- scrub ----- */
-  const handleScrub = useCallback(
+  /* ----- scrub on ruler click ----- */
+  const handleRulerClick = useCallback(
     (e: React.MouseEvent) => {
-      const t = pxToTime(e.clientX);
-      setCurrentTime(clamp(t, 0, duration));
+      const t = xToTime(e.clientX);
+      setCurrentTime(t);
     },
-    [pxToTime, duration],
+    [xToTime, setCurrentTime],
   );
 
-  const handleScrubDrag = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.buttons !== 1) return;
-      handleScrub(e);
-    },
-    [handleScrub],
-  );
-
-  /* ----- zoom via wheel ----- */
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-      const newZoom = clamp(zoom * factor, 1, 50);
-
-      // Zoom towards cursor position
-      const cursorTime = pxToTime(e.clientX);
-      const newVisDur = duration / newZoom;
-      const newOffset = clamp(cursorTime - (cursorTime - scrollOffset) * (newVisDur / visibleDuration), 0, duration - newVisDur);
-
-      setZoom(newZoom);
-      setScrollOffset(newOffset);
-    },
-    [zoom, duration, pxToTime, scrollOffset, visibleDuration],
-  );
-
-  /* ----- add effect ----- */
+  /* ----- track click: open add menu ----- */
   const handleTrackClick = useCallback(
     (e: React.MouseEvent) => {
-      // Don't open add menu if we clicked a marker
-      if ((e.target as HTMLElement).closest('[data-marker]')) return;
-      const t = pxToTime(e.clientX);
-      setAddMenuPos({ x: e.clientX, time: t });
-      setSelectedMarker(null);
+      if ((e.target as HTMLElement).closest('[data-event]')) return;
+      const t = xToTime(e.clientX);
+      setAddMenuPos({ x: e.clientX, y: e.clientY, time: t });
+      setSelectedId(null);
     },
-    [pxToTime],
+    [xToTime],
   );
 
-  const addMarker = useCallback(
-    (type: EffectType) => {
+  const handleAddEvent = useCallback(
+    (type: TimelineEventType) => {
       if (!addMenuPos) return;
-      const isRange = RANGE_EFFECTS.includes(type);
-      const marker: TimelineMarker = {
-        id: uid(),
-        type,
-        time: Math.round(addMenuPos.time * 1000) / 1000,
-        ...(isRange ? { endTime: Math.round((addMenuPos.time + 0.5) * 1000) / 1000 } : {}),
-      };
-      setMarkers((prev) => [...prev, marker]);
+      addEvent(type, addMenuPos.time);
       setAddMenuPos(null);
-      setSelectedMarker(marker.id);
     },
-    [addMenuPos],
+    [addMenuPos, addEvent],
   );
 
-  const deleteSelected = useCallback(() => {
-    if (!selectedMarker) return;
-    setMarkers((prev) => prev.filter((m) => m.id !== selectedMarker));
-    setSelectedMarker(null);
-  }, [selectedMarker]);
-
-  /* ----- drag markers ----- */
+  /* ----- drag events ----- */
   const startDrag = useCallback(
-    (e: React.MouseEvent, markerId: string, handle: 'start' | 'end') => {
+    (e: React.MouseEvent, eventId: string, startTime: number) => {
       e.stopPropagation();
-      const marker = markers.find((m) => m.id === markerId);
-      if (!marker) return;
-      setSelectedMarker(markerId);
+      setSelectedId(eventId);
       setDragging({
-        markerId,
-        handle,
-        startX: e.clientX,
-        startTime: handle === 'end' ? (marker.endTime ?? marker.time) : marker.time,
+        eventId,
+        startMouseX: e.clientX,
+        startTime,
       });
     },
-    [markers],
+    [],
   );
 
   useEffect(() => {
     if (!dragging) return;
 
     const onMove = (e: MouseEvent) => {
-      const track = trackRef.current;
-      if (!track) return;
-      const rect = track.getBoundingClientRect();
-      const dx = e.clientX - dragging.startX;
-      const dtSeconds = (dx / rect.width) * visibleDuration;
-      const newTime = clamp(dragging.startTime + dtSeconds, 0, duration);
-
-      setMarkers((prev) =>
-        prev.map((m) => {
-          if (m.id !== dragging.markerId) return m;
-          if (dragging.handle === 'end') {
-            return { ...m, endTime: Math.max(m.time + 0.05, Math.round(newTime * 1000) / 1000) };
-          }
-          const rounded = Math.round(newTime * 1000) / 1000;
-          if (m.endTime !== undefined) {
-            const dur = m.endTime - m.time;
-            return { ...m, time: rounded, endTime: Math.round((rounded + dur) * 1000) / 1000 };
-          }
-          return { ...m, time: rounded };
-        }),
-      );
+      const dx = e.clientX - dragging.startMouseX;
+      const dtSec = dx / pxPerSec;
+      const newTime = clamp(dragging.startTime + dtSec, 0, duration);
+      moveEvent(dragging.eventId, newTime);
     };
 
     const onUp = () => setDragging(null);
@@ -271,9 +210,39 @@ export function TimelinePanel() {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
-  }, [dragging, visibleDuration, duration]);
+  }, [dragging, pxPerSec, duration, moveEvent]);
 
-  /* close add-menu on outside click */
+  /* ----- resize drag (right edge of event block) ----- */
+  const startResize = useCallback(
+    (e: React.MouseEvent, eventId: string, startDuration: number) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setResizing({ eventId, startMouseX: e.clientX, startDuration });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!resizing) return;
+
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - resizing.startMouseX;
+      const dtSec = dx / pxPerSec;
+      const newDuration = Math.max(0.1, resizing.startDuration + dtSec);
+      updateEventDuration(resizing.eventId, Math.round(newDuration * 100) / 100);
+    };
+
+    const onUp = () => setResizing(null);
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [resizing, pxPerSec, updateEventDuration]);
+
+  /* ----- close add-menu on outside click ----- */
   useEffect(() => {
     if (!addMenuPos) return;
     const close = () => setAddMenuPos(null);
@@ -281,43 +250,61 @@ export function TimelinePanel() {
     return () => window.removeEventListener('mousedown', close);
   }, [addMenuPos]);
 
-  /* keyboard: delete */
+  /* ----- keyboard: delete selected ----- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedMarker) {
-        deleteSelected();
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        removeEvent(selectedId);
+        setSelectedId(null);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedMarker, deleteSelected]);
+  }, [selectedId, removeEvent]);
+
+  /* ----- auto-scroll to follow playhead ----- */
+  useEffect(() => {
+    if (!isPlaying || !scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const playheadX = timeToX(currentTime);
+    const viewLeft = container.scrollLeft;
+    const viewRight = viewLeft + container.clientWidth;
+    // Keep playhead in the middle 60% of the visible area
+    const margin = container.clientWidth * 0.2;
+    if (playheadX < viewLeft + margin) {
+      container.scrollLeft = Math.max(0, playheadX - margin);
+    } else if (playheadX > viewRight - margin) {
+      container.scrollLeft = playheadX - container.clientWidth + margin;
+    }
+  }, [currentTime, isPlaying, timeToX]);
 
   /* ----- ruler ticks ----- */
   const ticks = (() => {
-    const intervals = [0.1, 0.25, 0.5, 1, 2, 5, 10];
-    const targetTickCount = 12;
-    const interval =
-      intervals.find((i) => visibleDuration / i <= targetTickCount) ?? 10;
     const result: { time: number; major: boolean }[] = [];
-    const start = Math.ceil(visibleStart / interval) * interval;
-    for (let t = start; t <= visibleEnd; t += interval) {
-      const rounded = Math.round(t * 1000) / 1000;
-      result.push({ time: rounded, major: rounded % (interval * 2) < 0.001 || interval >= 1 });
+    // Place a tick every second, sub-ticks every 0.5s
+    const interval = 1;
+    for (let t = 0; t <= duration; t += interval) {
+      result.push({ time: t, major: true });
     }
-    return result;
+    // Half-second sub-ticks
+    for (let t = 0.5; t < duration; t += interval) {
+      result.push({ time: t, major: false });
+    }
+    return result.sort((a, b) => a.time - b.time);
   })();
 
   /* ----- render ----- */
   return (
     <div className="space-y-3">
-      {/* Header row: title + duration control */}
+      {/* Header: title + duration */}
       <div className="flex items-center justify-between">
-        <h3 className="text-[10px] text-accent uppercase tracking-widest font-semibold">
-          Timeline
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
+          Sequencer
         </h3>
         <div className="flex items-center gap-2">
-          <label className="text-[10px] text-text-muted">Duration</label>
+          <label htmlFor="timeline-duration" className="text-ui-sm text-text-muted">Duration</label>
           <input
+            id="timeline-duration"
             type="number"
             min={1}
             max={60}
@@ -326,26 +313,28 @@ export function TimelinePanel() {
             onChange={(e) => {
               const d = clamp(Number(e.target.value), 1, 60);
               setDuration(d);
-              if (currentTime > d) setCurrentTime(d);
             }}
-            className="w-14 px-1.5 py-0.5 rounded bg-bg-deep border border-border-subtle text-text-primary text-[11px] text-center outline-none focus:border-accent-border"
+            className="touch-target w-14 px-1.5 py-0.5 rounded bg-bg-deep border border-border-subtle text-text-primary text-ui-base text-center outline-none focus:border-accent-border"
           />
-          <span className="text-[10px] text-text-muted">s</span>
+          <span className="text-ui-sm text-text-muted">s</span>
         </div>
       </div>
 
       {/* Playback controls */}
-      <div className="flex items-center gap-3">
-        {/* Play/Pause */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Play / Pause */}
         <button
           onClick={() => {
-            if (currentTime >= duration && !loop) setCurrentTime(0);
-            setPlaying((p) => !p);
+            if (!isPlaying && currentTime >= duration && !loop) {
+              setCurrentTime(0);
+            }
+            setPlaying(!isPlaying);
           }}
-          className="flex items-center justify-center w-7 h-7 rounded bg-bg-deep border border-border-subtle text-text-primary hover:border-accent-border hover:text-accent transition-colors"
-          title={playing ? 'Pause' : 'Play'}
+          className="touch-target flex items-center justify-center w-7 h-7 rounded bg-bg-deep border border-border-subtle text-text-primary hover:border-accent-border hover:text-accent transition-colors"
+          title={isPlaying ? 'Pause' : 'Play'}
+          aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
         >
-          {playing ? (
+          {isPlaying ? (
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
               <rect x="2" y="1" width="3" height="10" rx="0.5" />
               <rect x="7" y="1" width="3" height="10" rx="0.5" />
@@ -358,19 +347,21 @@ export function TimelinePanel() {
         </button>
 
         {/* Time display */}
-        <span className="text-[11px] font-mono text-text-secondary tabular-nums w-[90px]">
+        <span className="text-ui-base font-mono text-text-secondary tabular-nums w-[72px]">
           {formatTime(currentTime)}
         </span>
 
         {/* Loop toggle */}
         <button
-          onClick={() => setLoop((l) => !l)}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] border transition-colors ${
+          onClick={() => setLoop(!loop)}
+          className={`touch-target flex items-center gap-1 px-2 py-1 rounded text-ui-sm border transition-colors ${
             loop
               ? 'bg-accent-dim border-accent-border text-accent'
               : 'bg-bg-deep border-border-subtle text-text-muted hover:text-text-secondary'
           }`}
           title="Toggle loop"
+          aria-label={loop ? 'Disable loop' : 'Enable loop'}
+          aria-pressed={loop}
         >
           <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M2 8a6 6 0 0 1 10.5-4M14 8a6 6 0 0 1-10.5 4" />
@@ -379,14 +370,16 @@ export function TimelinePanel() {
           Loop
         </button>
 
-        {/* Speed control */}
+        {/* Speed selector */}
         <div className="flex items-center gap-1">
           {SPEED_OPTIONS.map((s) => (
             <button
               key={s}
-              onClick={() => setSpeed(s)}
-              className={`px-1.5 py-0.5 rounded text-[10px] border transition-colors ${
-                speed === s
+              onClick={() => setPlaybackSpeed(s)}
+              aria-label={`Set playback speed to ${s}x`}
+              aria-pressed={playbackSpeed === s}
+              className={`touch-target px-1.5 py-0.5 rounded text-ui-sm border transition-colors ${
+                playbackSpeed === s
                   ? 'bg-accent-dim border-accent-border text-accent'
                   : 'bg-bg-deep border-border-subtle text-text-muted hover:text-text-secondary'
               }`}
@@ -396,220 +389,439 @@ export function TimelinePanel() {
           ))}
         </div>
 
-        {/* Delete selected */}
-        {selectedMarker && (
+        {/* Clear all */}
+        {events.length > 0 && (
           <button
-            onClick={deleteSelected}
-            className="ml-auto px-2 py-1 rounded text-[10px] border border-border-subtle bg-bg-deep text-red-400 hover:border-red-500 hover:text-red-300 transition-colors"
+            onClick={clearAll}
+            aria-label="Clear all timeline events"
+            className="touch-target ml-auto px-2 py-1 rounded text-ui-sm border border-border-subtle bg-bg-deep text-text-muted hover:text-red-400 hover:border-red-500 transition-colors"
           >
-            Delete
+            Clear All
           </button>
         )}
       </div>
 
-      {/* Timeline track area */}
+      {/* Timeline track area — scrollable */}
       <div
-        className="relative select-none"
-        onWheel={handleWheel}
+        ref={scrollContainerRef}
+        className="overflow-x-auto overflow-y-hidden rounded border border-border-subtle bg-bg-deep"
+        style={{ maxHeight: '200px' }}
       >
-        {/* Ruler */}
-        <div className="relative h-5 border-b border-border-subtle overflow-hidden">
-          {ticks.map((tick) => {
-            const pct = timeToPercent(tick.time);
-            if (pct < -1 || pct > 101) return null;
-            return (
-              <div
-                key={tick.time}
-                className="absolute top-0 flex flex-col items-center"
-                style={{ left: `${pct}%` }}
-              >
-                <span className="text-[9px] text-text-muted leading-none whitespace-nowrap -translate-x-1/2">
-                  {tick.time.toFixed(tick.time % 1 === 0 ? 0 : 1)}s
-                </span>
-                <div
-                  className={`w-px ${tick.major ? 'h-2 bg-text-muted' : 'h-1 bg-border-subtle'}`}
-                  style={{ marginTop: '1px' }}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Track */}
         <div
-          ref={trackRef}
-          className="relative h-16 bg-bg-deep rounded border border-border-subtle mt-1 cursor-crosshair overflow-hidden"
-          onClick={handleTrackClick}
-          onMouseDown={handleScrub}
-          onMouseMove={handleScrubDrag}
+          className="relative select-none"
+          style={{ width: `${totalTrackWidth}px`, minWidth: '100%' }}
         >
-          {/* Effect markers */}
-          {markers.map((marker) => {
-            const left = timeToPercent(marker.time);
-            const isRange = marker.endTime !== undefined;
-            const width = isRange
-              ? timeToPercent(marker.endTime!) - left
-              : undefined;
-            const isSelected = selectedMarker === marker.id;
-            const color = EFFECT_COLORS[marker.type];
-
-            if (isRange && width !== undefined) {
+          {/* Ruler */}
+          <div
+            className="relative h-5 border-b border-border-subtle cursor-pointer"
+            onClick={handleRulerClick}
+          >
+            {ticks.map((tick) => {
+              const x = timeToX(tick.time);
               return (
                 <div
-                  key={marker.id}
-                  data-marker
-                  className="absolute top-1 bottom-1 rounded-sm cursor-grab active:cursor-grabbing group"
-                  style={{
-                    left: `${left}%`,
-                    width: `${Math.max(width, 0.5)}%`,
-                    backgroundColor: `${color}22`,
-                    borderLeft: `2px solid ${color}`,
-                    borderRight: `2px solid ${color}`,
-                    outline: isSelected ? `1px solid ${color}` : undefined,
-                    zIndex: isSelected ? 10 : 1,
-                  }}
-                  onMouseDown={(e) => startDrag(e, marker.id, 'start')}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedMarker(marker.id);
-                  }}
+                  key={tick.time}
+                  className="absolute top-0 flex flex-col items-center"
+                  style={{ left: `${x}px` }}
                 >
-                  {/* Label */}
-                  <span
-                    className="absolute top-0.5 left-1 text-[9px] font-medium leading-none pointer-events-none"
-                    style={{ color }}
-                  >
-                    {EFFECT_LABELS[marker.type]}
-                  </span>
-                  {/* End handle */}
+                  {tick.major && (
+                    <span className="text-ui-xs text-text-muted leading-none whitespace-nowrap -translate-x-1/2">
+                      {tick.time}s
+                    </span>
+                  )}
                   <div
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize"
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      startDrag(e, marker.id, 'end');
-                    }}
+                    className={`w-px ${tick.major ? 'h-2.5 bg-text-muted' : 'h-1.5 bg-border-subtle'}`}
+                    style={{ marginTop: tick.major ? '1px' : '8px' }}
                   />
                 </div>
               );
-            }
+            })}
+          </div>
 
-            // Point marker
-            return (
-              <div
-                key={marker.id}
-                data-marker
-                className="absolute top-1 bottom-1 flex flex-col items-center cursor-grab active:cursor-grabbing"
-                style={{
-                  left: `${left}%`,
-                  transform: 'translateX(-50%)',
-                  zIndex: isSelected ? 10 : 1,
-                }}
-                onMouseDown={(e) => startDrag(e, marker.id, 'start')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedMarker(marker.id);
-                }}
-              >
-                {/* Diamond indicator */}
-                <div
-                  className="w-3 h-3 rotate-45 rounded-[1px] shrink-0"
-                  style={{
-                    backgroundColor: color,
-                    outline: isSelected ? `2px solid ${color}` : undefined,
-                    outlineOffset: '1px',
-                  }}
-                />
-                <div
-                  className="w-px flex-1"
-                  style={{ backgroundColor: color }}
-                />
-                <span
-                  className="text-[8px] font-medium whitespace-nowrap leading-none mt-0.5"
-                  style={{ color }}
-                >
-                  {EFFECT_LABELS[marker.type]}
-                </span>
-              </div>
-            );
-          })}
-
-          {/* Playhead */}
+          {/* Event track */}
           <div
-            className="absolute top-0 bottom-0 w-px bg-white z-20 pointer-events-none"
-            style={{ left: `${timeToPercent(currentTime)}%` }}
+            ref={trackRef}
+            className="relative cursor-crosshair"
+            style={{ height: '120px' }}
+            onClick={handleTrackClick}
+            role="listbox"
+            aria-label="Timeline events"
+            aria-roledescription="reorderable list"
           >
-            <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rounded-full" />
+            {/* Vertical grid lines at each second */}
+            {ticks
+              .filter((t) => t.major)
+              .map((tick) => (
+                <div
+                  key={`grid-${tick.time}`}
+                  className="absolute top-0 bottom-0 w-px bg-border-subtle/30"
+                  style={{ left: `${timeToX(tick.time)}px` }}
+                />
+              ))}
+
+            {/* Event blocks */}
+            {events.map((evt) => {
+              const x = timeToX(evt.startTime);
+              const color = EVENT_COLORS[evt.type];
+              const isSelected = selectedId === evt.id;
+              const hasDuration = evt.eventDuration > 0;
+              const blockWidth = hasDuration
+                ? Math.max(EVENT_BLOCK_WIDTH, evt.eventDuration * pxPerSec)
+                : EVENT_BLOCK_WIDTH;
+
+              return (
+                <div
+                  key={evt.id}
+                  data-event
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-roledescription="draggable item"
+                  aria-label={`${EVENT_LABELS[evt.type]} at ${evt.startTime.toFixed(1)}s`}
+                  className="absolute cursor-grab active:cursor-grabbing group"
+                  style={{
+                    left: `${hasDuration ? x : x - EVENT_BLOCK_WIDTH / 2}px`,
+                    top: '8px',
+                    width: `${blockWidth}px`,
+                    height: `${EVENT_BLOCK_HEIGHT}px`,
+                    zIndex: isSelected ? 10 : 1,
+                  }}
+                  onMouseDown={(e) => startDrag(e, evt.id, evt.startTime)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedId(evt.id);
+                  }}
+                >
+                  {/* Block background */}
+                  <div
+                    className="w-full h-full rounded-[4px] flex items-center justify-between relative overflow-hidden"
+                    style={{
+                      backgroundColor: `${color}22`,
+                      border: isSelected ? `2px solid ${color}` : `1px solid ${color}66`,
+                      opacity: evt.intensity < 1 ? 0.5 + evt.intensity * 0.5 : 1,
+                    }}
+                  >
+                    <span
+                      className="text-ui-xs font-semibold leading-none select-none truncate px-1"
+                      style={{ color }}
+                    >
+                      {EVENT_LABELS[evt.type]}
+                    </span>
+
+                    {/* Duration label (when wide enough) */}
+                    {hasDuration && blockWidth > 60 && (
+                      <span
+                        className="text-ui-xs font-mono select-none pr-3 shrink-0"
+                        style={{ color: `${color}88` }}
+                      >
+                        {evt.eventDuration.toFixed(1)}s
+                      </span>
+                    )}
+
+                    {/* Delete button (visible on hover / selection) */}
+                    <button
+                      className="touch-target absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-bg-deep border border-border-subtle text-text-muted
+                        flex items-center justify-center opacity-0 group-hover:opacity-100 hover:text-red-400 hover:border-red-500 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeEvent(evt.id);
+                        if (selectedId === evt.id) setSelectedId(null);
+                      }}
+                      title="Remove event"
+                      aria-label={`Remove ${EVENT_LABELS[evt.type]} event`}
+                    >
+                      <svg width="6" height="6" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M1 1l4 4M5 1l-4 4" />
+                      </svg>
+                    </button>
+
+                    {/* Resize handle (right edge, for duration events) */}
+                    {hasDuration && (
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ backgroundColor: `${color}44` }}
+                        onMouseDown={(e) => startResize(e, evt.id, evt.eventDuration)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Vertical tick line below the block */}
+                  <div
+                    className="absolute w-px"
+                    style={{
+                      left: hasDuration ? '0px' : `${EVENT_BLOCK_WIDTH / 2}px`,
+                      top: `${EVENT_BLOCK_HEIGHT}px`,
+                      height: `${120 - EVENT_BLOCK_HEIGHT - 8 - 4}px`,
+                      backgroundColor: `${color}44`,
+                    }}
+                  />
+
+                  {/* Time label below */}
+                  <span
+                    className="absolute text-ui-xs font-mono whitespace-nowrap"
+                    style={{
+                      left: hasDuration ? '0px' : `${EVENT_BLOCK_WIDTH / 2}px`,
+                      transform: hasDuration ? 'none' : 'translateX(-50%)',
+                      bottom: `-${120 - EVENT_BLOCK_HEIGHT - 8 - 2}px`,
+                      color: `${color}88`,
+                    }}
+                  >
+                    {evt.startTime.toFixed(2)}s
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Playhead */}
+            <div
+              className="absolute top-0 bottom-0 w-px bg-white/90 z-20 pointer-events-none"
+              style={{ left: `${timeToX(currentTime)}px` }}
+            >
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[5px] border-l-transparent border-r-transparent border-t-white" />
+            </div>
           </div>
         </div>
-
-        {/* Scroll indicator when zoomed */}
-        {zoom > 1 && (
-          <div className="relative h-1.5 mt-1 bg-bg-deep rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 bottom-0 bg-accent-dim rounded-full"
-              style={{
-                left: `${(scrollOffset / duration) * 100}%`,
-                width: `${(visibleDuration / duration) * 100}%`,
-              }}
-            />
-          </div>
-        )}
       </div>
 
       {/* Add-effect dropdown */}
       {addMenuPos && (
         <div
-          className="fixed z-50 py-1 rounded bg-bg-secondary border border-border-subtle shadow-lg"
-          style={{ left: addMenuPos.x, top: 'auto' }}
+          className="fixed z-50 py-1 rounded bg-bg-secondary border border-border-subtle shadow-lg max-h-64 overflow-y-auto"
+          style={{ left: addMenuPos.x, top: addMenuPos.y - 12, transform: 'translateY(-100%)' }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="px-3 py-1 text-[9px] text-text-muted uppercase tracking-wider">
-            Add effect at {addMenuPos.time.toFixed(2)}s
+          <div className="px-3 py-1 text-ui-xs text-text-muted uppercase tracking-wider">
+            Add at {addMenuPos.time.toFixed(2)}s
           </div>
-          {(Object.keys(EFFECT_COLORS) as EffectType[]).map((type) => (
+          {ALL_EVENT_TYPES.map((type) => (
             <button
               key={type}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-[11px] text-text-secondary hover:bg-bg-deep hover:text-text-primary transition-colors"
-              onClick={() => addMarker(type)}
+              className="touch-target flex items-center gap-2 w-full px-3 py-1.5 text-ui-base text-text-secondary hover:bg-bg-deep hover:text-text-primary transition-colors"
+              onClick={() => handleAddEvent(type)}
             >
               <span
                 className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: EFFECT_COLORS[type] }}
+                style={{ backgroundColor: EVENT_COLORS[type] }}
               />
-              {EFFECT_LABELS[type]}
-              {RANGE_EFFECTS.includes(type) && (
-                <span className="text-[9px] text-text-muted ml-auto">(range)</span>
-              )}
+              {EVENT_LABELS[type]}
             </button>
           ))}
         </div>
       )}
 
-      {/* Selected marker info */}
-      {selectedMarker && (() => {
-        const m = markers.find((mk) => mk.id === selectedMarker);
-        if (!m) return null;
+      {/* Selected event property panel */}
+      {selectedId && (() => {
+        const evt = events.find((e) => e.id === selectedId);
+        if (!evt) return null;
+        const color = EVENT_COLORS[evt.type];
+        const isInstant = evt.type === 'ignite' || evt.type === 'retract';
         return (
-          <div className="flex items-center gap-3 px-3 py-2 rounded bg-bg-deep border border-border-subtle text-[11px]">
-            <span
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: EFFECT_COLORS[m.type] }}
-            />
-            <span className="text-text-primary font-medium">{EFFECT_LABELS[m.type]}</span>
-            <span className="text-text-muted">@</span>
-            <span className="font-mono text-text-secondary">{m.time.toFixed(3)}s</span>
-            {m.endTime !== undefined && (
-              <>
-                <span className="text-text-muted">-</span>
-                <span className="font-mono text-text-secondary">{m.endTime.toFixed(3)}s</span>
-                <span className="text-text-muted">
-                  ({(m.endTime - m.time).toFixed(3)}s)
-                </span>
-              </>
-            )}
+          <div className="rounded bg-bg-deep border border-border-subtle p-3 space-y-2.5">
+            {/* Header row */}
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <span className="text-ui-base text-text-primary font-medium">{EVENT_LABELS[evt.type]}</span>
+              <span className="text-ui-sm text-text-muted">@</span>
+              <span className="text-ui-sm font-mono text-text-secondary">{evt.startTime.toFixed(3)}s</span>
+              <button
+                onClick={() => { removeEvent(evt.id); setSelectedId(null); }}
+                className="touch-target ml-auto px-2 py-0.5 rounded text-ui-sm border border-border-subtle bg-bg-deep text-red-400 hover:border-red-500 hover:text-red-300 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+
+            {/* Properties grid */}
+            <div className="grid grid-cols-1 desktop:grid-cols-3 gap-3">
+              {/* Duration */}
+              <div>
+                <label htmlFor={`event-duration-${evt.id}`} className="block text-ui-xs text-text-muted uppercase tracking-wider mb-1">
+                  Duration
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    id={`event-duration-${evt.id}`}
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.1}
+                    value={evt.eventDuration}
+                    disabled={isInstant}
+                    onChange={(e) => updateEventDuration(evt.id, Number(e.target.value))}
+                    className="touch-target w-full px-1.5 py-0.5 rounded bg-bg-surface border border-border-subtle text-ui-sm text-text-primary text-center outline-none focus:border-accent-border disabled:opacity-40"
+                  />
+                  <span className="text-ui-xs text-text-muted shrink-0">s</span>
+                </div>
+              </div>
+
+              {/* Easing Curve */}
+              <div>
+                <label htmlFor={`event-easing-${evt.id}`} className="block text-ui-xs text-text-muted uppercase tracking-wider mb-1">
+                  Easing
+                </label>
+                <select
+                  id={`event-easing-${evt.id}`}
+                  value={evt.easingCurve}
+                  disabled={isInstant}
+                  onChange={(e) => updateEventEasing(evt.id, e.target.value as EasingCurve)}
+                  className="touch-target w-full px-1 py-0.5 rounded bg-bg-surface border border-border-subtle text-ui-sm text-text-primary outline-none focus:border-accent-border disabled:opacity-40"
+                >
+                  {EASING_OPTIONS.map((e) => (
+                    <option key={e} value={e}>{EASING_LABELS[e]}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Intensity */}
+              <div>
+                <label htmlFor={`event-intensity-${evt.id}`} className="block text-ui-xs text-text-muted uppercase tracking-wider mb-1">
+                  Intensity
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    id={`event-intensity-${evt.id}`}
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={evt.intensity}
+                    onChange={(e) => updateEventIntensity(evt.id, Number(e.target.value))}
+                    className="flex-1 h-1 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-ui-xs text-text-muted tabular-nums w-6 text-right">
+                    {Math.round(evt.intensity * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         );
       })()}
+
+      {/* Template Palette */}
+      <TemplatePalette />
+
+      {/* Event count hint */}
+      <div className="flex items-center justify-between text-ui-xs text-text-muted">
+        <span>{events.length} event{events.length !== 1 ? 's' : ''} — click track to add, or drop a template</span>
+        <span>drag to reposition</span>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Template Palette                                                    */
+/* ------------------------------------------------------------------ */
+
+const CATEGORY_LABELS: Record<string, string> = {
+  ignition: 'Ignition',
+  idle: 'Idle',
+  combat: 'Combat',
+  retraction: 'Retraction',
+  special: 'Special',
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  ignition: '#22c55e',
+  idle: '#3b82f6',
+  combat: '#ef4444',
+  retraction: '#f59e0b',
+  special: '#a855f7',
+};
+
+function TemplatePalette() {
+  const [open, setOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('combat');
+  const addEventGroup = useTimelineStore((s) => s.addEventGroup);
+  const currentTime = useTimelineStore((s) => s.currentTime);
+
+  const handleDropTemplate = useCallback(
+    (templateId: string) => {
+      const template = ANIMATION_TEMPLATES.find((t) => t.id === templateId);
+      if (!template) return;
+      const groupEvents = template.events.map((e) => ({
+        type: e.type as TimelineEventType,
+        startTime: currentTime + e.relativeStartTime,
+        eventDuration: e.duration,
+        easingCurve: e.easing as EasingCurve,
+        intensity: e.intensity,
+        label: template.name,
+      }));
+      addEventGroup(groupEvents);
+    },
+    [currentTime, addEventGroup],
+  );
+
+  const templates = getTemplatesByCategory(activeCategory as import('@bladeforge/engine').AnimationCategory);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="touch-target text-ui-sm text-text-muted hover:text-accent transition-colors flex items-center gap-1"
+      >
+        <span className="text-ui-xs">{open ? '\u25BC' : '\u25B6'}</span>
+        Animation Templates
+      </button>
+
+      {open && (
+        <div className="mt-1.5 bg-bg-primary rounded p-2 border border-border-subtle space-y-2">
+          {/* Category tabs */}
+          <div className="flex gap-1">
+            {getCategories().map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`touch-target px-2 py-0.5 rounded text-ui-xs border transition-colors ${
+                  activeCategory === cat
+                    ? 'border-accent-border text-accent bg-accent-dim'
+                    : 'border-border-subtle text-text-muted hover:text-text-secondary'
+                }`}
+                style={activeCategory === cat ? { borderColor: CATEGORY_COLORS[cat] } : undefined}
+              >
+                {CATEGORY_LABELS[cat] ?? cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Template list */}
+          <div className="space-y-1 max-h-[140px] overflow-y-auto">
+            {templates.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center gap-2 group cursor-pointer hover:bg-bg-surface rounded px-1.5 py-1 transition-colors"
+                onClick={() => handleDropTemplate(t.id)}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: CATEGORY_COLORS[t.category] }}
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-ui-sm text-text-primary group-hover:text-accent transition-colors">
+                    {t.name}
+                  </span>
+                  <span className="text-ui-xs text-text-muted ml-1.5">
+                    {t.totalDuration}s &middot; {t.events.length} events
+                  </span>
+                </div>
+                <button
+                  className="touch-target text-ui-xs px-1.5 py-0.5 rounded border border-border-subtle text-text-muted opacity-0 group-hover:opacity-100 hover:text-accent hover:border-accent-border/40 transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDropTemplate(t.id);
+                  }}
+                >
+                  + Add
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-ui-xs text-text-muted">
+            Click a template to add it at the playhead position ({formatTime(useTimelineStore.getState().currentTime)}).
+          </p>
+        </div>
+      )}
     </div>
   );
 }

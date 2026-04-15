@@ -46,12 +46,29 @@ See [STYLE_AUTHORING.md](./STYLE_AUTHORING.md) for the full guide.
 4. Add effect and style mappings
 5. Write tests for compatibility scoring
 
+### Adding a new preset
+
+1. Create or update a file in `packages/presets/src/characters/`
+2. Define a `Preset` with `BladeConfig` and `PresetMetadata` (character name, era, affiliation, description)
+3. Export from `packages/presets/src/index.ts`
+4. Add to the `ALL_PRESETS` array
+
+### Adding a card preset template
+
+1. Add a new template object in `packages/presets/src/templates/card-templates.ts`
+2. Follow the `CardTemplate` interface: `{ id, name, description, entries: CardTemplateEntry[] }`
+3. Each entry needs `presetName`, `fontName`, `config` (full `BladeConfig`), and `source`
+4. Export the template and add it to the `CARD_TEMPLATES` array
+5. Export from `packages/presets/src/index.ts`
+
 ### UI changes (`apps/web/`)
 
 - Components live in `apps/web/components/`
-- State is in Zustand stores (`apps/web/stores/`)
+- State is in Zustand stores (`apps/web/stores/`) — 8 stores for different domains (blade, UI, presets, profiles, audio, mixer, accessibility, preset list)
 - Use Tailwind CSS for styling, Radix UI for primitives
+- Use `HelpTooltip` for contextual help on feature headings
 - Keep components focused — one panel, one responsibility
+- All new interactive elements must have ARIA labels and 44px min touch targets
 
 ## Code Style
 

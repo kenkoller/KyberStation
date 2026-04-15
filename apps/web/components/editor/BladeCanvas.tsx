@@ -1,10 +1,12 @@
 'use client';
-import { useRef, useCallback, useEffect, useState } from 'react';
-import type { BladeEngine } from '@bladeforge/engine';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import type { BladeEngine, BladeConfig } from '@bladeforge/engine';
 import { TOPOLOGY_PRESETS } from '@bladeforge/engine';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
+import { getThemeById } from '@/lib/canvasThemes';
 
 type RenderMode = 'photorealistic' | 'pixel';
 
@@ -13,6 +15,7 @@ interface BladeCanvasProps {
   vertical?: boolean;
   mobileFullscreen?: boolean;
   renderMode?: RenderMode;
+  compact?: boolean;
 }
 
 // ─── Design-space constants (scaled at render time) ───
@@ -26,8 +29,15 @@ const EMITTER_W = 14;
 const BLADE_START = 274; // hilt area ends here
 const BLADE_LEN = 830;
 const BLADE_Y = DESIGN_H / 2;
-const BLADE_CORE_H = 18;
+const BLADE_CORE_H = 26;
 
+// Data readout positions (design-space Y)
+const STRIP_Y = 400;       // pixel strip top
+const GRAPH_TOP_Y = 455;   // RGB graph top (increased gap from strip)
+const GRAPH_BOT_Y = 575;   // RGB graph bottom (padding from canvas edge)
+
+// Reference: max blade inches that fills BLADE_LEN design-space
+const MAX_BLADE_INCHES = 40;
 // Hilt palette
 const METAL_DARK = '#2a2a32';
 const METAL_SPEC = '#6a6a78';
@@ -36,7 +46,6 @@ const EMITTER_DARK = '#555560';
 const EMITTER_LIGHT = '#6a6a74';
 const BUTTON_RED = '#cc0000';
 const BUTTON_SPEC = '#ff6666';
-const BG_COLOR = '#0a0a10';
 
 // ─── Strip type definitions ───
 
@@ -54,6 +63,7 @@ const STRIP_TYPES: StripType[] = [
   { id: 'dual-neo', label: 'Neopixel (2 strip)', description: 'Dual strip, brighter', ledsPerInch: 3.66, stripCount: 2 },
   { id: 'tri-neo', label: 'Neopixel (3 strip)', description: 'Tri strip, very even', ledsPerInch: 3.66, stripCount: 3 },
   { id: 'quad-neo', label: 'Neopixel (4 strip)', description: 'Quad strip, ultra-even', ledsPerInch: 3.66, stripCount: 4 },
+  { id: 'penta-neo', label: 'Neopixel (5 strip)', description: 'Penta strip, maximum light', ledsPerInch: 3.66, stripCount: 5 },
   // In-hilt (high-power base LEDs, no per-pixel control)
   { id: 'tri-cree', label: 'Tri-Cree (In-Hilt)', description: '3 high-power base LEDs', ledsPerInch: 0, stripCount: 3 },
   { id: 'quad-cree', label: 'Quad-Star (In-Hilt)', description: '4 high-power base LEDs', ledsPerInch: 0, stripCount: 4 },
@@ -103,6 +113,7 @@ interface HiltStyle {
 }
 
 const HILT_STYLES: HiltStyle[] = [
+  { id: 'minimal', label: 'Minimal', pommelW: 10, gripW: 80, shroudW: 10, emitterW: 16, hiltH: 20, shroudInset: 1, emitterFlare: 1, ribSpacing: 10, hasButton: false, hasWindowPort: false, metalTint: '' },
   { id: 'classic', label: 'Classic (ANH)', pommelW: 22, gripW: 110, shroudW: 24, emitterW: 38, hiltH: 28, shroudInset: 4, emitterFlare: 4, ribSpacing: 6, hasButton: true, hasWindowPort: false, metalTint: '' },
   { id: 'graflex', label: 'Graflex (ESB)', pommelW: 18, gripW: 120, shroudW: 16, emitterW: 30, hiltH: 26, shroudInset: 2, emitterFlare: 2, ribSpacing: 4, hasButton: true, hasWindowPort: true, metalTint: '#c8b060' },
   { id: 'thin-neck', label: 'Thin Neck (ROTJ)', pommelW: 20, gripW: 100, shroudW: 30, emitterW: 34, hiltH: 26, shroudInset: 7, emitterFlare: 6, ribSpacing: 5, hasButton: true, hasWindowPort: false, metalTint: '' },
@@ -189,31 +200,31 @@ function getGlowProfile(r: number, g: number, b: number): GlowProfile {
 
   if (isRed) {
     // Red: deeper, tighter glow — menacing Sith look
-    return { coreWhiteout: 0.75, bloomRadius: 0.8, bloomIntensity: 1.1, colorSaturation: 1.2, outerHue: 0 };
+    return { coreWhiteout: 0.80, bloomRadius: 1.1, bloomIntensity: 1.4, colorSaturation: 1.3, outerHue: 0 };
   }
   if (isBlue) {
     // Blue: wider spread, classic Jedi
-    return { coreWhiteout: 0.85, bloomRadius: 1.2, bloomIntensity: 1.15, colorSaturation: 0.9, outerHue: 0 };
+    return { coreWhiteout: 0.88, bloomRadius: 1.5, bloomIntensity: 1.4, colorSaturation: 0.95, outerHue: 0 };
   }
   if (isCyan) {
     // Cyan: wide, bright, electric
-    return { coreWhiteout: 0.88, bloomRadius: 1.25, bloomIntensity: 1.2, colorSaturation: 0.85, outerHue: 0 };
+    return { coreWhiteout: 0.90, bloomRadius: 1.5, bloomIntensity: 1.45, colorSaturation: 0.9, outerHue: 0 };
   }
   if (isGreen) {
     // Green: medium with slight warm edge
-    return { coreWhiteout: 0.82, bloomRadius: 1.0, bloomIntensity: 1.05, colorSaturation: 0.95, outerHue: 5 };
+    return { coreWhiteout: 0.85, bloomRadius: 1.3, bloomIntensity: 1.3, colorSaturation: 1.0, outerHue: 5 };
   }
   if (isPurple) {
     // Purple: wide with desaturated outer ring
-    return { coreWhiteout: 0.80, bloomRadius: 1.15, bloomIntensity: 1.1, colorSaturation: 0.75, outerHue: 0 };
+    return { coreWhiteout: 0.85, bloomRadius: 1.4, bloomIntensity: 1.35, colorSaturation: 0.8, outerHue: 0 };
   }
   if (isYellow) {
     // Yellow: Temple Guard, bright and warm
-    return { coreWhiteout: 0.90, bloomRadius: 1.1, bloomIntensity: 1.15, colorSaturation: 0.85, outerHue: -5 };
+    return { coreWhiteout: 0.92, bloomRadius: 1.3, bloomIntensity: 1.35, colorSaturation: 0.9, outerHue: -5 };
   }
   if (isOrange) {
     // Orange: warm, moderate spread
-    return { coreWhiteout: 0.83, bloomRadius: 0.95, bloomIntensity: 1.05, colorSaturation: 1.0, outerHue: 0 };
+    return { coreWhiteout: 0.86, bloomRadius: 1.2, bloomIntensity: 1.25, colorSaturation: 1.1, outerHue: 0 };
   }
 
   // Default / mixed colors
@@ -244,17 +255,6 @@ function saturateRGB(r: number, g: number, b: number, amount: number): [number, 
   ];
 }
 
-/** sRGB to linear for physically correct blending */
-function srgbToLinear(c: number): number {
-  const s = c / 255;
-  return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-}
-
-function linearToSrgb(c: number): number {
-  const s = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-  return clamp(s * 255, 0, 255);
-}
-
 const VIEW_MODE_LABELS: Record<string, string> = {
   blade: 'Blade View',
   angle: 'Angle View',
@@ -264,12 +264,21 @@ const VIEW_MODE_LABELS: Record<string, string> = {
 
 // ─── Component ───
 
-export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = false, renderMode = 'photorealistic' }: BladeCanvasProps) {
+export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = false, renderMode = 'photorealistic', compact = false }: BladeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
+
+  // Compact strip mode: shorter design space with blade near top
+  const layoutRef = useRef({
+    designH: compact ? 240 : DESIGN_H,
+    bladeY: compact ? 60 : BLADE_Y,
+    stripY: compact ? 130 : STRIP_Y,
+    graphTopY: compact ? 148 : GRAPH_TOP_Y,
+    graphBotY: compact ? 230 : GRAPH_BOT_Y,
+  });
 
   const config = useBladeStore((s) => s.config);
   const topology = useBladeStore((s) => s.topology);
@@ -277,14 +286,21 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const setTopology = useBladeStore((s) => s.setTopology);
   const viewMode = useUIStore((s) => s.viewMode);
   const brightness = useUIStore((s) => s.brightness);
+  const canvasTheme = useUIStore((s) => s.canvasTheme);
+  const analyzeMode = useUIStore((s) => s.analyzeMode);
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const theme = useMemo(() => getThemeById(canvasTheme), [canvasTheme]);
 
-  // Local state for selectors
-  const [stripType, setStripType] = useState<string>('single');
+  // Strip type from store (persisted via BladeConfig)
+  const stripType = config.stripType ?? 'single';
+  const setStripType = useCallback((v: string) => updateConfig({ stripType: v as BladeConfig['stripType'] }), [updateConfig]);
   const [bladeLength, setBladeLength] = useState<number>(config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 132 ? 36 : 40);
   const [showGrid, setShowGrid] = useState<boolean>(true);
-  const [hiltStyle, setHiltStyle] = useState<string>('classic');
+  const [hiltStyle, setHiltStyle] = useState<string>('minimal');
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
+  const [zoom, setZoom] = useState<number>(1.25);
+  const [panX, setPanX] = useState<number>(0); // pan offset in design-space pixels
 
   // Shimmer state for organic animation
   const shimmerRef = useRef<number>(1.0);
@@ -336,16 +352,21 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     return offscreenRef.current;
   }, []);
 
-  // ─── Scale factor: maps design-space → actual canvas pixels ───
-  const getScale = useCallback(() => {
+  // ─── Scale factors: maps design-space → actual canvas pixels ───
+  // Base scale: fits design space into canvas without zoom
+  const getBaseScale = useCallback(() => {
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;
     const ch = h * dpr;
-    // Uniform scale: fit design space into canvas, preserving aspect ratio
     const sx = cw / DESIGN_W;
-    const sy = ch / DESIGN_H;
+    const sy = ch / layoutRef.current.designH;
     return Math.min(sx, sy);
   }, []);
+
+  // Zoomed scale: used for blade/hilt/glow rendering
+  const getScale = useCallback(() => {
+    return getBaseScale() * zoom;
+  }, [getBaseScale, zoom]);
 
   // ─── Draw background + measurement grid ───
   const drawBackground = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -354,19 +375,19 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const ch = h * dpr;
     const scale = getScale();
 
-    ctx.fillStyle = BG_COLOR;
+    ctx.fillStyle = theme.bgColor;
     ctx.fillRect(0, 0, cw, ch);
 
     if (!showGrid) return;
 
-    // Real-world measurement grid based on blade length
-    // Map blade inches to the BLADE_LEN design-space, then to canvas pixels
+    // Real-world measurement grid based on blade length (scale-accurate)
     const bladeLenInches = bladeLength;
-    const pixelsPerInch = (BLADE_LEN * scale) / bladeLenInches;
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const pixelsPerInch = (scaledBladeLenDS * scale) / bladeLenInches;
 
-    const bladeStartPx = BLADE_START * scale;
-    const bladeEndPx = (BLADE_START + BLADE_LEN) * scale;
-    const bladeCenterY = BLADE_Y * scale;
+    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeEndPx = bladeStartPx + scaledBladeLenDS * scale;
+    const bladeCenterY = layoutRef.current.bladeY * scale;
 
     // Draw half-inch vertical lines along blade area
     ctx.textAlign = 'center';
@@ -379,9 +400,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const isMajor = inch % 6 === 0; // every 6 inches = bolder
 
       ctx.strokeStyle = isMajor
-        ? 'rgba(255, 255, 255, 0.08)'
+        ? theme.gridColor
         : isWholeInch
-          ? 'rgba(255, 255, 255, 0.05)'
+          ? theme.gridLabelColor
           : 'rgba(255, 255, 255, 0.025)';
       ctx.lineWidth = isMajor ? 1.5 : 1;
 
@@ -394,7 +415,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       if (isWholeInch && inch > 0) {
         const fontSize = Math.max(8, Math.min(11, scale * 8));
         ctx.font = `${fontSize}px monospace`;
-        ctx.fillStyle = isMajor ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.1)';
+        ctx.fillStyle = isMajor ? theme.gridLabelColor : theme.gridLabelColor;
         ctx.fillText(`${inch}"`, x, bladeCenterY + (BLADE_CORE_H * scale) / 2 + 6 * scale);
       }
     }
@@ -402,7 +423,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Horizontal guide lines at blade center area
     const guideOffsets = [0, -BLADE_CORE_H / 2, BLADE_CORE_H / 2];
     for (const offset of guideOffsets) {
-      const y = (BLADE_Y + offset) * scale;
+      const y = (layoutRef.current.bladeY + offset) * scale;
       ctx.strokeStyle = offset === 0 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.02)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -442,7 +463,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.lineTo(x, rulerH * 0.3);
       ctx.stroke();
     }
-  }, [showGrid, bladeLength, getScale]);
+  }, [showGrid, bladeLength, panX, getScale, theme]);
 
   // ─── Draw vignette ───
   const drawVignette = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -453,11 +474,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cy = ch / 2;
     const radius = Math.sqrt(cx * cx + cy * cy);
     const grad = ctx.createRadialGradient(cx, cy, radius * 0.35, cx, cy, radius);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(0, `rgba(${theme.vignetteColor},0)`);
+    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, cw, ch);
-  }, []);
+  }, [theme]);
 
   // ─── Draw metallic hilt (uses selected hilt style) ───
   const drawHilt = useCallback((ctx: CanvasRenderingContext2D, bladeColor: { r: number; g: number; b: number } | null, scale: number) => {
@@ -465,8 +486,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     // Compute hilt geometry from style
     const totalHiltW = hs.pommelW + hs.gripW + hs.shroudW + hs.emitterW;
-    const hiltStartX = (BLADE_START * scale) - totalHiltW * scale - EMITTER_W * scale;
-    const centerY = BLADE_Y * scale;
+    const hiltStartX = ((BLADE_START + panX) * scale) - totalHiltW * scale;
+    const centerY = layoutRef.current.bladeY * scale;
     const hiltH = hs.hiltH * scale;
     const hiltTop = centerY - hiltH / 2;
     const hiltBot = centerY + hiltH / 2;
@@ -590,7 +611,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(bladeColor.r, bladeColor.g, bladeColor.b, 0.06);
       ctx.fillRect(curX, hiltTop - flare, emW, hiltH + flare * 2);
     }
-  }, [hiltStyle]);
+  }, [hiltStyle, panX]);
 
   // ─── Draw blade (photorealistic enhanced) ───
   const drawBladePhotorealistic = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
@@ -608,9 +629,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const diffusion = DIFFUSION_TYPES.find(d => d.id === diffusionType) ?? DIFFUSION_TYPES[2];
     const diameterConfig = BLADE_DIAMETERS.find(d => d.inches === bladeDiameter) ?? BLADE_DIAMETERS[1];
 
-    const bladeLenPx = BLADE_LEN * scale;
-    const bladeStartPx = BLADE_START * scale;
-    const bladeYPx = BLADE_Y * scale;
+    // Scale blade length proportionally to inches (shorter blades = shorter visual)
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const bladeLenPx = scaledBladeLenDS * scale;
+    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeYPx = layoutRef.current.bladeY * scale;
     const baseCoreH = BLADE_CORE_H * scale * diameterConfig.coreScale;
     const coreH = baseCoreH;
 
@@ -641,15 +664,21 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       return;
     }
 
-    // ── Compute average blade color ──
+    // ── Compute average blade color + find farthest lit LED ──
+    // Read all LEDs — the engine mask already zeroed unlit pixels,
+    // so we don't clip to extendProgress (which breaks non-linear
+    // retraction types like shatter).
     let avgR = 0, avgG = 0, avgB = 0, activeCount = 0;
+    let maxLitT = 0;
     for (let i = 0; i < ledCount; i++) {
       const t = i / (ledCount - 1);
-      if (t > extendProgress) break;
       const r = leds.getR(i) * effectiveBri;
       const g = leds.getG(i) * effectiveBri;
       const b = leds.getB(i) * effectiveBri;
-      if (r + g + b > 1) { avgR += r; avgG += g; avgB += b; activeCount++; }
+      if (r + g + b > 1) {
+        avgR += r; avgG += g; avgB += b; activeCount++;
+        maxLitT = t;
+      }
     }
     if (activeCount > 0) { avgR /= activeCount; avgG /= activeCount; avgB /= activeCount; }
 
@@ -668,25 +697,24 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // In-hilt LEDs: single color, brightness falloff from emitter to tip
       for (let i = 0; i < ledCount; i++) {
         const t = i / (ledCount - 1);
-        if (t > extendProgress) break;
         const x = bladeStartPx + t * bladeLenPx;
-        // Exponential falloff from emitter
         const falloff = Math.pow(1 - t, 1.8);
         const r = avgR * falloff * shimmer;
         const g = avgG * falloff * shimmer;
         const b = avgB * falloff * shimmer;
+        if (r + g + b < 0.5) continue; // skip unlit LEDs
         offCtx.fillStyle = rgbStr(r, g, b);
         offCtx.fillRect(x, bladeYPx - coreH / 2, segW, coreH);
       }
     } else {
-      // Neopixel: per-LED color segments
+      // Neopixel: per-LED color segments — engine mask already handles visibility
       for (let i = 0; i < ledCount; i++) {
         const t = i / (ledCount - 1);
-        if (t > extendProgress) break;
         const x = bladeStartPx + t * bladeLenPx;
         const r = leds.getR(i) * effectiveBri * shimmer;
         const g = leds.getG(i) * effectiveBri * shimmer;
         const b = leds.getB(i) * effectiveBri * shimmer;
+        if (r + g + b < 0.5) continue; // skip unlit LEDs
         offCtx.fillStyle = rgbStr(r, g, b);
         offCtx.fillRect(x, bladeYPx - coreH / 2, segW, coreH);
       }
@@ -707,56 +735,48 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     }
 
     // ══════════════════════════════════════════════════
-    // ── 8-PASS BLOOM PIPELINE ──
+    // ── SMOOTH BLOOM PIPELINE ──
+    // Graduated blur passes with exponential alpha
+    // falloff for seamless glow without visible steps.
     // ══════════════════════════════════════════════════
 
     const br = glow.bloomRadius;
     const bi = glow.bloomIntensity;
 
-    // Pass 1: Ambient room glow (huge, subtle)
-    ctx.save();
-    ctx.filter = `blur(${80 * scale * br}px)`;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.04 * bi * shimmer;
-    ctx.drawImage(offscreen, 0, 0);
-    ctx.restore();
+    // Bloom layers from widest (ambient) to tightest (edge),
+    // each with progressively smaller radius and higher alpha.
+    const bloomPasses: Array<[number, number]> = [
+      [90,  0.025],  // ambient room glow
+      [70,  0.04],   // outer atmospheric haze
+      [52,  0.06],   // wide corona
+      [38,  0.09],   // mid corona
+      [26,  0.13],   // color corona
+      [18,  0.18],   // inner glow
+      [12,  0.24],   // tight glow
+      [7,   0.32],   // near-blade softness
+      [3.5, 0.42],   // blade edge blend
+    ];
 
-    // Pass 2: Outer atmospheric bloom
-    ctx.save();
-    ctx.filter = `blur(${50 * scale * br}px)`;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.08 * bi * shimmer;
-    ctx.drawImage(offscreen, 0, 0);
-    ctx.restore();
+    for (const [radius, alpha] of bloomPasses) {
+      ctx.save();
+      ctx.filter = `blur(${radius * scale * br}px)`;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = alpha * bi * shimmer;
+      ctx.drawImage(offscreen, 0, 0);
+      ctx.restore();
+    }
 
-    // Pass 3: Color corona (this is where the saber color lives)
+    // Pass 5.5: Bridge glow — soft additive layer to fill gap between bloom and blade body
     ctx.save();
-    ctx.filter = `blur(${25 * scale * br}px)`;
+    ctx.filter = `blur(${1.5 * scale * br}px)`;
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.15 * bi * shimmer;
-    ctx.drawImage(offscreen, 0, 0);
-    ctx.restore();
-
-    // Pass 4: Inner glow
-    ctx.save();
-    ctx.filter = `blur(${10 * scale * br}px)`;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.30 * bi * shimmer;
-    ctx.drawImage(offscreen, 0, 0);
-    ctx.restore();
-
-    // Pass 5: Blade edge softness
-    ctx.save();
-    ctx.filter = `blur(${3 * scale}px)`;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.50 * shimmer;
+    ctx.globalAlpha = 0.5 * bi * shimmer;
     ctx.drawImage(offscreen, 0, 0);
     ctx.restore();
 
     // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
     for (let i = 0; i < ledCount; i++) {
       const t = i / (ledCount - 1);
-      if (t > extendProgress) break;
       const x = bladeStartPx + t * bladeLenPx;
 
       let r: number, g: number, b: number;
@@ -770,20 +790,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         g = leds.getG(i) * effectiveBri * shimmer;
         b = leds.getB(i) * effectiveBri * shimmer;
       }
+      if (r + g + b < 0.5) continue; // skip unlit LEDs
 
       const grad = ctx.createLinearGradient(x, bladeYPx - coreH / 2, x, bladeYPx + coreH / 2);
-      // Edge: darker, simulates tube curvature
-      const edgeDim = 0.55;
+      // Softer edge dimming — avoids dark band between bloom and blade body
+      const edgeDim = 0.72;
       // Center: slightly boosted
       const centerBoost = 1.15;
-      const rW = clamp(r * centerBoost + 35, 0, 255);
-      const gW = clamp(g * centerBoost + 35, 0, 255);
-      const bW = clamp(b * centerBoost + 35, 0, 255);
+      const rW = clamp(r * centerBoost + 40, 0, 255);
+      const gW = clamp(g * centerBoost + 40, 0, 255);
+      const bW = clamp(b * centerBoost + 40, 0, 255);
 
       grad.addColorStop(0, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim));
-      grad.addColorStop(0.2, rgbStr(r * 0.85, g * 0.85, b * 0.85));
+      grad.addColorStop(0.15, rgbStr(r * 0.88, g * 0.88, b * 0.88));
+      grad.addColorStop(0.35, rgbStr(r, g, b));
       grad.addColorStop(0.5, rgbStr(rW, gW, bW));
-      grad.addColorStop(0.8, rgbStr(r * 0.85, g * 0.85, b * 0.85));
+      grad.addColorStop(0.65, rgbStr(r, g, b));
+      grad.addColorStop(0.85, rgbStr(r * 0.88, g * 0.88, b * 0.88));
       grad.addColorStop(1, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim));
 
       ctx.fillStyle = grad;
@@ -802,12 +825,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
-    // Pass 7: Core whiteout (HDR overexposed center — narrower than blade body)
-    const whiteH = coreH * 0.3; // narrow hot core
+    // Pass 7: Core whiteout (HDR overexposed center — fills middle of blade body)
+    const whiteH = coreH * 0.45; // wider hot core reduces dark banding
     const coreWhiteout = glow.coreWhiteout;
     for (let i = 0; i < ledCount; i++) {
       const t = i / (ledCount - 1);
-      if (t > extendProgress) break;
       const x = bladeStartPx + t * bladeLenPx;
 
       let r: number, g: number, b: number;
@@ -819,6 +841,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         g = leds.getG(i) * effectiveBri;
         b = leds.getB(i) * effectiveBri;
       }
+      if (r + g + b < 0.5) continue; // skip unlit LEDs
 
       // Blow out to near-white: real sabers are blinding at the core
       const wr = lerpToWhite(r, coreWhiteout);
@@ -828,22 +851,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillRect(x, bladeYPx - whiteH / 2, segW, whiteH);
     }
 
+    // Compute actual visible end from LED data (matches engine mask,
+    // not the linear extendProgress which diverges for shatter/fadeout).
+    const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
+    const actualVisibleLen = maxLitT * bladeLenPx;
+
     // Pass 8: Specular highlight line (thin white line down center)
     ctx.save();
     ctx.strokeStyle = `rgba(255,255,255,${0.35 * shimmer})`;
     ctx.lineWidth = 1.2 * scale;
     ctx.beginPath();
     ctx.moveTo(bladeStartPx, bladeYPx);
-    ctx.lineTo(visibleEnd, bladeYPx);
+    ctx.lineTo(actualVisibleEnd, bladeYPx);
     ctx.stroke();
     ctx.restore();
 
     // ── Blade tip corona ──
-    if (visibleLen > 1) {
-      const tipIdx = Math.min(Math.floor(extendProgress * (ledCount - 1)), ledCount - 1);
+    if (actualVisibleLen > 1) {
+      const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
       let tipR: number, tipG: number, tipB: number;
       if (isInHilt) {
-        const falloff = Math.pow(1 - extendProgress, 1.8);
+        const falloff = Math.pow(1 - maxLitT, 1.8);
         tipR = avgR * falloff; tipG = avgG * falloff; tipB = avgB * falloff;
       } else {
         tipR = leds.getR(tipIdx) * effectiveBri;
@@ -854,7 +882,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // Colored tip cap
       ctx.fillStyle = rgbStr(tipR, tipG, tipB);
       ctx.beginPath();
-      ctx.arc(visibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
+      ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
       ctx.fill();
 
       // White-hot tip center
@@ -863,19 +891,19 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const wb = lerpToWhite(tipB, coreWhiteout);
       ctx.fillStyle = rgbStr(wr, wg, wb, 0.90);
       ctx.beginPath();
-      ctx.arc(visibleEnd, bladeYPx, whiteH / 2, -Math.PI / 2, Math.PI / 2);
+      ctx.arc(actualVisibleEnd, bladeYPx, whiteH / 2, -Math.PI / 2, Math.PI / 2);
       ctx.fill();
 
       // Tip corona glow (larger, softer)
-      const tipGlowR = (extendProgress < 1 ? 65 : 40) * scale * glow.bloomRadius;
-      const tipGlowA = (extendProgress < 1 ? 0.6 : 0.25) * glow.bloomIntensity;
-      const tipGrad = ctx.createRadialGradient(visibleEnd, bladeYPx, 0, visibleEnd, bladeYPx, tipGlowR);
+      const tipGlowR = (maxLitT < 1 ? 65 : 40) * scale * glow.bloomRadius;
+      const tipGlowA = (maxLitT < 1 ? 0.6 : 0.25) * glow.bloomIntensity;
+      const tipGrad = ctx.createRadialGradient(actualVisibleEnd, bladeYPx, 0, actualVisibleEnd, bladeYPx, tipGlowR);
       tipGrad.addColorStop(0, rgbStr(lerpToWhite(tipR, 0.5), lerpToWhite(tipG, 0.5), lerpToWhite(tipB, 0.5), tipGlowA));
       tipGrad.addColorStop(0.3, rgbStr(tipR, tipG, tipB, tipGlowA * 0.6));
       tipGrad.addColorStop(1, rgbStr(tipR, tipG, tipB, 0));
       ctx.fillStyle = tipGrad;
       ctx.beginPath();
-      ctx.arc(visibleEnd, bladeYPx, tipGlowR, 0, Math.PI * 2);
+      ctx.arc(actualVisibleEnd, bladeYPx, tipGlowR, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -902,7 +930,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       floorGrad.addColorStop(0.7, rgbStr(satR, satG, satB, washAlpha * 0.15));
       floorGrad.addColorStop(1, rgbStr(satR, satG, satB, 0));
       ctx.fillStyle = floorGrad;
-      ctx.fillRect(bladeStartPx - 60 * scale, bladeYPx + coreH / 2, visibleLen + 120 * scale, ch - bladeYPx);
+      ctx.fillRect(bladeStartPx - 60 * scale, bladeYPx + coreH / 2, actualVisibleLen + 120 * scale, ch - bladeYPx);
 
       // Ceiling wash (subtle upward light spill)
       const ceilGrad = ctx.createLinearGradient(0, bladeYPx - coreH / 2, 0, 0);
@@ -910,7 +938,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ceilGrad.addColorStop(0.5, rgbStr(satR, satG, satB, washAlpha * 0.1));
       ceilGrad.addColorStop(1, rgbStr(satR, satG, satB, 0));
       ctx.fillStyle = ceilGrad;
-      ctx.fillRect(bladeStartPx - 60 * scale, 0, visibleLen + 120 * scale, bladeYPx - coreH / 2);
+      ctx.fillRect(bladeStartPx - 60 * scale, 0, actualVisibleLen + 120 * scale, bladeYPx - coreH / 2);
     }
 
     // ── Background ambient tint (blade color bleeds into dark background) ──
@@ -934,7 +962,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
     }
-  }, [brightness, drawHilt, getOffscreen, getScale, stripType, diffusionType, bladeDiameter]);
+  }, [brightness, drawHilt, getOffscreen, getScale, stripType, diffusionType, bladeDiameter, bladeLength, panX, theme]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
@@ -947,21 +975,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const bri = brightness / 100;
     const leds = engine.leds;
     const ledCount = leds.count;
-    const isInHilt = stripType.ledsPerInch === 0;
+    const currentStrip = STRIP_TYPES.find(s => s.id === stripType) ?? STRIP_TYPES[0];
+    const isInHilt = currentStrip.ledsPerInch === 0;
 
-    // Background
-    ctx.fillStyle = '#050508';
+    // Background (uses theme)
+    ctx.fillStyle = theme.bgColor;
     ctx.fillRect(0, 0, cw, ch);
 
-    // Blade position
-    const bladeStartPx = BLADE_START * scale;
-    const bladeLenPx = BLADE_LEN * scale;
-    const bladeYPx = BLADE_Y * scale;
+    // Blade position (scale-accurate: shorter blades = shorter visual)
+    const bladeStartPx = (BLADE_START + panX) * scale;
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const bladeLenPx = scaledBladeLenDS * scale;
+    const bladeYPx = layoutRef.current.bladeY * scale;
     const bladeH = BLADE_CORE_H * scale;
     const pixelGap = 1 * scale; // gap between LED pixels
 
     // Draw hilt (simplified)
-    drawHilt(ctx, scale);
+    drawHilt(ctx, null, scale);
 
     // Draw blade tube outline
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
@@ -990,7 +1020,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = '#666';
       ctx.font = `${10 * scale}px monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText(`In-Hilt (${stripType.label}) - No per-pixel control`, bladeStartPx + bladeLenPx / 2, bladeYPx + bladeH + 20 * scale);
+      ctx.fillText(`In-Hilt (${currentStrip.label}) - No per-pixel control`, bladeStartPx + bladeLenPx / 2, bladeYPx + bladeH + 20 * scale);
     } else {
       // Neopixel: draw each LED as a distinct pixel
       const pixelW = (bladeLenPx - (ledCount - 1) * pixelGap) / ledCount;
@@ -1028,11 +1058,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     }
 
     // Strip count indicator
-    if (!isInHilt && stripType.stripCount > 1) {
+    if (!isInHilt && currentStrip.stripCount > 1) {
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.font = `${9 * scale}px monospace`;
       ctx.textAlign = 'left';
-      ctx.fillText(`x${stripType.stripCount} strips`, bladeStartPx, bladeYPx - bladeH - 6 * scale);
+      ctx.fillText(`x${currentStrip.stripCount} strips`, bladeStartPx, bladeYPx - bladeH - 6 * scale);
     }
 
     // RGB channel readout at bottom
@@ -1073,17 +1103,84 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fillText(ch.label, margin - 4 * scale, y + barH / 2 + 3 * scale);
       });
     }
-  }, [brightness, drawHilt, getScale, stripType]);
+  }, [brightness, drawHilt, getScale, stripType, bladeLength, panX]);
 
   // ─── View modes ───
 
   const drawBladeView = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
-    if (renderMode === 'pixel') {
-      drawBladePixelView(ctx, engine);
+    const drawBlade = renderMode === 'pixel' ? drawBladePixelView : drawBladePhotorealistic;
+    const topoId = topology.presetId;
+
+    if (topoId === 'staff') {
+      // Staff: hilt in center, blade 1 extending right, blade 2 extending left (mirrored)
+      const scale = getScale();
+      const { w, dpr } = sizeRef.current;
+      const cw = w * dpr;
+
+      // Draw blade 1 (normal — extending right from hilt)
+      ctx.save();
+      // Shift everything left so hilt appears centered
+      const hiltCenterX = BLADE_START * scale * 0.5;
+      ctx.translate(-hiltCenterX, 0);
+      drawBlade(ctx, engine);
+      ctx.restore();
+
+      // Draw blade 2 (mirrored — extending left from hilt)
+      ctx.save();
+      ctx.translate(cw + hiltCenterX, 0);
+      ctx.scale(-1, 1);
+      drawBlade(ctx, engine);
+      ctx.restore();
+    } else if (topoId === 'crossguard') {
+      // Crossguard: main blade + two short perpendicular quillon blades at emitter
+      drawBlade(ctx, engine);
+
+      const scale = getScale();
+      const emitterX = (BLADE_START + panX) * scale;
+      const bladeY = layoutRef.current.bladeY * scale;
+      const quillonLen = 60 * scale; // short quillon blades
+      const quillonH = 6 * scale;
+
+      // Get average blade color for quillon glow
+      const leds = engine.leds;
+      const bri = brightness / 100;
+      let avgR = 0, avgG = 0, avgB = 0, count = 0;
+      for (let i = 0; i < Math.min(6, leds.count); i++) {
+        avgR += leds.getR(i); avgG += leds.getG(i); avgB += leds.getB(i); count++;
+      }
+      if (count > 0) { avgR = (avgR / count) * bri; avgG = (avgG / count) * bri; avgB = (avgB / count) * bri; }
+
+      if (engine.extendProgress > 0) {
+        const qProgress = Math.min(1, Math.max(0, (engine.extendProgress - 0.1) / 0.3));
+        if (qProgress > 0) {
+          // Quillon glow (bloom)
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.filter = `blur(${12 * scale}px)`;
+          ctx.globalAlpha = 0.3 * qProgress;
+          ctx.fillStyle = `rgb(${Math.round(avgR)},${Math.round(avgG)},${Math.round(avgB)})`;
+          // Upper quillon
+          ctx.fillRect(emitterX - quillonH / 2, bladeY - quillonLen * qProgress, quillonH, quillonLen * qProgress);
+          // Lower quillon
+          ctx.fillRect(emitterX - quillonH / 2, bladeY, quillonH, quillonLen * qProgress);
+          ctx.restore();
+
+          // Quillon core
+          ctx.fillStyle = `rgba(${Math.round(Math.min(255, avgR * 1.5))},${Math.round(Math.min(255, avgG * 1.5))},${Math.round(Math.min(255, avgB * 1.5))},${0.9 * qProgress})`;
+          ctx.fillRect(emitterX - quillonH / 4, bladeY - quillonLen * qProgress, quillonH / 2, quillonLen * qProgress);
+          ctx.fillRect(emitterX - quillonH / 4, bladeY, quillonH / 2, quillonLen * qProgress);
+
+          // White-hot center
+          ctx.fillStyle = `rgba(255,255,255,${0.6 * qProgress})`;
+          ctx.fillRect(emitterX - 1 * scale, bladeY - quillonLen * qProgress, 2 * scale, quillonLen * qProgress);
+          ctx.fillRect(emitterX - 1 * scale, bladeY, 2 * scale, quillonLen * qProgress);
+        }
+      }
     } else {
-      drawBladePhotorealistic(ctx, engine);
+      // Single blade or other topologies — default rendering
+      drawBlade(ctx, engine);
     }
-  }, [drawBladePhotorealistic, drawBladePixelView, renderMode]);
+  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, panX]);
 
   const drawAngleView = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const { w, h, dpr } = sizeRef.current;
@@ -1295,16 +1392,45 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
+    // Crossguard quillon cross-sections at 90° offsets
+    if (topology.presetId === 'crossguard' && engine.extendProgress > 0) {
+      const quillonRadius = 8 * scale;
+      const quillonOffset = coreRadius + 40 * scale;
+      const quillonPositions = [
+        { x: centerX, y: centerY - quillonOffset }, // top
+        { x: centerX, y: centerY + quillonOffset }, // bottom
+      ];
+      for (const pos of quillonPositions) {
+        // Quillon glow
+        const qGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, quillonRadius * 3);
+        qGrad.addColorStop(0, rgbStr(avgR, avgG, avgB, 0.2));
+        qGrad.addColorStop(1, rgbStr(avgR, avgG, avgB, 0));
+        ctx.fillStyle = qGrad;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, quillonRadius * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Quillon core
+        const qCoreGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, quillonRadius);
+        qCoreGrad.addColorStop(0, rgbStr(lerpToWhite(avgR, 0.5), lerpToWhite(avgG, 0.5), lerpToWhite(avgB, 0.5), 0.9));
+        qCoreGrad.addColorStop(1, rgbStr(avgR * 0.6, avgG * 0.6, avgB * 0.6, 0.4));
+        ctx.fillStyle = qCoreGrad;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, quillonRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     // Label
     ctx.fillStyle = '#555';
     ctx.font = `${11 * scale}px monospace`;
     ctx.textAlign = 'center';
+    const topoLabel = topology.presetId !== 'single' ? `  |  ${topology.presetId}` : '';
     ctx.fillText(
-      `AVG: R${avgR | 0} G${avgG | 0} B${avgB | 0}  |  ${currentStrip.label} (${numStrips} strip${numStrips > 1 ? 's' : ''})`,
+      `AVG: R${avgR | 0} G${avgG | 0} B${avgB | 0}  |  ${currentStrip.label} (${numStrips} strip${numStrips > 1 ? 's' : ''})${topoLabel}`,
       centerX,
       ch - 40 * scale,
     );
-  }, [brightness, getOffscreen, getScale, stripType]);
+  }, [brightness, getOffscreen, getScale, stripType, topology]);
 
   // ─── View mode label ───
   const drawViewLabel = useCallback((ctx: CanvasRenderingContext2D, mode: string) => {
@@ -1319,7 +1445,145 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.fillText(label, cw - 12 * scale, ch - 10 * scale);
   }, [getScale]);
 
-  // ─── Main render loop ───
+  // ─── Inline Pixel Strip (always visible, docked to bottom area) ───
+  const drawInlineStrip = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
+    const pixels = engine.getPixels();
+    const bufferLeds = Math.floor(pixels.length / 3);
+    const ledCount = Math.min(config.ledCount, bufferLeds);
+    if (ledCount <= 0) return;
+
+    const scale = getScale(); // zoomed scale — strip moves with blade
+    const bri = brightness / 100;
+
+    // Design-space coordinates, scaled uniformly with blade
+    const stripTop = layoutRef.current.stripY * scale;
+    const stripH = 16 * scale;
+    const graphLeft = (BLADE_START + panX) * scale;
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const stripW = scaledBladeLenDS * scale;
+    const cellW = stripW / ledCount;
+
+    // Strip background — themed raised panel
+    const bgX = graphLeft - 3 * scale;
+    const bgY = stripTop - 2 * scale;
+    const bgW = stripW + 6 * scale;
+    const bgH = stripH + 4 * scale;
+    ctx.fillStyle = theme.stripBg;
+    ctx.fillRect(bgX, bgY, bgW, bgH);
+    ctx.strokeStyle = theme.stripBorder;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(bgX, bgY, bgW, bgH);
+
+    // Draw individual LED pixels
+    for (let i = 0; i < ledCount; i++) {
+      const r = (pixels[i * 3] ?? 0) * bri;
+      const g = (pixels[i * 3 + 1] ?? 0) * bri;
+      const b = (pixels[i * 3 + 2] ?? 0) * bri;
+      const x = graphLeft + i * cellW;
+      ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
+      ctx.fillRect(x, stripTop, Math.max(cellW - 0.3, 0.5), stripH);
+    }
+
+    // "PIXEL" label
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = `${7 * scale}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillText('PIXEL', graphLeft + 2 * scale, stripTop - 4 * scale);
+
+    // LED index labels every 24
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < ledCount; i += 24) {
+      const x = graphLeft + i * cellW + cellW / 2;
+      ctx.fillText(String(i), x, stripTop + stripH + 8 * scale);
+    }
+
+    // Divider line between pixel strip and RGB graph
+    const dividerY = stripTop + stripH + 16 * scale;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(bgX, dividerY);
+    ctx.lineTo(bgX + bgW, dividerY);
+    ctx.stroke();
+  }, [config.ledCount, getScale, brightness, bladeLength, panX, theme]);
+
+  // ─── RGB Line Graph (docked to bottom, unaffected by zoom) ───
+  const drawRGBGraph = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
+    const pixels = engine.getPixels();
+    const bufferLeds = Math.floor(pixels.length / 3);
+    const ledCount = Math.min(config.ledCount, bufferLeds);
+    if (ledCount <= 0) return;
+
+    const { dpr } = sizeRef.current;
+    const scale = getScale(); // zoomed scale — graph moves with blade
+
+    // Design-space coordinates, scaled uniformly with blade
+    const graphTop = layoutRef.current.graphTopY * scale;
+    const graphBottom = layoutRef.current.graphBotY * scale;
+    const graphH = graphBottom - graphTop;
+    const graphLeft = (BLADE_START + panX) * scale;
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const graphW = scaledBladeLenDS * scale;
+
+    // Background — themed raised panel (extra left margin for Y-axis labels)
+    const labelMargin = 22 * scale;
+    const gBgX = graphLeft - labelMargin;
+    const gBgY = graphTop - 4 * scale;
+    const gBgW = graphW + labelMargin + 4 * scale;
+    const gBgH = graphH + 8 * scale;
+    ctx.fillStyle = theme.graphBg;
+    ctx.fillRect(gBgX, gBgY, gBgW, gBgH);
+    ctx.strokeStyle = theme.graphBorder;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(gBgX, gBgY, gBgW, gBgH);
+
+    // Grid lines at 0, 64, 128, 192, 255 with value labels
+    ctx.lineWidth = 0.5 * dpr;
+    ctx.font = `${7 * scale}px monospace`;
+    ctx.textAlign = 'right';
+    for (const val of [0, 64, 128, 192, 255]) {
+      const gy = graphBottom - (val / 255) * graphH;
+      if (val > 0 && val < 255) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.beginPath();
+        ctx.moveTo(graphLeft, gy);
+        ctx.lineTo(graphLeft + graphW, gy);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.fillText(String(val), graphLeft - 4 * scale, gy + 3 * scale);
+    }
+
+    // Draw R, G, B lines
+    const channels = [
+      { offset: 0, color: 'rgba(255, 60, 60, 0.95)' },
+      { offset: 1, color: 'rgba(60, 255, 60, 0.95)' },
+      { offset: 2, color: 'rgba(80, 130, 255, 0.95)' },
+    ];
+
+    ctx.lineWidth = 2 * dpr;
+    for (const ch of channels) {
+      ctx.strokeStyle = ch.color;
+      ctx.beginPath();
+      for (let i = 0; i < ledCount; i++) {
+        const x = graphLeft + (i / (ledCount - 1)) * graphW;
+        const val = pixels[i * 3 + ch.offset] ?? 0;
+        const y = graphBottom - (val / 255) * graphH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = `${8 * scale}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillText('RGB', graphLeft + 2 * scale, graphTop + 10 * scale);
+  }, [config.ledCount, getScale, bladeLength, panX, theme]);
+
+  // ─── Main render loop (throttled to 2fps when reduced motion is on) ───
   useAnimationFrame((deltaMs) => {
     const engine = engineRef.current;
     const canvas = canvasRef.current;
@@ -1348,7 +1612,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Vertical mode: rotate 90° CCW so blade points upward, centered
     if (vertical && viewMode === 'blade') {
       // Fill entire actual canvas with background first (before rotation)
-      ctx.fillStyle = BG_COLOR;
+      ctx.fillStyle = theme.bgColor;
       ctx.fillRect(0, 0, cw, ch);
 
       ctx.save();
@@ -1356,8 +1620,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // After rotation, effective drawing area is ch × cw (swapped)
       const rotatedW = ch; // device px
       const rotatedH = cw; // device px
-      const scale = Math.min(rotatedW / DESIGN_W, rotatedH / DESIGN_H);
-      const renderedH = DESIGN_H * scale;
+      const scale = Math.min(rotatedW / DESIGN_W, rotatedH / layoutRef.current.designH);
+      const renderedH = layoutRef.current.designH * scale;
       const centerOffsetY = (rotatedH - renderedH) / 2;
 
       ctx.translate(0, ch);
@@ -1378,7 +1642,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       case 'cross': drawCrossSection(ctx, engine); break;
     }
 
+    // Vignette drawn BEFORE data readouts so it doesn't dim them
     drawVignette(ctx);
+
+    // Draw pixel strip + RGB graph in blade view when analyze mode is on
+    if (viewMode === 'blade' && !mobileFullscreen && analyzeMode) {
+      drawInlineStrip(ctx, engine);
+      drawRGBGraph(ctx, engine);
+    }
+
     drawViewLabel(ctx, viewMode);
 
     if (vertical && viewMode === 'blade') {
@@ -1387,7 +1659,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const deviceDpr = window.devicePixelRatio || 1;
       sizeRef.current = { w: Math.floor(canvas.width / deviceDpr), h: Math.floor(canvas.height / deviceDpr), dpr: deviceDpr };
     }
-  });
+  }, { maxFps: reducedMotion ? 2 : undefined });
 
   // ─── Blade length change handler ───
   const handleBladeLengthChange = useCallback((inches: number) => {
@@ -1410,14 +1682,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   // ─── Config bar content (reusable for both layouts) ───
   const configBar = (
-    <div className="flex flex-wrap items-center gap-2 desktop:gap-3 px-2 py-1.5 bg-bg-secondary/50 rounded-md border border-border-subtle text-[10px] shrink-0">
+    <div className="flex flex-wrap items-center gap-2 desktop:gap-3 px-2 py-1.5 bg-bg-secondary/50 rounded-md border border-border-subtle text-ui-sm shrink-0">
       {/* Topology */}
       <label className="flex items-center gap-1">
         <span className="text-text-muted">Type</span>
         <select
           value={topology.presetId}
           onChange={(e) => handleTopologyChange(e.target.value)}
-          className="bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-[10px] focus:outline-none focus:border-accent"
+          className="touch-target bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-ui-sm focus:outline-none focus:border-accent"
         >
           {TOPOLOGY_OPTIONS.map((t) => (
             <option key={t.id} value={t.id}>{t.label}</option>
@@ -1431,7 +1703,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         <select
           value={hiltStyle}
           onChange={(e) => setHiltStyle(e.target.value)}
-          className="bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-[10px] focus:outline-none focus:border-accent"
+          className="touch-target bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-ui-sm focus:outline-none focus:border-accent"
         >
           {HILT_STYLES.map((h) => (
             <option key={h.id} value={h.id}>{h.label}</option>
@@ -1445,7 +1717,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         <select
           value={stripType}
           onChange={(e) => setStripType(e.target.value)}
-          className="bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-[10px] focus:outline-none focus:border-accent"
+          className="touch-target bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-ui-sm focus:outline-none focus:border-accent"
         >
           {STRIP_TYPES.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
@@ -1459,7 +1731,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         <select
           value={bladeLength}
           onChange={(e) => handleBladeLengthChange(Number(e.target.value))}
-          className="bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-[10px] focus:outline-none focus:border-accent"
+          className="touch-target bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-ui-sm focus:outline-none focus:border-accent"
         >
           {BLADE_LENGTHS.map((b) => (
             <option key={b.inches} value={b.inches}>{b.label}</option>
@@ -1473,7 +1745,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         <select
           value={bladeDiameter}
           onChange={(e) => setBladeDiameter(Number(e.target.value))}
-          className="bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-[10px] focus:outline-none focus:border-accent"
+          className="touch-target bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-ui-sm focus:outline-none focus:border-accent"
         >
           {BLADE_DIAMETERS.map((d) => (
             <option key={d.inches} value={d.inches}>{d.label}</option>
@@ -1487,7 +1759,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         <select
           value={diffusionType}
           onChange={(e) => setDiffusionType(e.target.value)}
-          className="bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-[10px] focus:outline-none focus:border-accent"
+          className="touch-target bg-bg-deep border border-border-subtle rounded px-1.5 py-0.5 text-text-secondary text-ui-sm focus:outline-none focus:border-accent"
         >
           {DIFFUSION_TYPES.map((d) => (
             <option key={d.id} value={d.id}>{d.label}</option>
@@ -1499,21 +1771,41 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       <span className="text-text-muted">{config.ledCount} LEDs</span>
       <button
         onClick={() => setShowGrid(!showGrid)}
-        className={`px-1.5 py-0.5 rounded border text-[10px] transition-colors ${
+        className={`touch-target px-1.5 py-0.5 rounded border text-ui-sm transition-colors ${
           showGrid
             ? 'border-accent/40 text-accent bg-accent-dim/30'
             : 'border-border-subtle text-text-muted hover:text-text-secondary'
         }`}
+        role="switch"
+        aria-checked={showGrid}
+        aria-label="Toggle grid overlay"
       >
         Grid
       </button>
     </div>
   );
 
+  // ─── Always-in-frame zoom clamp ───
+  // Ensures the blade never scrolls entirely off-screen during pan/zoom.
+  const clampPanX = useCallback((newPanX: number, newZoom: number): number => {
+    const { w, dpr } = sizeRef.current;
+    const cw = w * dpr;
+    const bs = getBaseScale();
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const visibleW = cw / (bs * newZoom);
+    // At least 20% of blade (or 30% of viewport) must remain visible
+    const margin = Math.min(scaledBladeLenDS * 0.2, visibleW * 0.3);
+
+    const maxPan = visibleW - BLADE_START - margin;
+    const minPan = -(BLADE_START + scaledBladeLenDS - margin);
+
+    return Math.max(minPan, Math.min(maxPan, newPanX));
+  }, [getBaseScale, bladeLength]);
+
   return (
-    <div className="flex flex-col h-full gap-1.5">
-      {/* ── Blade Config Bar (hidden on mobile fullscreen) ── */}
-      {!mobileFullscreen && configBar}
+    <div className="flex flex-col h-full w-full gap-1.5">
+      {/* ── Blade Config Bar (mobile only — desktop uses CanvasToolbar + BladeHardwarePanel) ── */}
+      {!mobileFullscreen && <div className="desktop:hidden">{configBar}</div>}
 
       {/* ── Canvas Container ── */}
       <div
@@ -1528,7 +1820,83 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         <canvas
           ref={canvasRef}
           className="blade-canvas absolute inset-0 w-full h-full"
+          role="img"
+          aria-label="Blade style preview visualizer"
+          onWheel={(e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            setZoom((prevZoom) => {
+              const newZoom = Math.max(0.5, Math.min(3.0, prevZoom + delta));
+              // Auto-center: keep blade midpoint at same screen position
+              const bs = getBaseScale();
+              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+              setPanX(clampPanX(newPanX, newZoom));
+              return newZoom;
+            });
+          }}
         />
+        {/* Zoom controls overlay */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
+          <button
+            onClick={() => setZoom((prevZoom) => {
+              const newZoom = Math.max(0.5, prevZoom - 0.25);
+              const bs = getBaseScale();
+              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+              setPanX(clampPanX(newPanX, newZoom));
+              return newZoom;
+            })}
+            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <span className="text-ui-xs text-text-muted tabular-nums w-10 text-center">
+            {Math.round(zoom * 100)}%
+          </span>
+          <button
+            onClick={() => setZoom((prevZoom) => {
+              const newZoom = Math.min(3.0, prevZoom + 0.25);
+              const bs = getBaseScale();
+              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+              setPanX(clampPanX(newPanX, newZoom));
+              return newZoom;
+            })}
+            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          {zoom !== 1.25 && (
+            <button
+              onClick={() => { setZoom(1.25); setPanX(0); }}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
+              aria-label="Reset zoom"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        {/* Analyze / Clean mode toggle */}
+        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
+          <button
+            onClick={() => useUIStore.getState().toggleAnalyzeMode()}
+            className={`touch-target text-ui-xs px-1.5 py-0.5 rounded transition-colors ${analyzeMode ? 'text-accent bg-accent/15' : 'text-text-muted hover:text-text-primary'}`}
+            aria-label={analyzeMode ? 'Switch to clean view' : 'Switch to analyze view'}
+            title={analyzeMode ? 'Hide pixel strip & RGB graph' : 'Show pixel strip & RGB graph'}
+          >
+            {analyzeMode ? 'Analyze' : 'Clean'}
+          </button>
+        </div>
+        {/* Blade length label */}
+        <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
+          {bladeLength}" blade
+        </div>
       </div>
     </div>
   );
