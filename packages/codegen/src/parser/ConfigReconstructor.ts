@@ -115,25 +115,95 @@ function findNodes(node: StyleNode, predicate: (n: StyleNode) => boolean): Style
 
 /**
  * Detect the base style from the AST root pattern.
+ *
+ * Disambiguation logic mirrors `buildBaseStyle` in ASTBuilder.ts:
+ *   - `AudioFlicker`           → stable
+ *   - `StyleFire`, 2nd = Mix   → unstable (5-arg with FireConfig)
+ *   - `StyleFire`, 2nd = Rgb<255,200,50>, FireConfig<2,...> → fire
+ *   - `StyleFire`, 2nd = Rgb  (edge), FireConfig<4,2500,8>  → plasma
+ *   - `Pulsing`                → pulse
+ *   - `Stripes<5000,-1500,...>` → photon
+ *   - `Stripes<3000,-2000,...>` → crystalShatter
+ *   - `Mix<SwingSpeed<400>,...>` → rotoscope
+ *   - `Mix<SwingSpeed<300>, StyleFire<>, ...>` → cinder
+ *   - `Gradient<>`             → gradient (2 args) / painted (more args)
+ *   - `Rainbow`                → aurora (prism collides; we always return aurora)
  */
 function detectStyle(node: StyleNode): { style: string; confidence: number } {
-  // Unwrap StylePtr and InOutTrL to find the core style
   const core = unwrapToCore(node);
   if (!core) return { style: 'custom', confidence: 0.1 };
 
   const name = core.name;
 
-  // Direct matches
   if (name === 'AudioFlicker') return { style: 'stable', confidence: 0.9 };
-  if (name === 'StyleFire') return { style: 'fire', confidence: 0.95 };
-  if (name === 'Stripes') return { style: 'unstable', confidence: 0.9 };
-  if (name === 'Pulsing') return { style: 'pulse', confidence: 0.9 };
-  if (name === 'Gradient') return { style: 'gradient', confidence: 0.85 };
-  if (name === 'Rainbow') return { style: 'gradient', confidence: 0.7 };
   if (name === 'HumpFlicker') return { style: 'stable', confidence: 0.8 };
-  if (name === 'Rgb') return { style: 'stable', confidence: 0.6 };
 
-  // Named colors
+  // StyleFire family: fire / unstable / plasma — disambiguated by arg[1]
+  // shape and FireConfig values.
+  if (name === 'StyleFire') {
+    const secondArg = core.args[1];
+    const fireConfig = core.args[4];
+    const fireConfigFirstArg =
+      fireConfig?.name === 'FireConfig' ? extractInt(fireConfig.args[0]) : null;
+
+    // fire: 2nd arg is a plain Rgb (the hardcoded {255,200,50} default or
+    // user-tuned), FireConfig first arg = 2.
+    if (secondArg?.name === 'Rgb' && fireConfigFirstArg === 2) {
+      return { style: 'fire', confidence: 0.95 };
+    }
+    // plasma: FireConfig<4,...>
+    if (fireConfigFirstArg === 4) {
+      return { style: 'plasma', confidence: 0.9 };
+    }
+    // unstable: 2nd arg is Mix<>, FireConfig<3,...>
+    if (secondArg?.name === 'Mix' || fireConfigFirstArg === 3) {
+      return { style: 'unstable', confidence: 0.9 };
+    }
+    // Unknown FireConfig shape — prefer fire as the most common default.
+    return { style: 'fire', confidence: 0.5 };
+  }
+
+  if (name === 'Pulsing') return { style: 'pulse', confidence: 0.9 };
+
+  // Stripes: photon / crystalShatter disambiguated by timing args.
+  if (name === 'Stripes') {
+    const t0 = extractInt(core.args[0]);
+    const t1 = extractInt(core.args[1]);
+    if (t0 === 5000 && t1 === -1500) {
+      return { style: 'photon', confidence: 0.9 };
+    }
+    if (t0 === 3000 && t1 === -2000) {
+      return { style: 'crystalShatter', confidence: 0.9 };
+    }
+    // Unknown Stripes timing — prefer photon (more common community use).
+    return { style: 'photon', confidence: 0.5 };
+  }
+
+  // Mix<SwingSpeed<N>, ...> disambiguates rotoscope vs cinder.
+  if (name === 'Mix') {
+    const first = core.args[0];
+    if (first?.name === 'SwingSpeed') {
+      const speed = extractInt(first.args[0]);
+      if (speed === 400) return { style: 'rotoscope', confidence: 0.9 };
+      if (speed === 300) return { style: 'cinder', confidence: 0.9 };
+      // Unknown SwingSpeed — prefer rotoscope (more common pattern).
+      return { style: 'rotoscope', confidence: 0.5 };
+    }
+  }
+
+  if (name === 'Gradient') {
+    const argCount = core.args.length;
+    // imageScroll emits 2-12 colour stops; painted emits N from colorPositions.
+    // Both are indistinguishable from each other and — at 2 args — from gradient.
+    // Prefer `gradient` at 2 args, `painted` at 3+.
+    if (argCount >= 3) return { style: 'painted', confidence: 0.7 };
+    return { style: 'gradient', confidence: 0.85 };
+  }
+
+  // Rainbow: aurora and prism emit the same node. Pick aurora as canonical.
+  if (name === 'Rainbow') return { style: 'aurora', confidence: 0.6 };
+
+  if (name === 'Rgb') return { style: 'stable', confidence: 0.6 };
   if (NAMED_COLORS[name]) return { style: 'stable', confidence: 0.5 };
 
   return { style: 'custom', confidence: 0.2 };

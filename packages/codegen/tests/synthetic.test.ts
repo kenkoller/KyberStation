@@ -49,12 +49,11 @@ const MS_TOLERANCE = 5;
 // (tracked as deferred follow-up work) are filtered from the assertion so
 // CI stays green without hiding real regressions.
 const CONDITIONAL_FIELDS = {
-  // Ignition IDs the transitionMap currently handles as CANONICAL. The
-  // 11 unmapped ones (twist, swing, stab, crackle, fracture, flash-fill,
-  // pulse-wave, drip-up, hyperspace, summon, seismic) silently fall
-  // through to TrWipeIn. The aliases `wipe` (→ scroll) and `shatter`
-  // (→ fadeout) emit the same AST as their canonical sibling so the
-  // inverse necessarily picks the canonical name.
+  // Ignition IDs that round-trip *to their canonical ID*. Some IDs emit
+  // code that's shared with another ID (stab shares with center, crackle
+  // with swing, etc.) — those get `preferForInverse: false` in
+  // transitionMap.ts so the inverse picks the canonical. We omit those
+  // shared-shape IDs from this set; their round-trip is lossy by design.
   ignition: new Set([
     'standard',
     'scroll',
@@ -62,23 +61,33 @@ const CONDITIONAL_FIELDS = {
     'center',
     'stutter',
     'glitch',
+    'flash-fill',
+    'swing',
+    'pulse-wave',
   ]),
   retraction: new Set([
     'standard',
     'scroll',
     'fadeout',
     'center',
+    'flickerOut',
+    'spaghettify',
   ]),
-  // Styles the heuristic detectStyle recognises reliably. The engine has
-  // ~29 style implementations; many map to identical AST shapes or emit
-  // colors nested in Mix<>/Stripes<> where findBaseColor can't reach
-  // them. `unstable` specifically detects as `fire` because their
-  // emission patterns overlap — tracked as a detectStyle follow-up.
+  // Styles the heuristic detectStyle recognises reliably after the v0.2.1
+  // disambiguation work. The engine has ~29 style implementations;
+  // `aurora` vs `prism` and `gradient` vs `painted` vs `imageScroll`
+  // collide at the AST level and resolve to the canonical sibling.
   style: new Set([
     'stable',
     'fire',
+    'unstable',
+    'plasma',
     'pulse',
     'gradient',
+    'photon',
+    'crystalShatter',
+    'rotoscope',
+    'cinder',
   ]),
 } as const;
 
