@@ -3,7 +3,13 @@
 
 import type { StyleNode } from './types.js';
 
-// ─── Local BladeConfig types (avoids cross-package rootDir issues) ───
+// ─── Local BladeConfig / RGB types ───
+// These are a subset mirror of the canonical types in @kyberstation/engine.
+// Cross-package rootDir constraints + `node-linker=hoisted` prevent us from
+// importing them here at compile time. A structural-identity test in
+// tests/typeIdentity.test.ts guarantees this subset stays assignment-compatible
+// with the engine's source of truth; if a field is added in engine, add it
+// here too or the test will fail to typecheck.
 
 interface RGB {
   r: number;

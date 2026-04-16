@@ -3,6 +3,8 @@
 
 import type { StyleNode } from '../types.js';
 
+// Mirror of the engine's RGB shape. Structural-identity test lives in
+// tests/typeIdentity.test.ts and guarantees these stay assignment-compatible.
 interface RGB {
   r: number;
   g: number;

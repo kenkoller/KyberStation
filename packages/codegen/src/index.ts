@@ -23,6 +23,10 @@ export type {
 } from './types.js';
 
 export { buildAST } from './ASTBuilder.js';
+// BladeConfig / RGB are mirrored here from @kyberstation/engine (canonical source).
+// A compile-time structural-identity test (tests/typeIdentity.test.ts) guarantees
+// they stay assignment-compatible with the engine's definitions; if you add a
+// field to engine's BladeConfig, add it to the mirror in ASTBuilder.ts too.
 export type { BladeConfig, RGB, BuildOptions } from './ASTBuilder.js';
 export { EditArgManager, STANDARD_COLOR_ARGS } from './EditArgManager.js';
 export { emitCode } from './CodeEmitter.js';
