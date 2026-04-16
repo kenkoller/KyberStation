@@ -4,6 +4,7 @@ import type { BladeEngine } from '@bladeforge/engine';
 import { useUIStore } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
+import { useDeviceMotion } from '@/hooks/useDeviceMotion';
 
 // ── Effect definitions (mirrors EffectTriggerBar) ──────────────────────────
 
@@ -36,10 +37,17 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
   const setOrientation = useUIStore((s) => s.setFullscreenOrientation);
   const isPaused = useUIStore((s) => s.isPaused);
   const isOn = useBladeStore((s) => s.isOn);
+  const motionSim = useBladeStore((s) => s.motionSim);
+  const setMotionSim = useBladeStore((s) => s.setMotionSim);
 
   // Overlay visibility (auto-hide after HIDE_DELAY_MS of no movement)
   const [overlayVisible, setOverlayVisible] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Device motion
+  const [motionEnabled, setMotionEnabled] = useState(false);
+  const prevMotionSimRef = useRef<typeof motionSim | null>(null);
+  const { motionData, permissionState, requestPermission, stopListening, isSupported } = useDeviceMotion();
 
   const resetHideTimer = useCallback(() => {
     setOverlayVisible(true);
@@ -55,6 +63,54 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, [isFullscreen, resetHideTimer]);
+
+  // Feed live device motion into motionSim store
+  useEffect(() => {
+    if (!motionEnabled || !motionData.isActive) return;
+    // Map MotionData (-1..1 / 0..1) → motionSim (0..100 for angle/twist, 0..100 for swing)
+    setMotionSim({
+      swing: Math.round(motionData.swingSpeed * 100),
+      angle: Math.round((motionData.bladeAngle + 1) * 50),   // -1..1 → 0..100
+      twist: Math.round((motionData.twistAngle + 1) * 50),   // -1..1 → 0..100
+    });
+  }, [motionEnabled, motionData, setMotionSim]);
+
+  // Save/restore motionSim values around motion-enabled sessions
+  const handleToggleMotion = useCallback(async () => {
+    if (motionEnabled) {
+      // Disable: stop listening and restore previous values
+      stopListening();
+      setMotionEnabled(false);
+      if (prevMotionSimRef.current) {
+        setMotionSim(prevMotionSimRef.current);
+        prevMotionSimRef.current = null;
+      }
+    } else {
+      // Enable: save current values, request permission, start
+      prevMotionSimRef.current = { ...motionSim };
+      if (permissionState === 'granted') {
+        setMotionEnabled(true);
+      } else {
+        await requestPermission();
+        // requestPermission calls startListening internally on success
+        if (permissionState !== 'denied') {
+          setMotionEnabled(true);
+        }
+      }
+    }
+  }, [motionEnabled, motionSim, permissionState, requestPermission, stopListening, setMotionSim]);
+
+  // When fullscreen closes, disable motion and restore
+  useEffect(() => {
+    if (!isFullscreen && motionEnabled) {
+      stopListening();
+      setMotionEnabled(false);
+      if (prevMotionSimRef.current) {
+        setMotionSim(prevMotionSimRef.current);
+        prevMotionSimRef.current = null;
+      }
+    }
+  }, [isFullscreen, motionEnabled, stopListening, setMotionSim]);
 
   // Keyboard: Escape exits, orientation toggle with O
   useEffect(() => {
@@ -155,6 +211,48 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
           {/* Divider */}
           <span className="w-px h-8 bg-cyan-900/50" />
 
+          {/* Device motion toggle — only shown if supported */}
+          {isSupported && (
+            <button
+              onClick={handleToggleMotion}
+              title={
+                permissionState === 'denied'
+                  ? 'Motion permission denied'
+                  : motionEnabled
+                    ? 'Disable motion sensors'
+                    : 'Use device motion sensors (iOS requires permission)'
+              }
+              aria-label={motionEnabled ? 'Disable motion sensors' : 'Enable motion sensors'}
+              aria-pressed={motionEnabled}
+              className={[
+                'h-8 px-2.5 flex items-center gap-1.5 rounded border transition-all duration-100 active:scale-90 text-[10px] font-bold tracking-wider',
+                permissionState === 'denied'
+                  ? 'border-red-800/50 bg-red-950/40 text-red-600 cursor-not-allowed'
+                  : motionEnabled && motionData.isActive
+                    ? 'border-green-500/70 bg-green-900/50 text-green-300 shadow-[0_0_8px_rgba(34,197,94,0.35)]'
+                    : 'border-cyan-700/50 bg-cyan-950/60 text-cyan-300 hover:bg-cyan-800/60 hover:border-cyan-400/70 hover:text-cyan-100',
+              ].join(' ')}
+            >
+              {motionEnabled && motionData.isActive ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  MOTION
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <rect x="5" y="2" width="6" height="12" rx="2" />
+                    <circle cx="8" cy="12.5" r="0.8" fill="currentColor" />
+                  </svg>
+                  {permissionState === 'denied' ? 'DENIED' : 'MOTION'}
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Divider */}
+          <span className="w-px h-8 bg-cyan-900/50" />
+
           {/* Orientation toggle */}
           <button
             onClick={() => setOrientation(isVertical ? 'horizontal' : 'vertical')}
@@ -196,6 +294,7 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
         {/* Keyboard hint */}
         <p className="text-cyan-900 text-[10px] font-mono tracking-widest mt-0.5 select-none">
           ESC · EXIT &nbsp;|&nbsp; O · ROTATE &nbsp;|&nbsp; C B S L N D M F · EFFECTS
+          {isSupported && <>&nbsp;|&nbsp; MOTION · TILT TO SWING</>}
         </p>
       </div>
     </div>

@@ -8,7 +8,7 @@ const BLADE_LENGTHS = [
   { label: 'Short (24")', inches: 24, ledCount: 88 },
   { label: 'Medium (28")', inches: 28, ledCount: 103 },
   { label: 'Standard (32")', inches: 32, ledCount: 117 },
-  { label: 'Long (36")', inches: 36, ledCount: 132 },
+  { label: 'Long (36")', inches: 36, ledCount: 144 },
   { label: 'Extra Long (40")', inches: 40, ledCount: 147 },
 ];
 
@@ -34,7 +34,7 @@ export function BladeHardwarePanel() {
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const setTopology = useBladeStore((s) => s.setTopology);
 
-  const currentLength = config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 132 ? 36 : 40;
+  const currentLength = config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 144 ? 36 : 40;
 
   const handleLengthChange = (inches: number) => {
     const preset = BLADE_LENGTHS.find(b => b.inches === inches);

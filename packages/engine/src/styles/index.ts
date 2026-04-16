@@ -13,6 +13,14 @@ import { CinderStyle } from './CinderStyle.js';
 import { PrismStyle } from './PrismStyle.js';
 import { PaintedStyle } from './PaintedStyle.js';
 import { ImageScrollStyle } from './ImageScrollStyle.js';
+import { DataStreamStyle } from './DataStreamStyle.js';
+import { GravityStyle } from './GravityStyle.js';
+import { EmberStyle } from './EmberStyle.js';
+import { AutomataStyle } from './AutomataStyle.js';
+import { HelixStyle } from './HelixStyle.js';
+import { CandleStyle } from './CandleStyle.js';
+import { ShatterStyle } from './ShatterStyle.js';
+import { NeutronStyle } from './NeutronStyle.js';
 
 export { BaseStyle } from './BaseStyle.js';
 export { StableStyle } from './StableStyle.js';
@@ -29,6 +37,14 @@ export { CinderStyle } from './CinderStyle.js';
 export { PrismStyle } from './PrismStyle.js';
 export { PaintedStyle } from './PaintedStyle.js';
 export { ImageScrollStyle } from './ImageScrollStyle.js';
+export { DataStreamStyle } from './DataStreamStyle.js';
+export { GravityStyle } from './GravityStyle.js';
+export { EmberStyle } from './EmberStyle.js';
+export { AutomataStyle } from './AutomataStyle.js';
+export { HelixStyle } from './HelixStyle.js';
+export { CandleStyle } from './CandleStyle.js';
+export { ShatterStyle } from './ShatterStyle.js';
+export { NeutronStyle } from './NeutronStyle.js';
 
 /** Registry of all available blade styles, keyed by style ID. */
 export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
@@ -46,6 +62,14 @@ export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
   prism: () => new PrismStyle(),
   painted: () => new PaintedStyle(),
   imageScroll: () => new ImageScrollStyle(),
+  dataStream: () => new DataStreamStyle(),
+  gravity: () => new GravityStyle(),
+  ember: () => new EmberStyle(),
+  automata: () => new AutomataStyle(),
+  helix: () => new HelixStyle(),
+  candle: () => new CandleStyle(),
+  shatter: () => new ShatterStyle(),
+  neutron: () => new NeutronStyle(),
 };
 
 /**

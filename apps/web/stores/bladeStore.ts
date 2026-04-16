@@ -15,7 +15,7 @@ const DEFAULT_CONFIG: BladeConfig = {
   ignitionMs: 300,
   retractionMs: 800,
   shimmer: 0.1,
-  ledCount: 132,
+  ledCount: 144,
 };
 
 export interface BladeStore {

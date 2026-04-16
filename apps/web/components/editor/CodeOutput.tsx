@@ -39,6 +39,7 @@ export function CodeOutput() {
   const [importError, setImportError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [volume, setVolume] = useState(1500);
   const [showCppImport, setShowCppImport] = useState(false);
   const [cppInput, setCppInput] = useState('');
   const [cppResult, setCppResult] = useState<ReconstructedConfig | null>(null);
@@ -76,7 +77,7 @@ export function CodeOutput() {
           boardType: proffieBoardType,
           numBlades: 1,
           numButtons: 2,
-          volume: 2000,
+          volume,
           clashThresholdG: 3.0,
           maxClashStrength: 200,
           propFile: 'saber_fett263_buttons.h',
@@ -97,7 +98,7 @@ export function CodeOutput() {
     } catch {
       return '// Error generating code — check your configuration';
     }
-  }, [config, presetListEntries, editMode, gestureDefines]);
+  }, [config, presetListEntries, editMode, gestureDefines, volume]);
 
   const lines = useMemo(() => code.split('\n'), [code]);
 
@@ -238,6 +239,32 @@ export function CodeOutput() {
           `Generated for ${profileBoard}.${isProffie ? ' Paste into your config.h presets[] array. AST-validated with balanced angle brackets.' : ' Export format depends on board.'}`
         )}
       </p>
+
+      {/* Volume Control — only relevant when generating a full config */}
+      {isMultiPreset && (
+        <div className="mt-4 pt-4 border-t border-border-subtle">
+          <div className="flex items-center gap-3">
+            <label htmlFor="volume-slider" className="text-ui-sm font-medium text-text-secondary shrink-0 flex items-center gap-1">
+              Volume
+              <HelpTooltip text="Master volume written into config.h. ProffieOS range is 0–3000. Default 1500 is safe for most speakers; lower if your speaker distorts, raise only if you've confirmed your speaker can handle it." proffie="VOLUME" />
+            </label>
+            <input
+              id="volume-slider"
+              type="range"
+              min={500}
+              max={3000}
+              step={50}
+              value={volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-ui-sm font-mono text-text-muted w-12 text-right tabular-nums">{volume}</span>
+          </div>
+          <p className="text-ui-xs text-text-muted mt-1">
+            Outputs <code className="font-mono">#define VOLUME {volume}</code> in CONFIG_TOP. Range 500–3000.
+          </p>
+        </div>
+      )}
 
       {/* Fett263 Edit Mode Toggle */}
       <div className="mt-4 pt-4 border-t border-border-subtle">

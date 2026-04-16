@@ -303,11 +303,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
   // ─── Zoom constants ───
-  const ZOOM_MIN = 0.8;
-  const ZOOM_MAX = 2.0;
-  const ZOOM_STEP = 0.15; // button increment
+  const ZOOM_MIN = 0.9;
+  const ZOOM_MAX = 1.3;
+  const ZOOM_STEP = 0.1; // button increment
 
-  // Auto-fit zoom: compute zoom so the blade fills ~85% of the blade-length axis.
+  // Auto-fit zoom: compute zoom so the blade fills ~90% of the blade-length axis.
   // Base scale is height-only, so for horizontal mode we fit within canvas width,
   // for vertical mode we fit within canvas height (blade runs vertically).
   const computeFitZoom = useCallback((): number => {
@@ -321,12 +321,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     if (vertical) {
       // Vertical: blade length runs along canvas height, base scale = ch / DESIGN_W
       const baseScale = ch / DESIGN_W;
-      const fitZoom = (ch * 0.85) / (bladeExtentDS * baseScale);
+      const fitZoom = (ch * 0.90) / (bladeExtentDS * baseScale);
       return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
     } else {
       // Horizontal: base scale is ch / designH (height-only), blade runs along width
       const baseScale = ch / layoutRef.current.designH;
-      const fitZoom = (cw * 0.85) / (bladeExtentDS * baseScale);
+      const fitZoom = (cw * 0.90) / (bladeExtentDS * baseScale);
       return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
     }
   }, [bladeLength, vertical]);
@@ -335,21 +335,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const [panX, setPanX] = useState<number>(0);
   const hasAutoFitRef = useRef(false);
 
-  // Editable zoom input state
-  const [zoomInputValue, setZoomInputValue] = useState(String(Math.round(zoom * 100)));
-  useEffect(() => {
-    setZoomInputValue(String(Math.round(zoom * 100)));
-  }, [zoom]);
-  const applyZoomInput = useCallback(() => {
-    const parsed = parseInt(zoomInputValue, 10);
-    if (isNaN(parsed)) {
-      setZoomInputValue(String(Math.round(zoom * 100)));
-      return;
-    }
-    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, parsed / 100));
-    setZoom(newZoom);
-    setZoomInputValue(String(Math.round(newZoom * 100)));
-  }, [zoomInputValue, zoom]);
+  // Zoom display value (read-only label)
+  const zoomDisplayValue = String(Math.round(zoom * 100));
 
   // Auto-fit on first meaningful resize
   useEffect(() => {
@@ -2255,20 +2242,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           >
             −
           </button>
-          <input
-            type="text"
-            className="text-ui-xs text-text-muted tabular-nums w-10 text-center bg-transparent border-none outline-none focus:text-text-primary"
-            value={zoomInputValue}
-            onChange={(e) => setZoomInputValue(e.target.value)}
-            onFocus={(e) => e.target.select()}
-            onBlur={() => applyZoomInput()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') applyZoomInput();
-              if (e.key === 'Escape') setZoomInputValue(String(Math.round(zoom * 100)));
-            }}
-            aria-label="Zoom percentage"
-          />
-          <span className="text-ui-xs text-text-muted">%</span>
+          <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
+            {zoomDisplayValue}%
+          </span>
           <button
             onClick={() => setZoom((prevZoom) => {
               const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);

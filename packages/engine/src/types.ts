@@ -43,7 +43,14 @@ export type EffectType =
   | 'melt'
   | 'lightning'
   | 'stab'
-  | 'force';
+  | 'force'
+  | 'scatter'
+  | 'fragment'
+  | 'shockwave'
+  | 'ripple'
+  | 'freeze'
+  | 'overcharge'
+  | 'bifurcate';
 
 export interface EffectParams {
   position?: number; // 0-1, where on the blade the effect occurs

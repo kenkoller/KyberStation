@@ -12,6 +12,15 @@ import { StabIgnition } from './StabIgnition.js';
 import { CustomCurveIgnition } from './CustomCurveIgnition.js';
 import { FadeoutRetraction } from './FadeoutRetraction.js';
 import { ShatterRetraction } from './ShatterRetraction.js';
+import { FractureIgnition } from './FractureIgnition.js';
+import { FlickerOutRetraction } from './FlickerOutRetraction.js';
+import { UnravelRetraction } from './UnravelRetraction.js';
+import { CrackleIgnition } from './CrackleIgnition.js';
+import { DissolveRetraction } from './DissolveRetraction.js';
+import { FlashFillIgnition } from './FlashFillIgnition.js';
+import { PulseWaveIgnition } from './PulseWaveIgnition.js';
+import { DripUpIgnition } from './DripUpIgnition.js';
+import { DrainRetraction } from './DrainRetraction.js';
 
 export { BaseIgnition } from './BaseIgnition.js';
 export { StandardIgnition } from './StandardIgnition.js';
@@ -27,6 +36,15 @@ export { StabIgnition } from './StabIgnition.js';
 export { CustomCurveIgnition } from './CustomCurveIgnition.js';
 export { FadeoutRetraction } from './FadeoutRetraction.js';
 export { ShatterRetraction } from './ShatterRetraction.js';
+export { FractureIgnition } from './FractureIgnition.js';
+export { FlickerOutRetraction } from './FlickerOutRetraction.js';
+export { UnravelRetraction } from './UnravelRetraction.js';
+export { CrackleIgnition } from './CrackleIgnition.js';
+export { DissolveRetraction } from './DissolveRetraction.js';
+export { FlashFillIgnition } from './FlashFillIgnition.js';
+export { PulseWaveIgnition } from './PulseWaveIgnition.js';
+export { DripUpIgnition } from './DripUpIgnition.js';
+export { DrainRetraction } from './DrainRetraction.js';
 
 /** Registry mapping ignition style IDs to their constructors. */
 export const IGNITION_REGISTRY: Record<string, () => IgnitionAnimation> = {
@@ -41,6 +59,11 @@ export const IGNITION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   swing: () => new SwingIgnition(),
   stab: () => new StabIgnition(),
   'custom-curve': () => new CustomCurveIgnition(),
+  crackle: () => new CrackleIgnition(),
+  fracture: () => new FractureIgnition(),
+  'flash-fill': () => new FlashFillIgnition(),
+  'pulse-wave': () => new PulseWaveIgnition(),
+  'drip-up': () => new DripUpIgnition(),
 };
 
 /** Registry mapping retraction style IDs to their constructors. */
@@ -51,6 +74,10 @@ export const RETRACTION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   fadeout: () => new FadeoutRetraction(),
   shatter: () => new ShatterRetraction(),
   'custom-curve': () => new CustomCurveIgnition(),
+  dissolve: () => new DissolveRetraction(),
+  flickerOut: () => new FlickerOutRetraction(),
+  unravel: () => new UnravelRetraction(),
+  drain: () => new DrainRetraction(),
 };
 
 /** Create a new ignition animation instance by ID. */
