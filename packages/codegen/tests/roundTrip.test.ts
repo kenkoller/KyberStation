@@ -62,53 +62,88 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
     });
   });
 
-  describe('Phase 2 field set (currently broken — unskip when transitionMap lands)', () => {
-    it.todo('preserves ignition ID through round-trip');
-    it.todo('preserves retraction ID through round-trip');
-    it.todo('preserves ignitionMs through round-trip');
-    it.todo('preserves retractionMs through round-trip');
-    it.todo(
-      'preserves clash/lockup/drag/lightning/melt colors via container resolution',
-    );
+  describe('Phase 2 field set', () => {
+    it('preserves ignition ID through round-trip', () => {
+      for (const id of ['standard', 'scroll', 'spark', 'center', 'stutter', 'glitch']) {
+        const config = makeConfig({ ignition: id });
+        const result = roundTrip(config);
+        expect(result.parseErrors).toEqual([]);
+        expect(
+          result.reconstructedConfig?.ignition,
+          `ignition=${id} round-tripped as ${result.reconstructedConfig?.ignition}`,
+        ).toBe(id);
+      }
+    });
+
+    it('preserves retraction ID through round-trip', () => {
+      for (const id of ['standard', 'scroll', 'fadeout', 'center']) {
+        const config = makeConfig({ retraction: id });
+        const result = roundTrip(config);
+        expect(result.parseErrors).toEqual([]);
+        expect(
+          result.reconstructedConfig?.retraction,
+          `retraction=${id} round-tripped as ${result.reconstructedConfig?.retraction}`,
+        ).toBe(id);
+      }
+    });
+
+    it('preserves ignitionMs and retractionMs through a sweep', () => {
+      for (const ms of [50, 100, 1000, 5000]) {
+        const config = makeConfig({ ignitionMs: ms, retractionMs: ms });
+        const result = roundTrip(config);
+        expect(result.parseErrors).toEqual([]);
+        expect(result.reconstructedConfig?.ignitionMs).toBe(ms);
+        expect(result.reconstructedConfig?.retractionMs).toBe(ms);
+      }
+    });
+
+    it('recovers clash / lockup / drag / lightning / melt colors by container', () => {
+      const config = makeConfig({
+        clashColor: { r: 10, g: 20, b: 30 },
+        lockupColor: { r: 40, g: 50, b: 60 },
+        dragColor: { r: 70, g: 80, b: 90 },
+        lightningColor: { r: 100, g: 110, b: 120 },
+        meltColor: { r: 130, g: 140, b: 150 },
+        blastColor: { r: 200, g: 210, b: 220 },
+      });
+      const result = roundTrip(config);
+      expect(result.parseErrors).toEqual([]);
+      expect(result.reconstructedConfig?.clashColor).toEqual(config.clashColor);
+      expect(result.reconstructedConfig?.lockupColor).toEqual(config.lockupColor);
+      expect(result.reconstructedConfig?.dragColor).toEqual(config.dragColor);
+      expect(result.reconstructedConfig?.lightningColor).toEqual(
+        config.lightningColor,
+      );
+      expect(result.reconstructedConfig?.meltColor).toEqual(config.meltColor);
+      expect(result.reconstructedConfig?.blastColor).toEqual(config.blastColor);
+    });
+
+    it('preserves all Phase 2 fields together for a representative config', () => {
+      const config = makeConfig({
+        style: 'fire',
+        ignition: 'spark',
+        retraction: 'fadeout',
+        ignitionMs: 450,
+        retractionMs: 650,
+        clashColor: { r: 255, g: 200, b: 100 },
+      });
+      const result = roundTrip(config);
+      expect(result.parseErrors).toEqual([]);
+      assertFieldsRoundTrip(result, [
+        ...RT_PHASE0_FIELDS,
+        'ignition',
+        'retraction',
+        'ignitionMs',
+        'retractionMs',
+        'clashColor',
+        'blastColor',
+        'lockupColor',
+      ]);
+    });
   });
 
   describe('Phase 3 field set (requires ResponsiveLockupL emission)', () => {
     it.todo('preserves lockupPosition through round-trip (±1/32768)');
     it.todo('preserves lockupRadius through round-trip (±1/32768)');
-  });
-
-  describe('diagnostic inspection (documents current lossy surface)', () => {
-    it('documents which ignition-related fields are broken today', () => {
-      // Use a non-default ignition so the reconstructed default value
-      // cannot accidentally mask the bug. `scroll` is known-mismapped:
-      // forward emits TrWipe, reverse reads TrWipe → 'standard'.
-      const config = makeConfig({
-        ignition: 'scroll',
-        retraction: 'scroll',
-        ignitionMs: 500,
-        retractionMs: 900,
-      });
-      const result = roundTrip(config);
-      expect(result.parseErrors).toEqual([]);
-
-      // At least one of the Phase-2 fields must still be broken; otherwise
-      // the harness is silently hiding a regression, or Phase 2 has secretly
-      // landed and the tests above should be unskipped.
-      const brokenFields = new Set<string>([
-        ...result.mismatchedFields.map((m) => m.field),
-        ...result.missingFields,
-      ]);
-      const phase2Broken = [
-        'ignition',
-        'retraction',
-        'ignitionMs',
-        'retractionMs',
-      ].some((f) => brokenFields.has(f));
-      expect(
-        phase2Broken,
-        'Expected Phase 2 fields to still be broken pre-transitionMap. ' +
-          'If you fixed one, unskip the matching it.todo() in the Phase 2 block above.',
-      ).toBe(true);
-    });
   });
 });

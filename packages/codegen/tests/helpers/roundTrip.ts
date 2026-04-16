@@ -48,7 +48,11 @@ export const RT_PHASE0_FIELDS = [
   'style',
 ] as const satisfies readonly (keyof BladeConfig)[];
 
-/** Known-broken until Phase 2 transitionMap + reconstructor fixes land. */
+/**
+ * Fields that round-trip losslessly AFTER Phase 2 (transitionMap + reconstructor
+ * fixes) lands. Combined with `RT_PHASE0_FIELDS` via spread when a test wants
+ * the full committed coverage.
+ */
 export const RT_PHASE2_FIELDS = [
   'ignition',
   'retraction',

@@ -59,6 +59,37 @@ export {
 export { parseStyleCode, tokenize, filterTokens, reconstructConfig } from './parser/index.js';
 export type { ParseResult, ParseError, ReconstructedConfig, Token, TokenType } from './parser/index.js';
 
+// ─── AST Binding Layer (Phase 2) ───
+
+export {
+  configToAST,
+  astToCode,
+  codeToAST,
+  astToConfig,
+  makeInitialBindingState,
+  syncFromConfig,
+  syncFromCode,
+  hitToLED,
+  positionToProffie,
+  clamp01,
+} from './astBinding.js';
+export type {
+  BindingState,
+  HitGeometry,
+  LEDHit,
+} from './astBinding.js';
+
+// ─── Transition Map (Phase 2) ───
+
+export {
+  TRANSITION_MAPPINGS,
+  ignitionFromID,
+  retractionFromID,
+  ignitionFromAST,
+  retractionFromAST,
+} from './transitionMap.js';
+export type { TransitionMapping, TransitionKind } from './transitionMap.js';
+
 // ─── Convenience ───
 
 import type { EmitOptions } from './types.js';

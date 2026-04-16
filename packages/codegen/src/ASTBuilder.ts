@@ -369,6 +369,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   );
 
   // Melt lockup
+  const meltColor = config.meltColor ?? { r: 255, g: 200, b: 0 };
   layers.push(
     templateNode(
       'template',
@@ -387,7 +388,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
           'mix',
           'Mix',
           templateNode('function', 'NoisySoundLevel'),
-          rgbNode({ r: 255, g: 200, b: 0 }),
+          rgbNode(meltColor),
           rawNode('White'),
         ),
       ),
@@ -401,62 +402,18 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
 }
 
 // ─── Ignition / Retraction Transitions ───
+// Delegates to the canonical table in transitionMap.ts so forward and inverse
+// paths stay collocated. Unknown IDs fall through to `TrWipeIn<ms>` (same
+// behaviour as the previous default branches).
+
+import { ignitionFromID, retractionFromID } from './transitionMap.js';
 
 function buildIgnitionTransition(config: BladeConfig): StyleNode {
-  const ms = config.ignitionMs;
-  switch (config.ignition) {
-    case 'standard':
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-    case 'scroll':
-      return templateNode('transition', 'TrWipe', intNode(ms));
-    case 'spark':
-      return templateNode(
-        'transition',
-        'TrWipeSparkTip',
-        rawNode('White'),
-        intNode(ms),
-      );
-    case 'center':
-      return templateNode('transition', 'TrCenterWipeIn', intNode(ms));
-    case 'wipe':
-      return templateNode('transition', 'TrWipe', intNode(ms));
-    case 'stutter':
-      return templateNode(
-        'transition',
-        'TrConcat',
-        templateNode('transition', 'TrWipe', intNode(Math.round(ms / 3))),
-        templateNode('transition', 'TrDelay', intNode(Math.round(ms / 6))),
-        templateNode('transition', 'TrWipe', intNode(Math.round(ms / 2))),
-      );
-    case 'glitch':
-      return templateNode(
-        'transition',
-        'TrConcat',
-        templateNode('transition', 'TrFade', intNode(Math.round(ms / 4))),
-        templateNode('transition', 'TrDelay', intNode(Math.round(ms / 8))),
-        templateNode('transition', 'TrWipeIn', intNode(Math.round(ms / 2))),
-      );
-    default:
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-  }
+  return ignitionFromID(config.ignition, config.ignitionMs);
 }
 
 function buildRetractionTransition(config: BladeConfig): StyleNode {
-  const ms = config.retractionMs;
-  switch (config.retraction) {
-    case 'standard':
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-    case 'scroll':
-      return templateNode('transition', 'TrWipe', intNode(ms));
-    case 'fadeout':
-      return templateNode('transition', 'TrFade', intNode(ms));
-    case 'center':
-      return templateNode('transition', 'TrCenterWipeIn', intNode(ms));
-    case 'shatter':
-      return templateNode('transition', 'TrFade', intNode(ms));
-    default:
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-  }
+  return retractionFromID(config.retraction, config.retractionMs);
 }
 
 // ─── Main Builder ───
