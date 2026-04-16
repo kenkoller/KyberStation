@@ -1,0 +1,41 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 10,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "crossguard": true,
+  "dragColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 130,
+    "r": 255
+  },
+  "name": "KyloRen",
+  "noiseLevel": 0.2,
+  "quillonLength": 48,
+  "retraction": "flickerOut",
+  "retractionMs": 400,
+  "shimmer": 0.4,
+  "stutterCount": 4,
+  "style": "unstable",
+  "swingFxIntensity": 0.5,
+  "unstableIntensity": 0.6
+}

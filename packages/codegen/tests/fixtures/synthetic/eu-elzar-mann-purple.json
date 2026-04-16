@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 60,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 180,
+    "r": 200
+  },
+  "frequency": 1,
+  "ignition": "scroll",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 130,
+    "r": 150
+  },
+  "name": "ElzarMann",
+  "phaseSpeed": 1.2,
+  "retraction": "fadeout",
+  "retractionMs": 500,
+  "shimmer": 0.1,
+  "style": "plasma",
+  "swingFxIntensity": 0.35
+}

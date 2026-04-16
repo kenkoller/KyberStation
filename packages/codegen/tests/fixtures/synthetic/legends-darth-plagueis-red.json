@@ -1,0 +1,39 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 170
+  },
+  "blastColor": {
+    "b": 15,
+    "g": 30,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 160,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 120
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 50,
+    "r": 220
+  },
+  "name": "DarthPlagueis",
+  "noiseLevel": 0.05,
+  "pulseMinBright": 0.3,
+  "pulseSpeed": 0.8,
+  "retraction": "drain",
+  "retractionMs": 500,
+  "shimmer": 0.15,
+  "style": "pulse",
+  "swingFxIntensity": 0.2
+}

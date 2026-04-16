@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 80,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 140,
+    "r": 90
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 200,
+    "g": 0,
+    "r": 100
+  },
+  "frequency": 2,
+  "ignition": "center",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 155,
+    "r": 120
+  },
+  "name": "ExarKun",
+  "phaseSpeed": 1.5,
+  "retraction": "center",
+  "retractionMs": 320,
+  "shimmer": 0.2,
+  "style": "plasma",
+  "swingFxIntensity": 0.4
+}

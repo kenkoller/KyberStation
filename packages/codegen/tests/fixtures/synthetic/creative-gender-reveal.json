@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 240,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 50,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 150,
+    "r": 100
+  },
+  "name": "GenderReveal",
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.05,
+  "style": "stable"
+}

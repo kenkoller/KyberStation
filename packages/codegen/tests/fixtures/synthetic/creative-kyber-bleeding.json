@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 80,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 50,
+    "g": 50,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 20,
+    "g": 20,
+    "r": 180
+  },
+  "ignition": "stutter",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 30,
+    "r": 120
+  },
+  "name": "KyberBleeding",
+  "retraction": "fadeout",
+  "retractionMs": 1500,
+  "shimmer": 0.3,
+  "style": "gradient"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 15,
+    "r": 15
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 200,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "stutter",
+  "ignitionMs": 800,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 30,
+    "r": 30
+  },
+  "name": "DarkMode",
+  "retraction": "fadeout",
+  "retractionMs": 1500,
+  "shimmer": 0.05,
+  "style": "pulse"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 100,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 180,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "pulse-wave",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 60,
+    "r": 20
+  },
+  "name": "LoadingScreen",
+  "retraction": "dissolve",
+  "retractionMs": 600,
+  "shimmer": 0.15,
+  "style": "dataStream"
+}

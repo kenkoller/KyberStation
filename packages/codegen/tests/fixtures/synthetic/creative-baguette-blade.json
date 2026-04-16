@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 130,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "scroll",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 20,
+    "g": 90,
+    "r": 140
+  },
+  "name": "BaguetteBlade",
+  "retraction": "scroll",
+  "retractionMs": 800,
+  "shimmer": 0.05,
+  "style": "gradient"
+}

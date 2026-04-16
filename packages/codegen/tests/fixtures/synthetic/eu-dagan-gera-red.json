@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 15,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 90,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 210,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 200
+  },
+  "flicker": 0.7,
+  "ignition": "glitch",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 70,
+    "g": 110,
+    "r": 255
+  },
+  "name": "DaganGera",
+  "noiseLevel": 0.12,
+  "retraction": "shatter",
+  "retractionMs": 280,
+  "shimmer": 0.3,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

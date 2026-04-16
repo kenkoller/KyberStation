@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 160,
+    "g": 220,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "glitch",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 240,
+    "r": 150
+  },
+  "name": "GhostSignal",
+  "retraction": "fadeout",
+  "retractionMs": 600,
+  "shimmer": 0.12,
+  "style": "photon"
+}

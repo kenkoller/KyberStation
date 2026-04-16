@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 120,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 150,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "AnakinEp3",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

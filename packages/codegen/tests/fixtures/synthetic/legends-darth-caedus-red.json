@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 0,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 30,
+    "g": 60,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 145,
+    "g": 185,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 250
+  },
+  "name": "DarthCaedus",
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.12,
+  "style": "stable"
+}

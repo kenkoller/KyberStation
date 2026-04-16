@@ -2,6 +2,7 @@
 import { useMemo, useCallback, useState, useRef } from 'react';
 import { playUISound } from '@/lib/uiSounds';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useUIStore } from '@/stores/uiStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig } from '@kyberstation/codegen';
@@ -38,7 +39,12 @@ export function CodeOutput() {
   const [shareCopied, setShareCopied] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [editMode, setEditMode] = useState(false);
+  // Edit Mode moved from local useState to the shared uiStore so the blade
+  // canvas can also toggle it (see Phase 5). Legacy behaviour preserved: the
+  // existing "Fett263 Edit Mode" checkbox in this panel still controls the
+  // same flag.
+  const editMode = useUIStore((s) => s.editMode);
+  const setEditMode = useUIStore((s) => s.setEditMode);
   const [volume, setVolume] = useState(1500);
   const [showCppImport, setShowCppImport] = useState(false);
   const [cppInput, setCppInput] = useState('');

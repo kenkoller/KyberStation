@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 35,
+    "g": 75,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 200
+  },
+  "flicker": 0.7,
+  "ignition": "glitch",
+  "ignitionMs": 150,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 55,
+    "g": 100,
+    "r": 255
+  },
+  "name": "StarkillerRed",
+  "noiseLevel": 0.18,
+  "retraction": "shatter",
+  "retractionMs": 250,
+  "shimmer": 0.35,
+  "style": "unstable",
+  "swingFxIntensity": 0.6
+}

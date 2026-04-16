@@ -1,0 +1,39 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 120,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 30,
+    "g": 150,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 225,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 80,
+    "r": 200
+  },
+  "fireSize": 0.5,
+  "heatSpread": 0.4,
+  "ignition": "scroll",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 70,
+    "g": 170,
+    "r": 255
+  },
+  "name": "ShinHatiAnimated",
+  "retraction": "scroll",
+  "retractionMs": 360,
+  "shimmer": 0.12,
+  "sparkRate": 0.6,
+  "style": "fire",
+  "swingFxIntensity": 0.4
+}

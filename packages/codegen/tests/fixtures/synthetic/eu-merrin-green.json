@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 210,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 80
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 80,
+    "g": 150,
+    "r": 0
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 340,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 240,
+    "r": 100
+  },
+  "magickGlow": true,
+  "name": "MerrinNightsister",
+  "noiseLevel": 0.08,
+  "retraction": "unravel",
+  "retractionMs": 500,
+  "shimmer": 0.22,
+  "style": "plasma",
+  "swingFxIntensity": 0.3
+}

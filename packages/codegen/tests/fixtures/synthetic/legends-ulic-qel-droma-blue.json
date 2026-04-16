@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 100,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 160,
+    "r": 110
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 180,
+    "r": 140
+  },
+  "name": "UlicQelDroma",
+  "retraction": "fadeout",
+  "retractionMs": 420,
+  "shimmer": 0.1,
+  "style": "stable"
+}

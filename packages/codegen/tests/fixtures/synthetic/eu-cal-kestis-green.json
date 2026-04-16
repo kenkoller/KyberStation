@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 225,
+    "r": 10
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 130
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 220
+  },
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 140,
+    "g": 240,
+    "r": 160
+  },
+  "name": "CalKestisGreen",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.1,
+  "style": "stable"
+}

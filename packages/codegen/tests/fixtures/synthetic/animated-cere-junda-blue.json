@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 110,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 170,
+    "r": 120
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 225,
+    "r": 210
+  },
+  "ignition": "scroll",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 160
+  },
+  "name": "CereJunda",
+  "retraction": "scroll",
+  "retractionMs": 420,
+  "shimmer": 0.08,
+  "style": "rotoscope"
+}

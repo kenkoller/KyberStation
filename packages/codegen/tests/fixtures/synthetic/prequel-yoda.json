@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 235,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "summon",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "Yoda",
+  "pulseMinBright": 0.6,
+  "pulseSpeed": 0.6,
+  "retraction": "evaporate",
+  "retractionMs": 220,
+  "shimmer": 0.08,
+  "style": "pulse",
+  "swingFxIntensity": 0.55
+}

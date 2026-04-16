@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 90,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 50,
+    "g": 130,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 220,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 60,
+    "r": 200
+  },
+  "ignition": "scroll",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 150,
+    "r": 255
+  },
+  "name": "BaylanSkoll",
+  "noiseLevel": 0.05,
+  "retraction": "fadeout",
+  "retractionMs": 440,
+  "shimmer": 0.14,
+  "style": "cinder",
+  "swingFxIntensity": 0.3
+}

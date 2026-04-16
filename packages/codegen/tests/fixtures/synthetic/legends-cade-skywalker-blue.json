@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 90,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 155,
+    "r": 110
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 215,
+    "r": 200
+  },
+  "ignition": "spark",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 170,
+    "r": 140
+  },
+  "name": "CadeSkywalker",
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.3,
+  "style": "unstable"
+}

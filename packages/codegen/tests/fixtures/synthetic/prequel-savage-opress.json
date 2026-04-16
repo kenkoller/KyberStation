@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 255,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 255,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 200
+  },
+  "flicker": 0.7,
+  "ignition": "fracture",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "SavageOpress",
+  "noiseLevel": 0.15,
+  "retraction": "dissolve",
+  "retractionMs": 350,
+  "shimmer": 0.35,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

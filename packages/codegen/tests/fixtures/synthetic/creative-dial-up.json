@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 160,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 200,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "pulse-wave",
+  "ignitionMs": 3000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 80,
+    "r": 0
+  },
+  "name": "DialUp",
+  "retraction": "spaghettify",
+  "retractionMs": 2500,
+  "shimmer": 0.15,
+  "style": "dataStream"
+}

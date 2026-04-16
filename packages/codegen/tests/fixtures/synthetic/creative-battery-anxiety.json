@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 200,
+    "r": 50
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 200,
+    "r": 200
+  },
+  "ignition": "stutter",
+  "ignitionMs": 2000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 100,
+    "r": 200
+  },
+  "name": "BatteryAnxiety",
+  "retraction": "fadeout",
+  "retractionMs": 3000,
+  "shimmer": 0.1,
+  "style": "pulse"
+}

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 20,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 220,
+    "r": 255
+  },
+  "frequency": 1.8,
+  "ignition": "wipe",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 100,
+    "r": 255
+  },
+  "name": "PraetorianGuard",
+  "phaseSpeed": 0.6,
+  "retraction": "fadeout",
+  "retractionMs": 250,
+  "shimmer": 0.1,
+  "style": "plasma"
+}

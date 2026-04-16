@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 10,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 70,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 195,
+    "r": 255
+  },
+  "gradientSpeed": 1,
+  "ignition": "wipe",
+  "ignitionMs": 220,
+  "ledCount": 100,
+  "lockupColor": {
+    "b": 60,
+    "g": 90,
+    "r": 255
+  },
+  "name": "MarisBrood",
+  "retraction": "standard",
+  "retractionMs": 280,
+  "shimmer": 0.18,
+  "style": "gradient"
+}

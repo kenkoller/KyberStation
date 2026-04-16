@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 20,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 0
+  },
+  "ignition": "scroll",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 50,
+    "r": 0
+  },
+  "name": "Abyssal",
+  "retraction": "fadeout",
+  "retractionMs": 1200,
+  "shimmer": 0.2,
+  "style": "pulse"
+}

@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 150,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 200
+  },
+  "flicker": 0.5,
+  "ignition": "fracture",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "name": "ReyDarkVision",
+  "noiseLevel": 0.12,
+  "retraction": "implode",
+  "retractionMs": 300,
+  "shimmer": 0.3,
+  "style": "unstable",
+  "swingFxIntensity": 0.4
+}

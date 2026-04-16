@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 160,
+    "r": 200
+  },
+  "ignition": "wipe",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 220,
+    "r": 255
+  },
+  "name": "ReyYellow",
+  "noiseLevel": 0.02,
+  "retraction": "fadeout",
+  "retractionMs": 350,
+  "shimmer": 0.05,
+  "style": "photon",
+  "swingFxIntensity": 0.25
+}

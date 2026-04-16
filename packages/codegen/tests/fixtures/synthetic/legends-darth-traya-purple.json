@@ -1,0 +1,40 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 40,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 70,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 170,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 150,
+    "g": 20,
+    "r": 100
+  },
+  "driftSpeed": 0.4,
+  "ignition": "drip-up",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 210,
+    "g": 90,
+    "r": 160
+  },
+  "name": "DarthTraya",
+  "noiseLevel": 0.08,
+  "retraction": "unravel",
+  "retractionMs": 550,
+  "shimmer": 0.25,
+  "style": "aurora",
+  "swingFxIntensity": 0.3,
+  "telekinetic": true,
+  "waveCount": 6
+}

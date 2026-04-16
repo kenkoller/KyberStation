@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 50,
+    "g": 150,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 200,
+    "g": 0,
+    "r": 200
+  },
+  "ignition": "crackle",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "name": "PalpatineOT",
+  "noiseLevel": 0.06,
+  "retraction": "drain",
+  "retractionMs": 300,
+  "shimmer": 0.18,
+  "style": "cinder",
+  "swingFxIntensity": 0.3
+}

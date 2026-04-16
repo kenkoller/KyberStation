@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 80,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 50,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 800,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 40,
+    "r": 180
+  },
+  "name": "Wildfire",
+  "retraction": "evaporate",
+  "retractionMs": 1000,
+  "shimmer": 0.5,
+  "style": "ember"
+}

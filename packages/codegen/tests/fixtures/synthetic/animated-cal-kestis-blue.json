@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 160,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 180,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 140
+  },
+  "name": "CalKestisCyan",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.1,
+  "sparkSize": 0.5,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

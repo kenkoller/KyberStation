@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 120,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 150,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 100,
+    "r": 0
+  },
+  "ignition": "center",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "name": "CompanionCube",
+  "retraction": "center",
+  "retractionMs": 500,
+  "shimmer": 0.15,
+  "style": "pulse"
+}

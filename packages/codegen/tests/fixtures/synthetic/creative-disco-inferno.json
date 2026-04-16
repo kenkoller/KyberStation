@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 128,
+    "g": 0,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 128,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 255,
+    "r": 0
+  },
+  "name": "DiscoInferno",
+  "retraction": "shatter",
+  "retractionMs": 500,
+  "shimmer": 0.9,
+  "style": "photon"
+}

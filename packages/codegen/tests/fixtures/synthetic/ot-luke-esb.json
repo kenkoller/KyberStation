@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 120,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 210,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 160,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 180
+  },
+  "name": "LukeESB",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.04,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

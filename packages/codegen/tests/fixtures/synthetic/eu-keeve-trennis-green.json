@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 200,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "driftSpeed": 0.5,
+  "ignition": "scroll",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 230,
+    "r": 150
+  },
+  "name": "KeeveTrennis",
+  "retraction": "scroll",
+  "retractionMs": 400,
+  "shimmer": 0.08,
+  "style": "aurora",
+  "swingFxIntensity": 0.3,
+  "waveCount": 3
+}

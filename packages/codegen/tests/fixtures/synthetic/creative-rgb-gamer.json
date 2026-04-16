@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 255,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 215,
+    "g": 120,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 0,
+    "r": 0
+  },
+  "ignition": "standard",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "name": "RGBGamer",
+  "retraction": "standard",
+  "retractionMs": 200,
+  "shimmer": 0.8,
+  "style": "photon"
+}

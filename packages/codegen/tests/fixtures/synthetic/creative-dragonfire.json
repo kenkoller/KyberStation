@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 40,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 900,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 80,
+    "r": 200
+  },
+  "name": "Dragonfire",
+  "retraction": "evaporate",
+  "retractionMs": 1100,
+  "shimmer": 0.55,
+  "style": "candle"
+}

@@ -238,6 +238,12 @@ export interface BladeConfig {
   shimmer: number; // 0-1
   ledCount: number; // typically 144
 
+  // ── Spatial Lockup (Edit Mode) ──
+  /** Lockup centre position along the blade, 0..1. 0 = hilt, 1 = tip. Undefined = non-positional (runtime default). */
+  lockupPosition?: number;
+  /** Lockup radius (half-extent in each direction) as a fraction of blade length, 0..1. Default 0.12. */
+  lockupRadius?: number;
+
   // Style-specific params
   gradientEnd?: RGB;
   edgeColor?: RGB;

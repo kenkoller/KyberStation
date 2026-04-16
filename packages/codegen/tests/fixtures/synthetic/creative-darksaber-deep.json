@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 10,
+    "r": 10
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "glitch",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 180,
+    "r": 180
+  },
+  "name": "DarksaberCrackling",
+  "retraction": "shatter",
+  "retractionMs": 400,
+  "shimmer": 0.6,
+  "style": "unstable"
+}

@@ -81,6 +81,8 @@ export function CanvasToolbar() {
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const canvasTheme = useUIStore((s) => s.canvasTheme);
   const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
+  const editMode = useUIStore((s) => s.editMode);
+  const toggleEditMode = useUIStore((s) => s.toggleEditMode);
 
   const baseHex = rgbToHex(config.baseColor.r, config.baseColor.g, config.baseColor.b);
 
@@ -88,6 +90,26 @@ export function CanvasToolbar() {
 
   return (
     <div className="flex items-center gap-2 px-2 py-1 bg-bg-secondary/40 border-b border-border-subtle text-ui-sm shrink-0 overflow-x-auto">
+      {/* Edit Mode — click-on-blade to place the lockup position */}
+      <button
+        onClick={toggleEditMode}
+        aria-pressed={editMode}
+        title={
+          editMode
+            ? 'Edit Mode: click the blade to set the lockup position. Click here again to exit.'
+            : 'Enter Edit Mode to place the lockup position by clicking the blade.'
+        }
+        className={`px-2 py-0.5 rounded text-ui-sm font-medium border shrink-0 ${
+          editMode
+            ? 'bg-accent/20 border-accent text-accent'
+            : 'bg-bg-deep border-border-subtle text-text-muted hover:text-text-primary'
+        }`}
+      >
+        {editMode ? 'Edit: On' : 'Edit'}
+      </button>
+
+      <span className="w-px h-4 bg-border-subtle shrink-0" />
+
       {/* Style */}
       <label className="flex items-center gap-1 shrink-0">
         <span className="text-text-muted">Style</span>

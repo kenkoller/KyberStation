@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 245,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 190
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 170,
+    "r": 150
+  },
+  "coreColor": {
+    "b": 18,
+    "g": 4,
+    "r": 8
+  },
+  "darkCore": true,
+  "ignition": "wipe",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 210,
+    "g": 130,
+    "r": 110
+  },
+  "name": "SabineDarksaber",
+  "retraction": "fadeout",
+  "retractionMs": 350,
+  "shimmer": 0.32,
+  "style": "unstable"
+}

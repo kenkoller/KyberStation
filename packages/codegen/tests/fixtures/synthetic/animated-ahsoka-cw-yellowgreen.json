@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 235,
+    "r": 128
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 255,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 250,
+  "ledCount": 100,
+  "lockupColor": {
+    "b": 100,
+    "g": 240,
+    "r": 200
+  },
+  "name": "AhsokaCWShoto",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.12,
+  "style": "stable"
+}

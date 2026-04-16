@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 180,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "fireSize": 0.9,
+  "heatSpread": 1,
+  "ignition": "spark",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "name": "ThermalDetonator",
+  "retraction": "shatter",
+  "retractionMs": 250,
+  "shimmer": 0.2,
+  "sparkRate": 0.8,
+  "style": "fire"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 240,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 50,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "Over9000",
+  "retraction": "spaghettify",
+  "retractionMs": 200,
+  "shimmer": 1,
+  "style": "torrent"
+}

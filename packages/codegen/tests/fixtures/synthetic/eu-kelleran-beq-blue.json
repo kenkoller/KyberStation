@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 90,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 165,
+    "r": 110
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "spark",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 185,
+    "r": 150
+  },
+  "name": "KelleranBeq",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.08,
+  "style": "rotoscope"
+}

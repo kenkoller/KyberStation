@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 20,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 210,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 120,
+    "r": 255
+  },
+  "name": "VaderESB",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 480,
+  "shimmer": 0.07,
+  "style": "rotoscope",
+  "swingFxIntensity": 0.25
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 180,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 255,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 255,
+    "r": 150
+  },
+  "ignition": "scroll",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 100,
+    "r": 0
+  },
+  "name": "DigitalRain",
+  "retraction": "fadeout",
+  "retractionMs": 800,
+  "shimmer": 0.45,
+  "style": "aurora"
+}

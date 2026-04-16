@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 128,
+    "g": 128,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "summon",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "Dooku",
+  "noiseLevel": 0.02,
+  "retraction": "drain",
+  "retractionMs": 320,
+  "shimmer": 0.04,
+  "style": "stable"
+}

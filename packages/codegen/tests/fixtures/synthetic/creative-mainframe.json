@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 255,
+    "r": 150
+  },
+  "ignition": "hyperspace",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 120,
+    "r": 0
+  },
+  "name": "Mainframe",
+  "retraction": "spaghettify",
+  "retractionMs": 800,
+  "shimmer": 0.2,
+  "style": "dataStream"
+}

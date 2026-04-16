@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 40,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 100,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 150,
+    "r": 200
+  },
+  "ignition": "hyperspace",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 0,
+    "r": 80
+  },
+  "name": "WarpCore",
+  "retraction": "implode",
+  "retractionMs": 500,
+  "shimmer": 0.25,
+  "style": "helix"
+}

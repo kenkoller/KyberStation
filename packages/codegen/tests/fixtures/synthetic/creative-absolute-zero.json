@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "summon",
+  "ignitionMs": 2500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 150
+  },
+  "name": "AbsoluteZero",
+  "retraction": "implode",
+  "retractionMs": 800,
+  "shimmer": 0,
+  "style": "cascade"
+}

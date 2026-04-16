@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 10,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 30,
+    "g": 80,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 60,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 100,
+    "r": 255
+  },
+  "name": "GrandInquisitor",
+  "noiseLevel": 0.08,
+  "retraction": "dissolve",
+  "retractionMs": 250,
+  "shimmer": 0.35,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

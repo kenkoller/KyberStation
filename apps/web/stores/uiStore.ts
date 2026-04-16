@@ -48,6 +48,14 @@ export interface UIStore {
   isFullscreen: boolean;
   /** Orientation of the blade in fullscreen preview */
   fullscreenOrientation: FullscreenOrientation;
+  /**
+   * Edit Mode — when true, clicking the blade canvas places the lockup
+   * position and the Fett263 Edit Mode define wraps emitted code in
+   * RgbArg/IntArg argument templates. Previously a local useState in
+   * CodeOutput.tsx; unified here so the canvas, output panel, and any
+   * future direct-manipulation surfaces share a single flag.
+   */
+  editMode: boolean;
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -74,6 +82,8 @@ export interface UIStore {
   setTabOrder: (order: string[]) => void;
   toggleFullscreen: () => void;
   setFullscreenOrientation: (o: FullscreenOrientation) => void;
+  setEditMode: (on: boolean) => void;
+  toggleEditMode: () => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -103,6 +113,7 @@ export const useUIStore = create<UIStore>((set) => ({
   tabOrder: [],
   isFullscreen: false,
   fullscreenOrientation: 'horizontal',
+  editMode: false,
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -131,4 +142,6 @@ export const useUIStore = create<UIStore>((set) => ({
   setTabOrder: (tabOrder) => set({ tabOrder }),
   toggleFullscreen: () => set((state) => ({ isFullscreen: !state.isFullscreen })),
   setFullscreenOrientation: (fullscreenOrientation) => set({ fullscreenOrientation }),
+  setEditMode: (editMode) => set({ editMode }),
+  toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
 }));

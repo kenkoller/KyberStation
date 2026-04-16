@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 200,
+    "r": 150
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 150,
+    "r": 100
+  },
+  "name": "Permafrost",
+  "retraction": "shatter",
+  "retractionMs": 600,
+  "shimmer": 0.15,
+  "style": "crystalShatter"
+}

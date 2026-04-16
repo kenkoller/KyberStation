@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 150,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "scroll",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 20,
+    "g": 100,
+    "r": 200
+  },
+  "name": "BinarySunset",
+  "retraction": "fadeout",
+  "retractionMs": 1500,
+  "shimmer": 0.1,
+  "style": "gradient"
+}

@@ -26,9 +26,15 @@ export class LockupEffect extends BaseEffect {
   apply(color: RGB, position: number, context: EffectContext): RGB {
     if (!this.active) return color;
 
+    // When the config carries a spatial `lockupPosition` (placed via the
+    // canvas Edit Mode), prefer it over the runtime `trigger({position})`
+    // value. `lockupRadius` falls back to the historical 0.12 default so
+    // existing presets without a spatial lockup behave exactly as before.
+    const lockupPos = context.config.lockupPosition ?? this.position;
+    const radius = context.config.lockupRadius ?? 0.12;
+
     const fadeOut = this.getFadeOut(context.progress);
-    const dist = Math.abs(position - this.position);
-    const radius = 0.12;
+    const dist = Math.abs(position - lockupPos);
 
     if (dist < radius) {
       const strength = (1 - dist / radius) * fadeOut;

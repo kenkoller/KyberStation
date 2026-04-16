@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 250,
+    "g": 235,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "facets": 5,
+  "ignition": "center",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 210,
+    "r": 200
+  },
+  "name": "OrlaJareni",
+  "retraction": "center",
+  "retractionMs": 400,
+  "rotationSpeed": 1,
+  "shimmer": 0.08,
+  "style": "prism",
+  "swingFxIntensity": 0.2
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 100,
+    "g": 170,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "seismic",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 70,
+    "g": 130,
+    "r": 160
+  },
+  "name": "Sandstorm",
+  "retraction": "dissolve",
+  "retractionMs": 900,
+  "shimmer": 0.4,
+  "style": "mirage"
+}

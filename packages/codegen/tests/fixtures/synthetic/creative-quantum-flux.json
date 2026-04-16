@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "facets": 12,
+  "ignition": "glitch",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 200
+  },
+  "name": "QuantumFlux",
+  "retraction": "shatter",
+  "retractionMs": 300,
+  "rotationSpeed": 3,
+  "shimmer": 0.15,
+  "style": "prism"
+}

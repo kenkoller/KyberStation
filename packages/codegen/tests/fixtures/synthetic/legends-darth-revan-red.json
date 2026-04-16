@@ -1,0 +1,40 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 30,
+    "g": 60,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 130,
+    "g": 180,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 180
+  },
+  "fireSize": 0.55,
+  "heatSpread": 0.6,
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 255
+  },
+  "name": "RevanSith",
+  "noiseLevel": 0.1,
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.2,
+  "sparkRate": 0.5,
+  "style": "fire",
+  "swingFxIntensity": 0.4
+}

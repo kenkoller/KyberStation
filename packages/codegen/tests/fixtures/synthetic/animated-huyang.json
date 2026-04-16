@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 120,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 180,
+    "r": 130
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 160
+  },
+  "name": "Huyang",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.03,
+  "style": "stable"
+}

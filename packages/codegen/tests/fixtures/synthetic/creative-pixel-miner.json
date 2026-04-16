@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 50,
+    "g": 255,
+    "r": 50
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 150,
+    "r": 150
+  },
+  "ignition": "scroll",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 150,
+    "r": 0
+  },
+  "name": "PixelMiner",
+  "retraction": "shatter",
+  "retractionMs": 400,
+  "shimmer": 0.1,
+  "style": "crystalShatter"
+}

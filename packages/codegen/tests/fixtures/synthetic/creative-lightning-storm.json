@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 200,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 150,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 100,
+    "r": 150
+  },
+  "name": "LightningStorm",
+  "retraction": "shatter",
+  "retractionMs": 400,
+  "shimmer": 0.75,
+  "style": "unstable"
+}

@@ -3,7 +3,13 @@
 
 import type { StyleNode } from './types.js';
 
-// ─── Local BladeConfig types (avoids cross-package rootDir issues) ───
+// ─── Local BladeConfig / RGB types ───
+// These are a subset mirror of the canonical types in @kyberstation/engine.
+// Cross-package rootDir constraints + `node-linker=hoisted` prevent us from
+// importing them here at compile time. A structural-identity test in
+// tests/typeIdentity.test.ts guarantees this subset stays assignment-compatible
+// with the engine's source of truth; if a field is added in engine, add it
+// here too or the test will fail to typecheck.
 
 interface RGB {
   r: number;
@@ -27,6 +33,9 @@ interface BladeConfig {
   retractionMs: number;
   shimmer: number;
   ledCount: number;
+  // Spatial lockup (mirrors engine types — keep in sync; see typeIdentity.test.ts)
+  lockupPosition?: number;
+  lockupRadius?: number;
   gradientEnd?: RGB;
   edgeColor?: RGB;
   [key: string]: unknown;
@@ -317,16 +326,44 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   );
 
   // Lockup Normal
-  layers.push(
-    templateNode(
-      'template',
-      'LockupTrL',
-      templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
-      rawNode('TrInstant'),
-      templateNode('transition', 'TrFade', intNode(300)),
-      rawNode('SaberBase::LOCKUP_NORMAL'),
-    ),
-  );
+  // When `lockupPosition` is set the user has placed the lockup spatially
+  // (Edit Mode), so emit the real OS7 `ResponsiveLockupL<>` primitive with
+  // TOP/BOTTOM/SIZE args. Otherwise emit the non-positional LockupTrL so
+  // existing presets continue to produce identical byte-for-byte output.
+  if (typeof config.lockupPosition === 'number') {
+    const pos = positionToProffie(clamp01(config.lockupPosition));
+    const size = positionToProffie(clamp01(config.lockupRadius ?? 0.12));
+    const half = Math.round(size / 2);
+    // TOP/BOTTOM are emitted symmetrically around `pos` without clamping to
+    // [0, 32768]; ProffieOS handles out-of-range at render time, and keeping
+    // them symmetric is what makes the round-trip
+    // `(top+bottom)/2 → position` recovery work at the edges (position=0 or 1).
+    const top = pos + half;
+    const bottom = pos - half;
+    layers.push(
+      templateNode(
+        'template',
+        'ResponsiveLockupL',
+        templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
+        rawNode('TrInstant'),
+        templateNode('transition', 'TrFade', intNode(300)),
+        intTemplateNode(top),
+        intTemplateNode(bottom),
+        intTemplateNode(size),
+      ),
+    );
+  } else {
+    layers.push(
+      templateNode(
+        'template',
+        'LockupTrL',
+        templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
+        rawNode('TrInstant'),
+        templateNode('transition', 'TrFade', intNode(300)),
+        rawNode('SaberBase::LOCKUP_NORMAL'),
+      ),
+    );
+  }
 
   // Drag lockup
   const dragColor = config.dragColor ?? { r: 255, g: 150, b: 0 };
@@ -363,6 +400,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   );
 
   // Melt lockup
+  const meltColor = config.meltColor ?? { r: 255, g: 200, b: 0 };
   layers.push(
     templateNode(
       'template',
@@ -381,7 +419,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
           'mix',
           'Mix',
           templateNode('function', 'NoisySoundLevel'),
-          rgbNode({ r: 255, g: 200, b: 0 }),
+          rgbNode(meltColor),
           rawNode('White'),
         ),
       ),
@@ -395,62 +433,19 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
 }
 
 // ─── Ignition / Retraction Transitions ───
+// Delegates to the canonical table in transitionMap.ts so forward and inverse
+// paths stay collocated. Unknown IDs fall through to `TrWipeIn<ms>` (same
+// behaviour as the previous default branches).
+
+import { ignitionFromID, retractionFromID } from './transitionMap.js';
+import { positionToProffie, clamp01 } from './astBinding.js';
 
 function buildIgnitionTransition(config: BladeConfig): StyleNode {
-  const ms = config.ignitionMs;
-  switch (config.ignition) {
-    case 'standard':
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-    case 'scroll':
-      return templateNode('transition', 'TrWipe', intNode(ms));
-    case 'spark':
-      return templateNode(
-        'transition',
-        'TrWipeSparkTip',
-        rawNode('White'),
-        intNode(ms),
-      );
-    case 'center':
-      return templateNode('transition', 'TrCenterWipeIn', intNode(ms));
-    case 'wipe':
-      return templateNode('transition', 'TrWipe', intNode(ms));
-    case 'stutter':
-      return templateNode(
-        'transition',
-        'TrConcat',
-        templateNode('transition', 'TrWipe', intNode(Math.round(ms / 3))),
-        templateNode('transition', 'TrDelay', intNode(Math.round(ms / 6))),
-        templateNode('transition', 'TrWipe', intNode(Math.round(ms / 2))),
-      );
-    case 'glitch':
-      return templateNode(
-        'transition',
-        'TrConcat',
-        templateNode('transition', 'TrFade', intNode(Math.round(ms / 4))),
-        templateNode('transition', 'TrDelay', intNode(Math.round(ms / 8))),
-        templateNode('transition', 'TrWipeIn', intNode(Math.round(ms / 2))),
-      );
-    default:
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-  }
+  return ignitionFromID(config.ignition, config.ignitionMs);
 }
 
 function buildRetractionTransition(config: BladeConfig): StyleNode {
-  const ms = config.retractionMs;
-  switch (config.retraction) {
-    case 'standard':
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-    case 'scroll':
-      return templateNode('transition', 'TrWipe', intNode(ms));
-    case 'fadeout':
-      return templateNode('transition', 'TrFade', intNode(ms));
-    case 'center':
-      return templateNode('transition', 'TrCenterWipeIn', intNode(ms));
-    case 'shatter':
-      return templateNode('transition', 'TrFade', intNode(ms));
-    default:
-      return templateNode('transition', 'TrWipeIn', intNode(ms));
-  }
+  return retractionFromID(config.retraction, config.retractionMs);
 }
 
 // ─── Main Builder ───

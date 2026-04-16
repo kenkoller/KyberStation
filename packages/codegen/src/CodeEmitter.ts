@@ -11,6 +11,7 @@ const COMMENT_MAP: Record<string, string> = {
   SimpleClashL: 'Clash Effect',
   ResponsiveClashL: 'Clash Effect',
   LockupTrL: 'Lockup Layer',
+  ResponsiveLockupL: 'Responsive Lockup (spatial, OS7+)',
   AudioFlickerL: 'Audio Flicker',
   InOutTrL: 'Ignition / Retraction',
   Layers: 'Layer Compositor',

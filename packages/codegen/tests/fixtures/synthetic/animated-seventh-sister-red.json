@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 10,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 50,
+    "g": 70,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 200,
+    "r": 255
+  },
+  "frequency": 1.5,
+  "ignition": "center",
+  "ignitionMs": 190,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 70,
+    "g": 90,
+    "r": 255
+  },
+  "name": "SeventhSister",
+  "phaseSpeed": 1,
+  "retraction": "center",
+  "retractionMs": 240,
+  "shimmer": 0.12,
+  "style": "plasma",
+  "swingFxIntensity": 0.4
+}

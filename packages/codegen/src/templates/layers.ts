@@ -44,6 +44,18 @@ export const layerTemplates: Map<string, TemplateDefinition> = new Map([
     },
   ],
   [
+    'ResponsiveLockupL',
+    {
+      name: 'ResponsiveLockupL',
+      // <COLOR, TR1, TR2, TOP, BOTTOM, SIZE> — positional lockup layer from OS7.
+      // TOP / BOTTOM / SIZE are Int<> wrappers in 0..32768 (hilt=0, tip=32768).
+      // The optional 7th CONDITION arg defaults to Int<1> (always-on) and is
+      // not emitted by the ASTBuilder.
+      argTypes: ['COLOR', 'TRANSITION', 'TRANSITION', 'INTEGER', 'INTEGER', 'INTEGER'],
+      description: 'Spatial lockup layer (OS7): positions the lockup glow at a specific blade location.',
+    },
+  ],
+  [
     'AudioFlickerL',
     {
       name: 'AudioFlickerL',

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 130,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 170,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 2000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 90,
+    "r": 150
+  },
+  "name": "LoFiChill",
+  "retraction": "flickerOut",
+  "retractionMs": 2500,
+  "shimmer": 0.1,
+  "style": "candle"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 0,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 0
+  },
+  "ignition": "pulse-wave",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 0,
+    "r": 150
+  },
+  "name": "QuantumEntangle",
+  "retraction": "unravel",
+  "retractionMs": 900,
+  "shimmer": 0.45,
+  "style": "moire"
+}

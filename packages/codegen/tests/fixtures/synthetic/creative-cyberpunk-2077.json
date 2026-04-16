@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 0,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "glitch",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 255,
+    "r": 0
+  },
+  "name": "NightCityChrome",
+  "retraction": "implode",
+  "retractionMs": 400,
+  "shimmer": 0.7,
+  "style": "moire"
+}

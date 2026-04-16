@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 140,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 160,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 230,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 180,
+    "r": 255
+  },
+  "name": "CalKestisOrange",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.12,
+  "style": "stable"
+}

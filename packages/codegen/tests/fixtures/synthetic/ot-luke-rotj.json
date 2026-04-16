@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 220,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "name": "LukeROTJ",
+  "noiseLevel": 0.01,
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.03,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

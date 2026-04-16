@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 180,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 180
+  },
+  "ignition": "scroll",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 220,
+    "r": 150
+  },
+  "name": "Burryaga",
+  "retraction": "scroll",
+  "retractionMs": 500,
+  "shimmer": 0.03,
+  "style": "stable"
+}

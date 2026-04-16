@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 30,
+    "r": 150
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 75,
+    "r": 175
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 180,
+    "r": 215
+  },
+  "ignition": "spark",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 100,
+    "r": 185
+  },
+  "name": "JainaSolo",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.1,
+  "style": "stable"
+}

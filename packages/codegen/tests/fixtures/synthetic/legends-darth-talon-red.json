@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 15,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 80,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 210,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 100,
+    "r": 255
+  },
+  "name": "DarthTalon",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.14,
+  "style": "stable"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 60,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 150,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 2500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 0,
+    "r": 200
+  },
+  "name": "LavaLamp",
+  "retraction": "drain",
+  "retractionMs": 3000,
+  "shimmer": 0.2,
+  "style": "gravity"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 0,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 0,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 0,
+    "r": 200
+  },
+  "ignition": "glitch",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 0,
+    "r": 40
+  },
+  "name": "VoidWalker",
+  "retraction": "shatter",
+  "retractionMs": 600,
+  "shimmer": 0.65,
+  "style": "plasma"
+}

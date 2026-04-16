@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 32,
+    "g": 215,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "ObiWanEp1",
+  "retraction": "standard",
+  "retractionMs": 280,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingColorShift": {
+    "b": 60,
+    "g": 255,
+    "r": 0
+  },
+  "swingFxIntensity": 0.3
+}

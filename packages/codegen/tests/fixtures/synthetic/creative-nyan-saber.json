@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 100,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 100,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "hyperspace",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 255,
+    "r": 0
+  },
+  "name": "NyanSaber",
+  "retraction": "evaporate",
+  "retractionMs": 400,
+  "shimmer": 1,
+  "style": "prism"
+}

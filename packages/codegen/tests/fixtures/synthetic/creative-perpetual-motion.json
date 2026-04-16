@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 230,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "hyperspace",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 200,
+    "r": 220
+  },
+  "name": "PerpetualMotion",
+  "retraction": "drain",
+  "retractionMs": 900,
+  "shimmer": 0.15,
+  "style": "helix"
+}

@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 10,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 15,
+    "g": 50,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 130,
+    "g": 180,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 180
+  },
+  "flicker": 0.8,
+  "ignition": "fracture",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 70,
+    "r": 240
+  },
+  "name": "DarthSion",
+  "noiseLevel": 0.18,
+  "retraction": "dissolve",
+  "retractionMs": 300,
+  "shimmer": 0.32,
+  "style": "shatter",
+  "swingFxIntensity": 0.5
+}

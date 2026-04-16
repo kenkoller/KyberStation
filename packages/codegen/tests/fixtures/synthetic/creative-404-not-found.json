@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "ignition": "glitch",
+  "ignitionMs": 900,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 0,
+    "r": 0
+  },
+  "name": "404NotFound",
+  "retraction": "shatter",
+  "retractionMs": 600,
+  "shimmer": 0.7,
+  "style": "crystalShatter"
+}

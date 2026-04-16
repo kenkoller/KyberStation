@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 210,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "EethKoth",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.04,
+  "style": "stable"
+}
