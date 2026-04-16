@@ -8,17 +8,11 @@ import {
   applyPerformanceTier,
   type PerformanceTier,
 } from '@/lib/performanceTier';
+import { useAurebesh } from '@/hooks/useAurebesh';
+import { type AurebeshMode } from '@/lib/aurebesh';
+import { useLayoutStore } from '@/stores/layoutStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-type AurebeshMode = 'off' | 'labels' | 'full';
-
-interface LayoutPreset {
-  name: string;
-  data: string; // JSON blob stored in localStorage
-}
-
-const LAYOUT_PRESETS_KEY = 'bladeforge-layout-presets';
 
 const VISUALIZATION_LAYERS = [
   { id: 'blade-body', label: 'Blade Body' },
@@ -159,8 +153,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     applyPerformanceTier(tier);
   }, []);
 
-  // ── Aurebesh mode (stubbed — local state until store is wired) ──
-  const [aurebeshMode, setAurebeshMode] = useState<AurebeshMode>('off');
+  // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
+  const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
 
   // ── UI Sounds ──
   const soundEngine = typeof window !== 'undefined' ? getUISoundEngine() : null;
@@ -227,63 +221,39 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     [soundEngine],
   );
 
-  // ── Layout presets ──
-  const [layoutPresets, setLayoutPresets] = useState<LayoutPreset[]>([]);
+  // ── Layout presets — wired to layoutStore ──
+  const layoutSavedPresets = useLayoutStore((s) => s.savedPresets);
+  const layoutSavePreset = useLayoutStore((s) => s.savePreset);
+  const layoutLoadPreset = useLayoutStore((s) => s.loadPreset);
+  const layoutDeletePreset = useLayoutStore((s) => s.deletePreset);
+  const layoutResetToDefaults = useLayoutStore((s) => s.resetToDefaults);
+
   const [newLayoutName, setNewLayoutName] = useState('');
 
-  const loadLayoutPresets = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(LAYOUT_PRESETS_KEY);
-      setLayoutPresets(raw ? (JSON.parse(raw) as LayoutPreset[]) : []);
-    } catch {
-      setLayoutPresets([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    loadLayoutPresets();
-  }, [isOpen, loadLayoutPresets]);
-
-  const handleLoadLayoutPreset = useCallback((_preset: LayoutPreset) => {
-    // Stub: layout restore will be wired up when layout store supports import
-  }, []);
+  const handleLoadLayoutPreset = useCallback(
+    (id: string) => {
+      layoutLoadPreset(id);
+    },
+    [layoutLoadPreset],
+  );
 
   const handleDeleteLayoutPreset = useCallback(
-    (name: string) => {
-      const updated = layoutPresets.filter((p) => p.name !== name);
-      setLayoutPresets(updated);
-      try {
-        localStorage.setItem(LAYOUT_PRESETS_KEY, JSON.stringify(updated));
-      } catch {
-        // Storage full
-      }
+    (id: string) => {
+      layoutDeletePreset(id);
     },
-    [layoutPresets],
+    [layoutDeletePreset],
   );
 
   const handleSaveLayoutPreset = useCallback(() => {
     const trimmed = newLayoutName.trim();
     if (!trimmed) return;
-
-    // Stub: capture real layout state when store supports serialization
-    const data = JSON.stringify({ stub: true, savedAt: Date.now() });
-    const updated = [
-      ...layoutPresets.filter((p) => p.name !== trimmed),
-      { name: trimmed, data },
-    ];
-    setLayoutPresets(updated);
+    layoutSavePreset(trimmed);
     setNewLayoutName('');
-    try {
-      localStorage.setItem(LAYOUT_PRESETS_KEY, JSON.stringify(updated));
-    } catch {
-      // Storage full
-    }
-  }, [newLayoutName, layoutPresets]);
+  }, [newLayoutName, layoutSavePreset]);
 
   const handleResetLayout = useCallback(() => {
-    // Stub: reset to default layout when store supports it
-  }, []);
+    layoutResetToDefaults();
+  }, [layoutResetToDefaults]);
 
   // ── Display ──
   const [showFpsCounter, setShowFpsCounter] = useState(true);
@@ -505,7 +475,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         name="aurebesh-mode"
                         value={value}
                         checked={aurebeshMode === value}
-                        onChange={() => setAurebeshMode(value)}
+                        onChange={() => { playUISound('toggle-on'); setAurebeshMode(value); }}
                         className="mt-0.5 accent-[rgb(var(--accent))]"
                       />
                       <div className="min-w-0">
@@ -643,15 +613,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
 
                 {/* Saved presets */}
-                {layoutPresets.length > 0 && (
+                {layoutSavedPresets.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
                       Saved Layouts
                     </p>
                     <div className="space-y-1">
-                      {layoutPresets.map((preset) => (
+                      {layoutSavedPresets.map((preset) => (
                         <div
-                          key={preset.name}
+                          key={preset.id}
                           className="flex items-center gap-2 px-3 py-2 rounded border border-border-subtle bg-bg-deep/50"
                         >
                           <span className="flex-1 text-ui-sm text-text-secondary truncate">
@@ -659,14 +629,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           </span>
                           <button
                             type="button"
-                            onClick={() => handleLoadLayoutPreset(preset)}
+                            onClick={() => handleLoadLayoutPreset(preset.id)}
                             className="text-ui-xs text-accent hover:text-text-primary transition-colors px-1.5 py-0.5 rounded hover:bg-accent/10"
                           >
                             Load
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDeleteLayoutPreset(preset.name)}
+                            onClick={() => handleDeleteLayoutPreset(preset.id)}
                             className="text-ui-xs text-text-muted hover:text-red-400 transition-colors px-1.5 py-0.5 rounded hover:bg-red-900/20"
                             aria-label={`Delete layout preset "${preset.name}"`}
                           >

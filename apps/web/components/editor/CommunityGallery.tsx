@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { PanelSkeleton } from '@/components/shared/Skeleton';
 
 interface CommunityStyle {
   id: string;
@@ -189,7 +190,7 @@ export function CommunityGallery() {
       </div>
 
       {/* Gallery Grid */}
-      {loading && <p className="text-ui-sm text-text-muted">Loading gallery...</p>}
+      {loading && <PanelSkeleton title="Community Gallery" />}
       {error && <p className="text-ui-sm text-red-400">{error}</p>}
 
       <div className="grid grid-cols-1 gap-2">

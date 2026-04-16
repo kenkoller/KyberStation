@@ -21,11 +21,15 @@ export type PanelId =
   | 'randomizer'
   | 'layer-stack'
   | 'oled-preview'
+  | 'theme-picker'
+  | 'gradient-builder'
   // Dynamics tab
   | 'effect-triggers'
   | 'effect-config'
   | 'motion-simulation'
   | 'ignition-retraction'
+  | 'gesture-config'
+  | 'comparison-view'
   // Audio tab
   | 'font-library'
   | 'font-preview'
@@ -41,7 +45,9 @@ export type PanelId =
   | 'power-draw'
   | 'storage-budget'
   | 'saber-profiles'
-  | 'card-writer';
+  | 'card-writer'
+  | 'compatibility'
+  | 'oled-editor';
 
 export interface PanelDef {
   id: PanelId;
@@ -77,12 +83,16 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
   { id: 'randomizer',          label: 'Randomizer',         tab: 'design',   defaultColumn: 1, defaultOrder: 1, collapsible: true  },
   { id: 'layer-stack',         label: 'Layer Stack',        tab: 'design',   defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'oled-preview',        label: 'OLED Preview',       tab: 'design',   defaultColumn: 3, defaultOrder: 0, collapsible: true  },
+  { id: 'theme-picker',        label: 'Theme Picker',       tab: 'design',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
+  { id: 'gradient-builder',    label: 'Gradient Builder',   tab: 'design',   defaultColumn: 1, defaultOrder: 2, collapsible: true  },
 
   // ── Dynamics ──
   { id: 'effect-triggers',     label: 'Effect Triggers',    tab: 'dynamics', defaultColumn: 0, defaultOrder: 0, collapsible: false },
   { id: 'effect-config',       label: 'Effect Config',      tab: 'dynamics', defaultColumn: 1, defaultOrder: 0, collapsible: true  },
   { id: 'motion-simulation',   label: 'Motion Simulation',  tab: 'dynamics', defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'ignition-retraction', label: 'Ignition/Retraction',tab: 'dynamics', defaultColumn: 3, defaultOrder: 0, collapsible: true  },
+  { id: 'gesture-config',      label: 'Gesture Config',     tab: 'dynamics', defaultColumn: 1, defaultOrder: 1, collapsible: true  },
+  { id: 'comparison-view',     label: 'Comparison View',    tab: 'dynamics', defaultColumn: 3, defaultOrder: 1, collapsible: true  },
 
   // ── Audio ──
   { id: 'font-library',        label: 'Font Library',       tab: 'audio',    defaultColumn: 0, defaultOrder: 0, collapsible: false },
@@ -102,6 +112,8 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
   { id: 'storage-budget',      label: 'Storage Budget',     tab: 'output',   defaultColumn: 1, defaultOrder: 1, collapsible: true  },
   { id: 'saber-profiles',      label: 'Saber Profiles',     tab: 'output',   defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'card-writer',         label: 'Card Writer',        tab: 'output',   defaultColumn: 3, defaultOrder: 0, collapsible: true  },
+  { id: 'compatibility',       label: 'Compatibility',      tab: 'output',   defaultColumn: 2, defaultOrder: 1, collapsible: true  },
+  { id: 'oled-editor',         label: 'OLED Editor',        tab: 'output',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
 ];
 
 // ─── Default Column Assignment ───────────────────────────────────────────────

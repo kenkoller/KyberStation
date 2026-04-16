@@ -40,6 +40,7 @@ import { FullscreenPreview, FullscreenButton } from '@/components/editor/Fullscr
 import { DataTicker } from '@/components/hud/DataTicker';
 import { ScanSweep } from '@/components/hud/ScanSweep';
 import { CornerBrackets } from '@/components/hud/CornerBrackets';
+import { CanvasSkeleton } from '@/components/shared/Skeleton';
 import Link from 'next/link';
 
 // ─── HUD status messages for the header DataTicker ───
@@ -192,6 +193,15 @@ export function WorkbenchLayout() {
   );
   useKeyboardShortcuts(handlers);
   useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
+
+  // ── Engine ready guard — show CanvasSkeleton until the engine mounts ──
+  const [engineReady, setEngineReady] = useState(false);
+  useEffect(() => {
+    // engineRef is populated by useBladeEngine's first useEffect; wait one
+    // microtask to let it run before marking ready.
+    const id = requestAnimationFrame(() => setEngineReady(true));
+    return () => cancelAnimationFrame(id);
+  }, [engineRef]);
 
   // ── Settings modal state ──
   const [showSettings, setShowSettings] = useState(false);
@@ -367,7 +377,11 @@ export function WorkbenchLayout() {
         {/* Blade canvas area — horizontal, fills remaining width */}
         <CornerBrackets className="flex-1 min-w-0" size={16} thickness={1} pulse={true}>
           <div className="h-full p-1 relative">
-            <CanvasLayout engineRef={engineRef} />
+            {!engineReady ? (
+              <CanvasSkeleton className="h-full" />
+            ) : (
+              <CanvasLayout engineRef={engineRef} />
+            )}
             {/* Fullscreen toggle — top-right corner of canvas area */}
             <div className="absolute top-2 right-2 z-10">
               <FullscreenButton />

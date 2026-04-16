@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUIStore } from '@/stores/uiStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import type { PanelId, TabId } from '@/stores/layoutStore';
 import { ColumnGrid } from './ColumnGrid';
 import { useResponsiveColumns } from '@/hooks/useResponsiveColumns';
+import { TabContentSkeleton } from '@/components/shared/Skeleton';
 
 // ─── Panel imports — only components that exist ───────────────────────────────
 
@@ -15,17 +16,27 @@ import { ParameterBank } from '@/components/editor/ParameterBank';
 import { Randomizer } from '@/components/editor/Randomizer';
 import { LayerStack } from '@/components/editor/LayerStack';
 import { OLEDPreview } from '@/components/editor/OLEDPreview';
+import { ThemePickerPanel } from '@/components/editor/ThemePickerPanel';
 import { EffectPanel } from '@/components/editor/EffectPanel';
+import { GestureControlPanel } from '@/components/editor/GestureControlPanel';
 import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { SoundFontPanel } from '@/components/editor/SoundFontPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
+import { SmoothSwingPanel } from '@/components/editor/SmoothSwingPanel';
 import { PresetGallery } from '@/components/editor/PresetGallery';
+import { PresetBrowser } from '@/components/editor/PresetBrowser';
 import { CommunityGallery } from '@/components/editor/CommunityGallery';
 import { CodeOutput } from '@/components/editor/CodeOutput';
 import { PowerDrawPanel } from '@/components/editor/PowerDrawPanel';
 import { StorageBudgetPanel } from '@/components/editor/StorageBudgetPanel';
 import { SaberProfileManager } from '@/components/editor/SaberProfileManager';
 import { CardWriter } from '@/components/editor/CardWriter';
+import { CompatibilityPanel } from '@/components/editor/CompatibilityPanel';
+import { OLEDEditor } from '@/components/editor/OLEDEditor';
+import { GradientBuilder } from '@/components/editor/GradientBuilder';
+import { ComparisonView } from '@/components/editor/ComparisonView';
+import { useBladeStore } from '@/stores/bladeStore';
+import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 // ─── Coming-soon placeholder ──────────────────────────────────────────────────
 
@@ -38,11 +49,161 @@ function ComingSoon({ label }: { label: string }) {
   );
 }
 
+// ─── Font preview placeholder ─────────────────────────────────────────────────
+
+function FontPreviewPlaceholder() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
+      <span className="text-ui-sm text-text-muted font-mono">Font Preview</span>
+      <span className="text-ui-xs text-text-muted/50">Select a font from the library to preview</span>
+    </div>
+  );
+}
+
+// ─── ThemePickerPanel wrapper (needs store-bound props) ───────────────────────
+
+/**
+ * Thin wrapper that reads canvasTheme from uiStore and passes it as props to
+ * ThemePickerPanel, since renderPanel is a plain function and cannot call hooks.
+ */
+function ThemePickerPanelConnected() {
+  const canvasTheme = useUIStore((s) => s.canvasTheme);
+  const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
+  return (
+    <ThemePickerPanel
+      activeThemeId={canvasTheme}
+      onSelectTheme={setCanvasTheme}
+    />
+  );
+}
+
+// ─── Ignition / Retraction focused panel ─────────────────────────────────────
+//
+// Renders only the ignition + retraction sections so the ignition-retraction
+// panel slot has a distinct view instead of duplicating the full EffectPanel.
+
+const IGNITION_STYLES_IR = [
+  { id: 'standard',     label: 'Standard',    desc: 'Classic linear ignition' },
+  { id: 'scroll',       label: 'Scroll',       desc: 'Scrolling pixel fill' },
+  { id: 'spark',        label: 'Spark',        desc: 'Crackling spark ignition' },
+  { id: 'center',       label: 'Center Out',   desc: 'Ignites from center' },
+  { id: 'wipe',         label: 'Wipe',         desc: 'Soft wipe reveal' },
+  { id: 'stutter',      label: 'Stutter',      desc: 'Flickering unstable ignition' },
+  { id: 'glitch',       label: 'Glitch',       desc: 'Digital glitch effect' },
+  { id: 'twist',        label: 'Twist',        desc: 'Spiral ignition driven by twist' },
+  { id: 'swing',        label: 'Swing',        desc: 'Speed-reactive swing ignition' },
+  { id: 'stab',         label: 'Stab',         desc: 'Rapid center-out burst' },
+  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
+];
+
+const RETRACTION_STYLES_IR = [
+  { id: 'standard',     label: 'Standard',    desc: 'Linear retraction' },
+  { id: 'scroll',       label: 'Scroll',       desc: 'Scrolling retract' },
+  { id: 'fadeout',      label: 'Fade Out',     desc: 'Fading retraction' },
+  { id: 'center',       label: 'Center In',    desc: 'Retracts to center' },
+  { id: 'shatter',      label: 'Shatter',      desc: 'Shattering retraction' },
+  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
+];
+
+function IgnitionRetractionPanel() {
+  const config = useBladeStore((s) => s.config);
+  const setIgnition = useBladeStore((s) => s.setIgnition);
+  const setRetraction = useBladeStore((s) => s.setRetraction);
+  const updateConfig = useBladeStore((s) => s.updateConfig);
+
+  return (
+    <div className="space-y-4">
+      {/* Ignition */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          Ignition Style
+          <HelpTooltip
+            text="How the blade extends when activated. Controls the visual transition from off to on."
+            proffie="InOutTrL<TrWipe<300>>"
+          />
+        </h3>
+        <div className="grid grid-cols-2 gap-1.5">
+          {IGNITION_STYLES_IR.map((style) => (
+            <button
+              key={style.id}
+              onClick={() => setIgnition(style.id)}
+              title={style.desc}
+              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
+                config.ignition === style.id
+                  ? 'bg-accent-dim border-accent-border text-accent'
+                  : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
+              }`}
+            >
+              {style.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-ui-xs text-text-muted w-24 shrink-0">Ignition Speed</span>
+          <input
+            type="range"
+            min={100}
+            max={2000}
+            step={50}
+            value={(config.ignitionMs as number | undefined) ?? 300}
+            onChange={(e) => updateConfig({ ignitionMs: Number(e.target.value) })}
+            aria-label="Ignition speed in milliseconds"
+            className="flex-1"
+          />
+          <span className="text-ui-xs text-text-muted font-mono w-12 text-right">
+            {(config.ignitionMs as number | undefined) ?? 300}ms
+          </span>
+        </div>
+      </div>
+
+      {/* Retraction */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          Retraction Style
+          <HelpTooltip text="How the blade retracts when deactivated." proffie="InOutTrL<TrWipe<500>>" />
+        </h3>
+        <div className="grid grid-cols-2 gap-1.5">
+          {RETRACTION_STYLES_IR.map((style) => (
+            <button
+              key={style.id}
+              onClick={() => setRetraction(style.id)}
+              title={style.desc}
+              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
+                config.retraction === style.id
+                  ? 'bg-accent-dim border-accent-border text-accent'
+                  : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
+              }`}
+            >
+              {style.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-ui-xs text-text-muted w-24 shrink-0">Retraction Speed</span>
+          <input
+            type="range"
+            min={100}
+            max={3000}
+            step={50}
+            value={(config.retractionMs as number | undefined) ?? 500}
+            onChange={(e) => updateConfig({ retractionMs: Number(e.target.value) })}
+            aria-label="Retraction speed in milliseconds"
+            className="flex-1"
+          />
+          <span className="text-ui-xs text-text-muted font-mono w-12 text-right">
+            {(config.retractionMs as number | undefined) ?? 500}ms
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Panel renderer ───────────────────────────────────────────────────────────
 
 /**
  * Maps a PanelId string to the concrete React component (or placeholder) for
- * that panel.  This is passed to ColumnGrid as the `renderPanel` prop.
+ * that panel.  This is passed to ColumnGrid as the renderPanel prop.
  */
 function renderPanel(panelId: string): React.ReactNode {
   switch (panelId as PanelId) {
@@ -59,36 +220,53 @@ function renderPanel(panelId: string): React.ReactNode {
       return <LayerStack />;
     case 'oled-preview':
       return <OLEDPreview />;
+    case 'theme-picker':
+      // Canvas background theme selector — wires to uiStore.canvasTheme
+      return <ThemePickerPanelConnected />;
+    case 'gradient-builder':
+      return <GradientBuilder />;
 
     // ── Dynamics ──
     case 'effect-triggers':
+      // Main effect panel: clash, blast, lockup, stab, force triggers + per-effect config
       return <EffectPanel />;
     case 'effect-config':
-      return <EffectPanel />;
+      // Fett263 gesture defines — prop-level effect configuration (#define statements)
+      return <GestureControlPanel />;
     case 'motion-simulation':
       return <MotionSimPanel />;
     case 'ignition-retraction':
-      return <EffectPanel />;
+      // Ignition style selector + speed, retraction style selector + speed only
+      return <IgnitionRetractionPanel />;
+    case 'gesture-config':
+      return <GestureControlPanel />;
+    case 'comparison-view':
+      return <ComparisonView />;
 
     // ── Audio ──
     case 'font-library':
+      // Full font browser: library scanner, font list, load-to-active
       return <SoundFontPanel />;
     case 'font-preview':
-      return <SoundFontPanel />;
+      // Placeholder until SoundFontPanel gains a dedicated preview-only mode
+      return <FontPreviewPlaceholder />;
     case 'mixer-eq':
       return <AudioPanel />;
     case 'smoothswing-config':
-      return <ComingSoon label="SmoothSwing Config" />;
+      return <SmoothSwingPanel />;
 
     // ── Gallery ──
     case 'builtin-presets':
-      return <PresetGallery />;
+      // Feature-rich preset browser: era/affiliation filters, Kyber Code share links
+      return <PresetBrowser />;
     case 'my-presets':
-      return <PresetGallery />;
+      // PresetGallery opened directly on its "My Presets" internal tab
+      return <PresetGallery initialTab="my-presets" />;
     case 'community-gallery':
       return <CommunityGallery />;
     case 'preset-detail':
-      return <PresetGallery />;
+      // Future: detail view for a selected preset with full metadata + variations
+      return <ComingSoon label="Preset Detail" />;
 
     // ── Output ──
     case 'code-output':
@@ -101,6 +279,11 @@ function renderPanel(panelId: string): React.ReactNode {
       return <SaberProfileManager />;
     case 'card-writer':
       return <CardWriter />;
+    case 'compatibility':
+      // Board compatibility matrix — Proffie V3/V2, CFX, GH, Xeno, etc.
+      return <CompatibilityPanel />;
+    case 'oled-editor':
+      return <OLEDEditor />;
 
     default:
       return <ComingSoon label={panelId} />;
@@ -122,6 +305,13 @@ function renderPanel(panelId: string): React.ReactNode {
  */
 export function TabColumnContent() {
   const activeTab = useUIStore((s) => s.activeTab) as TabId;
+
+  // Suppress SSR / first-paint flash — show skeleton until layout store is
+  // hydrated on the client (the store reads from localStorage on mount).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Drive the store's columnCount from the viewport width automatically.
   // The hook also returns the current value so we can pass it straight to
@@ -155,6 +345,10 @@ export function TabColumnContent() {
     },
     [togglePanelCollapsed],
   );
+
+  if (!mounted) {
+    return <TabContentSkeleton columns={columnCount} />;
+  }
 
   return (
     <ColumnGrid

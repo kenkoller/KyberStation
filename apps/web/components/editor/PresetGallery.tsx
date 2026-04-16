@@ -9,6 +9,7 @@ import { downloadConfigAsFile, downloadCollection, readCollectionFile } from '@/
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
 import { playUISound } from '@/lib/uiSounds';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { PanelSkeleton } from '@/components/shared/Skeleton';
 import { CommunityGallery } from './CommunityGallery';
 import {
   ALL_PRESETS,
@@ -541,11 +542,16 @@ function UserPresetCard({
 
 // ─── Main Gallery Component ───
 
-export function PresetGallery() {
+interface PresetGalleryProps {
+  /** Open a specific internal tab on mount. Defaults to 'gallery'. */
+  initialTab?: GalleryTab;
+}
+
+export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
   const loadPreset = useBladeStore((s) => s.loadPreset);
   const config = useBladeStore((s) => s.config);
 
-  const [activeTab, setActiveTab] = useState<GalleryTab>('gallery');
+  const [activeTab, setActiveTab] = useState<GalleryTab>(initialTab);
   const [selectedEra, setSelectedEra] = useState<Era | 'all'>('all');
   const [selectedAffiliation, setSelectedAffiliation] = useState<Affiliation | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -805,7 +811,7 @@ export function PresetGallery() {
             </div>
           )}
           {isLoadingPresets ? (
-            <div className="text-ui-sm text-text-muted text-center py-6">Loading presets...</div>
+            <PanelSkeleton title="My Presets" />
           ) : filteredUserPresets.length === 0 ? (
             <div className="text-ui-sm text-text-muted text-center py-8 border border-dashed border-border-subtle rounded">
               {userPresets.length === 0 ? 'No saved presets yet. Customize a style and click "Save Current".' : 'No presets match your search.'}

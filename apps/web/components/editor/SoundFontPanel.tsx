@@ -1,5 +1,6 @@
 'use client';
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { PanelSkeleton } from '@/components/shared/Skeleton';
 import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
@@ -201,14 +202,7 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
 
       {/* Scanning progress */}
       {isScanning && (
-        <div className="bg-accent-dim/10 border border-accent-border/30 rounded-panel p-2 text-center">
-          <span className="text-ui-sm text-accent">
-            Scanning... {scanProgress.scanned} fonts found
-          </span>
-          {scanProgress.currentName && (
-            <span className="text-ui-xs text-text-muted ml-1">({scanProgress.currentName})</span>
-          )}
-        </div>
+        <PanelSkeleton title={`Scanning… ${scanProgress.scanned} fonts found`} />
       )}
 
       {/* Search + Sort */}
