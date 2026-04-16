@@ -6,8 +6,8 @@ import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import {
   rgbToHsl as engineRgbToHsl,
   getHarmonyColors,
-} from '@bladeforge/engine';
-import type { HarmonyType } from '@bladeforge/engine';
+} from '@kyberstation/engine';
+import type { HarmonyType } from '@kyberstation/engine';
 import { getSaberColorName } from '@/lib/saberColorNames';
 import { playUISound } from '@/lib/uiSounds';
 
@@ -200,10 +200,10 @@ export function ColorPanel() {
   const showEdgeColor = config.style === 'plasma';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* ── Active channel selector ── */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Color Channel
           <HelpTooltip text="Select which effect color to edit. Each channel controls a different combat interaction — clash for blade impacts, blast for blaster deflections, lockup for sustained blade contact. See also: Effect Panel for effect trigger configuration." proffie="Rgb<r,g,b> / RgbArg<>" />
         </h3>
@@ -276,7 +276,7 @@ export function ColorPanel() {
       </div>
 
       {/* ── Color preview + hex input ── */}
-      <div className="flex items-center gap-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
+      <div className="flex items-center gap-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
         <div
           className="w-14 h-14 rounded-lg border border-white/10 shrink-0"
           style={{ backgroundColor: rgbToHex(activeColor.r, activeColor.g, activeColor.b) }}
@@ -328,11 +328,11 @@ export function ColorPanel() {
 
       {/* ── HSL sliders ── */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           HSL Adjustment
           <HelpTooltip text="Hue, Saturation, Lightness — an intuitive way to fine-tune colors. Hue picks the color, Saturation controls vibrancy, Lightness sets brightness. ProffieOS uses RGB internally, but HSL is easier for color design." proffie="RotateColorsX<Int<hue>, Rgb<...>>" />
         </h3>
-        <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
+        <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
           {/* Hue */}
           <div className="flex items-center gap-2">
             <label htmlFor="hsl-hue" className="text-ui-sm text-text-secondary w-6">H</label>
@@ -385,11 +385,11 @@ export function ColorPanel() {
 
       {/* ── RGB sliders ── */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           RGB Values
           <HelpTooltip text="Direct red/green/blue channel values (0-255). These map directly to ProffieOS Rgb<> template arguments. Tip: pure blue (0,0,255) draws less power than white (255,255,255)." proffie="Rgb<r,g,b>" />
         </h3>
-        <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
+        <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
           {(['r', 'g', 'b'] as const).map((ch) => (
             <div key={ch} className="flex items-center gap-2">
               <label htmlFor={`rgb-${ch}`} className="text-ui-sm text-text-secondary w-6 uppercase">{ch}</label>
@@ -417,7 +417,7 @@ export function ColorPanel() {
 
       {/* ── Canon saber color presets ── */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Canon Presets
           <HelpTooltip text="Film-accurate lightsaber colors from Star Wars characters. Click any preset to apply it to the currently selected color channel." />
         </h3>
@@ -466,8 +466,8 @@ export function ColorPanel() {
 
       {/* ── Auto-suggest ── */}
       {activeChannel === 'baseColor' && (
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle">
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
             Auto-Suggest
             <HelpTooltip text="Generates complementary clash and lockup colors based on your base color. Blue blades get warm orange clashes, green blades get white/yellow, etc." />
           </h3>
@@ -606,11 +606,11 @@ function ColorHarmonySection({
 
   return (
     <div>
-      <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+      <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
         Color Harmony
         <HelpTooltip text="Generate complementary, analogous, or triadic colors from your active color. Apply them to effect channels for cohesive blade styling." />
       </h3>
-      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+      <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
         {/* Harmony type buttons */}
         <div className="flex flex-wrap gap-1">
           {HARMONY_TYPES.map((ht) => (

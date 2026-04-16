@@ -5,11 +5,11 @@ const nextConfig = {
   // headers() is not served with output: 'export' and actively breaks
   // dev mode by blocking Next.js inline scripts, so it is removed.
   transpilePackages: [
-    '@bladeforge/engine',
-    '@bladeforge/codegen',
-    '@bladeforge/presets',
-    '@bladeforge/sound',
-    '@bladeforge/boards',
+    '@kyberstation/engine',
+    '@kyberstation/codegen',
+    '@kyberstation/presets',
+    '@kyberstation/sound',
+    '@kyberstation/boards',
   ],
   images: {
     unoptimized: true,

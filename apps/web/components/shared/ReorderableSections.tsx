@@ -63,10 +63,12 @@ export function ReorderableSections({ tab, sections }: ReorderableSectionsProps)
     setDragId(id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
-    // Make the dragged element semi-transparent
-    if (e.currentTarget instanceof HTMLElement) {
+    // Make the dragged element semi-transparent.
+    // Capture the node before rAF — React pools SyntheticEvent and nulls currentTarget.
+    const target = e.currentTarget;
+    if (target instanceof HTMLElement) {
       requestAnimationFrame(() => {
-        (e.currentTarget as HTMLElement).style.opacity = '0.4';
+        target.style.opacity = '0.4';
       });
     }
   }, []);

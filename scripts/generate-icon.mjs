@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates a BladeForge app icon as a PNG set and .icns file.
+ * Generates a KyberStation app icon as a PNG set and .icns file.
  * Uses Node canvas-free approach: writes a simple icon via raw pixel data.
  *
  * For macOS .icns we create PNGs at required sizes and use iconutil.
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const ICONSET = resolve(ROOT, 'BladeForge.iconset');
+const ICONSET = resolve(ROOT, 'KyberStation.iconset');
 
 // We'll create the icon using sips to rasterize from a simple approach:
 // Create a 1024x1024 HTML canvas rendered to PNG via a quick script
@@ -68,12 +68,12 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <circle cx="480" cy="690" r="8" fill="#e22" opacity="0.9"/>
   <circle cx="480" cy="690" r="4" fill="#ff4444" opacity="0.8"/>
   <!-- Text -->
-  <text x="512" y="940" text-anchor="middle" font-family="SF Mono, Menlo, monospace" font-size="64" font-weight="bold" fill="#00e5ff" opacity="0.8">BF</text>
+  <text x="512" y="940" text-anchor="middle" font-family="SF Mono, Menlo, monospace" font-size="64" font-weight="bold" fill="#00e5ff" opacity="0.8">KS</text>
 </svg>`;
 
 try {
   // Write SVG
-  const svgPath = resolve(ROOT, 'BladeForge-icon.svg');
+  const svgPath = resolve(ROOT, 'KyberStation-icon.svg');
   writeFileSync(svgPath, svg);
 
   // Create iconset directory
@@ -116,7 +116,7 @@ try {
 
     try {
       execFileSync('qlmanage', ['-t', '-s', '1024', '-o', tmpDir, svgPath], { stdio: 'pipe' });
-      const rendered = resolve(tmpDir, 'BladeForge-icon.svg.png');
+      const rendered = resolve(tmpDir, 'KyberStation-icon.svg.png');
 
       for (const size of sizes) {
         const name = size <= 512
@@ -135,7 +135,7 @@ try {
   }
 
   // Generate .icns from iconset
-  const icnsPath = resolve(ROOT, 'BladeForge.app', 'Contents', 'Resources', 'AppIcon.icns');
+  const icnsPath = resolve(ROOT, 'KyberStation.app', 'Contents', 'Resources', 'AppIcon.icns');
   execFileSync('iconutil', ['-c', 'icns', '-o', icnsPath, ICONSET]);
 
   // Also copy to public for PWA

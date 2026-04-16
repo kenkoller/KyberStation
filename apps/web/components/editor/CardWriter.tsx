@@ -20,7 +20,7 @@ import {
   type DetectedBoard,
   type ExistingPreset,
 } from '@/lib/cardDetector';
-import { generateStyleCode } from '@bladeforge/codegen';
+import { generateStyleCode } from '@kyberstation/codegen';
 import { playUISound } from '@/lib/uiSounds';
 
 // ─── Preset Registry ───
@@ -274,7 +274,7 @@ export function CardWriter() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `bladeforge_${boardId}_${Date.now()}.zip`;
+      a.download = `kyberstation_${boardId}_${Date.now()}.zip`;
       a.click();
       URL.revokeObjectURL(url);
 

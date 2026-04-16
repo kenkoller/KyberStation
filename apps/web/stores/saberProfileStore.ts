@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { PresetListEntry } from './presetListStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 // ─── Card Preset types ───
 
@@ -71,7 +71,7 @@ interface SaberProfileStore {
   reorderCardEntries: (profileId: string, configId: string, fromIndex: number, toIndex: number) => void;
 }
 
-const STORAGE_KEY = 'bladeforge-saber-profiles';
+const STORAGE_KEY = 'kyberstation-saber-profiles';
 
 /** Migrate a profile from old format (presetEntries) to new format (cardConfigs). */
 function migrateProfile(profile: SaberProfile): SaberProfile {

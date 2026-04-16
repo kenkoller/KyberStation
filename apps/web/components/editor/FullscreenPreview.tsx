@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useCallback, useState } from 'react';
-import type { BladeEngine } from '@bladeforge/engine';
+import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';

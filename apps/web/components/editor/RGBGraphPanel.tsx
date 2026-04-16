@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useEffect } from 'react';
-import type { BladeEngine } from '@bladeforge/engine';
+import type { BladeEngine } from '@kyberstation/engine';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
@@ -10,10 +10,10 @@ interface RGBGraphPanelProps {
 }
 
 /**
- * RGBGraphPanel — standalone RGB line chart visualization.
+ * RGBGraphPanel — standalone horizontal RGB line chart visualization.
  *
- * Plots R, G, B channel values (0-255 on X-axis) against LED position
- * (bottom=hilt, top=tip on Y-axis). Reads engine pixel buffer each frame.
+ * Plots R, G, B channel values (0-255 on Y-axis) against LED position
+ * (left=hilt, right=tip on X-axis). Reads engine pixel buffer each frame.
  */
 export function RGBGraphPanel({ engineRef }: RGBGraphPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,70 +68,72 @@ export function RGBGraphPanel({ engineRef }: RGBGraphPanelProps) {
     ctx.fillStyle = '#030305';
     ctx.fillRect(0, 0, cw, ch);
 
-    // Layout
-    const padX = 12 * dpr;
-    const padY = 16 * dpr;
-    const labelH = 14 * dpr;
+    // Layout: X = LED position (hilt left, tip right), Y = channel value (0-255)
+    const padX = 8 * dpr;
+    const padTop = 10 * dpr;
+    const padBot = 6 * dpr;
     const graphX = padX;
     const graphW = cw - padX * 2;
-    const graphTopY = padY;
-    const graphBotY = ch - padY - labelH;
+    const graphTopY = padTop;
+    const graphBotY = ch - padBot;
     const graphH = graphBotY - graphTopY;
 
     if (graphW <= 0 || graphH <= 0) return;
 
     // Background panel
-    const bgPad = 4 * dpr;
+    const bgPad = 2 * dpr;
     ctx.fillStyle = 'rgba(10, 12, 20, 0.6)';
-    ctx.fillRect(graphX - bgPad, graphTopY - bgPad, graphW + bgPad * 2, graphH + labelH + bgPad * 2);
+    ctx.fillRect(graphX - bgPad, graphTopY - bgPad, graphW + bgPad * 2, graphH + bgPad * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(graphX - bgPad, graphTopY - bgPad, graphW + bgPad * 2, graphH + labelH + bgPad * 2);
+    ctx.strokeRect(graphX - bgPad, graphTopY - bgPad, graphW + bgPad * 2, graphH + bgPad * 2);
 
-    // Vertical grid lines at value marks (X axis = 0-255)
+    // Horizontal guide lines (Y = channel value marks: 0, 64, 128, 192, 255)
     ctx.lineWidth = 0.5 * dpr;
     ctx.font = `${7 * dpr}px monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
     for (const val of [0, 64, 128, 192, 255]) {
-      const gx = graphX + (val / 255) * graphW;
+      const gy = graphBotY - (val / 255) * graphH;
       if (val > 0 && val < 255) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.beginPath();
-        ctx.moveTo(gx, graphTopY);
-        ctx.lineTo(gx, graphBotY);
+        ctx.moveTo(graphX, gy);
+        ctx.lineTo(graphX + graphW, gy);
         ctx.stroke();
       }
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.30)';
-      ctx.fillText(String(val), gx, graphBotY + 2 * dpr);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.20)';
+      ctx.fillText(String(val), graphX - 3 * dpr, gy);
     }
-    ctx.textBaseline = 'alphabetic';
 
-    // Horizontal guide lines (Y = LED position fractions)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    // Vertical guide lines (X = LED position fractions)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 0.5 * dpr;
-    for (const frac of [0, 0.25, 0.5, 0.75, 1]) {
-      const y = graphBotY - frac * graphH;
+    for (const frac of [0.25, 0.5, 0.75]) {
+      const gx = graphX + frac * graphW;
       ctx.beginPath();
-      ctx.moveTo(graphX, y);
-      ctx.lineTo(graphX + graphW, y);
+      ctx.moveTo(gx, graphTopY);
+      ctx.lineTo(gx, graphBotY);
       ctx.stroke();
     }
 
-    // R, G, B lines — Y = LED position (bottom to top), X = channel value
+    // R, G, B lines — X = LED position (left to right), Y = channel value
+    // Also accumulate per-channel stats while iterating
     const channels = [
-      { offset: 0, color: 'rgba(255, 60, 60, 0.90)' },
-      { offset: 1, color: 'rgba(60, 255, 60, 0.90)' },
-      { offset: 2, color: 'rgba(80, 130, 255, 0.90)' },
+      { offset: 0, color: 'rgba(255, 60, 60, 0.90)', label: 'R', sum: 0, max: 0 },
+      { offset: 1, color: 'rgba(60, 255, 60, 0.90)', label: 'G', sum: 0, max: 0 },
+      { offset: 2, color: 'rgba(80, 130, 255, 0.90)', label: 'B', sum: 0, max: 0 },
     ];
     ctx.lineWidth = 1.5 * dpr;
-    for (const ch of channels) {
-      ctx.strokeStyle = ch.color;
+    for (const chan of channels) {
+      ctx.strokeStyle = chan.color;
       ctx.beginPath();
       for (let i = 0; i < leds; i++) {
-        const val = pixels[i * 3 + ch.offset] ?? 0;
-        const x = graphX + (val / 255) * graphW;
-        const y = graphBotY - (i / Math.max(leds - 1, 1)) * graphH;
+        const val = pixels[i * 3 + chan.offset] ?? 0;
+        chan.sum += val;
+        if (val > chan.max) chan.max = val;
+        const x = graphX + (i / Math.max(leds - 1, 1)) * graphW;
+        const y = graphBotY - (val / 255) * graphH;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -142,21 +144,28 @@ export function RGBGraphPanel({ engineRef }: RGBGraphPanelProps) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = `${8 * dpr}px monospace`;
     ctx.textAlign = 'left';
-    ctx.fillText('RGB', graphX + 2 * dpr, graphTopY + 12 * dpr);
+    ctx.fillText('RGB', graphX + 2 * dpr, graphTopY + 10 * dpr);
 
-    // Channel legend
-    const legendX = graphX + graphW - 60 * dpr;
-    const legendY = graphTopY + 10 * dpr;
+    // Live per-channel stat readouts — right-aligned, stacked vertically
+    const statX = graphX + graphW - 2 * dpr;
+    const statStartY = graphTopY + 10 * dpr;
+    const statLineH = 9 * dpr;
     ctx.font = `${7 * dpr}px monospace`;
-    const labels = [
-      { label: 'R', color: 'rgba(255, 60, 60, 0.90)' },
-      { label: 'G', color: 'rgba(60, 255, 60, 0.90)' },
-      { label: 'B', color: 'rgba(80, 130, 255, 0.90)' },
-    ];
-    labels.forEach((l, i) => {
-      ctx.fillStyle = l.color;
-      ctx.fillText(l.label, legendX + i * 16 * dpr, legendY);
-    });
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let ci = 0; ci < channels.length; ci++) {
+      const ch2 = channels[ci];
+      const avg = leds > 0 ? Math.round(ch2.sum / leds) : 0;
+      ctx.fillStyle = ch2.color;
+      ctx.globalAlpha = 0.60;
+      ctx.fillText(
+        `${ch2.label}: avg ${avg}  max ${ch2.max}`,
+        statX,
+        statStartY + ci * statLineH,
+      );
+    }
+    ctx.globalAlpha = 1;
+    ctx.textBaseline = 'alphabetic';
   }, { maxFps: reducedMotion ? 2 : undefined });
 
   return (

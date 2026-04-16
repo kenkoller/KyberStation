@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getUISoundEngine, playUISound, type UISoundPreset, type UISoundCategory } from '@/lib/uiSounds';
+import { playUISound } from '@/lib/uiSounds';
 import {
   getPerformanceTier,
   setPerformanceTier,
@@ -120,6 +120,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     aurebesh: false,
     sounds: false,
     layout: false,
+    shortcuts: false,
     display: false,
   });
 
@@ -155,71 +156,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
   const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
-
-  // ── UI Sounds ──
-  const soundEngine = typeof window !== 'undefined' ? getUISoundEngine() : null;
-
-  const [soundPreset, setSoundPresetState] = useState<UISoundPreset>('silent');
-  const [masterVolume, setMasterVolumeState] = useState(0.4);
-  const [categoryVolumes, setCategoryVolumesState] = useState<Record<UISoundCategory, number>>({
-    navigation: 0.5,
-    interaction: 0.4,
-    feedback: 0.6,
-    ambient: 0.2,
-  });
-  const [categoryMuted, setCategoryMutedState] = useState<Record<UISoundCategory, boolean>>({
-    navigation: false,
-    interaction: false,
-    feedback: false,
-    ambient: true,
-  });
-
-  useEffect(() => {
-    if (!isOpen || !soundEngine) return;
-    const s = soundEngine.getSettings();
-    setSoundPresetState(s.preset);
-    setMasterVolumeState(s.masterVolume);
-    setCategoryVolumesState({ ...s.categoryVolumes });
-    setCategoryMutedState({ ...s.categoryMuted });
-  }, [isOpen, soundEngine]);
-
-  const handleSoundPreset = useCallback(
-    (preset: UISoundPreset) => {
-      setSoundPresetState(preset);
-      soundEngine?.setPreset(preset);
-      // Re-sync derived state
-      if (soundEngine) {
-        const s = soundEngine.getSettings();
-        setMasterVolumeState(s.masterVolume);
-        setCategoryMutedState({ ...s.categoryMuted });
-      }
-    },
-    [soundEngine],
-  );
-
-  const handleMasterVolume = useCallback(
-    (v: number) => {
-      setMasterVolumeState(v);
-      soundEngine?.setMasterVolume(v);
-    },
-    [soundEngine],
-  );
-
-  const handleCategoryVolume = useCallback(
-    (cat: UISoundCategory, v: number) => {
-      setCategoryVolumesState((prev) => ({ ...prev, [cat]: v }));
-      soundEngine?.setCategoryVolume(cat, v);
-    },
-    [soundEngine],
-  );
-
-  const handleCategoryMuted = useCallback(
-    (cat: UISoundCategory, muted: boolean) => {
-      setCategoryMutedState((prev) => ({ ...prev, [cat]: muted }));
-      soundEngine?.setCategoryMuted(cat, muted);
-    },
-    [soundEngine],
-  );
 
   // ── Layout presets — wired to layoutStore ──
   const layoutSavedPresets = useLayoutStore((s) => s.savedPresets);
@@ -319,15 +255,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   if (!isOpen) return null;
 
-  // ─── Helpers ───
-
-  const SOUND_CATEGORIES: Array<{ id: UISoundCategory; label: string }> = [
-    { id: 'navigation', label: 'Navigation' },
-    { id: 'interaction', label: 'Interaction' },
-    { id: 'feedback', label: 'Feedback' },
-    { id: 'ambient', label: 'Ambient' },
-  ];
-
   // ─── Render ───
 
   return (
@@ -346,7 +273,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle shrink-0">
           <div>
             <h2 className="text-ui-lg font-semibold text-text-primary tracking-wide">Settings</h2>
-            <p className="text-ui-xs text-text-muted mt-0.5">BladeForge configuration</p>
+            <p className="text-ui-xs text-text-muted mt-0.5">KyberStation configuration</p>
           </div>
           <button
             type="button"
@@ -497,93 +424,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onToggle={() => toggleSection('sounds')}
             />
             {sections.sounds && (
-              <div className="mt-3 space-y-4">
-                {/* Preset selector */}
-                <div className="space-y-1.5">
-                  <label htmlFor="sound-preset" className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                    Sound Preset
-                  </label>
-                  <div className="flex gap-2">
-                    {(['silent', 'subtle', 'full'] as UISoundPreset[]).map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => handleSoundPreset(p)}
-                        className={`flex-1 px-2 py-1.5 rounded border text-ui-xs font-medium capitalize transition-colors ${
-                          soundPreset === p
-                            ? 'border-accent/60 bg-accent/10 text-accent'
-                            : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Master volume */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="sound-master-vol" className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                      Master Volume
-                    </label>
-                    <span className="text-ui-xs text-text-muted tabular-nums">
-                      {Math.round(masterVolume * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    id="sound-master-vol"
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={masterVolume}
-                    onChange={(e) => handleMasterVolume(Number(e.target.value))}
-                    className="w-full"
-                    aria-label="Master volume"
-                    disabled={soundPreset === 'silent'}
-                  />
-                </div>
-
-                {/* Per-category controls */}
-                <div className="space-y-2">
-                  <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                    Categories
-                  </p>
-                  {SOUND_CATEGORIES.map(({ id: cat, label }) => (
-                    <div key={cat} className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <ToggleSwitch
-                          id={`cat-mute-${cat}`}
-                          checked={!categoryMuted[cat]}
-                          onChange={(v) => handleCategoryMuted(cat, !v)}
-                          label={`${label} sounds enabled`}
-                        />
-                        <span
-                          className={`text-ui-sm flex-1 ${
-                            categoryMuted[cat] ? 'text-text-muted line-through' : 'text-text-secondary'
-                          }`}
-                        >
-                          {label}
-                        </span>
-                        <span className="text-ui-xs text-text-muted tabular-nums w-8 text-right">
-                          {Math.round(categoryVolumes[cat] * 100)}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={categoryVolumes[cat]}
-                        onChange={(e) => handleCategoryVolume(cat, Number(e.target.value))}
-                        disabled={categoryMuted[cat] || soundPreset === 'silent'}
-                        aria-label={`${label} volume`}
-                        className="w-full disabled:opacity-40"
-                      />
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-3">
+                <p className="text-ui-sm text-text-muted">
+                  UI sound effects are coming in a future update.
+                </p>
               </div>
             )}
           </section>
@@ -673,6 +517,72 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     >
                       Save
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Keyboard Shortcuts ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Keyboard Shortcuts"
+              open={sections.shortcuts}
+              onToggle={() => toggleSection('shortcuts')}
+            />
+            {sections.shortcuts && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  Keyboard shortcuts for blade simulation and editor controls.
+                </p>
+
+                {/* Blade effect shortcuts */}
+                <div className="space-y-1.5">
+                  <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+                    Blade Effects
+                  </p>
+                  <div className="space-y-1">
+                    {([
+                      { key: 'Space', action: 'Ignite / Retract' },
+                      { key: 'C', action: 'Clash' },
+                      { key: 'B', action: 'Blast' },
+                      { key: 'S', action: 'Stab' },
+                      { key: 'L', action: 'Lockup (toggle)' },
+                      { key: 'N', action: 'Lightning (toggle)' },
+                      { key: 'D', action: 'Drag (toggle)' },
+                      { key: 'M', action: 'Melt (toggle)' },
+                      { key: 'F', action: 'Force' },
+                      { key: 'W', action: 'Shockwave' },
+                    ] as const).map(({ key, action }) => (
+                      <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
+                        <span className="text-ui-sm text-text-secondary">{action}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
+                          {key}
+                        </kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Editor shortcuts */}
+                <div className="space-y-1.5">
+                  <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+                    Editor
+                  </p>
+                  <div className="space-y-1">
+                    {([
+                      { key: 'Escape', action: 'Exit fullscreen' },
+                      { key: 'O', action: 'Toggle blade orientation' },
+                      { key: '\u2318Z', action: 'Undo' },
+                      { key: '\u2318\u21E7Z', action: 'Redo' },
+                    ] as const).map(({ key, action }) => (
+                      <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
+                        <span className="text-ui-sm text-text-secondary">{action}</span>
+                        <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
+                          {key}
+                        </kbd>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

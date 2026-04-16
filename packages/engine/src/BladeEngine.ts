@@ -72,7 +72,7 @@ function applyBlendMode(base: RGB, overlay: RGB, opacity: number, mode: BlendMod
 }
 
 /**
- * BladeEngine — the core simulation engine for BladeForge.
+ * BladeEngine — the core simulation engine for KyberStation.
  *
  * Manages the full blade lifecycle: ignition/retraction state machine,
  * per-LED style rendering with multi-layer compositing, segment topology,

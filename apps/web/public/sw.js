@@ -1,7 +1,7 @@
-// BladeForge Service Worker
+// KyberStation Service Worker
 // Caches the app shell for offline use.
 
-const CACHE_VERSION = 'bladeforge-v1';
+const CACHE_VERSION = 'kyberstation-v1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const FONT_CACHE = `${CACHE_VERSION}-fonts`;
 
@@ -141,7 +141,7 @@ async function networkFirstNavigation(request) {
     if (fallback) return fallback;
 
     return new Response(
-      '<!DOCTYPE html><html><body style="background:#0a0a10;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h1>BladeForge</h1><p>You are offline and this page has not been cached yet.</p><p>Please connect to the internet and reload.</p></div></body></html>',
+      '<!DOCTYPE html><html><body style="background:#0a0a10;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h1>KyberStation</h1><p>You are offline and this page has not been cached yet.</p><p>Please connect to the internet and reload.</p></div></body></html>',
       { status: 503, headers: { 'Content-Type': 'text/html' } }
     );
   }

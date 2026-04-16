@@ -40,7 +40,7 @@ export interface BoardEmitter {
   readonly formatDescription: string;
 
   /**
-   * Generate config file(s) from a BladeForge AST and options.
+   * Generate config file(s) from a KyberStation AST and options.
    * The AST may be used for reference, but board-specific emitters
    * typically generate their own format from the options directly.
    */

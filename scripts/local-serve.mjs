@@ -45,7 +45,7 @@ const nextBuildDir = resolve(web, '.next');
 const needsBuild = !existsSync(nextBuildDir);
 
 async function main() {
-  console.log('BladeForge Production Server (HTTPS)\n');
+  console.log('KyberStation Production Server (HTTPS)\n');
 
   if (needsBuild) {
     console.log('No build found — building all packages...\n');
@@ -127,7 +127,7 @@ async function main() {
     httpsServer.listen(httpsPort, '0.0.0.0', () => {
       console.log(`\n  HTTPS proxy running on port ${httpsPort}`);
       console.log(`\n  ========================================`);
-      console.log(`   BladeForge is ready!`);
+      console.log(`   KyberStation is ready!`);
       console.log(`  ========================================`);
       console.log(`\n   PC (HTTP):    http://localhost:${port}`);
       console.log(`   PC (HTTPS):   https://localhost:${httpsPort}`);

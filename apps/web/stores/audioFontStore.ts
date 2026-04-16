@@ -6,8 +6,8 @@
  * font library directory and cached font metadata.
  */
 import { create } from 'zustand';
-import type { FontManifest } from '@bladeforge/sound';
-import type { LibraryFontEntry } from '@bladeforge/sound';
+import type { FontManifest } from '@kyberstation/sound';
+import type { LibraryFontEntry } from '@kyberstation/sound';
 import {
   saveLibraryHandle,
   loadLibraryHandle,
@@ -183,7 +183,7 @@ export const useAudioFontStore = create<AudioFontState>((set, get) => ({
     set({ isScanning: true, scanProgress: { scanned: 0, currentName: '' } });
 
     try {
-      const { scanDirectoryHandle } = await import('@bladeforge/sound');
+      const { scanDirectoryHandle } = await import('@kyberstation/sound');
       const fonts = await scanDirectoryHandle(handle, (scanned, name) => {
         set({ scanProgress: { scanned, currentName: name } });
       });

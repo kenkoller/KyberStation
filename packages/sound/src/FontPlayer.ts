@@ -1,5 +1,5 @@
 /**
- * Minimal sound font player for BladeForge.
+ * Minimal sound font player for KyberStation.
  *
  * Manages hum loop playback and one-shot sound effects, providing an output
  * GainNode that the AudioFilterChain can connect to.

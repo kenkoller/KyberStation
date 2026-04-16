@@ -1,6 +1,6 @@
 # Style Authoring Guide
 
-How to add a new blade style to BladeForge.
+How to add a new blade style to KyberStation.
 
 ## Overview
 
@@ -167,3 +167,130 @@ export class BreathingStyle extends BaseStyle {
   }
 }
 ```
+
+## New Style Patterns (Phase 5)
+
+The following patterns were used in the 8 new styles added in Phase 5. They demonstrate advanced techniques beyond the basic `getColor()` pattern.
+
+### Pattern: Accelerometer-Driven (GravityStyle)
+
+Use `context.bladeAngle` to shift the style's center of gravity:
+
+```typescript
+getColor(position: number, time: number, context: StyleContext): RGB {
+  const { baseColor } = context.config;
+  // Map blade angle (-1..1) to a gravity center (0..1)
+  const gravityCenter = 0.5 + context.bladeAngle * 0.4;
+  // Use EMA smoothing to avoid jitter
+  this.smoothCenter += (gravityCenter - this.smoothCenter) * 0.08;
+  // Gaussian distribution around the gravity point
+  const sigma = 0.2;
+  const dist = position - this.smoothCenter;
+  const intensity = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+  return {
+    r: Math.round(baseColor.r * intensity),
+    g: Math.round(baseColor.g * intensity),
+    b: Math.round(baseColor.b * intensity),
+  };
+}
+```
+
+**Key takeaway:** Store smoothing state as instance fields. Initialize in the constructor, update in `getColor()`. This breaks pure-function purity but is necessary for temporal smoothing.
+
+### Pattern: Particle System (DataStreamStyle, EmberStyle, NeutronStyle)
+
+Manage an array of particle objects with position, speed, and lifetime:
+
+```typescript
+private particles: Array<{ pos: number; speed: number; brightness: number }> = [];
+
+getColor(position: number, time: number, context: StyleContext): RGB {
+  const { baseColor } = context.config;
+  // Advance particles
+  for (const p of this.particles) {
+    p.pos += p.speed * 0.016; // ~60fps delta
+    if (p.pos > 1) p.pos = 0; // Wrap or respawn
+  }
+  // Find nearest particle contribution
+  let brightness = 0;
+  for (const p of this.particles) {
+    const dist = Math.abs(position - p.pos);
+    if (dist < 0.03) brightness += p.brightness * (1 - dist / 0.03);
+  }
+  brightness = Math.min(1, brightness);
+  return {
+    r: Math.round(baseColor.r * brightness),
+    g: Math.round(baseColor.g * brightness),
+    b: Math.round(baseColor.b * brightness),
+  };
+}
+```
+
+**Key takeaway:** Particle systems need pre-allocated arrays (avoid GC pressure). Keep particle count low (7-12) since `getColor()` runs per-LED per-frame.
+
+### Pattern: Cellular Automaton (AutomataStyle)
+
+Maintain a state grid that evolves based on mathematical rules:
+
+```typescript
+private cells: number[] = new Array(144).fill(0);
+private lastUpdateTime = 0;
+
+getColor(position: number, time: number, context: StyleContext): RGB {
+  const { baseColor } = context.config;
+  const ledIndex = Math.floor(position * (this.cells.length - 1));
+  
+  // Evolve the automaton at a fixed rate
+  if (time - this.lastUpdateTime > 0.05) {
+    const next = [...this.cells];
+    for (let i = 1; i < this.cells.length - 1; i++) {
+      const neighborhood = (this.cells[i-1] << 2) | (this.cells[i] << 1) | this.cells[i+1];
+      next[i] = (30 >> neighborhood) & 1; // Rule 30
+    }
+    this.cells = next;
+    this.lastUpdateTime = time;
+  }
+  
+  const intensity = this.cells[ledIndex];
+  return {
+    r: Math.round(baseColor.r * intensity),
+    g: Math.round(baseColor.g * intensity),
+    b: Math.round(baseColor.b * intensity),
+  };
+}
+```
+
+**Key takeaway:** Rate-limit state evolution (don't evolve every `getColor()` call -- evolve once per frame). Use `time` to control update frequency.
+
+### Pattern: Fractal Noise with Events (CandleStyle)
+
+Combine continuous noise with discrete random events:
+
+```typescript
+getColor(position: number, time: number, context: StyleContext): RGB {
+  // Fractal Brownian motion (3 octaves)
+  let flicker = 0;
+  for (let octave = 0; octave < 3; octave++) {
+    const freq = Math.pow(2, octave);
+    const amp = Math.pow(0.5, octave);
+    flicker += Math.sin(time * freq * 4 + position * 3) * amp;
+  }
+  flicker = flicker * 0.3 + 0.7; // Normalize to 0.4-1.0 range
+
+  // Random gust events
+  if (Math.random() < 0.001) this.gustIntensity = 0.8;
+  if (this.gustIntensity > 0) {
+    flicker *= (1 - this.gustIntensity * 0.5);
+    this.gustIntensity *= 0.95; // Decay
+  }
+
+  // Warm gradient (orange at base, yellow at tip)
+  return {
+    r: Math.round(255 * flicker),
+    g: Math.round((180 + position * 75) * flicker),
+    b: Math.round(30 * flicker * (1 - position)),
+  };
+}
+```
+
+**Key takeaway:** Combine deterministic noise (reproducible, smooth) with stochastic events (rare, dramatic). The blend creates organic-feeling effects.

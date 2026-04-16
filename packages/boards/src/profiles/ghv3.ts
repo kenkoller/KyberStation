@@ -1,40 +1,40 @@
 import type { BoardProfile } from '../types.js';
 
 const GH_EFFECTS_V3: BoardProfile['supportedEffects'] = [
-  { bladeforgeEffect: 'clash', boardEffectName: 'clash', configParam: 'clash_color', notes: 'Clash flash with configurable color' },
-  { bladeforgeEffect: 'lockup', boardEffectName: 'lockup', configParam: 'lockup_color', notes: 'Lockup with configurable color and flicker' },
-  { bladeforgeEffect: 'blast', boardEffectName: 'blast', configParam: 'blast_color', notes: 'Blast deflection with configurable color' },
-  { bladeforgeEffect: 'drag', boardEffectName: 'drag', configParam: 'drag_color', notes: 'Drag effect with tip color override' },
-  { bladeforgeEffect: 'melt', boardEffectName: null, notes: 'Melt not supported on GHv3' },
-  { bladeforgeEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on GHv3' },
-  { bladeforgeEffect: 'stab', boardEffectName: 'stab', configParam: 'stab_color', notes: 'Basic stab flash effect' },
-  { bladeforgeEffect: 'force', boardEffectName: null, notes: 'Force effect not supported on GHv3' },
+  { kyberstationEffect: 'clash', boardEffectName: 'clash', configParam: 'clash_color', notes: 'Clash flash with configurable color' },
+  { kyberstationEffect: 'lockup', boardEffectName: 'lockup', configParam: 'lockup_color', notes: 'Lockup with configurable color and flicker' },
+  { kyberstationEffect: 'blast', boardEffectName: 'blast', configParam: 'blast_color', notes: 'Blast deflection with configurable color' },
+  { kyberstationEffect: 'drag', boardEffectName: 'drag', configParam: 'drag_color', notes: 'Drag effect with tip color override' },
+  { kyberstationEffect: 'melt', boardEffectName: null, notes: 'Melt not supported on GHv3' },
+  { kyberstationEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on GHv3' },
+  { kyberstationEffect: 'stab', boardEffectName: 'stab', configParam: 'stab_color', notes: 'Basic stab flash effect' },
+  { kyberstationEffect: 'force', boardEffectName: null, notes: 'Force effect not supported on GHv3' },
 ];
 
 const GH_EFFECTS_V4: BoardProfile['supportedEffects'] = [
-  { bladeforgeEffect: 'clash', boardEffectName: 'clash', configParam: 'clash', notes: 'Clash with configurable color and intensity' },
-  { bladeforgeEffect: 'lockup', boardEffectName: 'lockup', configParam: 'lockup', notes: 'Lockup with configurable color and pattern' },
-  { bladeforgeEffect: 'blast', boardEffectName: 'blast', configParam: 'blast', notes: 'Blast deflection effect' },
-  { bladeforgeEffect: 'drag', boardEffectName: 'drag', configParam: 'drag', notes: 'Drag tip effect' },
-  { bladeforgeEffect: 'melt', boardEffectName: 'melt', configParam: 'melt', notes: 'Basic melt effect on GHv4' },
-  { bladeforgeEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on GHv4' },
-  { bladeforgeEffect: 'stab', boardEffectName: 'stab', configParam: 'stab', notes: 'Stab flash effect' },
-  { bladeforgeEffect: 'force', boardEffectName: 'force', configParam: 'force', notes: 'Basic force push color change' },
+  { kyberstationEffect: 'clash', boardEffectName: 'clash', configParam: 'clash', notes: 'Clash with configurable color and intensity' },
+  { kyberstationEffect: 'lockup', boardEffectName: 'lockup', configParam: 'lockup', notes: 'Lockup with configurable color and pattern' },
+  { kyberstationEffect: 'blast', boardEffectName: 'blast', configParam: 'blast', notes: 'Blast deflection effect' },
+  { kyberstationEffect: 'drag', boardEffectName: 'drag', configParam: 'drag', notes: 'Drag tip effect' },
+  { kyberstationEffect: 'melt', boardEffectName: 'melt', configParam: 'melt', notes: 'Basic melt effect on GHv4' },
+  { kyberstationEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on GHv4' },
+  { kyberstationEffect: 'stab', boardEffectName: 'stab', configParam: 'stab', notes: 'Stab flash effect' },
+  { kyberstationEffect: 'force', boardEffectName: 'force', configParam: 'force', notes: 'Basic force push color change' },
 ];
 
 const GH_STYLES: BoardProfile['supportedStyles'] = [
-  { bladeforgeStyle: 'stable', boardStyleName: 'solid', configMapping: { style: 'solid' }, notes: 'Solid color blade' },
-  { bladeforgeStyle: 'unstable', boardStyleName: 'flicker', configMapping: { style: 'flicker' }, notes: 'GH flicker mode for unstable effect' },
-  { bladeforgeStyle: 'fire', boardStyleName: 'fire', configMapping: { style: 'fire' }, notes: 'GH built-in fire animation' },
-  { bladeforgeStyle: 'rotoscope', boardStyleName: 'scroll', configMapping: { style: 'scroll' }, notes: 'Scrolling color pattern' },
-  { bladeforgeStyle: 'pulse', boardStyleName: 'pulse', configMapping: { style: 'pulse' }, notes: 'Pulsing brightness effect' },
-  { bladeforgeStyle: 'gradient', boardStyleName: 'gradient', configMapping: { style: 'gradient' }, notes: 'Two-color gradient' },
-  { bladeforgeStyle: 'photon', boardStyleName: 'solid', configMapping: { style: 'solid' }, notes: 'No direct match; falls back to solid' },
-  { bladeforgeStyle: 'plasma', boardStyleName: 'flicker', configMapping: { style: 'flicker' }, notes: 'Closest match: flicker mode' },
-  { bladeforgeStyle: 'crystal-shatter', boardStyleName: 'strobe', configMapping: { style: 'strobe' }, notes: 'Closest match: strobe mode' },
-  { bladeforgeStyle: 'aurora', boardStyleName: 'rainbow', configMapping: { style: 'rainbow' }, notes: 'Rainbow color cycling' },
-  { bladeforgeStyle: 'cinder', boardStyleName: 'fire', configMapping: { style: 'fire' }, notes: 'Closest match: fire animation' },
-  { bladeforgeStyle: 'prism', boardStyleName: 'rainbow', configMapping: { style: 'rainbow' }, notes: 'Closest match: rainbow cycle' },
+  { kyberstationStyle: 'stable', boardStyleName: 'solid', configMapping: { style: 'solid' }, notes: 'Solid color blade' },
+  { kyberstationStyle: 'unstable', boardStyleName: 'flicker', configMapping: { style: 'flicker' }, notes: 'GH flicker mode for unstable effect' },
+  { kyberstationStyle: 'fire', boardStyleName: 'fire', configMapping: { style: 'fire' }, notes: 'GH built-in fire animation' },
+  { kyberstationStyle: 'rotoscope', boardStyleName: 'scroll', configMapping: { style: 'scroll' }, notes: 'Scrolling color pattern' },
+  { kyberstationStyle: 'pulse', boardStyleName: 'pulse', configMapping: { style: 'pulse' }, notes: 'Pulsing brightness effect' },
+  { kyberstationStyle: 'gradient', boardStyleName: 'gradient', configMapping: { style: 'gradient' }, notes: 'Two-color gradient' },
+  { kyberstationStyle: 'photon', boardStyleName: 'solid', configMapping: { style: 'solid' }, notes: 'No direct match; falls back to solid' },
+  { kyberstationStyle: 'plasma', boardStyleName: 'flicker', configMapping: { style: 'flicker' }, notes: 'Closest match: flicker mode' },
+  { kyberstationStyle: 'crystal-shatter', boardStyleName: 'strobe', configMapping: { style: 'strobe' }, notes: 'Closest match: strobe mode' },
+  { kyberstationStyle: 'aurora', boardStyleName: 'rainbow', configMapping: { style: 'rainbow' }, notes: 'Rainbow color cycling' },
+  { kyberstationStyle: 'cinder', boardStyleName: 'fire', configMapping: { style: 'fire' }, notes: 'Closest match: fire animation' },
+  { kyberstationStyle: 'prism', boardStyleName: 'rainbow', configMapping: { style: 'rainbow' }, notes: 'Closest match: rainbow cycle' },
 ];
 
 const GH_TERMINOLOGY: BoardProfile['terminology'] = {

@@ -1,4 +1,4 @@
-# BladeForge QA Test Plan
+# KyberStation QA Test Plan
 
 Interactive test plan. Work through each test sequentially. Report results using the letter codes. Tests marked [BLOCKER] must pass before proceeding to the next phase.
 

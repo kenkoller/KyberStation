@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 const STYLE_OPTIONS = [
   { id: 'stable', label: 'Stable' },
@@ -17,6 +17,21 @@ const STYLE_OPTIONS = [
   { id: 'aurora', label: 'Aurora' },
   { id: 'cinder', label: 'Cinder' },
   { id: 'prism', label: 'Prism' },
+  { id: 'dataStream', label: 'Data Stream' },
+  { id: 'gravity', label: 'Gravity' },
+  { id: 'ember', label: 'Ember' },
+  { id: 'automata', label: 'Automata' },
+  { id: 'helix', label: 'Helix' },
+  { id: 'candle', label: 'Candle' },
+  { id: 'shatter', label: 'Shatter' },
+  { id: 'neutron', label: 'Neutron' },
+  { id: 'torrent', label: 'Torrent' },
+  { id: 'moire', label: 'Moir\u00e9' },
+  { id: 'cascade', label: 'Cascade' },
+  { id: 'vortex', label: 'Vortex' },
+  { id: 'nebula', label: 'Nebula' },
+  { id: 'tidal', label: 'Tidal' },
+  { id: 'mirage', label: 'Mirage' },
 ] as const;
 
 const IGNITION_OPTIONS = [

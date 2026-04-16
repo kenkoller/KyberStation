@@ -55,14 +55,14 @@ export interface BoardCapabilities {
 }
 
 export interface EffectMapping {
-  bladeforgeEffect: string;
+  kyberstationEffect: string;
   boardEffectName: string | null;
   configParam?: string;
   notes?: string;
 }
 
 export interface StyleMapping {
-  bladeforgeStyle: string;
+  kyberstationStyle: string;
   boardStyleName: string | null;
   configMapping?: Record<string, string>;
   notes?: string;

@@ -1,5 +1,5 @@
 {
-  "name": "bladeforge",
+  "name": "kyberstation",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.30.3",
@@ -9,15 +9,15 @@
     "build": "turbo build",
     "build:local": "node scripts/local-build.mjs",
     "test": "turbo test",
-    "test:engine": "turbo test --filter=@bladeforge/engine",
-    "test:codegen": "turbo test --filter=@bladeforge/codegen",
+    "test:engine": "turbo test --filter=@kyberstation/engine",
+    "test:codegen": "turbo test --filter=@kyberstation/codegen",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "clean": "turbo clean",
     "serve": "node scripts/local-serve.mjs",
     "launch": "node scripts/local-dev.mjs",
     "generate-icon": "node scripts/generate-icon.mjs",
-    "install-app": "ln -sf \"$(pwd)/BladeForge.app\" ~/Applications/BladeForge.app && echo 'BladeForge.app installed to ~/Applications'"
+    "install-app": "ln -sf \"$(pwd)/KyberStation.app\" ~/Applications/KyberStation.app && echo 'KyberStation.app installed to ~/Applications'"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

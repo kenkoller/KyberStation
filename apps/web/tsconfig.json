@@ -19,19 +19,19 @@
       "@/*": [
         "./*"
       ],
-      "@bladeforge/engine": [
+      "@kyberstation/engine": [
         "../../packages/engine/src"
       ],
-      "@bladeforge/codegen": [
+      "@kyberstation/codegen": [
         "../../packages/codegen/src"
       ],
-      "@bladeforge/presets": [
+      "@kyberstation/presets": [
         "../../packages/presets/src"
       ],
-      "@bladeforge/sound": [
+      "@kyberstation/sound": [
         "../../packages/sound/src"
       ],
-      "@bladeforge/boards": [
+      "@kyberstation/boards": [
         "../../packages/boards/src"
       ]
     },

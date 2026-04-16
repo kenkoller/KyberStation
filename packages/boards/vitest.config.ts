@@ -8,8 +8,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@bladeforge/codegen': path.resolve(__dirname, '../codegen/src'),
-      '@bladeforge/engine': path.resolve(__dirname, '../engine/src'),
+      '@kyberstation/codegen': path.resolve(__dirname, '../codegen/src'),
+      '@kyberstation/engine': path.resolve(__dirname, '../engine/src'),
     },
   },
 });

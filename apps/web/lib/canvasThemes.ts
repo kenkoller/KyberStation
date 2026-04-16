@@ -11,6 +11,8 @@
  *     calls that require standard CSS color notation.
  */
 
+import { ALL_EXTENDED_THEMES } from './extendedThemes';
+
 export interface UIThemePalette {
   bgDeep: string;
   bgPrimary: string;
@@ -336,6 +338,17 @@ export const CANVAS_THEMES: CanvasTheme[] = [
 
 export const DEFAULT_THEME_ID = 'deep-space';
 
+/**
+ * Look up a theme by ID across both the base 9 themes and the 21 extended
+ * themes.  Extended themes satisfy the CanvasTheme interface (they extend it),
+ * so callers that only need CanvasTheme fields work without changes.
+ *
+ * Falls back to Deep Space if the ID is not found in either list.
+ */
 export function getThemeById(id: string): CanvasTheme {
-  return CANVAS_THEMES.find((t) => t.id === id) ?? CANVAS_THEMES[0];
+  return (
+    CANVAS_THEMES.find((t) => t.id === id) ??
+    ALL_EXTENDED_THEMES.find((t) => t.id === id) ??
+    CANVAS_THEMES[0]
+  );
 }

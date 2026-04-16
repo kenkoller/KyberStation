@@ -4,8 +4,8 @@ import { playUISound } from '@/lib/uiSounds';
 import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
-import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig } from '@bladeforge/codegen';
-import type { ReconstructedConfig } from '@bladeforge/codegen';
+import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig } from '@kyberstation/codegen';
+import type { ReconstructedConfig } from '@kyberstation/codegen';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
 import { generateQRDataUrl, downloadQR } from '@/lib/qrCode';
@@ -189,6 +189,16 @@ export function CodeOutput() {
 
   return (
     <div>
+      {/* Helper text for non-technical users */}
+      <div className="mb-3 px-3 py-2.5 bg-bg-surface rounded-lg border border-border-subtle">
+        <p className="text-ui-xs text-text-secondary leading-relaxed">
+          This is the generated configuration code for your {isProffie ? 'Proffieboard' : profileBoard}.
+          <span className="text-text-muted"> You don&apos;t need to understand C++ &mdash; KyberStation
+          writes this automatically from your design choices. Use the Card Writer panel to export
+          everything to your SD card, or download the .h file below if you prefer manual setup.</span>
+        </p>
+      </div>
+
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
           {isMultiPreset ? `Full Config (${presetListEntries.length} presets)` : `Generated ${isProffie ? 'ProffieOS' : profileBoard} Code`}
@@ -232,7 +242,7 @@ export function CodeOutput() {
 
       <p className="text-ui-xs text-text-muted mt-2">
         {!hasCodegen ? (
-          `${profileBoard} does not support custom code generation. BladeForge can preview styles, but code export is available for Proffie, CFX, Golden Harvest, and Xenopixel boards.`
+          `${profileBoard} does not support custom code generation. KyberStation can preview styles, but code export is available for Proffie, CFX, Golden Harvest, and Xenopixel boards.`
         ) : isMultiPreset ? (
           `Complete config for ${profileBoard} with ${presetListEntries.length} preset(s) in order.${isProffie ? ' Ready to flash with ProffieOS 7.x.' : ''}`
         ) : (
@@ -312,7 +322,7 @@ export function CodeOutput() {
       <div className="mt-4 pt-4 border-t border-border-subtle">
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
           Import / Export / Share
-          <HelpTooltip text="Export your config as a .bladeforge.json file for backup, share via URL (Kyber Code), or generate a QR code. Import loads a previously exported config or one shared by another user." />
+          <HelpTooltip text="Export your config as a .kyberstation.json file for backup, share via URL (Kyber Code), or generate a QR code. Import loads a previously exported config or one shared by another user." />
         </h3>
         <div className="flex flex-wrap gap-2">
           <button
@@ -350,9 +360,9 @@ export function CodeOutput() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json,.bladeforge.json"
+          accept=".json,.kyberstation.json"
           onChange={handleImportConfig}
-          aria-label="Import BladeForge config file"
+          aria-label="Import KyberStation config file"
           className="hidden"
         />
         {importError && (
@@ -394,7 +404,7 @@ export function CodeOutput() {
         )}
 
         <p className="text-ui-xs text-text-muted mt-2">
-          Export saves your config as a .bladeforge.json file. Share Link copies a URL that
+          Export saves your config as a .kyberstation.json file. Share Link copies a URL that
           anyone can open to load your exact configuration. QR Code generates a scannable image.
         </p>
       </div>
@@ -404,7 +414,7 @@ export function CodeOutput() {
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
             Import C++ Style
-            <HelpTooltip text="Paste existing ProffieOS C++ style code to reverse-engineer it into BladeForge. The parser extracts colors, style type, ignition, and retraction settings. Confidence score indicates how complete the reconstruction is." proffie="StylePtr<...>" />
+            <HelpTooltip text="Paste existing ProffieOS C++ style code to reverse-engineer it into KyberStation. The parser extracts colors, style type, ignition, and retraction settings. Confidence score indicates how complete the reconstruction is." proffie="StylePtr<...>" />
           </h3>
           <button
             onClick={() => setShowCppImport(!showCppImport)}

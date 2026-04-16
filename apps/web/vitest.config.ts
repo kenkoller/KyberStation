@@ -9,11 +9,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
-      '@bladeforge/engine': path.resolve(__dirname, '../../packages/engine/src'),
-      '@bladeforge/codegen': path.resolve(__dirname, '../../packages/codegen/src'),
-      '@bladeforge/presets': path.resolve(__dirname, '../../packages/presets/src'),
-      '@bladeforge/sound': path.resolve(__dirname, '../../packages/sound/src'),
-      '@bladeforge/boards': path.resolve(__dirname, '../../packages/boards/src'),
+      '@kyberstation/engine': path.resolve(__dirname, '../../packages/engine/src'),
+      '@kyberstation/codegen': path.resolve(__dirname, '../../packages/codegen/src'),
+      '@kyberstation/presets': path.resolve(__dirname, '../../packages/presets/src'),
+      '@kyberstation/sound': path.resolve(__dirname, '../../packages/sound/src'),
+      '@kyberstation/boards': path.resolve(__dirname, '../../packages/boards/src'),
     },
   },
 });

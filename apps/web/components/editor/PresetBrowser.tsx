@@ -4,7 +4,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
 import { useAudioFontStore } from '@/stores/audioFontStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
@@ -16,8 +16,8 @@ import {
   ANIMATED_SERIES_PRESETS,
   EXTENDED_UNIVERSE_PRESETS,
   LEGENDS_PRESETS,
-} from '@bladeforge/presets';
-import type { Preset, Era, Affiliation } from '@bladeforge/presets';
+} from '@kyberstation/presets';
+import type { Preset, Era, Affiliation } from '@kyberstation/presets';
 
 const ERA_OPTIONS: Array<{ id: Era | 'all'; label: string; count: number }> = [
   { id: 'all', label: 'All Eras', count: ALL_PRESETS.length },
@@ -794,13 +794,13 @@ export function PresetBrowser() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json,.bladeforge.json"
+          accept=".json,.kyberstation.json"
           onChange={handleImportConfig}
           className="hidden"
         />
         {importError && <p className="text-ui-sm text-red-400 mt-2">{importError}</p>}
         <p className="text-ui-sm text-text-muted mt-2">
-          Click a preset to load it, or import a .bladeforge.json file. Share Link copies a URL
+          Click a preset to load it, or import a .kyberstation.json file. Share Link copies a URL
           that anyone can open to load your exact configuration.
         </p>
       </div>

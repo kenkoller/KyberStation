@@ -1,4 +1,4 @@
-# BladeForge Testing Notes — 2026-04-14 (updated 2026-04-15)
+# KyberStation Testing Notes — 2026-04-14 (updated 2026-04-15)
 
 Testing feedback and bugs. Items marked [x] are fixed; unmarked [ ] are open.
 
@@ -50,7 +50,7 @@ Testing feedback and bugs. Items marked [x] are fixed; unmarked [ ] are open.
 - [x] Overall: pixel strip + RGB graph should feel like a distinct "dev workbench" zone — fixed: vertical layout with resizable sub-panels, clear divider lines, and Analyze/Clean mode toggle
 - [x] Vertical spacing: tighten gap between saber and pixel strip, increase gap between strip and graph — fixed with new Y positions (STRIP_Y=400, GRAPH_TOP_Y=455)
 - [x] **Clean Mode vs Analyze Mode** — fixed: toggle button in bottom-left of canvas. Analyze mode (default) shows pixel strip + RGB graph. Clean mode hides them for cinematic saber-only view. State stored in uiStore.analyzeMode.
-- [ ] **Share Cards**: Clean mode + QR code / share code overlay for sharing creations. Users can export a still image or animated GIF of their saber with a share code embedded. Other users enter the code in BladeForge to load the exact same blade config. Think trading cards for sabers.
+- [ ] **Share Cards**: Clean mode + QR code / share code overlay for sharing creations. Users can export a still image or animated GIF of their saber with a share code embedded. Other users enter the code in KyberStation to load the exact same blade config. Think trading cards for sabers.
 - [x] Add visual separation between pixel strip and RGB graph — fixed: divider line + increased spacing
 - [x] Add visual separation between saber preview and dev data (pixel + RGB) — fixed: pixel strip at Y=400, RGB graph at Y=455, clear spatial separation
 - [x] Zoom UX: add slider or +/- buttons (not just scroll wheel) — fixed: +/- buttons and reset button added to canvas overlay (bottom-right)
@@ -83,7 +83,7 @@ Testing feedback and bugs. Items marked [x] are fixed; unmarked [ ] are open.
 - [ ] Replace placeholder sounds with royalty-free/public domain or remove entirely
 - [ ] **Critical UX gap**: Font folder name mapping is confusing. Gallery presets have hardcoded names (e.g. "obiwananh") but users' SD cards have different folder names (e.g. "Ben"). Need a clear workflow for: (1) browsing/selecting a style, (2) mapping it to the user's actual font folder on their card. Consider: font folder picker that reads from SD card, or a "My Fonts" library where users register their font folder names once, or auto-detect from card.
 - [ ] Font name changes in Output panel preset list don't propagate back to Gallery — should they be the same source of truth?
-- [ ] **Sound Font Builder**: Add ability to browse, preview, and create custom sound font folders within BladeForge. Users should be able to mix and match individual sound files (hum, swing, clash, ignition, etc.) from different sources to build their own font folder paired with a blade design.
+- [ ] **Sound Font Builder**: Add ability to browse, preview, and create custom sound font folders within KyberStation. Users should be able to mix and match individual sound files (hum, swing, clash, ignition, etc.) from different sources to build their own font folder paired with a blade design.
 - [ ] Consider a "My Font Library" where users register/import their existing font folders once, then drag-and-drop to pair with any blade preset
 - [ ] Auto-assign sound fonts: intelligently match a default/base font to a blade based on its attributes (e.g. unstable style → crackling font, smooth style → smooth swing font, fire → aggressive font). Could tie into the Audio tab's EQ/mixer settings for per-preset audio tuning.
 
@@ -91,18 +91,18 @@ Testing feedback and bugs. Items marked [x] are fixed; unmarked [ ] are open.
 - [ ] **CRITICAL: Eliminate Arduino IDE dependency.** config.h is C++ that must be compiled and flashed — just putting it on the SD card does nothing for ProffieOS. Three approaches:
   - (a) Server-side compilation: send config.h to build server, return .bin, flash via Web Serial API (browser-native, no installs)
   - (b) Bundled arduino-cli in Electron desktop app (offline, self-contained)
-  - (c) Hybrid: BladeForge manages arduino-cli install locally, compile + flash from within app
+  - (c) Hybrid: KyberStation manages arduino-cli install locally, compile + flash from within app
 - [ ] Web Serial API (Chrome/Brave/Edge) can flash Proffieboard directly from browser — no drivers needed
 - [ ] Note: CFX, Golden Harvest, and Xenopixel boards DO read config from SD card directly — the card writer already works for those boards. This is ProffieOS-specific.
 - [x] For immediate testing: install arduino-cli + Proffieboard toolchain on Ken's Mac to validate the generated config compiles
   - arduino-cli 1.4.1 installed via Homebrew
   - Proffieboard core proffieboard:stm32l4@4.6 installed
-  - ProffieOS cloned to /Users/KK/Development/SaberSpanner/ProffieOS/
+  - ProffieOS cloned to /Users/KK/Development/KyberStation/ProffieOS/
   - FQBN: `proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmmc1,speed=80,opt=os`
   - **Test compilation PASSED**: 3-preset config → 192,904 bytes (37% of flash)
 
 ## Connectivity
-- [ ] **Bluetooth Live Edit**: Some boards (e.g. CFX, Golden Harvest) support Bluetooth. Add ability to connect to a saber via Bluetooth and push parameter changes in real-time — adjust colors, effects, ignition style without removing the SD card. Would make BladeForge a true live-tuning companion app. Ken's Proffie V3.9 doesn't have BT, but this is a major feature for the broader community.
+- [ ] **Bluetooth Live Edit**: Some boards (e.g. CFX, Golden Harvest) support Bluetooth. Add ability to connect to a saber via Bluetooth and push parameter changes in real-time — adjust colors, effects, ignition style without removing the SD card. Would make KyberStation a true live-tuning companion app. Ken's Proffie V3.9 doesn't have BT, but this is a major feature for the broader community.
 
 ## Code Generation
 - [x] Verify generated ProffieOS code is valid syntax — confirmed manually, all angle brackets balanced, correct template signatures

@@ -14,6 +14,12 @@ import { RippleEffect } from './RippleEffect.js';
 import { FreezeEffect } from './FreezeEffect.js';
 import { OverchargeEffect } from './OverchargeEffect.js';
 import { BifurcateEffect } from './BifurcateEffect.js';
+import { InvertEffect } from './InvertEffect.js';
+import { GhostEchoEffect } from './GhostEchoEffect.js';
+import { SplinterEffect } from './SplinterEffect.js';
+import { CoronaryEffect } from './CoronaryEffect.js';
+import { GlitchMatrixEffect } from './GlitchMatrixEffect.js';
+import { SiphonEffect } from './SiphonEffect.js';
 
 export { BaseEffect } from './BaseEffect.js';
 export { ClashEffect } from './ClashEffect.js';
@@ -31,6 +37,12 @@ export { RippleEffect } from './RippleEffect.js';
 export { FreezeEffect } from './FreezeEffect.js';
 export { OverchargeEffect } from './OverchargeEffect.js';
 export { BifurcateEffect } from './BifurcateEffect.js';
+export { InvertEffect } from './InvertEffect.js';
+export { GhostEchoEffect } from './GhostEchoEffect.js';
+export { SplinterEffect } from './SplinterEffect.js';
+export { CoronaryEffect } from './CoronaryEffect.js';
+export { GlitchMatrixEffect } from './GlitchMatrixEffect.js';
+export { SiphonEffect } from './SiphonEffect.js';
 
 /** Registry mapping each EffectType to its constructor. */
 export const EFFECT_REGISTRY: Record<EffectType, () => BladeEffect> = {
@@ -49,6 +61,12 @@ export const EFFECT_REGISTRY: Record<EffectType, () => BladeEffect> = {
   freeze: () => new FreezeEffect(),
   overcharge: () => new OverchargeEffect(),
   bifurcate: () => new BifurcateEffect(),
+  invert: () => new InvertEffect(),
+  ghostEcho: () => new GhostEchoEffect(),
+  splinter: () => new SplinterEffect(),
+  coronary: () => new CoronaryEffect(),
+  glitchMatrix: () => new GlitchMatrixEffect(),
+  siphon: () => new SiphonEffect(),
 };
 
 /** Create a new effect instance by type. */

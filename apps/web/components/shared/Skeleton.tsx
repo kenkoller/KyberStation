@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * BladeForge loading skeleton primitives.
+ * KyberStation loading skeleton primitives.
  *
  * Pure-render shimmer placeholders for panels, text blocks, the blade canvas,
  * and multi-column tab layouts while lazy content loads.

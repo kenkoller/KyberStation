@@ -1,5 +1,5 @@
 {
-  "name": "@bladeforge/boards",
+  "name": "@kyberstation/boards",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -24,7 +24,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "@bladeforge/engine": "workspace:*",
-    "@bladeforge/codegen": "workspace:*"
+    "@kyberstation/engine": "workspace:*",
+    "@kyberstation/codegen": "workspace:*"
   }
 }

@@ -31,6 +31,14 @@ const IGNITION_STYLES = [
   { id: 'twist', label: 'Twist', desc: 'Spiral ignition driven by twist' },
   { id: 'swing', label: 'Swing', desc: 'Speed-reactive swing ignition' },
   { id: 'stab', label: 'Stab', desc: 'Rapid center-out burst' },
+  { id: 'crackle', label: 'Crackle', desc: 'Random segment flicker fill' },
+  { id: 'fracture', label: 'Fracture', desc: 'Radiating crack points' },
+  { id: 'flash-fill', label: 'Flash Fill', desc: 'White flash then color wipe' },
+  { id: 'pulse-wave', label: 'Pulse Wave', desc: 'Sequential building waves' },
+  { id: 'drip-up', label: 'Drip Up', desc: 'Fluid upward flow' },
+  { id: 'hyperspace', label: 'Hyperspace', desc: 'Streaking star-line ignition' },
+  { id: 'summon', label: 'Summon', desc: 'Force-pull ignition' },
+  { id: 'seismic', label: 'Seismic', desc: 'Ground-shake ripple ignition' },
   { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
 ];
 
@@ -40,6 +48,13 @@ const RETRACTION_STYLES = [
   { id: 'fadeout', label: 'Fade Out', desc: 'Fading retraction' },
   { id: 'center', label: 'Center In', desc: 'Retracts to center' },
   { id: 'shatter', label: 'Shatter', desc: 'Shattering retraction' },
+  { id: 'dissolve', label: 'Dissolve', desc: 'Random shuffle turn-off' },
+  { id: 'flickerOut', label: 'Flicker Out', desc: 'Tip-to-base flicker band' },
+  { id: 'unravel', label: 'Unravel', desc: 'Sinusoidal thread unwind' },
+  { id: 'drain', label: 'Drain', desc: 'Gravity drain with meniscus' },
+  { id: 'implode', label: 'Implode', desc: 'Collapsing inward retraction' },
+  { id: 'evaporate', label: 'Evaporate', desc: 'Fading particle evaporation' },
+  { id: 'spaghettify', label: 'Spaghettify', desc: 'Stretching gravitational pull' },
   { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
 ];
 
@@ -51,10 +66,10 @@ export function EffectPanel() {
   const effectLog = useBladeStore((s) => s.effectLog);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Ignition */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Ignition Style
           <HelpTooltip text="How the blade extends when activated. Controls the visual transition from off to on." proffie="InOutTrL<TrWipe<300>>" />
         </h3>
@@ -198,7 +213,7 @@ export function EffectPanel() {
 
       {/* Retraction */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Retraction Style
           <HelpTooltip text="How the blade retracts when deactivated. Controls the visual transition from on to off." proffie="InOutTrL<..., TrWipeIn<300>>" />
         </h3>
@@ -253,11 +268,11 @@ export function EffectPanel() {
 
       {/* Duration sliders */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Timing
           <HelpTooltip text="Duration in milliseconds for ignition and retraction animations. Lower = faster, higher = more dramatic. Typical range: 200-800ms." />
         </h3>
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-4">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <div className="flex items-center gap-3">
             <label htmlFor="timing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
             <input
@@ -295,11 +310,11 @@ export function EffectPanel() {
 
       {/* Easing */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Easing Curves
           <HelpTooltip text="Controls the acceleration profile of ignition/retraction animations. Linear = constant speed. Ease In = starts slow. Ease Out = ends slow. Bounce/Elastic add physical spring effects." proffie="TrEaseX<TrWipe<300>, 5>" />
         </h3>
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <div className="flex items-center gap-3">
             <label htmlFor="easing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
             <select
@@ -331,11 +346,11 @@ export function EffectPanel() {
 
       {/* Dual-Mode Ignition */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Dual-Mode Ignition
           <HelpTooltip text="When enabled, blade angle selects between two different ignition/retraction animations. Tilt up for one, tilt down for another. See also: Motion Simulation panel to test angle values." proffie="TrSelect<BladeAngle<>, TrWipe<>, TrWipeIn<>>" />
         </h3>
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <label className="touch-target flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -425,11 +440,11 @@ export function EffectPanel() {
 
       {/* Effect Customization */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Effect Customization
           <HelpTooltip text="Fine-tune the visual behavior of clash, blast, and stab effects. These settings control location, intensity, count, spread, and depth." />
         </h3>
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-4">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           {/* Clash controls */}
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Clash</span>
@@ -515,11 +530,11 @@ export function EffectPanel() {
       {/* Custom Curve Controls */}
       {(config.ignition === 'custom-curve' || config.retraction === 'custom-curve') && (
         <div>
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
             Curve Controls
             <HelpTooltip text="Adjust the cubic Bezier control points to shape the ignition/retraction profile. X controls timing, Y controls intensity." />
           </h3>
-          <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-3">
+          <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             {config.ignition === 'custom-curve' && (
               <div>
                 <label className="text-ui-xs text-text-muted uppercase mb-1.5 block">Ignition Curve</label>
@@ -582,11 +597,11 @@ export function EffectPanel() {
 
       {/* Effect log */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Effect Log
           <HelpTooltip text="Chronological record of triggered effects during this session. Use keyboard shortcuts or toolbar buttons to trigger effects." />
         </h3>
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle max-h-[250px] overflow-y-auto">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle max-h-[250px] overflow-y-auto">
           {effectLog.length === 0 ? (
             <p className="text-ui-xs text-text-muted italic">
               No effects triggered yet. Use keyboard shortcuts or buttons to trigger effects.
@@ -607,8 +622,8 @@ export function EffectPanel() {
       </div>
 
       {/* Keyboard shortcuts */}
-      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
-        <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+      <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle">
+        <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5">
           Keyboard Shortcuts
         </h4>
         <div className="grid grid-cols-2 gap-1 text-ui-sm">
@@ -630,6 +645,8 @@ export function EffectPanel() {
           <span className="text-text-secondary">Stab</span>
           <span className="text-text-muted">F</span>
           <span className="text-text-secondary">Force</span>
+          <span className="text-text-muted">W</span>
+          <span className="text-text-secondary">Shockwave</span>
         </div>
       </div>
     </div>

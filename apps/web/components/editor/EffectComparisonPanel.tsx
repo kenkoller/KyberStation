@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useEffect, useCallback, useMemo } from 'react';
-import { BladeEngine } from '@bladeforge/engine';
-import type { EffectType } from '@bladeforge/engine';
+import { BladeEngine } from '@kyberstation/engine';
+import type { EffectType } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';

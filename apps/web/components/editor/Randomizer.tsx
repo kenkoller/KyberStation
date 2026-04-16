@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
 
 // ---------------------------------------------------------------------------
@@ -12,6 +12,9 @@ import { playUISound } from '@/lib/uiSounds';
 const ALL_STYLES = [
   'stable', 'unstable', 'fire', 'pulse', 'rotoscope', 'gradient',
   'photon', 'plasma', 'crystalShatter', 'aurora', 'cinder', 'prism',
+  'dataStream', 'gravity', 'ember', 'automata', 'helix', 'candle',
+  'shatter', 'neutron', 'torrent', 'moire', 'cascade', 'vortex',
+  'nebula', 'tidal', 'mirage',
 ] as const;
 
 const ALL_IGNITIONS = [
@@ -55,42 +58,42 @@ const THEMES: Record<string, ThemeDef> = {
     hueRanges: [[0, 30], [340, 360]],
     satRange: [70, 100],
     lightRange: [40, 55],
-    styles: ['unstable', 'fire', 'plasma', 'cinder'],
+    styles: ['unstable', 'fire', 'plasma', 'cinder', 'ember', 'candle', 'shatter'],
   },
   jedi: {
     label: 'Jedi',
     hueRanges: [[190, 250], [100, 150]],
     satRange: [60, 100],
     lightRange: [45, 60],
-    styles: ['stable', 'rotoscope', 'gradient', 'pulse'],
+    styles: ['stable', 'rotoscope', 'gradient', 'pulse', 'helix', 'cascade'],
   },
   darkSide: {
     label: 'Dark Side',
     hueRanges: [[260, 310], [0, 20], [340, 360]],
     satRange: [50, 90],
     lightRange: [30, 50],
-    styles: ['unstable', 'fire', 'plasma', 'crystalShatter', 'cinder'],
+    styles: ['unstable', 'fire', 'plasma', 'crystalShatter', 'cinder', 'shatter', 'vortex', 'torrent'],
   },
   nature: {
     label: 'Nature',
     hueRanges: [[80, 180]],
     satRange: [50, 90],
     lightRange: [40, 60],
-    styles: ['aurora', 'cinder', 'gradient', 'stable'],
+    styles: ['aurora', 'cinder', 'gradient', 'stable', 'ember', 'candle', 'tidal'],
   },
   cyberpunk: {
     label: 'Cyberpunk',
     hueRanges: [[170, 200], [280, 330], [50, 70]],
     satRange: [80, 100],
     lightRange: [50, 65],
-    styles: ['plasma', 'photon', 'prism', 'crystalShatter'],
+    styles: ['plasma', 'photon', 'prism', 'crystalShatter', 'dataStream', 'automata', 'moire'],
   },
   cosmic: {
     label: 'Cosmic',
     hueRanges: [[240, 300], [0, 0]],
     satRange: [30, 80],
     lightRange: [50, 75],
-    styles: ['prism', 'aurora', 'gradient', 'photon'],
+    styles: ['prism', 'aurora', 'gradient', 'photon', 'nebula', 'vortex', 'mirage'],
   },
   random: {
     label: 'Random',

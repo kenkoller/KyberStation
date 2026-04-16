@@ -10,7 +10,7 @@ out/
 .turbo/
 
 # launcher log
-.bladeforge.log
+.kyberstation.log
 
 # env
 .env
@@ -38,14 +38,19 @@ coverage/
 next-env.d.ts
 
 # generated app bundle (machine-specific)
-BladeForge.app/
-BladeForge.iconset/
+KyberStation.app/
+KyberStation.iconset/
 .icon-tmp/
-BladeForge-icon.svg
+KyberStation-icon.svg
 
 # Personal data / external source
 89sabers sdcard OG/
 ProffieOS/
-BladeForge.command
+KyberStation.command
 layout reference*
 .claude/
+
+# Bulky binary assets (kept local, not tracked)
+backups/
+voice-packs/
+test-fonts/

@@ -15,13 +15,15 @@ export interface PanelDragPayload {
   sourceIndex: number;
 }
 
-export const PANEL_DRAG_TYPE = 'application/x-bladeforge-panel';
+export const PANEL_DRAG_TYPE = 'application/x-kyberstation-panel';
 
 // ─── Props ───
 
 interface DraggablePanelProps {
   panelId: string;
   label: string;
+  /** Short subtitle describing what this panel does */
+  description?: string;
   column: number;
   index: number;
   isCollapsed: boolean;
@@ -44,6 +46,7 @@ interface DraggablePanelProps {
 export function DraggablePanel({
   panelId,
   label,
+  description,
   column,
   index,
   isCollapsed,
@@ -67,9 +70,12 @@ export function DraggablePanel({
       // Also write plain text so older browsers / Firefox work
       e.dataTransfer.setData('text/plain', JSON.stringify(payload));
       onDragStart(payload);
+      // Capture the DOM node before the rAF fires — React's SyntheticEvent
+      // pools e.currentTarget and nulls it out after the handler returns.
+      const target = e.currentTarget;
       // Defer opacity so the drag image is captured first
       requestAnimationFrame(() => {
-        const el = e.currentTarget.closest('[data-panel-id]') as HTMLElement | null;
+        const el = target.closest('[data-panel-id]') as HTMLElement | null;
         if (el) el.style.opacity = '0.35';
       });
     },
@@ -102,6 +108,7 @@ export function DraggablePanel({
     (e: React.DragEvent<HTMLDivElement>) => {
       if (!e.dataTransfer.types.includes(PANEL_DRAG_TYPE) && !e.dataTransfer.types.includes('text/plain')) return;
       e.preventDefault();
+      e.stopPropagation(); // Prevent column-level handler from also firing
       e.dataTransfer.dropEffect = 'move';
       setDropEdge(resolveEdge(e));
     },
@@ -112,6 +119,7 @@ export function DraggablePanel({
     (e: React.DragEvent<HTMLDivElement>) => {
       if (!e.dataTransfer.types.includes(PANEL_DRAG_TYPE) && !e.dataTransfer.types.includes('text/plain')) return;
       e.preventDefault();
+      e.stopPropagation(); // Prevent column-level enter counter from incrementing
       dragEnterCountRef.current += 1;
       setDropEdge(resolveEdge(e));
     },
@@ -119,7 +127,8 @@ export function DraggablePanel({
   );
 
   const handleDragLeave = useCallback(
-    (_e: React.DragEvent<HTMLDivElement>) => {
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.stopPropagation(); // Keep column-level leave counter in sync
       dragEnterCountRef.current = Math.max(0, dragEnterCountRef.current - 1);
       if (dragEnterCountRef.current === 0) {
         setDropEdge(null);
@@ -131,6 +140,7 @@ export function DraggablePanel({
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
+      e.stopPropagation(); // Prevent column-level drop from double-handling this move
       dragEnterCountRef.current = 0;
 
       const raw =
@@ -224,9 +234,16 @@ export function DraggablePanel({
           aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${label}`}
           className="flex items-center justify-between flex-1 min-w-0 group"
         >
-          <h3 className="text-ui-sm uppercase tracking-wider text-text-muted font-bold truncate">
-            {label}
-          </h3>
+          <div className="min-w-0">
+            <h3 className="text-ui-sm uppercase tracking-wider text-text-muted font-bold truncate">
+              {label}
+            </h3>
+            {description && !isCollapsed && (
+              <p className="text-[10px] text-text-muted/50 font-normal mt-0.5 truncate leading-tight">
+                {description}
+              </p>
+            )}
+          </div>
           {/* Chevron */}
           <span
             className={[

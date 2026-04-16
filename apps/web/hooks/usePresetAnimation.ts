@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 import { usePresetThumbnail, getAnimationFrames } from './usePresetThumbnail';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 

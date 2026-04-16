@@ -17,19 +17,19 @@ importers:
 
   apps/web:
     dependencies:
-      '@bladeforge/boards':
+      '@kyberstation/boards':
         specifier: workspace:*
         version: link:../../packages/boards
-      '@bladeforge/codegen':
+      '@kyberstation/codegen':
         specifier: workspace:*
         version: link:../../packages/codegen
-      '@bladeforge/engine':
+      '@kyberstation/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@bladeforge/presets':
+      '@kyberstation/presets':
         specifier: workspace:*
         version: link:../../packages/presets
-      '@bladeforge/sound':
+      '@kyberstation/sound':
         specifier: workspace:*
         version: link:../../packages/sound
       '@radix-ui/react-dialog':
@@ -114,10 +114,10 @@ importers:
 
   packages/boards:
     dependencies:
-      '@bladeforge/codegen':
+      '@kyberstation/codegen':
         specifier: workspace:*
         version: link:../codegen
-      '@bladeforge/engine':
+      '@kyberstation/engine':
         specifier: workspace:*
         version: link:../engine
     devDependencies:
@@ -130,7 +130,7 @@ importers:
 
   packages/codegen:
     dependencies:
-      '@bladeforge/engine':
+      '@kyberstation/engine':
         specifier: workspace:*
         version: link:../engine
     devDependencies:
@@ -156,7 +156,7 @@ importers:
 
   packages/presets:
     dependencies:
-      '@bladeforge/engine':
+      '@kyberstation/engine':
         specifier: workspace:*
         version: link:../engine
     devDependencies:

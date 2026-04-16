@@ -1,8 +1,8 @@
-import type { BladeConfig, RGB } from '@bladeforge/engine';
+import type { BladeConfig, RGB } from '@kyberstation/engine';
 import type { UserPreset } from '@/lib/fontDB';
 import type { CardConfig } from '@/stores/saberProfileStore';
 
-const SCHEMA_ID = 'bladeforge-config';
+const SCHEMA_ID = 'kyberstation-config';
 const SCHEMA_VERSION = 1;
 
 interface BladeConfigFile {
@@ -67,7 +67,7 @@ export function serializeConfig(config: BladeConfig): string {
     version: SCHEMA_VERSION,
     config,
     exportedAt: new Date().toISOString(),
-    exportedFrom: 'BladeForge v0.1.0',
+    exportedFrom: 'KyberStation v0.1.0',
   };
   return JSON.stringify(file, null, 2);
 }
@@ -110,7 +110,7 @@ export function downloadConfigAsFile(config: BladeConfig): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${(config.name ?? 'blade-style').replace(/\s+/g, '_')}.bladeforge.json`;
+  a.download = `${(config.name ?? 'blade-style').replace(/\s+/g, '_')}.kyberstation.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -139,7 +139,7 @@ export function readConfigFromFile(file: File): Promise<BladeConfig> {
 
 // ─── Collection Import/Export ───
 
-const COLLECTION_SCHEMA = 'bladeforge-collection';
+const COLLECTION_SCHEMA = 'kyberstation-collection';
 const COLLECTION_VERSION = 1;
 
 interface CollectionFile {
@@ -156,7 +156,7 @@ export function serializeCollection(presets: UserPreset[]): string {
     version: COLLECTION_VERSION,
     presets,
     exportedAt: new Date().toISOString(),
-    exportedFrom: 'BladeForge v0.1.0',
+    exportedFrom: 'KyberStation v0.1.0',
   };
   return JSON.stringify(file, null, 2);
 }
@@ -176,7 +176,7 @@ export function deserializeCollection(json: string): UserPreset[] {
   const file = parsed as Record<string, unknown>;
 
   if (file.$schema !== COLLECTION_SCHEMA || !Array.isArray(file.presets)) {
-    throw new Error('Not a valid BladeForge collection file');
+    throw new Error('Not a valid KyberStation collection file');
   }
 
   // Validate each preset has at least name and config
@@ -195,7 +195,7 @@ export function downloadCollection(presets: UserPreset[], filename?: string): vo
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename ?? `presets.bladeforge-collection.json`;
+  a.download = filename ?? `presets.kyberstation-collection.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -222,7 +222,7 @@ export function readCollectionFile(file: File): Promise<UserPreset[]> {
 
 // ─── Card Preset Template Export/Import ───
 
-const CARD_TEMPLATE_SCHEMA = 'bladeforge-card';
+const CARD_TEMPLATE_SCHEMA = 'kyberstation-card';
 const CARD_TEMPLATE_VERSION = 1;
 
 interface CardTemplateFile {
@@ -251,7 +251,7 @@ export function serializeCardTemplate(cardConfig: CardConfig): string {
       source: e.source,
     })),
     exportedAt: new Date().toISOString(),
-    exportedFrom: 'BladeForge v0.1.0',
+    exportedFrom: 'KyberStation v0.1.0',
   };
   return JSON.stringify(file, null, 2);
 }
@@ -270,7 +270,7 @@ export function deserializeCardTemplate(json: string): { name: string; entries: 
 
   const file = parsed as Record<string, unknown>;
   if (file.$schema !== CARD_TEMPLATE_SCHEMA || !Array.isArray(file.entries)) {
-    throw new Error('Not a valid BladeForge card template file');
+    throw new Error('Not a valid KyberStation card template file');
   }
 
   const entries = (file.entries as unknown[]).filter((e): e is CardTemplateFile['entries'][0] => {
@@ -291,7 +291,7 @@ export function downloadCardTemplate(cardConfig: CardConfig, filename?: string):
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename ?? `${cardConfig.name.replace(/\s+/g, '_')}.bladeforge-card.json`;
+  a.download = filename ?? `${cardConfig.name.replace(/\s+/g, '_')}.kyberstation-card.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

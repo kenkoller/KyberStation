@@ -67,6 +67,9 @@ describe('BladeStore config shape', () => {
       'stable', 'unstable', 'fire', 'pulse', 'rotoscope',
       'gradient', 'photon', 'plasma', 'crystalShatter',
       'aurora', 'cinder', 'prism',
+      'dataStream', 'gravity', 'ember', 'automata', 'helix', 'candle',
+      'shatter', 'neutron', 'torrent', 'moire', 'cascade', 'vortex',
+      'nebula', 'tidal', 'mirage',
     ];
     const validIgnitions = [
       'standard', 'scroll', 'spark', 'center', 'wipe', 'stutter', 'glitch',
@@ -167,7 +170,7 @@ describe('RGB color utilities', () => {
 // ─── Preset library import tests ───
 
 describe('Preset library', () => {
-  it('ALL_PRESETS exports from @bladeforge/presets', async () => {
+  it('ALL_PRESETS exports from @kyberstation/presets', async () => {
     // This test verifies the module structure is correct.
     // In a real test env with properly linked packages, this would
     // import and verify. Here we verify the expected shape.

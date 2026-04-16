@@ -1,4 +1,4 @@
-// BladeConfig is imported at runtime from @bladeforge/engine.
+// BladeConfig is imported at runtime from @kyberstation/engine.
 // For type-only usage, we re-declare the shape we need to avoid cross-rootDir issues.
 // The actual BladeConfig interface is the source of truth in packages/engine/src/types.ts.
 

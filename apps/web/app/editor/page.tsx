@@ -7,7 +7,7 @@ import { OnboardingFlow, isOnboardingComplete } from '@/components/layout/Onboar
 import ToastContainer from '@/components/layout/ToastContainer';
 import { useSharedConfig } from '@/hooks/useSharedConfig';
 
-const SPLASH_SEEN_KEY = 'bladeforge-splash-seen';
+const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
 
 /**
  * Editor entry point.

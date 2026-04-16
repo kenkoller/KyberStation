@@ -4,7 +4,7 @@ import { Canvas, useFrame, type RootState } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBladeStore } from '@/stores/bladeStore';
-import { BladeState } from '@bladeforge/engine';
+import { BladeState } from '@kyberstation/engine';
 import {
   HiltSelector,
   useHiltSelection,

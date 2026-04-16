@@ -12,7 +12,7 @@
 import { useEffect, useRef } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useHistoryStore } from '@/stores/historyStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 const DEBOUNCE_MS = 300;
 

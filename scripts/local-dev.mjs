@@ -116,7 +116,7 @@ async function main() {
     console.log(`⚡ Port ${preferredPort} is busy — using port ${port}\n`);
   }
 
-  console.log(`BladeForge local dev (no Turbo) — port ${port}\n`);
+  console.log(`KyberStation local dev (no Turbo) — port ${port}\n`);
 
   // Step 1: Build engine once so dependents can resolve types
   console.log('Building engine...');

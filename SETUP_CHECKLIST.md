@@ -1,30 +1,30 @@
-# BLADEFORGE — GitHub Setup Checklist
+# KYBERSTATION — GitHub Setup Checklist
 
 ## Repo Initialization
 
 ```bash
 # 1. Create the repo
-gh repo create bladeforge --public --description "ProffieOS blade style editor & real-time Neopixel visualizer" --clone
-cd bladeforge
+gh repo create kyberstation --public --description "ProffieOS blade style editor & real-time Neopixel visualizer" --clone
+cd kyberstation
 
 # 2. Copy in CLAUDE.md
 cp /path/to/CLAUDE.md ./CLAUDE.md
 
 # 3. Launch Agent 0 (scaffold)
-claude-code --session "bladeforge-scaffold" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 0/,/## AGENT 1/p')"
+claude-code --session "kyberstation-scaffold" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 0/,/## AGENT 1/p')"
 
 # 4. After Agent 0 completes and pushes, launch parallel agents:
 # Terminal 1 — Engine
-claude-code --session "bladeforge-engine" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 1/,/## AGENT 2/p')"
+claude-code --session "kyberstation-engine" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 1/,/## AGENT 2/p')"
 
 # Terminal 2 — Codegen
-claude-code --session "bladeforge-codegen" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 2/,/## AGENT 3/p')"
+claude-code --session "kyberstation-codegen" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 2/,/## AGENT 3/p')"
 
 # Terminal 3 — Web UI
-claude-code --session "bladeforge-web" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 3/,/## AGENT 4/p')"
+claude-code --session "kyberstation-web" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 3/,/## AGENT 4/p')"
 
 # Terminal 4 — Presets/Sound/Docs
-claude-code --session "bladeforge-content" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 4/,/## Merge Order/p')"
+claude-code --session "kyberstation-content" --prompt "$(cat AGENT_PROMPTS.md | sed -n '/## AGENT 4/,/## Merge Order/p')"
 ```
 
 ## GitHub Settings
@@ -82,4 +82,4 @@ main (protected)
 - [ ] Choreography mode: sequence effects on a timeline, export to Fett263 choreography format
 - [ ] WebSerial API for browser-direct Proffieboard communication (Chrome only)
 - [ ] AI-assisted style generation ("make me a blade that looks like a dying star")
-- [ ] Import existing ProffieOS config.h and parse into BladeForge config
+- [ ] Import existing ProffieOS config.h and parse into KyberStation config

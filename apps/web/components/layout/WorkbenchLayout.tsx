@@ -8,7 +8,7 @@ import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useUIStore } from '@/stores/uiStore';
 import type { ActiveTab } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
-import { playUISound } from '@/lib/uiSounds';
+import { playUISound, getUISoundEngine } from '@/lib/uiSounds';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
 import { useAccessibilityApplier } from '@/hooks/useAccessibilityApplier';
@@ -28,6 +28,7 @@ import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
 import { PixelDebugOverlay } from '@/components/editor/PixelDebugOverlay';
 import { CanvasLayout } from '@/components/editor/CanvasLayout';
+import { BladeCanvas3D } from '@/components/editor/BladeCanvas3DWrapper';
 import { DesignPanel } from '@/components/editor/DesignPanel';
 import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
@@ -113,7 +114,7 @@ function TabContent({ activeTab }: { activeTab: ActiveTab }) {
 // ─── Main Component ───
 
 /**
- * WorkbenchLayout — desktop editor layout for BladeForge.
+ * WorkbenchLayout — desktop editor layout for KyberStation.
  *
  * Structure (top to bottom):
  *  1. Header bar — logo, project name, undo/redo, FPS, share, settings
@@ -144,6 +145,8 @@ export function WorkbenchLayout() {
   const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
   const setTabOrder = useUIStore((s) => s.setTabOrder);
   const presetListCount = usePresetListStore((s) => s.entries.length);
+  const canvasMode = useUIStore((s) => s.canvasMode);
+  const setCanvasMode = useUIStore((s) => s.setCanvasMode);
 
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
@@ -186,6 +189,21 @@ export function WorkbenchLayout() {
     [triggerEffect, audio],
   );
 
+  // ── Combined sound mute toggle — controls font audio + UI sounds ──
+  const toggleSoundMute = useCallback(() => {
+    audio.toggleMute();
+    // Sync UI sound engine: if we're about to unmute, set UI sounds to 'subtle';
+    // if muting, set to 'silent'.  audio.muted is the *current* value (pre-toggle).
+    const uiEngine = getUISoundEngine();
+    if (audio.muted) {
+      // Was muted, now unmuting — enable UI sounds
+      uiEngine.setPreset('subtle');
+    } else {
+      // Was unmuted, now muting — silence UI sounds
+      uiEngine.setPreset('silent');
+    }
+  }, [audio]);
+
   // ── Keyboard shortcuts + timeline ──
   const handlers = useMemo(
     () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
@@ -215,9 +233,11 @@ export function WorkbenchLayout() {
     setTabDragId(id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
-    if (e.currentTarget instanceof HTMLElement) {
+    // Capture the node before rAF — React pools SyntheticEvent and nulls currentTarget.
+    const target = e.currentTarget;
+    if (target instanceof HTMLElement) {
       requestAnimationFrame(() => {
-        (e.currentTarget as HTMLElement).style.opacity = '0.4';
+        target.style.opacity = '0.4';
       });
     }
   }, []);
@@ -285,8 +305,8 @@ export function WorkbenchLayout() {
         {/* Left cluster: logo + project name */}
         <div className="flex items-center gap-3">
           <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
-            <span className="text-white">BLADE</span>
-            <span className="text-accent">FORGE</span>
+            <span className="text-white">KYBER</span>
+            <span className="text-accent">STATION</span>
           </h1>
           <span className="text-ui-xs text-text-muted font-sw-body hidden desktop:inline">
             Universal Saber Style Engine
@@ -305,15 +325,15 @@ export function WorkbenchLayout() {
 
           <PauseButton />
 
-          {/* Audio mute */}
+          {/* Audio mute — controls both font audio engine and UI sounds */}
           <button
-            onClick={audio.toggleMute}
+            onClick={toggleSoundMute}
             className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
               audio.muted
                 ? 'border-border-subtle text-text-muted hover:text-text-secondary'
                 : 'border-accent-border/40 text-accent bg-accent-dim/30'
             }`}
-            title={audio.muted ? 'Unmute audio' : 'Mute audio'}
+            title={audio.muted ? 'Unmute all audio (font sounds + UI sounds)' : 'Mute all audio'}
           >
             {audio.muted ? 'Sound OFF' : 'Sound ON'}
           </button>
@@ -348,18 +368,6 @@ export function WorkbenchLayout() {
           >
             ⚙
           </button>
-
-          {/* Ignite / Retract */}
-          <button
-            onClick={toggleWithAudio}
-            className={`px-4 py-1.5 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-              isOn
-                ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-                : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-            }`}
-          >
-            {isOn ? 'Retract' : 'Ignite'}
-          </button>
         </div>
       </header>
 
@@ -368,7 +376,7 @@ export function WorkbenchLayout() {
        * ════════════════════════════════════════════════════ */}
       <section
         className="shrink-0 border-b border-border-subtle bg-bg-primary flex"
-        style={{ height: 240 }}
+        style={{ height: 280 }}
         role="region"
         aria-label="Blade visualization"
       >
@@ -379,28 +387,60 @@ export function WorkbenchLayout() {
           <div className="h-full p-1 relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
+            ) : canvasMode === '3d' ? (
+              <BladeCanvas3D />
             ) : (
               <CanvasLayout engineRef={engineRef} />
             )}
-            {/* Fullscreen toggle — top-right corner of canvas area */}
-            <div className="absolute top-2 right-2 z-10">
+            {/* Controls — top-right corner of canvas area */}
+            <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+              {/* 2D / 3D view toggle */}
+              <div className="flex rounded overflow-hidden border border-border-subtle">
+                <button
+                  onClick={() => setCanvasMode('2d')}
+                  className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
+                    canvasMode === '2d'
+                      ? 'bg-accent-dim text-accent border-r border-accent-border/40'
+                      : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
+                  }`}
+                  title="2D blade view"
+                  aria-pressed={canvasMode === '2d'}
+                >
+                  2D
+                </button>
+                <button
+                  onClick={() => setCanvasMode('3d')}
+                  className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
+                    canvasMode === '3d'
+                      ? 'bg-accent-dim text-accent'
+                      : 'bg-transparent text-text-muted hover:text-text-secondary'
+                  }`}
+                  title="3D hilt + blade view"
+                  aria-pressed={canvasMode === '3d'}
+                >
+                  3D
+                </button>
+              </div>
               <FullscreenButton />
             </div>
-            <PixelDebugOverlay
-              getPixelRgb={(index) => {
-                const engine = engineRef.current;
-                if (engine) {
-                  const buf = engine.getPixels();
-                  const base = index * 3;
-                  if (base + 2 < buf.length) {
-                    return { r: buf[base], g: buf[base + 1], b: buf[base + 2] };
+            {/* Pixel debug overlay only applies to 2D canvas mode */}
+            {canvasMode === '2d' && (
+              <PixelDebugOverlay
+                getPixelRgb={(index) => {
+                  const engine = engineRef.current;
+                  if (engine) {
+                    const buf = engine.getPixels();
+                    const base = index * 3;
+                    if (base + 2 < buf.length) {
+                      return { r: buf[base], g: buf[base + 1], b: buf[base + 2] };
+                    }
                   }
-                }
-                return { r: 0, g: 0, b: 0 };
-              }}
-              vertical={false}
-              className="absolute inset-0 z-20"
-            />
+                  return { r: 0, g: 0, b: 0 };
+                }}
+                vertical={false}
+                className="absolute inset-0 z-20"
+              />
+            )}
           </div>
         </CornerBrackets>
       </section>
@@ -417,6 +457,59 @@ export function WorkbenchLayout() {
           pixelData={pixelBufRef.current}
           pixelCount={ledCount}
         />
+      </div>
+
+      {/* ════════════════════════════════════════════════════
+       * 2c. ACTION BAR — Ignite/Retract + effect trigger buttons
+       * ════════════════════════════════════════════════════ */}
+      <div
+        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b border-border-subtle bg-bg-secondary/40"
+        role="toolbar"
+        aria-label="Blade actions and effects"
+      >
+        {/* Ignite / Retract */}
+        <button
+          onClick={toggleWithAudio}
+          className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+            isOn
+              ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+              : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+          }`}
+          title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
+        >
+          {isOn ? 'Retract' : 'Ignite'}
+        </button>
+
+        <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
+
+        {/* Effect trigger buttons */}
+        {([
+          { type: 'clash',     label: 'Clash',     key: 'C' },
+          { type: 'blast',     label: 'Blast',     key: 'B' },
+          { type: 'stab',      label: 'Stab',      key: 'S' },
+          { type: 'lockup',    label: 'Lockup',    key: 'L' },
+          { type: 'lightning',  label: 'Lightning', key: 'N' },
+          { type: 'drag',      label: 'Drag',      key: 'D' },
+          { type: 'melt',      label: 'Melt',      key: 'M' },
+          { type: 'force',     label: 'Force',     key: 'F' },
+          { type: 'shockwave', label: 'Shockwave', key: 'W' },
+          { type: 'scatter',   label: 'Scatter',   key: '' },
+          { type: 'ripple',    label: 'Ripple',    key: '' },
+          { type: 'freeze',    label: 'Freeze',    key: '' },
+          { type: 'overcharge', label: 'Overcharge', key: '' },
+          { type: 'invert',    label: 'Invert',    key: '' },
+        ] as const).map(({ type, label, key }) => (
+          <button
+            key={type}
+            onClick={() => triggerEffectWithAudio(type)}
+            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light hover:bg-bg-secondary transition-colors"
+            title={key ? `${label} effect (${key})` : `${label} effect`}
+          >
+            <span className="hidden desktop:inline">{label}</span>
+            <span className="desktop:hidden">{key || label.slice(0, 2)}</span>
+            {key && <kbd className="hidden desktop:inline ml-1 text-[9px] text-text-muted/50">{key}</kbd>}
+          </button>
+        ))}
       </div>
 
       {/* ════════════════════════════════════════════════════

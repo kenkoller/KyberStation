@@ -1,5 +1,5 @@
 {
-  "name": "@bladeforge/web",
+  "name": "@kyberstation/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,11 +13,11 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@bladeforge/boards": "workspace:*",
-    "@bladeforge/codegen": "workspace:*",
-    "@bladeforge/engine": "workspace:*",
-    "@bladeforge/presets": "workspace:*",
-    "@bladeforge/sound": "workspace:*",
+    "@kyberstation/boards": "workspace:*",
+    "@kyberstation/codegen": "workspace:*",
+    "@kyberstation/engine": "workspace:*",
+    "@kyberstation/presets": "workspace:*",
+    "@kyberstation/sound": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-select": "^2.1.0",
     "@radix-ui/react-slider": "^1.2.0",

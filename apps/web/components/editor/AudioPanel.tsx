@@ -13,7 +13,7 @@ export function AudioPanel() {
     },
     {
       id: 'timeline',
-      title: 'Timeline',
+      title: 'Effect Sequencer',
       children: <TimelinePanel />,
     },
   ], []);

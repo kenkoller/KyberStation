@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { FontManifest, SoundCategory } from '@bladeforge/sound';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { FontManifest, SoundCategory } from '@kyberstation/sound';
+import type { BladeConfig } from '@kyberstation/engine';
 
 // ─── Stored record types ───
 
@@ -54,7 +54,7 @@ export interface UserPreset {
 
 // ─── Database definition ───
 
-class BladeForgeDB extends Dexie {
+class KyberStationDB extends Dexie {
   fonts!: Table<StoredFont, string>;
   settings!: Table<AppSetting, string>;
   userPresets!: Table<UserPreset, string>;
@@ -62,7 +62,7 @@ class BladeForgeDB extends Dexie {
   libraryFonts!: Table<LibraryFontEntry, string>;
 
   constructor() {
-    super('bladeforge-fonts');
+    super('kyberstation-fonts');
     this.version(1).stores({
       fonts: 'name',
       settings: 'key',
@@ -82,7 +82,7 @@ class BladeForgeDB extends Dexie {
   }
 }
 
-const db = new BladeForgeDB();
+const db = new KyberStationDB();
 
 // ─── Public API ───
 

@@ -39,6 +39,20 @@ function rgbToHsv(r: number, g: number, b: number): { h: number; s: number; v: n
 
 // ─── Per-layer canvas drawing helpers ───
 
+/** Compute min, max, avg of a numeric array. Returns zeros if empty. */
+function arrayStats(values: number[]): { min: number; max: number; avg: number } {
+  const n = values.length;
+  if (n === 0) return { min: 0, max: 0, avg: 0 };
+  let min = values[0], max = values[0], sum = 0;
+  for (let i = 0; i < n; i++) {
+    const v = values[i];
+    if (v < min) min = v;
+    if (v > max) max = v;
+    sum += v;
+  }
+  return { min, max, avg: sum / n };
+}
+
 /** Draw a horizontal waveform where X = pixel index, Y = value (yMin..yMax). */
 function drawWaveform(
   ctx: CanvasRenderingContext2D,
@@ -50,6 +64,8 @@ function drawWaveform(
   lineColor: string,
   label: string,
   dpr: number,
+  /** Optional right-aligned stat string drawn in the header area */
+  statLabel?: string,
 ) {
   const n = values.length;
   if (n === 0) return;
@@ -117,12 +133,23 @@ function drawWaveform(
   ctx.lineWidth = 1.5 * dpr;
   ctx.stroke();
 
-  // Label
+  // Label (left)
   ctx.fillStyle = 'rgba(255,255,255,0.30)';
   ctx.font = `${7 * dpr}px monospace`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillText(label, gx + 2 * dpr, 2 * dpr);
+
+  // Live stat readout (right-aligned)
+  if (statLabel) {
+    ctx.fillStyle = lineColor;
+    ctx.globalAlpha = 0.55;
+    ctx.font = `${7 * dpr}px monospace`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(statLabel, gx + gw - 2 * dpr, 2 * dpr);
+    ctx.globalAlpha = 1;
+  }
 }
 
 // ─── Layer render functions ───
@@ -142,7 +169,9 @@ function renderChannelLayer(
   for (let i = 0; i < leds; i++) {
     values.push(pixels[i * 3 + channelOffset] ?? 0);
   }
-  drawWaveform(ctx, values, cw, ch, 0, 255, lineColor, label, dpr);
+  const { avg, max } = arrayStats(values);
+  const stat = `avg:${Math.round(avg)} max:${max}`;
+  drawWaveform(ctx, values, cw, ch, 0, 255, lineColor, label, dpr, stat);
 }
 
 function renderLuminanceLayer(
@@ -160,7 +189,9 @@ function renderLuminanceLayer(
     const b = pixels[i * 3 + 2] ?? 0;
     values.push(0.299 * r + 0.587 * g + 0.114 * b);
   }
-  drawWaveform(ctx, values, cw, ch, 0, 255, '#cccccc', 'LUMA', dpr);
+  const { avg } = arrayStats(values);
+  const pct = Math.round((avg / 255) * 100);
+  drawWaveform(ctx, values, cw, ch, 0, 255, '#cccccc', 'LUMA', dpr, `avg: ${pct}%`);
 }
 
 function renderPowerDrawLayer(
@@ -183,7 +214,11 @@ function renderPowerDrawLayer(
     values.push(ma);
   }
 
-  drawWaveform(ctx, values, cw, ch, 0, maxMaPerPixel, '#ffaa00', 'POWER (mA)', dpr);
+  // Compute total draw in amps for stat readout
+  let totalMa = 0;
+  for (let i = 0; i < values.length; i++) totalMa += values[i];
+  const totalA = (totalMa / 1000).toFixed(2);
+  drawWaveform(ctx, values, cw, ch, 0, maxMaPerPixel, '#ffaa00', 'POWER (mA)', dpr, `total: ${totalA}A`);
 
   // 5A limit line — draw as dashed red line across the graph area
   const padX = 8 * dpr;
@@ -228,7 +263,16 @@ function renderHueLayer(
     const b = pixels[i * 3 + 2] ?? 0;
     values.push(rgbToHsv(r, g, b).h);
   }
-  drawWaveform(ctx, values, cw, ch, 0, 360, '#cc88ff', 'HUE (°)', dpr);
+  // Dominant hue via circular mean (hue wraps at 360)
+  let sinSum = 0, cosSum = 0;
+  for (let i = 0; i < values.length; i++) {
+    const rad = (values[i] * Math.PI) / 180;
+    sinSum += Math.sin(rad);
+    cosSum += Math.cos(rad);
+  }
+  let dominantHue = Math.round((Math.atan2(sinSum, cosSum) * 180) / Math.PI);
+  if (dominantHue < 0) dominantHue += 360;
+  drawWaveform(ctx, values, cw, ch, 0, 360, '#cc88ff', 'HUE (\u00B0)', dpr, `dominant: ${dominantHue}\u00B0`);
 }
 
 function renderSaturationLayer(
@@ -246,7 +290,8 @@ function renderSaturationLayer(
     const b = pixels[i * 3 + 2] ?? 0;
     values.push(rgbToHsv(r, g, b).s * 100);
   }
-  drawWaveform(ctx, values, cw, ch, 0, 100, '#ff88cc', 'SAT (%)', dpr);
+  const { avg } = arrayStats(values);
+  drawWaveform(ctx, values, cw, ch, 0, 100, '#ff88cc', 'SAT (%)', dpr, `avg: ${Math.round(avg)}%`);
 }
 
 function renderEffectOverlayLayer(
@@ -271,6 +316,7 @@ function renderEffectOverlayLayer(
   if (leds <= 0 || gw <= 0 || gh <= 0) return;
 
   const cellW = gw / leds;
+  let hotCount = 0;
 
   for (let i = 0; i < leds; i++) {
     const r = pixels[i * 3] ?? 0;
@@ -279,6 +325,7 @@ function renderEffectOverlayLayer(
     const luma = 0.299 * r + 0.587 * g + 0.114 * b;
     // Hot pixel = very bright (effect flash) or high green/blue clash signature
     if (luma > 180) {
+      hotCount++;
       const alpha = Math.min(1, (luma - 180) / 75);
       ctx.fillStyle = `rgba(${r},${g},${b},${(alpha * 0.7).toFixed(2)})`;
       ctx.fillRect(gx + i * cellW, padTop, Math.max(cellW, 1), gh);
@@ -296,6 +343,11 @@ function renderEffectOverlayLayer(
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillText('EFFECTS', gx + 2 * dpr, 2 * dpr);
+
+  // Live stat: count of hot (effect-active) pixels
+  ctx.fillStyle = 'rgba(255,221,68,0.55)';
+  ctx.textAlign = 'right';
+  ctx.fillText(`hot: ${hotCount}px`, gx + gw - 2 * dpr, 2 * dpr);
 }
 
 function renderSwingResponseLayer(

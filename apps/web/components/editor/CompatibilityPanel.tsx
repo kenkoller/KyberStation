@@ -91,7 +91,7 @@ const FEATURES: FeatureRow[] = [
     data: { proffieV3: 'none', proffieV2: 'none', cfx: 'full', ghv4: 'none', ghv3: 'none', xenoV3: 'full', xenoV2: 'none', verso: 'none', snpixelV4: 'full', asteria: 'none', lgtBaselit: 'none', sRgb: 'none' },
   },
   {
-    feature: 'BladeForge Code Gen', key: 'codeGeneration',
+    feature: 'KyberStation Code Gen', key: 'codeGeneration',
     data: { proffieV3: 'full', proffieV2: 'full', cfx: 'partial', ghv4: 'partial', ghv3: 'partial', xenoV3: 'partial', xenoV2: 'partial', verso: 'none', snpixelV4: 'none', asteria: 'none', lgtBaselit: 'none', sRgb: 'none' },
   },
 ];
@@ -138,7 +138,7 @@ export function CompatibilityPanel() {
     <div className="space-y-3">
       <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
         Board Compatibility
-        <HelpTooltip text="Feature support across lightsaber soundboard platforms. BladeForge generates full native code for Proffieboard, with limited export for CFX, Golden Harvest, and Xenopixel. Budget boards show what BladeForge features apply to your hardware." />
+        <HelpTooltip text="Feature support across lightsaber soundboard platforms. KyberStation generates full native code for Proffieboard, with limited export for CFX, Golden Harvest, and Xenopixel. Budget boards show what KyberStation features apply to your hardware." />
       </h3>
 
       {/* Filters */}
@@ -223,8 +223,8 @@ export function CompatibilityPanel() {
       </div>
 
       <p className="text-ui-xs text-text-muted">
-        BladeForge generates native ProffieOS C++ code with full config.h export. CFX, Golden Harvest, and Xenopixel boards
-        get simplified style export. Budget boards (Asteria, SN-Pixel, S-RGB) show which BladeForge features apply
+        KyberStation generates native ProffieOS C++ code with full config.h export. CFX, Golden Harvest, and Xenopixel boards
+        get simplified style export. Budget boards (Asteria, SN-Pixel, S-RGB) show which KyberStation features apply
         to your hardware. Baselit boards support color selection only.
       </p>
     </div>

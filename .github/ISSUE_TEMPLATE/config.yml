@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / Discussion
+    url: https://github.com/kenkoller/KyberStation/discussions
+    about: Ask questions, share your builds, or discuss ideas. Use this instead of filing an issue.
+  - name: ProffieOS Documentation
+    url: https://pod.hubbe.net/
+    about: Official ProffieOS documentation — check here first for firmware questions.

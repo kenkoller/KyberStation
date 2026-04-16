@@ -1,4 +1,4 @@
-# BladeForge Development Guide
+# KyberStation Development Guide
 
 ## Prerequisites
 
@@ -36,13 +36,13 @@ These scripts (`scripts/local-build.mjs`, `scripts/local-dev.mjs`) resolve binar
 |---------|-------------|
 | `pnpm dev:local` | Start Next.js dev server + package watchers |
 | `pnpm build:local` | Build all packages + web app for production |
-| `pnpm test` | Run all 398 tests (Vitest) |
+| `pnpm test` | Run all 498+ tests (Vitest) |
 | `pnpm test:engine` | Engine tests only |
 | `pnpm test:codegen` | Codegen tests only |
 | `pnpm lint` | ESLint check |
 | `pnpm typecheck` | TypeScript strict mode check |
 
-**Windows shortcut:** Double-click `BladeForge.bat` in the project root to launch the dev server, or use the Desktop shortcut.
+**Windows shortcut:** Double-click `KyberStation.bat` in the project root to launch the dev server, or use the Desktop shortcut.
 
 ## Build Order
 
@@ -55,7 +55,7 @@ The local build script handles dependency ordering automatically:
 ## Project Structure
 
 ```
-bladeforge/
+kyberstation/
 ├── apps/web/              # Next.js 14 App Router
 │   ├── app/               # Pages (/, /editor, /s, /docs)
 │   ├── components/        # React components
@@ -64,7 +64,7 @@ bladeforge/
 │   │   └── shared/        # Reusable UI primitives
 │   ├── hooks/             # Custom React hooks
 │   ├── lib/               # Config I/O, URL encoding, IndexedDB (fontDB)
-│   └── stores/            # Zustand stores (blade, UI, userPreset, saberProfile, presetList, audioFont, accessibility, audioMixer)
+│   └── stores/            # Zustand stores (13 total: blade, UI, layout, visualization, history, userPreset, saberProfile, presetList, audioFont, audioMixer, accessibility)
 ├── packages/engine/       # Blade simulation engine (zero DOM deps)
 ├── packages/codegen/      # AST-based ProffieOS C++ generator
 ├── packages/presets/      # Character preset library
@@ -97,8 +97,9 @@ node node_modules/vitest/vitest.mjs run --project engine
 ```
 
 Test coverage by package:
-- **engine** — 6 test suites, 398 tests (styles, effects, ignition, easing, LEDArray, BladeEngine)
+- **engine** — 6+ test suites, 398+ tests (styles, effects, ignition, easing, LEDArray, BladeEngine)
 - **codegen** — AST building, code emission, config generation, template validation
+- **web** — layoutStore (39 tests), visualizationStore (30 tests), historyStore (31 tests), component integration tests
 
 ## Debugging
 
@@ -117,7 +118,7 @@ Don't use `taskkill /F /IM node.exe` — it will kill everything including your 
 
 ## Firmware Compilation (ProffieOS)
 
-BladeForge generates ProffieOS config.h files, but these must be compiled and flashed to the Proffieboard. The toolchain:
+KyberStation generates ProffieOS config.h files, but these must be compiled and flashed to the Proffieboard. The toolchain:
 
 ### Prerequisites
 
@@ -175,6 +176,61 @@ arduino-cli upload --fqbn "proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmm
 ```
 
 The board must be in DFU/bootloader mode (hold BOOT button while powering on, or use the serial command).
+
+## New Features (Phase 4-6)
+
+### Desktop Workbench Layout
+
+The sidebar layout has been replaced with a horizontal workbench on desktop:
+
+- `components/layout/WorkbenchLayout.tsx` — Main desktop layout container
+- `components/layout/ColumnGrid.tsx` — CSS grid with HTML5 DnD for panel reordering
+- `components/layout/DraggablePanel.tsx` — Individual panel wrapper with drag handle
+- `components/layout/TabColumnContent.tsx` — Maps 29 panel IDs to React components
+- `stores/layoutStore.ts` — Column assignments, presets, collapsed state
+- `hooks/useResponsiveColumns.ts` — matchMedia listeners at 1440/1200/1024px breakpoints
+
+### Visualization Stack
+
+Analysis layers below the blade canvas:
+
+- `lib/visualizationTypes.ts` — 13 layer type definitions
+- `stores/visualizationStore.ts` — Layer visibility, ordering, debug mode
+- `components/editor/VisualizationToolbar.tsx` — Toggle icons per layer
+- `components/editor/VisualizationStack.tsx` — Canvas-based layer rendering
+- `components/editor/PixelDebugOverlay.tsx` — Per-pixel hover/pin/range debug overlay
+
+### New Engine Effects (24 total)
+
+All in `packages/engine/src/`:
+
+**New Styles (8):** GravityStyle, DataStreamStyle, EmberStyle, AutomataStyle, HelixStyle, CandleStyle, ShatterStyle, NeutronStyle
+
+**New Effects (7):** ShockwaveEffect, ScatterEffect, FragmentEffect, RippleEffect, FreezeEffect, OverchargeEffect, BifurcateEffect
+
+**New Ignitions (5):** CrackleIgnition, FractureIgnition, FlashFillIgnition, PulseWaveIgnition, DripUpIgnition
+
+**New Retractions (4):** DissolveRetraction, FlickerOutRetraction, UnravelRetraction, DrainRetraction
+
+### Additional Features
+
+- `components/editor/FullscreenPreview.tsx` — Immersive preview with device motion
+- `components/layout/UndoRedoButtons.tsx` + `stores/historyStore.ts` — 50-entry undo/redo
+- `components/layout/ShareButton.tsx` — Kyber Code URL encoding via configUrl.ts
+- `components/layout/FPSCounter.tsx` — Real-time FPS with color-coded thresholds
+- `components/layout/StatusBar.tsx` — Power draw, storage budget, LED count
+- `components/layout/PauseButton.tsx` + `hooks/usePauseSystem.ts` — Global animation pause
+- `components/layout/SettingsModal.tsx` — Performance tiers, Aurebesh, UI sounds, layout presets
+- `lib/themeDefinitions.ts` — 30 theme definitions with material properties
+- `hooks/useThemeApplier.ts` — CSS custom property theme application
+- `components/editor/SmoothSwingPanel.tsx` — V1/V2 SmoothSwing configuration
+- `components/shared/Skeleton.tsx` — Loading skeleton components
+
+### Hardware Default Changes
+
+- Default LED count: 132 → 144 (in `bladeStore.ts` and `BladeHardwarePanel.tsx`)
+- Default volume: 2000 → 1500 (in `CodeOutput.tsx`)
+- Zoom constrained to 0.9x–1.3x range (was 0.8x–2.0x in `BladeCanvas.tsx`)
 
 ## Conventions
 

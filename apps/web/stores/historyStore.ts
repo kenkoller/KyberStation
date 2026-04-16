@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 export interface HistoryEntry {
   timestamp: number;

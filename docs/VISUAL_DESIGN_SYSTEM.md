@@ -1,4 +1,4 @@
-# BladeForge Visual Design System
+# KyberStation Visual Design System
 
 > Comprehensive specification for the Star Wars-inspired visual layer: theming, animations,
 > typography, sound design, HUD elements, and performance tiers.
@@ -7,7 +7,7 @@
 
 ## 1. Design Philosophy
 
-The BladeForge UI draws from **Star Wars tactical HUD displays** — the screens seen in
+The KyberStation UI draws from **Star Wars tactical HUD displays** — the screens seen in
 cockpits, command centers, briefing rooms, and Imperial consoles across the films and series.
 The aesthetic is functional-cinematic: it looks like something that *belongs* in the Star Wars
 universe while remaining a productive tool.

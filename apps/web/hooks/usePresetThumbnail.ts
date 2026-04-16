@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { BladeEngine } from '@bladeforge/engine';
-import type { BladeConfig } from '@bladeforge/engine';
+import { BladeEngine } from '@kyberstation/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 /**
  * Thumbnail dimensions for the engine-rendered preview strip.

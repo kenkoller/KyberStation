@@ -17,7 +17,7 @@ interface AccessibilityState {
   reset: () => void;
 }
 
-const STORAGE_KEY = 'bladeforge-accessibility';
+const STORAGE_KEY = 'kyberstation-accessibility';
 
 function loadFromStorage(): Partial<AccessibilityState> {
   try {

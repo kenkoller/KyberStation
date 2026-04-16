@@ -1,29 +1,29 @@
 import type { BoardProfile } from '../types.js';
 
 const PROFFIE_EFFECTS: BoardProfile['supportedEffects'] = [
-  { bladeforgeEffect: 'clash', boardEffectName: 'SimpleClashL', configParam: 'EFFECT_CLASH', notes: 'Full responsive clash via SimpleClashL / ResponsiveClashL' },
-  { bladeforgeEffect: 'lockup', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_NORMAL', notes: 'Full responsive lockup with begin/end transitions' },
-  { bladeforgeEffect: 'blast', boardEffectName: 'BlastL', configParam: 'EFFECT_BLAST', notes: 'Randomized blast deflection with fade' },
-  { bladeforgeEffect: 'drag', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_DRAG', notes: 'Drag effect via LockupTrL with drag lockup type' },
-  { bladeforgeEffect: 'melt', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_MELT', notes: 'Melt tip effect with responsive intensity' },
-  { bladeforgeEffect: 'lightning', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_LIGHTNING_BLOCK', notes: 'Lightning block with animated effect' },
-  { bladeforgeEffect: 'stab', boardEffectName: 'StabL', configParam: 'EFFECT_STAB', notes: 'Stab effect with tip-localized flash' },
-  { bladeforgeEffect: 'force', boardEffectName: 'AlphaL', configParam: 'EFFECT_FORCE', notes: 'Force effect via custom layer or transition' },
+  { kyberstationEffect: 'clash', boardEffectName: 'SimpleClashL', configParam: 'EFFECT_CLASH', notes: 'Full responsive clash via SimpleClashL / ResponsiveClashL' },
+  { kyberstationEffect: 'lockup', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_NORMAL', notes: 'Full responsive lockup with begin/end transitions' },
+  { kyberstationEffect: 'blast', boardEffectName: 'BlastL', configParam: 'EFFECT_BLAST', notes: 'Randomized blast deflection with fade' },
+  { kyberstationEffect: 'drag', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_DRAG', notes: 'Drag effect via LockupTrL with drag lockup type' },
+  { kyberstationEffect: 'melt', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_MELT', notes: 'Melt tip effect with responsive intensity' },
+  { kyberstationEffect: 'lightning', boardEffectName: 'LockupTrL', configParam: 'LOCKUP_LIGHTNING_BLOCK', notes: 'Lightning block with animated effect' },
+  { kyberstationEffect: 'stab', boardEffectName: 'StabL', configParam: 'EFFECT_STAB', notes: 'Stab effect with tip-localized flash' },
+  { kyberstationEffect: 'force', boardEffectName: 'AlphaL', configParam: 'EFFECT_FORCE', notes: 'Force effect via custom layer or transition' },
 ];
 
 const PROFFIE_STYLES: BoardProfile['supportedStyles'] = [
-  { bladeforgeStyle: 'stable', boardStyleName: 'Rgb', configMapping: { template: 'Layers<Rgb<{r},{g},{b}>,...>' }, notes: 'Solid color base layer' },
-  { bladeforgeStyle: 'unstable', boardStyleName: 'AudioFlicker', configMapping: { template: 'AudioFlicker<{color1},{color2}>' }, notes: 'Audio-responsive flickering' },
-  { bladeforgeStyle: 'fire', boardStyleName: 'StyleFire', configMapping: { template: 'StyleFire<{color1},{color2},{delay},{sparkle}>' }, notes: 'Animated fire effect' },
-  { bladeforgeStyle: 'rotoscope', boardStyleName: 'Stripes', configMapping: { template: 'Stripes<{width},{speed},{color1},{color2},{color3}>' }, notes: 'Scrolling stripe patterns' },
-  { bladeforgeStyle: 'pulse', boardStyleName: 'Pulsing', configMapping: { template: 'Pulsing<{color1},{color2},{period}>' }, notes: 'Smooth color pulsing' },
-  { bladeforgeStyle: 'gradient', boardStyleName: 'Gradient', configMapping: { template: 'Gradient<{color1},{color2}>' }, notes: 'Static color gradient' },
-  { bladeforgeStyle: 'photon', boardStyleName: 'Mix', configMapping: { template: 'Mix<{f},{color1},{color2}>' }, notes: 'Custom mix-based photon effect' },
-  { bladeforgeStyle: 'plasma', boardStyleName: 'RandomFlicker', configMapping: { template: 'RandomFlicker<{color1},{color2}>' }, notes: 'Plasma-like random flicker' },
-  { bladeforgeStyle: 'crystal-shatter', boardStyleName: 'Strobe', configMapping: { template: 'Strobe<{color1},{color2},{frequency},{duration}>' }, notes: 'Shatter strobe effect' },
-  { bladeforgeStyle: 'aurora', boardStyleName: 'Rainbow', configMapping: { template: 'Rainbow' }, notes: 'Full spectrum color cycling' },
-  { bladeforgeStyle: 'cinder', boardStyleName: 'StyleFire', configMapping: { template: 'StyleFire<{color1},{color2},{delay},{sparkle}>' }, notes: 'Ember/cinder variant of fire' },
-  { bladeforgeStyle: 'prism', boardStyleName: 'RotateColorsX', configMapping: { template: 'RotateColorsX<Variation,Rainbow>' }, notes: 'Rotating prismatic rainbow' },
+  { kyberstationStyle: 'stable', boardStyleName: 'Rgb', configMapping: { template: 'Layers<Rgb<{r},{g},{b}>,...>' }, notes: 'Solid color base layer' },
+  { kyberstationStyle: 'unstable', boardStyleName: 'AudioFlicker', configMapping: { template: 'AudioFlicker<{color1},{color2}>' }, notes: 'Audio-responsive flickering' },
+  { kyberstationStyle: 'fire', boardStyleName: 'StyleFire', configMapping: { template: 'StyleFire<{color1},{color2},{delay},{sparkle}>' }, notes: 'Animated fire effect' },
+  { kyberstationStyle: 'rotoscope', boardStyleName: 'Stripes', configMapping: { template: 'Stripes<{width},{speed},{color1},{color2},{color3}>' }, notes: 'Scrolling stripe patterns' },
+  { kyberstationStyle: 'pulse', boardStyleName: 'Pulsing', configMapping: { template: 'Pulsing<{color1},{color2},{period}>' }, notes: 'Smooth color pulsing' },
+  { kyberstationStyle: 'gradient', boardStyleName: 'Gradient', configMapping: { template: 'Gradient<{color1},{color2}>' }, notes: 'Static color gradient' },
+  { kyberstationStyle: 'photon', boardStyleName: 'Mix', configMapping: { template: 'Mix<{f},{color1},{color2}>' }, notes: 'Custom mix-based photon effect' },
+  { kyberstationStyle: 'plasma', boardStyleName: 'RandomFlicker', configMapping: { template: 'RandomFlicker<{color1},{color2}>' }, notes: 'Plasma-like random flicker' },
+  { kyberstationStyle: 'crystal-shatter', boardStyleName: 'Strobe', configMapping: { template: 'Strobe<{color1},{color2},{frequency},{duration}>' }, notes: 'Shatter strobe effect' },
+  { kyberstationStyle: 'aurora', boardStyleName: 'Rainbow', configMapping: { template: 'Rainbow' }, notes: 'Full spectrum color cycling' },
+  { kyberstationStyle: 'cinder', boardStyleName: 'StyleFire', configMapping: { template: 'StyleFire<{color1},{color2},{delay},{sparkle}>' }, notes: 'Ember/cinder variant of fire' },
+  { kyberstationStyle: 'prism', boardStyleName: 'RotateColorsX', configMapping: { template: 'RotateColorsX<Variation,Rainbow>' }, notes: 'Rotating prismatic rainbow' },
 ];
 
 const PROFFIE_TERMINOLOGY: BoardProfile['terminology'] = {

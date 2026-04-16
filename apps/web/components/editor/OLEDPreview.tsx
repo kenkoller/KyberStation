@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
-import type { OLEDResolution } from '@bladeforge/engine';
+import type { OLEDResolution } from '@kyberstation/engine';
 
 // ─── 5x7 Bitmap Font ───
 // Each character is a 5-wide x 7-tall boolean grid stored as rows of bitmask integers.
@@ -230,7 +230,7 @@ function fillRect(buf: PixelBuffer, x: number, y: number, w: number, h: number):
 // ─── Screen Renderers ───
 
 function renderBootScreen(buf: PixelBuffer, _t: number): void {
-  drawTextCentered5x7(buf, 'BLADEFORGE', 5);
+  drawTextCentered5x7(buf, 'KYBERSTATION', 5);
   drawTextCentered3x5(buf, 'V1.0', 18);
   // decorative line
   drawHLine(buf, 24, 103, 26);

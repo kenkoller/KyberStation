@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { FontPlayer, SmoothSwingEngine, AudioFilterChain, parseFileList, extractFontName, decodeFilesByCategory } from '@bladeforge/sound';
-import type { FontManifest } from '@bladeforge/sound';
+import { FontPlayer, SmoothSwingEngine, AudioFilterChain, parseFileList, extractFontName, decodeFilesByCategory } from '@kyberstation/sound';
+import type { FontManifest } from '@kyberstation/sound';
 import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { saveFontToDB, loadFontFromDB, getLastUsedFontName } from '@/lib/fontDB';
@@ -136,10 +136,6 @@ export function useAudioEngine() {
     }
   }, []);
 
-  const toggleMute = useCallback(() => {
-    setMuted(!mutedRef.current);
-  }, [setMuted]);
-
   // Initialize on first user gesture (AudioContext requires it)
   const ensureInit = useCallback(() => {
     if (initializedRef.current) return true;
@@ -180,6 +176,13 @@ export function useAudioEngine() {
       return false;
     }
   }, []);
+
+  const toggleMute = useCallback(() => {
+    const newMuted = !mutedRef.current;
+    // Ensure the AudioContext exists so the gain node can be set
+    ensureInit();
+    setMuted(newMuted);
+  }, [setMuted, ensureInit]);
 
   /**
    * Get a buffer for a sound event — prefers real font buffers, falls back to synthetic.

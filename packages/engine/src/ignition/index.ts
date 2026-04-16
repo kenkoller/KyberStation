@@ -21,6 +21,12 @@ import { FlashFillIgnition } from './FlashFillIgnition.js';
 import { PulseWaveIgnition } from './PulseWaveIgnition.js';
 import { DripUpIgnition } from './DripUpIgnition.js';
 import { DrainRetraction } from './DrainRetraction.js';
+import { ImplodeRetraction } from './ImplodeRetraction.js';
+import { EvaporateRetraction } from './EvaporateRetraction.js';
+import { SpaghettifyRetraction } from './SpaghettifyRetraction.js';
+import { HyperspaceIgnition } from './HyperspaceIgnition.js';
+import { SummonIgnition } from './SummonIgnition.js';
+import { SeismicIgnition } from './SeismicIgnition.js';
 
 export { BaseIgnition } from './BaseIgnition.js';
 export { StandardIgnition } from './StandardIgnition.js';
@@ -45,6 +51,12 @@ export { FlashFillIgnition } from './FlashFillIgnition.js';
 export { PulseWaveIgnition } from './PulseWaveIgnition.js';
 export { DripUpIgnition } from './DripUpIgnition.js';
 export { DrainRetraction } from './DrainRetraction.js';
+export { ImplodeRetraction } from './ImplodeRetraction.js';
+export { EvaporateRetraction } from './EvaporateRetraction.js';
+export { SpaghettifyRetraction } from './SpaghettifyRetraction.js';
+export { HyperspaceIgnition } from './HyperspaceIgnition.js';
+export { SummonIgnition } from './SummonIgnition.js';
+export { SeismicIgnition } from './SeismicIgnition.js';
 
 /** Registry mapping ignition style IDs to their constructors. */
 export const IGNITION_REGISTRY: Record<string, () => IgnitionAnimation> = {
@@ -64,6 +76,9 @@ export const IGNITION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   'flash-fill': () => new FlashFillIgnition(),
   'pulse-wave': () => new PulseWaveIgnition(),
   'drip-up': () => new DripUpIgnition(),
+  hyperspace: () => new HyperspaceIgnition(),
+  summon: () => new SummonIgnition(),
+  seismic: () => new SeismicIgnition(),
 };
 
 /** Registry mapping retraction style IDs to their constructors. */
@@ -78,6 +93,9 @@ export const RETRACTION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   flickerOut: () => new FlickerOutRetraction(),
   unravel: () => new UnravelRetraction(),
   drain: () => new DrainRetraction(),
+  implode: () => new ImplodeRetraction(),
+  evaporate: () => new EvaporateRetraction(),
+  spaghettify: () => new SpaghettifyRetraction(),
 };
 
 /** Create a new ignition animation instance by ID. */

@@ -1,40 +1,40 @@
 import type { BoardProfile } from '../types.js';
 
 const XENOPIXEL_EFFECTS_V2: BoardProfile['supportedEffects'] = [
-  { bladeforgeEffect: 'clash', boardEffectName: 'clash', notes: 'Basic clash flash, color not customizable' },
-  { bladeforgeEffect: 'lockup', boardEffectName: 'lockup', notes: 'Basic lockup flicker, firmware-defined' },
-  { bladeforgeEffect: 'blast', boardEffectName: 'blast', notes: 'Basic blast flash, firmware-defined' },
-  { bladeforgeEffect: 'drag', boardEffectName: null, notes: 'Drag not supported on Xenopixel V2' },
-  { bladeforgeEffect: 'melt', boardEffectName: null, notes: 'Melt not supported on Xenopixel V2' },
-  { bladeforgeEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on Xenopixel V2' },
-  { bladeforgeEffect: 'stab', boardEffectName: null, notes: 'Stab not supported on Xenopixel V2' },
-  { bladeforgeEffect: 'force', boardEffectName: null, notes: 'Force effect not supported on Xenopixel V2' },
+  { kyberstationEffect: 'clash', boardEffectName: 'clash', notes: 'Basic clash flash, color not customizable' },
+  { kyberstationEffect: 'lockup', boardEffectName: 'lockup', notes: 'Basic lockup flicker, firmware-defined' },
+  { kyberstationEffect: 'blast', boardEffectName: 'blast', notes: 'Basic blast flash, firmware-defined' },
+  { kyberstationEffect: 'drag', boardEffectName: null, notes: 'Drag not supported on Xenopixel V2' },
+  { kyberstationEffect: 'melt', boardEffectName: null, notes: 'Melt not supported on Xenopixel V2' },
+  { kyberstationEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on Xenopixel V2' },
+  { kyberstationEffect: 'stab', boardEffectName: null, notes: 'Stab not supported on Xenopixel V2' },
+  { kyberstationEffect: 'force', boardEffectName: null, notes: 'Force effect not supported on Xenopixel V2' },
 ];
 
 const XENOPIXEL_EFFECTS_V3: BoardProfile['supportedEffects'] = [
-  { bladeforgeEffect: 'clash', boardEffectName: 'clash', notes: 'Clash flash with improved animation' },
-  { bladeforgeEffect: 'lockup', boardEffectName: 'lockup', notes: 'Lockup flicker effect' },
-  { bladeforgeEffect: 'blast', boardEffectName: 'blast', notes: 'Blast deflection flash' },
-  { bladeforgeEffect: 'drag', boardEffectName: 'drag', notes: 'Basic drag effect on V3' },
-  { bladeforgeEffect: 'melt', boardEffectName: null, notes: 'Melt not supported on Xenopixel V3' },
-  { bladeforgeEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on Xenopixel V3' },
-  { bladeforgeEffect: 'stab', boardEffectName: 'stab', notes: 'Basic stab effect on V3' },
-  { bladeforgeEffect: 'force', boardEffectName: null, notes: 'Force effect not supported on Xenopixel V3' },
+  { kyberstationEffect: 'clash', boardEffectName: 'clash', notes: 'Clash flash with improved animation' },
+  { kyberstationEffect: 'lockup', boardEffectName: 'lockup', notes: 'Lockup flicker effect' },
+  { kyberstationEffect: 'blast', boardEffectName: 'blast', notes: 'Blast deflection flash' },
+  { kyberstationEffect: 'drag', boardEffectName: 'drag', notes: 'Basic drag effect on V3' },
+  { kyberstationEffect: 'melt', boardEffectName: null, notes: 'Melt not supported on Xenopixel V3' },
+  { kyberstationEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not supported on Xenopixel V3' },
+  { kyberstationEffect: 'stab', boardEffectName: 'stab', notes: 'Basic stab effect on V3' },
+  { kyberstationEffect: 'force', boardEffectName: null, notes: 'Force effect not supported on Xenopixel V3' },
 ];
 
 const XENOPIXEL_STYLES: BoardProfile['supportedStyles'] = [
-  { bladeforgeStyle: 'stable', boardStyleName: 'solid', notes: 'Solid blade color — primary Xenopixel mode' },
-  { bladeforgeStyle: 'unstable', boardStyleName: 'solid', notes: 'Xenopixel has no unstable mode; mapped to solid color' },
-  { bladeforgeStyle: 'fire', boardStyleName: 'solid', notes: 'No fire effect; mapped to solid color' },
-  { bladeforgeStyle: 'rotoscope', boardStyleName: 'solid', notes: 'No rotoscope; mapped to solid color' },
-  { bladeforgeStyle: 'pulse', boardStyleName: 'solid', notes: 'No pulse mode; mapped to solid color' },
-  { bladeforgeStyle: 'gradient', boardStyleName: 'solid', notes: 'No gradient; mapped to solid color' },
-  { bladeforgeStyle: 'photon', boardStyleName: 'solid', notes: 'No photon effect; mapped to solid color' },
-  { bladeforgeStyle: 'plasma', boardStyleName: 'solid', notes: 'No plasma effect; mapped to solid color' },
-  { bladeforgeStyle: 'crystal-shatter', boardStyleName: 'solid', notes: 'No crystal-shatter; mapped to solid color' },
-  { bladeforgeStyle: 'aurora', boardStyleName: 'solid', notes: 'No aurora; mapped to solid color' },
-  { bladeforgeStyle: 'cinder', boardStyleName: 'solid', notes: 'No cinder; mapped to solid color' },
-  { bladeforgeStyle: 'prism', boardStyleName: 'solid', notes: 'No prism; mapped to solid color' },
+  { kyberstationStyle: 'stable', boardStyleName: 'solid', notes: 'Solid blade color — primary Xenopixel mode' },
+  { kyberstationStyle: 'unstable', boardStyleName: 'solid', notes: 'Xenopixel has no unstable mode; mapped to solid color' },
+  { kyberstationStyle: 'fire', boardStyleName: 'solid', notes: 'No fire effect; mapped to solid color' },
+  { kyberstationStyle: 'rotoscope', boardStyleName: 'solid', notes: 'No rotoscope; mapped to solid color' },
+  { kyberstationStyle: 'pulse', boardStyleName: 'solid', notes: 'No pulse mode; mapped to solid color' },
+  { kyberstationStyle: 'gradient', boardStyleName: 'solid', notes: 'No gradient; mapped to solid color' },
+  { kyberstationStyle: 'photon', boardStyleName: 'solid', notes: 'No photon effect; mapped to solid color' },
+  { kyberstationStyle: 'plasma', boardStyleName: 'solid', notes: 'No plasma effect; mapped to solid color' },
+  { kyberstationStyle: 'crystal-shatter', boardStyleName: 'solid', notes: 'No crystal-shatter; mapped to solid color' },
+  { kyberstationStyle: 'aurora', boardStyleName: 'solid', notes: 'No aurora; mapped to solid color' },
+  { kyberstationStyle: 'cinder', boardStyleName: 'solid', notes: 'No cinder; mapped to solid color' },
+  { kyberstationStyle: 'prism', boardStyleName: 'solid', notes: 'No prism; mapped to solid color' },
 ];
 
 const XENOPIXEL_TERMINOLOGY: BoardProfile['terminology'] = {

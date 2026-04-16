@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useTimelineStore } from '@/stores/timelineStore';
 import { useBladeStore } from '@/stores/bladeStore';
-import { EASING_PRESETS } from '@bladeforge/engine';
+import { EASING_PRESETS } from '@kyberstation/engine';
 
 /**
  * Orchestrates timeline playback by advancing currentTime each frame

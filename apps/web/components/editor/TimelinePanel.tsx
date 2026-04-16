@@ -7,7 +7,7 @@ import {
   ANIMATION_TEMPLATES,
   getCategories,
   getTemplatesByCategory,
-} from '@bladeforge/engine';
+} from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 const EASING_OPTIONS: EasingCurve[] = [
@@ -300,8 +300,8 @@ export function TimelinePanel() {
       {/* Header: title + duration */}
       <div className="flex items-center justify-between">
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
-          Sequencer
-          <HelpTooltip text="Choreograph a sequence of blade effects over time. Click the track to place events, drag to reposition, resize from the right edge. Use templates below for preset combos. See also: Effect Panel for individual effect settings." />
+          Effect Sequencer
+          <HelpTooltip text="Choreograph a timed sequence of blade effects (clash, blast, lockup, etc.) for demo playback. Place events on the timeline, press Play, and watch them fire on the blade preview in real time. Great for rehearsing choreography or recording demo videos. Click the track to add events, drag to reposition, resize from the right edge." />
         </h3>
         <div className="flex items-center gap-2">
           <label htmlFor="timeline-duration" className="text-ui-sm text-text-muted">Duration</label>
@@ -321,6 +321,12 @@ export function TimelinePanel() {
           <span className="text-ui-sm text-text-muted">s</span>
         </div>
       </div>
+
+      {/* Description */}
+      <p className="text-ui-xs text-text-muted -mt-1">
+        Schedule blade effects on a timeline for choreographed demo playback.
+        Press Play to fire each effect on the blade preview in sequence.
+      </p>
 
       {/* Playback controls */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -460,6 +466,17 @@ export function TimelinePanel() {
                   style={{ left: `${timeToX(tick.time)}px` }}
                 />
               ))}
+
+            {/* Empty-state guide */}
+            {events.length === 0 && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                <span className="text-ui-sm text-text-muted/60 font-medium">No events yet</span>
+                <span className="text-ui-xs text-text-muted/40 text-center max-w-[260px] leading-relaxed">
+                  Click anywhere on this track to place a blade effect (clash, blast, lockup, etc.),
+                  or expand Animation Templates below to drop a preset combo.
+                </span>
+              </div>
+            )}
 
             {/* Event blocks */}
             {events.map((evt) => {
@@ -707,8 +724,12 @@ export function TimelinePanel() {
 
       {/* Event count hint */}
       <div className="flex items-center justify-between text-ui-xs text-text-muted">
-        <span>{events.length} event{events.length !== 1 ? 's' : ''} — click track to add, or drop a template</span>
-        <span>drag to reposition</span>
+        <span>
+          {events.length === 0
+            ? 'Click the track above to place your first effect, or use a template'
+            : `${events.length} event${events.length !== 1 ? 's' : ''} \u2014 click track to add, drag to reposition, Delete key to remove`}
+        </span>
+        {events.length > 0 && <span>drag right edge to resize</span>}
       </div>
     </div>
   );
@@ -757,7 +778,7 @@ function TemplatePalette() {
     [currentTime, addEventGroup],
   );
 
-  const templates = getTemplatesByCategory(activeCategory as import('@bladeforge/engine').AnimationCategory);
+  const templates = getTemplatesByCategory(activeCategory as import('@kyberstation/engine').AnimationCategory);
 
   return (
     <div>

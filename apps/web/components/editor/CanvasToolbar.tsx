@@ -12,6 +12,18 @@ const IGNITION_STYLES = [
   { id: 'wipe', label: 'Wipe' },
   { id: 'stutter', label: 'Stutter' },
   { id: 'glitch', label: 'Glitch' },
+  { id: 'twist', label: 'Twist' },
+  { id: 'swing', label: 'Swing' },
+  { id: 'stab', label: 'Stab' },
+  { id: 'crackle', label: 'Crackle' },
+  { id: 'fracture', label: 'Fracture' },
+  { id: 'flash-fill', label: 'Flash Fill' },
+  { id: 'pulse-wave', label: 'Pulse Wave' },
+  { id: 'drip-up', label: 'Drip Up' },
+  { id: 'hyperspace', label: 'Hyperspace' },
+  { id: 'summon', label: 'Summon' },
+  { id: 'seismic', label: 'Seismic' },
+  { id: 'custom-curve', label: 'Custom Curve' },
 ];
 
 const RETRACTION_STYLES = [
@@ -20,6 +32,14 @@ const RETRACTION_STYLES = [
   { id: 'fadeout', label: 'Fade Out' },
   { id: 'center', label: 'Center In' },
   { id: 'shatter', label: 'Shatter' },
+  { id: 'dissolve', label: 'Dissolve' },
+  { id: 'flickerOut', label: 'Flicker Out' },
+  { id: 'unravel', label: 'Unravel' },
+  { id: 'drain', label: 'Drain' },
+  { id: 'implode', label: 'Implode' },
+  { id: 'evaporate', label: 'Evaporate' },
+  { id: 'spaghettify', label: 'Spaghettify' },
+  { id: 'custom-curve', label: 'Custom Curve' },
 ];
 
 const STYLE_OPTIONS = [
@@ -35,6 +55,21 @@ const STYLE_OPTIONS = [
   { id: 'aurora', label: 'Aurora' },
   { id: 'cinder', label: 'Cinder' },
   { id: 'prism', label: 'Prism' },
+  { id: 'dataStream', label: 'Data Stream' },
+  { id: 'gravity', label: 'Gravity' },
+  { id: 'ember', label: 'Ember' },
+  { id: 'automata', label: 'Automata' },
+  { id: 'helix', label: 'Helix' },
+  { id: 'candle', label: 'Candle' },
+  { id: 'shatter', label: 'Shatter' },
+  { id: 'neutron', label: 'Neutron' },
+  { id: 'torrent', label: 'Torrent' },
+  { id: 'moire', label: 'Moir\u00e9' },
+  { id: 'cascade', label: 'Cascade' },
+  { id: 'vortex', label: 'Vortex' },
+  { id: 'nebula', label: 'Nebula' },
+  { id: 'tidal', label: 'Tidal' },
+  { id: 'mirage', label: 'Mirage' },
 ];
 
 function rgbToHex(r: number, g: number, b: number): string {

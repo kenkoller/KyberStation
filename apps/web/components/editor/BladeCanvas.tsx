@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
-import type { BladeEngine, BladeConfig } from '@bladeforge/engine';
-import { TOPOLOGY_PRESETS } from '@bladeforge/engine';
+import type { BladeEngine, BladeConfig } from '@kyberstation/engine';
+import { TOPOLOGY_PRESETS } from '@kyberstation/engine';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';

@@ -1,4 +1,4 @@
-import type { BladeConfig, RGB } from '@bladeforge/engine';
+import type { BladeConfig, RGB } from '@kyberstation/engine';
 import { validateBladeConfig } from './bladeConfigIO';
 
 // Short key mapping for compact URL encoding

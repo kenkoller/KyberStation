@@ -19,6 +19,21 @@ const BLADE_STYLES = [
   { id: 'aurora', label: 'Aurora' },
   { id: 'cinder', label: 'Cinder' },
   { id: 'prism', label: 'Prism' },
+  { id: 'dataStream', label: 'Data Stream' },
+  { id: 'gravity', label: 'Gravity' },
+  { id: 'ember', label: 'Ember' },
+  { id: 'automata', label: 'Automata' },
+  { id: 'helix', label: 'Helix' },
+  { id: 'candle', label: 'Candle' },
+  { id: 'shatter', label: 'Shatter' },
+  { id: 'neutron', label: 'Neutron' },
+  { id: 'torrent', label: 'Torrent' },
+  { id: 'moire', label: 'Moir\u00e9' },
+  { id: 'cascade', label: 'Cascade' },
+  { id: 'vortex', label: 'Vortex' },
+  { id: 'nebula', label: 'Nebula' },
+  { id: 'tidal', label: 'Tidal' },
+  { id: 'mirage', label: 'Mirage' },
 ];
 
 const EFFECT_TYPES = [
@@ -30,6 +45,19 @@ const EFFECT_TYPES = [
   { id: 'lightning', label: 'Lightning Block' },
   { id: 'stab', label: 'Stab Flash' },
   { id: 'force', label: 'Force Effect' },
+  { id: 'shockwave', label: 'Shockwave' },
+  { id: 'scatter', label: 'Scatter Burst' },
+  { id: 'fragment', label: 'Fragment' },
+  { id: 'ripple', label: 'Ripple Waves' },
+  { id: 'freeze', label: 'Freeze Crystal' },
+  { id: 'overcharge', label: 'Overcharge' },
+  { id: 'bifurcate', label: 'Bifurcate' },
+  { id: 'invert', label: 'Invert' },
+  { id: 'preon', label: 'Preon' },
+  { id: 'postoff', label: 'Post-Off' },
+  { id: 'emitter', label: 'Emitter' },
+  { id: 'rain', label: 'Rain' },
+  { id: 'fire', label: 'Fire Distortion' },
 ];
 
 const BLEND_MODES: Array<{ id: BlendMode; label: string }> = [
@@ -166,20 +194,23 @@ function BaseLayerConfig({ layerId }: { layerId: string }) {
         <label className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block">
           Style
         </label>
-        <div className="grid grid-cols-3 gap-1">
-          {BLADE_STYLES.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => updateConfig(layerId, { style: s.id })}
-              className={`px-2 py-1 rounded text-ui-sm border transition-colors ${
-                style === s.id
-                  ? 'border-accent bg-accent-dim text-accent'
-                  : 'border-border-subtle bg-bg-deep text-text-secondary hover:border-border-light'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className="max-h-[200px] overflow-y-auto rounded border border-border-subtle/50">
+          <div className="grid grid-cols-3 gap-1 p-1">
+            {BLADE_STYLES.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => updateConfig(layerId, { style: s.id })}
+                className={`px-1.5 py-0.5 rounded text-ui-xs border transition-colors truncate ${
+                  style === s.id
+                    ? 'border-accent bg-accent-dim text-accent'
+                    : 'border-border-subtle bg-bg-deep text-text-secondary hover:border-border-light'
+                }`}
+                title={s.label}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       {/* Color */}

@@ -1,4 +1,4 @@
-# Contributing to BladeForge
+# Contributing to KyberStation
 
 ## Getting Started
 

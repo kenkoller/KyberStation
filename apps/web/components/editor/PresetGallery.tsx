@@ -4,7 +4,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
 import { useAudioFontStore } from '@/stores/audioFontStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, downloadCollection, readCollectionFile } from '@/lib/bladeConfigIO';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
 import { playUISound } from '@/lib/uiSounds';
@@ -20,8 +20,8 @@ import {
   EXTENDED_UNIVERSE_PRESETS,
   LEGENDS_PRESETS,
   CREATIVE_COMMUNITY_PRESETS,
-} from '@bladeforge/presets';
-import type { Preset, Era, Affiliation } from '@bladeforge/presets';
+} from '@kyberstation/presets';
+import type { Preset, Era, Affiliation } from '@kyberstation/presets';
 
 // ─── Constants ───
 
@@ -591,7 +591,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
       const currentFont = useAudioFontStore.getState().fontName;
       if (currentFont !== preset.fontAssociation) {
         try {
-          const { loadFontFromDirectoryHandle, parseFileList, decodeFilesByCategory } = await import('@bladeforge/sound');
+          const { loadFontFromDirectoryHandle, parseFileList, decodeFilesByCategory } = await import('@kyberstation/sound');
           const files = await loadFontFromDirectoryHandle(libraryHandle, preset.fontAssociation);
           if (files.length > 0) {
             // Use the same loadFont path from audioEngine
@@ -799,7 +799,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
             >
               Import
             </button>
-            <HelpTooltip text="Export all presets as a .bladeforge-collection.json file, or import a collection to merge into your library." />
+            <HelpTooltip text="Export all presets as a .kyberstation-collection.json file, or import a collection to merge into your library." />
             <input ref={collectionImportRef} type="file" accept=".json" onChange={handleCollectionImport} className="hidden" />
           </div>
           {allTags.length > 0 && (

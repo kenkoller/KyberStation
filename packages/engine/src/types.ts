@@ -50,7 +50,13 @@ export type EffectType =
   | 'ripple'
   | 'freeze'
   | 'overcharge'
-  | 'bifurcate';
+  | 'bifurcate'
+  | 'invert'
+  | 'ghostEcho'
+  | 'splinter'
+  | 'coronary'
+  | 'glitchMatrix'
+  | 'siphon';
 
 export interface EffectParams {
   position?: number; // 0-1, where on the blade the effect occurs

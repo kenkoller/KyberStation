@@ -1,5 +1,6 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface HelpTooltipProps {
   /** Short explanation of the control */
@@ -10,13 +11,78 @@ interface HelpTooltipProps {
   position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
+/** Viewport padding — tooltips stay this far from screen edges */
+const VP_PAD = 8;
+
+/** Calculate tooltip position in fixed/viewport coordinates, auto-flipping and shifting to stay in view */
+function calcTooltipPosition(
+  triggerRect: DOMRect,
+  tooltipEl: HTMLElement,
+  preferred: 'top' | 'bottom' | 'left' | 'right',
+): { top: number; left: number; resolved: 'top' | 'bottom' | 'left' | 'right' } {
+  const tw = tooltipEl.offsetWidth;
+  const th = tooltipEl.offsetHeight;
+  const gap = 8; // space between trigger and tooltip
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Center of trigger
+  const cx = triggerRect.left + triggerRect.width / 2;
+  const cy = triggerRect.top + triggerRect.height / 2;
+
+  let resolved = preferred;
+  let top = 0;
+  let left = 0;
+
+  // Try preferred axis, flip if it overflows
+  if (resolved === 'top') {
+    top = triggerRect.top - th - gap;
+    if (top < VP_PAD) resolved = 'bottom';
+  } else if (resolved === 'bottom') {
+    top = triggerRect.bottom + gap;
+    if (top + th > vh - VP_PAD) resolved = 'top';
+  } else if (resolved === 'left') {
+    left = triggerRect.left - tw - gap;
+    if (left < VP_PAD) resolved = 'right';
+  } else if (resolved === 'right') {
+    left = triggerRect.right + gap;
+    if (left + tw > vw - VP_PAD) resolved = 'left';
+  }
+
+  // Compute position based on resolved side
+  if (resolved === 'top') {
+    top = triggerRect.top - th - gap;
+    left = cx - tw / 2;
+  } else if (resolved === 'bottom') {
+    top = triggerRect.bottom + gap;
+    left = cx - tw / 2;
+  } else if (resolved === 'left') {
+    left = triggerRect.left - tw - gap;
+    top = cy - th / 2;
+  } else {
+    left = triggerRect.right + gap;
+    top = cy - th / 2;
+  }
+
+  // Clamp so the tooltip never overflows the viewport
+  left = Math.max(VP_PAD, Math.min(left, vw - tw - VP_PAD));
+  top = Math.max(VP_PAD, Math.min(top, vh - th - VP_PAD));
+
+  return { top, left, resolved };
+}
+
 export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProps) {
   const [visible, setVisible] = useState(false);
-  const [resolvedPos, setResolvedPos] = useState(position);
+  const [pos, setPos] = useState<{ top: number; left: number; resolved: string }>({ top: 0, left: 0, resolved: position });
   const tooltipRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Wait for client mount so createPortal has a target
+  useEffect(() => { setMounted(true); }, []);
 
   const clearTimers = useCallback(() => {
     if (showTimer.current) { clearTimeout(showTimer.current); showTimer.current = null; }
@@ -25,7 +91,7 @@ export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProp
 
   const show = useCallback(() => {
     clearTimers();
-    showTimer.current = setTimeout(() => setVisible(true), 250);
+    showTimer.current = setTimeout(() => setVisible(true), 550);
   }, [clearTimers]);
 
   const hide = useCallback(() => {
@@ -56,28 +122,15 @@ export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProp
     return () => document.removeEventListener('mousedown', handler);
   }, [visible, clearTimers]);
 
-  // Auto-flip position when tooltip clips viewport
-  useEffect(() => {
-    if (!visible || !tooltipRef.current) { setResolvedPos(position); return; }
-    const rect = tooltipRef.current.getBoundingClientRect();
-    const pad = 8;
-    let next = position;
-    if (position === 'top' && rect.top < pad) next = 'bottom';
-    else if (position === 'bottom' && rect.bottom > window.innerHeight - pad) next = 'top';
-    else if (position === 'left' && rect.left < pad) next = 'right';
-    else if (position === 'right' && rect.right > window.innerWidth - pad) next = 'left';
-    if (next !== resolvedPos) setResolvedPos(next);
-  }, [visible, position, resolvedPos]);
+  // Position the tooltip in viewport coordinates whenever it becomes visible
+  useLayoutEffect(() => {
+    if (!visible || !tooltipRef.current || !triggerRef.current) return;
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    setPos(calcTooltipPosition(triggerRect, tooltipRef.current, position));
+  }, [visible, position]);
 
   // Cleanup timers on unmount
   useEffect(() => clearTimers, [clearTimers]);
-
-  const positionClasses: Record<string, string> = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
-  };
 
   const originClasses: Record<string, string> = {
     top: 'origin-bottom',
@@ -85,6 +138,35 @@ export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProp
     left: 'origin-right',
     right: 'origin-left',
   };
+
+  const tooltipContent = (
+    <div
+      ref={tooltipRef}
+      id="help-tooltip"
+      role="tooltip"
+      onMouseEnter={() => { clearTimers(); setVisible(true); }}
+      onMouseLeave={hide}
+      style={{
+        position: 'fixed',
+        top: pos.top,
+        left: pos.left,
+        zIndex: 9999,
+      }}
+      className={`w-56 max-w-[75vw] p-2.5 rounded-lg bg-bg-card border border-border-light shadow-xl
+        transition-all duration-150 ease-out ${originClasses[pos.resolved] ?? 'origin-bottom'}
+        ${visible
+          ? 'opacity-100 scale-100 pointer-events-auto'
+          : 'opacity-0 scale-95 pointer-events-none'
+        }`}
+    >
+      <p className="text-ui-sm text-text-secondary leading-relaxed">{text}</p>
+      {proffie && (
+        <p className="mt-1.5 text-ui-xs text-accent/70 font-mono leading-snug border-t border-border-subtle pt-1.5">
+          ProffieOS: {proffie}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <span className="relative inline-flex items-center">
@@ -101,26 +183,7 @@ export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProp
       >
         ?
       </button>
-      <div
-        ref={tooltipRef}
-        id="help-tooltip"
-        role="tooltip"
-        onMouseEnter={() => { clearTimers(); setVisible(true); }}
-        onMouseLeave={hide}
-        className={`absolute z-50 ${positionClasses[resolvedPos]} w-56 max-w-[75vw] p-2.5 rounded-lg bg-bg-card border border-border-light shadow-xl
-          transition-all duration-150 ease-out ${originClasses[resolvedPos]}
-          ${visible
-            ? 'opacity-100 scale-100 pointer-events-auto'
-            : 'opacity-0 scale-95 pointer-events-none'
-          }`}
-      >
-        <p className="text-ui-sm text-text-secondary leading-relaxed">{text}</p>
-        {proffie && (
-          <p className="mt-1.5 text-ui-xs text-accent/70 font-mono leading-snug border-t border-border-subtle pt-1.5">
-            ProffieOS: {proffie}
-          </p>
-        )}
-      </div>
+      {mounted ? createPortal(tooltipContent, document.body) : tooltipContent}
     </span>
   );
 }

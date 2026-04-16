@@ -3,14 +3,14 @@
 ## Motivation
 
 Sound fonts are an integral part of the lightsaber experience — the visual blade style
-and the sound font together define a saber's character. BladeForge currently handles
+and the sound font together define a saber's character. KyberStation currently handles
 fonts as one-at-a-time drag-drop imports with no persistent library. It also lacks a
 way for users to save their own customized presets alongside the built-in canonical ones,
 or to compose curated "card presets" — complete SD card configurations assembled from
 a mix of built-in and personal presets paired with specific fonts.
 
 This spec covers three tightly related features:
-1. **Sound Font Library Browser** — point BladeForge at your local font collection,
+1. **Sound Font Library Browser** — point KyberStation at your local font collection,
    browse and switch fonts instantly, and associate fonts with presets.
 2. **Custom User Presets** — save your current editor state as a named personal preset,
    organize a personal collection, and pair presets with fonts from your library.
@@ -25,7 +25,7 @@ This spec covers three tightly related features:
 
 - `SoundFontPanel.tsx` — single font drag-drop import, playback buttons, EQ/effects mixer
 - `audioFontStore.ts` — Zustand store holding one active font's decoded AudioBuffers
-- `fontDB.ts` — IndexedDB persistence via Dexie (`bladeforge-fonts` database), stores
+- `fontDB.ts` — IndexedDB persistence via Dexie (`kyberstation-fonts` database), stores
   individual fonts by name with raw ArrayBuffer audio data, tracks last-used font name
 - `FontParser.ts` — parses a FileList into a FontManifest, categorizes WAVs by ProffieOS
   naming convention (`clsh`, `swng`, `blst`, etc.), also detects CFX naming. Detects
@@ -153,7 +153,7 @@ If unsupported:
   localStorage. Each entry has: id, presetName, fontName, config (full BladeConfig),
   optional sourcePresetId. This is effectively an export queue for generating the
   ProffieOS config file, NOT a personal preset library.
-- `bladeConfigIO.ts` — export config as `.bladeforge.json` file download, import from
+- `bladeConfigIO.ts` — export config as `.kyberstation.json` file download, import from
   file. Also has `encodeConfig()`/`buildShareUrl()` for share links.
 - `bladeStore.ts` — the active editor state (current BladeConfig being edited)
 
@@ -218,7 +218,7 @@ interface UserPresetStore {
 
 **Persistence**: Store in IndexedDB via Dexie (not localStorage — user preset collections
 can grow large with thumbnail data). Add a `userPresets` table to the existing
-`BladeForgeDB` in `fontDB.ts` (or create a dedicated `presetDB.ts` if cleaner):
+`KyberStationDB` in `fontDB.ts` (or create a dedicated `presetDB.ts` if cleaner):
 
 ```ts
 this.version(3).stores({
@@ -273,12 +273,12 @@ from the built-in canonical presets. This section shows:
   - Edit Details (name, description, tags, font)
   - Update (overwrite config with current editor state)
   - Duplicate
-  - Export as `.bladeforge.json`
+  - Export as `.kyberstation.json`
   - Delete (with confirmation)
 - **Search** across name, description, and tags
 - **Filter by tags** (show all unique tags as filter chips)
 - **Sort**: newest first, alphabetical, recently modified
-- **Bulk export**: select multiple and export as a single `.bladeforge.json` bundle
+- **Bulk export**: select multiple and export as a single `.kyberstation.json` bundle
 
 #### 2.5 Preset + Font Pairing
 
@@ -313,12 +313,12 @@ be enhanced to accept user presets:
 
 Users should be able to share their custom preset collections:
 
-- **Export**: Download all (or selected) user presets as a `.bladeforge-collection.json`
+- **Export**: Download all (or selected) user presets as a `.kyberstation-collection.json`
   file containing an array of `UserPreset` objects (thumbnails included)
-- **Import**: Load a `.bladeforge-collection.json` — merges into existing collection,
+- **Import**: Load a `.kyberstation-collection.json` — merges into existing collection,
   handles name conflicts by appending "(imported)" suffix
-- The existing single-preset `.bladeforge.json` export continues to work for sharing
-  individual configs. When importing a single `.bladeforge.json`, offer to save it as
+- The existing single-preset `.kyberstation.json` export continues to work for sharing
+  individual configs. When importing a single `.kyberstation.json`, offer to save it as
   a user preset in addition to loading it into the editor.
 
 ---
@@ -467,7 +467,7 @@ Connect the storage budget estimation to real data:
 Allow card presets to be shared as templates:
 
 - **Export as template**: strips personal font paths but keeps font folder names,
-  exports as `.bladeforge-card.json`
+  exports as `.kyberstation-card.json`
 - **Import template**: loads the preset list and font folder names. If font library
   is connected, attempts to match font names automatically. Unmatched fonts show as
   "font not found — assign manually"
@@ -492,7 +492,7 @@ The existing `CardWriter.tsx` should pull from the active card configuration:
 
 The complete end-to-end workflow with all three features:
 
-1. **Set up font library** (Part 1): Point BladeForge at `~/SaberFonts/` containing
+1. **Set up font library** (Part 1): Point KyberStation at `~/SaberFonts/` containing
    40 fonts from Kyberphonic, Greyscale, BK Saber Sounds, etc.
 
 2. **Create custom presets** (Part 2):

@@ -160,7 +160,7 @@ export function SplashScreen({
             marginTop: '16px',
           }}
         >
-          BLADEFORGE
+          KYBERSTATION
         </div>
 
         {/* Version number */}

@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useEffect } from 'react';
-import type { BladeEngine } from '@bladeforge/engine';
+import type { BladeEngine } from '@kyberstation/engine';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -11,10 +11,10 @@ interface PixelStripPanelProps {
 }
 
 /**
- * PixelStripPanel — standalone vertical LED pixel bar visualization.
+ * PixelStripPanel — standalone horizontal LED pixel bar visualization.
  *
- * Renders each LED as a colored rectangle, LED 0 at the bottom (hilt)
- * to last LED at top (tip). Reads engine pixel buffer each frame.
+ * Renders each LED as a colored rectangle, LED 0 at the left (hilt)
+ * to last LED at right (tip). Reads engine pixel buffer each frame.
  */
 export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -72,53 +72,57 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     ctx.fillStyle = '#030305';
     ctx.fillRect(0, 0, cw, ch);
 
-    // Layout: vertical strip centered horizontally
-    const padX = 8 * dpr;
-    const padY = 16 * dpr;
-    const stripW = Math.min(cw - padX * 2, 36 * dpr);
-    const stripX = (cw - stripW) / 2;
+    // Layout: horizontal strip spanning full width
+    const padX = 4 * dpr;
+    const padY = 2 * dpr;
+    const stripLeft = padX;
+    const stripRight = cw - padX;
+    const stripW = stripRight - stripLeft;
     const stripTopY = padY;
-    const stripBotY = ch - padY;
-    const stripH = stripBotY - stripTopY;
-    const cellH = stripH / leds;
+    const stripH = ch - padY * 2;
+    const cellW = stripW / leds;
 
     // Background panel
-    const bgPad = 4 * dpr;
+    const bgPad = 2 * dpr;
     ctx.fillStyle = 'rgba(10, 12, 20, 0.8)';
-    ctx.fillRect(stripX - bgPad, stripTopY - bgPad, stripW + bgPad * 2, stripH + bgPad * 2);
+    ctx.fillRect(stripLeft - bgPad, stripTopY - bgPad, stripW + bgPad * 2, stripH + bgPad * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(stripX - bgPad, stripTopY - bgPad, stripW + bgPad * 2, stripH + bgPad * 2);
+    ctx.strokeRect(stripLeft - bgPad, stripTopY - bgPad, stripW + bgPad * 2, stripH + bgPad * 2);
 
-    // LED pixels — LED 0 at bottom, last LED at top
+    // LED pixels — LED 0 at left (hilt), last LED at right (tip)
+    // Also accumulate stats while iterating
+    let totalMa = 0;
+    let lumaSum = 0;
     for (let i = 0; i < leds; i++) {
       const r = (pixels[i * 3] ?? 0) * bri;
       const g = (pixels[i * 3 + 1] ?? 0) * bri;
       const b = (pixels[i * 3 + 2] ?? 0) * bri;
-      const y = stripBotY - (i + 1) * cellH;
+      const x = stripLeft + i * cellW;
       ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
-      ctx.fillRect(stripX, y, stripW, Math.max(cellH - 0.3, 0.5));
+      ctx.fillRect(x, stripTopY, Math.max(cellW - 0.3, 0.5), stripH);
+
+      // mA: each channel draws up to 20 mA at full brightness (255)
+      totalMa += ((r + g + b) / 255) * 20;
+      // Perceptual luminance
+      lumaSum += 0.299 * r + 0.587 * g + 0.114 * b;
     }
 
-    // LED index labels every 24 LEDs
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.30)';
+    // "PIXEL" label at left edge
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = `${7 * dpr}px monospace`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    const labelX = stripX + stripW + 4 * dpr;
-    if (labelX + 20 * dpr < cw) {
-      for (let i = 0; i < leds; i += 24) {
-        const y = stripBotY - (i + 0.5) * cellH;
-        ctx.fillText(String(i), labelX, y);
-      }
-    }
+    ctx.fillText('PIXEL', stripLeft + 3 * dpr, ch / 2);
 
-    // "PIXEL" label at top
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    // Live stats at right edge: total power + avg brightness
+    const totalA = (totalMa / 1000).toFixed(2);
+    const avgBri = leds > 0 ? Math.round((lumaSum / leds / 255) * 100) : 0;
+    ctx.fillStyle = 'rgba(255,170,0,0.55)';
     ctx.font = `${7 * dpr}px monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('PIXEL', cw / 2, stripTopY - bgPad - 2 * dpr);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${totalA}A  bri:${avgBri}%`, stripRight - 3 * dpr, ch / 2);
   }, { maxFps: reducedMotion ? 2 : undefined });
 
   return (

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BladeForge — Lightsaber Style Editor',
+  title: 'KyberStation — Lightsaber Style Editor',
   description:
     'Universal Saber Style Engine — Design, preview, and export lightsaber blade styles',
   manifest: '/manifest.json',
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'BladeForge',
+    title: 'KyberStation',
   },
   other: {
     'mobile-web-app-capable': 'yes',

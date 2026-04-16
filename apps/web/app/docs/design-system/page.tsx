@@ -476,7 +476,7 @@ export default function DesignSystemPage() {
               className="font-cinematic"
               style={{ fontSize: 'calc(16px * var(--font-scale))', color: 'rgb(var(--text-primary))' }}
             >
-              BladeForge Universal Saber Style Engine
+              KyberStation Universal Saber Style Engine
             </span>
           </div>
 

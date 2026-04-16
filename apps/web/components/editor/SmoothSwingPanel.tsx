@@ -115,7 +115,7 @@ function computeCrossfade(
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 mb-2">
+    <div className="flex items-center gap-2 mb-1">
       <span className="text-ui-xs font-mono uppercase tracking-widest text-text-muted">
         {children}
       </span>
@@ -199,7 +199,7 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
   const speedPct = Math.round(simSpeed * 100);
 
   return (
-    <div className="rounded border border-border-subtle bg-bg-elevated p-3 space-y-3">
+    <div className="rounded border border-border-subtle bg-bg-elevated p-2 space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-ui-xs font-mono uppercase tracking-widest text-text-muted">
           Crossfade Preview
@@ -345,7 +345,7 @@ export function SmoothSwingPanel() {
   );
 
   return (
-    <div className="flex flex-col gap-4 p-3 text-text-primary">
+    <div className="flex flex-col gap-2 p-3 text-text-primary">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
@@ -398,7 +398,7 @@ export function SmoothSwingPanel() {
       {/* ── Swing parameters ── */}
       <div>
         <SectionHeader>Swing Parameters</SectionHeader>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {PARAMS.slice(0, 3).map((meta) => (
             <SliderRow
               key={meta.key}
@@ -413,7 +413,7 @@ export function SmoothSwingPanel() {
       {/* ── Hum & accent ── */}
       <div>
         <SectionHeader>Hum &amp; Accent</SectionHeader>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {PARAMS.slice(3).map((meta) => (
             <SliderRow
               key={meta.key}

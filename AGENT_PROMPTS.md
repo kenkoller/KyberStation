@@ -1,4 +1,4 @@
-# BLADEFORGE — Claude Code Parallel Agent Prompts
+# KYBERSTATION — Claude Code Parallel Agent Prompts
 
 ## Session Strategy
 
@@ -13,7 +13,7 @@ Split the project into 4 parallel workstreams that have minimal merge conflicts.
 ```
 Read CLAUDE.md for full project context.
 
-Scaffold the BladeForge monorepo from scratch:
+Scaffold the KyberStation monorepo from scratch:
 
 1. Initialize pnpm workspace with turbo.json
 2. Create all directories per the repo structure in CLAUDE.md
@@ -48,7 +48,7 @@ Commit message: "feat: scaffold monorepo structure"
 ```
 Read CLAUDE.md for full project context. You own packages/engine.
 
-Build the complete blade simulation engine in packages/engine/src/. This is the core of BladeForge — a headless, zero-DOM TypeScript engine that simulates a 144-LED Neopixel blade in real-time.
+Build the complete blade simulation engine in packages/engine/src/. This is the core of KyberStation — a headless, zero-DOM TypeScript engine that simulates a 144-LED Neopixel blade in real-time.
 
 ### Phase 1: Core Architecture
 
@@ -151,7 +151,7 @@ Commit messages: conventional commits, prefix with "feat(engine):" or "test(engi
 ```
 Read CLAUDE.md for full project context. You own packages/codegen.
 
-Build the ProffieOS code generator that converts BladeForge configurations into valid, compilable ProffieOS C++ blade style code.
+Build the ProffieOS code generator that converts KyberStation configurations into valid, compilable ProffieOS C++ blade style code.
 
 ### Phase 1: AST Definition (StyleAST.ts)
 
@@ -268,7 +268,7 @@ Commit messages: "feat(codegen):" / "test(codegen):"
 ```
 Read CLAUDE.md for full project context. You own apps/web.
 
-Build the Next.js web application — the visual editor UI for BladeForge. This is the user-facing product.
+Build the Next.js web application — the visual editor UI for KyberStation. This is the user-facing product.
 
 ### Design System
 
@@ -497,7 +497,7 @@ PROFFIE_REFERENCE.md:
 - Common config.h patterns
 
 STYLE_AUTHORING.md:
-- How to add a new blade style to BladeForge
+- How to add a new blade style to KyberStation
 - Step-by-step: create class, implement interface, register, add UI, add codegen mapping
 - How to add a new effect
 - How to add a new ignition animation

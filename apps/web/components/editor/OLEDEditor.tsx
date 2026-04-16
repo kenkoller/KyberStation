@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { encodeBMP, decodeBMP } from '@bladeforge/engine';
-import type { OLEDResolution } from '@bladeforge/engine';
+import { encodeBMP, decodeBMP } from '@kyberstation/engine';
+import type { OLEDResolution } from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 type Tool = 'pencil' | 'eraser' | 'line' | 'rect' | 'fill';

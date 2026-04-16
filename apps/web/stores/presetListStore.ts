@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 export interface PresetListEntry {
   id: string;
@@ -39,7 +39,7 @@ function deduplicateFontName(name: string, existing: string[]): string {
   return `${name}_${i}`;
 }
 
-const STORAGE_KEY = 'bladeforge-preset-list';
+const STORAGE_KEY = 'kyberstation-preset-list';
 
 function loadFromStorage(): { entries: PresetListEntry[]; activeEntryId: string | null } {
   try {

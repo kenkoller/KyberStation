@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { AudioFilterChainConfig } from '@bladeforge/sound';
-import { FILTER_CHAIN_PRESETS } from '@bladeforge/sound';
+import type { AudioFilterChainConfig } from '@kyberstation/sound';
+import { FILTER_CHAIN_PRESETS } from '@kyberstation/sound';
 
 // ---------------------------------------------------------------------------
 // Mixer slider value map — matches the SoundFontPanel MIXER_CONTROLS ids.

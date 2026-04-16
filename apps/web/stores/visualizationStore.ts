@@ -33,7 +33,7 @@ interface VisualizationStore {
 
 // ─── Persistence helpers ───
 
-const STORAGE_KEY = 'bladeforge-visualization';
+const STORAGE_KEY = 'kyberstation-visualization';
 
 interface PersistedState {
   visibleLayers: VisualizationLayerId[];

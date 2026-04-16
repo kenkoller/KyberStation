@@ -327,8 +327,8 @@ describe('Xenopixel limitations', () => {
 describe('CFX limitations', () => {
   it('CFX does not support melt or lightning effects', () => {
     const profile = getBoardProfile('cfx');
-    const melt = profile.supportedEffects.find((e) => e.bladeforgeEffect === 'melt');
-    const lightning = profile.supportedEffects.find((e) => e.bladeforgeEffect === 'lightning');
+    const melt = profile.supportedEffects.find((e) => e.kyberstationEffect === 'melt');
+    const lightning = profile.supportedEffects.find((e) => e.kyberstationEffect === 'lightning');
     expect(melt!.boardEffectName).toBeNull();
     expect(lightning!.boardEffectName).toBeNull();
   });
@@ -518,8 +518,8 @@ describe('Board capability flags', () => {
     });
 
     it('V4 supports melt effect but V3 does not', () => {
-      const v3Melt = v3.supportedEffects.find((e) => e.bladeforgeEffect === 'melt');
-      const v4Melt = v4.supportedEffects.find((e) => e.bladeforgeEffect === 'melt');
+      const v3Melt = v3.supportedEffects.find((e) => e.kyberstationEffect === 'melt');
+      const v4Melt = v4.supportedEffects.find((e) => e.kyberstationEffect === 'melt');
       expect(v3Melt!.boardEffectName).toBeNull();
       expect(v4Melt!.boardEffectName).toBe('melt');
     });

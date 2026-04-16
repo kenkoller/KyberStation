@@ -22,7 +22,7 @@ const SECTIONS: Section[] = [
     id: 'getting-started',
     title: 'Getting Started',
     content: [
-      'BladeForge is a visual saber style editor, real-time blade simulator, and config generator for ProffieOS 7.x sabers. It runs entirely in your browser with no server required — all project data is stored locally in IndexedDB.',
+      'KyberStation is a visual saber style editor, real-time blade simulator, and config generator for ProffieOS 7.x sabers. It runs entirely in your browser with no server required — all project data is stored locally in IndexedDB.',
       'The main editor workspace has three areas: a compact canvas strip at the top showing your blade preview, a toolbar for quick style/effect controls, and a tabbed panel area below for detailed configuration.',
       'Click IGNITE (or press Space) to power on the virtual blade and see your style in action. Use the effect buttons (Clash, Blast, Lockup, etc.) to preview how your saber reacts to combat events. Every change updates the blade preview in real-time.',
       'The tabbed panels at the bottom give you full control: Style for blade style selection, Colors for palette editing, Effects for combat effect tuning, Ignition for ignition/retraction animations, Params for advanced parameters, Audio for sound font management, Gallery for presets, and Output for code generation and SD card export.',
@@ -36,7 +36,7 @@ const SECTIONS: Section[] = [
     id: 'blade-styles',
     title: 'Blade Styles',
     content: [
-      'BladeForge includes 12 blade styles, each with a unique visual character. Select a style from the Style panel and adjust its parameters to create your look.',
+      'KyberStation includes 29 blade styles, each with a unique visual character. Select a style from the Style panel and adjust its parameters to create your look.',
     ],
     list: [
       'Stable — Classic solid blade with subtle shimmer. The foundation for most saber builds. Shimmer intensity is adjustable.',
@@ -51,6 +51,21 @@ const SECTIONS: Section[] = [
       'Aurora — Northern-lights flowing color waves. Slow, organic color bands drift along the blade like aurora borealis.',
       'Cinder — Ember and lava-flow with hot spots and cooling dark regions. Embers brighten and fade organically, creating a smoldering blade effect.',
       'Prism — Rainbow light splitting and recombining. White light separates into spectral colors that shift and blend across the blade.',
+      'Gravity — Color pools toward whichever end of the blade points down, using accelerometer input. The center of brightness follows gravity with smooth Gaussian distribution.',
+      'Data Stream — Digital data packets traveling from emitter to tip. Multiple concurrent light pulses scroll along the blade like a data bus, each with unique speed and color variation.',
+      'Ember — Streams of glowing embers drifting upward along the blade. Multiple ember particles rise with organic movement and height-based dimming.',
+      'Automata — Cellular automaton patterns (Rule 30) evolving per frame. Creates complex, self-organizing patterns from simple mathematical rules.',
+      'Helix — Double sinusoidal waves at 180\u00b0 offset, creating a DNA-like spiral pattern. The two helices weave around each other along the blade length.',
+      'Candle — Realistic candle flame simulation with fractal Brownian motion flicker. Warm gradient with occasional gust events that cause the flame to dance.',
+      'Shatter — Deterministic segments with independent pulses and crack highlights. The blade appears fractured into distinct shards, each pulsing independently.',
+      'Neutron — A bright point bouncing back and forth along the blade with a phosphor trail. The bouncing particle leaves a glowing afterimage that slowly fades.',
+      'Torrent — Rapid streaks of light rushing along the blade like a torrential downpour. Multiple concurrent streams with randomized speed and brightness.',
+      'Moire — Interference pattern created by overlapping sine waves at slightly different frequencies. Produces mesmerizing, slowly shifting geometric patterns.',
+      'Cascade — Layered waterfalls of color that tumble down the blade in waves. Each cascade layer has independent timing and color variation.',
+      'Vortex — Swirling spiral pattern that rotates around the blade axis. The vortex speed responds to swing motion for dynamic visual feedback.',
+      'Nebula — Soft, cloud-like color formations that drift and morph along the blade. Inspired by interstellar gas clouds with gentle color gradients.',
+      'Tidal — Ocean wave patterns that ebb and flow along the blade length. Simulates tidal motion with cresting waves and foam-like bright edges.',
+      'Mirage — Heat-shimmer distortion effect with wavering color bands. The blade appears to ripple like a desert mirage with shifting transparency.',
     ],
   },
 
@@ -61,7 +76,7 @@ const SECTIONS: Section[] = [
     id: 'effects',
     title: 'Effects',
     content: [
-      'Effects simulate how your saber responds to combat and Force interactions. Each effect has its own configurable color and behavior. Transient effects fire once and fade, while sustained effects stay active until released.',
+      'Effects simulate how your saber responds to combat and Force interactions. KyberStation includes 21 effect types. Each effect has its own configurable color and behavior. Transient effects fire once and fade, while sustained effects stay active until released.',
     ],
     list: [
       'Clash (key: C) — Brief flash when blades collide. Creates a bright burst at the clash position. Configurable location and intensity.',
@@ -72,6 +87,19 @@ const SECTIONS: Section[] = [
       'Drag (key: D) — Blade dragged along a surface. Sustained effect near the tip with heat-glow behavior. Press D to toggle.',
       'Melt (key: M) — Blade melting through a surface. Sustained tip glow with molten drip effect. Press M to toggle.',
       'Force (key: F) — Force push/pull effect. Blade-wide color shift and brightness pulse that ripples along the entire blade.',
+      'Shockwave (key: W) — Two bright rings expand outward from the impact point in both directions, dimming as they travel. Creates a dramatic ripple effect from clash events.',
+      'Scatter — 20-30 random pixel positions flash simultaneously across the blade, creating a scattered sparkle burst effect.',
+      'Fragment — The blade splits into 5-8 distinct segments with expanding dark gaps between them, as if the blade is breaking apart.',
+      'Ripple — Three concentric rings with cosine-shaped profiles emanate from the trigger point, creating a water-ripple effect along the blade.',
+      'Freeze — An icy crystal pattern spreads from the contact point, gradually covering the blade with a cold blue-white overlay before snapping back.',
+      'Overcharge — Brightness ramps up dramatically with unstable flicker, simulating a power surge, followed by a dim dip as the saber recovers.',
+      'Bifurcate — The blade color splits into warm and cool halves at the trigger point, as if the kyber crystal\'s energy is being divided.',
+      'Invert — Instantly inverts all blade colors to their complementary values. The blade flashes to its negative image before snapping back.',
+      'Ghost Echo — A translucent afterimage of the blade\'s previous state lingers and slowly fades, creating a ghostly double-vision trail effect.',
+      'Splinter — Sharp crystalline fracture lines shoot out from the trigger point, splitting the blade into jagged splinter segments that briefly separate.',
+      'Coronary — A bright corona flare erupts around the blade, radiating intense light outward from the blade surface like a solar prominence.',
+      'Glitch Matrix — Digital corruption artifacts scramble sections of the blade into random pixel noise and color channel shifts, as if the kyber crystal is malfunctioning.',
+      'Siphon — Energy visibly drains from the blade toward the trigger point, darkening the extremities while concentrating brightness at the center of the effect.',
     ],
   },
 
@@ -99,6 +127,14 @@ const SECTIONS: Section[] = [
           'Swing — Speed-reactive ignition. The blade fills faster when swing speed is higher. At rest the fill is smooth; at high swing speed it accelerates with a bright leading edge.',
           'Stab — Rapid center-out burst ignition. Inspired by the stab-on gesture. A bright flash at the center explodes outward in both directions.',
           'Custom Curve — User-defined cubic Bezier ignition profile. Draw a custom curve that shapes how the blade fills across its length. Full control over the ignition timing envelope.',
+          'Crackle — Random segments flicker on during ignition like an unstable power-up. Per-LED probability increases over the ignition duration, creating a chaotic, organic fill-in.',
+          'Fracture — Seven crack points radiate outward from random positions, illuminating the blade in a spreading fracture pattern.',
+          'Flash Fill — A bright white flash illuminates the entire blade, then a base-to-tip color wipe fills in the actual blade color.',
+          'Pulse Wave — Four sequential energy waves, each reaching further along the blade than the last, building up to full ignition.',
+          'Drip Up — Fluid upward flow with leading drip particles. The blade fills like liquid being poured upward with surface tension effects.',
+          'Hyperspace — The blade streaks to life like stars elongating into hyperspace lines. LEDs stretch from the emitter in accelerating trails that snap into a solid blade.',
+          'Summon — Force-pull ignition where the blade materializes from the tip inward, as if being summoned from a distance. Particles converge toward the hilt before solidifying.',
+          'Seismic — Ground-shaking ignition with concentric shock rings expanding from the emitter. The blade builds in pulsing waves like seismic tremors.',
         ],
       },
       {
@@ -113,6 +149,13 @@ const SECTIONS: Section[] = [
           'Fadeout — The entire blade dims progressively instead of retracting with a hard edge. The tip fades faster than the hilt, creating a ghostly power-down.',
           'Shatter — The blade fragments and dissolves like shattering crystal. Noise-driven fragments disappear as retraction progresses, with configurable fragment scale and dim speed.',
           'Custom Curve — Same Bezier curve system as ignition, applied in reverse for retraction.',
+          'Dissolve — Pixels randomly turn off in a shuffled order like analog TV static dying. Each LED flickers briefly before going dark.',
+          'Flicker Out — A dead zone advances from tip to base with a flickering band at the boundary. LEDs in the flicker zone flash erratically before going dark.',
+          'Unravel — The blade appears to unwind like a thread being pulled. A sinusoidal tension pattern travels along the blade with a trailing afterimage.',
+          'Drain — Smooth gravity-like drain from tip to base with a meniscus curve at the leading edge and occasional residual drips left behind.',
+          'Implode — The blade collapses inward toward its center from both ends simultaneously, compressing into a bright point before vanishing.',
+          'Evaporate — The blade dissipates like steam, with brightness fading unevenly as if the energy is boiling away into the air.',
+          'Spaghettify — The blade stretches and thins like matter falling into a black hole. Segments elongate and narrow before disappearing into a point.',
         ],
       },
     ],
@@ -137,6 +180,12 @@ const SECTIONS: Section[] = [
       'N — Toggle Lightning effect (sustained — press again to release)',
       'D — Toggle Drag effect (sustained — press again to release)',
       'M — Toggle Melt effect (sustained — press again to release)',
+      'W — Trigger Shockwave effect (one-shot)',
+      'Escape — Exit fullscreen preview',
+      'O — Toggle fullscreen orientation (horizontal/vertical)',
+      'Cmd+Z — Undo last change',
+      'Cmd+Shift+Z — Redo last undone change',
+      'Cmd+Y — Redo (alternative)',
     ],
   },
 
@@ -211,7 +260,7 @@ const SECTIONS: Section[] = [
         subtitle: 'Blend Modes',
         list: [
           'Blend Mode — How the blade style composites with other layers: Normal, Additive, Multiply, Screen, or Overlay.',
-          'Secondary Style — An optional second style to blend with the primary. Choose from any of the 12 blade styles.',
+          'Secondary Style — An optional second style to blend with the primary. Choose from any of the 29 blade styles.',
           'Mix Amount — How much of the secondary style shows through (0-100%).',
           'Mask — Pattern used to blend between primary and secondary: None, Gradient, Noise, or Wave.',
         ],
@@ -252,7 +301,7 @@ const SECTIONS: Section[] = [
         list: [
           'The Proffieboard\'s power FET can handle approximately 5A continuous current for blade power.',
           'ProffieOS includes configurable global brightness limiting (maxLedsPerStrip setting) to cap total current draw.',
-          'Exceeding the 5A limit risks brownouts, board resets, or component damage. BladeForge\'s storage budget panel estimates per-style power impact to help you stay within safe limits.',
+          'Exceeding the 5A limit risks brownouts, board resets, or component damage. KyberStation\'s storage budget panel estimates per-style power impact to help you stay within safe limits.',
           'Multi-blade setups (staff, crossguard) multiply the draw — a dual-blade staff uses roughly twice the current of a single blade.',
         ],
       },
@@ -266,13 +315,13 @@ const SECTIONS: Section[] = [
     id: 'code-export',
     title: 'Code Generation & Export',
     content: [
-      'BladeForge generates valid ProffieOS 7.x C++ code from your blade configuration. The code generator builds an AST (Abstract Syntax Tree) of ProffieOS style templates, validates it, and emits properly formatted code that compiles in Arduino IDE with the Proffieboard board manager installed.',
+      'KyberStation generates valid ProffieOS 7.x C++ code from your blade configuration. The code generator builds an AST (Abstract Syntax Tree) of ProffieOS style templates, validates it, and emits properly formatted code that compiles in Arduino IDE with the Proffieboard board manager installed.',
     ],
     subsections: [
       {
         subtitle: 'Generated Code',
         list: [
-          'BladeForge produces complete StylePtr<> declarations using standard ProffieOS templates: Layers<>, BlastL<>, SimpleClashL<>, LockupTrL<>, InOutTrL<>, and all standard transitions.',
+          'KyberStation produces complete StylePtr<> declarations using standard ProffieOS templates: Layers<>, BlastL<>, SimpleClashL<>, LockupTrL<>, InOutTrL<>, and all standard transitions.',
           'The code uses Rgb<> for colors, Mix<> and Gradient<> for color blending, and responsive functions like Scale<>, SwingSpeed<>, and BladeAngle<>.',
           'All angle brackets are correctly nested and matched. Template arguments are validated before emission.',
           'Copy the generated style code from the Output tab and paste it into the presets[] array in your config.h file.',
@@ -303,9 +352,9 @@ const SECTIONS: Section[] = [
       {
         subtitle: 'Sharing & Backup',
         list: [
-          'Single Config (.bladeforge.json) — Export/import the current editor state as a file.',
-          'Preset Collection (.bladeforge-collection.json) — Bundle multiple user presets with thumbnails for sharing.',
-          'Card Template (.bladeforge-card.json) — Share a card config. Font paths are stripped but folder names are preserved.',
+          'Single Config (.kyberstation.json) — Export/import the current editor state as a file.',
+          'Preset Collection (.kyberstation-collection.json) — Bundle multiple user presets with thumbnails for sharing.',
+          'Card Template (.kyberstation-card.json) — Share a card config. Font paths are stripped but folder names are preserved.',
           'Kyber Code (URL) — Share a style as a compact URL using JSON, deflate-raw, and base64url encoding. Anyone with the link loads your style instantly.',
         ],
       },
@@ -392,17 +441,17 @@ const SECTIONS: Section[] = [
     id: 'font-library',
     title: 'Font Library',
     content: [
-      'The Font Library lets you point BladeForge at your local sound font collection folder. It scans all subdirectories, detects font formats (Proffie, CFX, Generic), and shows completeness at a glance. Requires a Chromium-based browser (Chrome, Edge, Arc).',
+      'The Font Library lets you point KyberStation at your local sound font collection folder. It scans all subdirectories, detects font formats (Proffie, CFX, Generic), and shows completeness at a glance. Requires a Chromium-based browser (Chrome, Edge, Arc).',
       'Go to the Audio tab and click the "Library" sub-tab. Click "Set Font Library Folder" and select your top-level font directory.',
     ],
     list: [
-      'Auto-Scan — After selecting a folder, BladeForge scans every subdirectory for sound files. It counts files per category (hum, swing, clash, etc.) and detects SmoothSwing pairs.',
+      'Auto-Scan — After selecting a folder, KyberStation scans every subdirectory for sound files. It counts files per category (hum, swing, clash, etc.) and detects SmoothSwing pairs.',
       'Completeness Indicator — Each font shows a dot: green (complete — all essential categories present), yellow (partial — some missing), or red (minimal). Hover for a text label.',
       'Search & Sort — Filter fonts by name. Sort alphabetically, by file count, or by completeness.',
       'Load — Click "Load" on any font to decode and activate it as the current sound font for preview playback.',
       'Pair — Associate a font with your current preset so they auto-load together.',
       'Refresh — Re-scan the folder to pick up newly added fonts.',
-      'Persistent Handle — Your folder selection is saved in IndexedDB. On next visit, BladeForge re-requests access to the same directory without you needing to re-pick it.',
+      'Persistent Handle — Your folder selection is saved in IndexedDB. On next visit, KyberStation re-requests access to the same directory without you needing to re-pick it.',
       'Non-Chromium Fallback — On Firefox/Safari, the Library tab shows a notice. You can still import individual fonts via drag-and-drop in the Sound Fonts tab.',
     ],
   },
@@ -452,7 +501,7 @@ const SECTIONS: Section[] = [
     id: 'accessibility',
     title: 'Accessibility',
     content: [
-      'BladeForge includes accessibility features to ensure the editor is usable by everyone.',
+      'KyberStation includes accessibility features to ensure the editor is usable by everyone.',
     ],
     list: [
       'Text Sizing — Adjust UI text size from the Accessibility panel in settings.',
@@ -463,6 +512,114 @@ const SECTIONS: Section[] = [
       'ARIA Labels — All controls have descriptive ARIA labels for screen reader support.',
       'Focus Traps — Modals and dialogs trap focus within the dialog until dismissed.',
       'Color-Only Indicators — Status indicators (completeness dots, active states) include text labels alongside color coding.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Workbench Layout
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'workbench-layout',
+    title: 'Workbench Layout',
+    content: [
+      'The desktop editor uses a horizontal workbench layout with the blade preview at the top and a multi-column panel workspace below. The layout automatically adapts to your screen width: 4 columns at 1440px+, 3 columns at 1200px+, 2 columns at 1024px+, and single column on smaller screens.',
+      'Panels within each tab can be dragged between columns to customize your workspace. Collapse panels you don\'t need by clicking their header. Save your preferred layout as a preset in Settings for quick recall.',
+    ],
+    list: [
+      'Header Bar — App logo, undo/redo buttons, FPS counter, share button (Kyber Code), global pause toggle, settings gear, and documentation link.',
+      'Blade Canvas — Horizontal blade preview with the visualization stack below it. Toggle individual analysis layers on/off.',
+      'Tab Bar — Five top-level tabs organize all controls: Design, Dynamics, Audio, Gallery, and Output.',
+      'Column Grid — Drag panels between columns to arrange your ideal workspace. Save layout presets from Settings.',
+      'Status Bar — Real-time power draw estimate (mA vs 5A limit), storage budget percentage, and LED count.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Visualization Stack
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'visualization-stack',
+    title: 'Visualization Stack',
+    content: [
+      'The visualization stack sits below the blade canvas and provides detailed analysis layers that help you understand exactly what your blade is doing at every pixel.',
+    ],
+    list: [
+      'Pixel Strip — Shows the raw LED colors as a strip of discrete pixels, matching your physical blade.',
+      'R / G / B Channels — Individual red, green, and blue channel intensity graphs.',
+      'Luminance — Perceived brightness graph across the blade length.',
+      'Power Draw — Estimated milliamp draw per LED based on color values.',
+      'Hue — Hue angle distribution across the blade.',
+      'Saturation — Color saturation graph.',
+      'Effect Overlay — Highlights which portions of the blade are currently affected by active effects.',
+      'Swing Response — Shows how swing speed is influencing the current frame.',
+      'Transition Progress — Displays ignition/retraction animation progress.',
+      'Storage Budget — Estimated flash memory usage visualization.',
+      'Debug Mode — Click the debug icon to enable per-pixel inspection. Hover any pixel for a tooltip showing RGB, hex, HSL, power draw (mA), and Star Wars color name. Click to pin an info card. Select ranges for comparison.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Fullscreen Preview
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'fullscreen-preview',
+    title: 'Fullscreen Preview',
+    content: [
+      'Enter fullscreen mode from the toolbar to see your blade in an immersive, distraction-free view. The blade takes over the entire viewport with a dark background.',
+    ],
+    list: [
+      'Orientation — Toggle between horizontal and vertical blade orientation with the O key or the orientation button.',
+      'Control Bar — Auto-hides after 3 seconds of inactivity. Move your mouse or touch the screen to reveal it.',
+      'Effect Triggers — Use keyboard shortcuts (C, B, S, L, N, D, M, F) to trigger effects in fullscreen.',
+      'Mobile Motion — On mobile devices, enable the motion toggle to use your device\'s accelerometer and gyroscope. Tilt and swing your phone to drive blade angle and swing speed in real-time.',
+      'Exit — Press Escape or click the X button to return to the editor.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Settings
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'settings',
+    title: 'Settings',
+    content: [
+      'Access the global settings panel from the gear icon in the header bar. Settings are organized into five sections and persist across sessions.',
+    ],
+    list: [
+      'Performance Tier — Choose Full (all animations and effects), Medium (reduced particle counts), or Lite (minimal animations). Lower tiers improve performance on older devices.',
+      'Aurebesh Mode — Toggle Aurebesh script rendering: Off (standard English), Labels Only (UI labels in Aurebesh), or Full (all text in Aurebesh). A fun Star Wars immersion feature.',
+      'UI Sounds — Enable Star Wars-style beep and chirp sound effects for UI interactions. Choose from preset sound packs and adjust volume per category. Defaults to off.',
+      'Layout Presets — Save, load, and delete custom workbench column arrangements. Each preset remembers which panels are in which columns.',
+      'Display — Toggle FPS counter visibility and configure which visualization layers appear by default.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Global Pause
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'global-pause',
+    title: 'Global Pause',
+    content: [
+      'The pause button in the header bar (\u23f8) freezes all animations across the entire application. This is useful when the blade preview feels visually overwhelming, or when you want to inspect a specific frame of an animation.',
+      'When paused, the blade canvas keeps its last rendered frame visible, but the engine stops updating. All CSS animations across the app are also frozen. Press the button again (or Space when not in a text field) to resume.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Undo / Redo
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'undo-redo',
+    title: 'Undo / Redo',
+    content: [
+      'KyberStation tracks changes to your blade configuration and lets you step backward and forward through your edit history. The undo/redo buttons in the header bar show tooltips describing what will be undone or redone.',
+      'History is session-only (not persisted across page reloads) and stores up to 50 entries. Changes are debounced by 300ms to avoid flooding the history with rapid slider adjustments.',
+    ],
+    list: [
+      'Cmd+Z (Mac) or Ctrl+Z (Windows) — Undo the last change.',
+      'Cmd+Shift+Z or Cmd+Y — Redo the last undone change.',
+      'Each history entry is labeled with a human-readable description of what changed (e.g., "Change base color", "Switch to Fire style").',
     ],
   },
 ];
@@ -480,8 +637,8 @@ export default function DocsPage() {
               &larr; Editor
             </Link>
             <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em]">
-              <span className="text-white">BLADE</span>
-              <span className="text-accent">FORGE</span>
+              <span className="text-white">KYBER</span>
+              <span className="text-accent">STATION</span>
               <span className="text-text-muted ml-2 font-mono text-ui-sm font-normal">User Guide</span>
             </h1>
           </div>

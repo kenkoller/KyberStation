@@ -1,67 +1,27 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BladeEngine } from '@bladeforge/engine';
+import { useRef } from 'react';
+import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore } from '@/stores/uiStore';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
 import { RGBGraphPanel } from './RGBGraphPanel';
-
-// ─── Constants ───
-
-/** Minimum panel ratios (sum must leave room for all three) */
-const MIN_BLADE = 0.20;
-const MIN_STRIP = 0.05;
-const MIN_GRAPH = 0.10;
-
-/** Breakpoint (px) below which panels stack vertically */
-const VERTICAL_BREAKPOINT = 768;
 
 interface CanvasLayoutProps {
   engineRef: React.MutableRefObject<BladeEngine | null>;
 }
 
 /**
- * Clamp panel widths so every visible panel meets its minimum and the sum is 1.0.
- * Returns a new widths object (never mutates the input).
- */
-function clampWidths(
-  blade: number,
-  strip: number,
-  graph: number,
-): { blade: number; strip: number; graph: number } {
-  // Enforce individual minimums
-  blade = Math.max(MIN_BLADE, blade);
-  strip = Math.max(MIN_STRIP, strip);
-  graph = Math.max(MIN_GRAPH, graph);
-
-  // If they exceed 1.0, proportionally shrink the largest panels back down
-  const total = blade + strip + graph;
-  if (total > 1) {
-    blade /= total;
-    strip /= total;
-    graph /= total;
-  }
-
-  // If they're under 1.0 due to clamping, give the surplus to graph (most flexible)
-  const remainder = 1 - blade - strip - graph;
-  if (remainder > 0.001) {
-    graph += remainder;
-  }
-
-  return { blade, strip, graph };
-}
-
-/**
- * CanvasLayout — three-panel container for blade visualization.
+ * CanvasLayout — vertically stacked full-width visualization panels.
  *
- * Arranges BladePanel, PixelStripPanel, and RGBGraphPanel horizontally
- * with resizable drag handles between them. At narrow widths (< 768px
- * container width) the panels stack vertically instead, with height
- * ratios matching the stored width ratios.
+ * Renders:
+ *   1. Blade canvas — horizontal, full width (hilt left, tip right)
+ *   2. Pixel strip — horizontal, full width
+ *   3. RGB graph — horizontal, full width
+ *
+ * All panels span the entire workbench width. The blade always renders
+ * horizontally (left-to-right) in the desktop workbench layout.
  */
 export function CanvasLayout({ engineRef }: CanvasLayoutProps) {
-  const verticalPanelWidths = useUIStore((s) => s.verticalPanelWidths);
-  const setVerticalPanelWidths = useUIStore((s) => s.setVerticalPanelWidths);
   const showBladePanel = useUIStore((s) => s.showBladePanel);
   const showPixelPanel = useUIStore((s) => s.showPixelPanel);
   const showGraphPanel = useUIStore((s) => s.showGraphPanel);
@@ -74,129 +34,14 @@ export function CanvasLayout({ engineRef }: CanvasLayoutProps) {
   const toggleAnimationPaused = useUIStore((s) => s.toggleAnimationPaused);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isVertical, setIsVertical] = useState(false);
-  const dragRef = useRef<{
-    handle: 'blade-pixel' | 'pixel-graph';
-    startPos: number; // clientX (horizontal) or clientY (vertical)
-    startWidths: { blade: number; strip: number; graph: number };
-  } | null>(null);
 
-  // ─── Responsive: observe container width for vertical stacking ───
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
-        setIsVertical(width < VERTICAL_BREAKPOINT);
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // Count visible panels for proportional layout
   const visiblePanels = [showBladePanel, showPixelPanel, showGraphPanel].filter(Boolean).length;
 
-  // Compute effective widths — redistribute hidden panel space proportionally
-  const getEffectiveWidths = useCallback(() => {
-    if (visiblePanels === 0) return { blade: 1, strip: 0, graph: 0 };
-
-    let blade = showBladePanel ? verticalPanelWidths.blade : 0;
-    let strip = showPixelPanel ? verticalPanelWidths.strip : 0;
-    let graph = showGraphPanel ? verticalPanelWidths.graph : 0;
-
-    // Normalize to fill available space
-    const total = blade + strip + graph;
-    if (total > 0) {
-      blade /= total;
-      strip /= total;
-      graph /= total;
-    }
-
-    return { blade, strip, graph };
-  }, [showBladePanel, showPixelPanel, showGraphPanel, verticalPanelWidths, visiblePanels]);
-
-  // ─── Drag handle resize ───
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (!dragRef.current || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-
-      // Use the appropriate axis depending on layout direction
-      const extent = isVertical ? rect.height : rect.width;
-      const clientPos = isVertical ? e.clientY : e.clientX;
-      const deltaRatio = (clientPos - dragRef.current.startPos) / extent;
-      const sw = dragRef.current.startWidths;
-
-      if (dragRef.current.handle === 'blade-pixel') {
-        // Blade grows/shrinks; strip+graph absorb the change proportionally
-        const rawBlade = sw.blade + deltaRatio;
-        const consumed = rawBlade - sw.blade;
-
-        const dataTotal = sw.strip + sw.graph;
-        if (dataTotal > 0) {
-          const ratio = sw.strip / dataTotal;
-          const rawStrip = sw.strip - consumed * ratio;
-          const rawGraph = sw.graph - consumed * (1 - ratio);
-          setVerticalPanelWidths(clampWidths(rawBlade, rawStrip, rawGraph));
-        }
-      } else {
-        // pixel-graph handle: blade stays fixed, strip ↔ graph
-        const rawStrip = sw.strip + deltaRatio;
-        const rawGraph = sw.graph - deltaRatio;
-        setVerticalPanelWidths(clampWidths(sw.blade, rawStrip, rawGraph));
-      }
-    };
-
-    const onUp = () => {
-      if (!dragRef.current) return;
-      dragRef.current = null;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-  }, [setVerticalPanelWidths, isVertical]);
-
-  const startDrag = useCallback(
-    (handle: 'blade-pixel' | 'pixel-graph', e: React.PointerEvent) => {
-      e.preventDefault();
-      dragRef.current = {
-        handle,
-        startPos: isVertical ? e.clientY : e.clientX,
-        startWidths: { ...verticalPanelWidths },
-      };
-      document.body.style.cursor = isVertical ? 'row-resize' : 'col-resize';
-      document.body.style.userSelect = 'none';
-    },
-    [isVertical, verticalPanelWidths],
-  );
-
-  const ew = getEffectiveWidths();
-
-  // Choose flex direction and size property based on layout mode
-  const containerClass = isVertical
-    ? 'flex flex-col h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle'
-    : 'flex h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle';
-
-  const panelSizeStyle = (ratio: number) =>
-    isVertical ? { height: `${ratio * 100}%` } : { width: `${ratio * 100}%` };
-
   return (
-    <div ref={containerRef} className={containerClass}>
-      {/* ── Blade Panel ── */}
+    <div ref={containerRef} className="flex flex-col h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle">
+      {/* ── Blade Panel — full width, horizontal ── */}
       {showBladePanel && (
-        <div
-          className="flex flex-col min-w-0 min-h-0 overflow-hidden relative"
-          style={panelSizeStyle(ew.blade)}
-        >
+        <div className="flex flex-col min-h-0 overflow-hidden relative flex-1">
           <PanelHeader
             title="Blade Preview"
             onToggle={toggleBladePanel}
@@ -227,53 +72,23 @@ export function CanvasLayout({ engineRef }: CanvasLayoutProps) {
             </button>
           </PanelHeader>
           <div className="flex-1 min-h-0 overflow-hidden">
-            <BladeCanvas engineRef={engineRef} vertical renderMode="photorealistic" panelMode />
+            <BladeCanvas engineRef={engineRef} vertical={false} renderMode="photorealistic" panelMode />
           </div>
         </div>
       )}
 
-      {/* Blade ↔ Pixel handle */}
-      {showBladePanel && showPixelPanel && (
-        <ResizeHandle
-          direction={isVertical ? 'horizontal' : 'vertical'}
-          onPointerDown={(e) => startDrag('blade-pixel', e)}
-        />
-      )}
-
-      {/* ── Pixel Strip Panel ── */}
+      {/* ── Pixel Strip Panel — horizontal, full width ── */}
       {showPixelPanel && (
-        <div
-          className="flex flex-col min-w-0 min-h-0 overflow-hidden relative"
-          style={panelSizeStyle(ew.strip)}
-        >
-          <PanelHeader
-            title="Pixel Strip"
-            onToggle={togglePixelPanel}
-          />
+        <div className="flex flex-col min-h-0 overflow-hidden relative shrink-0" style={{ height: 36 }}>
           <div className="flex-1 min-h-0 overflow-hidden">
             <PixelStripPanel engineRef={engineRef} />
           </div>
         </div>
       )}
 
-      {/* Pixel ↔ Graph handle */}
-      {showPixelPanel && showGraphPanel && (
-        <ResizeHandle
-          direction={isVertical ? 'horizontal' : 'vertical'}
-          onPointerDown={(e) => startDrag('pixel-graph', e)}
-        />
-      )}
-
-      {/* ── RGB Graph Panel ── */}
+      {/* ── RGB Graph Panel — horizontal, full width ── */}
       {showGraphPanel && (
-        <div
-          className="flex flex-col min-w-0 min-h-0 overflow-hidden relative"
-          style={panelSizeStyle(ew.graph)}
-        >
-          <PanelHeader
-            title="RGB Analysis"
-            onToggle={toggleGraphPanel}
-          />
+        <div className="flex flex-col min-h-0 overflow-hidden relative shrink-0" style={{ height: 90 }}>
           <div className="flex-1 min-h-0 overflow-hidden">
             <RGBGraphPanel engineRef={engineRef} />
           </div>
@@ -331,38 +146,6 @@ function PanelHeader({
           ✕
         </button>
       </div>
-    </div>
-  );
-}
-
-/**
- * ResizeHandle — drag divider between panels.
- * @param direction - 'vertical' for col-resize (horizontal layout),
- *                    'horizontal' for row-resize (vertical/stacked layout)
- */
-function ResizeHandle({
-  direction,
-  onPointerDown,
-}: {
-  direction: 'vertical' | 'horizontal';
-  onPointerDown: (e: React.PointerEvent) => void;
-}) {
-  if (direction === 'horizontal') {
-    return (
-      <div
-        className="h-[6px] shrink-0 cursor-row-resize group flex items-center justify-center"
-        onPointerDown={onPointerDown}
-      >
-        <div className="h-[2px] w-full bg-border-subtle group-hover:bg-accent/40 transition-colors" />
-      </div>
-    );
-  }
-  return (
-    <div
-      className="w-[6px] shrink-0 cursor-col-resize group flex items-center justify-center"
-      onPointerDown={onPointerDown}
-    >
-      <div className="w-[2px] h-full bg-border-subtle group-hover:bg-accent/40 transition-colors" />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import type { MixerValues } from '@/stores/audioMixerStore';
-import type { LibraryFontEntry } from '@bladeforge/sound';
+import type { LibraryFontEntry } from '@kyberstation/sound';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 // ─── Sound event types ───
@@ -152,8 +152,8 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
       <div className="space-y-3">
         <div className="border-2 border-dashed border-border-subtle rounded-panel p-6 text-center">
           <div className="text-ui-sm text-text-muted mb-3 flex items-center justify-center gap-1">
-            Point BladeForge at your local sound font collection to browse and load fonts instantly.
-            <HelpTooltip text="Select the top-level folder containing your sound font subfolders. BladeForge scans each subfolder for audio files, detects formats (Proffie/CFX), and shows completeness. Your folder choice is remembered across sessions." />
+            Point KyberStation at your local sound font collection to browse and load fonts instantly.
+            <HelpTooltip text="Select the top-level folder containing your sound font subfolders. KyberStation scans each subfolder for audio files, detects formats (Proffie/CFX), and shows completeness. Your folder choice is remembered across sessions." />
           </div>
           <button
             onClick={handlePickDirectory}
@@ -441,7 +441,7 @@ export function SoundFontPanel() {
 
     setLibraryLoadingFont(fontName);
     try {
-      const { loadFontFromDirectoryHandle } = await import('@bladeforge/sound');
+      const { loadFontFromDirectoryHandle } = await import('@kyberstation/sound');
       const files = await loadFontFromDirectoryHandle(handle, fontName);
       if (files.length > 0) {
         await audio.loadFont(files);

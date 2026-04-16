@@ -7,15 +7,15 @@ export function MotionSimPanel() {
   const setMotionSim = useBladeStore((s) => s.setMotionSim);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Motion sliders */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Motion Parameters
           <HelpTooltip text="Simulate the Proffieboard's IMU sensor data. These sliders drive motion-reactive styles in real time. See also: Style Panel for motion-responsive styles like AudioFlicker." proffie="SwingSpeed<>, BladeAngle<>, TwistAngle<>" />
         </h3>
 
-        <div className="bg-bg-surface rounded-panel p-4 border border-border-subtle space-y-5">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           {/* Swing Speed */}
           <div>
             <div className="flex items-center gap-3">
@@ -91,12 +91,12 @@ export function MotionSimPanel() {
 
       {/* Auto modes */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Auto Modes
           <HelpTooltip text="Automated motion and combat simulation for hands-free previewing. Auto-Swing oscillates swing speed; Auto-Duel triggers random clash, blast, and lockup effects." />
         </h3>
 
-        <div className="bg-bg-surface rounded-panel p-4 border border-border-subtle space-y-4">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <span className="text-ui-xs text-text-secondary">Auto-Swing</span>
@@ -149,10 +149,10 @@ export function MotionSimPanel() {
 
       {/* ProffieOS mapping info */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5">
           ProffieOS Mapping
         </h3>
-        <div className="bg-bg-surface rounded-panel p-4 border border-border-subtle space-y-3">
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <div className="text-ui-xs text-text-secondary leading-relaxed">
             <p className="mb-2">
               These sliders simulate the Proffieboard IMU (accelerometer + gyroscope) sensor data

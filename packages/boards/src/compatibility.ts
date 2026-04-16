@@ -32,7 +32,7 @@ const WEIGHT_EFFECTS = 0.20;
 const WEIGHT_MOTION_AUDIO = 0.10;
 const WEIGHT_EXTRAS = 0.05;
 
-// ─── All known BladeForge effects ───
+// ─── All known KyberStation effects ───
 
 const ALL_EFFECTS = ['clash', 'lockup', 'blast', 'drag', 'melt', 'lightning', 'stab', 'force'];
 
@@ -42,7 +42,7 @@ function scoreBaseStyle(
   style: string,
   profile: BoardProfile,
 ): { score: number; degradation: FeatureDegradation | null } {
-  const mapping = profile.supportedStyles.find((s) => s.bladeforgeStyle === style);
+  const mapping = profile.supportedStyles.find((s) => s.kyberstationStyle === style);
 
   if (!mapping || mapping.boardStyleName === null) {
     return {
@@ -141,7 +141,7 @@ function scoreEffects(
   let supportedCount = 0;
 
   for (const effect of ALL_EFFECTS) {
-    const mapping = profile.supportedEffects.find((e) => e.bladeforgeEffect === effect);
+    const mapping = profile.supportedEffects.find((e) => e.kyberstationEffect === effect);
     if (mapping && mapping.boardEffectName !== null) {
       supportedCount++;
     } else {

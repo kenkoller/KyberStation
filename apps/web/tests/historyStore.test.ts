@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useHistoryStore, type HistoryEntry } from '../stores/historyStore';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

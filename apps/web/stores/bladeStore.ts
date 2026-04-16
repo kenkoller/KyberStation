@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { BladeConfig, BladeTopology, BladeState } from '@bladeforge/engine';
-import { DEFAULT_TOPOLOGY } from '@bladeforge/engine';
+import type { BladeConfig, BladeTopology, BladeState } from '@kyberstation/engine';
+import { DEFAULT_TOPOLOGY } from '@kyberstation/engine';
 
 // Default config matching the prototype's Obi-Wan ANH preset
 const DEFAULT_CONFIG: BladeConfig = {

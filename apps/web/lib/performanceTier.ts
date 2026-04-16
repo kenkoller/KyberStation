@@ -20,8 +20,8 @@ interface DeviceCapabilities {
   prefersReducedMotion: boolean;
 }
 
-const STORAGE_KEY = 'bladeforge-perf-tier';
-const STORAGE_KEY_AUTO = 'bladeforge-perf-auto-detected';
+const STORAGE_KEY = 'kyberstation-perf-tier';
+const STORAGE_KEY_AUTO = 'kyberstation-perf-auto-detected';
 
 /**
  * Detect raw device capabilities from browser APIs.

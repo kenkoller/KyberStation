@@ -1,4 +1,4 @@
-# BladeForge Architecture
+# KyberStation Architecture
 
 ## Design Principles
 
@@ -8,7 +8,7 @@
 
 3. **Plugin-style extensibility** — Styles, effects, and ignition types are classes implementing well-defined abstract base classes. Adding a new one is: create class, register in the index, add UI entry.
 
-4. **Board abstraction** — `packages/boards` defines capability profiles for 14 boards. Presets are board-agnostic "intent" objects; the compatibility scorer determines what each board can actually render.
+4. **Board abstraction** — `packages/boards` defines capability profiles for 16 boards. Presets are board-agnostic "intent" objects; the compatibility scorer determines what each board can actually render.
 
 5. **Offline-first** — All project data persists in IndexedDB. No server required for core functionality.
 
@@ -31,7 +31,7 @@ No circular dependencies. Engine is the leaf — everything depends on it, it de
 
 ### packages/engine
 
-The simulation core. 42 source files, 398 tests.
+The simulation core. 82+ source files, 398+ tests.
 
 **Key classes:**
 - `BladeEngine` — Main engine. Owns an `LEDArray`, `MotionSimulator`, active style/effects/ignition instances. Call `update(deltaMs, config)` each frame, then `getPixels()` for the LED color array. Segment rendering is wrapped in try-catch for error recovery — a failing segment does not blank the entire blade.
@@ -39,9 +39,9 @@ The simulation core. 42 source files, 398 tests.
 - `MotionSimulator` — IMU emulation. Produces swing speed, blade angle, and twist values for the `StyleContext`.
 
 **Registries:**
-- `STYLE_REGISTRY` — Maps style IDs to constructors. 12 styles (stable, unstable, fire, pulse, rotoscope, gradient, photon, plasma, crystalShatter, aurora, cinder, prism).
-- `EFFECT_REGISTRY` — Maps effect type strings to constructors. 8 effects (clash, lockup, blast, drag, melt, lightning, stab, force).
-- `IGNITION_REGISTRY` / `RETRACTION_REGISTRY` — 7 ignition + 5 retraction animations.
+- `STYLE_REGISTRY` — Maps style IDs to constructors. 29 styles: stable, unstable, fire, pulse, rotoscope, gradient, photon, plasma, crystalShatter, aurora, cinder, prism, painted, imageScroll, gravity, dataStream, ember, automata, helix, candle, shatter, neutron, torrent, moire, cascade, vortex, nebula, tidal, mirage.
+- `EFFECT_REGISTRY` — Maps effect type strings to constructors. 21 effects: clash, lockup, blast, drag, melt, lightning, stab, force, shockwave, scatter, fragment, ripple, freeze, overcharge, bifurcate, invert, ghostEcho, splinter, coronary, glitchMatrix, siphon.
+- `IGNITION_REGISTRY` / `RETRACTION_REGISTRY` — 19 ignition animations (standard, scroll, center, spark, wipe, stutter, glitch, twist, swing, stab, custom-curve, crackle, fracture, flash-fill, pulse-wave, drip-up, hyperspace, summon, seismic) + 13 retraction animations (standard, scroll, center, fadeout, shatter, custom-curve, dissolve, flickerOut, unravel, drain, implode, evaporate, spaghettify).
 
 **Type system (`types.ts`):**
 - `BladeState` enum: OFF, IGNITING, ON, RETRACTING
@@ -49,6 +49,7 @@ The simulation core. 42 source files, 398 tests.
 - `BladeEffect` interface: `apply()`, `isActive()`, `trigger()`, `release()`, `reset()`
 - `IgnitionAnimation` interface: `getMask(position, progress, context?): number` (0–1)
 - `IgnitionContext` — bladeAngle, swingSpeed, twistAngle, config (optional BladeConfig reference for configurable ignitions like StutterIgnition's `stutterFullExtend`)
+- `EffectType` — Union type now includes: 'clash' | 'lockup' | 'blast' | 'drag' | 'melt' | 'lightning' | 'stab' | 'force' | 'shockwave' | 'scatter' | 'fragment' | 'ripple' | 'freeze' | 'overcharge' | 'bifurcate' | 'invert' | 'ghostEcho' | 'splinter' | 'coronary' | 'glitchMatrix' | 'siphon'
 - `StyleContext` — time, swingSpeed, bladeAngle, twistAngle, soundLevel, batteryLevel, config
 - `BladeTopology` — segments, total LED count, topology type
 - `BladeSegment` — startLED, endLED, direction, layers, ignition config, segment role
@@ -79,7 +80,7 @@ Converts `BladeConfig` objects into valid ProffieOS C++ code.
 
 ### packages/boards
 
-14 board profiles with capability matrices. Each profile declares supported features, LED limits, color profile count, and sub-blade support. Used by the UI to filter presets and by the codegen to select the correct board header and compilation options.
+16 board profiles with capability matrices. Each profile declares supported features, LED limits, color profile count, and sub-blade support. Used by the UI to filter presets and by the codegen to select the correct board header and compilation options.
 
 **Tier system:**
 - **Tier 1** — Full custom styles (Proffieboard V2, V3): unlimited color profiles, custom everything, layer compositing, sub-blade support.
@@ -118,14 +119,20 @@ Each template entry has a `presetName`, `fontName`, `source: { type: 'builtin', 
 
 ### State Management
 
-Seven Zustand stores:
+Thirteen Zustand stores:
 - **bladeStore** — Blade config, topology, active segment, blade state, motion sim parameters, effect log. All engine-facing state.
 - **uiStore** — View mode (blade/angle/strip/cross/uv-unwrap), render mode (photorealistic/pixel), canvas mode (2d/3d), active tab, brightness, HUD toggle, canvas theme, effect comparison toggle, active color channel, analyze mode (toggle pixel strip + RGB graph visibility for clean/analyze view).
-- **userPresetStore** — User-created preset collection. Hydrates from IndexedDB on mount. CRUD operations: save, update, delete, duplicate, reorder. Import/export for `.bladeforge-collection.json` bundles.
+- **userPresetStore** — User-created preset collection. Hydrates from IndexedDB on mount. CRUD operations: save, update, delete, duplicate, reorder. Import/export for `.kyberstation-collection.json` bundles.
 - **saberProfileStore** — Saber profiles, card configs, and card preset entries. Each profile has multiple named card configs; each config has an ordered list of `CardPresetEntry` objects. Persists to IndexedDB.
 - **presetListStore** — Legacy preset list management (predates card configs). Still used by older export paths.
 - **audioFontStore** — Sound font state: loaded font data, playback, and font library. Library state includes `libraryHandle` (persisted `FileSystemDirectoryHandle`), `libraryFonts` (scanned `LibraryFontEntry[]`), `libraryPath`, scanning progress.
 - **accessibilityStore** — Text size, reduced motion (auto-syncs from OS `prefers-reduced-motion` on first load), touch target sizing, high contrast mode.
+- **audioMixerStore** — EQ and audio effects mixer state. 3-band EQ, 13 filter types, dynamic parameter sources, mixer presets.
+- **layoutStore** — Workbench multi-column layout. Stores `ColumnAssignment` (Record mapping tab IDs to arrays of panel ID arrays), saved layout presets, collapsed panel tracking. Supports 1–4 columns with HTML5 Drag-and-Drop for cross-column panel movement. Auto-saves to localStorage.
+- **visualizationStore** — Visualization stack layer visibility and ordering. 13 layer types (blade, pixel-strip, channel-r/g/b, luminance, power-draw, hue, saturation, effect-overlay, swing-response, transition-progress, storage-budget). Debug mode, pinned pixels, hovered pixel state. Persists to localStorage.
+- **historyStore** — Undo/redo history. Past/future stacks of `HistoryEntry` objects (timestamp, label, snapshot), max 50 entries, session-only. Supports Cmd+Z / Cmd+Shift+Z / Cmd+Y keyboard shortcuts.
+- **themeStore** — (shared via uiStore) Extended theme support with 30 themes (9 base + 21 extended). Material, corner style, border style, and ambient intensity CSS custom properties.
+- **presetListStore** — Legacy preset list management (predates card configs). Still used by older export paths.
 
 ### IndexedDB Schema (Dexie.js, version 3)
 
@@ -213,6 +220,31 @@ interface LibraryFontEntry {
 3. Each frame: engine `update()` → `getPixels()` → `BladeCanvas` draws to HTML5 Canvas 2D.
 4. Canvas renders blade glow, hilt, LED strip visualization, and motion sim overlay.
 
+### Desktop Layout (Workbench)
+
+The desktop editor uses a horizontal workbench layout (`WorkbenchLayout.tsx`):
+
+1. **Header Bar** — Logo, undo/redo, FPS counter, share button, pause toggle, settings gear, docs link
+2. **Blade Canvas + Visualization Stack** — Horizontal blade preview with toggleable analysis layers (pixel strip, RGB channels, luminance, power draw, hue, saturation, effect overlay, swing response, transition progress, storage budget). Per-pixel debug overlay with hover tooltips and click-to-pin cards.
+3. **Tab Bar** — 5 top-level tabs: Design, Dynamics, Audio, Gallery, Output
+4. **Column Grid** — 1–4 columns (responsive to viewport width: 4 cols at 1440px+, 3 at 1200px+, 2 at 1024px+, 1 below). 29 panel definitions mapped across tabs. Panels are draggable between columns via HTML5 DnD. Users can save/load/delete custom layout presets.
+5. **Status Bar** — Power draw (mA/5A), storage budget (%), LED count, color-coded thresholds
+
+Mobile uses a swipe-between-tabs layout. Tablet uses a 2-column variant.
+
+### Fullscreen Preview
+
+Fixed z-50 overlay for immersive blade viewing. Supports horizontal and vertical orientations. Auto-hiding control bar (3s timeout). Keyboard shortcuts: Escape to exit, O for orientation, C/B/S/L/N/D/M/F for effects. Device motion toggle for mobile (accelerometer/gyroscope drives swing speed and blade angle via DeviceMotionEvent API).
+
+### Settings System
+
+Global settings modal with 5 sections:
+- **Performance Tier** — Full (all effects), Medium (reduced particles), Lite (minimal animations). Applied via CSS classes `perf-medium`, `perf-lite`.
+- **Aurebesh Mode** — Off, Labels only, Full. Toggles Aurebesh font rendering via CSS classes `aurebesh-labels`, `aurebesh-full`.
+- **UI Sounds** — Star Wars-style beep/chirp feedback. Preset selection, per-category volume, generated via Web Audio API oscillator synthesis. Defaults to OFF.
+- **Layout Management** — Save/load/delete custom workbench layouts via layoutStore presets.
+- **Display** — FPS counter toggle, visualization layer checkboxes.
+
 ### Pages
 
 - `/` — Landing page (redirects to editor)
@@ -222,6 +254,6 @@ interface LibraryFontEntry {
 ### Config I/O
 
 - `bladeConfigIO.ts` — Serialize/deserialize configs to JSON, validate, download as file, read from file. Also handles:
-  - **Collection I/O** — `downloadCollection()` / `readCollectionFile()` for `.bladeforge-collection.json` bundles (array of `UserPreset` objects with thumbnails).
-  - **Card Template I/O** — `downloadCardTemplate()` / `readCardTemplateFile()` for `.bladeforge-card.json` files (card config entries stripped of personal font paths).
+  - **Collection I/O** — `downloadCollection()` / `readCollectionFile()` for `.kyberstation-collection.json` bundles (array of `UserPreset` objects with thumbnails).
+  - **Card Template I/O** — `downloadCardTemplate()` / `readCardTemplateFile()` for `.kyberstation-card.json` files (card config entries stripped of personal font paths).
 - `configUrl.ts` — Encode configs to compact URL-safe strings (JSON → deflate-raw → base64url) for Kyber Code sharing.

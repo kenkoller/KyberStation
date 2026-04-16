@@ -21,6 +21,13 @@ import { HelixStyle } from './HelixStyle.js';
 import { CandleStyle } from './CandleStyle.js';
 import { ShatterStyle } from './ShatterStyle.js';
 import { NeutronStyle } from './NeutronStyle.js';
+import { TorrentStyle } from './TorrentStyle.js';
+import { MoireStyle } from './MoireStyle.js';
+import { CascadeStyle } from './CascadeStyle.js';
+import { VortexStyle } from './VortexStyle.js';
+import { NebulaStyle } from './NebulaStyle.js';
+import { TidalStyle } from './TidalStyle.js';
+import { MirageStyle } from './MirageStyle.js';
 
 export { BaseStyle } from './BaseStyle.js';
 export { StableStyle } from './StableStyle.js';
@@ -45,6 +52,13 @@ export { HelixStyle } from './HelixStyle.js';
 export { CandleStyle } from './CandleStyle.js';
 export { ShatterStyle } from './ShatterStyle.js';
 export { NeutronStyle } from './NeutronStyle.js';
+export { TorrentStyle } from './TorrentStyle.js';
+export { MoireStyle } from './MoireStyle.js';
+export { CascadeStyle } from './CascadeStyle.js';
+export { VortexStyle } from './VortexStyle.js';
+export { NebulaStyle } from './NebulaStyle.js';
+export { TidalStyle } from './TidalStyle.js';
+export { MirageStyle } from './MirageStyle.js';
 
 /** Registry of all available blade styles, keyed by style ID. */
 export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
@@ -70,6 +84,13 @@ export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
   candle: () => new CandleStyle(),
   shatter: () => new ShatterStyle(),
   neutron: () => new NeutronStyle(),
+  torrent: () => new TorrentStyle(),
+  moire: () => new MoireStyle(),
+  cascade: () => new CascadeStyle(),
+  vortex: () => new VortexStyle(),
+  nebula: () => new NebulaStyle(),
+  tidal: () => new TidalStyle(),
+  mirage: () => new MirageStyle(),
 };
 
 /**

@@ -23,6 +23,21 @@ const BLADE_STYLES = [
   { id: 'aurora', label: 'Aurora', desc: 'Northern lights shimmer' },
   { id: 'cinder', label: 'Cinder', desc: 'Dying ember trail' },
   { id: 'prism', label: 'Prism', desc: 'Rainbow refraction' },
+  { id: 'dataStream', label: 'Data Stream', desc: 'Traveling data packets' },
+  { id: 'gravity', label: 'Gravity', desc: 'Accelerometer-driven pooling' },
+  { id: 'ember', label: 'Ember', desc: 'Rising ember particles' },
+  { id: 'automata', label: 'Automata', desc: 'Cellular automaton pattern' },
+  { id: 'helix', label: 'Helix', desc: 'Double helix sine waves' },
+  { id: 'candle', label: 'Candle', desc: 'Fbm flicker with gust events' },
+  { id: 'shatter', label: 'Shatter', desc: 'Independent shard pulses' },
+  { id: 'neutron', label: 'Neutron', desc: 'Bouncing particle with trail' },
+  { id: 'torrent', label: 'Torrent', desc: 'Rushing energy torrent' },
+  { id: 'moire', label: 'Moir\u00e9', desc: 'Moir\u00e9 interference pattern' },
+  { id: 'cascade', label: 'Cascade', desc: 'Cascading energy waves' },
+  { id: 'vortex', label: 'Vortex', desc: 'Swirling vortex effect' },
+  { id: 'nebula', label: 'Nebula', desc: 'Cosmic nebula clouds' },
+  { id: 'tidal', label: 'Tidal', desc: 'Tidal wave oscillation' },
+  { id: 'mirage', label: 'Mirage', desc: 'Heat shimmer mirage' },
   { id: 'painted', label: 'Painted', desc: 'Hand-painted blade colors' },
   { id: 'imageScroll', label: 'Image Scroll', desc: 'Scroll an image for light painting' },
 ];
@@ -187,49 +202,51 @@ export function StylePanel() {
   const showEdgeColor = config.style === 'plasma';
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Style buttons */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Blade Style
           <HelpTooltip text="Choose the base animation style. Each style has a unique visual character and may expose its own tunable parameters below." proffie="StylePtr<...>" />
         </h3>
-        <div className="grid grid-cols-2 gap-2">
-          {BLADE_STYLES.map((style) => {
-            const isActive = config.style === style.id;
-            return (
-              <button
-                key={style.id}
-                onClick={() => { playUISound('button-click'); setStyle(style.id); playUISound('success'); }}
-                title={style.desc}
-                className={`text-left px-2 py-1.5 rounded text-ui-xs transition-colors border-l-[3px] border-r border-t border-b ${
-                  isActive
-                    ? 'border-l-accent bg-accent-dim border-r-accent-border border-t-accent-border border-b-accent-border text-accent'
-                    : 'border-l-transparent bg-bg-surface border-r-border-subtle border-t-border-subtle border-b-border-subtle text-text-secondary hover:text-text-primary hover:border-l-border-light'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <StyleDot
-                    styleId={style.id}
-                    baseColor={config.baseColor}
-                    gradientEnd={config.gradientEnd}
-                  />
-                  <span className="font-medium text-ui-base">{style.label}</span>
-                </div>
-              </button>
-            );
-          })}
+        <div className="max-h-[320px] overflow-y-auto rounded border border-border-subtle">
+          <div className="grid grid-cols-2 gap-1.5 p-1.5">
+            {BLADE_STYLES.map((style) => {
+              const isActive = config.style === style.id;
+              return (
+                <button
+                  key={style.id}
+                  onClick={() => { playUISound('button-click'); setStyle(style.id); playUISound('success'); }}
+                  title={style.desc}
+                  className={`text-left px-2 py-1 rounded text-ui-xs transition-colors border-l-[3px] border-r border-t border-b ${
+                    isActive
+                      ? 'border-l-accent bg-accent-dim border-r-accent-border border-t-accent-border border-b-accent-border text-accent'
+                      : 'border-l-transparent bg-bg-surface border-r-border-subtle border-t-border-subtle border-b-border-subtle text-text-secondary hover:text-text-primary hover:border-l-border-light'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <StyleDot
+                      styleId={style.id}
+                      baseColor={config.baseColor}
+                      gradientEnd={config.gradientEnd}
+                    />
+                    <span className="font-medium text-ui-base">{style.label}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Style-Specific Parameters */}
       {STYLE_PARAMS[config.style] && (
         <div>
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
             Style Parameters
             <HelpTooltip text="Fine-tune the selected style's behavior. These sliders are specific to the current style — switching styles may show different parameters." />
           </h3>
-          <div className="space-y-3 bg-bg-surface rounded-panel p-3 border border-border-subtle">
+          <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
             {STYLE_PARAMS[config.style].map((param) => (
               <StyleParamSlider
                 key={param.key}
@@ -252,7 +269,7 @@ export function StylePanel() {
 
       {/* Colors */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Colors
           <HelpTooltip text="Quick color pickers for base blade and effect trigger colors. For advanced color editing with HSL sliders, harmony wheels, and canon presets, use the full Color Panel." proffie="Rgb<r,g,b>" />
         </h3>
@@ -280,11 +297,11 @@ export function StylePanel() {
 
       {/* Core Parameters (brightness, LED count) */}
       <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-3 flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
           Hardware
           <HelpTooltip text="LED brightness and count. These should match your physical blade setup for accurate simulation. See also: Blade Hardware panel for topology and strip config, Power Draw for battery estimates." proffie="MaxLedsPerStrip" />
         </h3>
-        <div className="space-y-4 bg-bg-surface rounded-panel p-3 border border-border-subtle">
+        <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
           <div className="flex items-center gap-3">
             <label htmlFor="hw-brightness" className="text-ui-xs text-text-secondary w-20 shrink-0">Brightness</label>
             <input

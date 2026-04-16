@@ -24,8 +24,6 @@ import { SoundFontPanel } from '@/components/editor/SoundFontPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { SmoothSwingPanel } from '@/components/editor/SmoothSwingPanel';
 import { PresetGallery } from '@/components/editor/PresetGallery';
-import { PresetBrowser } from '@/components/editor/PresetBrowser';
-import { CommunityGallery } from '@/components/editor/CommunityGallery';
 import { CodeOutput } from '@/components/editor/CodeOutput';
 import { PowerDrawPanel } from '@/components/editor/PowerDrawPanel';
 import { StorageBudgetPanel } from '@/components/editor/StorageBudgetPanel';
@@ -35,7 +33,9 @@ import { CompatibilityPanel } from '@/components/editor/CompatibilityPanel';
 import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
 import { ComparisonView } from '@/components/editor/ComparisonView';
+import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 // ─── Coming-soon placeholder ──────────────────────────────────────────────────
@@ -93,6 +93,14 @@ const IGNITION_STYLES_IR = [
   { id: 'twist',        label: 'Twist',        desc: 'Spiral ignition driven by twist' },
   { id: 'swing',        label: 'Swing',        desc: 'Speed-reactive swing ignition' },
   { id: 'stab',         label: 'Stab',         desc: 'Rapid center-out burst' },
+  { id: 'crackle',      label: 'Crackle',      desc: 'Random segment flicker fill' },
+  { id: 'fracture',     label: 'Fracture',     desc: 'Radiating crack points' },
+  { id: 'flash-fill',   label: 'Flash Fill',   desc: 'White flash then color wipe' },
+  { id: 'pulse-wave',   label: 'Pulse Wave',   desc: 'Sequential building waves' },
+  { id: 'drip-up',      label: 'Drip Up',      desc: 'Fluid upward flow' },
+  { id: 'hyperspace',   label: 'Hyperspace',   desc: 'Streaking star-line ignition' },
+  { id: 'summon',       label: 'Summon',       desc: 'Force-pull ignition' },
+  { id: 'seismic',      label: 'Seismic',      desc: 'Ground-shake ripple ignition' },
   { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
 ];
 
@@ -102,6 +110,13 @@ const RETRACTION_STYLES_IR = [
   { id: 'fadeout',      label: 'Fade Out',     desc: 'Fading retraction' },
   { id: 'center',       label: 'Center In',    desc: 'Retracts to center' },
   { id: 'shatter',      label: 'Shatter',      desc: 'Shattering retraction' },
+  { id: 'dissolve',     label: 'Dissolve',     desc: 'Random shuffle turn-off' },
+  { id: 'flickerOut',   label: 'Flicker Out',  desc: 'Tip-to-base flicker band' },
+  { id: 'unravel',      label: 'Unravel',      desc: 'Sinusoidal thread unwind' },
+  { id: 'drain',        label: 'Drain',        desc: 'Gravity drain with meniscus' },
+  { id: 'implode',      label: 'Implode',      desc: 'Collapsing inward retraction' },
+  { id: 'evaporate',    label: 'Evaporate',    desc: 'Fading particle evaporation' },
+  { id: 'spaghettify',  label: 'Spaghettify',  desc: 'Stretching gravitational pull' },
   { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
 ];
 
@@ -199,6 +214,52 @@ function IgnitionRetractionPanel() {
   );
 }
 
+// ─── Effect Presets standalone panel ──────────────────────────────────────────
+//
+// Extracted from SoundFontPanel so it can live in its own layout slot.
+
+const AUDIO_EFFECT_PRESETS = [
+  { id: 'clean', label: 'Clean', description: 'No effects, pure sound' },
+  { id: 'kylo-unstable', label: 'Kylo Unstable', description: 'Distortion + high-pass crackle' },
+  { id: 'cave-echo', label: 'Cave Echo', description: 'Deep reverb + echo' },
+  { id: 'lo-fi-retro', label: 'Lo-Fi Retro', description: 'Bitcrusher + low-pass warmth' },
+  { id: 'underwater', label: 'Underwater', description: 'Heavy low-pass + chorus' },
+  { id: 'force-tunnel', label: 'Force Tunnel', description: 'Phaser + reverb + pitch shift' },
+];
+
+function EffectPresetsPanel() {
+  const activePreset = useAudioMixerStore((s) => s.activePresetId);
+  const applyPreset = useAudioMixerStore((s) => s.applyPreset);
+
+  return (
+    <div className="space-y-3">
+      <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
+        Effect Chain Presets
+        <HelpTooltip text="One-click audio effect combos for common saber sounds. Each preset sets multiple EQ and effects sliders at once. Switch to the Mixer / EQ panel to fine-tune after applying." />
+      </h4>
+      <div className="grid grid-cols-1 gap-2">
+        {AUDIO_EFFECT_PRESETS.map((preset) => {
+          const isActive = activePreset === preset.id;
+          return (
+            <button
+              key={preset.id}
+              onClick={() => applyPreset(preset.id)}
+              className={`text-left px-3 py-2.5 rounded text-ui-xs transition-colors border ${
+                isActive
+                  ? 'border-accent bg-accent-dim text-accent'
+                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
+              }`}
+            >
+              <div className="font-medium">{preset.label}</div>
+              <div className="text-ui-sm text-text-muted mt-0.5">{preset.description}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Panel renderer ───────────────────────────────────────────────────────────
 
 /**
@@ -225,6 +286,9 @@ function renderPanel(panelId: string): React.ReactNode {
       return <ThemePickerPanelConnected />;
     case 'gradient-builder':
       return <GradientBuilder />;
+    case 'ignition-retraction':
+      // Ignition style selector + speed, retraction style selector + speed only
+      return <IgnitionRetractionPanel />;
 
     // ── Dynamics ──
     case 'effect-triggers':
@@ -235,9 +299,6 @@ function renderPanel(panelId: string): React.ReactNode {
       return <GestureControlPanel />;
     case 'motion-simulation':
       return <MotionSimPanel />;
-    case 'ignition-retraction':
-      // Ignition style selector + speed, retraction style selector + speed only
-      return <IgnitionRetractionPanel />;
     case 'gesture-config':
       return <GestureControlPanel />;
     case 'comparison-view':
@@ -252,23 +313,31 @@ function renderPanel(panelId: string): React.ReactNode {
       return <FontPreviewPlaceholder />;
     case 'mixer-eq':
       return <AudioPanel />;
+    case 'effect-presets':
+      return <EffectPresetsPanel />;
     case 'smoothswing-config':
       return <SmoothSwingPanel />;
 
     // ── Gallery ──
+    case 'gallery-browser':
+      // Unified gallery with Built-in / My Presets / Community sub-tabs
+      return <PresetGallery />;
     case 'builtin-presets':
-      // Feature-rich preset browser: era/affiliation filters, Kyber Code share links
-      return <PresetBrowser />;
+      // Legacy slot — redirects to the unified gallery on the built-in tab
+      return <PresetGallery initialTab="gallery" />;
     case 'my-presets':
-      // PresetGallery opened directly on its "My Presets" internal tab
+      // Legacy slot — redirects to the unified gallery on the my-presets tab
       return <PresetGallery initialTab="my-presets" />;
     case 'community-gallery':
-      return <CommunityGallery />;
+      // Legacy slot — redirects to the unified gallery on the community tab
+      return <PresetGallery initialTab="community" />;
     case 'preset-detail':
       // Future: detail view for a selected preset with full metadata + variations
       return <ComingSoon label="Preset Detail" />;
 
     // ── Output ──
+    case 'output-workflow':
+      return <OutputWorkflowGuide />;
     case 'code-output':
       return <CodeOutput />;
     case 'power-draw':
@@ -320,9 +389,18 @@ export function TabColumnContent() {
   const columns = useLayoutStore((s) => s.columns[activeTab] ?? [[]]);
   const collapsedPanels = useLayoutStore((s) => s.collapsedPanels);
 
+  const columnWidths = useLayoutStore((s) => s.columnWidths[activeTab]);
+  const setColumnWidths = useLayoutStore((s) => s.setColumnWidths);
   const movePanelToColumn = useLayoutStore((s) => s.movePanelToColumn);
   const reorderPanelInColumn = useLayoutStore((s) => s.reorderPanelInColumn);
   const togglePanelCollapsed = useLayoutStore((s) => s.togglePanelCollapsed);
+
+  const handleColumnWidthsChange = useCallback(
+    (widths: number[]) => {
+      setColumnWidths(activeTab, widths);
+    },
+    [activeTab, setColumnWidths],
+  );
 
   // Stable callbacks that capture the current activeTab via closure
   const handleMovePanel = useCallback(
@@ -360,6 +438,8 @@ export function TabColumnContent() {
       onToggleCollapse={handleToggleCollapse}
       collapsedPanels={collapsedPanels}
       renderPanel={renderPanel}
+      columnWidths={columnWidths}
+      onColumnWidthsChange={handleColumnWidthsChange}
     />
   );
 }

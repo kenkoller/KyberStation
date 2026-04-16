@@ -24,7 +24,7 @@ function lerpColor(a: { r: number; g: number; b: number }, b: { r: number; g: nu
   };
 }
 
-const STORAGE_KEY = 'bladeforge-saved-gradients';
+const STORAGE_KEY = 'kyberstation-saved-gradients';
 
 function loadSavedGradients(): SavedGradient[] {
   if (typeof window === 'undefined') return [];

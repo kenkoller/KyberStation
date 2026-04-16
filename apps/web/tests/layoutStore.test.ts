@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   useLayoutStore,
   DEFAULT_COLUMN_ASSIGNMENT,
+  DEFAULT_COLLAPSED_PANELS,
   PANEL_DEFINITIONS,
   type PanelId,
   type TabId,
@@ -41,28 +42,28 @@ describe('layoutStore — default column assignment', () => {
     expect(allInColumns.sort()).toEqual(expected.sort());
   });
 
-  it('dynamics tab contains all 4 expected panels', () => {
+  it('dynamics tab contains all expected panels', () => {
     const { columns } = useLayoutStore.getState();
     const allInColumns = columns.dynamics.flat();
     const expected = panelsForTab('dynamics');
     expect(allInColumns.sort()).toEqual(expected.sort());
   });
 
-  it('audio tab contains all 4 expected panels', () => {
+  it('audio tab contains all expected panels', () => {
     const { columns } = useLayoutStore.getState();
     const allInColumns = columns.audio.flat();
     const expected = panelsForTab('audio');
     expect(allInColumns.sort()).toEqual(expected.sort());
   });
 
-  it('gallery tab contains all 4 expected panels', () => {
+  it('gallery tab contains all expected panels', () => {
     const { columns } = useLayoutStore.getState();
     const allInColumns = columns.gallery.flat();
     const expected = panelsForTab('gallery');
     expect(allInColumns.sort()).toEqual(expected.sort());
   });
 
-  it('output tab contains all 5 expected panels', () => {
+  it('output tab contains all expected panels', () => {
     const { columns } = useLayoutStore.getState();
     const allInColumns = columns.output.flat();
     const expected = panelsForTab('output');
@@ -80,14 +81,14 @@ describe('layoutStore — default column assignment', () => {
     expect(col.indexOf('style-select')).toBeLessThan(col.indexOf('color-picker'));
   });
 
-  it('code-output is in output column 0', () => {
+  it('code-output is in output column 1', () => {
     const { columns } = useLayoutStore.getState();
-    expect(columns.output[0]).toContain('code-output');
+    expect(columns.output[1]).toContain('code-output');
   });
 
-  it('card-writer is in output column 3', () => {
+  it('card-writer is in output column 2', () => {
     const { columns } = useLayoutStore.getState();
-    expect(columns.output[3]).toContain('card-writer');
+    expect(columns.output[2]).toContain('card-writer');
   });
 });
 
@@ -126,12 +127,12 @@ describe('layoutStore — movePanelToColumn', () => {
   });
 
   it('clamps targetIndex to valid range (beyond end inserts at end)', () => {
-    // Column 3 of design currently has only 'oled-preview'; insert at index 99 should append
-    useLayoutStore.getState().movePanelToColumn('design', 'randomizer', 3, 99);
+    // Insert at index 99 should clamp to the end of the target column
+    useLayoutStore.getState().movePanelToColumn('design', 'parameters', 3, 99);
 
     const { columns } = useLayoutStore.getState();
     const col3 = columns.design[3];
-    expect(col3[col3.length - 1]).toBe('randomizer');
+    expect(col3[col3.length - 1]).toBe('parameters');
   });
 
   it('total panel count for the tab is unchanged after move', () => {
@@ -320,11 +321,18 @@ describe('layoutStore — resetToDefaults', () => {
     expect(useLayoutStore.getState().columnCount).toBe(4);
   });
 
-  it('clears all collapsed panels', () => {
+  it('restores default collapsed panels', () => {
+    // Expand a panel that is collapsed by default, then reset
+    useLayoutStore.getState().togglePanelCollapsed('parameters');
     useLayoutStore.getState().togglePanelCollapsed('color-picker');
-    useLayoutStore.getState().togglePanelCollapsed('layer-stack');
     useLayoutStore.getState().resetToDefaults();
-    expect(useLayoutStore.getState().collapsedPanels.size).toBe(0);
+
+    const { collapsedPanels } = useLayoutStore.getState();
+    // Should match the curated DEFAULT_COLLAPSED_PANELS set
+    expect(collapsedPanels.size).toBe(DEFAULT_COLLAPSED_PANELS.size);
+    for (const id of DEFAULT_COLLAPSED_PANELS) {
+      expect(collapsedPanels.has(id)).toBe(true);
+    }
   });
 
   it('does not clear saved presets', () => {

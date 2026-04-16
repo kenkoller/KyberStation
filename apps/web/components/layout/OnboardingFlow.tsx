@@ -18,7 +18,7 @@ import {
   getUISoundEngine,
 } from '../../lib/uiSounds';
 
-const ONBOARDING_KEY = 'bladeforge-onboarding-complete';
+const ONBOARDING_KEY = 'kyberstation-onboarding-complete';
 
 interface OnboardingFlowProps {
   onComplete: () => void;

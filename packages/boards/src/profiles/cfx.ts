@@ -1,29 +1,29 @@
 import type { BoardProfile } from '../types.js';
 
 const CFX_EFFECTS: BoardProfile['supportedEffects'] = [
-  { bladeforgeEffect: 'clash', boardEffectName: 'clash', configParam: 'clash_profile', notes: 'Clash effect via clash profile parameters in config.txt' },
-  { bladeforgeEffect: 'lockup', boardEffectName: 'lockup', configParam: 'lockup_profile', notes: 'Lockup effect with configurable color and intensity' },
-  { bladeforgeEffect: 'blast', boardEffectName: 'blaster', configParam: 'blaster_profile', notes: 'Blast deflection via blaster profile in config.txt' },
-  { bladeforgeEffect: 'drag', boardEffectName: 'drag', configParam: 'drag_profile', notes: 'Drag effect via drag profile parameters' },
-  { bladeforgeEffect: 'melt', boardEffectName: null, notes: 'Melt effect not natively supported on CFX' },
-  { bladeforgeEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not natively supported on CFX' },
-  { bladeforgeEffect: 'stab', boardEffectName: 'stab', configParam: 'stab_profile', notes: 'Basic stab effect via config parameter' },
-  { bladeforgeEffect: 'force', boardEffectName: 'force', configParam: 'force_profile', notes: 'Force push effect via force profile' },
+  { kyberstationEffect: 'clash', boardEffectName: 'clash', configParam: 'clash_profile', notes: 'Clash effect via clash profile parameters in config.txt' },
+  { kyberstationEffect: 'lockup', boardEffectName: 'lockup', configParam: 'lockup_profile', notes: 'Lockup effect with configurable color and intensity' },
+  { kyberstationEffect: 'blast', boardEffectName: 'blaster', configParam: 'blaster_profile', notes: 'Blast deflection via blaster profile in config.txt' },
+  { kyberstationEffect: 'drag', boardEffectName: 'drag', configParam: 'drag_profile', notes: 'Drag effect via drag profile parameters' },
+  { kyberstationEffect: 'melt', boardEffectName: null, notes: 'Melt effect not natively supported on CFX' },
+  { kyberstationEffect: 'lightning', boardEffectName: null, notes: 'Lightning block not natively supported on CFX' },
+  { kyberstationEffect: 'stab', boardEffectName: 'stab', configParam: 'stab_profile', notes: 'Basic stab effect via config parameter' },
+  { kyberstationEffect: 'force', boardEffectName: 'force', configParam: 'force_profile', notes: 'Force push effect via force profile' },
 ];
 
 const CFX_STYLES: BoardProfile['supportedStyles'] = [
-  { bladeforgeStyle: 'stable', boardStyleName: 'static', configMapping: { effect: 'static' }, notes: 'Solid color blade' },
-  { bladeforgeStyle: 'unstable', boardStyleName: 'unstable', configMapping: { effect: 'unstable' }, notes: 'CFX built-in unstable flicker' },
-  { bladeforgeStyle: 'fire', boardStyleName: 'fire', configMapping: { effect: 'fire' }, notes: 'CFX built-in fire effect' },
-  { bladeforgeStyle: 'rotoscope', boardStyleName: 'rainbow', configMapping: { effect: 'rainbow' }, notes: 'Closest match: rainbow scrolling effect' },
-  { bladeforgeStyle: 'pulse', boardStyleName: 'pulse', configMapping: { effect: 'pulse' }, notes: 'CFX built-in pulsing effect' },
-  { bladeforgeStyle: 'gradient', boardStyleName: 'gradient', configMapping: { effect: 'gradient' }, notes: 'CFX gradient between two colors' },
-  { bladeforgeStyle: 'photon', boardStyleName: 'static', configMapping: { effect: 'static' }, notes: 'No direct match; falls back to static' },
-  { bladeforgeStyle: 'plasma', boardStyleName: 'unstable', configMapping: { effect: 'unstable' }, notes: 'Closest match: unstable flicker' },
-  { bladeforgeStyle: 'crystal-shatter', boardStyleName: 'strobe', configMapping: { effect: 'strobe' }, notes: 'Closest match: strobe effect' },
-  { bladeforgeStyle: 'aurora', boardStyleName: 'rainbow', configMapping: { effect: 'rainbow' }, notes: 'Closest match: rainbow cycle' },
-  { bladeforgeStyle: 'cinder', boardStyleName: 'fire', configMapping: { effect: 'fire' }, notes: 'Closest match: fire effect' },
-  { bladeforgeStyle: 'prism', boardStyleName: 'rainbow', configMapping: { effect: 'rainbow' }, notes: 'Closest match: rainbow cycle' },
+  { kyberstationStyle: 'stable', boardStyleName: 'static', configMapping: { effect: 'static' }, notes: 'Solid color blade' },
+  { kyberstationStyle: 'unstable', boardStyleName: 'unstable', configMapping: { effect: 'unstable' }, notes: 'CFX built-in unstable flicker' },
+  { kyberstationStyle: 'fire', boardStyleName: 'fire', configMapping: { effect: 'fire' }, notes: 'CFX built-in fire effect' },
+  { kyberstationStyle: 'rotoscope', boardStyleName: 'rainbow', configMapping: { effect: 'rainbow' }, notes: 'Closest match: rainbow scrolling effect' },
+  { kyberstationStyle: 'pulse', boardStyleName: 'pulse', configMapping: { effect: 'pulse' }, notes: 'CFX built-in pulsing effect' },
+  { kyberstationStyle: 'gradient', boardStyleName: 'gradient', configMapping: { effect: 'gradient' }, notes: 'CFX gradient between two colors' },
+  { kyberstationStyle: 'photon', boardStyleName: 'static', configMapping: { effect: 'static' }, notes: 'No direct match; falls back to static' },
+  { kyberstationStyle: 'plasma', boardStyleName: 'unstable', configMapping: { effect: 'unstable' }, notes: 'Closest match: unstable flicker' },
+  { kyberstationStyle: 'crystal-shatter', boardStyleName: 'strobe', configMapping: { effect: 'strobe' }, notes: 'Closest match: strobe effect' },
+  { kyberstationStyle: 'aurora', boardStyleName: 'rainbow', configMapping: { effect: 'rainbow' }, notes: 'Closest match: rainbow cycle' },
+  { kyberstationStyle: 'cinder', boardStyleName: 'fire', configMapping: { effect: 'fire' }, notes: 'Closest match: fire effect' },
+  { kyberstationStyle: 'prism', boardStyleName: 'rainbow', configMapping: { effect: 'rainbow' }, notes: 'Closest match: rainbow cycle' },
 ];
 
 export const CFX_PROFILE: BoardProfile = {

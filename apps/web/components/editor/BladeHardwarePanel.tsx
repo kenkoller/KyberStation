@@ -1,6 +1,6 @@
 'use client';
 import { useBladeStore } from '@/stores/bladeStore';
-import { TOPOLOGY_PRESETS, type BladeConfig } from '@bladeforge/engine';
+import { TOPOLOGY_PRESETS, type BladeConfig } from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
 const BLADE_LENGTHS = [

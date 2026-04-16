@@ -1,8 +1,8 @@
-# BLADEFORGE — Project Context
+# KYBERSTATION — Project Context
 
 ## Overview
 
-BladeForge is a standalone desktop + web application for designing, previewing, and exporting custom lightsaber blade styles for the Proffieboard V3.9 running ProffieOS 7.x. It is a visual style editor, real-time blade simulator, sound font manager, and config generator — think "DAW for lightsabers."
+KyberStation is a standalone desktop + web application for designing, previewing, and exporting custom lightsaber blade styles for the Proffieboard V3.9 running ProffieOS 7.x. It is a visual style editor, real-time blade simulator, sound font manager, and config generator — think "DAW for lightsabers."
 
 The app targets the Neopixel lightsaber hobbyist community (cosplay, reenactment, collecting, dueling) and aims to surpass every existing tool (Fett263 Style Library web UI, Fredrik's Style Editor, manual config editing) by combining them into a single cohesive experience with features nobody has built yet.
 
@@ -24,7 +24,7 @@ The app targets the Neopixel lightsaber hobbyist community (cosplay, reenactment
 ## Repository Structure
 
 ```
-bladeforge/
+kyberstation/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml
@@ -49,7 +49,7 @@ bladeforge/
 │   │   │       └── page.tsx          # Built-in ProffieOS reference
 │   │   ├── components/
 │   │   │   ├── editor/
-│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas
+│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas (zoom: 0.9x–1.3x)
 │   │   │   │   ├── BladeCanvas3D.tsx       # Three.js 3D hilt + blade
 │   │   │   │   ├── StylePanel.tsx          # Style selection + config
 │   │   │   │   ├── EffectPanel.tsx         # Effect triggers + config
@@ -57,13 +57,18 @@ bladeforge/
 │   │   │   │   ├── MotionSimPanel.tsx      # Swing/angle/twist simulation
 │   │   │   │   ├── TimelinePanel.tsx       # Effect timeline / sequencer
 │   │   │   │   ├── LayerStack.tsx          # Visual layer compositor
-│   │   │   │   ├── CodeOutput.tsx          # Generated code + export
+│   │   │   │   ├── CodeOutput.tsx          # Generated code + export (volume default 1500)
 │   │   │   │   ├── PresetGallery.tsx       # Preset gallery + user presets (My Presets)
 │   │   │   │   ├── SoundFontPanel.tsx      # Sound font preview + font library
 │   │   │   │   ├── SaberProfileManager.tsx # Saber profiles + card preset composer
 │   │   │   │   ├── CardWriter.tsx          # SD card ZIP generation + writer
 │   │   │   │   ├── StorageBudgetPanel.tsx  # Flash memory budget estimation
-│   │   │   │   └── OLEDPreview.tsx         # OLED display preview
+│   │   │   │   ├── OLEDPreview.tsx         # OLED display preview
+│   │   │   │   ├── VisualizationStack.tsx  # Canvas-based analysis layers
+│   │   │   │   ├── VisualizationToolbar.tsx # Layer toggle icons
+│   │   │   │   ├── PixelDebugOverlay.tsx   # Per-pixel hover/pin/range debug
+│   │   │   │   ├── FullscreenPreview.tsx   # Immersive blade + device motion
+│   │   │   │   └── SmoothSwingPanel.tsx    # V1/V2 SmoothSwing config
 │   │   │   ├── hilt/
 │   │   │   │   ├── HiltSelector.tsx        # Hilt model picker
 │   │   │   │   └── HiltViewer3D.tsx        # 3D hilt renderer
@@ -76,12 +81,23 @@ bladeforge/
 │   │   │   │   ├── CollapsibleSection.tsx  # Collapsible panel wrapper
 │   │   │   │   ├── Modal.tsx
 │   │   │   │   ├── Tabs.tsx
-│   │   │   │   └── Toast.tsx
+│   │   │   │   ├── Toast.tsx
+│   │   │   │   └── Skeleton.tsx            # Loading skeleton components
 │   │   │   └── layout/
-│   │   │       ├── AppShell.tsx
+│   │   │       ├── AppShell.tsx            # Desktop→WorkbenchLayout, mobile/tablet shells
+│   │   │       ├── WorkbenchLayout.tsx     # Desktop horizontal workbench
+│   │   │       ├── ColumnGrid.tsx          # 1-4 col CSS grid + HTML5 DnD
+│   │   │       ├── DraggablePanel.tsx      # Panel wrapper with drag handle
+│   │   │       ├── TabColumnContent.tsx    # 29 panel ID → component mapping
 │   │   │       ├── Toolbar.tsx
-│   │   │       ├── StatusBar.tsx
-│   │   │       └── PanelLayout.tsx
+│   │   │       ├── StatusBar.tsx           # Power draw, storage budget, LED count
+│   │   │       ├── PanelLayout.tsx
+│   │   │       ├── UndoRedoButtons.tsx     # Cmd+Z / Cmd+Shift+Z
+│   │   │       ├── ShareButton.tsx         # Kyber Code URL copy
+│   │   │       ├── FPSCounter.tsx          # Color-coded FPS display
+│   │   │       ├── PauseButton.tsx         # Global animation pause toggle
+│   │   │       ├── SettingsModal.tsx       # Perf tiers, Aurebesh, sounds, layouts
+│   │   │       └── ToastContainer.tsx      # Toast notification wrapper
 │   │   ├── hooks/
 │   │   │   ├── useBladeEngine.ts
 │   │   │   ├── useAnimationFrame.ts
@@ -89,21 +105,30 @@ bladeforge/
 │   │   │   ├── useKeyboardShortcuts.ts
 │   │   │   ├── useDeviceMotion.ts
 │   │   │   ├── useSharedConfig.ts          # Kyber Code share link handler
-│   │   │   └── useAccessibilityApplier.ts  # OS reduced-motion sync
+│   │   │   ├── useAccessibilityApplier.ts  # OS reduced-motion sync
+│   │   │   ├── useResponsiveColumns.ts     # matchMedia 1440/1200/1024 breakpoints
+│   │   │   ├── usePauseSystem.ts           # isPaused → CSS class + Space key
+│   │   │   ├── useHistoryTracking.ts       # bladeStore → historyStore debounced
+│   │   │   └── useThemeApplier.ts          # CSS custom property theme application
 │   │   ├── stores/
-│   │   │   ├── bladeStore.ts               # Blade config, topology, state
-│   │   │   ├── uiStore.ts                  # View mode, tabs, canvas theme
+│   │   │   ├── bladeStore.ts               # Blade config, topology, state (LED default: 144)
+│   │   │   ├── uiStore.ts                  # View mode, tabs, canvas theme, pause, fullscreen
 │   │   │   ├── userPresetStore.ts          # User preset CRUD + IndexedDB
 │   │   │   ├── saberProfileStore.ts        # Saber profiles + card configs
 │   │   │   ├── presetListStore.ts          # Legacy preset list
 │   │   │   ├── audioFontStore.ts           # Sound fonts + library
 │   │   │   ├── audioMixerStore.ts          # EQ/effects mixer state
-│   │   │   └── accessibilityStore.ts       # A11y settings + OS sync
+│   │   │   ├── accessibilityStore.ts       # A11y settings + OS sync
+│   │   │   ├── layoutStore.ts              # Workbench columns, presets, collapsed panels
+│   │   │   ├── visualizationStore.ts       # 13 analysis layers, debug mode, pins
+│   │   │   └── historyStore.ts             # Undo/redo (50 entries, session-only)
 │   │   ├── lib/
 │   │   │   ├── bladeConfigIO.ts            # Config/collection/card template I/O
 │   │   │   ├── configUrl.ts                # Kyber Code URL encoding
 │   │   │   ├── fontDB.ts                   # IndexedDB schema (Dexie v3)
-│   │   │   └── cardDetector.ts             # SD card detection
+│   │   │   ├── cardDetector.ts             # SD card detection
+│   │   │   ├── themeDefinitions.ts         # 30 themes (9 base + 21 extended)
+│   │   │   └── visualizationTypes.ts       # 13 visualization layer definitions
 │   │   └── styles/
 │   │       └── globals.css
 │   └── electron/                     # Future: Electron shell
@@ -116,7 +141,7 @@ bladeforge/
 │   │   │   ├── index.ts
 │   │   │   ├── BladeEngine.ts        # Main engine class
 │   │   │   ├── LEDArray.ts           # LED buffer management
-│   │   │   ├── styles/               # Style implementations
+│   │   │   ├── styles/               # 29 style implementations
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── StableStyle.ts
 │   │   │   │   ├── UnstableStyle.ts
@@ -130,8 +155,16 @@ bladeforge/
 │   │   │   │   ├── AuroraStyle.ts
 │   │   │   │   ├── CinderStyle.ts
 │   │   │   │   ├── PrismStyle.ts
-│   │   │   │   └── BaseStyle.ts      # Abstract style interface
-│   │   │   ├── effects/              # Effect implementations
+│   │   │   │   ├── GravityStyle.ts       # Accelerometer-driven pooling
+│   │   │   │   ├── DataStreamStyle.ts    # Traveling data packets
+│   │   │   │   ├── EmberStyle.ts         # Rising ember particles
+│   │   │   │   ├── AutomataStyle.ts      # Rule 30 cellular automaton
+│   │   │   │   ├── HelixStyle.ts         # Double helix sine waves
+│   │   │   │   ├── CandleStyle.ts        # fbm flicker + gust events
+│   │   │   │   ├── ShatterStyle.ts       # Independent shard pulses
+│   │   │   │   ├── NeutronStyle.ts       # Bouncing particle + trail
+│   │   │   │   └── BaseStyle.ts          # Abstract style interface
+│   │   │   ├── effects/              # 21 effect implementations
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── ClashEffect.ts
 │   │   │   │   ├── LockupEffect.ts
@@ -141,8 +174,15 @@ bladeforge/
 │   │   │   │   ├── LightningEffect.ts
 │   │   │   │   ├── StabEffect.ts
 │   │   │   │   ├── ForceEffect.ts
-│   │   │   │   └── BaseEffect.ts     # Abstract effect interface
-│   │   │   ├── ignition/             # Ignition/retraction anims
+│   │   │   │   ├── ShockwaveEffect.ts    # Dual Gaussian wavefronts
+│   │   │   │   ├── ScatterEffect.ts      # Random pixel flash burst
+│   │   │   │   ├── FragmentEffect.ts     # Expanding segment gaps
+│   │   │   │   ├── RippleEffect.ts       # Concentric ring waves
+│   │   │   │   ├── FreezeEffect.ts       # Icy crystal spread
+│   │   │   │   ├── OverchargeEffect.ts   # Power surge + flicker
+│   │   │   │   ├── BifurcateEffect.ts    # Warm/cool color split
+│   │   │   │   └── BaseEffect.ts         # Abstract effect interface
+│   │   │   ├── ignition/             # 19 ignition + 13 retraction anims
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── StandardIgnition.ts
 │   │   │   │   ├── ScrollIgnition.ts
@@ -151,6 +191,15 @@ bladeforge/
 │   │   │   │   ├── WipeIgnition.ts
 │   │   │   │   ├── StutterIgnition.ts
 │   │   │   │   ├── GlitchIgnition.ts
+│   │   │   │   ├── CrackleIgnition.ts    # Random segment flicker fill
+│   │   │   │   ├── FractureIgnition.ts   # Radiating crack points
+│   │   │   │   ├── FlashFillIgnition.ts  # White flash → color wipe
+│   │   │   │   ├── PulseWaveIgnition.ts  # Sequential building waves
+│   │   │   │   ├── DripUpIgnition.ts     # Fluid upward flow
+│   │   │   │   ├── DissolveRetraction.ts # Random shuffle turn-off
+│   │   │   │   ├── FlickerOutRetraction.ts # Tip-to-base flicker band
+│   │   │   │   ├── UnravelRetraction.ts  # Sinusoidal thread unwind
+│   │   │   │   ├── DrainRetraction.ts    # Gravity drain + meniscus
 │   │   │   │   └── BaseIgnition.ts
 │   │   │   ├── functions/            # ProffieOS function emulators
 │   │   │   │   ├── SwingSpeed.ts
@@ -304,6 +353,69 @@ interface BladeConfig {
 - Fett263 prop file (saber_fett263_buttons.h)
 - Generated code must compile without modification in Arduino IDE with Proffieboard board manager installed
 - Support for: Layers<>, BlastL<>, SimpleClashL<>, LockupTrL<>, InOutTrL<>, all standard transitions, AudioFlicker, StyleFire, Pulsing, Stripes, Mix<>, Gradient<>, Rainbow, RotateColorsX<>, responsive functions
+
+## Development Environment
+
+### Source of Truth
+
+- **Local machine** is the development environment (Mac or PC)
+- **GitHub** (`kenkoller/KyberStation`) is the canonical remote — all work is pushed here
+- **NAS** (`/Volumes/ZDC/` aka Z: drive on Windows) is an optional mirror clone for backup only — never develop directly on the NAS
+- There should only be ONE active working copy per machine, cloned from GitHub
+
+### Multi-Machine Workflow (Mac + PC)
+
+Both machines clone from GitHub independently. Standard push/pull to stay in sync:
+
+```bash
+# On any machine — always pull before starting work
+git pull
+
+# After finishing work — commit and push
+git add <files>
+git commit -m "feat: description"
+git push
+```
+
+### PC Setup (Windows)
+
+Prerequisites:
+- Git for Windows
+- Node.js 20+ (24.x recommended)
+- pnpm (`corepack enable && corepack prepare pnpm@latest --activate`)
+- Windows Terminal + PowerShell or Git Bash
+
+```bash
+git clone https://github.com/kenkoller/KyberStation.git
+cd KyberStation
+pnpm install
+pnpm dev
+```
+
+Windows launch scripts (`KyberStation.bat`, `KyberStation.ps1`) are provided in the project root.
+
+### Mac Setup
+
+Prerequisites:
+- Node.js 20+ (24.x recommended)
+- pnpm 9+ (10.x recommended)
+
+```bash
+git clone https://github.com/kenkoller/KyberStation.git
+cd KyberStation
+pnpm install
+pnpm dev
+```
+
+### Cross-Platform Notes
+
+- `.gitattributes` enforces LF line endings on all source files across Mac and Windows
+- `.bat` and `.ps1` files are kept as CRLF for Windows compatibility
+- Do NOT develop on the NAS directly — SMB causes issues with file watching, symlinks, and pnpm performance
+- If a NAS backup is desired, clone the repo there and `git pull` periodically:
+  ```bash
+  git clone https://github.com/kenkoller/KyberStation.git /Volumes/ZDC/Development/KyberStation
+  ```
 
 ## Development Commands
 

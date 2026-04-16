@@ -21,7 +21,7 @@ interface GalleryData {
   lastUpdated: string;
 }
 
-const GALLERY_CACHE_KEY = 'bladeforge-community-gallery';
+const GALLERY_CACHE_KEY = 'kyberstation-community-gallery';
 const GALLERY_CACHE_TTL = 1000 * 60 * 30; // 30 minutes
 
 export function CommunityGallery() {
@@ -237,7 +237,7 @@ export function CommunityGallery() {
 
       <p className="text-ui-xs text-text-muted">
         {gallery.length} community style{gallery.length !== 1 ? 's' : ''} available.
-        Submit yours via GitHub PR to the bladeforge-community-styles repository.
+        Submit yours via GitHub PR to the kyberstation-community-styles repository.
       </p>
     </div>
   );

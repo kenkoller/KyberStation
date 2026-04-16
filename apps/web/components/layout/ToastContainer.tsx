@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * ToastContainer — Global notification overlay for BladeForge.
+ * ToastContainer — Global notification overlay for KyberStation.
  *
  * Mount once at the app root (editor/page.tsx). Toasts are pushed via the
  * `toast()` convenience function (or the lower-level `toastManager` API) from

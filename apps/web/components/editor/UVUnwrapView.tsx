@@ -4,7 +4,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { useBladeEngine } from '@/hooks/useBladeEngine';
-import type { BladeConfig } from '@bladeforge/engine';
+import type { BladeConfig } from '@kyberstation/engine';
 
 const STRIP_COLORS = ['#fff', '#88f', '#f88', '#8f8', '#ff8'];
 const STRIP_LABELS = ['S1', 'S2', 'S3', 'S4', 'S5'];

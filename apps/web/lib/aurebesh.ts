@@ -13,7 +13,7 @@
 
 export type AurebeshMode = 'off' | 'labels' | 'full';
 
-const STORAGE_KEY = 'bladeforge-aurebesh-mode';
+const STORAGE_KEY = 'kyberstation-aurebesh-mode';
 
 /**
  * Get the saved Aurebesh mode from localStorage.

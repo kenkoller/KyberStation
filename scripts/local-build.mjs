@@ -58,7 +58,7 @@ const web = resolve(ROOT, 'apps', 'web');
 
 async function main() {
   const start = Date.now();
-  console.log('BladeForge local build (no Turbo)\n');
+  console.log('KyberStation local build (no Turbo)\n');
 
   // Step 1: Build engine first (everything depends on it)
   console.log('Step 1/3: Building engine...');
