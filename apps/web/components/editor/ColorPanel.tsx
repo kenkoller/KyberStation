@@ -9,6 +9,7 @@ import {
 } from '@bladeforge/engine';
 import type { HarmonyType } from '@bladeforge/engine';
 import { getSaberColorName } from '@/lib/saberColorNames';
+import { playUISound } from '@/lib/uiSounds';
 
 // ─── Canon saber color presets ───
 
@@ -182,6 +183,7 @@ export function ColorPanel() {
   }, [activeColor, activeChannel, setColor]);
 
   const handlePresetClick = useCallback((preset: ColorPreset) => {
+    playUISound('button-click');
     setColor(activeChannel, preset.color);
     // Auto-suggest complementary clash/lockup when base color changes
     if (activeChannel === 'baseColor') {

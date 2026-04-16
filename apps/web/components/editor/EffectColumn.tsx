@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { playUISound } from '@/lib/uiSounds';
 
 // ─── Effect Definitions ───
 
@@ -122,6 +123,7 @@ export function EffectColumn({ onTrigger, onRelease, side = 'left' }: EffectColu
 
   const handleClick = useCallback((effect: EffectDef) => {
     if (!isOn) return;
+    playUISound('button-click');
 
     if (effect.sustained) {
       // Toggle: if active → release, if inactive → trigger

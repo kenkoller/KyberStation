@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import type { BladeConfig } from '@bladeforge/engine';
+import { playUISound } from '@/lib/uiSounds';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -376,10 +377,12 @@ export function Randomizer() {
   );
 
   const handleSurpriseMe = useCallback(() => {
+    playUISound('button-click');
     pushHistory(config);
     const theme = THEMES[activeTheme] ?? THEMES.random;
     const newConfig = applyLocks(generateConfig(theme), config, locks);
     setConfig(newConfig);
+    playUISound('success');
   }, [config, activeTheme, locks, pushHistory, setConfig]);
 
   const handleUndo = useCallback(() => {
@@ -390,8 +393,10 @@ export function Randomizer() {
   }, [history, setConfig]);
 
   const handleMutate = useCallback(() => {
+    playUISound('button-click');
     pushHistory(config);
     setConfig(mutateConfig(config));
+    playUISound('success');
   }, [config, pushHistory, setConfig]);
 
   const handleGenerateBatch = useCallback(() => {
@@ -406,11 +411,13 @@ export function Randomizer() {
 
   const handleApplyBatch = useCallback(() => {
     if (selectedBatchIdx === null || !batchConfigs[selectedBatchIdx]) return;
+    playUISound('button-click');
     pushHistory(config);
     setConfig(batchConfigs[selectedBatchIdx]);
     setShowBatch(false);
     setBatchConfigs([]);
     setSelectedBatchIdx(null);
+    playUISound('success');
   }, [selectedBatchIdx, batchConfigs, config, pushHistory, setConfig]);
 
   const toggleLock = useCallback((key: LockKey) => {

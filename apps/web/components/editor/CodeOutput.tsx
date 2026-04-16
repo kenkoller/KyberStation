@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useCallback, useState, useRef } from 'react';
+import { playUISound } from '@/lib/uiSounds';
 import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
@@ -103,6 +104,7 @@ export function CodeOutput() {
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(code);
+      playUISound('copy');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -112,6 +114,7 @@ export function CodeOutput() {
       textarea.select();
       document.execCommand('copy');
       document.body.removeChild(textarea);
+      playUISound('copy');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -150,6 +153,7 @@ export function CodeOutput() {
       const encoded = await encodeConfig(config);
       const url = buildShareUrl(encoded);
       await navigator.clipboard.writeText(url);
+      playUISound('copy');
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {

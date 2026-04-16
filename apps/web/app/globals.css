@@ -247,6 +247,36 @@ input[type='range']::-moz-range-thumb {
   box-shadow: 0 0 6px rgb(var(--accent) / 0.3);
 }
 
+/* ─── Skeleton shimmer (used by components/shared/Skeleton.tsx) ─── */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Respect OS/user reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  [style*="skeleton-shimmer"] {
+    animation: none !important;
+    background-image: none !important;
+    background-color: rgb(var(--bg-surface) / 0.4) !important;
+  }
+}
+
+/* Lite perf tier — strip animation entirely */
+html.perf-lite [style*="skeleton-shimmer"] {
+  animation: none !important;
+  background-image: none !important;
+  background-color: rgb(var(--bg-surface) / 0.4) !important;
+}
+
+/* App .reduced-motion class (set by useAccessibilityApplier) */
+.reduced-motion [style*="skeleton-shimmer"] {
+  animation: none !important;
+  background-image: none !important;
+  background-color: rgb(var(--bg-surface) / 0.4) !important;
+}
+
 /* Ignite button animations */
 @keyframes ignite-pulse {
   0%, 100% { box-shadow: 0 0 8px rgba(74, 158, 255, 0.3); }
@@ -388,6 +418,19 @@ input[type='range']::-moz-range-thumb {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ambient-intensity and crystal-color are in the main :root block above */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOBAL PAUSE — app-paused class set by usePauseSystem hook
+   Freezes every CSS animation and suppresses transitions so the last
+   rendered frame stays visible without motion. Applied to <html>.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.app-paused *,
+html.app-paused *::before,
+html.app-paused *::after {
+  animation-play-state: paused !important;
+  transition: none !important;
+}
 
 /* Kill all ambient animations when user prefers or class is set */
 .ambient-off .holo-scanline::after,

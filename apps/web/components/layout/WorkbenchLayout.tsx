@@ -1,0 +1,507 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useBladeEngine } from '@/hooks/useBladeEngine';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
+
+import { useUIStore } from '@/stores/uiStore';
+import type { ActiveTab } from '@/stores/uiStore';
+import { useBladeStore } from '@/stores/bladeStore';
+import { playUISound } from '@/lib/uiSounds';
+import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useThemeApplier } from '@/hooks/useThemeApplier';
+import { useAccessibilityApplier } from '@/hooks/useAccessibilityApplier';
+import { usePerformanceTier } from '@/hooks/usePerformanceTier';
+import { useAurebesh } from '@/hooks/useAurebesh';
+import { usePauseSystem } from '@/hooks/usePauseSystem';
+import { usePresetListSync } from '@/hooks/usePresetListSync';
+import { useHistoryTracking } from '@/hooks/useHistoryTracking';
+import { usePresetListStore } from '@/stores/presetListStore';
+import { PauseButton } from '@/components/layout/PauseButton';
+import { ShareButton } from '@/components/layout/ShareButton';
+import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
+import { StatusBar } from '@/components/layout/StatusBar';
+import { FPSCounter } from '@/components/layout/FPSCounter';
+import { SettingsModal } from '@/components/layout/SettingsModal';
+import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
+import { VisualizationStack } from '@/components/editor/VisualizationStack';
+import { PixelDebugOverlay } from '@/components/editor/PixelDebugOverlay';
+import { CanvasLayout } from '@/components/editor/CanvasLayout';
+import { DesignPanel } from '@/components/editor/DesignPanel';
+import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
+import { AudioPanel } from '@/components/editor/AudioPanel';
+import { PresetGallery } from '@/components/editor/PresetGallery';
+import { OutputPanel } from '@/components/editor/OutputPanel';
+import { EffectComparisonPanel } from '@/components/editor/EffectComparisonPanel';
+import { SaberProfileSwitcher } from '@/components/editor/SaberProfileSwitcher';
+import { TabColumnContent } from '@/components/layout/TabColumnContent';
+import { FullscreenPreview, FullscreenButton } from '@/components/editor/FullscreenPreview';
+import { DataTicker } from '@/components/hud/DataTicker';
+import { ScanSweep } from '@/components/hud/ScanSweep';
+import { CornerBrackets } from '@/components/hud/CornerBrackets';
+import Link from 'next/link';
+
+// ─── HUD status messages for the header DataTicker ───
+const HUD_TICKER_MESSAGES = [
+  'SYSTEMS NOMINAL',
+  'BLADE CALIBRATED',
+  'KYBER ALIGNED',
+  'POWER STABLE',
+  'CRYSTAL RESONANT',
+  'STYLE ENGINE READY',
+  'PROFFIE OS 7.x',
+  'LED MATRIX SYNC',
+];
+
+// ─── Tab Definitions ───
+
+const TABS: Array<{ id: ActiveTab; label: string }> = [
+  { id: 'design', label: 'Design' },
+  { id: 'dynamics', label: 'Dynamics' },
+  { id: 'audio', label: 'Audio' },
+  { id: 'gallery', label: 'Gallery' },
+  { id: 'output', label: 'Output' },
+];
+
+// ─── Tab Reorder Hook ───
+
+function useOrderedTabs() {
+  const tabOrder = useUIStore((s) => s.tabOrder);
+
+  return useMemo(() => {
+    if (!tabOrder || tabOrder.length === 0) return TABS;
+
+    const byId = new Map(TABS.map((t) => [t.id, t]));
+    const ordered: typeof TABS = [];
+
+    for (const id of tabOrder) {
+      const t = byId.get(id as ActiveTab);
+      if (t) {
+        ordered.push(t);
+        byId.delete(id as ActiveTab);
+      }
+    }
+
+    // Append any tabs not in saved order (e.g. newly added tabs)
+    for (const t of byId.values()) {
+      ordered.push(t);
+    }
+
+    return ordered;
+  }, [tabOrder]);
+}
+
+// ─── Tab Content Router ───
+
+function TabContent({ activeTab }: { activeTab: ActiveTab }) {
+  switch (activeTab) {
+    case 'design':
+      return <DesignPanel />;
+    case 'dynamics':
+      return <DynamicsPanel />;
+    case 'audio':
+      return <AudioPanel />;
+    case 'gallery':
+      return <PresetGallery />;
+    case 'output':
+      return <OutputPanel />;
+  }
+}
+
+// ─── Main Component ───
+
+/**
+ * WorkbenchLayout — desktop editor layout for BladeForge.
+ *
+ * Structure (top to bottom):
+ *  1. Header bar — logo, project name, undo/redo, FPS, share, settings
+ *  2. Blade + visualization stack — horizontal blade canvas, always visible
+ *  3. Tab bar — horizontal, drag-to-reorder
+ *  4. Multi-column panel content — fills remaining space, scrollable
+ *  5. Effect comparison strips — collapsible
+ *  6. Status bar — power draw, storage budget, LED count
+ *
+ * Designed for desktop only. AppShell can render this for the desktop breakpoint
+ * while keeping mobile/tablet layouts separate.
+ */
+export function WorkbenchLayout() {
+  const { engineRef, toggle, triggerEffect, releaseEffect } = useBladeEngine();
+  const audio = useAudioEngine();
+  useThemeApplier();
+  useAccessibilityApplier();
+  usePerformanceTier();
+  useAurebesh();
+  usePauseSystem();
+  usePresetListSync();
+  useHistoryTracking();
+
+  // ── Store selectors ──
+  const activeTab = useUIStore((s) => s.activeTab);
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
+  const showEffectComparison = useUIStore((s) => s.showEffectComparison);
+  const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
+  const setTabOrder = useUIStore((s) => s.setTabOrder);
+  const presetListCount = usePresetListStore((s) => s.entries.length);
+
+  const isOn = useBladeStore((s) => s.isOn);
+  const ledCount = useBladeStore((s) => s.config.ledCount);
+
+  // ── Pixel buffer for VisualizationStack ──
+  // Capture the engine's live Uint8Array once after mount. getPixels() returns
+  // the same buffer reference every call (mutated in place each frame), so
+  // LayerCanvas draw calls will always read the latest pixel values.
+  const pixelBufRef = useRef<Uint8Array | null>(null);
+  useEffect(() => {
+    pixelBufRef.current = engineRef.current?.getPixels() ?? null;
+  }, [engineRef]);
+
+  // ── Audio-wrapped toggle + effects ──
+  const toggleWithAudio = useCallback(() => {
+    const wasOn = useBladeStore.getState().isOn;
+    toggle();
+    if (wasOn) {
+      audio.playRetraction();
+    } else {
+      audio.playIgnition();
+    }
+  }, [toggle, audio]);
+
+  const triggerEffectWithAudio = useCallback(
+    (type: string) => {
+      triggerEffect(type);
+      const audioMap: Record<string, () => void> = {
+        clash: audio.playClash,
+        blast: audio.playBlast,
+        stab: audio.playStab,
+        lockup: audio.playLockup,
+        lightning: audio.playClash,
+        drag: audio.playLockup,
+        melt: audio.playLockup,
+        force: audio.playSwing,
+      };
+      audioMap[type]?.();
+    },
+    [triggerEffect, audio],
+  );
+
+  // ── Keyboard shortcuts + timeline ──
+  const handlers = useMemo(
+    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
+    [toggleWithAudio, triggerEffectWithAudio, releaseEffect],
+  );
+  useKeyboardShortcuts(handlers);
+  useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
+
+  // ── Settings modal state ──
+  const [showSettings, setShowSettings] = useState(false);
+
+  // ── Tab drag-to-reorder state ──
+  const orderedTabs = useOrderedTabs();
+  const [tabDragId, setTabDragId] = useState<string | null>(null);
+  const [tabDragOverId, setTabDragOverId] = useState<string | null>(null);
+
+  const handleTabDragStart = useCallback((e: React.DragEvent, id: string) => {
+    setTabDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    if (e.currentTarget instanceof HTMLElement) {
+      requestAnimationFrame(() => {
+        (e.currentTarget as HTMLElement).style.opacity = '0.4';
+      });
+    }
+  }, []);
+
+  const handleTabDragEnd = useCallback((e: React.DragEvent) => {
+    setTabDragId(null);
+    setTabDragOverId(null);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '';
+    }
+  }, []);
+
+  const handleTabDragOver = useCallback(
+    (e: React.DragEvent, id: string) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (id !== tabDragId) {
+        setTabDragOverId(id);
+      }
+    },
+    [tabDragId],
+  );
+
+  const handleTabDragLeave = useCallback(() => {
+    setTabDragOverId(null);
+  }, []);
+
+  const handleTabDrop = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      e.preventDefault();
+      const sourceId = e.dataTransfer.getData('text/plain');
+      if (!sourceId || sourceId === targetId) {
+        setTabDragOverId(null);
+        return;
+      }
+
+      const currentOrder = orderedTabs.map((t) => t.id);
+      const sourceIdx = currentOrder.indexOf(sourceId as ActiveTab);
+      const targetIdx = currentOrder.indexOf(targetId as ActiveTab);
+      if (sourceIdx === -1 || targetIdx === -1) return;
+
+      const newOrder = [...currentOrder];
+      newOrder.splice(sourceIdx, 1);
+      newOrder.splice(targetIdx, 0, sourceId as ActiveTab);
+
+      setTabOrder(newOrder);
+      setTabDragOverId(null);
+    },
+    [orderedTabs, setTabOrder],
+  );
+
+  // ─── Render ───
+  return (
+    <div className="h-screen flex flex-col bg-bg-deep text-text-primary font-mono overflow-hidden">
+      {/* ════════════════════════════════════════════════════
+       * 1. HEADER BAR
+       * ════════════════════════════════════════════════════ */}
+      <header className="relative flex items-center justify-between px-4 py-1.5 border-b border-border-subtle bg-bg-secondary shrink-0">
+        {/* HUD: decorative data ticker running behind header content */}
+        <DataTicker
+          data={HUD_TICKER_MESSAGES}
+          speed={30}
+          className="absolute inset-0 flex items-end pb-px pointer-events-none"
+        />
+        {/* Left cluster: logo + project name */}
+        <div className="flex items-center gap-3">
+          <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
+            <span className="text-white">BLADE</span>
+            <span className="text-accent">FORGE</span>
+          </h1>
+          <span className="text-ui-xs text-text-muted font-sw-body hidden desktop:inline">
+            Universal Saber Style Engine
+          </span>
+
+          <UndoRedoButtons />
+
+          <SaberProfileSwitcher />
+        </div>
+
+        {/* Right cluster: FPS, controls, ignite */}
+        <div className="flex items-center gap-2">
+          <ShareButton />
+
+          <FPSCounter />
+
+          <PauseButton />
+
+          {/* Audio mute */}
+          <button
+            onClick={audio.toggleMute}
+            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
+              audio.muted
+                ? 'border-border-subtle text-text-muted hover:text-text-secondary'
+                : 'border-accent-border/40 text-accent bg-accent-dim/30'
+            }`}
+            title={audio.muted ? 'Unmute audio' : 'Mute audio'}
+          >
+            {audio.muted ? 'Sound OFF' : 'Sound ON'}
+          </button>
+
+          {/* Effect comparison toggle */}
+          <button
+            onClick={toggleEffectComparison}
+            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
+              showEffectComparison
+                ? 'border-accent-border/40 text-accent bg-accent-dim/30'
+                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
+            }`}
+            title="Toggle effect comparison strips"
+          >
+            FX Compare
+          </button>
+
+          {/* Docs */}
+          <Link
+            href="/docs"
+            target="_blank"
+            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+          >
+            Docs
+          </Link>
+
+          <button
+            onClick={() => setShowSettings(true)}
+            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+            title="Settings"
+            aria-label="Open settings"
+          >
+            ⚙
+          </button>
+
+          {/* Ignite / Retract */}
+          <button
+            onClick={toggleWithAudio}
+            className={`px-4 py-1.5 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+              isOn
+                ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+                : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+            }`}
+          >
+            {isOn ? 'Retract' : 'Ignite'}
+          </button>
+        </div>
+      </header>
+
+      {/* ════════════════════════════════════════════════════
+       * 2. BLADE + VISUALIZATION STACK — always visible
+       * ════════════════════════════════════════════════════ */}
+      <section
+        className="shrink-0 border-b border-border-subtle bg-bg-primary flex"
+        style={{ height: 240 }}
+        role="region"
+        aria-label="Blade visualization"
+      >
+        <VisualizationToolbar className="shrink-0 w-10" orientation="vertical" />
+
+        {/* Blade canvas area — horizontal, fills remaining width */}
+        <CornerBrackets className="flex-1 min-w-0" size={16} thickness={1} pulse={true}>
+          <div className="h-full p-1 relative">
+            <CanvasLayout engineRef={engineRef} />
+            {/* Fullscreen toggle — top-right corner of canvas area */}
+            <div className="absolute top-2 right-2 z-10">
+              <FullscreenButton />
+            </div>
+            <PixelDebugOverlay
+              getPixelRgb={(index) => {
+                const engine = engineRef.current;
+                if (engine) {
+                  const buf = engine.getPixels();
+                  const base = index * 3;
+                  if (base + 2 < buf.length) {
+                    return { r: buf[base], g: buf[base + 1], b: buf[base + 2] };
+                  }
+                }
+                return { r: 0, g: 0, b: 0 };
+              }}
+              vertical={false}
+              className="absolute inset-0 z-20"
+            />
+          </div>
+        </CornerBrackets>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
+       * 2b. VISUALIZATION STACK — analysis layers below blade
+       * ════════════════════════════════════════════════════ */}
+      <div
+        className="shrink-0 overflow-y-auto max-h-[400px] border-b border-border-subtle bg-bg-primary"
+        role="region"
+        aria-label="Visualization analysis layers"
+      >
+        <VisualizationStack
+          pixelData={pixelBufRef.current}
+          pixelCount={ledCount}
+        />
+      </div>
+
+      {/* ════════════════════════════════════════════════════
+       * 3. TAB BAR — horizontal, drag-to-reorder
+       * ════════════════════════════════════════════════════ */}
+      <nav
+        className="relative flex items-center border-b border-border-subtle shrink-0 px-3 bg-bg-secondary/60"
+        role="tablist"
+        aria-label="Editor sections"
+      >
+        {/* HUD: subtle scan sweep in the far-right corner of the tab bar */}
+        <ScanSweep
+          size={48}
+          speed={12}
+          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-40"
+        />
+        {orderedTabs.map((tab) => (
+          <button
+            key={tab.id}
+            id={`tab-${tab.id}`}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-controls={`panel-${tab.id}`}
+            draggable
+            onDragStart={(e) => handleTabDragStart(e, tab.id)}
+            onDragEnd={handleTabDragEnd}
+            onDragOver={(e) => handleTabDragOver(e, tab.id)}
+            onDragLeave={handleTabDragLeave}
+            onDrop={(e) => handleTabDrop(e, tab.id)}
+            onClick={() => { playUISound('tab-switch'); setActiveTab(tab.id); }}
+            className={[
+              'px-3 py-2 text-ui-sm font-medium transition-colors relative whitespace-nowrap',
+              'cursor-grab active:cursor-grabbing',
+              activeTab === tab.id
+                ? 'text-accent'
+                : 'text-text-muted hover:text-text-secondary',
+              tabDragOverId === tab.id && tabDragId !== tab.id
+                ? 'border-l-2 border-l-accent'
+                : 'border-l-2 border-l-transparent',
+            ].join(' ')}
+          >
+            {tab.label}
+            {tab.id === 'output' && presetListCount > 0 && (
+              <span className="ml-1 text-ui-xs text-accent">({presetListCount})</span>
+            )}
+            {activeTab === tab.id && (
+              <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-accent rounded-t" />
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {/* ════════════════════════════════════════════════════
+       * 4. MULTI-COLUMN PANEL CONTENT — fills remaining space
+       * ════════════════════════════════════════════════════ */}
+      <main
+        className="flex-1 min-h-0 overflow-y-auto bg-bg-deep"
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
+        {/* Desktop: multi-column draggable grid driven by layoutStore */}
+        <div className="hidden desktop:block max-w-[1920px] mx-auto p-4">
+          <TabColumnContent />
+        </div>
+
+        {/* Mobile / tablet fallback: single-column tab content */}
+        <div className="desktop:hidden max-w-6xl mx-auto p-4">
+          <TabContent activeTab={activeTab} />
+        </div>
+      </main>
+
+      {/* ════════════════════════════════════════════════════
+       * 5. EFFECT COMPARISON STRIPS — collapsible
+       * ════════════════════════════════════════════════════ */}
+      {showEffectComparison && (
+        <section
+          className="shrink-0 border-t border-border-subtle"
+          role="region"
+          aria-label="Effect comparison"
+        >
+          <EffectComparisonPanel />
+        </section>
+      )}
+
+      {/* ════════════════════════════════════════════════════
+       * 6. STATUS BAR — always visible
+       * ════════════════════════════════════════════════════ */}
+      <StatusBar />
+
+      {/* ════════════════════════════════════════════════════
+       * FULLSCREEN PREVIEW — portal-style fixed overlay
+       * ════════════════════════════════════════════════════ */}
+      <FullscreenPreview engineRef={engineRef} onTriggerEffect={triggerEffectWithAudio} />
+
+      {/* ════════════════════════════════════════════════════
+       * SETTINGS MODAL
+       * ════════════════════════════════════════════════════ */}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+    </div>
+  );
+}

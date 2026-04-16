@@ -1,33 +1,39 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BladeState } from '@bladeforge/engine';
 import { useBladeEngine } from '@/hooks/useBladeEngine';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useDeviceMotion } from '@/hooks/useDeviceMotion';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useUIStore } from '@/stores/uiStore';
-import type { ActiveTab } from '@/stores/uiStore';
+import type { ActiveTab, RenderMode } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 
-import { CanvasLayout } from '@/components/editor/CanvasLayout';
 import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
-import { EffectColumn } from '@/components/editor/EffectColumn';
 import { PresetGallery } from '@/components/editor/PresetGallery';
 import { DesignPanel } from '@/components/editor/DesignPanel';
 import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
-import { EffectComparisonPanel } from '@/components/editor/EffectComparisonPanel';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
 import { useAccessibilityApplier } from '@/hooks/useAccessibilityApplier';
+import { usePerformanceTier } from '@/hooks/usePerformanceTier';
+import { useAurebesh } from '@/hooks/useAurebesh';
+import { usePauseSystem } from '@/hooks/usePauseSystem';
+import { PauseButton } from '@/components/layout/PauseButton';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { AccessibilityPanel } from '@/components/editor/AccessibilityPanel';
 import { SaberProfileSwitcher } from '@/components/editor/SaberProfileSwitcher';
-import Link from 'next/link';
+import { WorkbenchLayout } from '@/components/layout/WorkbenchLayout';
+import { FullscreenPreview, FullscreenButton } from '@/components/editor/FullscreenPreview';
+import { StatusBar } from '@/components/layout/StatusBar';
+import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
+import { VisualizationStack } from '@/components/editor/VisualizationStack';
+import { TabColumnContent } from '@/components/layout/TabColumnContent';
+import { playUISound } from '@/lib/uiSounds';
 
 const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
   { id: 'design', label: 'Design', shortLabel: 'Design' },
@@ -38,34 +44,6 @@ const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
 ];
 
 type BladeOrientation = 'vertical' | 'horizontal';
-
-// ─── Tab Reorder Hook (desktop only) ───
-
-function useOrderedTabs() {
-  const tabOrder = useUIStore((s) => s.tabOrder);
-
-  return useMemo(() => {
-    if (!tabOrder || tabOrder.length === 0) return TABS;
-
-    const byId = new Map(TABS.map((t) => [t.id, t]));
-    const ordered: typeof TABS = [];
-
-    for (const id of tabOrder) {
-      const t = byId.get(id as ActiveTab);
-      if (t) {
-        ordered.push(t);
-        byId.delete(id as ActiveTab);
-      }
-    }
-
-    // Append any tabs not in saved order (e.g. newly added tabs)
-    for (const t of byId.values()) {
-      ordered.push(t);
-    }
-
-    return ordered;
-  }, [tabOrder]);
-}
 
 function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   switch (activeTab) {
@@ -82,26 +60,599 @@ function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   }
 }
 
+// ─── Mobile Shell ────────────────────────────────────────────────────────────
+// Extracted into its own component so swipe-gesture refs live here rather than
+// inside AppShell, which would force conditional hook calls (rules of hooks).
+
+interface MobileShellProps {
+  isVertical: boolean;
+  setBladeOrientation: (o: BladeOrientation) => void;
+  showA11yPanel: boolean;
+  setShowA11yPanel: (v: boolean) => void;
+  showPanel: boolean;
+  setShowPanel: (v: boolean) => void;
+  activeTab: ActiveTab;
+  setActiveTab: (tab: ActiveTab) => void;
+  currentTabIndex: number;
+  tabIds: ActiveTab[];
+  presetListCount: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  engineRef: React.RefObject<any>;
+  isOn: boolean;
+  toggleWithAudio: () => void;
+  triggerEffectWithAudio: (type: string) => void;
+  motionData: { isActive: boolean; swingSpeed: number; bladeAngle: number; twistAngle: number };
+  permissionState: string;
+  requestPermission: () => void;
+  isSupported: boolean;
+}
+
+/** Minimum horizontal drag distance (px) to register as a tab swipe. */
+const SWIPE_THRESHOLD = 50;
+
+function MobileShell({
+  isVertical,
+  setBladeOrientation,
+  showA11yPanel,
+  setShowA11yPanel,
+  showPanel,
+  setShowPanel,
+  activeTab,
+  setActiveTab,
+  currentTabIndex,
+  tabIds,
+  presetListCount,
+  engineRef,
+  isOn,
+  toggleWithAudio,
+  triggerEffectWithAudio,
+  motionData,
+  permissionState,
+  requestPermission,
+  isSupported,
+}: MobileShellProps) {
+  // ── Touch swipe gesture tracking ──────────────────────────────────────────
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  // null = undetermined; true = user is scrolling vertically; false = swiping horizontally
+  const isScrollGesture = useRef<boolean | null>(null);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isScrollGesture.current = null;
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    // Classify intent on the first substantial movement
+    if (isScrollGesture.current === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      isScrollGesture.current = Math.abs(dy) > Math.abs(dx);
+    }
+
+    // Prevent default scroll when committed to a horizontal swipe so the
+    // panel content doesn't scroll at the same time.
+    if (isScrollGesture.current === false) {
+      e.preventDefault();
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || isScrollGesture.current !== false) {
+        touchStartX.current = null;
+        touchStartY.current = null;
+        isScrollGesture.current = null;
+        return;
+      }
+
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      touchStartX.current = null;
+      touchStartY.current = null;
+      isScrollGesture.current = null;
+
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+
+      if (dx < 0) {
+        // Swipe left → advance to next tab
+        const next = tabIds[currentTabIndex + 1];
+        if (next) {
+          setActiveTab(next);
+          setShowPanel(true);
+        }
+      } else {
+        // Swipe right → go back to previous tab
+        const prev = tabIds[currentTabIndex - 1];
+        if (prev) {
+          setActiveTab(prev);
+          setShowPanel(true);
+        }
+      }
+    },
+    [currentTabIndex, tabIds, setActiveTab, setShowPanel],
+  );
+
+  return (
+    <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
+
+      {/* ── Compact Mobile Header ─────────────────────────────────────────── */}
+      <header className="flex items-center justify-between px-2 py-1 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0">
+        <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none shrink-0">
+          <span className="text-white">BF</span>
+        </h1>
+
+        <div className="flex items-center gap-1 min-w-0 flex-wrap justify-end">
+          {/* Orientation toggle */}
+          <button
+            onClick={() => setBladeOrientation(isVertical ? 'horizontal' : 'vertical')}
+            className="touch-target px-1 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted transition-colors active:border-accent active:text-accent"
+            title={isVertical ? 'Switch to horizontal' : 'Switch to vertical'}
+          >
+            {isVertical ? '\u2194' : '\u2195'}
+          </button>
+
+          {/* Accessibility settings */}
+          <button
+            onClick={() => setShowA11yPanel(true)}
+            className="touch-target px-1 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted transition-colors active:border-accent active:text-accent"
+            aria-label="Accessibility settings"
+          >
+            {'\u2699'}
+          </button>
+
+          {/* Gyro */}
+          {isSupported && (
+            <button
+              onClick={requestPermission}
+              className={`touch-target px-1 py-1 rounded text-ui-xs font-medium border transition-colors ${
+                motionData.isActive
+                  ? 'border-green-500/40 text-green-400 bg-green-900/20'
+                  : permissionState === 'denied'
+                    ? 'border-red-500/30 text-red-400'
+                    : 'border-border-subtle text-text-muted'
+              }`}
+              title={
+                motionData.isActive
+                  ? 'Gyro active'
+                  : permissionState === 'denied'
+                    ? 'Gyro denied'
+                    : 'Enable gyro'
+              }
+            >
+              {'\uD83D\uDCE1'}
+            </button>
+          )}
+
+          {/* Fullscreen — pinned in header so it's always reachable on mobile */}
+          <FullscreenButton className="touch-target w-9 h-9" />
+
+          {/* Global pause */}
+          <PauseButton />
+
+          {/* Ignite / Retract */}
+          <button
+            onClick={toggleWithAudio}
+            className={`min-h-[44px] px-2 py-1 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border shrink-0 ${
+              isOn
+                ? 'bg-red-900/30 border-red-700/50 text-red-400 ignite-btn-on'
+                : 'bg-accent-dim border-accent-border text-accent ignite-btn-off'
+            }`}
+          >
+            {isOn ? 'Off' : 'On'}
+          </button>
+        </div>
+      </header>
+
+      {/* ── Blade Canvas — horizontal by default, full screen width ─────── */}
+      <div
+        className="w-full shrink-0 flex items-center justify-center bg-bg-primary"
+        style={{ height: '120px' }}
+        role="region"
+        aria-label="Blade preview"
+      >
+        <BladeCanvas engineRef={engineRef} vertical={false} compact />
+      </div>
+
+      {/* ── Visualization Toolbar — compact horizontal strip below blade ── */}
+      <div className="shrink-0 px-2 py-1 border-b border-border-subtle bg-bg-secondary/60 flex items-center overflow-x-auto">
+        <VisualizationToolbar orientation="horizontal" />
+      </div>
+
+      {/* ── Effect Trigger Bar ────────────────────────────────────────────── */}
+      <div className="px-1 py-0.5 shrink-0 border-b border-border-subtle">
+        <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
+      </div>
+
+      {/* ── Panel Area — swipeable, single scrollable column ─────────────── */}
+      <div
+        className="flex-1 min-h-0 flex flex-col bg-bg-secondary/50"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Tab bar */}
+        <div
+          className="flex overflow-x-auto px-1 pt-0.5 shrink-0 border-b border-border-subtle"
+          role="tablist"
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              id={`mobile-tab-${tab.id}`}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`mobile-panel-${tab.id}`}
+              onClick={() => {
+                playUISound('tab-switch');
+                setActiveTab(tab.id);
+                setShowPanel(true);
+              }}
+              className={`flex-1 min-w-0 min-h-[44px] px-2 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
+                activeTab === tab.id && showPanel ? 'text-accent' : 'text-text-muted'
+              }`}
+            >
+              {tab.shortLabel}
+              {tab.id === 'output' && presetListCount > 0 && (
+                <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
+              )}
+              {activeTab === tab.id && showPanel && (
+                <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
+              )}
+            </button>
+          ))}
+
+          {/* Swipe position indicator dots */}
+          <div className="flex items-center px-2 gap-1 shrink-0" aria-hidden="true">
+            {TABS.map((tab, i) => (
+              <span
+                key={tab.id}
+                className={`inline-block rounded-full transition-all duration-200 ${
+                  i === currentTabIndex ? 'w-2 h-2 bg-accent' : 'w-1.5 h-1.5 bg-border-subtle'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setShowPanel(!showPanel)}
+            className="min-h-[44px] px-2 py-1.5 text-ui-sm text-text-muted shrink-0"
+            aria-label={showPanel ? 'Collapse panel' : 'Expand panel'}
+          >
+            {showPanel ? '\u25BC' : '\u25B2'}
+          </button>
+        </div>
+
+        {/* Panel content — single scrollable column */}
+        {showPanel && (
+          <div
+            className="flex-1 min-h-0 overflow-y-auto p-3"
+            role="tabpanel"
+            id={`mobile-panel-${activeTab}`}
+            aria-labelledby={`mobile-tab-${activeTab}`}
+          >
+            <TabContent activeTab={activeTab} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Status Bar — slim readout, accounts for safe-area bottom ─────── */}
+      <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
+        <StatusBar />
+      </div>
+
+      {/* Accessibility Settings Modal */}
+      {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
+
+      {/* Fullscreen preview overlay */}
+      <FullscreenPreview engineRef={engineRef} onTriggerEffect={triggerEffectWithAudio} />
+    </div>
+  );
+}
+
+// ─── Tablet Shell ────────────────────────────────────────────────────────────
+// Extracted into its own component so swipe-gesture refs live here rather than
+// inside AppShell, which would force conditional hook calls (rules of hooks).
+
+interface TabletShellProps {
+  showA11yPanel: boolean;
+  setShowA11yPanel: (v: boolean) => void;
+  showPanel: boolean;
+  setShowPanel: (v: boolean) => void;
+  activeTab: ActiveTab;
+  setActiveTab: (tab: ActiveTab) => void;
+  currentTabIndex: number;
+  tabIds: ActiveTab[];
+  presetListCount: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  engineRef: React.RefObject<any>;
+  isOn: boolean;
+  toggleWithAudio: () => void;
+  triggerEffectWithAudio: (type: string) => void;
+  renderMode: RenderMode;
+  pixelBufRef: React.RefObject<Uint8Array | null>;
+  ledCount: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  audio: any;
+}
+
+function TabletShell({
+  showA11yPanel,
+  setShowA11yPanel,
+  showPanel,
+  setShowPanel,
+  activeTab,
+  setActiveTab,
+  currentTabIndex,
+  tabIds,
+  presetListCount,
+  engineRef,
+  isOn,
+  toggleWithAudio,
+  triggerEffectWithAudio,
+  renderMode,
+  pixelBufRef,
+  ledCount,
+  audio,
+}: TabletShellProps) {
+  // ── Touch swipe gesture tracking (same pattern as MobileShell) ─────────────
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  // null = undetermined; true = user is scrolling vertically; false = swiping horizontally
+  const isScrollGesture = useRef<boolean | null>(null);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isScrollGesture.current = null;
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    // Classify intent on the first substantial movement
+    if (isScrollGesture.current === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      isScrollGesture.current = Math.abs(dy) > Math.abs(dx);
+    }
+
+    // Prevent default scroll when committed to a horizontal swipe
+    if (isScrollGesture.current === false) {
+      e.preventDefault();
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || isScrollGesture.current !== false) {
+        touchStartX.current = null;
+        touchStartY.current = null;
+        isScrollGesture.current = null;
+        return;
+      }
+
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      touchStartX.current = null;
+      touchStartY.current = null;
+      isScrollGesture.current = null;
+
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+
+      if (dx < 0) {
+        // Swipe left → advance to next tab
+        const next = tabIds[currentTabIndex + 1];
+        if (next) {
+          setActiveTab(next);
+          setShowPanel(true);
+        }
+      } else {
+        // Swipe right → go back to previous tab
+        const prev = tabIds[currentTabIndex - 1];
+        if (prev) {
+          setActiveTab(prev);
+          setShowPanel(true);
+        }
+      }
+    },
+    [currentTabIndex, tabIds, setActiveTab, setShowPanel],
+  );
+
+  return (
+    <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
+
+      {/* ── Tablet Header ───────────────────────────────────────────────────── */}
+      <header className="flex items-center justify-between px-3 py-2 border-b border-border-subtle bg-bg-secondary shrink-0">
+        <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
+          <span className="text-white">BLADE</span>
+          <span className="text-accent">FORGE</span>
+        </h1>
+
+        <div className="flex items-center gap-2">
+          <SaberProfileSwitcher />
+          {/* Audio mute toggle */}
+          <button
+            onClick={audio.toggleMute}
+            className={`touch-target px-2 py-1 rounded text-ui-sm font-medium border transition-colors ${
+              audio.muted
+                ? 'border-border-subtle text-text-muted hover:text-text-secondary'
+                : 'border-accent-border/40 text-accent bg-accent-dim/30'
+            }`}
+            title={audio.muted ? 'Unmute audio' : 'Mute audio'}
+          >
+            {audio.muted ? 'Sound OFF' : 'Sound ON'}
+          </button>
+          {/* Accessibility settings */}
+          <button
+            onClick={() => setShowA11yPanel(true)}
+            className="touch-target w-7 h-7 flex items-center justify-center rounded-full border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border transition-colors text-ui-sm"
+            aria-label="Accessibility settings"
+          >
+            ⚙
+          </button>
+          {/* Fullscreen — accessible in tablet header */}
+          <FullscreenButton className="touch-target w-8 h-8" />
+          {/* Global pause */}
+          <PauseButton />
+          {/* Ignite / Retract */}
+          <button
+            onClick={toggleWithAudio}
+            className={`px-5 py-2 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+              isOn
+                ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+                : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+            }`}
+          >
+            {isOn ? 'Retract' : 'Ignite'}
+          </button>
+        </div>
+      </header>
+
+      {/* ── Main Content ────────────────────────────────────────────────────── */}
+      <div id="main-content" className="flex-1 min-h-0 flex flex-col overflow-hidden">
+
+        {/* ── Blade Canvas — horizontal, full width ─────────────────────────── */}
+        <div
+          className="shrink-0 h-[160px] border-b border-border-subtle"
+          role="region"
+          aria-label="Blade preview"
+        >
+          <div className="h-full p-1">
+            <BladeCanvas engineRef={engineRef} compact vertical={false} renderMode={renderMode} />
+          </div>
+        </div>
+
+        {/* ── Visualization Toolbar — compact strip below blade ─────────────── */}
+        <div className="shrink-0 px-2 py-1 border-b border-border-subtle bg-bg-secondary/60 flex items-center overflow-x-auto">
+          <VisualizationToolbar orientation="horizontal" />
+        </div>
+
+        {/* ── Visualization Stack — analysis layers, capped height ──────────── */}
+        <div
+          className="shrink-0 overflow-y-auto max-h-[160px] border-b border-border-subtle bg-bg-primary"
+          role="region"
+          aria-label="Visualization analysis layers"
+        >
+          <VisualizationStack
+            pixelData={pixelBufRef.current}
+            pixelCount={ledCount}
+          />
+        </div>
+
+        {/* ── Effect Trigger Bar ────────────────────────────────────────────── */}
+        <div className="px-3 py-1 shrink-0 border-b border-border-subtle">
+          <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
+        </div>
+
+        {/* ── Panel Area — swipeable, 2-column grid via TabColumnContent ──────── */}
+        <div
+          className="flex-1 min-h-0 flex flex-col bg-bg-secondary/50"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          {/* Tab bar */}
+          <div
+            className="flex overflow-x-auto border-b border-border-subtle shrink-0 px-2 pt-1"
+            role="tablist"
+            aria-label="Editor sections"
+          >
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                id={`tablet-tab-${tab.id}`}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`tablet-panel-${tab.id}`}
+                onClick={() => {
+                  playUISound('tab-switch');
+                  setActiveTab(tab.id);
+                  setShowPanel(true);
+                }}
+                className={`flex-shrink-0 min-h-[44px] px-3 py-2 text-ui-base font-medium transition-colors relative whitespace-nowrap ${
+                  activeTab === tab.id && showPanel
+                    ? 'text-accent'
+                    : 'text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                {tab.label}
+                {tab.id === 'output' && presetListCount > 0 && (
+                  <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
+                )}
+                {activeTab === tab.id && showPanel && (
+                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
+                )}
+              </button>
+            ))}
+
+            {/* Swipe position indicator dots */}
+            <div className="flex items-center px-2 gap-1 shrink-0 ml-auto" aria-hidden="true">
+              {TABS.map((tab, i) => (
+                <span
+                  key={tab.id}
+                  className={`inline-block rounded-full transition-all duration-200 ${
+                    i === currentTabIndex ? 'w-2 h-2 bg-accent' : 'w-1.5 h-1.5 bg-border-subtle'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Collapse toggle */}
+            <button
+              onClick={() => setShowPanel(!showPanel)}
+              className="min-h-[44px] px-2 py-1.5 text-ui-sm text-text-muted shrink-0"
+              aria-label={showPanel ? 'Collapse panel' : 'Expand panel'}
+            >
+              {showPanel ? '\u25BC' : '\u25B2'}
+            </button>
+          </div>
+
+          {/* Panel content — 2-column ColumnGrid via TabColumnContent */}
+          {showPanel && (
+            <div
+              className="flex-1 min-h-0 overflow-y-auto"
+              role="tabpanel"
+              id={`tablet-panel-${activeTab}`}
+              aria-labelledby={`tablet-tab-${activeTab}`}
+            >
+              <TabColumnContent />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Status Bar — proper component, safe-area aware ───────────────────── */}
+      <div className="shrink-0">
+        <StatusBar />
+      </div>
+
+      {/* Accessibility Settings Modal */}
+      {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
+
+      {/* Fullscreen preview overlay */}
+      <FullscreenPreview engineRef={engineRef} onTriggerEffect={triggerEffectWithAudio} />
+    </div>
+  );
+}
+
 export function AppShell() {
   const { engineRef, toggle, triggerEffect, releaseEffect } = useBladeEngine();
   const audio = useAudioEngine();
   useThemeApplier();
   useAccessibilityApplier();
+  usePerformanceTier();
+  useAurebesh();
+  usePauseSystem();
   usePresetListSync();
   const presetListCount = usePresetListStore((s) => s.entries.length);
   const renderMode = useUIStore((s) => s.renderMode);
   const activeTab = useUIStore((s) => s.activeTab);
   const setActiveTab = useUIStore((s) => s.setActiveTab);
-  const showEffectComparison = useUIStore((s) => s.showEffectComparison);
-  const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
-  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
   const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
-  const layoutMode = useUIStore((s) => s.layoutMode);
-  const setLayoutMode = useUIStore((s) => s.setLayoutMode);
-  const setTabOrder = useUIStore((s) => s.setTabOrder);
   const isOn = useBladeStore((s) => s.isOn);
-  const bladeState = useBladeStore((s) => s.bladeState);
-  const fps = useBladeStore((s) => s.fps);
   const ledCount = useBladeStore((s) => s.config.ledCount);
   const setMotionSim = useBladeStore((s) => s.setMotionSim);
 
@@ -137,62 +688,14 @@ export function AppShell() {
   const [showA11yPanel, setShowA11yPanel] = useState(false);
   const [bladeOrientation, setBladeOrientation] = useState<BladeOrientation>('horizontal');
 
-  // ── Desktop tab reorder state ──
-  const orderedTabs = useOrderedTabs();
-  const [tabDragId, setTabDragId] = useState<string | null>(null);
-  const [tabDragOverId, setTabDragOverId] = useState<string | null>(null);
-
-  const handleTabDragStart = useCallback((e: React.DragEvent, id: string) => {
-    setTabDragId(id);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
-    if (e.currentTarget instanceof HTMLElement) {
-      requestAnimationFrame(() => {
-        (e.currentTarget as HTMLElement).style.opacity = '0.4';
-      });
-    }
-  }, []);
-
-  const handleTabDragEnd = useCallback((e: React.DragEvent) => {
-    setTabDragId(null);
-    setTabDragOverId(null);
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = '';
-    }
-  }, []);
-
-  const handleTabDragOver = useCallback((e: React.DragEvent, id: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (id !== tabDragId) {
-      setTabDragOverId(id);
-    }
-  }, [tabDragId]);
-
-  const handleTabDragLeave = useCallback(() => {
-    setTabDragOverId(null);
-  }, []);
-
-  const handleTabDrop = useCallback((e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    const sourceId = e.dataTransfer.getData('text/plain');
-    if (!sourceId || sourceId === targetId) {
-      setTabDragOverId(null);
-      return;
-    }
-
-    const currentOrder = orderedTabs.map((t) => t.id);
-    const sourceIdx = currentOrder.indexOf(sourceId as ActiveTab);
-    const targetIdx = currentOrder.indexOf(targetId as ActiveTab);
-    if (sourceIdx === -1 || targetIdx === -1) return;
-
-    const newOrder = [...currentOrder];
-    newOrder.splice(sourceIdx, 1);
-    newOrder.splice(targetIdx, 0, sourceId as ActiveTab);
-
-    setTabOrder(newOrder);
-    setTabDragOverId(null);
-  }, [orderedTabs, setTabOrder]);
+  // ── Pixel buffer for VisualizationStack (tablet layout) ──
+  // Same pattern as WorkbenchLayout: capture the engine's live Uint8Array once after
+  // mount. getPixels() returns the same buffer reference every call (mutated in place
+  // each frame), so LayerCanvas draw calls always read the latest pixel values.
+  const pixelBufRef = useRef<Uint8Array | null>(null);
+  useEffect(() => {
+    pixelBufRef.current = engineRef.current?.getPixels() ?? null;
+  }, [engineRef]);
 
   // ── Sidebar resize handling ──
   const sidebarDragRef = useRef<{ startX: number; startWidth: number } | null>(null);
@@ -256,558 +759,62 @@ export function AppShell() {
   // ─── Mobile Layout ───
   if (isMobile) {
     const isVertical = bladeOrientation === 'vertical';
+    const tabIds = TABS.map((t) => t.id);
+    const currentTabIndex = tabIds.indexOf(activeTab);
+
     return (
-      <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
-        {/* ── Compact Mobile Header ── */}
-        <header className="flex items-center justify-between px-2 py-1 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0">
-          <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none shrink-0">
-            <span className="text-white">BF</span>
-          </h1>
-
-          <div className="flex items-center gap-1 min-w-0 flex-wrap justify-end">
-            {/* Orientation toggle */}
-            <button
-              onClick={() => setBladeOrientation(isVertical ? 'horizontal' : 'vertical')}
-              className="touch-target px-1 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted transition-colors active:border-accent active:text-accent"
-              title={isVertical ? 'Switch to horizontal' : 'Switch to vertical'}
-            >
-              {isVertical ? '↔' : '↕'}
-            </button>
-
-            {/* Accessibility settings */}
-            <button
-              onClick={() => setShowA11yPanel(true)}
-              className="touch-target px-1 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted transition-colors active:border-accent active:text-accent"
-              aria-label="Accessibility settings"
-            >
-              ⚙
-            </button>
-
-            {/* Gyro button */}
-            {isSupported && (
-              <button
-                onClick={requestPermission}
-                className={`touch-target px-1 py-1 rounded text-ui-xs font-medium border transition-colors ${
-                  motionData.isActive
-                    ? 'border-green-500/40 text-green-400 bg-green-900/20'
-                    : permissionState === 'denied'
-                      ? 'border-red-500/30 text-red-400'
-                      : 'border-border-subtle text-text-muted'
-                }`}
-                title={motionData.isActive ? 'Gyro active' : permissionState === 'denied' ? 'Gyro denied' : 'Enable gyro'}
-              >
-                {motionData.isActive ? '📡' : permissionState === 'denied' ? '🚫' : '📡'}
-              </button>
-            )}
-
-            {/* Ignite */}
-            <button
-              onClick={toggleWithAudio}
-              className={`min-h-[44px] px-2 py-1 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border shrink-0 ${
-                isOn
-                  ? 'bg-red-900/30 border-red-700/50 text-red-400 ignite-btn-on'
-                  : 'bg-accent-dim border-accent-border text-accent ignite-btn-off'
-              }`}
-            >
-              {isOn ? 'Off' : 'On'}
-            </button>
-          </div>
-        </header>
-
-        {/* ── Blade Canvas (maximized — takes all available space) ── */}
-        <div className="flex-1 min-h-0 flex items-center justify-center p-1">
-          <BladeCanvas engineRef={engineRef} vertical={isVertical} mobileFullscreen />
-        </div>
-
-        {/* ── Effect triggers (compact row) ── */}
-        <div className="px-1 pb-0.5 shrink-0">
-          <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
-        </div>
-
-        {/* ── Bottom Panel Toggle + Content ── */}
-        <div className="shrink-0 border-t border-border-subtle bg-bg-secondary pb-[env(safe-area-inset-bottom)]">
-          {/* Tab bar (always visible) */}
-          <div className="flex overflow-x-auto px-1 pt-0.5" role="tablist">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                id={`tab-${tab.id}`}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`panel-${tab.id}`}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setShowPanel(true);
-                }}
-                className={`flex-1 min-w-0 min-h-[44px] px-2 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
-                  activeTab === tab.id && showPanel
-                    ? 'text-accent'
-                    : 'text-text-muted'
-                }`}
-              >
-                {tab.shortLabel}
-                {tab.id === 'output' && presetListCount > 0 && (
-                  <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-                )}
-                {activeTab === tab.id && showPanel && (
-                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
-                )}
-              </button>
-            ))}
-            {/* Collapse button */}
-            <button
-              onClick={() => setShowPanel(!showPanel)}
-              className="min-h-[44px] px-2 py-1.5 text-ui-sm text-text-muted"
-            >
-              {showPanel ? '\u25BC' : '\u25B2'}
-            </button>
-          </div>
-
-          {/* Panel content (collapsible) */}
-          {showPanel && (
-            <div className="max-h-[40vh] overflow-y-auto p-3" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-              <TabContent activeTab={activeTab} />
-            </div>
-          )}
-        </div>
-
-        {/* Accessibility Settings Modal */}
-        {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
-      </div>
+      <MobileShell
+        isVertical={isVertical}
+        setBladeOrientation={setBladeOrientation}
+        showA11yPanel={showA11yPanel}
+        setShowA11yPanel={setShowA11yPanel}
+        showPanel={showPanel}
+        setShowPanel={setShowPanel}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentTabIndex={currentTabIndex}
+        tabIds={tabIds}
+        presetListCount={presetListCount}
+        engineRef={engineRef}
+        isOn={isOn}
+        toggleWithAudio={toggleWithAudio}
+        triggerEffectWithAudio={triggerEffectWithAudio}
+        motionData={motionData}
+        permissionState={permissionState}
+        requestPermission={requestPermission}
+        isSupported={isSupported}
+      />
     );
   }
 
   // ─── Tablet Layout (600-1023px) ───
   if (isTablet) {
+    const tabIds = TABS.map((t) => t.id);
+    const currentTabIndex = tabIds.indexOf(activeTab);
+
     return (
-      <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
-        {/* ── Tablet Header ── */}
-        <header className="flex items-center justify-between px-3 py-2 border-b border-border-subtle bg-bg-secondary shrink-0">
-          <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
-            <span className="text-white">BLADE</span>
-            <span className="text-accent">FORGE</span>
-          </h1>
-
-          <div className="flex items-center gap-2">
-            <SaberProfileSwitcher />
-            {/* Audio mute toggle */}
-            <button
-              onClick={audio.toggleMute}
-              className={`touch-target px-2 py-1 rounded text-ui-sm font-medium border transition-colors ${
-                audio.muted
-                  ? 'border-border-subtle text-text-muted hover:text-text-secondary'
-                  : 'border-accent-border/40 text-accent bg-accent-dim/30'
-              }`}
-              title={audio.muted ? 'Unmute audio' : 'Mute audio'}
-            >
-              {audio.muted ? 'Sound OFF' : 'Sound ON'}
-            </button>
-            {/* Accessibility settings */}
-            <button
-              onClick={() => setShowA11yPanel(true)}
-              className="touch-target w-7 h-7 flex items-center justify-center rounded-full border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border transition-colors text-ui-sm"
-              aria-label="Accessibility settings"
-            >
-              ⚙
-            </button>
-            {/* Ignite */}
-            <button
-              onClick={toggleWithAudio}
-              className={`px-5 py-2 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-                isOn
-                  ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-                  : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-              }`}
-            >
-              {isOn ? 'Retract' : 'Ignite'}
-            </button>
-          </div>
-        </header>
-
-        {/* ── Main Content ── */}
-        <div id="main-content" className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {/* ── Canvas Strip ── */}
-          <div className="shrink-0 h-[180px] border-b border-border-subtle" role="region" aria-label="Blade preview">
-            <div className="h-full p-1">
-              <BladeCanvas engineRef={engineRef} compact vertical={false} renderMode={renderMode} />
-            </div>
-          </div>
-
-          {/* ── Effect triggers ── */}
-          <div className="px-3 py-1 shrink-0">
-            <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
-          </div>
-
-          {/* ── Panel Area ── */}
-          <div className="flex-1 min-h-0 flex flex-col bg-bg-secondary/50">
-            <div className="flex border-b border-border-subtle shrink-0 px-2 pt-2 overflow-x-auto" role="tablist">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  id={`tab-${tab.id}`}
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  aria-controls={`panel-${tab.id}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-2 text-ui-base font-medium transition-colors relative whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'text-accent'
-                      : 'text-text-muted hover:text-text-secondary'
-                  }`}
-                >
-                  {tab.shortLabel}
-                  {tab.id === 'output' && presetListCount > 0 && (
-                    <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-                  )}
-                  {activeTab === tab.id && (
-                    <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto p-3" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-              <TabContent activeTab={activeTab} />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Status Bar ── */}
-        <footer className="flex items-center justify-between px-4 py-1.5 border-t border-border-subtle bg-bg-secondary text-ui-sm text-text-muted shrink-0">
-          <span className="flex items-center gap-1.5">
-            <span
-              className={`inline-block w-1.5 h-1.5 rounded-full ${
-                bladeState === BladeState.ON ? 'console-blink' :
-                bladeState === BladeState.IGNITING ? 'console-alert' :
-                bladeState === BladeState.RETRACTING ? 'console-alert' :
-                'console-breathe'
-              }`}
-              style={{
-                backgroundColor: bladeState === BladeState.ON ? 'rgb(var(--status-ok))' :
-                  bladeState === BladeState.IGNITING ? 'rgb(var(--status-warn))' :
-                  bladeState === BladeState.RETRACTING ? 'rgb(var(--status-warn))' :
-                  'rgb(var(--status-info))'
-              }}
-            />
-            <span className="sr-only">
-              {bladeState === BladeState.ON ? 'Status: active' :
-                bladeState === BladeState.IGNITING ? 'Status: igniting' :
-                bladeState === BladeState.RETRACTING ? 'Status: retracting' :
-                'Status: idle'}
-            </span>
-            State:{' '}
-            <span
-              role="status"
-              className={
-                bladeState === BladeState.ON
-                  ? 'text-green-400'
-                  : bladeState === BladeState.IGNITING
-                    ? 'text-yellow-400'
-                    : bladeState === BladeState.RETRACTING
-                      ? 'text-orange-400'
-                      : 'text-text-muted'
-              }
-            >
-              {String(bladeState).toUpperCase()}
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-1.5 h-1.5 rounded-full console-breathe" style={{ backgroundColor: 'rgb(var(--status-info))' }} />
-            <span className="sr-only">Frames per second</span>
-            <span className="tabular-nums">{fps}</span> FPS
-          </span>
-          <span className="tabular-nums">{ledCount} LEDs</span>
-        </footer>
-
-        {/* Accessibility Settings Modal */}
-        {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
-      </div>
+      <TabletShell
+        showA11yPanel={showA11yPanel}
+        setShowA11yPanel={setShowA11yPanel}
+        showPanel={showPanel}
+        setShowPanel={setShowPanel}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentTabIndex={currentTabIndex}
+        tabIds={tabIds}
+        presetListCount={presetListCount}
+        engineRef={engineRef}
+        isOn={isOn}
+        toggleWithAudio={toggleWithAudio}
+        triggerEffectWithAudio={triggerEffectWithAudio}
+        renderMode={renderMode}
+        pixelBufRef={pixelBufRef}
+        ledCount={ledCount}
+        audio={audio}
+      />
     );
   }
 
   // ─── Desktop Layout ───
-  return (
-    <div className="h-screen flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden particle-drift">
-      {/* ── Toolbar ── */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-border-subtle bg-bg-secondary shrink-0 energy-border">
-        <div className="flex items-center gap-4">
-          <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
-            <span className="text-white">BLADE</span>
-            <span className="text-accent">FORGE</span>
-          </h1>
-          <span className="text-ui-sm text-text-muted font-sw-body hidden desktop:inline">
-            Universal Saber Style Engine
-          </span>
-          <SaberProfileSwitcher />
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Audio mute toggle */}
-          <button
-            onClick={audio.toggleMute}
-            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
-              audio.muted
-                ? 'border-border-subtle text-text-muted hover:text-text-secondary'
-                : 'border-accent-border/40 text-accent bg-accent-dim/30'
-            }`}
-            title={audio.muted ? 'Unmute audio' : 'Mute audio'}
-          >
-            {audio.muted ? 'Sound OFF' : 'Sound ON'}
-          </button>
-          {/* Layout mode toggle */}
-          <button
-            onClick={() => setLayoutMode(layoutMode === 'sidebar' ? 'horizontal' : 'sidebar')}
-            className={`hidden wide:inline-flex px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
-              layoutMode === 'horizontal'
-                ? 'border-accent-border/40 text-accent bg-accent-dim/30'
-                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
-            }`}
-            title={layoutMode === 'sidebar' ? 'Switch to horizontal blade layout' : 'Switch to sidebar layout'}
-          >
-            {layoutMode === 'sidebar' ? '⬒ Horiz' : '⬓ Sidebar'}
-          </button>
-          {/* Effect Comparison toggle */}
-          <button
-            onClick={toggleEffectComparison}
-            className={`hidden wide:inline-flex px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
-              showEffectComparison
-                ? 'border-accent-border/40 text-accent bg-accent-dim/30'
-                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
-            }`}
-            title="Toggle effect comparison view"
-          >
-            FX Compare
-          </button>
-          {/* Docs link */}
-          <Link
-            href="/docs"
-            target="_blank"
-            className="hidden desktop:inline-flex px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
-          >
-            Docs
-          </Link>
-          {/* Accessibility settings */}
-          <button
-            onClick={() => setShowA11yPanel(true)}
-            className="items-center justify-center w-5 h-5 rounded-full border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border transition-colors text-ui-sm hidden desktop:inline-flex"
-            aria-label="Accessibility settings"
-          >
-            ⚙
-          </button>
-          <span className="text-ui-xs text-text-muted tabular-nums hidden wide:inline">
-            {fps} FPS
-          </span>
-          <button
-            onClick={toggleWithAudio}
-            className={`px-4 py-1.5 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-              isOn
-                ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-                : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-            }`}
-          >
-            {isOn ? 'Retract' : 'Ignite'}
-          </button>
-        </div>
-      </header>
-
-      {/* ── Main Content ── */}
-      {layoutMode === 'horizontal' ? (
-        /* ═══════════════════════════════════════════════
-         * HORIZONTAL LAYOUT: Canvas on top, tabs below
-         * ═══════════════════════════════════════════════ */
-        <div id="main-content" className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {/* Top: Blade canvas (horizontal, ~35% height) + effect column */}
-          <div className="flex border-b border-border-subtle" style={{ height: '35%' }}>
-            <EffectColumn onTrigger={triggerEffectWithAudio} onRelease={releaseEffect} />
-            <div className="flex-1 min-w-0 p-1" role="region" aria-label="Blade preview">
-              <CanvasLayout engineRef={engineRef} />
-            </div>
-          </div>
-          {/* Bottom: Full-width tabs + content */}
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            {/* Tab bar */}
-            <div className="flex border-b border-border-subtle shrink-0 px-2 pt-1.5 bg-bg-secondary/50" role="tablist">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  id={`tab-${tab.id}`}
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  aria-controls={`panel-${tab.id}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'text-accent'
-                      : 'text-text-muted hover:text-text-secondary'
-                  }`}
-                >
-                  {tab.label}
-                  {tab.id === 'output' && presetListCount > 0 && (
-                    <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-                  )}
-                  {activeTab === tab.id && (
-                    <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-accent rounded-t" />
-                  )}
-                </button>
-              ))}
-            </div>
-            {/* Panel content — multi-column for wider screens */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-4" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-              <div className="max-w-4xl mx-auto">
-                <TabContent activeTab={activeTab} />
-              </div>
-            </div>
-          </div>
-          {showEffectComparison && <EffectComparisonPanel />}
-        </div>
-      ) : (
-        /* ═══════════════════════════════════════════════
-         * SIDEBAR LAYOUT: Sidebar left, canvas right
-         * ═══════════════════════════════════════════════ */
-      <div id="main-content" className="flex-1 min-h-0 flex overflow-hidden">
-        {/* ── Left Sidebar (tabs + panel content) ── */}
-        <aside
-          className="shrink-0 flex flex-col border-r border-border-subtle bg-bg-secondary/50 overflow-hidden relative"
-          style={{ width: `${sidebarWidth}px` }}
-        >
-          {/* Tab bar (drag-to-reorder) */}
-          <div className="flex border-b border-border-subtle shrink-0 px-1 pt-1.5 overflow-x-auto" role="tablist">
-            {orderedTabs.map((tab) => (
-              <button
-                key={tab.id}
-                id={`tab-${tab.id}`}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`panel-${tab.id}`}
-                draggable
-                onDragStart={(e) => handleTabDragStart(e, tab.id)}
-                onDragEnd={handleTabDragEnd}
-                onDragOver={(e) => handleTabDragOver(e, tab.id)}
-                onDragLeave={handleTabDragLeave}
-                onDrop={(e) => handleTabDrop(e, tab.id)}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-2.5 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap cursor-grab active:cursor-grabbing ${
-                  activeTab === tab.id
-                    ? 'text-accent'
-                    : 'text-text-muted hover:text-text-secondary'
-                } ${tabDragOverId === tab.id && tabDragId !== tab.id ? 'border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'}`}
-              >
-                {tab.label}
-                {tab.id === 'output' && presetListCount > 0 && (
-                  <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-                )}
-                {activeTab === tab.id && (
-                  <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-accent rounded-t" />
-                )}
-              </button>
-            ))}
-          </div>
-          {/* Panel content */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-3" role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-            <TabContent activeTab={activeTab} />
-          </div>
-          {/* Quick actions bar — always visible at bottom of sidebar */}
-          <div className="shrink-0 border-t border-border-subtle bg-bg-secondary px-3 py-2 flex gap-2">
-            <button
-              onClick={() => {
-                const store = usePresetListStore.getState();
-                const config = useBladeStore.getState().config;
-                store.addEntry({
-                  presetName: config.name || 'Custom Preset',
-                  fontName: (config.name || 'custom').toLowerCase().replace(/[^a-z0-9]/g, '_'),
-                  config,
-                });
-                setActiveTab('output');
-              }}
-              className="flex-1 px-2 py-1.5 rounded text-ui-xs font-medium border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
-              title="Save current design and add to output preset list"
-            >
-              + Add to Card
-            </button>
-          </div>
-          {/* Sidebar resize handle */}
-          <div
-            className="absolute top-0 bottom-0 right-0 w-[6px] cursor-col-resize z-20 group"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              sidebarDragRef.current = { startX: e.clientX, startWidth: sidebarWidth };
-              document.body.style.cursor = 'col-resize';
-              document.body.style.userSelect = 'none';
-            }}
-          >
-            <div className="absolute inset-y-0 right-0 w-[2px] bg-transparent group-hover:bg-accent/40 transition-colors" />
-          </div>
-        </aside>
-
-        {/* ── Effect Column (between sidebar and canvas) ── */}
-        <EffectColumn onTrigger={triggerEffectWithAudio} onRelease={releaseEffect} />
-
-        {/* ── Right: Canvas ── */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Canvas panels (fills all remaining space) */}
-          <div className="flex-1 min-h-0 p-1" role="region" aria-label="Blade preview">
-            <CanvasLayout engineRef={engineRef} />
-          </div>
-
-          {/* Effect Comparison (togglable, below canvas) */}
-          {showEffectComparison && <EffectComparisonPanel />}
-        </div>
-      </div>
-      )}
-
-      {/* ── Status Bar ── */}
-      <footer className="flex items-center justify-between px-4 py-1.5 border-t border-border-subtle bg-bg-secondary text-ui-sm text-text-muted shrink-0">
-        <span className="flex items-center gap-1.5">
-          <span
-            className={`inline-block w-1.5 h-1.5 rounded-full ${
-              bladeState === BladeState.ON ? 'console-blink' :
-              bladeState === BladeState.IGNITING ? 'console-alert' :
-              bladeState === BladeState.RETRACTING ? 'console-alert' :
-              'console-breathe'
-            }`}
-            style={{
-              backgroundColor: bladeState === BladeState.ON ? 'rgb(var(--status-ok))' :
-                bladeState === BladeState.IGNITING ? 'rgb(var(--status-warn))' :
-                bladeState === BladeState.RETRACTING ? 'rgb(var(--status-warn))' :
-                'rgb(var(--status-info))'
-            }}
-          />
-          <span className="sr-only">
-            {bladeState === BladeState.ON ? 'Status: active' :
-              bladeState === BladeState.IGNITING ? 'Status: igniting' :
-              bladeState === BladeState.RETRACTING ? 'Status: retracting' :
-              'Status: idle'}
-          </span>
-          State:{' '}
-          <span
-            role="status"
-            className={
-              bladeState === BladeState.ON
-                ? 'text-green-400'
-                : bladeState === BladeState.IGNITING
-                  ? 'text-yellow-400'
-                  : bladeState === BladeState.RETRACTING
-                    ? 'text-orange-400'
-                    : 'text-text-muted'
-            }
-          >
-            {String(bladeState).toUpperCase()}
-          </span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full console-breathe" style={{ backgroundColor: 'rgb(var(--status-info))' }} />
-          <span className="sr-only">Frames per second</span>
-          <span className="tabular-nums">{fps}</span> FPS
-        </span>
-        <span className="tabular-nums">{ledCount} LEDs</span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full console-breathe" style={{ backgroundColor: 'rgb(var(--status-ok))' }} />
-          <span className="sr-only">ProffieOS version</span>
-          ProffieOS 7.x
-        </span>
-      </footer>
-
-      {/* Accessibility Settings Modal */}
-      {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
-    </div>
-  );
+  return <WorkbenchLayout />;
 }

@@ -5,6 +5,7 @@ export type RenderMode = 'photorealistic' | 'pixel';
 export type CanvasMode = '2d' | '3d';
 export type ActiveTab = 'design' | 'dynamics' | 'audio' | 'gallery' | 'output';
 export type LayoutMode = 'sidebar' | 'horizontal';
+export type FullscreenOrientation = 'horizontal' | 'vertical';
 
 export interface UIStore {
   viewMode: ViewMode;
@@ -33,6 +34,8 @@ export interface UIStore {
   showGraphPanel: boolean;
   /** Global animation pause — freezes engine updates while keeping the last frame visible */
   animationPaused: boolean;
+  /** Global CSS pause — freezes ALL CSS animations and transitions app-wide */
+  isPaused: boolean;
   /** Battery preset index for power draw estimation */
   batteryPresetIdx: number;
   /** Per-tab section ordering — maps tab → ordered array of section IDs */
@@ -41,6 +44,10 @@ export interface UIStore {
   layoutMode: LayoutMode;
   /** Custom tab order for desktop tab bar (empty = default order) */
   tabOrder: string[];
+  /** Fullscreen preview mode — blade takes over entire viewport */
+  isFullscreen: boolean;
+  /** Orientation of the blade in fullscreen preview */
+  fullscreenOrientation: FullscreenOrientation;
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -59,10 +66,14 @@ export interface UIStore {
   togglePixelPanel: () => void;
   toggleGraphPanel: () => void;
   toggleAnimationPaused: () => void;
+  togglePause: () => void;
+  setPaused: (paused: boolean) => void;
   setBatteryPresetIdx: (idx: number) => void;
   setSectionOrder: (tab: ActiveTab, order: string[]) => void;
   setLayoutMode: (mode: LayoutMode) => void;
   setTabOrder: (order: string[]) => void;
+  toggleFullscreen: () => void;
+  setFullscreenOrientation: (o: FullscreenOrientation) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -85,10 +96,13 @@ export const useUIStore = create<UIStore>((set) => ({
   showPixelPanel: true,
   showGraphPanel: true,
   animationPaused: false,
+  isPaused: false,
   batteryPresetIdx: 0,
   sectionOrder: {},
   layoutMode: 'sidebar',
   tabOrder: [],
+  isFullscreen: false,
+  fullscreenOrientation: 'horizontal',
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -107,10 +121,14 @@ export const useUIStore = create<UIStore>((set) => ({
   togglePixelPanel: () => set((state) => ({ showPixelPanel: !state.showPixelPanel })),
   toggleGraphPanel: () => set((state) => ({ showGraphPanel: !state.showGraphPanel })),
   toggleAnimationPaused: () => set((state) => ({ animationPaused: !state.animationPaused })),
+  togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
+  setPaused: (isPaused) => set({ isPaused }),
   setBatteryPresetIdx: (batteryPresetIdx) => set({ batteryPresetIdx }),
   setSectionOrder: (tab, order) => set((state) => ({
     sectionOrder: { ...state.sectionOrder, [tab]: order },
   })),
   setLayoutMode: (layoutMode) => set({ layoutMode }),
   setTabOrder: (tabOrder) => set({ tabOrder }),
+  toggleFullscreen: () => set((state) => ({ isFullscreen: !state.isFullscreen })),
+  setFullscreenOrientation: (fullscreenOrientation) => set({ fullscreenOrientation }),
 }));

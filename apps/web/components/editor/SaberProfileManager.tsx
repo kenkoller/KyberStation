@@ -9,6 +9,7 @@ import { CARD_TEMPLATES } from '@bladeforge/presets';
 import type { CardTemplate } from '@bladeforge/presets';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { downloadCardTemplate, readCardTemplateFile } from '@/lib/bladeConfigIO';
+import { playUISound } from '@/lib/uiSounds';
 
 function ProfileCard({
   profile,
@@ -465,6 +466,7 @@ export function SaberProfileManager() {
   const handleCreate = () => {
     if (!newName.trim()) return;
     createProfile(newName.trim(), newChassis.trim(), newBoard, newCard);
+    playUISound('success');
     setNewName('');
     setNewChassis('');
     setShowCreate(false);
@@ -520,6 +522,7 @@ export function SaberProfileManager() {
   const handleEditSave = () => {
     if (editingId) {
       updateProfile(editingId, { notes: editNotes });
+      playUISound('success');
       setEditingId(null);
     }
   };
@@ -610,7 +613,7 @@ export function SaberProfileManager() {
             <ProfileCard
               profile={profile}
               isActive={profile.id === activeProfileId}
-              onSwitch={() => switchProfile(profile.id)}
+              onSwitch={() => { playUISound('preset-loaded'); switchProfile(profile.id); }}
               onDuplicate={() => duplicateProfile(profile.id)}
               onDelete={() => handleDelete(profile.id)}
               onExport={() => handleExport(profile.id)}

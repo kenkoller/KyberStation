@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { CANVAS_THEMES, type CanvasTheme } from '../../lib/canvasThemes';
+import { CANVAS_THEMES } from '../../lib/canvasThemes';
+import { playUISound } from '@/lib/uiSounds';
 import {
   EXTENDED_LOCATION_THEMES,
   EXTENDED_FACTION_THEMES,
@@ -185,7 +186,7 @@ export function ThemePickerPanel({
             key={theme.id}
             theme={theme}
             isActive={activeThemeId === theme.id}
-            onClick={() => onSelectTheme(theme.id)}
+            onClick={() => { playUISound('theme-switch'); onSelectTheme(theme.id); }}
           />
         ))}
 

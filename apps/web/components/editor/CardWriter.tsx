@@ -21,6 +21,7 @@ import {
   type ExistingPreset,
 } from '@/lib/cardDetector';
 import { generateStyleCode } from '@bladeforge/codegen';
+import { playUISound } from '@/lib/uiSounds';
 
 // ─── Preset Registry ───
 // Same presets used in PresetBrowser, kept minimal here for the card writer.
@@ -279,6 +280,7 @@ export function CardWriter() {
 
       setProgress(100);
       setPhase('done');
+      playUISound('success');
       setShowPostExport(true);
       addStatus({
         type: 'success',
@@ -286,6 +288,7 @@ export function CardWriter() {
       });
     } catch (err) {
       setPhase('error');
+      playUISound('error');
       addStatus({
         type: 'error',
         text: `Failed to create ZIP: ${err instanceof Error ? err.message : String(err)}`,
@@ -452,6 +455,7 @@ export function CardWriter() {
 
       setProgress(100);
       setPhase('done');
+      playUISound('success');
       setShowPostExport(true);
       addStatus({
         type: 'success',
@@ -459,6 +463,7 @@ export function CardWriter() {
       });
     } catch (err) {
       setPhase('error');
+      playUISound('error');
       addStatus({
         type: 'error',
         text: `Write failed: ${err instanceof Error ? err.message : String(err)}`,

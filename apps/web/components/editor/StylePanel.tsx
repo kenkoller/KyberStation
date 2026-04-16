@@ -1,6 +1,7 @@
 'use client';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
+import { playUISound } from '@/lib/uiSounds';
 import { ParameterBank } from './ParameterBank';
 import { Randomizer } from './Randomizer';
 import { GradientBuilder } from './GradientBuilder';
@@ -199,7 +200,7 @@ export function StylePanel() {
             return (
               <button
                 key={style.id}
-                onClick={() => setStyle(style.id)}
+                onClick={() => { playUISound('button-click'); setStyle(style.id); playUISound('success'); }}
                 title={style.desc}
                 className={`text-left px-2 py-1.5 rounded text-ui-xs transition-colors border-l-[3px] border-r border-t border-b ${
                   isActive

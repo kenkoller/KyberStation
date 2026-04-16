@@ -7,6 +7,7 @@ import { useAudioFontStore } from '@/stores/audioFontStore';
 import type { BladeConfig } from '@bladeforge/engine';
 import { downloadConfigAsFile, downloadCollection, readCollectionFile } from '@/lib/bladeConfigIO';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
+import { playUISound } from '@/lib/uiSounds';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CommunityGallery } from './CommunityGallery';
 import {
@@ -577,6 +578,7 @@ export function PresetGallery() {
 
   // Load user preset + auto-load associated font from library
   const handleLoadUserPreset = useCallback(async (preset: UserPreset) => {
+    playUISound('preset-loaded');
     loadPreset(preset.config);
     // Auto-load font if associated and available in library
     if (preset.fontAssociation && libraryHandle && libraryFontNames.has(preset.fontAssociation)) {
@@ -700,6 +702,7 @@ export function PresetGallery() {
 
   const handleSelect = useCallback(
     (preset: Preset) => {
+      playUISound('preset-loaded');
       loadPreset(preset.config as BladeConfig);
       setDetailPreset(preset);
     },
@@ -711,7 +714,7 @@ export function PresetGallery() {
       {/* Tab bar + Save */}
       <div className="flex items-center gap-1 mb-3">
         <button
-          onClick={() => setActiveTab('gallery')}
+          onClick={() => { playUISound('tab-switch'); setActiveTab('gallery'); }}
           className={`px-3 py-1 rounded text-ui-sm font-semibold transition-colors border ${
             activeTab === 'gallery'
               ? 'bg-accent-dim border-accent-border text-accent'
@@ -721,7 +724,7 @@ export function PresetGallery() {
           Gallery ({filteredPresets.length})
         </button>
         <button
-          onClick={() => setActiveTab('my-presets')}
+          onClick={() => { playUISound('tab-switch'); setActiveTab('my-presets'); }}
           className={`px-3 py-1 rounded text-ui-sm font-semibold transition-colors border ${
             activeTab === 'my-presets'
               ? 'bg-accent-dim border-accent-border text-accent'
@@ -731,7 +734,7 @@ export function PresetGallery() {
           My Presets ({userPresets.length})
         </button>
         <button
-          onClick={() => setActiveTab('community')}
+          onClick={() => { playUISound('tab-switch'); setActiveTab('community'); }}
           className={`px-3 py-1 rounded text-ui-sm font-semibold transition-colors border ${
             activeTab === 'community'
               ? 'bg-accent-dim border-accent-border text-accent'
