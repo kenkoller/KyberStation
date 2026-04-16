@@ -7,6 +7,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
+import { playUISound } from '@/lib/uiSounds';
 
 type RenderMode = 'photorealistic' | 'pixel';
 
@@ -272,6 +273,26 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
+  /**
+   * Edit Mode hit-test geometry — updated each render frame so the click
+   * handler doesn't need to re-derive the blade's screen-space position
+   * (which would require duplicating the rotation / scaling logic).
+   * Null when the blade hasn't been rendered yet or the mode isn't supported.
+   */
+  const bladeHitRef = useRef<{
+    mode: 'vertical' | 'horizontal';
+    /** In canvas device-pixel coords. */
+    hiltX: number;
+    hiltY: number;
+    tipX: number;
+    tipY: number;
+    /** Perpendicular half-thickness tolerance in canvas px. */
+    thicknessTolerance: number;
+  } | null>(null);
+
+  /** Pointer hover position (canvas DPR coords) during Edit Mode — drives the ghost caret. */
+  const hoverPosRef = useRef<number | null>(null); // 0..1 along the blade, or null
+
   // Compact strip mode: shorter design space with blade near top
   const layoutRef = useRef({
     designH: compact ? 240 : DESIGN_H,
@@ -292,6 +313,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const verticalPanelWidths = useUIStore((s) => s.verticalPanelWidths);
   const showHilt = useUIStore((s) => s.showHilt);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const editMode = useUIStore((s) => s.editMode);
   const theme = useMemo(() => getThemeById(canvasTheme), [canvasTheme]);
 
   // Strip type from store (persisted via BladeConfig)
@@ -1628,6 +1650,96 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.fillText(label, cw - 12 * scale, ch - 10 * scale);
   }, [getScale]);
 
+  // ─── Edit Mode overlay ───
+  // Drawn last in the vertical-mode render pipeline when uiStore.editMode is
+  // on. Shows a caret on the blade at the current config.lockupPosition plus a
+  // ghost caret tracking the pointer during hover. Both are drawn in canvas
+  // device-pixel coords using the geometry captured in bladeHitRef during
+  // render (we can't reverse-engineer the rotation transform after the fact).
+  const drawEditModeOverlay = useCallback(
+    (ctx: CanvasRenderingContext2D, hit: typeof bladeHitRef.current) => {
+      if (!hit) return;
+      const { dpr } = sizeRef.current;
+      const cfg = useBladeStore.getState().config;
+
+      const markerOffset = 16 * dpr; // distance to the side of the blade
+      // Position a caret at `position` (0..1 along blade) with a given opacity.
+      const drawCaret = (
+        position: number,
+        opacity: number,
+        showLabel: boolean,
+      ) => {
+        const t = Math.max(0, Math.min(1, position));
+        const x = hit.hiltX + (hit.tipX - hit.hiltX) * t;
+        const y = hit.hiltY + (hit.tipY - hit.hiltY) * t;
+
+        // Caret glyph — small triangle pointing at the blade, drawn next to it.
+        const side = hit.thicknessTolerance * 0.35 + markerOffset;
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = 'rgba(0, 200, 255, 1)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 1 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(x + side, y);
+        ctx.lineTo(x + side + 8 * dpr, y - 5 * dpr);
+        ctx.lineTo(x + side + 8 * dpr, y + 5 * dpr);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        if (showLabel) {
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.font = `${10 * dpr}px monospace`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          const pct = Math.round(t * 100);
+          ctx.fillText(`${pct}%`, x + side + 12 * dpr, y);
+        }
+        ctx.restore();
+      };
+
+      // Radius bracket at the committed lockup position.
+      if (typeof cfg.lockupPosition === 'number') {
+        const r = cfg.lockupRadius ?? 0.12;
+        const t = cfg.lockupPosition;
+        const t0 = Math.max(0, t - r / 2);
+        const t1 = Math.min(1, t + r / 2);
+        const x0 = hit.hiltX + (hit.tipX - hit.hiltX) * t0;
+        const y0 = hit.hiltY + (hit.tipY - hit.hiltY) * t0;
+        const x1 = hit.hiltX + (hit.tipX - hit.hiltX) * t1;
+        const y1 = hit.hiltY + (hit.tipY - hit.hiltY) * t1;
+        const side = hit.thicknessTolerance * 0.35 + markerOffset;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.55)';
+        ctx.lineWidth = 2 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(x0 + side, y0);
+        ctx.lineTo(x1 + side, y1);
+        ctx.stroke();
+        // End caps
+        ctx.beginPath();
+        ctx.moveTo(x0 + side - 3 * dpr, y0);
+        ctx.lineTo(x0 + side + 3 * dpr, y0);
+        ctx.moveTo(x1 + side - 3 * dpr, y1);
+        ctx.lineTo(x1 + side + 3 * dpr, y1);
+        ctx.stroke();
+        ctx.restore();
+
+        drawCaret(t, 1, true);
+      }
+
+      // Ghost caret tracking the pointer.
+      const hover = hoverPosRef.current;
+      if (typeof hover === 'number' && hover !== cfg.lockupPosition) {
+        drawCaret(hover, 0.45, false);
+      }
+    },
+    [],
+  );
+
   // ─── Inline Pixel Strip (always visible, docked to bottom area) ───
   const drawInlineStrip = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const pixels = engine.getPixels();
@@ -1978,6 +2090,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const hiltScreenY = ch - (BLADE_START + panX) * rScale + verticalBias;
       const tipScreenY = ch - (BLADE_START + panX + scaledBladeLenDS) * rScale + verticalBias;
 
+      // Capture blade geometry for Edit Mode hit-testing.
+      // In vertical mode the blade's screen X is roughly the left half of
+      // `bladeEndX`; we center it on `centerOffsetY + BLADE_CORE_H*scale/2`
+      // offset from the rotation frame's origin. After the rotation+translate
+      // transform, the blade's screen-space centre X is centerOffsetY (the
+      // horizontal axis of the pre-rotation space becomes vertical post-rotation
+      // — and vice versa). What matters for click-to-LED is the Y span.
+      const bladeScreenX = centerOffsetY + (layoutRef.current.bladeY * baseScale);
+      bladeHitRef.current = {
+        mode: 'vertical',
+        hiltX: bladeScreenX,
+        hiltY: hiltScreenY,
+        tipX: bladeScreenX,
+        tipY: tipScreenY,
+        thicknessTolerance: Math.max(24 * dpr, 40 * baseScale),
+      };
+
       // Apply rotation transform
       const savedSize = { ...sizeRef.current };
       ctx.save();
@@ -2036,6 +2165,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         }
       }
 
+      // ── Edit Mode overlay (drawn last so it sits on top of the blade) ──
+      const editModeOn = useUIStore.getState().editMode;
+      if (editModeOn) {
+        drawEditModeOverlay(ctx, bladeHitRef.current);
+      }
+
       drawViewLabel(ctx, viewMode);
 
     } else {
@@ -2062,6 +2197,76 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       drawViewLabel(ctx, viewMode);
     }
   }, { maxFps: reducedMotion ? 2 : undefined });
+
+  // ─── Edit Mode click / hover handlers ───
+  /**
+   * Map a pointer event to a 0..1 blade position using the geometry the
+   * render loop captured in `bladeHitRef`. Returns null if:
+   *   - Edit Mode is off
+   *   - blade geometry hasn't been rendered yet
+   *   - the pointer is outside the blade's thickness tolerance band
+   */
+  const pointerToBladePosition = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>): number | null => {
+      const canvas = canvasRef.current;
+      const hit = bladeHitRef.current;
+      if (!canvas || !hit) return null;
+
+      const rect = canvas.getBoundingClientRect();
+      const dpr = sizeRef.current.dpr;
+      // Screen → canvas DPR space (same space bladeHitRef is recorded in).
+      const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+      // Project (px, py) onto the line from (hiltX,hiltY) → (tipX,tipY).
+      const dx = hit.tipX - hit.hiltX;
+      const dy = hit.tipY - hit.hiltY;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq < 1) return null;
+      const t = ((px - hit.hiltX) * dx + (py - hit.hiltY) * dy) / lenSq;
+      // Distance from the line (perpendicular tolerance).
+      const projX = hit.hiltX + dx * t;
+      const projY = hit.hiltY + dy * t;
+      const perpDist = Math.hypot(px - projX, py - projY);
+      if (perpDist > hit.thicknessTolerance) return null;
+      // Clamp t into [0, 1]; anything strictly outside is a miss.
+      if (t < -0.02 || t > 1.02) return null;
+      return Math.max(0, Math.min(1, t));
+      // Intentionally ignore dpr here — we're comparing canvas-px to canvas-px.
+      void dpr;
+    },
+    [],
+  );
+
+  const handleCanvasPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!useUIStore.getState().editMode) return;
+      const pos = pointerToBladePosition(e);
+      if (pos === null) return;
+      const prev = useBladeStore.getState().config.lockupRadius;
+      updateConfig({
+        lockupPosition: pos,
+        lockupRadius: prev ?? 0.12,
+      });
+      playUISound('button-click');
+    },
+    [pointerToBladePosition, updateConfig],
+  );
+
+  const handleCanvasPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!useUIStore.getState().editMode) {
+        hoverPosRef.current = null;
+        return;
+      }
+      hoverPosRef.current = pointerToBladePosition(e);
+    },
+    [pointerToBladePosition],
+  );
+
+  const handleCanvasPointerLeave = useCallback(() => {
+    hoverPosRef.current = null;
+  }, []);
 
   // ─── Blade length change handler ───
   const handleBladeLengthChange = useCallback((inches: number) => {
@@ -2224,6 +2429,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           className="blade-canvas absolute inset-0 w-full h-full"
           role="img"
           aria-label="Blade style preview visualizer"
+          onPointerDown={handleCanvasPointerDown}
+          onPointerMove={handleCanvasPointerMove}
+          onPointerLeave={handleCanvasPointerLeave}
+          style={{
+            cursor: editMode ? 'crosshair' : undefined,
+          }}
         />
         {/* Zoom controls overlay */}
         <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
