@@ -33,6 +33,9 @@ interface BladeConfig {
   retractionMs: number;
   shimmer: number;
   ledCount: number;
+  // Spatial lockup (mirrors engine types — keep in sync; see typeIdentity.test.ts)
+  lockupPosition?: number;
+  lockupRadius?: number;
   gradientEnd?: RGB;
   edgeColor?: RGB;
   [key: string]: unknown;
@@ -323,16 +326,44 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   );
 
   // Lockup Normal
-  layers.push(
-    templateNode(
-      'template',
-      'LockupTrL',
-      templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
-      rawNode('TrInstant'),
-      templateNode('transition', 'TrFade', intNode(300)),
-      rawNode('SaberBase::LOCKUP_NORMAL'),
-    ),
-  );
+  // When `lockupPosition` is set the user has placed the lockup spatially
+  // (Edit Mode), so emit the real OS7 `ResponsiveLockupL<>` primitive with
+  // TOP/BOTTOM/SIZE args. Otherwise emit the non-positional LockupTrL so
+  // existing presets continue to produce identical byte-for-byte output.
+  if (typeof config.lockupPosition === 'number') {
+    const pos = positionToProffie(clamp01(config.lockupPosition));
+    const size = positionToProffie(clamp01(config.lockupRadius ?? 0.12));
+    const half = Math.round(size / 2);
+    // TOP/BOTTOM are emitted symmetrically around `pos` without clamping to
+    // [0, 32768]; ProffieOS handles out-of-range at render time, and keeping
+    // them symmetric is what makes the round-trip
+    // `(top+bottom)/2 → position` recovery work at the edges (position=0 or 1).
+    const top = pos + half;
+    const bottom = pos - half;
+    layers.push(
+      templateNode(
+        'template',
+        'ResponsiveLockupL',
+        templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
+        rawNode('TrInstant'),
+        templateNode('transition', 'TrFade', intNode(300)),
+        intTemplateNode(top),
+        intTemplateNode(bottom),
+        intTemplateNode(size),
+      ),
+    );
+  } else {
+    layers.push(
+      templateNode(
+        'template',
+        'LockupTrL',
+        templateNode('template', 'AudioFlickerL', rgbNode(config.lockupColor)),
+        rawNode('TrInstant'),
+        templateNode('transition', 'TrFade', intNode(300)),
+        rawNode('SaberBase::LOCKUP_NORMAL'),
+      ),
+    );
+  }
 
   // Drag lockup
   const dragColor = config.dragColor ?? { r: 255, g: 150, b: 0 };
@@ -407,6 +438,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
 // behaviour as the previous default branches).
 
 import { ignitionFromID, retractionFromID } from './transitionMap.js';
+import { positionToProffie, clamp01 } from './astBinding.js';
 
 function buildIgnitionTransition(config: BladeConfig): StyleNode {
   return ignitionFromID(config.ignition, config.ignitionMs);

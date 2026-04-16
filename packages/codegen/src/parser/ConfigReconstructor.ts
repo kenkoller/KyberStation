@@ -40,6 +40,10 @@ export interface ReconstructedConfig {
   retraction?: string;
   ignitionMs?: number;
   retractionMs?: number;
+  /** Spatial lockup centre 0..1 recovered from `ResponsiveLockupL<>` TOP/BOTTOM. */
+  lockupPosition?: number;
+  /** Spatial lockup size (radius) 0..1 recovered from `ResponsiveLockupL<>` SIZE. */
+  lockupRadius?: number;
   confidence: number;
   warnings: string[];
   rawAST: StyleNode;
@@ -72,17 +76,27 @@ function extractRGB(node: StyleNode): RGB | null {
 }
 
 /**
- * Extract an integer value from an Int<N> or raw integer node.
+ * Extract an integer value from any of the integer-literal AST shapes we
+ * might encounter:
+ *   - Emitter's bare integer:     { type:'integer', name:'<num>', args:[] }
+ *   - Parser's integer literal:   { type:'integer', name:'Int', args:[{type:'raw', name:'<num>'}] }
+ *   - Parser's Int<> wrapper:     { type:'function', name:'Int', args:[<integer-literal>] }
+ *   - Nested Int<Int<...>>:       further levels of the above stacked
+ *   - Raw literal:                { type:'raw', name:'<num>', args:[] }
  */
 function extractInt(node: StyleNode): number | null {
-  if (node.name === 'Int' && node.args.length > 0 && node.args[0].type === 'raw') {
-    return parseInt(node.args[0].name, 10);
+  if (!node) return null;
+  // Unwrap Int / IntArg wrappers recursively.
+  if (
+    (node.name === 'Int' || node.name === 'IntArg') &&
+    node.args.length > 0
+  ) {
+    return extractInt(node.args[0]);
   }
-  if (node.type === 'raw') {
-    return parseInt(node.name, 10);
-  }
-  if (node.type === 'integer' && node.args.length > 0 && node.args[0].type === 'raw') {
-    return parseInt(node.args[0].name, 10);
+  // Bare integer (emitter shape) or raw numeric string (parser inner).
+  if (node.type === 'integer' || node.type === 'raw') {
+    const n = parseInt(node.name, 10);
+    return Number.isFinite(n) ? n : null;
   }
   return null;
 }
@@ -279,6 +293,29 @@ function resolveColorsByContainer(ast: StyleNode): {
   return result;
 }
 
+/**
+ * Recover spatial lockup params from the first `ResponsiveLockupL<>` node.
+ * Inverse of the emission branch in `buildEffectLayers` (ASTBuilder.ts).
+ */
+function resolveSpatialLockup(ast: StyleNode): {
+  lockupPosition?: number;
+  lockupRadius?: number;
+} {
+  const nodes = findNodes(ast, (n) => n.name === 'ResponsiveLockupL');
+  if (nodes.length === 0) return {};
+  const n = nodes[0];
+  // Expected args: [COLOR, TR1, TR2, TOP, BOTTOM, SIZE]
+  if (n.args.length < 6) return {};
+  const top = extractInt(n.args[3]);
+  const bottom = extractInt(n.args[4]);
+  const size = extractInt(n.args[5]);
+  if (top === null || bottom === null || size === null) return {};
+
+  const position = (top + bottom) / 2 / 32768;
+  const radius = size / 32768;
+  return { lockupPosition: position, lockupRadius: radius };
+}
+
 /** Find the first color in the tree that isn't inside a known effect layer. */
 function findBaseColor(ast: StyleNode): RGB | undefined {
   const effectLayerNames = new Set([
@@ -327,6 +364,9 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
 
   // Effect colors: resolved by the layer each color lives in.
   const containerColors = resolveColorsByContainer(ast);
+
+  // Spatial lockup params from ResponsiveLockupL<>, if present.
+  const spatialLockup = resolveSpatialLockup(ast);
 
   // Look for InOutTrL to extract ignition/retraction. Forward emits
   // `InOutTrL<ignitionTr, retractionTr>` — exactly 2 args, NOT 3+; the old
@@ -393,6 +433,8 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
     retraction,
     ignitionMs,
     retractionMs,
+    lockupPosition: spatialLockup.lockupPosition,
+    lockupRadius: spatialLockup.lockupRadius,
     confidence: Math.round(confidence * 100) / 100,
     warnings,
     rawAST: ast,

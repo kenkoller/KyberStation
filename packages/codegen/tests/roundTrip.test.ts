@@ -142,8 +142,50 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
     });
   });
 
-  describe('Phase 3 field set (requires ResponsiveLockupL emission)', () => {
-    it.todo('preserves lockupPosition through round-trip (±1/32768)');
-    it.todo('preserves lockupRadius through round-trip (±1/32768)');
+  describe('Phase 3 field set (ResponsiveLockupL emission)', () => {
+    const TOLERANCE = 2 / 32768; // rounding noise from position→proffie→position
+
+    it('preserves lockupPosition through round-trip', () => {
+      for (const pos of [0, 0.25, 0.33, 0.5, 0.8, 1]) {
+        const config = makeConfig({ lockupPosition: pos });
+        const result = roundTrip(config);
+        expect(result.parseErrors).toEqual([]);
+        const recovered = result.reconstructedConfig?.lockupPosition;
+        expect(
+          recovered,
+          `lockupPosition=${pos} did not recover: ${recovered}`,
+        ).toBeDefined();
+        expect(Math.abs((recovered ?? 0) - pos)).toBeLessThanOrEqual(TOLERANCE);
+      }
+    });
+
+    it('preserves lockupRadius through round-trip', () => {
+      for (const r of [0.05, 0.12, 0.3]) {
+        const config = makeConfig({ lockupPosition: 0.5, lockupRadius: r });
+        const result = roundTrip(config);
+        expect(result.parseErrors).toEqual([]);
+        const recovered = result.reconstructedConfig?.lockupRadius;
+        expect(
+          recovered,
+          `lockupRadius=${r} did not recover: ${recovered}`,
+        ).toBeDefined();
+        expect(Math.abs((recovered ?? 0) - r)).toBeLessThanOrEqual(TOLERANCE);
+      }
+    });
+
+    it('emits ResponsiveLockupL only when lockupPosition is set', () => {
+      const without = roundTrip(makeConfig());
+      expect(without.emittedCode).not.toContain('ResponsiveLockupL');
+      expect(without.emittedCode).toContain('LockupTrL');
+
+      const withSpatial = roundTrip(makeConfig({ lockupPosition: 0.5 }));
+      expect(withSpatial.emittedCode).toContain('ResponsiveLockupL');
+    });
+
+    it('does not set lockupPosition when absent from emitted code', () => {
+      const result = roundTrip(makeConfig());
+      expect(result.reconstructedConfig?.lockupPosition).toBeUndefined();
+      expect(result.reconstructedConfig?.lockupRadius).toBeUndefined();
+    });
   });
 });
