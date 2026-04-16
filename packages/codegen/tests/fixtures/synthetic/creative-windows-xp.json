@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 180,
+    "r": 50
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "ignition": "stutter",
+  "ignitionMs": 1500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 215,
+    "g": 120,
+    "r": 0
+  },
+  "name": "WindowsXPBliss",
+  "retraction": "dissolve",
+  "retractionMs": 2000,
+  "shimmer": 0.05,
+  "style": "gradient"
+}

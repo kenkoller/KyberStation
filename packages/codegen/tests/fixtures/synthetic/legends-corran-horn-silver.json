@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 225,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 215,
+    "r": 210
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dualPhase": true,
+  "ignition": "scroll",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 230,
+    "g": 210,
+    "r": 200
+  },
+  "name": "CorranHorn",
+  "retraction": "scroll",
+  "retractionMs": 400,
+  "shimmer": 0.06,
+  "style": "rotoscope",
+  "swingFxIntensity": 0.3
+}

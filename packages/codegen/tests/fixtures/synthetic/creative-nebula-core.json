@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 30,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 150,
+    "r": 200
+  },
+  "frequency": 2.5,
+  "ignition": "spark",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 100,
+    "r": 180
+  },
+  "name": "NebulaCore",
+  "phaseSpeed": 1.8,
+  "retraction": "fadeout",
+  "retractionMs": 500,
+  "shimmer": 0.18,
+  "style": "plasma"
+}

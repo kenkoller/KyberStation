@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 50,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 0,
+    "r": 180
+  },
+  "ignition": "glitch",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 0,
+    "r": 60
+  },
+  "name": "SithAlchemy",
+  "retraction": "shatter",
+  "retractionMs": 800,
+  "shimmer": 0.5,
+  "style": "plasma"
+}

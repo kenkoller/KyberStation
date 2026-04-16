@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 150,
+    "r": 0
+  },
+  "name": "NeuralLink",
+  "retraction": "dissolve",
+  "retractionMs": 700,
+  "shimmer": 0.3,
+  "style": "automata"
+}

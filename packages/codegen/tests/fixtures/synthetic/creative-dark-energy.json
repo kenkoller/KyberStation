@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 120,
+    "g": 0,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 50,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 100,
+    "r": 200
+  },
+  "ignition": "glitch",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 0,
+    "r": 60
+  },
+  "name": "DarkEnergy",
+  "retraction": "shatter",
+  "retractionMs": 700,
+  "shimmer": 0.55,
+  "style": "plasma"
+}

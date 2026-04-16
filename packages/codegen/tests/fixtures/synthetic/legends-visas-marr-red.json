@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 0,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 20,
+    "g": 40,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 130,
+    "g": 170,
+    "r": 255
+  },
+  "ignition": "scroll",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 60,
+    "r": 240
+  },
+  "name": "VisasMarr",
+  "retraction": "fadeout",
+  "retractionMs": 400,
+  "shimmer": 0.1,
+  "style": "stable"
+}

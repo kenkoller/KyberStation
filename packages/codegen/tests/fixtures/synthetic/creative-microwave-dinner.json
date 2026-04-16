@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 100,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "stutter",
+  "ignitionMs": 2000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 50,
+    "r": 200
+  },
+  "name": "MicrowaveDinner",
+  "retraction": "drain",
+  "retractionMs": 1500,
+  "shimmer": 0.35,
+  "style": "ember"
+}

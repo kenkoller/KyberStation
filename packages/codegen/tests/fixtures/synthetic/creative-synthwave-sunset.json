@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 0,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 0
+  },
+  "ignition": "wipe",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 0,
+    "r": 200
+  },
+  "name": "SynthwaveSunset",
+  "retraction": "flickerOut",
+  "retractionMs": 700,
+  "shimmer": 0.6,
+  "style": "helix"
+}

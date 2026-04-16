@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 5,
+    "r": 210
+  },
+  "blastColor": {
+    "b": 20,
+    "g": 50,
+    "r": 235
+  },
+  "clashColor": {
+    "b": 130,
+    "g": 180,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 180
+  },
+  "ignition": "fracture",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 35,
+    "g": 70,
+    "r": 245
+  },
+  "name": "DarthKrayt",
+  "noiseLevel": 0.12,
+  "retraction": "dissolve",
+  "retractionMs": 300,
+  "shimmer": 0.3,
+  "style": "cinder",
+  "swingFxIntensity": 0.45
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 147,
+    "g": 20,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 150,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 215,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 255,
+    "r": 0
+  },
+  "name": "PartyMode",
+  "retraction": "shatter",
+  "retractionMs": 400,
+  "shimmer": 0.8,
+  "style": "mirage"
+}

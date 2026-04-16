@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 255,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 0,
+    "r": 255
+  },
+  "ignition": "fracture",
+  "ignitionMs": 50,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "name": "ForbiddenSaber",
+  "retraction": "spaghettify",
+  "retractionMs": 3000,
+  "shimmer": 1,
+  "style": "unstable"
+}

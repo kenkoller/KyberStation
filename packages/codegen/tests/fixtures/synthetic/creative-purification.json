@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 30,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 180,
+    "r": 220
+  },
+  "name": "CrystalPurification",
+  "retraction": "fadeout",
+  "retractionMs": 1200,
+  "shimmer": 0.2,
+  "style": "gradient"
+}

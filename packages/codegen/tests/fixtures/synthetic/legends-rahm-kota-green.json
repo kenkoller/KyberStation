@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 35,
+    "g": 190,
+    "r": 10
+  },
+  "blastColor": {
+    "b": 95,
+    "g": 240,
+    "r": 80
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 190
+  },
+  "ignition": "scroll",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 230,
+    "r": 110
+  },
+  "name": "RahmKota",
+  "retraction": "scroll",
+  "retractionMs": 420,
+  "shimmer": 0.07,
+  "style": "stable"
+}

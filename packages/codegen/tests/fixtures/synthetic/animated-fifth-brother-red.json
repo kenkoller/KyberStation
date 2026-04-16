@@ -1,0 +1,39 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 20,
+    "g": 50,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 160,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "fireSize": 0.5,
+  "heatSpread": 0.5,
+  "ignition": "center",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 70,
+    "r": 255
+  },
+  "name": "FifthBrother",
+  "retraction": "center",
+  "retractionMs": 300,
+  "shimmer": 0.15,
+  "sparkRate": 0.4,
+  "style": "fire",
+  "swingFxIntensity": 0.3
+}

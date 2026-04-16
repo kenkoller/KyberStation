@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 0,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 0,
+    "r": 200
+  },
+  "name": "RaveSaber",
+  "retraction": "fadeout",
+  "retractionMs": 400,
+  "shimmer": 0.85,
+  "style": "pulse"
+}

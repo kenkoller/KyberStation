@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 20,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 80,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 180,
+    "r": 230
+  },
+  "dragColor": {
+    "b": 180,
+    "g": 0,
+    "r": 150
+  },
+  "facets": 6,
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 100,
+    "r": 210
+  },
+  "name": "MaraJadePurple",
+  "retraction": "standard",
+  "retractionMs": 360,
+  "rotationSpeed": 1.5,
+  "shimmer": 0.1,
+  "style": "prism",
+  "swingFxIntensity": 0.35
+}

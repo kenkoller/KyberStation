@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 0,
+    "r": 128
+  },
+  "blastColor": {
+    "b": 128,
+    "g": 0,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 128,
+    "r": 255
+  },
+  "ignition": "seismic",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 128,
+    "g": 255,
+    "r": 0
+  },
+  "name": "EverythingBagel",
+  "retraction": "spaghettify",
+  "retractionMs": 500,
+  "shimmer": 0.85,
+  "style": "vortex"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 50,
+    "r": 140
+  },
+  "blastColor": {
+    "b": 30,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 150,
+    "r": 255
+  },
+  "ignition": "seismic",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 30,
+    "r": 100
+  },
+  "name": "Earthquake",
+  "retraction": "drain",
+  "retractionMs": 1000,
+  "shimmer": 0.3,
+  "style": "gravity"
+}

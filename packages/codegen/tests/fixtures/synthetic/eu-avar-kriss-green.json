@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 45,
+    "g": 210,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 110,
+    "g": 255,
+    "r": 90
+  },
+  "clashColor": {
+    "b": 190,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 240,
+    "r": 120
+  },
+  "name": "AvarKriss",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.07,
+  "style": "stable"
+}

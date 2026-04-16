@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 180,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 800,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 200,
+    "r": 255
+  },
+  "name": "TempleSentinel",
+  "retraction": "center",
+  "retractionMs": 600,
+  "shimmer": 0.15,
+  "style": "rotoscope"
+}

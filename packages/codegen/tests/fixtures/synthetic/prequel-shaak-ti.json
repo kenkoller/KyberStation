@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 130,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "ShaakTi",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.05,
+  "style": "stable"
+}

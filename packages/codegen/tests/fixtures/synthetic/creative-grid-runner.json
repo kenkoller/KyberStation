@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 255,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 200,
+    "r": 0
+  },
+  "name": "GridRunner",
+  "retraction": "scroll",
+  "retractionMs": 300,
+  "shimmer": 0,
+  "style": "stable"
+}

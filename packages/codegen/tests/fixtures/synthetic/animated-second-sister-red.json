@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 60,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 140,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 80,
+    "r": 255
+  },
+  "name": "SecondSister",
+  "retraction": "center",
+  "retractionMs": 280,
+  "shimmer": 0.18,
+  "style": "stable"
+}

@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 70,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 150,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 215,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 170,
+    "r": 140
+  },
+  "name": "StarkillerBlue",
+  "noiseLevel": 0.06,
+  "retraction": "standard",
+  "retractionMs": 280,
+  "shimmer": 0.18,
+  "sparkSize": 0.7,
+  "style": "photon",
+  "swingFxIntensity": 0.55
+}

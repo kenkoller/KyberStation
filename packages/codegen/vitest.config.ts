@@ -12,6 +12,7 @@ export default defineConfig({
       // engine source directly so tests/helpers/ and tests/typeIdentity.test.ts
       // can `import { ... } from '@kyberstation/engine'`.
       '@kyberstation/engine': path.resolve(thisDir, '../engine/src/index.ts'),
+      '@kyberstation/presets': path.resolve(thisDir, '../presets/src/index.ts'),
     },
   },
   test: {

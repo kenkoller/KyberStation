@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 235,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 220,
+    "g": 190,
+    "r": 180
+  },
+  "ignition": "summon",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 200,
+    "r": 180
+  },
+  "name": "AhsokaWhite",
+  "retraction": "evaporate",
+  "retractionMs": 450,
+  "shimmer": 0.08,
+  "style": "photon",
+  "swingFxIntensity": 0.3
+}

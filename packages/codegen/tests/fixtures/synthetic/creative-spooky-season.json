@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 80,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 255,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 0,
+    "r": 100
+  },
+  "ignition": "spark",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 0,
+    "r": 50
+  },
+  "name": "SpookySeason",
+  "retraction": "fadeout",
+  "retractionMs": 1200,
+  "shimmer": 0.4,
+  "style": "fire"
+}

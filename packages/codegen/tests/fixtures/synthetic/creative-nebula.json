@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 0,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 200,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "scroll",
+  "ignitionMs": 1500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 0,
+    "r": 80
+  },
+  "name": "Nebula",
+  "retraction": "fadeout",
+  "retractionMs": 1800,
+  "shimmer": 0.35,
+  "style": "aurora"
+}

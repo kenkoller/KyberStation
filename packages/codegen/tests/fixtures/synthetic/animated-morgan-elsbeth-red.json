@@ -1,0 +1,39 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 20,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 180,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 0,
+    "r": 180
+  },
+  "fireSize": 0.5,
+  "heatSpread": 0.6,
+  "ignition": "drip-up",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 100,
+    "r": 255
+  },
+  "name": "MorganElsbeth",
+  "noiseLevel": 0.06,
+  "retraction": "unravel",
+  "retractionMs": 600,
+  "shimmer": 0.12,
+  "sparkRate": 0.4,
+  "style": "ember"
+}

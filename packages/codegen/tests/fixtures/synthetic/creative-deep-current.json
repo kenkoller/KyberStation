@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 90,
+    "g": 60,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 180,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 100
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 100,
+    "r": 0
+  },
+  "name": "DeepCurrent",
+  "retraction": "drain",
+  "retractionMs": 1500,
+  "shimmer": 0.25,
+  "style": "tidal"
+}

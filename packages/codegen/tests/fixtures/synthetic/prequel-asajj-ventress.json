@@ -1,0 +1,39 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 120,
+    "r": 255
+  },
+  "flicker": 0.5,
+  "ignition": "crackle",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "Ventress",
+  "noiseLevel": 0.1,
+  "retraction": "flickerOut",
+  "retractionMs": 280,
+  "shimmer": 0.3,
+  "stutterCount": 3,
+  "style": "unstable",
+  "swingFxIntensity": 0.4
+}

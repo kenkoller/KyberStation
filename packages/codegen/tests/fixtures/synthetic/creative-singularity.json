@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 0,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 0,
+    "r": 120
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 50,
+    "r": 180
+  },
+  "ignition": "summon",
+  "ignitionMs": 800,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 0,
+    "r": 40
+  },
+  "name": "Singularity",
+  "retraction": "spaghettify",
+  "retractionMs": 1200,
+  "shimmer": 0.6,
+  "style": "vortex"
+}

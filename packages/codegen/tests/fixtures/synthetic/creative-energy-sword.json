@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 150,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "center",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 0
+  },
+  "name": "EnergySword",
+  "retraction": "center",
+  "retractionMs": 300,
+  "shimmer": 0.3,
+  "style": "prism"
+}

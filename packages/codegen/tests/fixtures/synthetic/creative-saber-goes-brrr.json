@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 255,
+    "r": 0
+  },
+  "ignition": "crackle",
+  "ignitionMs": 150,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 100,
+    "r": 0
+  },
+  "name": "SaberGoesBrrr",
+  "retraction": "dissolve",
+  "retractionMs": 300,
+  "shimmer": 0.9,
+  "style": "dataStream"
+}

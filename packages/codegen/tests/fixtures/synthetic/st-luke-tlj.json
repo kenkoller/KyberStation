@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 220,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 180
+  },
+  "ignition": "standard",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "name": "LukeTLJ",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.03,
+  "style": "rotoscope"
+}

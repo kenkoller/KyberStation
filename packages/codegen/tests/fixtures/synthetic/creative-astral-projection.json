@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 100,
+    "r": 140
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 180,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 220
+  },
+  "ignition": "summon",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 160,
+    "g": 70,
+    "r": 100
+  },
+  "name": "AstralProjection",
+  "retraction": "flickerOut",
+  "retractionMs": 1300,
+  "shimmer": 0.4,
+  "style": "neutron"
+}

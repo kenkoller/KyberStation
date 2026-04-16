@@ -1,0 +1,40 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 0,
+    "r": 210
+  },
+  "blastColor": {
+    "b": 25,
+    "g": 55,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 130,
+    "g": 175,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 200
+  },
+  "fireSize": 0.6,
+  "heatSpread": 0.6,
+  "ignition": "stutter",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 45,
+    "g": 80,
+    "r": 255
+  },
+  "name": "TaronMalicos",
+  "noiseLevel": 0.12,
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.28,
+  "sparkRate": 0.5,
+  "style": "fire",
+  "swingFxIntensity": 0.4
+}

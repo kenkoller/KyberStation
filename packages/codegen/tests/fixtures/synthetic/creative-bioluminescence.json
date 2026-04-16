@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 20,
+    "r": 10
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 0
+  },
+  "ignition": "summon",
+  "ignitionMs": 1000,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 50,
+    "r": 20
+  },
+  "name": "Bioluminescence",
+  "retraction": "flickerOut",
+  "retractionMs": 1400,
+  "shimmer": 0.35,
+  "style": "nebula"
+}

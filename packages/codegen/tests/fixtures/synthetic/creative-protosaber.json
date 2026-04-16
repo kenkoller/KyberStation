@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 150,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "stutter",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 120,
+    "r": 180
+  },
+  "name": "Protosaber",
+  "retraction": "fadeout",
+  "retractionMs": 1000,
+  "shimmer": 0.15,
+  "style": "cinder"
+}

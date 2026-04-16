@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 155,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 225,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 210,
+    "r": 180
+  },
+  "name": "ObiWanANH",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 450,
+  "shimmer": 0.08,
+  "style": "rotoscope",
+  "swingFxIntensity": 0.2
+}

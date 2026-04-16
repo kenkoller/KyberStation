@@ -1,0 +1,33 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 230,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 255,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "spark",
+  "ignitionMs": 250,
+  "ledCount": 100,
+  "lockupColor": {
+    "b": 180,
+    "g": 240,
+    "r": 180
+  },
+  "name": "Grogu",
+  "pulseMinBright": 0.6,
+  "pulseSpeed": 0.8,
+  "retraction": "scroll",
+  "retractionMs": 300,
+  "shimmer": 0.1,
+  "style": "pulse",
+  "swingFxIntensity": 0.4
+}

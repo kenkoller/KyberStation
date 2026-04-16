@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 20,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 45,
+    "g": 80,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 0,
+    "r": 200
+  },
+  "frequency": 1.2,
+  "ignition": "stutter",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 65,
+    "g": 105,
+    "r": 255
+  },
+  "name": "BodeAkuna",
+  "phaseSpeed": 0.8,
+  "retraction": "fadeout",
+  "retractionMs": 340,
+  "shimmer": 0.14,
+  "style": "plasma",
+  "swingFxIntensity": 0.35
+}

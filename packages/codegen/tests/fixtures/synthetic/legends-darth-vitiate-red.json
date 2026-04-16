@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 10,
+    "g": 20,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 150,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 50,
+    "g": 0,
+    "r": 100
+  },
+  "ignition": "pulse-wave",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 20,
+    "g": 40,
+    "r": 220
+  },
+  "name": "DarthVitiate",
+  "noiseLevel": 0.15,
+  "retraction": "spaghettify",
+  "retractionMs": 600,
+  "shimmer": 0.28,
+  "style": "cinder",
+  "swingFxIntensity": 0.3
+}

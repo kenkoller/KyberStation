@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 60,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "stutter",
+  "ignitionMs": 450,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 150,
+    "r": 255
+  },
+  "name": "MoltenCore",
+  "retraction": "fadeout",
+  "retractionMs": 600,
+  "shimmer": 0.15,
+  "style": "cinder"
+}

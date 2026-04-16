@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 245,
+    "g": 110,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 290,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "BarrissOffee",
+  "retraction": "standard",
+  "retractionMs": 280,
+  "shimmer": 0.04,
+  "style": "stable"
+}

@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 100,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 170,
+    "r": 120
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "summon",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 160
+  },
+  "name": "KananJarrus",
+  "retraction": "fadeout",
+  "retractionMs": 380,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 20,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "seismic",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 10,
+    "r": 150
+  },
+  "name": "Tectonic",
+  "retraction": "drain",
+  "retractionMs": 1000,
+  "shimmer": 0.35,
+  "style": "shatter"
+}

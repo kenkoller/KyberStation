@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 100,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 170
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 160
+  },
+  "name": "LeiaST",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.04,
+  "style": "stable"
+}

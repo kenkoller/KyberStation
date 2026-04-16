@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 28,
+    "g": 220,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "summon",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "name": "QuiGon",
+  "noiseLevel": 0.02,
+  "retraction": "fadeout",
+  "retractionMs": 300,
+  "shimmer": 0.04,
+  "style": "stable",
+  "swingFxIntensity": 0.25
+}

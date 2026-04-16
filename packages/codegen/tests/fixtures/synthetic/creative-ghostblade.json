@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 40,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 180,
+    "r": 150
+  },
+  "ignition": "stutter",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 80,
+    "r": 60
+  },
+  "name": "Ghostblade",
+  "retraction": "fadeout",
+  "retractionMs": 2000,
+  "shimmer": 0.6,
+  "style": "pulse"
+}

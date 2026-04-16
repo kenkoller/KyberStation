@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 80,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 160,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 180,
+    "r": 150
+  },
+  "name": "EzraBridger",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

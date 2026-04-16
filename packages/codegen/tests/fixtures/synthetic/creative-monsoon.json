@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 140,
+    "g": 100,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 180,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 800,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 110,
+    "g": 70,
+    "r": 50
+  },
+  "name": "Monsoon",
+  "retraction": "drain",
+  "retractionMs": 1000,
+  "shimmer": 0.2,
+  "style": "cascade"
+}

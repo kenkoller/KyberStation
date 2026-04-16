@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 100,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 170,
+    "r": 120
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "stutter",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 160
+  },
+  "name": "EzraHybrid",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.12,
+  "style": "stable"
+}

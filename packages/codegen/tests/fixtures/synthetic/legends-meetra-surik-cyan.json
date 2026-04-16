@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 210,
+    "r": 80
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 180
+  },
+  "ignition": "scroll",
+  "ignitionMs": 340,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 100
+  },
+  "name": "MeetraSurik",
+  "retraction": "scroll",
+  "retractionMs": 400,
+  "shimmer": 0.08,
+  "style": "stable"
+}

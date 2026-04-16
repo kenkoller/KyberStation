@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 10,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "stutter",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 50,
+    "r": 220
+  },
+  "name": "Heartbeat",
+  "pulseMinBright": 0.1,
+  "pulseSpeed": 0.6,
+  "retraction": "fadeout",
+  "retractionMs": 800,
+  "shimmer": 0.05,
+  "style": "pulse"
+}

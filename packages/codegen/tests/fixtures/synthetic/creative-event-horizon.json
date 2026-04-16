@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 0,
+    "r": 10
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 0,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 0,
+    "r": 150
+  },
+  "ignition": "seismic",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 0,
+    "r": 30
+  },
+  "name": "EventHorizon",
+  "retraction": "spaghettify",
+  "retractionMs": 1100,
+  "shimmer": 0.7,
+  "style": "vortex"
+}

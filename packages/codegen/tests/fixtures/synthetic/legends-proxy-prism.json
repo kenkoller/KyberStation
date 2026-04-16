@@ -1,0 +1,35 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 200,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "colorShiftSpeed": 2,
+  "facets": 8,
+  "ignition": "glitch",
+  "ignitionMs": 180,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 150,
+    "r": 200
+  },
+  "name": "PROXY",
+  "rainbow": true,
+  "retraction": "shatter",
+  "retractionMs": 250,
+  "rotationSpeed": 2.5,
+  "shimmer": 0.4,
+  "style": "prism",
+  "swingFxIntensity": 0.5
+}

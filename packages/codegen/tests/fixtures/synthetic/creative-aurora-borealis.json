@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 100,
+    "g": 180,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 150,
+    "r": 0
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 0,
+    "r": 100
+  },
+  "ignition": "scroll",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 255,
+    "r": 0
+  },
+  "name": "AuroraBorealis",
+  "retraction": "fadeout",
+  "retractionMs": 1500,
+  "shimmer": 0.3,
+  "style": "aurora"
+}

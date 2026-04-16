@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 230,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "seismic",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 200,
+    "r": 200
+  },
+  "name": "Graviton",
+  "retraction": "implode",
+  "retractionMs": 600,
+  "shimmer": 0.1,
+  "style": "gravity"
+}

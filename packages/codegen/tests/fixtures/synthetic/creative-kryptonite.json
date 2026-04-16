@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 220,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 100
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 255,
+    "r": 150
+  },
+  "ignition": "spark",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 150,
+    "r": 0
+  },
+  "name": "Kryptonite",
+  "retraction": "fadeout",
+  "retractionMs": 700,
+  "shimmer": 0.55,
+  "style": "unstable"
+}

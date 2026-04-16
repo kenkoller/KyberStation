@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 215,
+    "g": 120,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 0,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "glitch",
+  "ignitionMs": 100,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 80,
+    "r": 0
+  },
+  "name": "BSOD",
+  "retraction": "dissolve",
+  "retractionMs": 3000,
+  "shimmer": 0,
+  "style": "stable"
+}

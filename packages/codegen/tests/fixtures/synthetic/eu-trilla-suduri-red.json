@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 5,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 65,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 145,
+    "g": 185,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 85,
+    "r": 255
+  },
+  "name": "TrillaSuduri",
+  "retraction": "center",
+  "retractionMs": 280,
+  "shimmer": 0.16,
+  "style": "stable"
+}

@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 140,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 60,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 20,
+    "g": 100,
+    "r": 180
+  },
+  "name": "CozyFireplace",
+  "retraction": "flickerOut",
+  "retractionMs": 1500,
+  "shimmer": 0.3,
+  "style": "candle"
+}

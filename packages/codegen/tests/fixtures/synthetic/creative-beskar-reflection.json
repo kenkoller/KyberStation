@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 170,
+    "r": 160
+  },
+  "blastColor": {
+    "b": 0,
+    "g": 150,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 50,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 210,
+    "g": 200,
+    "r": 200
+  },
+  "name": "BeskarReflection",
+  "retraction": "scroll",
+  "retractionMs": 400,
+  "shimmer": 0.35,
+  "style": "prism"
+}

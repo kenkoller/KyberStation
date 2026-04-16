@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 210,
+    "r": 200
+  },
+  "name": "Starfield",
+  "retraction": "shatter",
+  "retractionMs": 300,
+  "shimmer": 0.1,
+  "style": "crystalShatter"
+}
