@@ -1,3 +1,5 @@
+import { LandingBladeHero } from './LandingBladeHero';
+
 export function LandingHero() {
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
@@ -10,15 +12,7 @@ export function LandingHero() {
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         aria-hidden="true"
       >
-        <div
-          className="relative h-[70vh] max-h-[560px] w-[3px] rounded-full kyber-glow"
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgb(var(--accent)) 8%, rgb(var(--accent)) 92%, rgba(255,255,255,0.95) 100%)',
-            boxShadow:
-              '0 0 24px rgb(var(--accent) / 0.6), 0 0 64px rgb(var(--accent) / 0.4), 0 0 128px rgb(var(--accent) / 0.18)',
-          }}
-        />
+        <LandingBladeHero />
       </div>
 
       <div className="relative z-10 w-full text-center px-6">

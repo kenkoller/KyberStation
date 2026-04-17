@@ -1,4 +1,6 @@
-const VERSION = '0.10.0';
+import pkg from '../../package.json';
+
+const VERSION = pkg.version;
 const RELEASE_DATE = '2026-04-17';
 const RELEASE_TITLE = 'Long-tail cleanup';
 const REPO_RELEASES_URL =
