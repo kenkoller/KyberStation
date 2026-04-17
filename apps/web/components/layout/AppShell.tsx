@@ -17,6 +17,7 @@ import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
+import { useAudioSync } from '@/hooks/useAudioSync';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
 import { useAccessibilityApplier } from '@/hooks/useAccessibilityApplier';
 import { useCrystalAccent } from '@/hooks/useCrystalAccent';
@@ -642,6 +643,7 @@ function TabletShell({
 export function AppShell() {
   const { engineRef, toggle, triggerEffect, releaseEffect } = useBladeEngine();
   const audio = useAudioEngine();
+  useAudioSync(audio);
   useThemeApplier();
   useAccessibilityApplier();
   useCrystalAccent();
