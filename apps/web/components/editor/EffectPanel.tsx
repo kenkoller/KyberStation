@@ -91,7 +91,7 @@ export function EffectPanel() {
         </div>
         {/* Stutter parameters */}
         {config.ignition === 'stutter' && (
-          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <label className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer">
               <input
                 type="checkbox"
@@ -131,7 +131,7 @@ export function EffectPanel() {
         )}
         {/* Glitch parameters */}
         {config.ignition === 'glitch' && (
-          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-ui-xs text-text-muted w-20 shrink-0">Density</span>
               <input
@@ -162,7 +162,7 @@ export function EffectPanel() {
         )}
         {/* Spark parameters */}
         {config.ignition === 'spark' && (
-          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-ui-xs text-text-muted w-20 shrink-0">Spark Size</span>
               <input
@@ -193,7 +193,7 @@ export function EffectPanel() {
         )}
         {/* Wipe parameters */}
         {config.ignition === 'wipe' && (
-          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-ui-xs text-text-muted w-20 shrink-0">Softness</span>
               <input
@@ -235,7 +235,7 @@ export function EffectPanel() {
         </div>
         {/* Shatter retraction parameters */}
         {config.retraction === 'shatter' && (
-          <div className="mt-2 bg-bg-surface rounded p-2 border border-border-subtle space-y-2">
+          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-ui-xs text-text-muted w-20 shrink-0">Fragment Size</span>
               <input

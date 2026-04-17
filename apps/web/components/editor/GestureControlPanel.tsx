@@ -216,8 +216,13 @@ export function GestureControlPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {FETT263_BUTTON_ACTIONS.map((row) => (
-                    <tr key={row.input} className="border-t border-border-subtle/50">
+                  {FETT263_BUTTON_ACTIONS.map((row, i) => (
+                    <tr
+                      key={row.input}
+                      className={`border-t border-border-subtle/50 ${
+                        i % 2 === 1 ? 'bg-bg-surface/40' : ''
+                      }`}
+                    >
                       <td className="px-2 py-1 text-text-primary font-medium">
                         {row.input}
                       </td>
