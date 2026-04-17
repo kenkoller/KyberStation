@@ -86,7 +86,7 @@ export function CodeOutput() {
           volume,
           clashThresholdG: 3.0,
           maxClashStrength: 200,
-          propFile: 'saber_fett263_buttons.h',
+          propFile: (config.propFile as string | undefined) ?? 'saber_fett263_buttons.h',
           fett263Defines: allDefines,
           presets,
           bladeConfig: [
