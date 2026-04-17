@@ -6,6 +6,8 @@
 
 **Visual blade style editor, real-time simulator, and config generator for custom lightsabers.**
 
+![KyberStation landing page — live blade render behind the wordmark](docs/images/landing-hero.png)
+
 Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device — phone, tablet, laptop, or desktop. Installable as a PWA.
 
 > Think "DAW for lightsabers" — if GarageBand let you design blade animations instead of music tracks.
