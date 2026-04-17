@@ -24,6 +24,7 @@ import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { FPSCounter } from '@/components/layout/FPSCounter';
 import { SettingsModal } from '@/components/layout/SettingsModal';
+import { SaberWizard } from '@/components/onboarding/SaberWizard';
 import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
 import { PixelDebugOverlay } from '@/components/editor/PixelDebugOverlay';
@@ -223,6 +224,8 @@ export function WorkbenchLayout() {
 
   // ── Settings modal state ──
   const [showSettings, setShowSettings] = useState(false);
+  // ── Saber Wizard state ──
+  const [showWizard, setShowWizard] = useState(false);
 
   // ── Tab drag-to-reorder state ──
   const orderedTabs = useOrderedTabs();
@@ -359,6 +362,16 @@ export function WorkbenchLayout() {
           >
             Docs
           </Link>
+
+          <button
+            onClick={() => setShowWizard(true)}
+            className="px-2 py-1 rounded text-ui-xs font-medium border border-accent/40 text-accent hover:bg-accent/10 transition-colors inline-flex items-center gap-1"
+            title="Launch the guided Saber Wizard — 3 steps to a complete preset"
+            aria-label="Open Saber Wizard"
+          >
+            <span aria-hidden="true">✦</span>
+            <span className="hidden tablet:inline">Wizard</span>
+          </button>
 
           <button
             onClick={() => setShowSettings(true)}
@@ -609,6 +622,7 @@ export function WorkbenchLayout() {
        * SETTINGS MODAL
        * ════════════════════════════════════════════════════ */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SaberWizard open={showWizard} onClose={() => setShowWizard(false)} />
     </div>
   );
 }
