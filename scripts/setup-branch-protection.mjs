@@ -105,13 +105,14 @@ const ruleset = {
         allowed_merge_methods: ['merge', 'squash', 'rebase'],
       },
     },
-    // Require CI to pass
+    // Require CI to pass. The `integration_id` field is optional — omit
+    // it to accept any check from any app (omitting it as `null` causes
+    // the API to reject with "Invalid property: data matches no possible
+    // input"; omitting the key entirely is the correct shape).
     {
       type: 'required_status_checks',
       parameters: {
-        required_status_checks: [
-          { context: 'build-and-test', integration_id: null },
-        ],
+        required_status_checks: [{ context: 'build-and-test' }],
         strict_required_status_checks_policy: false,
       },
     },
