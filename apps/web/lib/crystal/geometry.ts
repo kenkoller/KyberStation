@@ -112,10 +112,22 @@ function buildPrism(params: {
     faces.push([botRing + i, botRing + j, botCenterIdx]);
   }
 
-  // Flatten into a non-indexed BufferGeometry so each face has its
-  // own vertex copies and therefore its own flat-shaded normal.
+  // Flatten into a non-indexed BufferGeometry. We author HYBRID normals:
+  //   - Side quads (ri spans two adjacent rings) share normals
+  //     ACROSS the top-to-bottom seam so vertical curvature reads as
+  //     one continuous highlight band, not stepped facets.
+  //   - Horizontal neighbour seams (between segment i and i+1 of the
+  //     same ring) stay hard-faceted so each prism face still reads
+  //     as a distinct crystal cut.
+  //   - Top and bottom caps stay flat-shaded (fan triangles).
+  //
+  // Implementation: for side faces, compute a per-vertex normal by
+  // averaging the in-plane radial direction (smooths vertically) while
+  // keeping the azimuthal (angular) direction as-is (faceted
+  // horizontally).
   const positions: number[] = [];
   const uvs: number[] = [];
+  const normals: number[] = [];
 
   const getVtx = (idx: number): [number, number, number] => [
     vertices[idx * 3],
@@ -123,21 +135,66 @@ function buildPrism(params: {
     vertices[idx * 3 + 2],
   ];
 
-  for (const face of faces) {
-    for (const idx of face) {
-      const [x, y, z] = getVtx(idx);
-      positions.push(x, y, z);
-      // UV: simple cylindrical projection — angle-around, height-up
-      const u = 0.5 + Math.atan2(z, x) / (Math.PI * 2);
-      const v = (y - yBot) / (yTop - yBot);
-      uvs.push(u, v);
+  // Helper: flat-face normal from three positions.
+  const faceNormal = (
+    a: [number, number, number],
+    b: [number, number, number],
+    c: [number, number, number],
+  ): [number, number, number] => {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const nx = uy * vz - uz * vy;
+    const ny = uz * vx - ux * vz;
+    const nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz) || 1;
+    return [nx / len, ny / len, nz / len];
+  };
+
+  // Side band faces: faces[0 .. sideCount-1]. Two triangles per quad,
+  // so segment i owns faces[2*i] and faces[2*i+1] within each ring band.
+  const sideCount = (layers.length - 1) * segs * 2;
+
+  for (let fi = 0; fi < faces.length; fi++) {
+    const face = faces[fi];
+    const isSide = fi < sideCount;
+    const [a, b, c] = [getVtx(face[0]), getVtx(face[1]), getVtx(face[2])];
+
+    if (isSide) {
+      // One shared azimuthal normal per face: faceted HORIZONTALLY
+      // (each segment is a distinct crystal cut) but smooth
+      // VERTICALLY across rings because both rings' vertices within
+      // the same segment get the SAME normal. This produces the
+      // continuous top-to-bottom highlight band we want while keeping
+      // segment-to-segment seams crisp.
+      const sideFaceIndex = fi % (segs * 2); // [0, 2*segs)
+      const segIndex = Math.floor(sideFaceIndex / 2); // 0..segs-1
+      const faceCentreAngle = ((segIndex + 0.5) / segs) * Math.PI * 2;
+      const nx = Math.cos(faceCentreAngle);
+      const nz = Math.sin(faceCentreAngle);
+      for (const [x, y, z] of [a, b, c]) {
+        positions.push(x, y, z);
+        normals.push(nx, 0, nz);
+        const u = 0.5 + Math.atan2(z, x) / (Math.PI * 2);
+        const v = (y - yBot) / (yTop - yBot);
+        uvs.push(u, v);
+      }
+    } else {
+      // Flat-shaded cap face
+      const n = faceNormal(a, b, c);
+      for (const [x, y, z] of [a, b, c]) {
+        positions.push(x, y, z);
+        normals.push(n[0], n[1], n[2]);
+        const u = 0.5 + Math.atan2(z, x) / (Math.PI * 2);
+        const v = (y - yBot) / (yTop - yBot);
+        uvs.push(u, v);
+      }
     }
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.computeVertexNormals(); // flat-ish because we un-indexed
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
 
   return { geometry, topY: yTop, bottomY: yBot, radius: params.radius };
 }
@@ -207,53 +264,83 @@ function buildVeins(params: {
 }): VeinGeometry {
   const rng = seedRng(params.seed ^ 0x9e3779b9);
 
-  const positions: number[] = [];
-  const uvs: number[] = [];
+  // Path-swept tubes read as sub-surface channels rather than the flat
+  // ribbons the older code produced (which twisted visually under
+  // off-axis viewing).
+  //
+  // We build each vein as a CatmullRomCurve3 sampled at tight control
+  // points along the crystal surface, then sweep a TubeGeometry along
+  // it. Multiple vein tubes are merged into a single BufferGeometry
+  // so the renderer stays at one draw call.
+  const tubes: THREE.BufferGeometry[] = [];
+  const radialSegments = 6;
+  const tubeRadius = 0.006;
+  const tubularSegments = 24;
 
   for (let c = 0; c < params.crackCount; c++) {
-    // A vein starts near the top, meanders down the side toward the base
     const startAngle = rng() * Math.PI * 2;
-    const segments = 12;
-    const halfWidth = 0.008;
+    const controlCount = 8;
+    const pts: THREE.Vector3[] = [];
 
-    let prevLeft: [number, number, number] | null = null;
-    let prevRight: [number, number, number] | null = null;
-
-    for (let s = 0; s <= segments; s++) {
-      const t = s / segments;
-      // Angle wanders as we descend
-      const angle = startAngle + (rng() - 0.5) * 0.6 * t;
+    // Pre-sample angle drift so the path is deterministic regardless of
+    // the merge order.
+    let angle = startAngle;
+    for (let s = 0; s < controlCount; s++) {
+      const t = s / (controlCount - 1);
+      angle += (rng() - 0.5) * 0.4 * t;
       const y = params.height / 2 - t * params.height * 0.95;
-      // Slight pull toward the surface
-      const r = params.radius * (1.01 - 0.02 * Math.sin(t * Math.PI));
-      const cx = Math.cos(angle) * r;
-      const cz = Math.sin(angle) * r;
-
-      // Tangent-ish offsets for ribbon width (perpendicular to radial dir)
-      const tx = -Math.sin(angle) * halfWidth;
-      const tz = Math.cos(angle) * halfWidth;
-      const left: [number, number, number] = [cx - tx, y, cz - tz];
-      const right: [number, number, number] = [cx + tx, y, cz + tz];
-
-      if (prevLeft && prevRight) {
-        // Two triangles for this segment of ribbon
-        positions.push(...prevLeft, ...prevRight, ...right);
-        uvs.push(0, (s - 1) / segments, 1, (s - 1) / segments, 1, s / segments);
-        positions.push(...prevLeft, ...right, ...left);
-        uvs.push(0, (s - 1) / segments, 1, s / segments, 0, s / segments);
-      }
-
-      prevLeft = left;
-      prevRight = right;
+      // Sit the path just above the surface — negative offset pulls
+      // it slightly INSIDE so the tube reads as a sub-surface channel
+      // through the transmissive body rather than pasted on top.
+      const r = params.radius * (0.985 - 0.015 * Math.sin(t * Math.PI));
+      pts.push(new THREE.Vector3(Math.cos(angle) * r, y, Math.sin(angle) * r));
     }
+
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+    const tube = new THREE.TubeGeometry(
+      curve,
+      tubularSegments,
+      tubeRadius,
+      radialSegments,
+      false,
+    );
+    tubes.push(tube);
+  }
+
+  // Simple concatenation — all tubes share the same material, so a
+  // single BufferGeometry with the combined buffers is enough. We
+  // avoid pulling BufferGeometryUtils just for this.
+  if (tubes.length === 0) {
+    return { geometry: new THREE.BufferGeometry(), count: 0 };
+  }
+
+  const positions: number[] = [];
+  const normalsOut: number[] = [];
+  const uvs: number[] = [];
+  for (const t of tubes) {
+    const p = t.getAttribute('position');
+    const n = t.getAttribute('normal');
+    const u = t.getAttribute('uv');
+    const idx = t.getIndex();
+
+    const pushVtx = (i: number) => {
+      positions.push(p.getX(i), p.getY(i), p.getZ(i));
+      normalsOut.push(n.getX(i), n.getY(i), n.getZ(i));
+      uvs.push(u.getX(i), u.getY(i));
+    };
+
+    if (idx) {
+      for (let i = 0; i < idx.count; i++) pushVtx(idx.getX(i));
+    } else {
+      for (let i = 0; i < p.count; i++) pushVtx(i);
+    }
+    t.dispose();
   }
 
   const geometry = new THREE.BufferGeometry();
-  if (positions.length) {
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.computeVertexNormals();
-  }
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normalsOut, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
 
   return { geometry, count: params.crackCount };
 }
@@ -334,6 +421,21 @@ export function computeFleckTransforms(params: {
   }
 
   return transforms;
+}
+
+/**
+ * Deterministic per-fleck phase values in [0, 1). The fleck twinkle
+ * shader consumes these as `aPhase`, scaled internally to 2π.
+ *
+ * Returned values are stable for a given seed + count so two crystals
+ * with matching configs share the same twinkle pattern — important for
+ * snapshot determinism.
+ */
+export function computeFleckPhases(params: { count: number; seed: number }): Float32Array {
+  const rng = seedRng((params.seed ^ 0x1f83d9ab) >>> 0);
+  const out = new Float32Array(params.count);
+  for (let i = 0; i < params.count; i++) out[i] = rng();
+  return out;
 }
 
 // ─── Composite geometry result ───

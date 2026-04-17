@@ -19,6 +19,7 @@ import {
 import { hashConfig } from './hash';
 import {
   buildCrystalGeometry,
+  computeFleckPhases,
   disposeCrystalGeometry,
   type CrystalGeometryResult,
 } from './geometry';
@@ -31,6 +32,7 @@ import {
   createHaloMaterial,
   createQrDecalMaterial,
   type CrystalBodyMaterial,
+  type FleckMaterial,
 } from './materials';
 import {
   createCrystalLighting,
@@ -70,7 +72,7 @@ interface CrystalMeshes {
     inner: THREE.MeshBasicMaterial;
     vein: THREE.MeshBasicMaterial | null;
     seam: THREE.MeshBasicMaterial | null;
-    fleck: THREE.MeshBasicMaterial | null;
+    fleck: FleckMaterial | null;
     halo: THREE.MeshBasicMaterial;
     qr: THREE.MeshBasicMaterial | null;
     pairedRightBody?: CrystalBodyMaterial;
@@ -103,6 +105,8 @@ export class CrystalRenderer implements CrystalHandle {
   private qrEnabled: boolean;
   private glyph: string;
   private disposed = false;
+  private reducedMotion: boolean;
+  private elapsedSeconds = 0;
 
   // Bleed snapshot — captured at the time bleed is triggered so the
   // internal point light can crossfade cleanly even if config.baseColor
@@ -113,6 +117,7 @@ export class CrystalRenderer implements CrystalHandle {
     this.config = opts.config;
     this.qrEnabled = opts.qrEnabled ?? true;
     this.glyph = opts.glyph ?? 'JED.000000000000';
+    this.reducedMotion = detectReducedMotion(opts.respectReducedMotion ?? true);
 
     this.root = new THREE.Group();
     this.root.name = 'kyber-crystal';
@@ -180,6 +185,16 @@ export class CrystalRenderer implements CrystalHandle {
 
     if (hover) {
       this.animations.trigger('hover', { tiltX: hover.tiltX, tiltY: hover.tiltY });
+    }
+
+    // Advance the shared clock used by shader uniforms (fleck twinkle).
+    // When reduced-motion is honoured we leave the clock frozen so the
+    // material's static phase offsets show steady flecks.
+    if (!this.reducedMotion) {
+      this.elapsedSeconds += deltaMs / 1000;
+      if (this.meshes.materials.fleck) {
+        this.meshes.materials.fleck.setTime(this.elapsedSeconds);
+      }
     }
 
     const state = this.animations.tick(deltaMs);
@@ -371,11 +386,13 @@ export class CrystalRenderer implements CrystalHandle {
       bodyGroup.add(seam);
     }
 
-    // Flecks — InstancedMesh for efficiency
+    // Flecks — InstancedMesh for efficiency. Each instance has a
+    // deterministic `aPhase` attribute that the fleck material's
+    // custom shader consumes to twinkle each fleck independently.
     let fleck: THREE.InstancedMesh | null = null;
-    let fleckMat: THREE.MeshBasicMaterial | null = null;
+    let fleckMat: FleckMaterial | null = null;
     if (this.geometry.fleckTransforms.length > 0) {
-      fleckMat = createFleckMaterial();
+      fleckMat = createFleckMaterial({ reducedMotion: this.reducedMotion });
       fleck = new THREE.InstancedMesh(
         this.geometry.fleck,
         fleckMat,
@@ -386,6 +403,21 @@ export class CrystalRenderer implements CrystalHandle {
         fleck.setMatrixAt(i, this.geometry.fleckTransforms[i]);
       }
       fleck.instanceMatrix.needsUpdate = true;
+
+      // Attach the per-instance phase attribute. Note: InstancedMesh's
+      // underlying geometry is shared, so we add the attribute to
+      // `geometry.fleck` rather than creating a wrapper — Three.js
+      // picks it up automatically in the vertex shader via `attribute
+      // float aPhase`.
+      const phases = computeFleckPhases({
+        count: this.geometry.fleckTransforms.length,
+        seed: this.currentHash,
+      });
+      this.geometry.fleck.setAttribute(
+        'aPhase',
+        new THREE.InstancedBufferAttribute(phases, 1),
+      );
+
       bodyGroup.add(fleck);
     }
 
@@ -526,6 +558,21 @@ function snapshotOf(config: BladeConfig): ConfigSnapshot {
     style: config.style,
     preonEnabled: config.preonEnabled ?? false,
   };
+}
+
+/**
+ * Detect OS-level reduced-motion preference. When disabled we always
+ * animate, regardless of the OS setting. Safe for SSR (returns false
+ * if matchMedia isn't available).
+ */
+function detectReducedMotion(respect: boolean): boolean {
+  if (!respect) return false;
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
 }
 
 // ─── Barrel export of frequently used items ───

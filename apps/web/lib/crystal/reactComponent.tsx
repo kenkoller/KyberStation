@@ -19,9 +19,15 @@ import {
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { useBladeStore } from '@/stores/bladeStore';
 import { CrystalRenderer } from './renderer';
+import {
+  createCrystalPostProcessing,
+  type CrystalPostProcessingHandle,
+} from './postProcessing';
+import { getPerformanceTier } from '@/lib/performanceTier';
 import type { BladeConfig } from '@kyberstation/engine';
 import type { CrystalHandle, AnimationTrigger } from './types';
 
@@ -56,10 +62,32 @@ interface SceneDriverProps {
 }
 
 function SceneDriver({ config, glyph, qrEnabled, onRendererReady }: SceneDriverProps) {
-  const { scene } = useThree();
+  const { scene, gl } = useThree();
   const rendererRef = useRef<CrystalRenderer | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
   const hoverRef = useRef<{ tiltX: number; tiltY: number } | null>(null);
+  const envTextureRef = useRef<THREE.Texture | null>(null);
+
+  // ─── Environment map (runtime-generated PMREM from RoomEnvironment) ───
+  //
+  // Gives the clearcoat something subtle to reflect — without this the
+  // gem reads as plastic. We use `scene.environment` (NOT
+  // scene.background) so only the material reflection is affected; the
+  // canvas background stays transparent.
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const envScene = new RoomEnvironment();
+    const envMap = pmrem.fromScene(envScene, 0.04).texture;
+    scene.environment = envMap;
+    envTextureRef.current = envMap;
+    pmrem.dispose();
+
+    return () => {
+      scene.environment = null;
+      envMap.dispose();
+      envTextureRef.current = null;
+    };
+  }, [scene, gl]);
 
   useEffect(() => {
     const r = new CrystalRenderer({
@@ -84,7 +112,9 @@ function SceneDriver({ config, glyph, qrEnabled, onRendererReady }: SceneDriverP
     rendererRef.current?.applyConfig(config);
   }, [config]);
 
-  // Per-frame tick
+  // Per-frame tick — renderer simulation only. The composer (or
+  // fallback render) is driven by PostProcessingDriver at a later
+  // priority so we always tick BEFORE we render.
   useFrame(() => {
     const now = performance.now();
     const delta = now - lastTimeRef.current;
@@ -121,6 +151,52 @@ function SceneDriver({ config, glyph, qrEnabled, onRendererReady }: SceneDriverP
   return null;
 }
 
+// ─── Post-processing driver ───
+//
+// Owns the EffectComposer lifecycle. Runs `useFrame` at a priority
+// AFTER the default render so R3F's auto-render is suppressed (any
+// positive priority does this), and delegates to the composer instead.
+// Skipped entirely on lite-tier devices; those take the default R3F
+// render path.
+
+function PostProcessingDriver() {
+  const { gl, scene, camera, size } = useThree();
+  const composerRef = useRef<CrystalPostProcessingHandle | null>(null);
+  const lastTimeRef = useRef<number>(performance.now());
+
+  useEffect(() => {
+    const composer = createCrystalPostProcessing({
+      scene,
+      camera,
+      renderer: gl,
+      size: { width: size.width, height: size.height },
+    });
+    composerRef.current = composer;
+
+    return () => {
+      composer.dispose();
+      composerRef.current = null;
+    };
+  }, [gl, scene, camera, size.width, size.height]);
+
+  // Keep composer buffers in sync with viewport size
+  useEffect(() => {
+    composerRef.current?.setSize(size.width, size.height);
+  }, [size.width, size.height]);
+
+  // priority=1 takes over the render loop — R3F's internal render is
+  // disabled for any priority > 0. This fires after the SceneDriver's
+  // useFrame (priority 0, default), so tick has already advanced.
+  useFrame((_, delta) => {
+    const now = performance.now();
+    const deltaSeconds = delta > 0 ? delta : (now - lastTimeRef.current) / 1000;
+    lastTimeRef.current = now;
+    composerRef.current?.render(deltaSeconds);
+  }, 1);
+
+  return null;
+}
+
 // ─── Handle wrapper ───
 
 export const KyberCrystal = forwardRef<CrystalHandle, KyberCrystalProps>(
@@ -140,6 +216,18 @@ export const KyberCrystal = forwardRef<CrystalHandle, KyberCrystalProps>(
     const glyph = glyphProp ?? buildPlaceholderGlyph(config);
 
     const [renderer, setRenderer] = useState<CrystalRenderer | null>(null);
+
+    // Decide once per mount whether we can afford post-processing.
+    // Lite-tier devices skip bloom entirely and use the default R3F
+    // render path (no PostProcessingDriver, R3F auto-renders).
+    const enablePostProcessing = useMemo(() => {
+      if (typeof window === 'undefined') return false;
+      try {
+        return getPerformanceTier().tier !== 'lite';
+      } catch {
+        return true;
+      }
+    }, []);
 
     useImperativeHandle(
       ref,
@@ -195,6 +283,7 @@ export const KyberCrystal = forwardRef<CrystalHandle, KyberCrystalProps>(
             qrEnabled={qrEnabled}
             onRendererReady={setRenderer}
           />
+          {enablePostProcessing && <PostProcessingDriver />}
           {interactive && (
             <OrbitControls
               enablePan={false}
