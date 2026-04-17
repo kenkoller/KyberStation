@@ -1,12 +1,14 @@
 'use client';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { PanelSkeleton } from '@/components/shared/Skeleton';
 import { useAudioFontStore } from '@/stores/audioFontStore';
+import { useBladeStore } from '@/stores/bladeStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import type { MixerValues } from '@/stores/audioMixerStore';
 import type { LibraryFontEntry } from '@kyberstation/sound';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { scoreFontForConfig, pairingLabel } from '@/lib/fontPairing';
 
 // ─── Sound event types ───
 
@@ -101,8 +103,29 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
   const activeFontName = useAudioFontStore((s) => s.fontName);
 
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<'alpha' | 'files' | 'completeness'>('alpha');
+  const [sort, setSort] = useState<'alpha' | 'files' | 'completeness' | 'pairing'>('pairing');
+  const [pairingFilter, setPairingFilter] = useState(false);
   const [expandedFont, setExpandedFont] = useState<string | null>(null);
+
+  // Current preset config for pairing heuristic. Pulled once so font list
+  // re-renders only when these specific fields change.
+  const bladeConfig = useBladeStore((s) => s.config);
+  const pairingCtx = useMemo(
+    () => ({
+      style: bladeConfig.style,
+      ignition: bladeConfig.ignition,
+      baseColor: bladeConfig.baseColor,
+      name: bladeConfig.name,
+    }),
+    [bladeConfig.style, bladeConfig.ignition, bladeConfig.baseColor, bladeConfig.name],
+  );
+  const fontScores = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const f of libraryFonts) {
+      map.set(f.name, scoreFontForConfig(f.name, pairingCtx).score);
+    }
+    return map;
+  }, [libraryFonts, pairingCtx]);
   const hasFileSystemAccess = typeof window !== 'undefined' && 'showDirectoryPicker' in window;
 
   // Hydrate library handle on mount
@@ -124,10 +147,18 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
     }
   }, [hasFileSystemAccess, setLibraryHandle]);
 
-  // Filter + sort
+  // Filter + sort. Pairing sort/filter are optional toggles layered on top
+  // of the text search.
   const filteredFonts = libraryFonts
     .filter((f) => !search || f.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((f) => !pairingFilter || (fontScores.get(f.name) ?? 0) >= 0.25)
     .sort((a, b) => {
+      if (sort === 'pairing') {
+        const sb = fontScores.get(b.name) ?? 0;
+        const sa = fontScores.get(a.name) ?? 0;
+        if (sb !== sa) return sb - sa;
+        return a.name.localeCompare(b.name);
+      }
       if (sort === 'alpha') return a.name.localeCompare(b.name);
       if (sort === 'files') return b.fileCount - a.fileCount;
       // completeness: complete > partial > minimal
@@ -216,8 +247,21 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
             aria-label="Search font library"
             className="flex-1 bg-bg-deep text-ui-sm text-text-primary px-2 py-1 rounded border border-border-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent placeholder:text-text-muted"
           />
+          <button
+            onClick={() => setPairingFilter((v) => !v)}
+            aria-pressed={pairingFilter}
+            title="Show only fonts whose name suggests they pair with the current preset."
+            className={`text-ui-xs px-1.5 py-0.5 rounded border transition-colors shrink-0 ${
+              pairingFilter
+                ? 'bg-accent/20 border-accent text-accent'
+                : 'border-border-subtle text-text-muted hover:text-text-primary'
+            }`}
+          >
+            ✦ Paired
+          </button>
           <div className="flex gap-0.5">
             {([
+              { id: 'pairing' as const, label: 'Match' },
               { id: 'alpha' as const, label: 'A-Z' },
               { id: 'files' as const, label: '#' },
               { id: 'completeness' as const, label: 'Status' },
@@ -255,6 +299,7 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
               isExpanded={expandedFont === font.name}
               onToggleExpand={() => setExpandedFont(expandedFont === font.name ? null : font.name)}
               onLoad={() => onLoadFont(font.name)}
+              pairingScore={fontScores.get(font.name) ?? 0}
             />
           ))}
         </div>
@@ -269,14 +314,17 @@ function FontLibraryRow({
   isExpanded,
   onToggleExpand,
   onLoad,
+  pairingScore = 0,
 }: {
   font: LibraryFontEntry;
   isActive: boolean;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onLoad: () => void;
+  pairingScore?: number;
 }) {
   const comp = COMPLETENESS_COLORS[font.completeness];
+  const pair = pairingLabel(pairingScore);
 
   return (
     <div
@@ -304,6 +352,21 @@ function FontLibraryRow({
             {isActive && <span className="ml-1 text-accent text-ui-xs">(loaded)</span>}
           </span>
         </button>
+
+        {/* Pairing badge — only shown when score is meaningful */}
+        {pair.tag !== 'neutral' && (
+          <span
+            className="text-[9px] uppercase tracking-wider font-mono px-1 py-0.5 rounded shrink-0"
+            style={{
+              color: pair.color,
+              background: `${pair.color.replace('rgb(', 'rgba(').replace(')', ' / 0.12)')}`,
+              border: `1px solid ${pair.color.replace('rgb(', 'rgba(').replace(')', ' / 0.35)')}`,
+            }}
+            title={`Pairing score ${Math.round(pairingScore * 100)}%`}
+          >
+            {pair.label}
+          </span>
+        )}
 
         {/* File count */}
         <span className="text-ui-xs text-text-muted tabular-nums shrink-0">

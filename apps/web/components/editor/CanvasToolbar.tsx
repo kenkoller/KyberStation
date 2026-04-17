@@ -106,6 +106,14 @@ export function CanvasToolbar() {
             ? 'bg-accent/20 border-accent text-accent'
             : 'bg-bg-deep border-border-subtle text-text-muted hover:text-text-primary'
         }`}
+        style={
+          editMode
+            ? {
+                // Crystal-colour halo that tracks the current blade base colour.
+                boxShadow: '0 0 10px rgb(var(--crystal-accent) / 0.35)',
+              }
+            : undefined
+        }
       >
         {editMode ? `Edit: ${editTarget === 'lockup' ? 'Lockup' : 'Blast'}` : 'Edit'}
       </button>
