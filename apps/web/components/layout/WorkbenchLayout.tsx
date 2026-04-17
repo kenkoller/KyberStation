@@ -368,6 +368,11 @@ export function WorkbenchLayout() {
             className="px-2 py-1 rounded text-ui-xs font-medium border border-accent/40 text-accent hover:bg-accent/10 transition-colors inline-flex items-center gap-1"
             title="Launch the guided Saber Wizard — 3 steps to a complete preset"
             aria-label="Open Saber Wizard"
+            style={{
+              // Subtle crystal-colour glow on hover — the var is set by
+              // useCrystalAccent to match the current blade base colour.
+              boxShadow: '0 0 8px rgb(var(--crystal-accent, var(--accent)) / 0.25)',
+            }}
           >
             <span aria-hidden="true">✦</span>
             <span className="hidden tablet:inline">Wizard</span>

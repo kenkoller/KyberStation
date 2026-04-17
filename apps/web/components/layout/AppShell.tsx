@@ -19,6 +19,7 @@ import { OutputPanel } from '@/components/editor/OutputPanel';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
 import { useAccessibilityApplier } from '@/hooks/useAccessibilityApplier';
+import { useCrystalAccent } from '@/hooks/useCrystalAccent';
 import { usePerformanceTier } from '@/hooks/usePerformanceTier';
 import { useAurebesh } from '@/hooks/useAurebesh';
 import { usePauseSystem } from '@/hooks/usePauseSystem';
@@ -643,6 +644,7 @@ export function AppShell() {
   const audio = useAudioEngine();
   useThemeApplier();
   useAccessibilityApplier();
+  useCrystalAccent();
   usePerformanceTier();
   useAurebesh();
   usePauseSystem();
