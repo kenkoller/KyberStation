@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { ConsoleIndicator } from '@/components/hud/ConsoleIndicator';
+import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSignal';
 
 // ─── Power constants (mirrors PowerDrawPanel) ─────────────────────────────────
 const MA_PER_CHANNEL = 20;      // mA per WS2812B channel at full brightness
@@ -84,6 +85,14 @@ export function StatusBar() {
   const powerFgClass = usageFgClass(powerFraction);
   const storageFgClass = usageFgClass(storageFraction);
 
+  // Paired glyph variant for each indicator — redundant channel for
+  // colorblind users + a subtle craft cue. Thresholds mirror the color
+  // classes above so glyph + color always agree.
+  const powerStatus: StatusVariant =
+    powerFraction >= 0.85 ? 'error' : powerFraction >= 0.6 ? 'alert' : 'success';
+  const storageStatus: StatusVariant =
+    storageFraction >= 0.85 ? 'error' : storageFraction >= 0.6 ? 'alert' : 'success';
+
   return (
     <footer
       // overflow-hidden prevents tablet/narrow layouts from pushing the
@@ -106,6 +115,7 @@ export function StatusBar() {
           }
           size={4}
         />
+        <StatusSignal variant={powerStatus} size="sm" label={`Power status: ${powerStatus}`} />
         <span className="text-text-muted/60 text-ui-xs" aria-hidden="true">⚡</span>
         <span className={`text-ui-xs tabular-nums ${powerFgClass}`} aria-label={`Power draw: ${formatAmps(colorMA)}`}>
           {formatAmps(colorMA)}
@@ -129,6 +139,7 @@ export function StatusBar() {
           }
           size={4}
         />
+        <StatusSignal variant={storageStatus} size="sm" label={`Storage status: ${storageStatus}`} />
         <span className="text-text-muted/60 text-ui-xs" aria-hidden="true">💾</span>
         <span className={`text-ui-xs tabular-nums ${storageFgClass}`} aria-label={`Storage used: ${storagePct} percent`}>
           {storagePct}%
@@ -142,6 +153,7 @@ export function StatusBar() {
         aria-label={`${ledCount} LEDs`}
       >
         <ConsoleIndicator variant="breathe" color="rgb(var(--accent))" size={4} />
+        <StatusSignal variant="active" size="sm" label="Active LED count" />
         {ledCount}&thinsp;LEDs
       </div>
     </footer>

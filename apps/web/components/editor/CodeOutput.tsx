@@ -13,6 +13,7 @@ import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
 import { generateQRDataUrl, downloadQR } from '@/lib/qrCode';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { ErrorState } from '@/components/shared/ErrorState';
+import { toast } from '@/lib/toastManager';
 
 /**
  * Map a `ReconstructedConfig` (output of `reconstructConfig`) into a full
@@ -240,8 +241,9 @@ export function CodeOutput() {
       const encoded = await encodeConfig(config);
       const url = buildShareUrl(encoded);
       downloadQR(url, config.name?.replace(/\s+/g, '_') || 'blade_preset');
-    } catch {
-      // silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`QR download failed: ${msg}`);
     }
   }, [config]);
 
