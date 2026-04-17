@@ -44,6 +44,12 @@ export function applyReconstructedConfig(
     lockupRadius: cppResult.lockupRadius,
     blastPosition: cppResult.blastPosition,
     blastRadius: cppResult.blastRadius,
+    dragPosition: cppResult.dragPosition,
+    dragRadius: cppResult.dragRadius,
+    meltPosition: cppResult.meltPosition,
+    meltRadius: cppResult.meltRadius,
+    stabPosition: cppResult.stabPosition,
+    stabRadius: cppResult.stabRadius,
     // Preon — pre-ignition flash.
     preonEnabled: cppResult.preonEnabled,
     preonColor: cppResult.preonColor,
@@ -91,6 +97,7 @@ export function CodeOutput() {
   const [cppInput, setCppInput] = useState('');
   const [cppResult, setCppResult] = useState<ReconstructedConfig | null>(null);
   const [cppErrors, setCppErrors] = useState<string[]>([]);
+  const [cppWarnings, setCppWarnings] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isMultiPreset = presetListEntries.length > 0;
@@ -268,9 +275,18 @@ export function CodeOutput() {
             aria-label="Copy generated code to clipboard"
             className={`touch-target px-3 py-1.5 rounded text-ui-xs font-medium transition-colors border ${
               copied
-                ? 'bg-green-900/30 border-green-700/50 text-green-400'
+                ? ''
                 : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20'
             }`}
+            style={
+              copied
+                ? {
+                    background: 'rgb(var(--status-ok) / 0.2)',
+                    borderColor: 'rgb(var(--status-ok) / 0.5)',
+                    color: 'rgb(var(--status-ok))',
+                  }
+                : undefined
+            }
           >
             {copied ? 'Copied!' : 'Copy to Clipboard'}
           </button>
@@ -393,9 +409,18 @@ export function CodeOutput() {
             onClick={handleShareLink}
             className={`touch-target px-3 py-1.5 rounded text-ui-xs font-medium transition-colors border ${
               shareCopied
-                ? 'bg-green-900/30 border-green-700/50 text-green-400'
+                ? ''
                 : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20'
             }`}
+            style={
+              shareCopied
+                ? {
+                    background: 'rgb(var(--status-ok) / 0.2)',
+                    borderColor: 'rgb(var(--status-ok) / 0.5)',
+                    color: 'rgb(var(--status-ok))',
+                  }
+                : undefined
+            }
           >
             {shareCopied ? 'Link Copied!' : 'Share Link'}
           </button>
@@ -493,13 +518,14 @@ export function CodeOutput() {
                 onClick={() => {
                   if (!cppInput.trim()) return;
                   const result = parseStyleCode(cppInput);
+                  setCppErrors(result.errors.map((e) => e.message));
+                  setCppWarnings(
+                    result.warnings?.map((w) => w.message) ?? [],
+                  );
                   if (result.ast) {
-                    const config = reconstructConfig(result.ast);
-                    setCppResult(config);
-                    setCppErrors(result.errors.map((e) => e.message));
+                    setCppResult(reconstructConfig(result.ast));
                   } else {
                     setCppResult(null);
-                    setCppErrors(result.errors.map((e) => e.message));
                   }
                 }}
                 className="touch-target px-3 py-1.5 rounded text-ui-xs font-medium border bg-accent-dim border-accent-border text-accent hover:bg-accent/20 transition-colors"
@@ -516,8 +542,15 @@ export function CodeOutput() {
                     setShowCppImport(false);
                     setCppInput('');
                     setCppResult(null);
+                    setCppErrors([]);
+                    setCppWarnings([]);
                   }}
-                  className="touch-target px-3 py-1.5 rounded text-ui-xs font-medium border bg-green-900/30 border-green-700/50 text-green-400 hover:bg-green-900/50 transition-colors"
+                  className="touch-target px-3 py-1.5 rounded text-ui-xs font-medium border"
+                  style={{
+                    background: 'rgb(var(--status-ok) / 0.2)',
+                    borderColor: 'rgb(var(--status-ok) / 0.5)',
+                    color: 'rgb(var(--status-ok))',
+                  }}
                 >
                   Apply to Editor
                 </button>
@@ -525,8 +558,35 @@ export function CodeOutput() {
             </div>
 
             {cppErrors.length > 0 && (
-              <div className="text-ui-sm text-yellow-400 bg-yellow-900/20 rounded p-2 border border-yellow-800/30">
+              <div
+                className="text-ui-sm rounded p-2 border"
+                style={{
+                  color: 'rgb(var(--status-error))',
+                  background: 'rgb(var(--status-error) / 0.12)',
+                  borderColor: 'rgb(var(--status-error) / 0.35)',
+                }}
+              >
+                <div className="font-semibold mb-1">Errors:</div>
                 {cppErrors.map((e, i) => <div key={i}>{e}</div>)}
+              </div>
+            )}
+
+            {cppWarnings.length > 0 && (
+              <div
+                className="text-ui-sm rounded p-2 border"
+                style={{
+                  color: 'rgb(var(--status-warn))',
+                  background: 'rgb(var(--status-warn) / 0.12)',
+                  borderColor: 'rgb(var(--status-warn) / 0.35)',
+                }}
+              >
+                <div className="font-semibold mb-1">Warnings ({cppWarnings.length}):</div>
+                {cppWarnings.slice(0, 10).map((w, i) => <div key={i}>{w}</div>)}
+                {cppWarnings.length > 10 && (
+                  <div className="opacity-70 mt-1">
+                    + {cppWarnings.length - 10} more…
+                  </div>
+                )}
               </div>
             )}
 
@@ -534,15 +594,30 @@ export function CodeOutput() {
               <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-ui-sm text-text-secondary font-medium">Parse Result</span>
-                  <span className={`text-ui-xs font-mono px-1.5 py-0.5 rounded ${
-                    cppResult.confidence >= 0.7
-                      ? 'bg-green-900/30 text-green-400'
-                      : cppResult.confidence >= 0.4
-                        ? 'bg-yellow-900/30 text-yellow-400'
-                        : 'bg-red-900/30 text-red-400'
-                  }`}>
-                    {cppResult.confidence >= 0.7 ? 'High' : cppResult.confidence >= 0.4 ? 'Medium' : 'Low'}: {Math.round(cppResult.confidence * 100)}% confidence
-                  </span>
+                  {(() => {
+                    const statusVar =
+                      cppResult.confidence >= 0.7
+                        ? '--status-ok'
+                        : cppResult.confidence >= 0.4
+                          ? '--status-warn'
+                          : '--status-error';
+                    return (
+                      <span
+                        className="text-ui-xs font-mono px-1.5 py-0.5 rounded"
+                        style={{
+                          background: `rgb(var(${statusVar}) / 0.2)`,
+                          color: `rgb(var(${statusVar}))`,
+                        }}
+                      >
+                        {cppResult.confidence >= 0.7
+                          ? 'High'
+                          : cppResult.confidence >= 0.4
+                            ? 'Medium'
+                            : 'Low'}
+                        : {Math.round(cppResult.confidence * 100)}% confidence
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="text-ui-sm text-text-muted space-y-0.5">
                   <div>Style: <span className="text-text-secondary">{cppResult.style}</span></div>
@@ -562,7 +637,10 @@ export function CodeOutput() {
                   <div>Retraction: <span className="text-text-secondary">{cppResult.retraction} ({cppResult.retractionMs}ms)</span></div>
                 </div>
                 {cppResult.warnings.length > 0 && (
-                  <div className="text-ui-xs text-yellow-400 mt-1">
+                  <div
+                    className="text-ui-xs mt-1"
+                    style={{ color: 'rgb(var(--status-warn))' }}
+                  >
                     {cppResult.warnings.map((w, i) => <div key={i}>⚠ {w}</div>)}
                   </div>
                 )}

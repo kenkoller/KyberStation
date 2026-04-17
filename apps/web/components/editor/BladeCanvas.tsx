@@ -2206,6 +2206,33 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // ── HORIZONTAL / OTHER VIEW MODES ──
       // ══════════════════════════════════════════════════
 
+      // ── Capture blade geometry for Edit Mode (horizontal + compact) ──
+      // Blade runs left→right in this branch (hilt at design-space
+      // BLADE_START, tip at BLADE_START+BLADE_LEN*bladeLength scale).
+      // Vertical centre is `layoutRef.current.bladeY`, which already
+      // accounts for compact mode (60 vs 300). getScale() returns the
+      // DPR-adjusted design→screen scale. We compute screen-space
+      // coordinates and stash them so pointerToBladePosition (which is
+      // mode-agnostic) can project clicks onto the hilt→tip line.
+      if (viewMode === 'blade') {
+        const scale = getScale();
+        const bladeYScreen = layoutRef.current.bladeY * scale;
+        const hiltXScreen = (BLADE_START + panX) * scale;
+        const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+        const tipXScreen = hiltXScreen + scaledBladeLenDS * scale;
+        bladeHitRef.current = {
+          mode: 'horizontal',
+          hiltX: hiltXScreen,
+          hiltY: bladeYScreen,
+          tipX: tipXScreen,
+          tipY: bladeYScreen,
+          thicknessTolerance: Math.max(24 * dpr, 40 * scale),
+        };
+      } else {
+        // Non-blade view modes (angle/strip/cross) don't support Edit Mode.
+        bladeHitRef.current = null;
+      }
+
       drawBackground(ctx);
 
       switch (viewMode) {
@@ -2220,6 +2247,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       if (viewMode === 'blade' && !panelMode && !mobileFullscreen && analyzeMode) {
         drawInlineStrip(ctx, engine);
         drawRGBGraph(ctx, engine);
+      }
+
+      // Edit Mode caret + radius bracket overlay (blade view only).
+      const editModeOn = useUIStore.getState().editMode;
+      if (editModeOn && viewMode === 'blade') {
+        drawEditModeOverlay(ctx, bladeHitRef.current);
       }
 
       drawViewLabel(ctx, viewMode);

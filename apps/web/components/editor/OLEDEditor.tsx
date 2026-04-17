@@ -8,6 +8,14 @@ import { HelpTooltip } from '@/components/shared/HelpTooltip';
 type Tool = 'pencil' | 'eraser' | 'line' | 'rect' | 'fill';
 
 const SCALE = 4;
+
+// These are NOT UI theme colours — they simulate real monochrome OLED
+// hardware. A typical SSD1306 white-pixel emitter is slightly blue-tinted
+// (~#e0e8ff matches real-world photos), the off state is near-black with
+// a faint red residue, and the grid is a debug overlay that should read
+// as "barely there" on any theme. Keeping them hardcoded on purpose so
+// the OLED preview always looks like actual hardware regardless of the
+// surrounding app theme.
 const PIXEL_ON = '#e0e8ff';
 const PIXEL_OFF = '#0a0a0a';
 const GRID_COLOR = '#1a1a2a';

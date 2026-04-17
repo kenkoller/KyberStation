@@ -248,4 +248,74 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
       }
     });
   });
+
+  describe('Spatial drag / melt / stab (v0.10.0)', () => {
+    const TOLERANCE = 2 / 32768;
+
+    it('emits AlphaL<LockupTrL<LOCKUP_DRAG>, Bump> when dragPosition is set', () => {
+      const result = roundTrip(makeConfig({ dragPosition: 0.4, dragRadius: 0.2 }));
+      expect(result.parseErrors).toEqual([]);
+      expect(result.emittedCode).toContain('LOCKUP_DRAG');
+      expect(result.emittedCode).toContain('AlphaL<');
+      expect(result.emittedCode).toContain('Bump<');
+    });
+
+    it('round-trips dragPosition and dragRadius', () => {
+      const config = makeConfig({ dragPosition: 0.33, dragRadius: 0.18 });
+      const result = roundTrip(config);
+      expect(result.reconstructedConfig?.dragPosition).toBeDefined();
+      expect(
+        Math.abs((result.reconstructedConfig?.dragPosition ?? 0) - 0.33),
+      ).toBeLessThanOrEqual(TOLERANCE);
+      expect(
+        Math.abs((result.reconstructedConfig?.dragRadius ?? 0) - 0.18),
+      ).toBeLessThanOrEqual(TOLERANCE);
+    });
+
+    it('emits AlphaL around melt lockup when meltPosition is set', () => {
+      const result = roundTrip(makeConfig({ meltPosition: 0.6, meltRadius: 0.25 }));
+      expect(result.parseErrors).toEqual([]);
+      expect(result.emittedCode).toContain('LOCKUP_MELT');
+      const idx = result.emittedCode.indexOf('AlphaL');
+      expect(idx).toBeGreaterThanOrEqual(0);
+    });
+
+    it('round-trips meltPosition and meltRadius', () => {
+      const result = roundTrip(
+        makeConfig({ meltPosition: 0.7, meltRadius: 0.22 }),
+      );
+      expect(
+        Math.abs((result.reconstructedConfig?.meltPosition ?? 0) - 0.7),
+      ).toBeLessThanOrEqual(TOLERANCE);
+      expect(
+        Math.abs((result.reconstructedConfig?.meltRadius ?? 0) - 0.22),
+      ).toBeLessThanOrEqual(TOLERANCE);
+    });
+
+    it('emits TransitionEffectL<..., EFFECT_STAB> when stabPosition is set', () => {
+      const result = roundTrip(makeConfig({ stabPosition: 0.5, stabRadius: 0.25 }));
+      expect(result.parseErrors).toEqual([]);
+      expect(result.emittedCode).toContain('EFFECT_STAB');
+    });
+
+    it('round-trips stabPosition and stabRadius', () => {
+      const result = roundTrip(
+        makeConfig({ stabPosition: 0.5, stabRadius: 0.25 }),
+      );
+      expect(
+        Math.abs((result.reconstructedConfig?.stabPosition ?? 0) - 0.5),
+      ).toBeLessThanOrEqual(TOLERANCE);
+      expect(
+        Math.abs((result.reconstructedConfig?.stabRadius ?? 0) - 0.25),
+      ).toBeLessThanOrEqual(TOLERANCE);
+    });
+
+    it('omits spatial drag/melt/stab when their position fields are unset', () => {
+      const result = roundTrip(makeConfig());
+      expect(result.reconstructedConfig?.dragPosition).toBeUndefined();
+      expect(result.reconstructedConfig?.meltPosition).toBeUndefined();
+      expect(result.reconstructedConfig?.stabPosition).toBeUndefined();
+      expect(result.emittedCode).not.toContain('EFFECT_STAB');
+    });
+  });
 });

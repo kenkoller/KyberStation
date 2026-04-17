@@ -24,6 +24,7 @@ import { emitCode } from './CodeEmitter.js';
 import { parseStyleCode } from './parser/index.js';
 import type {
   ParseError,
+  ParseWarning,
   ReconstructedConfig,
 } from './parser/index.js';
 import { reconstructConfig } from './parser/index.js';
@@ -44,9 +45,14 @@ export function astToCode(ast: StyleNode, opts?: EmitOptions): string {
 export function codeToAST(code: string): {
   ast: StyleNode | null;
   errors: ParseError[];
+  warnings: ParseWarning[];
 } {
   const result = parseStyleCode(code);
-  return { ast: result.ast, errors: result.errors };
+  return {
+    ast: result.ast,
+    errors: result.errors,
+    warnings: result.warnings,
+  };
 }
 
 export function astToConfig(ast: StyleNode): ReconstructedConfig {

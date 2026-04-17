@@ -41,6 +41,12 @@ function makeFullConfig(): BladeConfig {
     lockupRadius: 0.12,
     blastPosition: 0.5,
     blastRadius: 0.45,
+    dragPosition: 0.28,
+    dragRadius: 0.2,
+    meltPosition: 0.72,
+    meltRadius: 0.22,
+    stabPosition: 0.5,
+    stabRadius: 0.25,
     preonEnabled: true,
     preonColor: { r: 200, g: 100, b: 255 },
     preonMs: 400,
@@ -81,6 +87,25 @@ describe('CodeOutput import round-trip (v0.9.1 regression)', () => {
     expect(result.blastRadius).toBeDefined();
     expect(Math.abs((result.blastRadius ?? 0) - source.blastRadius!))
       .toBeLessThanOrEqual(TOL);
+  });
+
+  it('preserves spatial drag/melt/stab fields through Apply (v0.10.0)', () => {
+    const source = makeFullConfig();
+    const result = roundTripViaApply(source);
+    const TOL = 2 / 32768;
+    for (const key of [
+      'dragPosition',
+      'dragRadius',
+      'meltPosition',
+      'meltRadius',
+      'stabPosition',
+      'stabRadius',
+    ] as const) {
+      const actual = result[key];
+      const expected = source[key];
+      expect(actual, `${key} missing`).toBeDefined();
+      expect(Math.abs((actual ?? 0) - (expected ?? 0))).toBeLessThanOrEqual(TOL);
+    }
   });
 
   it('preserves Preon enable + colour + duration through Apply', () => {

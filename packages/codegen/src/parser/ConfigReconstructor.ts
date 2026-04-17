@@ -54,6 +54,15 @@ export interface ReconstructedConfig {
   blastPosition?: number;
   /** Spatial blast wave-size 0..1 recovered from the Bump second arg. */
   blastRadius?: number;
+  /** Spatial drag centre 0..1 recovered from `AlphaL<LockupTrL<..., LOCKUP_DRAG>, Bump<...>>`. */
+  dragPosition?: number;
+  dragRadius?: number;
+  /** Spatial melt centre 0..1 recovered from `AlphaL<LockupTrL<..., LOCKUP_MELT>, Bump<...>>`. */
+  meltPosition?: number;
+  meltRadius?: number;
+  /** Spatial stab centre 0..1 recovered from `TransitionEffectL<..., EFFECT_STAB>`. */
+  stabPosition?: number;
+  stabRadius?: number;
   confidence: number;
   warnings: string[];
   rawAST: StyleNode;
@@ -457,6 +466,84 @@ function resolveSpatialBlast(ast: StyleNode): {
   };
 }
 
+/**
+ * Recover spatial drag or melt position from
+ * `AlphaL<LockupTrL<..., LOCKUP_DRAG|LOCKUP_MELT>, Bump<Int<pos>, Int<size>>>`.
+ * Walks every AlphaL whose first arg is a LockupTrL; matches the lockup
+ * enum to pick drag vs melt.
+ */
+function resolveLockupFamilySpatial(ast: StyleNode): {
+  dragPosition?: number;
+  dragRadius?: number;
+  meltPosition?: number;
+  meltRadius?: number;
+} {
+  const out: ReturnType<typeof resolveLockupFamilySpatial> = {};
+
+  const alphaWrappers = findNodes(
+    ast,
+    (n) =>
+      n.name === 'AlphaL' &&
+      n.args.length >= 2 &&
+      n.args[0]?.name === 'LockupTrL' &&
+      n.args[1]?.name === 'Bump',
+  );
+
+  for (const wrapper of alphaWrappers) {
+    const lockup = wrapper.args[0];
+    const bump = wrapper.args[1];
+    const enumArg = lockup.args[lockup.args.length - 1];
+    if (!enumArg) continue;
+    const enumName = enumArg.name.replace('SaberBase::', '');
+    const posRaw = extractInt(bump.args[0]);
+    const sizeRaw = extractInt(bump.args[1]);
+    if (posRaw === null) continue;
+    const position = posRaw / 32768;
+    const radius = sizeRaw === null ? undefined : sizeRaw / 32768;
+    if (enumName === 'LOCKUP_DRAG' && out.dragPosition === undefined) {
+      out.dragPosition = position;
+      out.dragRadius = radius;
+    } else if (enumName === 'LOCKUP_MELT' && out.meltPosition === undefined) {
+      out.meltPosition = position;
+      out.meltRadius = radius;
+    }
+  }
+  return out;
+}
+
+/**
+ * Recover spatial stab from
+ * `TransitionEffectL<TrConcat<TrInstant, AlphaL<Rgb, Bump<pos, size>>, TrFade>, EFFECT_STAB>`.
+ */
+function resolveSpatialStab(ast: StyleNode): {
+  stabPosition?: number;
+  stabRadius?: number;
+} {
+  const stabNodes = findNodes(
+    ast,
+    (n) =>
+      n.name === 'TransitionEffectL' &&
+      n.args.length >= 2 &&
+      (n.args[1].name === 'EFFECT_STAB' ||
+        n.args[1].name === 'SaberBase::EFFECT_STAB'),
+  );
+  if (stabNodes.length === 0) return {};
+  const trConcat = stabNodes[0].args[0];
+  if (!trConcat || trConcat.name !== 'TrConcat') return {};
+  // TrConcat<TrInstant, AlphaL<Rgb, Bump<pos,size>>, TrFade<ms>>
+  const alpha = trConcat.args[1];
+  if (!alpha || alpha.name !== 'AlphaL') return {};
+  const bump = alpha.args[1];
+  if (!bump || bump.name !== 'Bump') return {};
+  const posRaw = extractInt(bump.args[0]);
+  if (posRaw === null) return {};
+  const sizeRaw = extractInt(bump.args[1]);
+  return {
+    stabPosition: posRaw / 32768,
+    stabRadius: sizeRaw === null ? undefined : sizeRaw / 32768,
+  };
+}
+
 /** Find the first color in the tree that isn't inside a known effect layer. */
 function findBaseColor(ast: StyleNode): RGB | undefined {
   const effectLayerNames = new Set([
@@ -514,6 +601,12 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
 
   // Spatial blast position from AlphaL<BlastL<>, Bump<>>, if present.
   const spatialBlast = resolveSpatialBlast(ast);
+
+  // Spatial drag / melt from AlphaL<LockupTrL<..., LOCKUP_DRAG|MELT>, Bump<>>
+  const lockupFamily = resolveLockupFamilySpatial(ast);
+
+  // Spatial stab from TransitionEffectL<..., EFFECT_STAB>
+  const spatialStab = resolveSpatialStab(ast);
 
   // Look for InOutTrL to extract ignition/retraction. Forward emits
   // `InOutTrL<ignitionTr, retractionTr>` — exactly 2 args, NOT 3+; the old
@@ -587,6 +680,12 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
     preonMs: preon.preonMs,
     blastPosition: spatialBlast.blastPosition,
     blastRadius: spatialBlast.blastRadius,
+    dragPosition: lockupFamily.dragPosition,
+    dragRadius: lockupFamily.dragRadius,
+    meltPosition: lockupFamily.meltPosition,
+    meltRadius: lockupFamily.meltRadius,
+    stabPosition: spatialStab.stabPosition,
+    stabRadius: spatialStab.stabRadius,
     confidence: Math.round(confidence * 100) / 100,
     warnings,
     rawAST: ast,

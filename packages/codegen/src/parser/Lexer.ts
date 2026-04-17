@@ -96,10 +96,23 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
-    // Template name (identifier: letters, digits, underscore)
+    // Template name (identifier: letters, digits, underscore).
+    // C++ scope-resolution operator `::` is consumed as part of the
+    // identifier so that `SaberBase::LOCKUP_NORMAL` stays one token
+    // instead of being silently split (which would skew downstream
+    // arg-count validation and round-trip identity). The regex below
+    // accepts `::` as an internal separator.
     if (/[A-Za-z_]/.test(ch)) {
       const start = pos;
-      while (pos < input.length && /[A-Za-z0-9_]/.test(input[pos])) pos++;
+      while (pos < input.length) {
+        if (/[A-Za-z0-9_]/.test(input[pos])) {
+          pos++;
+        } else if (input[pos] === ':' && input[pos + 1] === ':') {
+          pos += 2;
+        } else {
+          break;
+        }
+      }
       tokens.push({ type: 'TEMPLATE_NAME', value: input.slice(start, pos), position: start });
       continue;
     }
