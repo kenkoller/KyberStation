@@ -26,46 +26,66 @@ baked in and the full config recoverable.
 
 ## Anatomy of a Saber Card
 
+**The blade on its hilt is the hero.** The Kyber Crystal is important
+as the sharing mechanism (it carries the QR-backed config), but on the
+card it's a secondary accent element — never stealing attention from
+the lightsaber itself. The saber IS the artefact; the crystal is its
+signature.
+
 The card is a rectangular graphic at **1200 × 675** (Twitter / Discord OG
 aspect, renders cleanly as a WhatsApp / iMessage thumbnail too). Layout:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  ◈ KYBERSTATION   ARCHIVE DATA CARD   ✦ seed: OBW-8K3Q    │   ← header band
+│  ◈ KYBERSTATION   ARCHIVE DATA CARD                          │ ← header band
 │                                                              │
-│    ╔════════════════════════════════════════════════════╗   │
-│    ║                                                    ║   │
-│    ║         [ BLADE RENDER — still or animated ]      ║   │   ← 70% of canvas
-│    ║                                                    ║   │
-│    ╚════════════════════════════════════════════════════╝   │
 │                                                              │
-│    "Obi-Wan (Prequel)"                                       │   ← preset name
-│    Stable · Sky Blue · Standard ignition 300ms               │   ← one-line spec
+│  ╔═════════════════════════════════════════════════════════╗ │
+│  ║                                                         ║ │
+│  ║    ▓▓▓▓▓╡══════════════════════════════════════════     ║ │ ← HERO: hilt + blade
+│  ║    HILT                    BLADE RENDER                 ║ │    (70% of canvas)
+│  ║                                                         ║ │
+│  ╚═════════════════════════════════════════════════════════╝ │
 │                                                              │
-│    github.com/kenkoller/KyberStation           ◈            │   ← footer
+│  "Obi-Wan (Prequel)" — "Dawnlight"             ◆            │ ← preset + crystal name
+│  Stable · Sky Blue · Standard ignition 300ms  ╱▓╲           │   crystal accent
+│  JED.4X7QPN9MBK3F                            │▓▓▓│           │   (small, bottom-right)
+│                                               ╲▓╱            │
+│  github.com/kenkoller/KyberStation            ▼             │ ← footer + glyph
 └──────────────────────────────────────────────────────────────┘
 ```
 
 **Chrome (border / header / footer):**
-- Dark deep-space backdrop with subtle radial gradient toward the hilt
+- Dark deep-space backdrop with subtle radial gradient toward the blade
 - Thin hairline border in a theme-aware accent colour (default:
   `--accent`)
-- Header: KyberStation glyph + word-mark + "ARCHIVE DATA CARD" + seed
-  code (monospace, aurebesh-ish font stack)
+- Header: KyberStation glyph + word-mark + "ARCHIVE DATA CARD"
+  (monospace, aurebesh-ish font stack)
 - Footer: repo URL (so someone who screenshots the card still has a
-  route back to the app)
+  route back to the app) + glyph prefix
 
-**Blade area:**
-- The diffused neopixel render from `BladeCanvas`, scaled and cropped
-  to fit
-- Optional transparent-ish hilt outline at the base for silhouette
+**Hero area (saber — 70% of canvas):**
+- The hilt silhouette from the curated hilt library (or user-designed
+  hilt, if that feature ships)
+- Full-length blade render emanating from the hilt's emitter, using the
+  diffused neopixel path from `BladeCanvas`
+- Slight subtle glow / bloom around the blade matching `baseColor`
 - Background is deep-space dark; blade's own bloom carries the colour
 
 **Label strip:**
-- Preset name (if saved) or "Custom Blade"
+- Preset name (if saved) + em-dash + crystal public name (if set)
+  e.g. `"Obi-Wan (Prequel)" — "Dawnlight"`
 - One-line spec: `<style> · <base-colour name> · <ignition> <ms>ms`
+- Kyber Glyph (shortened view) as monospace accent text
 - Affiliation badge (Jedi / Sith / Grey / Neutral) using the existing
   `factionStyles.ts` colour map
+
+**Crystal accent (bottom-right, ~8% of canvas):**
+- Small rendering of the saber's Kyber Crystal — see
+  `KYBER_CRYSTAL_VISUAL.md` for the full spec
+- The QR inside the crystal IS the functional share mechanism; even at
+  this small size, printed at business-card scale it scans
+- Never dominates — if in doubt, render it smaller
 
 ## Four share formats (all planned, user chose all four)
 

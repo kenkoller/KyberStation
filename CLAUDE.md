@@ -467,13 +467,21 @@ editor. Session notes: `docs/SESSION_2026-04-17.md`.
 | 14 | Validation + polish | ✅ v0.9.1 | Round-trip data-loss fix, theme-token compliance |
 | 15 | Long-tail cleanup | ✅ v0.10.0 | Spatial drag/melt/stab, parser warnings, font pairing polish |
 | 16 | **WebUSB flash** | 🔜 v0.11.0 | Spawned as standalone session; STM32 DFU with "use at your own risk" |
-| 17 | **Share Pack** | 📋 planned | Jedi-Holocron card: PNG + GIF + seed code. See `docs/SHARE_PACK.md` |
+| 17 | **Share Pack + Kyber Crystal** | 📋 spec'd | Blade-on-hilt hero + crystal-as-QR accent. Four docs: `SHARE_PACK.md`, `KYBER_CRYSTAL_VISUAL.md`, `KYBER_CRYSTAL_NAMING.md`, `KYBER_CRYSTAL_VERSIONING.md` |
 | 18 | **Community gallery (GitHub PR)** | 📋 planned | Static, PR-moderated. See `docs/COMMUNITY_GALLERY.md` |
 | 19 | Tablet-specific layout | ⏸ deferred | Existing responsive breakpoints cover it for now |
 | 20 | More spatial effects | ✅ v0.10.0 | drag/melt/stab positioning completed |
 | 21 | Hosted gallery + voting | ⏸ deferred | Requires backend; GitHub-PR gallery is the pragmatic alternative |
 | 22 | Electron USB serial | ⏸ deferred | Superseded by WebUSB flash (v0.11.0) |
 | 23 | Plugin-authored styles | ⏸ deferred | Worth revisiting once the style API stabilises |
+
+### Additional sprints planned (beyond the 23-feature brainstorm)
+
+| Version | Sprint | Status | Notes |
+|---|---|---|---|
+| v0.12.0 | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session. |
+| v0.13.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Every panel visible simultaneously, nothing hidden. Cosplay + fan-film + livestream-optimised. |
+| v0.14.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. 5 lanes: Prequel/OT/Sequel deep cuts, Legends/KOTOR/SWTOR, Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Cross-franchise "inspired by" presets. Could 4-5× the preset library in one session. |
 
 Legend: ✅ shipped · 🔜 next sprint · 📋 planned (doc exists) · ⏸ deferred
 
