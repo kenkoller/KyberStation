@@ -39,8 +39,15 @@ These scripts (`scripts/local-build.mjs`, `scripts/local-dev.mjs`) resolve binar
 | `pnpm test` | Run all 498+ tests (Vitest) |
 | `pnpm test:engine` | Engine tests only |
 | `pnpm test:codegen` | Codegen tests only |
-| `pnpm lint` | ESLint check |
-| `pnpm typecheck` | TypeScript strict mode check |
+| `pnpm lint` | Placeholder — prints "lint: placeholder — eslint not yet configured". See note below. |
+| `pnpm typecheck` | TypeScript strict mode check (authoritative correctness check) |
+
+> **Lint status**: ESLint is referenced by each package's `lint` script but
+> has never been added as a devDependency. Scripts were replaced with
+> `echo` placeholders so CI and local `pnpm -w lint` both pass cleanly.
+> TypeScript strict mode (`pnpm typecheck`) does most of the work a linter
+> would. Adding proper ESLint + `eslint-config-next` + a shared
+> `.eslintrc` is tracked as a follow-up.
 
 **Windows shortcut:** Double-click `KyberStation.bat` in the project root to launch the dev server, or use the Desktop shortcut.
 
@@ -57,7 +64,13 @@ The local build script handles dependency ordering automatically:
 ```
 kyberstation/
 ├── apps/web/              # Next.js 14 App Router
-│   ├── app/               # Pages (/, /editor, /s, /docs)
+│   ├── app/               # Pages (/, /editor, /m, /s, /docs)
+│   │                      #   /       = identity landing (live blade hero, value strip, CTAs, release strip, footer)
+│   │                      #   /editor = main workbench (4-column panel grid, drag-reorderable)
+│   │                      #   /m      = mobile companion (touch-first, swipe between 12 curated presets)
+│   │                      #   /s      = short-link share redirect
+│   │                      #   /docs   = built-in ProffieOS reference + design system page
+│   ├── components/landing/# Landing page shell (Hero + ValueStrip + CTAs + ReleaseStrip + Footer)
 │   ├── components/        # React components
 │   │   ├── editor/        # Editor panels (canvas, style, effects, etc.)
 │   │   ├── layout/        # App shell, toolbar

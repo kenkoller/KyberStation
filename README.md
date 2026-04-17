@@ -127,6 +127,12 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - 13 new engine components: 7 styles (Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage), 6 effects (Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon), 3 ignitions (Hyperspace, Summon, Seismic), 3 retractions (Implode, Evaporate, Spaghettify)
 - Engine totals: 29 styles, 21 effects, 19 ignitions, 13 retractions (82 animation components)
 
+### v0.11.1: Landing Page + Design Review Polish (Complete)
+- Replaced `redirect('/editor')` with a real first-impression landing: live BladeEngine hero (4 iconic preset rotation: Luke ROTJ, Anakin, Kylo Ren, Ahsoka), value strip, CTAs, release strip, footer.
+- Follow-on workstreams planned: alert-color token discipline, skeleton + error-state coverage across all panels, color-glyph pairing for colorblind redundancy.
+- `.reduced-motion` class and `@media (prefers-reduced-motion: reduce)` now both hide ambient decorations (opacity: 0) instead of just stopping animation, matching the behaviour of `.ambient-off`.
+- CI infrastructure fixes: lint scripts replaced with a clearly-labeled placeholder (eslint was referenced but never installed); `/editor` and `/m` pages now wrap `useSearchParams()` in Suspense to satisfy static prerender under `output: 'export'`.
+
 ## Quick Start
 
 ### Prerequisites
@@ -142,7 +148,10 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser. You'll
+land on the identity page — click **Open Editor** to start building, **Launch
+Wizard** for a guided 3-step onboarding, or **Browse Gallery** to jump straight
+to curated presets.
 
 ## Development
 

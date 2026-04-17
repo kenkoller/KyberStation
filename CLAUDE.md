@@ -441,11 +441,12 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
-## Current State (v0.10.0 — 2026-04-17)
+## Current State (v0.11.1 — 2026-04-17)
 
-We shipped thirteen tagged releases in a single working day (v0.2.0 → v0.10.0),
+We shipped fourteen tagged releases in a single working day (v0.2.0 → v0.11.1),
 taking KyberStation from a partial WYSIWYG demo to a release-ready visual
-editor. Session notes: `docs/SESSION_2026-04-17.md`.
+editor with a real first-impression landing page. Session notes:
+`docs/SESSION_2026-04-17.md`.
 
 ### 23-feature brainstorm — status matrix
 
@@ -474,6 +475,18 @@ editor. Session notes: `docs/SESSION_2026-04-17.md`.
 | 21 | Hosted gallery + voting | ⏸ deferred | Requires backend; GitHub-PR gallery is the pragmatic alternative |
 | 22 | Electron USB serial | ⏸ deferred | Superseded by WebUSB flash (v0.11.0) |
 | 23 | Plugin-authored styles | ⏸ deferred | Worth revisiting once the style API stabilises |
+
+### Design audit polish pass (post-review, not part of the original 23)
+
+Output of the 2026-04-17 12-question design review. Plan lives at
+`~/.claude/plans/i-m-curious-what-the-glistening-island.md`.
+
+| # | Workstream | Status | Notes |
+|---|---|---|---|
+| DA-1 | Landing page | ✅ v0.11.1 | Replaces `redirect('/editor')`. Hero (live BladeEngine render with 4-preset rotation) + value strip + CTAs + release strip + footer. `apps/web/components/landing/` + new `apps/web/app/page.tsx`. |
+| DA-2 | Alert-color discipline | 📋 planned | Reserve `#ff4444` for errors only. Move Sith text to `--faction-sith`, retract button to amber, era-sequel to `--era-sequel` token. Bundled with DA-4 (both touch `globals.css`). |
+| DA-3 | Skeleton + error-state coverage | 📋 planned | Audit all 29 editor panels for async boundaries; add `<Skeleton>` + new `<ErrorState variant="load-failed|parse-failed|save-failed|import-failed">`. Deferred until WebUSB flash merges so FlashPanel.tsx gets covered in the same sweep. |
+| DA-4 | Color-glyph pairing | 📋 planned | Pair status dots / era badges / faction markers with typographic glyphs (◉ ● ▲ ✓ etc.) for colorblind redundancy + craft signal. New `<StatusSignal>` primitive. Bundled with DA-2. |
 
 ### Additional sprints planned (beyond the 23-feature brainstorm)
 
