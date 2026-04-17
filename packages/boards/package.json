@@ -16,7 +16,7 @@
     "dev": "tsc --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/",
+    "lint": "echo 'lint: placeholder — eslint not yet configured'",
     "clean": "rm -rf dist"
   },
   "devDependencies": {

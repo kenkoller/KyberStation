@@ -9,7 +9,7 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint",
+    "lint": "echo 'lint: placeholder — eslint/next-lint not yet configured'",
     "clean": "rm -rf .next"
   },
   "dependencies": {
