@@ -174,7 +174,14 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
   if (!hasFileSystemAccess) {
     return (
       <div className="space-y-3">
-        <div className="bg-yellow-900/10 border border-yellow-700/30 rounded-panel p-3 text-ui-sm text-yellow-300/80">
+        <div
+          className="rounded-panel p-3 text-ui-sm border"
+          style={{
+            background: 'rgb(var(--status-warn) / 0.1)',
+            borderColor: 'rgb(var(--status-warn) / 0.3)',
+            color: 'rgb(var(--status-warn) / 0.85)',
+          }}
+        >
           Font library browsing requires Chrome, Edge, or Arc. You can still import individual fonts via drag-and-drop in the Sound Fonts tab.
         </div>
       </div>
@@ -228,7 +235,15 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
           </button>
           <button
             onClick={() => clearLibrary()}
-            className="text-ui-xs px-1.5 py-0.5 rounded border border-border-subtle text-text-muted hover:text-red-400 hover:border-red-400/40 transition-colors"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'rgb(var(--status-error))';
+              e.currentTarget.style.borderColor = 'rgb(var(--status-error) / 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '';
+              e.currentTarget.style.borderColor = '';
+            }}
+            className="text-ui-xs px-1.5 py-0.5 rounded border border-border-subtle text-text-muted transition-colors"
           >
             Clear
           </button>
@@ -605,7 +620,15 @@ export function SoundFontPanel() {
                       e.stopPropagation();
                       clearFont();
                     }}
-                    className="text-text-muted hover:text-red-400 text-ui-sm px-1.5 py-0.5 rounded border border-border-subtle hover:border-red-500/30"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'rgb(var(--status-error))';
+                      e.currentTarget.style.borderColor = 'rgb(var(--status-error) / 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '';
+                      e.currentTarget.style.borderColor = '';
+                    }}
+                    className="text-text-muted text-ui-sm px-1.5 py-0.5 rounded border border-border-subtle"
                     aria-label="Clear loaded sound font"
                   >
                     Clear
@@ -619,16 +642,36 @@ export function SoundFontPanel() {
 
           {/* Warnings */}
           {warnings.length > 0 && (
-            <div className="bg-yellow-900/10 border border-yellow-700/30 rounded-panel p-2.5">
-              <h4 className="text-ui-sm text-yellow-400 uppercase tracking-widest font-semibold mb-1">
+            <div
+              className="rounded-panel p-2.5 border"
+              style={{
+                background: 'rgb(var(--status-warn) / 0.1)',
+                borderColor: 'rgb(var(--status-warn) / 0.3)',
+              }}
+            >
+              <h4
+                className="text-ui-sm uppercase tracking-widest font-semibold mb-1"
+                style={{ color: 'rgb(var(--status-warn))' }}
+              >
                 Warnings
               </h4>
               <div className="space-y-0.5 max-h-[80px] overflow-y-auto">
                 {warnings.slice(0, 10).map((w, i) => (
-                  <div key={i} className="text-ui-sm text-yellow-300/80">{w}</div>
+                  <div
+                    key={i}
+                    className="text-ui-sm"
+                    style={{ color: 'rgb(var(--status-warn) / 0.85)' }}
+                  >
+                    {w}
+                  </div>
                 ))}
                 {warnings.length > 10 && (
-                  <div className="text-ui-sm text-yellow-300/50">+{warnings.length - 10} more</div>
+                  <div
+                    className="text-ui-sm"
+                    style={{ color: 'rgb(var(--status-warn) / 0.55)' }}
+                  >
+                    +{warnings.length - 10} more
+                  </div>
                 )}
               </div>
             </div>
@@ -654,7 +697,10 @@ export function SoundFontPanel() {
                         }`}
                       >
                         <span className="text-text-secondary capitalize">{category}</span>
-                        <span className={hasBuffers ? 'text-green-400' : 'text-text-muted'}>
+                        <span
+                          className={hasBuffers ? '' : 'text-text-muted'}
+                          style={hasBuffers ? { color: 'rgb(var(--status-ok))' } : undefined}
+                        >
                           {count}
                         </span>
                       </div>
@@ -687,11 +733,20 @@ export function SoundFontPanel() {
                     aria-label={isPlaying ? `Stop ${event.label}` : `Play ${event.label}`}
                     className={`flex items-center gap-2 px-2 py-1.5 rounded text-ui-sm border transition-colors ${
                       isPlaying
-                        ? 'border-green-500/50 bg-green-900/20 text-green-400'
+                        ? ''
                         : hasSound
                           ? 'border-border-subtle bg-bg-surface text-text-secondary hover:border-accent'
                           : 'border-border-subtle bg-bg-deep text-text-muted opacity-40 cursor-not-allowed'
                     }`}
+                    style={
+                      isPlaying
+                        ? {
+                            color: 'rgb(var(--status-ok))',
+                            background: 'rgb(var(--status-ok) / 0.18)',
+                            borderColor: 'rgb(var(--status-ok) / 0.5)',
+                          }
+                        : undefined
+                    }
                   >
                     <span className="text-ui-md" aria-hidden="true">{isPlaying ? '\u25A0' : '\u25B6'}</span>
                     <span>{event.label}</span>
