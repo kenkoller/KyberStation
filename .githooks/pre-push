@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# KyberStation pre-push hook — local safeguards for `main`
+#
+# GitHub's server-side branch protection requires GitHub Pro for private
+# repositories. Until KyberStation upgrades or goes public, this hook is
+# our defense-in-depth against the two footguns that server-side
+# protection would normally catch:
+#
+#   1. Force-pushing to main (rewriting shared history)
+#   2. Deleting main
+#
+# To install:  pnpm run hooks:install
+# To bypass (rare, intentional):  git push --no-verify
+# ─────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+PROTECTED_BRANCH='main'
+ZERO='0000000000000000000000000000000000000000'
+
+# Read the ref info git passes on stdin. Format per line:
+#   <local_ref> <local_sha> <remote_ref> <remote_sha>
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # ── Branch deletion check ──
+  # A deletion is signalled by local_sha being all zeros.
+  if [[ "$local_sha" == "$ZERO" ]]; then
+    if [[ "$remote_ref" == "refs/heads/$PROTECTED_BRANCH" ]]; then
+      echo ""
+      echo "🛑 REFUSED: Attempting to DELETE the $PROTECTED_BRANCH branch."
+      echo "    This is almost certainly a mistake."
+      echo ""
+      echo "    If you really mean it, bypass with:"
+      echo "      git push --no-verify origin :$PROTECTED_BRANCH"
+      echo ""
+      exit 1
+    fi
+    continue
+  fi
+
+  # ── Force-push check ──
+  # Only applies to pushes targeting the protected branch.
+  if [[ "$remote_ref" == "refs/heads/$PROTECTED_BRANCH" ]]; then
+    # If remote_sha is zero, the branch doesn't exist remotely yet;
+    # a "force" push is meaningless in that case.
+    if [[ "$remote_sha" != "$ZERO" ]]; then
+      # If the remote tip isn't an ancestor of the local tip, this is a
+      # force-push (history rewrite).
+      if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        echo ""
+        echo "🛑 REFUSED: Force-push to $PROTECTED_BRANCH detected."
+        echo ""
+        echo "    You're about to rewrite history on the protected branch."
+        echo "    This will invalidate every contributor's local copy of"
+        echo "    $PROTECTED_BRANCH and may destroy commits silently."
+        echo ""
+        echo "    GitHub server-side protection is not active on this repo"
+        echo "    (private + free tier). This local hook is our only"
+        echo "    safeguard."
+        echo ""
+        echo "    Common correct actions instead:"
+        echo "      • git pull --rebase origin $PROTECTED_BRANCH"
+        echo "      • (resolve any conflicts)"
+        echo "      • git push        # no force flag"
+        echo ""
+        echo "    If you're ABSOLUTELY sure force-push is what you want"
+        echo "    (e.g. recovering from a confirmed rebase emergency):"
+        echo "      git push --no-verify --force origin $PROTECTED_BRANCH"
+        echo ""
+        exit 1
+      fi
+    fi
+  fi
+done
+
+exit 0

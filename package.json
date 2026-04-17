@@ -17,7 +17,8 @@
     "serve": "node scripts/local-serve.mjs",
     "launch": "node scripts/local-dev.mjs",
     "generate-icon": "node scripts/generate-icon.mjs",
-    "install-app": "ln -sf \"$(pwd)/KyberStation.app\" ~/Applications/KyberStation.app && echo 'KyberStation.app installed to ~/Applications'"
+    "install-app": "ln -sf \"$(pwd)/KyberStation.app\" ~/Applications/KyberStation.app && echo 'KyberStation.app installed to ~/Applications'",
+    "hooks:install": "node scripts/install-git-hooks.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
