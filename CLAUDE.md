@@ -443,22 +443,37 @@ pnpm typecheck                  # TypeScript strict check
 
 ## Current State (2026-04-17)
 
-Last git tag: **v0.10.0**. Two feature sprints have landed on `main`
-past that tag, both awaiting hardware / visual validation before a new
-tag is cut:
+Last git tag: **v0.10.0**. Multiple feature sprints have landed on
+`main` past that tag:
 
 - **Landing page + Kyber Crystal spec** (WS1 of the design polish
   pass) — first-impression landing page replacing `redirect('/editor')`,
-  plus four crystal-design docs.
+  plus four crystal-design docs. Shipped in PR #14.
 - **WebUSB flash** (feature #16 below) — STM32 DfuSe protocol library,
   FlashPanel UI, dry-run mode, readback verification, 43 mock-based
   tests. **Not yet validated on real hardware.** See
   `docs/HARDWARE_VALIDATION_TODO.md` for the three-phase checklist
   (connect → dry run → real flash) that must pass before a `v0.11.x`
   tag is cut.
+- **v0.11.1 — Design Review Polish Pass** (PR #19, merged) — WS2
+  alert-color tokenisation, WS3 `ErrorState` primitive + skeleton
+  coverage across async panels, WS4 `StatusSignal` primitive + HUD
+  glyph pairing (EngineStats FPS readout, PowerDashboard system
+  status, StatusBar power/storage/LED indicators, PresetGallery
+  era/faction badges). New `CHANGELOG.md` + README landing-hero
+  screenshot.
+- **Branch protection safeguards** (PR #22, merged) — client-side
+  `.githooks/pre-push` blocking force-push/deletion of main, plus a
+  `setup-branch-protection` script ready for when the repo upgrades
+  to GitHub Pro / goes public.
+- **Tiered algorithmic color naming** (PR #21, merged) — three-tier
+  name generator for saber colors (landmark + modifier + mood-word)
+  expanding the curated palette to full HSL coverage.
 
-Session notes: `docs/SESSION_2026-04-17.md`.
+Session notes: `docs/SESSION_2026-04-17.md`,
+`docs/SESSION_2026-04-17_C.md` (release-readiness wrap-up).
 WebUSB protocol reference: `docs/WEBUSB_FLASH.md`.
+Release history: `CHANGELOG.md`.
 
 ### 23-feature brainstorm — status matrix
 
@@ -496,16 +511,17 @@ Output of the 2026-04-17 12-question design review. Plan lives at
 | # | Workstream | Status | Notes |
 |---|---|---|---|
 | DA-1 | Landing page | ✅ v0.11.1 | Replaces `redirect('/editor')`. Hero (live BladeEngine render with 4-preset rotation) + value strip + CTAs + release strip + footer. `apps/web/components/landing/` + new `apps/web/app/page.tsx`. |
-| DA-2 | Alert-color discipline | 📋 planned | Reserve `#ff4444` for errors only. Move Sith text to `--faction-sith`, retract button to amber, era-sequel to `--era-sequel` token. Bundled with DA-4 (both touch `globals.css`). |
-| DA-3 | Skeleton + error-state coverage | 📋 planned | Audit all 29 editor panels for async boundaries; add `<Skeleton>` + new `<ErrorState variant="load-failed|parse-failed|save-failed|import-failed">`. Deferred until WebUSB flash merges so FlashPanel.tsx gets covered in the same sweep. |
-| DA-4 | Color-glyph pairing | 📋 planned | Pair status dots / era badges / faction markers with typographic glyphs (◉ ● ▲ ✓ etc.) for colorblind redundancy + craft signal. New `<StatusSignal>` primitive. Bundled with DA-2. |
+| DA-2 | Alert-color discipline | ✅ v0.11.1 | `globals.css` tokenised. `.console-alert` → `--status-error`. `@keyframes retract-breathe` → `--badge-creative` amber. Era badges → `rgb(var(--era-*))`. Sith/Jedi gradient text → new `--faction-*-deep` tokens. HUD hex (`#22c55e`/`#eab308`/`#ef4444`) in `PowerDashboard` + `EngineStats` → `--status-ok/warn/error`. Remaining raw-hex RGB viz in `BladeCanvas`/`VisualizationStack`/`RGBGraphPanel` intentional (literal R/G/B channel renders). |
+| DA-3 | Skeleton + error-state coverage | ✅ v0.11.1 | New `<ErrorState>` primitive (`components/shared/ErrorState.tsx`) with 4 named variants + retry callback + compact mode. Applied to CommunityGallery, PresetBrowser, CodeOutput, OLEDEditor (in-panel) and SaberProfileManager, SoundFontPanel, PresetGallery (toast). CardWriter + FlashPanel intentionally unchanged (existing state machines fit-for-purpose). |
+| DA-4 | Color-glyph pairing | ✅ v0.11.1 | New `<StatusSignal>` + `<EraBadge>` + `<FactionBadge>` (`components/shared/StatusSignal.tsx`) pairing color with typographic glyphs (●/◉/✓/▲/⚠/✕ + era monograms ◇/◆/▲/◯/✦/✧ + faction markers ☉/✦/◐/·). Applied in StatusBar, PresetGallery, EngineStats (FPS), PowerDashboard (system status). Colorblind-safe via redundant glyph channel. `TimelinePanel` event-type colors stay raw hex by design (identity colors paired with text labels). |
 
 ### Additional sprints planned (beyond the 23-feature brainstorm)
 
 | Version | Sprint | Status | Notes |
 |---|---|---|---|
-| v0.11.1 | **Design Review Polish Pass** | 🚧 in progress | Four workstreams from the "not-look-AI-built" audit. Plan: `~/.claude/plans/i-m-curious-what-the-glistening-island.md`. **WS1 Landing Page** shipped on `feat/landing-page` (awaiting merge). **WS2 Alert-color discipline**, **WS3 Skeleton+ErrorState coverage**, **WS4 Color-glyph pairing** planned but not started. |
-| v0.12.0 | **Kyber Crystal — Three.js renderer** | 🧪 merged (PR #20) | Four commits: foundation (ddc5ee7) + camera-zoom reveal (1276edd) + real glyph encoder (783c3c6) + visual polish (59ed6f3). 294/294 tests. Deferred follow-ups: Crystal Vault panel, Re-attunement UI, favicon replacement, phone-camera scan validation, `CANONICAL_DEFAULT_CONFIG` drift-sentinel, `<HiltMesh>` extraction. Spec/arch in `docs/KYBER_CRYSTAL_3D.md`. |
+| v0.11.1 | **Design Review Polish Pass** | ✅ shipped | All four workstreams merged to main via PR #14 (WS1 Landing Page) and PR #19 (WS2/WS3/WS4 + docs + housekeeping). See `CHANGELOG.md` for full entry and `docs/SESSION_2026-04-17_C.md` for the release-readiness wrap-up. |
+| v0.11.2 | **Color Naming Math** | 🧪 partial | PR #21 (tiered base generator) merged. Follow-up polish pass on PR #23 (compound threshold + shorter Tier 3 mood words) in flight. |
+| v0.12.0 | **Kyber Crystal — Three.js renderer** | ✅ shipped (PR #20) | Four commits: foundation (ddc5ee7) + camera-zoom reveal (1276edd) + real glyph encoder (783c3c6) + visual polish (59ed6f3). 294/294 tests. Deferred follow-ups: Crystal Vault panel, Re-attunement UI, favicon replacement, phone-camera scan validation, `CANONICAL_DEFAULT_CONFIG` drift-sentinel, `<HiltMesh>` extraction. Spec/arch in `docs/KYBER_CRYSTAL_3D.md`. |
 | v0.12.x | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session — originally planned for v0.12.0, reassigned to let the crystal renderer take that slot. |
 | v0.13.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Blade+hilt hero full-width; flanking setup (left) + quick-options (right) sidebars; pixel-level LED debug row synced 1:1 beneath the hero; analysis panels stacked in a bottom row; status-ticker at the base. Cosplay + fan-film + livestream-optimised. |
 | v0.14.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. Deep-cut lanes: Prequel/OT/Sequel Jedi & Sith, Legends/KOTOR/SWTOR (incl. Dark Forces / Jedi Knight / Outcast / Academy), Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Space-combat (Rogue Squadron / X-Wing / TIE Fighter / Squadrons / Rebel Assault), Cross-franchise "inspired by". Could 4-5× the preset library in one session. |
@@ -513,29 +529,35 @@ Output of the 2026-04-17 12-question design review. Plan lives at
 
 Legend: ✅ shipped · 🧪 complete, awaiting merge · 🚧 in progress · 🔜 next sprint · 📋 planned (doc exists) · ⏸ deferred
 
-### Cross-session coordination (as of 2026-04-17)
+### Cross-session coordination (as of 2026-04-17, late session)
 
-Multiple claude sessions have been running in parallel on this project. Key
-discipline to preserve during this phase:
+Multiple claude sessions have been running in parallel on this project.
+Discipline that carried the v0.11.1 multi-session phase through to
+green CI on main:
 
-1. **Read `~/.claude/plans/i-m-curious-what-the-glistening-island.md` before
-   starting any UI work.** It catalogs the four design-review workstreams
-   and their file footprints, along with hand-off protocol for conflicts.
-2. **Branch per workstream. Never commit directly to main** during this
-   multi-session phase. `feat/landing-page`, `feat/alert-color-discipline`,
-   `feat/skeleton-coverage`, `feat/color-glyph-pairing`,
-   `feat/kyber-crystal-spec-v2` are live. WebUSB lives on
-   `claude/stoic-wing-81bb99`.
-3. **Before starting any workstream,** `git fetch origin && git log --oneline
-   origin/main ^HEAD && git diff origin/main --name-only` to see what's
-   moved.
-4. **Kyber Crystal design spec** (this doc batch) is pure docs + one new
-   `apps/web/lib/` file — zero overlap with any workstream's component or
-   `globals.css` footprint. Safe to run in parallel with all four design
-   workstreams and with WebUSB merge.
-5. **When merging to main**, suggested order: WebUSB (v0.11.0) first,
-   then WS1 (Landing Page), then Kyber Crystal spec batch, then WS2-4 as
-   they complete. Each merge creates a clean base for the next.
+1. **Branch per workstream. Never commit directly to main.** PRs are
+   how work lands. Client-side `.githooks/pre-push` (PR #22, on main)
+   now blocks accidental force-push + deletion of main for any clone
+   that has run `pnpm run hooks:install`.
+2. **Before starting any workstream:** `git fetch origin && git log
+   --oneline origin/main ^HEAD && git diff origin/main --name-only`
+   to see what's moved. The v0.11.1 merge order (WebUSB → WS1 → Kyber
+   Crystal spec → v0.11.1 polish pass) worked because each merge
+   created a clean base for the next.
+3. **When wrapping a session:** use the generic wrap-up prompt
+   documented in `docs/SESSION_2026-04-17_C.md` — it separates
+   ship-ready work from deferred work, enforces a typecheck + test
+   gate before commit, and requires deferred items to land in the
+   PR description or CHANGELOG before close.
+4. **Conflict audit checklist before cross-session merge:** (a) diff
+   each PR's file footprint, (b) check `package.json` + `pnpm-lock.yaml`
+   for dep conflicts, (c) prefer the smallest-footprint PR first so
+   subsequent rebases are trivial.
+5. **Active branches (late session 2026-04-17):** `feat/kyber-crystal-threejs`
+   (PR #20, Three.js renderer + reveal scene), `feat/naming-math-polish`
+   (PR #23, polish on top of merged naming math), `feat/hilt-library`
+   (pre-PR, cataloging hilt parts). Lint-enforcement sprint is the
+   planned Phase C4 follow-up after those land.
 
 ### Architecture decisions made this session
 
@@ -653,6 +675,23 @@ discipline to preserve during this phase:
   OG meta tags, `?config=<base64>` fallback toast when glyph exceeds
   QR capacity.
 
+**Deferred from v0.11.1 release-readiness pass** (see
+`docs/SESSION_2026-04-17_C.md`):
+
+- **Lint enforcement sprint** — ESLint not currently in
+  `devDependencies`. Activating it would surface hundreds of
+  preexisting issues; scoped as its own sprint with explicit
+  triage policy (fix vs `// eslint-disable-next-line`) to avoid
+  breaking main.
+- **Editor/gallery screenshots for README** — landing-hero screenshot
+  shipped in v0.11.1; editor + gallery screenshots blocked by the
+  onboarding modal in headless capture. Defer to the sprint that
+  next modifies either surface, or a dedicated 30-min micro-sprint.
+- **Strict glyph pairing for identity colors** (`TimelinePanel` event
+  type markers, `StorageBudgetPanel` segment colors) — currently
+  colorblind-safe via paired text labels. Tightening the rule to
+  include identity colors is cosmetic polish, not a release blocker.
+
 **Not yet planned:**
 
 - Tablet-specific layout adaptations beyond the existing breakpoints
@@ -690,6 +729,10 @@ Added this session; tests co-located unless noted:
 | `apps/web/hooks/useAudioSync.ts` | Swing-driven audio pitch/volume modulation |
 | `apps/web/lib/webusb/` | WebUSB + STM32 DfuSe protocol (v0.11.0): `DfuDevice`, `DfuSeFlasher`, memory-layout parser, connect façade |
 | `apps/web/components/editor/FlashPanel.tsx` | Disclaimer → connect → flash state machine with progress UI |
+| `apps/web/components/shared/ErrorState.tsx` | v0.11.1 — named error-state presentation (`load-failed`/`parse-failed`/`save-failed`/`import-failed`) with retry callback + compact mode |
+| `apps/web/components/shared/StatusSignal.tsx` | v0.11.1 — color + glyph pair indicator (●/◉/✓/▲/⚠/✕) plus `EraBadge` + `FactionBadge` for colorblind accessibility |
+| `.githooks/pre-push` + `scripts/install-git-hooks.mjs` | v0.11.1 — client-side safeguard blocking force-push / deletion of main (paywall workaround until repo upgrades to GitHub Pro or goes public) |
+| `scripts/setup-branch-protection.mjs` | v0.11.1 — post-upgrade automation for server-side ruleset |
 | `apps/web/lib/crystal/` | **Three.js Kyber Crystal (v0.12.0)**: `renderer.ts` (scene driver), `materials.ts` (PBR + `MATERIAL_TUNING` table), `geometry.ts` (5 Forms + hybrid normals + tube veins), `animations.ts` (13-trigger controller), `qrSurface.ts` (real `qrcode` + WCAG contrast), `lighting.ts`, `hash.ts` (FNV-1a + mulberry32), `postProcessing.ts` (UnrealBloomPass), `reactComponent.tsx` (R3F wrapper), `cameraChoreographer.ts` (Fullscreen dolly) |
 | `apps/web/lib/sharePack/kyberGlyph.ts` | v1 Kyber Glyph encoder/decoder: MsgPack + delta-vs-default + raw-deflate + base58. Archetype prefix (`JED/SIT/GRY/CNO/SPC`). Version-byte routing. |
 | `apps/web/lib/sharePack/cardSnapshot.ts` | 1200×675 Saber Card PNG with crystal accent in bottom-right; hero area is labelled placeholder pending full Share Pack card renderer |
