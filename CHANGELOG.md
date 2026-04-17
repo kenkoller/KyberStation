@@ -46,6 +46,10 @@ orchestration plan that scopes these sprints.
   pairing status colors with typographic glyphs (●/◉/✓/▲/⚠/✕) for
   colorblind accessibility, with era and faction monogram variants
 - CHANGELOG.md documenting the full release history
+- `docs/images/landing-hero.png` — live-engine landing screenshot
+  referenced from `README.md` above the feature list
+- `--faction-sith-deep` and `--faction-jedi-deep` tokens for
+  gradient-stop use in `.sw-sith-text` / `.sw-jedi-text`
 
 ### Changed
 
@@ -59,11 +63,18 @@ orchestration plan that scopes these sprints.
   - `.console-alert` now uses `rgb(var(--status-error))` — still red
     (it IS an alert), but tokenised so colorblind theme overrides flow
     through
-- Status indicators across `StatusBar.tsx`, `PresetGallery.tsx`, and
-  other panel surfaces now pair color with `StatusSignal` glyphs
+- Status indicators across `StatusBar.tsx`, `PresetGallery.tsx`,
+  `PowerDashboard.tsx`, and `EngineStats.tsx` now pair color with
+  `StatusSignal` glyphs (FPS performance bucket, system-status
+  indicator, power draw)
 - Async-boundary panels across the editor now show `<Skeleton>`
   during loading and `<ErrorState>` on failure (previously: blank
   panels or silent failures)
+- `.sw-sith-text` / `.sw-jedi-text` gradient stops routed through
+  `rgb(var(--faction-*))` tokens instead of raw hex
+- Raw `#22c55e` / `#eab308` / `#ef4444` in `PowerDashboard.tsx` and
+  `EngineStats.tsx` replaced with `rgb(var(--status-ok/warn/error))`
+  so colorblind + theme overrides flow through
 
 ### Fixed
 
@@ -86,6 +97,15 @@ orchestration plan that scopes these sprints.
   `visualizationTypes.ts` intentionally keep raw red/green/blue hex
   colors — those represent the literal RGB channels being visualized,
   not alert semantics
+- `TimelinePanel.tsx` event-type category colors (ignite/retract/
+  clash/blast/etc.) stay as raw hex — these are distinct identity
+  colors paired with text labels, not alert semantics. Tokenising
+  these would be identity coupling, not accessibility
+- **Lint enforcement** (originally scoped for this sprint as Phase C4)
+  is deferred. ESLint is not currently in `devDependencies`; activating
+  it would surface hundreds of preexisting issues and is worth its own
+  sprint with a clear scope for how to handle them (fix vs
+  `// eslint-disable-next-line`). Tracked as a follow-up
 
 ---
 
