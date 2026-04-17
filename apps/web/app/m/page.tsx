@@ -130,9 +130,9 @@ export default function MobileCompanion() {
           </div>
         </div>
         <a
-          href="/editor"
+          href={`/editor?preset=${encodeURIComponent(preset.id)}`}
           className="text-ui-xs text-text-muted hover:text-text-primary shrink-0 px-2 py-1 rounded border border-border-subtle"
-          title="Open the full editor"
+          title={`Open ${preset.name} in the full editor`}
         >
           Edit →
         </a>
