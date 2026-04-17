@@ -57,7 +57,7 @@ export {
 // ─── C++ Style Parser ───
 
 export { parseStyleCode, tokenize, filterTokens, reconstructConfig } from './parser/index.js';
-export type { ParseResult, ParseError, ReconstructedConfig, Token, TokenType } from './parser/index.js';
+export type { ParseResult, ParseError, ParseWarning, ReconstructedConfig, Token, TokenType } from './parser/index.js';
 
 // ─── AST Binding Layer (Phase 2) ───
 
