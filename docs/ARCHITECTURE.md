@@ -247,9 +247,11 @@ Global settings modal with 5 sections:
 
 ### Pages
 
-- `/` — Landing page (redirects to editor)
-- `/editor` — Main workspace with canvas, style panel, effect panel, motion sim, preset browser, code output
-- `/s` — Share link handler (decodes Kyber Code URL → loads config into editor)
+- `/` — Identity landing (live BladeEngine hero with 4-preset rotation, value strip, CTAs to Editor / Wizard / Gallery, release strip, footer). Components in `apps/web/components/landing/`.
+- `/editor` — Main workspace with canvas, style panel, effect panel, motion sim, preset browser, code output.
+- `/m` — Mobile companion (touch-first swipe browser over 12 curated presets; read-only, no editor chrome; deep-link friendly via `?preset=<id>`).
+- `/s` — Share link handler (decodes Kyber Code URL → loads config into editor).
+- `/docs` — Built-in ProffieOS template reference and design-system page.
 
 ### Config I/O
 
