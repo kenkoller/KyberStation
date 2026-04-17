@@ -364,15 +364,24 @@ acceptable for a showcase feature.
 
 #### Size sanity check
 
-Measured on representative configs:
+Measured on representative configs via the shipped v1 encoder
+(`apps/web/lib/sharePack/kyberGlyph.ts`):
 
-| Config | Delta bytes | zlib bytes | base58 chars | QR version |
-|---|---|---|---|---|
-| Obi-Wan default | 12 | 18 | 25 | Version 1 |
-| Custom stable + 2 spatial | 38 | 42 | 58 | Version 2 |
-| Everything-on max | 78 | 81 | 112 | Version 3 |
+| Config | base58 body chars | QR version |
+|---|---|---|
+| Obi-Wan default | 18 | Version 1 |
+| Typical custom (≈5 fields tweaked) | ~130 | Version 4 |
+| Max-complexity (35+ fields, all spatial + dual-mode + preon + motion) | ~490 | Version 8 |
 
-Even the worst case scans fine from a ~3cm × 3cm printed glyph.
+**Note:** these numbers replace earlier pre-implementation estimates
+(which guessed max-complexity at ~112 chars / Version 3). The real v1
+schema carries saber metadata (hilt model, prop file, sound/OLED refs,
+public name, `extras` bag) in addition to the BladeConfig delta — the
+overhead is cheap for typical blades (default encodes in 18 chars) but
+compounds at the max. Everything still scans fine from a 3cm × 3cm
+printed glyph through QR Version 8, but the graceful-overflow fallback
+(item 4 in the ladder below) becomes load-bearing at a smaller
+feature-complexity footprint than the original table implied.
 
 #### What the glyph can and can't capture
 
@@ -399,16 +408,20 @@ This covers ~95% of what the editor produces today.
 | Custom Bezier easing curves | Would bloat typical glyphs | v3 if we ever ship authoring |
 | Arbitrary imported `Layers<>` trees beyond editor-generated shapes | Editor only emits patterns it understands | Parser warnings already surface this today |
 
-**Graceful overflow ladder:**
+**Graceful overflow ladder** (revised against measured v1 encoder output):
 
-1. Typical blade → glyph (20–35 chars)
-2. Max-complexity standard config → glyph (60–80 chars)
-3. v2/v3 with style params → glyph grows to 100–200 chars, QR bumps to
-   Version 5
-4. Hard ceiling (> ~250 chars, QR Version 8+) → fall back to
-   `?config=<base64>` URL with a toast: *"This blade's too intricate for
-   a glyph — here's a share link instead"*
-5. Genuine multi-blade saber → `.kybersaber` ZIP export (separate
+1. Default / near-default blade → glyph (~18–40 chars, QR Version 1–2)
+2. Typical custom blade → glyph (~100–160 chars, QR Version 3–4)
+3. Max-complexity standard config (all spatial, dual-mode, preon,
+   motion reactivity) → glyph (~400–500 chars, QR Version 7–8)
+4. v2/v3 schema additions (style params, custom easing, etc.) → glyph
+   may hit ~600+ chars, QR Version 10+
+5. Hard ceiling (QR capacity exceeded OR length > 700 chars) → fall
+   back to `?config=<base64>` URL with a toast: *"This blade's too
+   intricate for a glyph — here's a share link instead."* **This
+   fallback path is not yet implemented in the encoder — detection and
+   toast are a follow-up sprint.**
+6. Genuine multi-blade saber → `.kybersaber` ZIP export (separate
    feature, not in Share Pack scope)
 
 The fallback URL is always available, so no blade is ever un-shareable

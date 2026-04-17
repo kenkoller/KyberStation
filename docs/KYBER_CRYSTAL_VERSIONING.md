@@ -95,10 +95,43 @@ blade.
   publicName: string | null,      // moderated at share-time
   // privateName stays local, NEVER embedded
   createdAt: number,              // unix timestamp
-  kyberstationVersion: string,    // "0.11.0" etc.
+  kyberstationVersion: string,    // "0.11.0" etc. Empty string = unknown.
   extras: Record<string, unknown>, // escape hatch for unknown future fields
 }
 ```
+
+**Field defaults + omission rules** (settled during v1 implementation):
+
+- `kyberstationVersion`: defaults to empty string `""` — omitted from
+  the encoded payload when empty so default glyphs stay tiny. Callers
+  that want to stamp provenance (archive flow, attribution on a
+  community-gallery submission) pass it explicitly. Decoder returns
+  `""` when the field is absent rather than guessing the current
+  runtime version — the absence IS the meaning ("unknown mint
+  version").
+- `publicName`: `null` means "no public name"; omitted from payload.
+- `soundFontRef` / `oledBitmapRef`: `null` means "not referenced";
+  omitted from payload.
+- `extras`: empty object omitted from payload; any non-empty object is
+  preserved verbatim on decode (forward-compat).
+- `createdAt`: always present when encoding (unix ms); decoder returns
+  `0` if somehow missing.
+
+**Source-of-truth discipline for `CANONICAL_DEFAULT_CONFIG`:**
+
+The v1 delta encoder needs a canonical default BladeConfig to diff
+against. That default is currently duplicated in two places:
+
+1. `apps/web/stores/bladeStore.ts` — the editor's initial config
+2. `apps/web/lib/sharePack/kyberGlyph.ts` — the delta baseline
+
+They MUST stay byte-identical. If they drift, v1 glyphs silently
+round-trip wrong on the diverging side. Same pattern as the
+`BladeConfig` mirror in `packages/codegen/src/ASTBuilder.ts`
+(architecture decision #1 in `CLAUDE.md`) — a drift-sentinel vitest
+that imports both via alias and asserts structural equality is the
+right fix. Pending follow-up before v1 is promoted to a stability
+pledge.
 
 **What stays OUT of v1 (by design):**
 

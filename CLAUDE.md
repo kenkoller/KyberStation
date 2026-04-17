@@ -480,7 +480,7 @@ WebUSB protocol reference: `docs/WEBUSB_FLASH.md`.
 | 14 | Validation + polish | ✅ v0.9.1 | Round-trip data-loss fix, theme-token compliance |
 | 15 | Long-tail cleanup | ✅ v0.10.0 | Spatial drag/melt/stab, parser warnings, font pairing polish |
 | 16 | **WebUSB flash** | 🧪 merged | Protocol + UI on `main`; 43 mock tests pass. Pending hardware validation before `v0.11.x` tag — see `docs/HARDWARE_VALIDATION_TODO.md`. |
-| 17 | **Share Pack + Kyber Crystal** | 📋 spec'd | Blade-on-hilt hero + crystal-as-QR accent. Four docs: `SHARE_PACK.md`, `KYBER_CRYSTAL_VISUAL.md`, `KYBER_CRYSTAL_NAMING.md`, `KYBER_CRYSTAL_VERSIONING.md` |
+| 17 | **Share Pack + Kyber Crystal** | 🧪 v0.12.0 merged | **Three.js Kyber Crystal renderer** (5 Forms, 13 animations, scannable QR), **real v1 Kyber Glyph encoder** (full BladeConfig round-trip through MsgPack → delta → raw-deflate → base58, `/editor?s=<glyph>` URL handler), **Fullscreen camera-zoom reveal** into ACCENT_TOPOLOGY Crystal Chamber, **bloom + env map + tube veins + GPU fleck twinkle** polish pass. Crystal portion of Saber Card (snapshot pipeline) shipped; hilt+blade hero card renderer still pending. Four commits on `feat/kyber-crystal-threejs`, PR #20. See `docs/KYBER_CRYSTAL_3D.md`. |
 | 18 | **Community gallery (GitHub PR)** | 📋 planned | Static, PR-moderated. See `docs/COMMUNITY_GALLERY.md` |
 | 19 | Tablet-specific layout | ⏸ deferred | Existing responsive breakpoints cover it for now |
 | 20 | More spatial effects | ✅ v0.10.0 | drag/melt/stab positioning completed |
@@ -505,7 +505,8 @@ Output of the 2026-04-17 12-question design review. Plan lives at
 | Version | Sprint | Status | Notes |
 |---|---|---|---|
 | v0.11.1 | **Design Review Polish Pass** | 🚧 in progress | Four workstreams from the "not-look-AI-built" audit. Plan: `~/.claude/plans/i-m-curious-what-the-glistening-island.md`. **WS1 Landing Page** shipped on `feat/landing-page` (awaiting merge). **WS2 Alert-color discipline**, **WS3 Skeleton+ErrorState coverage**, **WS4 Color-glyph pairing** planned but not started. |
-| v0.12.0 | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session. |
+| v0.12.0 | **Kyber Crystal — Three.js renderer** | 🧪 merged (PR #20) | Four commits: foundation (ddc5ee7) + camera-zoom reveal (1276edd) + real glyph encoder (783c3c6) + visual polish (59ed6f3). 294/294 tests. Deferred follow-ups: Crystal Vault panel, Re-attunement UI, favicon replacement, phone-camera scan validation, `CANONICAL_DEFAULT_CONFIG` drift-sentinel, `<HiltMesh>` extraction. Spec/arch in `docs/KYBER_CRYSTAL_3D.md`. |
+| v0.12.x | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session — originally planned for v0.12.0, reassigned to let the crystal renderer take that slot. |
 | v0.13.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Blade+hilt hero full-width; flanking setup (left) + quick-options (right) sidebars; pixel-level LED debug row synced 1:1 beneath the hero; analysis panels stacked in a bottom row; status-ticker at the base. Cosplay + fan-film + livestream-optimised. |
 | v0.14.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. Deep-cut lanes: Prequel/OT/Sequel Jedi & Sith, Legends/KOTOR/SWTOR (incl. Dark Forces / Jedi Knight / Outcast / Academy), Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Space-combat (Rogue Squadron / X-Wing / TIE Fighter / Squadrons / Rebel Assault), Cross-franchise "inspired by". Could 4-5× the preset library in one session. |
 | v0.15.0 | **Multi-Blade Workbench** | 📋 planned | Channel-strip UI for editing dual-blade sabers / saberstaffs / crossguards. Blade-switching in the workbench. Sync / Unsync toggle for symmetry vs independence. Glyph format already supports multi-blade from v1, so this is purely the editing UI side. |
@@ -597,6 +598,39 @@ discipline to preserve during this phase:
    bundled binary is absent — power users always have the "custom .bin"
    path via file upload, so missing binaries don't break the feature.
 
+10. **Crystal renderer is Three.js, not SVG (v0.12.0).** Option C from
+    the design brainstorm won over pre-rendered PNGs (Option A) and
+    hand-authored SVG (Option B). Only Three.js delivers photoreal-
+    stylised quartz + real refraction/transmission/iridescence + the
+    stretch-goal camera-zoom reveal into the hilt's Crystal Chamber
+    LED segment. `MeshPhysicalMaterial` carries the PBR weight;
+    `UnrealBloomPass` + `RoomEnvironment` PMREM carry the polish.
+    SVG mockups in `KYBER_CRYSTAL_VISUAL.md` §5 are retained as
+    *conceptual art only* and explicitly flagged as placeholder in
+    the doc header.
+
+11. **Kyber Glyph v1 is a binding stability contract.** `payload_byte
+    version + visual_byte version` at the head of every zlib-deflated
+    MessagePack payload per `docs/KYBER_CRYSTAL_VERSIONING.md` §2.
+    Encoder lives at `apps/web/lib/sharePack/kyberGlyph.ts`. Delta-
+    encoded against a `CANONICAL_DEFAULT_CONFIG` — currently
+    duplicated with `apps/web/stores/bladeStore.ts`'s `DEFAULT_CONFIG`.
+    **A drift-sentinel vitest (same pattern as the BladeConfig mirror
+    in decision #1) is a pending follow-up before v1 is promoted to a
+    public stability pledge.** 50-config fuzz + 9 fixtures in
+    `apps/web/tests/fixtures/kyberGlyphs/v1/` catch accidental breaks
+    today, but the real default-config diff is the load-bearing
+    constraint.
+
+12. **Measured vs. pre-implementation glyph sizes.** Default
+    Obi-Wan ANH: 18 base58 chars. Typical custom blade: ~130 chars.
+    Max-complexity (35+ fields): ~490 chars / QR Version 8. Earlier
+    spec in `SHARE_PACK.md` guessed max at ~112 chars / Version 3 —
+    doc corrected 2026-04-17. The graceful-overflow fallback path
+    (item 5 in the revised ladder) becomes load-bearing earlier than
+    the doc implied; detection + toast for
+    `?config=<base64>` fallback is not yet implemented.
+
 ### Deferred items
 
 **Pending hardware validation:**
@@ -609,10 +643,15 @@ discipline to preserve during this phase:
   in `docs/HARDWARE_VALIDATION_TODO.md`. Blocks moving the status
   in the feature table above from "✅ shipped" to "✅ validated".
 
-**Not yet planned:**
+**Share Pack — partially shipped, partially deferred:**
 
-- Share Pack implementation (doc `docs/SHARE_PACK.md` exists; implementation
-  is the next candidate sprint)
+- Shipped in v0.12.0: Kyber Glyph v1 encoder, `?s=<glyph>` URL handler,
+  Three.js Kyber Crystal with scannable QR, crystal portion of Saber
+  Card snapshot pipeline.
+- Still deferred: full Saber Card hilt+blade hero renderer, hum-GIF
+  variant, state-cycle-GIF variant, Aurebesh card typography, Discord
+  OG meta tags, `?config=<base64>` fallback toast when glyph exceeds
+  QR capacity.
 
 **Not yet planned:**
 
@@ -651,6 +690,12 @@ Added this session; tests co-located unless noted:
 | `apps/web/hooks/useAudioSync.ts` | Swing-driven audio pitch/volume modulation |
 | `apps/web/lib/webusb/` | WebUSB + STM32 DfuSe protocol (v0.11.0): `DfuDevice`, `DfuSeFlasher`, memory-layout parser, connect façade |
 | `apps/web/components/editor/FlashPanel.tsx` | Disclaimer → connect → flash state machine with progress UI |
+| `apps/web/lib/crystal/` | **Three.js Kyber Crystal (v0.12.0)**: `renderer.ts` (scene driver), `materials.ts` (PBR + `MATERIAL_TUNING` table), `geometry.ts` (5 Forms + hybrid normals + tube veins), `animations.ts` (13-trigger controller), `qrSurface.ts` (real `qrcode` + WCAG contrast), `lighting.ts`, `hash.ts` (FNV-1a + mulberry32), `postProcessing.ts` (UnrealBloomPass), `reactComponent.tsx` (R3F wrapper), `cameraChoreographer.ts` (Fullscreen dolly) |
+| `apps/web/lib/sharePack/kyberGlyph.ts` | v1 Kyber Glyph encoder/decoder: MsgPack + delta-vs-default + raw-deflate + base58. Archetype prefix (`JED/SIT/GRY/CNO/SPC`). Version-byte routing. |
+| `apps/web/lib/sharePack/cardSnapshot.ts` | 1200×675 Saber Card PNG with crystal accent in bottom-right; hero area is labelled placeholder pending full Share Pack card renderer |
+| `apps/web/components/editor/CrystalPanel.tsx` | "My Crystal" dockable Workbench panel (Design tab, col 3) |
+| `apps/web/components/editor/CrystalRevealScene.tsx` | R3F overlay for the Fullscreen camera-zoom reveal |
+| `apps/web/hooks/useSharedConfig.ts` | Now handles `?s=<glyph>` in addition to the legacy `?config=<base64>` |
 
 ### Test coverage (top-level)
 
