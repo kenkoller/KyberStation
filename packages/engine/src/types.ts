@@ -244,6 +244,18 @@ export interface BladeConfig {
   /** Lockup radius (half-extent in each direction) as a fraction of blade length, 0..1. Default 0.12. */
   lockupRadius?: number;
 
+  // ── Preon (ProffieOS 7+) ──
+  /** Enable the PREON effect — a short colour flash that plays BEFORE ignition. */
+  preonEnabled?: boolean;
+  /** Preon flash colour (falls back to baseColor when unset). */
+  preonColor?: RGB;
+  /** Preon flash duration in ms. Default 300. */
+  preonMs?: number;
+
+  // ── Spatial Blast (Edit Mode extension) ──
+  /** When set, blast deflects appear at this position along the blade (0..1). Undefined = random position (default OS behaviour). */
+  blastPosition?: number;
+
   // Style-specific params
   gradientEnd?: RGB;
   edgeColor?: RGB;

@@ -44,6 +44,14 @@ export interface ReconstructedConfig {
   lockupPosition?: number;
   /** Spatial lockup size (radius) 0..1 recovered from `ResponsiveLockupL<>` SIZE. */
   lockupRadius?: number;
+  /** True when a `TransitionEffectL<..., EFFECT_PREON>` layer is present. */
+  preonEnabled?: boolean;
+  /** Preon colour recovered from the preon layer's Rgb node. */
+  preonColor?: RGB;
+  /** Preon duration recovered from the preon layer's TrFade arg. */
+  preonMs?: number;
+  /** Spatial blast centre 0..1 recovered from `AlphaL<BlastL<...>, Bump<...>>` Bump position. */
+  blastPosition?: number;
   confidence: number;
   warnings: string[];
   rawAST: StyleNode;
@@ -386,6 +394,60 @@ function resolveSpatialLockup(ast: StyleNode): {
   return { lockupPosition: position, lockupRadius: radius };
 }
 
+/**
+ * Recover Preon config from a TransitionEffectL<..., EFFECT_PREON> layer
+ * (inverse of the Preon emission branch in buildEffectLayers).
+ */
+function resolvePreon(ast: StyleNode): {
+  preonEnabled?: boolean;
+  preonColor?: RGB;
+  preonMs?: number;
+} {
+  const nodes = findNodes(
+    ast,
+    (n) =>
+      n.name === 'TransitionEffectL' &&
+      n.args.length >= 2 &&
+      (n.args[1].name === 'EFFECT_PREON' ||
+        n.args[1].name === 'SaberBase::EFFECT_PREON'),
+  );
+  if (nodes.length === 0) return {};
+  const node = nodes[0];
+  const trConcat = node.args[0];
+  if (!trConcat || trConcat.name !== 'TrConcat') {
+    return { preonEnabled: true };
+  }
+  // Expect TrConcat<TrInstant, Rgb<...>, TrFade<ms>>
+  const colorNode = trConcat.args[1];
+  const fadeNode = trConcat.args[2];
+  const preonColor = colorNode ? extractRGB(colorNode) ?? undefined : undefined;
+  const preonMs =
+    fadeNode && fadeNode.name === 'TrFade'
+      ? extractInt(fadeNode.args[0]) ?? undefined
+      : undefined;
+  return { preonEnabled: true, preonColor, preonMs };
+}
+
+/**
+ * Recover spatial-blast position from an AlphaL<BlastL<...>, Bump<...>>
+ * wrapper (inverse of the spatial-blast emission branch).
+ */
+function resolveSpatialBlast(ast: StyleNode): { blastPosition?: number } {
+  const nodes = findNodes(
+    ast,
+    (n) =>
+      n.name === 'AlphaL' &&
+      n.args.length >= 2 &&
+      n.args[0]?.name === 'BlastL' &&
+      n.args[1]?.name === 'Bump',
+  );
+  if (nodes.length === 0) return {};
+  const bump = nodes[0].args[1];
+  const posRaw = extractInt(bump.args[0]);
+  if (posRaw === null) return {};
+  return { blastPosition: posRaw / 32768 };
+}
+
 /** Find the first color in the tree that isn't inside a known effect layer. */
 function findBaseColor(ast: StyleNode): RGB | undefined {
   const effectLayerNames = new Set([
@@ -437,6 +499,12 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
 
   // Spatial lockup params from ResponsiveLockupL<>, if present.
   const spatialLockup = resolveSpatialLockup(ast);
+
+  // Preon config from TransitionEffectL<..., EFFECT_PREON>, if present.
+  const preon = resolvePreon(ast);
+
+  // Spatial blast position from AlphaL<BlastL<>, Bump<>>, if present.
+  const spatialBlast = resolveSpatialBlast(ast);
 
   // Look for InOutTrL to extract ignition/retraction. Forward emits
   // `InOutTrL<ignitionTr, retractionTr>` — exactly 2 args, NOT 3+; the old
@@ -505,6 +573,10 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
     retractionMs,
     lockupPosition: spatialLockup.lockupPosition,
     lockupRadius: spatialLockup.lockupRadius,
+    preonEnabled: preon.preonEnabled,
+    preonColor: preon.preonColor,
+    preonMs: preon.preonMs,
+    blastPosition: spatialBlast.blastPosition,
     confidence: Math.round(confidence * 100) / 100,
     warnings,
     rawAST: ast,
