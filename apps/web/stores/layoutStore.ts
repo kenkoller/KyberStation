@@ -49,6 +49,7 @@ export type PanelId =
   | 'storage-budget'
   | 'saber-profiles'
   | 'card-writer'
+  | 'flash-to-saber'
   | 'compatibility'
   | 'oled-editor';
 
@@ -123,9 +124,10 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
   { id: 'saber-profiles',      label: 'Saber Profiles',     description: 'Manage saber identities and preset cards',                 tab: 'output',   defaultColumn: 0, defaultOrder: 1, collapsible: false },
   // Column 1: Code Output (expanded, primary)
   { id: 'code-output',         label: 'Code Output',        description: 'Generated ProffieOS C++ config code',                      tab: 'output',   defaultColumn: 1, defaultOrder: 0, collapsible: false },
-  // Column 2: Storage Budget + Card Writer (the export flow)
+  // Column 2: Storage Budget + Card Writer + Flash to Saber (the export + flash flow)
   { id: 'storage-budget',      label: 'Storage Budget',     description: 'Flash memory usage estimation',                            tab: 'output',   defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'card-writer',         label: 'Card Writer',        description: 'Export config and fonts to SD card',                       tab: 'output',   defaultColumn: 2, defaultOrder: 1, collapsible: true  },
+  { id: 'flash-to-saber',      label: 'Flash to Saber',     description: 'Flash firmware over WebUSB (STM32 DFU)',                   tab: 'output',   defaultColumn: 2, defaultOrder: 2, collapsible: true  },
   // Column 3: Secondary / advanced panels (collapsed by default)
   { id: 'power-draw',          label: 'Power Draw',         description: 'Estimate battery consumption and LED power draw',          tab: 'output',   defaultColumn: 3, defaultOrder: 0, collapsible: true  },
   { id: 'compatibility',       label: 'Compatibility',      description: 'Board compatibility matrix for your config',               tab: 'output',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
