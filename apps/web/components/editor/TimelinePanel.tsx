@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTimelineStore } from '@/stores/timelineStore';
 import type { TimelineEventType, EasingCurve } from '@/stores/timelineStore';
+import { EasingCurvePreview } from '@/components/editor/EasingCurvePreview';
 import {
   ANIMATION_TEMPLATES,
   getCategories,
@@ -679,17 +680,33 @@ export function TimelinePanel() {
                   Easing
                   <HelpTooltip text="Acceleration curve for the effect animation. Linear = constant speed. Ease Out = fast start, slow end (natural). Bounce/Elastic add spring physics." proffie="TrEaseX<>" position="bottom" />
                 </label>
-                <select
-                  id={`event-easing-${evt.id}`}
-                  value={evt.easingCurve}
-                  disabled={isInstant}
-                  onChange={(e) => updateEventEasing(evt.id, e.target.value as EasingCurve)}
-                  className="touch-target w-full px-1 py-0.5 rounded bg-bg-surface border border-border-subtle text-ui-sm text-text-primary outline-none focus:border-accent-border disabled:opacity-40"
-                >
-                  {EASING_OPTIONS.map((e) => (
-                    <option key={e} value={e}>{EASING_LABELS[e]}</option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    id={`event-easing-${evt.id}`}
+                    value={evt.easingCurve}
+                    disabled={isInstant}
+                    onChange={(e) => updateEventEasing(evt.id, e.target.value as EasingCurve)}
+                    className="touch-target flex-1 px-1 py-0.5 rounded bg-bg-surface border border-border-subtle text-ui-sm text-text-primary outline-none focus:border-accent-border disabled:opacity-40"
+                  >
+                    {EASING_OPTIONS.map((e) => (
+                      <option key={e} value={e}>{EASING_LABELS[e]}</option>
+                    ))}
+                  </select>
+                  {/* Live SVG preview of the chosen curve. Disabled events
+                      render in muted grey so it's obvious the selector is
+                      greyed-out too. */}
+                  <div
+                    className="shrink-0 rounded bg-bg-surface border border-border-subtle px-1 py-0.5"
+                    title={`${EASING_LABELS[evt.easingCurve]} curve`}
+                    style={{ opacity: isInstant ? 0.3 : 1 }}
+                  >
+                    <EasingCurvePreview
+                      curve={evt.easingCurve}
+                      color={isInstant ? 'rgb(var(--text-muted))' : color}
+                      width={70}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Intensity */}
