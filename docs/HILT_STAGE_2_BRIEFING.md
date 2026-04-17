@@ -158,13 +158,26 @@ stay centered.
 
 ---
 
-## Known limitation — Next.js file watcher in `.claude/` worktrees
+## Dev server / worktree gotcha
 
-If your worktree lives under `.claude/worktrees/...`, Next.js's dev
-file watcher does not pick up edits (verified on Next 14.2 +
-chokidar). Tests and typecheck are the authoritative verification.
-Visual preview must happen either from a worktree outside `.claude/`
-or after merging to the main repo checkout.
+`preview_start` reads `.claude/launch.json` from a fixed location
+(usually the main repo root, not the worktree). If you call it with
+the default config, you'll be serving the **main repo's code, not
+your worktree's**, and your edits will appear invisible — this is
+how Stage 1 initially got confused. Worktree-local changes compile
+fine; the bundler was just pointed at the wrong tree.
 
-This blocks nothing for Stage 2 parts — they're pure data + inline
-SVG path strings with full test coverage.
+To verify in-browser from this worktree specifically, either:
+
+1. Add a config entry to the main `.claude/launch.json` with an
+   explicit `-C <absolute-worktree-path>` arg (see the
+   `hilt-library-worktree` entry added during Stage 1), then
+   `preview_start` by that name.
+2. Run `pnpm --filter=@kyberstation/web exec next dev` directly
+   from the worktree via the Bash tool (remember: the shell cwd
+   can reset between Bash calls — use absolute paths or explicit
+   `cd` every time).
+
+Tests and typecheck run fine from any cwd because pnpm resolves
+the workspace via `pnpm-workspace.yaml` from the invoking
+directory.
