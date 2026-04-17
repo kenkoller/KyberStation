@@ -367,7 +367,9 @@ export function findLandmarkName(hsl: HSL): LandmarkHit | null {
 // (single-axis nudges). The first trigger wins — "Shadowed Obi-Wan Azure"
 // beats "Deep Obi-Wan Azure" when both apply.
 
-const COMPOUND_THRESHOLD = 10; // |ds| and |dl| must BOTH clear this
+const COMPOUND_THRESHOLD = 12; // |ds| and |dl| must BOTH clear this — raised from
+                               // 10 so mid-saturation reds don't spuriously get
+                               // "Bleached"/"Shadowed" for small, coupled shifts.
 const HUE_SHIFT_MIN = 5;
 const HUE_SHIFT_MAX = 15;
 const EMBER_FROST_MIN = 15;
@@ -456,35 +458,35 @@ const MOOD_POOLS: readonly MoodPool[] = [
   {
     from: 15,
     to: 45,
-    moods: ['Ember', 'Copper', 'Flare', 'Kindle', 'Sunforge', 'Mustafar-Lit'],
+    moods: ['Ember', 'Copper', 'Flare', 'Kindle', 'Sunforge', 'Mustafar'],
     sectors: ['Rim', 'Belt', 'Expanse', 'Forge', 'Outer Rim', 'Crater'],
   },
   // Amber / yellow (45-65)
   {
     from: 45,
     to: 65,
-    moods: ['Dawn', 'Vigil', 'Gold', 'Sentinel-Flame', 'Sunlit', 'Vigilant'],
+    moods: ['Dawn', 'Vigil', 'Gold', 'Sentinel', 'Sunlit', 'Vigilant'],
     sectors: ['Expanse', 'Dawn Quadrant', 'Reach', 'Outer Rim', 'Meridian'],
   },
   // Yellow-green / chartreuse (65-90)
   {
     from: 65,
     to: 90,
-    moods: ['Verdant', 'Mist', 'Vine', 'Sporelight', 'Felucia-Spore', 'Canopy'],
+    moods: ['Verdant', 'Mist', 'Vine', 'Sporelight', 'Felucia', 'Canopy'],
     sectors: ['Reach', 'Canopy', 'Sector', 'Overgrowth', 'Marsh'],
   },
   // Green (90-160)
   {
     from: 90,
     to: 160,
-    moods: ['Verdant', 'Mistlight', 'Living', 'Grove', 'Kashyyyk-Lit', 'Wild'],
+    moods: ['Verdant', 'Mistlight', 'Living', 'Grove', 'Kashyyyk', 'Wild'],
     sectors: ['Reach', 'Canopy', 'Sector', 'Expanse', 'Hollow', 'Grove'],
   },
   // Cyan / teal (160-200)
   {
     from: 160,
     to: 200,
-    moods: ['Frost', 'Tideborn', 'Kamino', 'Pale', 'Ilum-Pure', 'Glacial'],
+    moods: ['Frost', 'Tideborn', 'Kamino', 'Pale', 'Ilum', 'Glacial'],
     sectors: ['Margin', 'Tideline', 'Sector', 'Expanse', 'Reef', 'Drift'],
   },
   // Blue (200-250)
@@ -498,14 +500,14 @@ const MOOD_POOLS: readonly MoodPool[] = [
   {
     from: 250,
     to: 290,
-    moods: ['Dusk', 'Twilight', 'Hollow', 'Violet-Hush', 'Between-Worlds'],
+    moods: ['Dusk', 'Twilight', 'Hollow', 'Violet-Hush', 'Liminal'],
     sectors: ['Quadrant', 'Expanse', 'Sector', 'Margin', 'Hollow'],
   },
   // Pink / magenta (290-345)
   {
     from: 290,
     to: 345,
-    moods: ['Nightsister', 'Zeffo', 'Dathomiri', 'Magick-Kissed', 'Witch-Spoken'],
+    moods: ['Nightsister', 'Zeffo', 'Dathomiri', 'Magick', 'Witchbound'],
     sectors: ['Expanse', 'Coven', 'Quadrant', 'Sector', 'Bloom'],
   },
 ];

@@ -295,12 +295,19 @@ describe('applyModifier — modifier precedence and boundaries', () => {
   });
 
   it('Shadowed wins when BOTH darker and less saturated', () => {
-    // |ds| = 12, |dl| = 12, both negative. Compound takes precedence.
-    expect(applyModifier(anchor, { h: 200, s: 58, l: 38 })).toBe('Shadowed Anchor');
+    // |ds| = 14, |dl| = 14, both negative. Compound takes precedence.
+    expect(applyModifier(anchor, { h: 200, s: 56, l: 36 })).toBe('Shadowed Anchor');
   });
 
   it('Bleached wins when lighter AND less saturated', () => {
-    expect(applyModifier(anchor, { h: 200, s: 58, l: 62 })).toBe('Bleached Anchor');
+    expect(applyModifier(anchor, { h: 200, s: 56, l: 64 })).toBe('Bleached Anchor');
+  });
+
+  it('small coupled shifts do NOT trigger compound modifiers', () => {
+    // |ds|=10, |dl|=10 — both below the 12-unit compound threshold.
+    // Should fall through to single-axis modifiers (neither fires at this size)
+    // and return the bare landmark name.
+    expect(applyModifier(anchor, { h: 200, s: 60, l: 60 })).toBe('Anchor');
   });
 
   it('Dawn- / Dusk- fires only for small hue shifts', () => {
@@ -361,6 +368,21 @@ describe('coordinateMoodName', () => {
     expect(name).toMatch(/^(Azure|Deepwater|Dawn|Azurine|Reverent|Still) /);
   });
 
+  it('mood words stay short enough to keep Tier 3 names readable', () => {
+    // Tier 3 names stack {mood} {sector} {HEX}-{HEX}. Long compound mood
+    // words (like the dropped "Sentinel-Flame", "Felucia-Spore") made these
+    // overflow tooltips. Cap mood ≤ 12 chars, sector ≤ 14 chars.
+    const hues = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+    const sats = [50, 5];
+    for (const h of hues) {
+      for (const s of sats) {
+        const pool = _internals.selectMoodPool({ h, s, l: 50 });
+        for (const m of pool.moods) expect(m.length).toBeLessThanOrEqual(12);
+        for (const sec of pool.sectors) expect(sec.length).toBeLessThanOrEqual(14);
+      }
+    }
+  });
+
   it('uses achromatic-pool mood words when saturation is very low', () => {
     const name = coordinateMoodName({ h: 90, s: 5, l: 55 });
     expect(name).toMatch(/^(Beskar|Ashgrey|Unknown|Ghost|Hollow|Durasteel) /);
@@ -393,6 +415,27 @@ describe('lore preservation — curated character names still land', () => {
   ])('%s landmark survives as-is', (name, h, s, l) => {
     const { r, g, b } = hslToRgb(h, s, l);
     expect(getSaberColorName(r, g, b)).toBe(name);
+  });
+});
+
+// ─── Regression: compound modifiers don't fire on small coupled shifts ───
+
+describe('regression — compound threshold tuned for mid-saturation reds', () => {
+  it('#CC3333 (mid-sat red) does NOT get "Bleached" prefix', () => {
+    // Raw QA flag: before the compound threshold was raised from 10 to 12,
+    // this color produced "Bleached Inquisitor Red" — semantically off because
+    // the shift from the landmark (ds=-12, dl=+10) is too small to feel
+    // "bleached" in the faded-fabric sense.
+    const name = getSaberColorName(0xcc, 0x33, 0x33);
+    expect(name).not.toContain('Bleached');
+  });
+
+  it('#CC3333 lands on a reasonable red landmark or single-axis modifier', () => {
+    const name = getSaberColorName(0xcc, 0x33, 0x33);
+    // Should be a bare landmark name or a Pale/Deep/Vivid/Muted variant — no
+    // compound modifier, no coord-mood fallback.
+    expect(name).not.toMatch(/ [0-9A-F]{2}-[0-9A-F]{2}$/);
+    expect(name).not.toMatch(/^(Shadowed|Bleached) /);
   });
 });
 
