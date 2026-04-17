@@ -63,6 +63,14 @@ export async function connectProffieboardDfu(): Promise<ConnectedProffieboard> {
 
   const dfu = new DfuDevice(device, interfaceNumber);
   await dfu.loadAlternates();
+  // Read the bootloader's advertised wTransferSize. If this fails we treat
+  // it as non-fatal and fall back to DFU_DEFAULT_TRANSFER_SIZE — some older
+  // ST bootloaders return a short descriptor but still flash correctly.
+  try {
+    await dfu.readFunctionalDescriptor();
+  } catch {
+    // Intentional swallow — flasher will use the fallback.
+  }
 
   // STM32 typically exposes Internal Flash as alternate 0, but we don't hard-
   // code the index — select the alternate whose parsed memory region covers

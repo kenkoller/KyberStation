@@ -29,6 +29,8 @@ export class DfuSeFlasher {
       startAddress = STM32L4_FLASH_BASE,
       onProgress,
       signal,
+      verifyAfterWrite = true,
+      dryRun = false,
     } = options;
 
     if (firmware.byteLength === 0) {
@@ -71,12 +73,14 @@ export class DfuSeFlasher {
     emit(progress, {
       phase: 'erasing',
       fraction: 0,
-      message: `Erasing ${pages.length} page${pages.length === 1 ? '' : 's'}`,
+      message: dryRun
+        ? `DRY RUN — would erase ${pages.length} page${pages.length === 1 ? '' : 's'}`
+        : `Erasing ${pages.length} page${pages.length === 1 ? '' : 's'}`,
     });
 
     for (const pageAddress of pages) {
       this.checkAbort(signal);
-      await this.eraseePage(pageAddress);
+      if (!dryRun) await this.eraseePage(pageAddress);
       progress.eraseDone++;
       // Erase phase is short; weight it as the first 10% of total progress.
       emit(progress, {
@@ -89,16 +93,20 @@ export class DfuSeFlasher {
     //    block number ≥2 as an offset from the pointer set by SET_ADDRESS.
     //    So we set the pointer to `startAddress`, then download blocks
     //    starting at block 2.
-    await this.setAddressPointer(startAddress);
+    if (!dryRun) await this.setAddressPointer(startAddress);
     this.checkAbort(signal);
 
-    const transferSize = DFU_DEFAULT_TRANSFER_SIZE;
+    // Prefer the bootloader's advertised wTransferSize when we've read the
+    // functional descriptor. Fall back to the spec-typical 2048 otherwise.
+    const transferSize = this.dfu.getTransferSize(DFU_DEFAULT_TRANSFER_SIZE);
     const totalBlocks = Math.ceil(firmware.byteLength / transferSize);
 
     emit(progress, {
       phase: 'writing',
       fraction: 0.1,
-      message: `Writing ${firmware.byteLength} bytes (${totalBlocks} blocks)`,
+      message: dryRun
+        ? `DRY RUN — would write ${firmware.byteLength} bytes (${totalBlocks} blocks of up to ${transferSize} bytes each)`
+        : `Writing ${firmware.byteLength} bytes (${totalBlocks} blocks)`,
       bytesWritten: 0,
       bytesTotal: firmware.byteLength,
     });
@@ -109,33 +117,60 @@ export class DfuSeFlasher {
       const blockEnd = Math.min(blockStart + transferSize, firmware.byteLength);
       const chunk = firmware.subarray(blockStart, blockEnd);
 
-      // DfuSe block numbering: block 0 = command, block 1 reserved,
-      // data starts at block 2 (see AN3156 §4.2). Copy the subarray into
-      // a fresh ArrayBuffer so TypeScript doesn't widen the buffer type
-      // to ArrayBufferLike (which isn't assignable to BufferSource in
-      // some lib.dom.d.ts revisions).
-      const blockCopy = new Uint8Array(chunk.length);
-      blockCopy.set(chunk);
-      await this.dfu.download(i + 2, blockCopy);
-      await this.dfu.pollUntilIdle(
-        [DfuState.dfuDNLOAD_IDLE],
-        this.sleep,
-      );
+      if (!dryRun) {
+        // DfuSe block numbering: block 0 = command, block 1 reserved,
+        // data starts at block 2 (see AN3156 §4.2). Copy the subarray into
+        // a fresh ArrayBuffer so TypeScript doesn't widen the buffer type
+        // to ArrayBufferLike (which isn't assignable to BufferSource in
+        // some lib.dom.d.ts revisions).
+        const blockCopy = new Uint8Array(chunk.length);
+        blockCopy.set(chunk);
+        await this.dfu.download(i + 2, blockCopy);
+        await this.dfu.pollUntilIdle([DfuState.dfuDNLOAD_IDLE], this.sleep);
+      }
 
       progress.bytesWritten = blockEnd;
       emit(progress, {
         phase: 'writing',
-        fraction: 0.1 + 0.8 * (progress.bytesWritten / Math.max(1, progress.bytesTotal)),
+        fraction: 0.1 + 0.7 * (progress.bytesWritten / Math.max(1, progress.bytesTotal)),
         bytesWritten: progress.bytesWritten,
         bytesTotal: progress.bytesTotal,
       });
     }
 
-    // 4) Manifest — the device commits the new firmware. A zero-length
+    // 4) Optional verification — UPLOAD every block back from the device
+    //    and compare against the source firmware. Catches bit-flips /
+    //    incomplete writes that would otherwise leave the user trusting
+    //    a corrupt image.
+    if (verifyAfterWrite && !dryRun) {
+      await this.verifyFlash({
+        firmware,
+        startAddress,
+        transferSize,
+        totalBlocks,
+        onProgress,
+        signal,
+      });
+    }
+
+    // 5) Manifest — the device commits the new firmware. A zero-length
     //    DNLOAD at block 0 tells the device "download complete"; the
     //    subsequent GET_STATUS transitions through dfuMANIFEST_SYNC →
     //    dfuMANIFEST → dfuMANIFEST_WAIT_RESET.
     this.checkAbort(signal);
+
+    if (dryRun) {
+      emit(progress, {
+        phase: 'done',
+        fraction: 1,
+        message:
+          'DRY RUN complete. No bytes were written. Review the protocol trace above, then disable dry-run to perform the real flash.',
+        bytesWritten: progress.bytesTotal,
+        bytesTotal: progress.bytesTotal,
+      });
+      return;
+    }
+
     emit(progress, {
       phase: 'manifesting',
       fraction: 0.95,
@@ -152,6 +187,60 @@ export class DfuSeFlasher {
       bytesWritten: progress.bytesTotal,
       bytesTotal: progress.bytesTotal,
     });
+  }
+
+  /**
+   * Read every block we just wrote and compare to the source firmware.
+   * DfuSe reuses the block-number scheme from DNLOAD: block N ≥ 2 reads
+   * from `address_pointer + (N - 2) * transferSize`.
+   */
+  private async verifyFlash(args: {
+    firmware: Uint8Array;
+    startAddress: number;
+    transferSize: number;
+    totalBlocks: number;
+    onProgress?: (progress: FlashProgress) => void;
+    signal?: AbortSignal;
+  }): Promise<void> {
+    const { firmware, startAddress, transferSize, totalBlocks, onProgress, signal } = args;
+
+    // Re-set the address pointer so UPLOAD starts at the same base address.
+    await this.setAddressPointer(startAddress);
+    this.checkAbort(signal);
+
+    onProgress?.({
+      phase: 'verifying',
+      fraction: 0.8,
+      message: `Verifying ${firmware.byteLength} bytes`,
+      bytesWritten: 0,
+      bytesTotal: firmware.byteLength,
+    });
+
+    let bytesVerified = 0;
+    for (let i = 0; i < totalBlocks; i++) {
+      this.checkAbort(signal);
+      const blockStart = i * transferSize;
+      const blockEnd = Math.min(blockStart + transferSize, firmware.byteLength);
+      const expected = firmware.subarray(blockStart, blockEnd);
+
+      const readBack = await this.dfu.upload(i + 2, expected.length);
+
+      for (let j = 0; j < expected.length; j++) {
+        if (readBack[j] !== expected[j]) {
+          throw new DfuError(
+            `Verification failed at block ${i + 2}, byte offset ${blockStart + j}: expected 0x${expected[j].toString(16).padStart(2, '0')}, got 0x${readBack[j].toString(16).padStart(2, '0')}`,
+          );
+        }
+      }
+
+      bytesVerified = blockEnd;
+      onProgress?.({
+        phase: 'verifying',
+        fraction: 0.8 + 0.15 * (bytesVerified / Math.max(1, firmware.byteLength)),
+        bytesWritten: bytesVerified,
+        bytesTotal: firmware.byteLength,
+      });
+    }
   }
 
   // ─── Internals ─────────────────────────────────────────────────────────────

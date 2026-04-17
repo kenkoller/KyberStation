@@ -145,6 +145,25 @@ export interface DfuStatusResult {
 }
 
 /**
+ * DFU functional descriptor (class-specific descriptor type 0x21), parsed
+ * from the 9-byte USB descriptor the bootloader returns for a
+ * GET_DESCRIPTOR(0x21, 0) standard request. Authoritative source of the
+ * bootloader's advertised `wTransferSize` — see USB DFU 1.1 §4.1.3.
+ */
+export interface DfuFunctionalDescriptor {
+  /** bLength. Always 9 for DFU 1.1. */
+  length: number;
+  /** bmAttributes — bit 0 = can DNLOAD, bit 1 = can UPLOAD, bit 2 = manifest tolerant, bit 3 = will detach. */
+  attributes: number;
+  /** wDetachTimeOut in ms. */
+  detachTimeoutMs: number;
+  /** wTransferSize — the maximum bytes per DFU_DNLOAD / DFU_UPLOAD. */
+  transferSize: number;
+  /** bcdDFUVersion — e.g. 0x0110 for DFU 1.1. */
+  dfuVersion: number;
+}
+
+/**
  * A DFU-capable interface alternate setting. STM32 exposes one alternate per
  * flash region (Internal Flash, Option Bytes, OTP, Device Feature).
  * The alternate's name encodes the region's address range — we parse it to
@@ -195,4 +214,20 @@ export interface FlashOptions {
   onProgress?: (progress: FlashProgress) => void;
   /** If set, abort the flash when this AbortSignal fires. */
   signal?: AbortSignal;
+  /**
+   * If true, after the DNLOAD phase completes, UPLOAD each block back and
+   * compare bytes to the source firmware. Throws `DfuError` with the block
+   * index + mismatch offset on failure. Defaults to `true` — verification
+   * is cheap relative to the flash itself and catches silent corruption.
+   */
+  verifyAfterWrite?: boolean;
+  /**
+   * Dry-run mode. When true, the flasher still reads the memory layout,
+   * selects the alternate, and computes the exact byte stream it would
+   * send — but skips every DNLOAD. Every step is reported through
+   * `onProgress` so the UI can render a protocol trace without touching
+   * flash. Useful for verifying the plan against a real board before
+   * committing to a write.
+   */
+  dryRun?: boolean;
 }

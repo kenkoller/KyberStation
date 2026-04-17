@@ -71,6 +71,32 @@ describe('DfuDevice.loadAlternates', () => {
   });
 });
 
+describe('DfuDevice.readFunctionalDescriptor', () => {
+  it('parses the 9-byte DFU functional descriptor', async () => {
+    const { dfu } = await makeDfu();
+    const desc = await dfu.readFunctionalDescriptor();
+    expect(desc.length).toBe(9);
+    expect(desc.transferSize).toBe(2048);
+    expect(desc.dfuVersion).toBe(0x0110);
+    expect(desc.detachTimeoutMs).toBe(255);
+    // bit 0 (can DNLOAD) + bit 1 (can UPLOAD) + bit 3 (manifest tolerant)
+    expect(desc.attributes).toBe(0b00001011);
+  });
+
+  it('honours a non-standard wTransferSize from the bootloader', async () => {
+    const { dfu } = await makeDfu({ transferSize: 1024 });
+    const desc = await dfu.readFunctionalDescriptor();
+    expect(desc.transferSize).toBe(1024);
+    expect(dfu.getTransferSize(2048)).toBe(1024);
+  });
+
+  it('falls back when the descriptor has not been read', async () => {
+    const { dfu } = await makeDfu();
+    expect(dfu.functionalDescriptor).toBeUndefined();
+    expect(dfu.getTransferSize(2048)).toBe(2048);
+  });
+});
+
 describe('DfuDevice.pollUntilIdle', () => {
   it('returns once the device transitions to an expected state', async () => {
     // busyPolls = 2 → device reports DNBUSY twice, then DNLOAD_IDLE.
@@ -98,5 +124,23 @@ describe('DfuDevice.pollUntilIdle', () => {
     await expect(dfu.pollUntilIdle([DfuState.dfuDNLOAD_IDLE], fakeSleep)).rejects.toThrow(
       DfuError,
     );
+  });
+
+  it('honours the bwPollTimeout reported by the device', async () => {
+    // Report a 50 ms poll timeout, with 2 DNBUSY polls → expect 2 sleeps of 50 ms.
+    const { dfu } = await makeDfu({ busyPolls: 2, pollTimeoutMs: 50 });
+    await dfu.download(0, new Uint8Array([0x21, 0, 0, 0, 0x08]));
+
+    const sleepCalls: number[] = [];
+    const fakeSleep = async (ms: number) => {
+      sleepCalls.push(ms);
+    };
+
+    await dfu.pollUntilIdle([DfuState.dfuDNLOAD_IDLE], fakeSleep);
+    // We should have slept at least once between GET_STATUS responses where
+    // the state was still busy, and the value should match what the device
+    // advertised — not a hardcoded number on our side.
+    expect(sleepCalls.length).toBeGreaterThan(0);
+    expect(sleepCalls.every((ms) => ms === 50)).toBe(true);
   });
 });

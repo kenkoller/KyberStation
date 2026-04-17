@@ -2,6 +2,7 @@ import type {
   USBDevice,
   DfuStatusResult,
   DfuInterfaceAlternate,
+  DfuFunctionalDescriptor,
   USBAlternateInterface,
 } from './types';
 import { DfuStatus, DfuState } from './types';
@@ -41,6 +42,12 @@ export class DfuError extends Error {
 export class DfuDevice {
   public alternates: DfuInterfaceAlternate[] = [];
   public activeAlternate: number = 0;
+  /**
+   * Functional descriptor read from the device. `undefined` until
+   * `readFunctionalDescriptor()` is called; most flash operations should
+   * pull wTransferSize from here rather than hardcoding a constant.
+   */
+  public functionalDescriptor: DfuFunctionalDescriptor | undefined;
 
   constructor(
     public readonly device: USBDevice,
@@ -93,6 +100,58 @@ export class DfuDevice {
   async selectAlternate(alternateSetting: number): Promise<void> {
     await this.device.selectAlternateInterface(this.interfaceNumber, alternateSetting);
     this.activeAlternate = alternateSetting;
+  }
+
+  /**
+   * Read the DFU functional descriptor (type 0x21). Populates
+   * `this.functionalDescriptor` and returns the parsed result.
+   *
+   * Sent as a standard GET_DESCRIPTOR request with
+   * `wValue = (0x21 << 8) | 0`. The descriptor is 9 bytes (USB DFU 1.1
+   * §4.1.3). We prefer this over a hardcoded transfer-size constant
+   * because the bootloader is the source of truth.
+   *
+   * Throws `DfuError` if the bootloader returns a short / non-DFU
+   * descriptor, which means we're not talking to a DFU device.
+   */
+  async readFunctionalDescriptor(): Promise<DfuFunctionalDescriptor> {
+    const result = await this.device.controlTransferIn(
+      {
+        requestType: 'standard',
+        recipient: 'interface',
+        request: 0x06, // GET_DESCRIPTOR
+        value: 0x21 << 8,
+        index: this.interfaceNumber,
+      },
+      9,
+    );
+    if (result.status !== 'ok' || !result.data || result.data.byteLength < 9) {
+      throw new DfuError('GET_DESCRIPTOR(DFU functional) returned a short or stalled response');
+    }
+    const data = result.data;
+    if (data.getUint8(1) !== 0x21) {
+      throw new DfuError(
+        `Device returned descriptor type 0x${data.getUint8(1).toString(16)} — expected 0x21 (DFU functional)`,
+      );
+    }
+    const desc: DfuFunctionalDescriptor = {
+      length: data.getUint8(0),
+      attributes: data.getUint8(2),
+      detachTimeoutMs: data.getUint16(3, true),
+      transferSize: data.getUint16(5, true),
+      dfuVersion: data.getUint16(7, true),
+    };
+    this.functionalDescriptor = desc;
+    return desc;
+  }
+
+  /**
+   * wTransferSize from the functional descriptor, if it's been read.
+   * Falls back to the fallback value (typically `DFU_DEFAULT_TRANSFER_SIZE`)
+   * when the descriptor hasn't been loaded yet.
+   */
+  getTransferSize(fallback: number): number {
+    return this.functionalDescriptor?.transferSize ?? fallback;
   }
 
   // ─── DFU class requests ────────────────────────────────────────────────────

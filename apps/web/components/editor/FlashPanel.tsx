@@ -88,6 +88,7 @@ export function FlashPanel() {
   const [selectedVariant, setSelectedVariant] = useState<string>(FIRMWARE_VARIANTS[0].id);
   const [customFirmware, setCustomFirmware] = useState<Uint8Array | null>(null);
   const [customFirmwareName, setCustomFirmwareName] = useState<string | null>(null);
+  const [dryRun, setDryRun] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -203,6 +204,7 @@ export function FlashPanel() {
     try {
       await flasher.flash({
         firmware,
+        dryRun,
         signal: ctrl.signal,
         onProgress: (progress) => {
           setState((prev) =>
@@ -214,8 +216,9 @@ export function FlashPanel() {
       await disconnectProffieboardDfu(board);
       setState({
         kind: 'done',
-        message:
-          'Flash complete. Unplug and reconnect the board — it will boot into the new firmware.',
+        message: dryRun
+          ? 'Dry run complete. No bytes were written. Disable dry-run and run again to perform the real flash.'
+          : 'Flash complete. Unplug and reconnect the board — it will boot into the new firmware.',
       });
     } catch (err) {
       await disconnectProffieboardDfu(board);
@@ -229,7 +232,7 @@ export function FlashPanel() {
     } finally {
       abortRef.current = null;
     }
-  }, [state, selectedVariant, customFirmware]);
+  }, [state, selectedVariant, customFirmware, dryRun]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -282,6 +285,8 @@ export function FlashPanel() {
             {state.kind === 'connected' && (
               <ConnectedActions
                 board={state.board}
+                dryRun={dryRun}
+                onDryRunToggle={setDryRun}
                 onFlash={handleFlash}
                 onDisconnect={async () => {
                   await disconnectProffieboardDfu(state.board);
@@ -491,10 +496,14 @@ function StatusLine({ children }: { children: React.ReactNode }) {
 
 function ConnectedActions({
   board,
+  dryRun,
+  onDryRunToggle,
   onFlash,
   onDisconnect,
 }: {
   board: ConnectedProffieboard;
+  dryRun: boolean;
+  onDryRunToggle: (value: boolean) => void;
   onFlash: () => void;
   onDisconnect: () => void;
 }) {
@@ -510,6 +519,31 @@ function ConnectedActions({
       >
         <strong>Connected.</strong> {board.summary}
       </div>
+
+      <label
+        className="flex items-start gap-2 px-3 py-2 rounded-panel border cursor-pointer transition-colors"
+        style={{
+          background: dryRun ? 'rgb(var(--status-info) / 0.08)' : 'rgb(var(--bg-surface))',
+          borderColor: dryRun ? 'rgb(var(--status-info) / 0.35)' : 'rgb(var(--border-subtle))',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={dryRun}
+          onChange={(e) => onDryRunToggle(e.target.checked)}
+          className="mt-0.5 accent-accent shrink-0"
+        />
+        <div className="min-w-0">
+          <div className="text-ui-xs text-text-primary">
+            <strong>Dry run</strong> — simulate the flash without writing any bytes
+          </div>
+          <div className="text-ui-xs text-text-muted mt-0.5">
+            Runs the full protocol sequence and reports progress, but skips every DNLOAD. Useful
+            for a first-connection sanity check. No data is committed to flash memory.
+          </div>
+        </div>
+      </label>
+
       <div className="flex gap-2">
         <button
           type="button"
@@ -517,7 +551,7 @@ function ConnectedActions({
           className="flex-1 px-4 py-2 rounded text-ui-sm font-medium transition-colors
             bg-accent text-white hover:bg-accent/90"
         >
-          Flash firmware
+          {dryRun ? 'Run dry run' : 'Flash firmware'}
         </button>
         <button
           type="button"

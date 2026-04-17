@@ -236,13 +236,44 @@ that offset puts the first 2 KiB of firmware at the wrong address.
 
 `apps/web/tests/webusb/mockUsbDevice.ts` implements a pure-TypeScript
 STM32 DfuSe mock: it tracks the address pointer, records erased pages,
-simulates a DNBUSY→DNLOAD_IDLE transition, and verifies flash contents
-against a simulated 0xff-initialised memory map. Exercised by:
+simulates a DNBUSY→DNLOAD_IDLE transition, serves the 9-byte DFU
+functional descriptor, and verifies flash contents against a simulated
+0xff-initialised memory map. The mock's advertised flash layout
+defaults to the real STM32L452RE descriptor (256 × 2 KiB = 512 KiB);
+tests can override for V2's L433CC, custom wTransferSize values, or
+silent-corruption scenarios.
+
+Exercised by:
 
 ```bash
 pnpm --filter @kyberstation/web test tests/webusb
 ```
 
-30 tests cover layout parsing, every DFU class request, poll-until-idle,
-the full successful flash round-trip, and every error path
-(empty firmware, oversized firmware, mid-flash dfuERROR, AbortSignal).
+**43 tests** cover:
+
+- Memory-layout string parsing (multi-region, flag interpretation, malformed inputs)
+- DFU class requests (GET_STATUS, GET_STATE, CLR_STATUS, ABORT, DNLOAD, UPLOAD) + standard GET_DESCRIPTOR(0x21) for the functional descriptor
+- `pollUntilIdle` honours the device-reported `bwPollTimeout` between GET_STATUS calls
+- Successful flash round-trip including SET_ADDRESS, ERASE, DNLOAD, MANIFEST
+- **UPLOAD-based readback verification** catches silent flash corruption (bit flips during write)
+- **Dry-run mode** runs the full protocol sequence without issuing a single DNLOAD
+- Bootloader `wTransferSize` overrides the fallback (tests a 1024-byte bootloader)
+- Realistic ~350 KB binary flashes end-to-end with byte-exact readback
+- Flash-size fit check against the 512 KB STM32L452RE region
+- Error paths: empty firmware, >1 MiB, doesn't fit in region, mid-flash dfuERROR, AbortSignal
+
+## Dry-run mode — recommended for first-hardware test
+
+The FlashPanel exposes a **Dry run** toggle. When on, the flasher:
+
+1. Reads the memory layout from the real bootloader.
+2. Walks through the erase / SET_ADDRESS / write / verify phases exactly as it would for a real flash.
+3. Skips every `DNLOAD` — the bootloader receives no writes.
+4. Reports progress through the same UI so you see the byte counts and block boundaries.
+
+This is the recommended path for the **first** WebUSB test against a
+real board: prove the memory layout is parsed correctly, the
+wTransferSize matches what the board advertises, and the block-count
+math lines up — all without committing anything to flash memory.
+
+After a successful dry run, disable the toggle and flash for real.

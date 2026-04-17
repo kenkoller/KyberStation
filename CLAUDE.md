@@ -573,6 +573,16 @@ Legend: ✅ shipped · 🔜 next sprint · 📋 planned (doc exists) · ⏸ defe
 
 ### Deferred items
 
+**Pending hardware validation:**
+
+- **WebUSB flash on real Proffieboard V3.9** — protocol is fully
+  exercised in 43 mock-based tests (including readback verification,
+  dry-run, bootloader-advertised wTransferSize). Must be smoke-tested
+  against real hardware in three phases: connect-only → dry run →
+  real flash. Checklist + success criteria + failure-mode playbook
+  in `docs/HARDWARE_VALIDATION_TODO.md`. Blocks moving the status
+  in the feature table above from "✅ shipped" to "✅ validated".
+
 **Not yet planned:**
 
 - Share Pack implementation (doc `docs/SHARE_PACK.md` exists; implementation
