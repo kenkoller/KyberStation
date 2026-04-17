@@ -76,7 +76,7 @@ export function SplashScreen({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[100] flex items-center justify-center"
       style={{
         background: 'rgb(var(--bg-deep))',
         opacity: phase === 'fadeout' ? 0 : 1,

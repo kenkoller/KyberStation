@@ -404,4 +404,67 @@ describe('buildAST', () => {
       expect(endRgb.args.map((a) => a.name)).toEqual(['255', '0', '128']);
     });
   });
+
+  describe('dual-mode ignition / retraction (Fett263)', () => {
+    function findInOutTrL(ast: StyleNode): StyleNode {
+      const matches = findNodes(ast, (n) => n.name === 'InOutTrL');
+      expect(matches.length).toBeGreaterThan(0);
+      return matches[0];
+    }
+
+    it('emits single-mode transitions when dualModeIgnition is not set', () => {
+      const ast = buildAST(makeConfig());
+      const inOut = findInOutTrL(ast);
+      // args: [ignitionTr, retractionTr] — neither should be TrSelect.
+      expect(inOut.args[0].name).not.toBe('TrSelect');
+      expect(inOut.args[1].name).not.toBe('TrSelect');
+    });
+
+    it('wraps ignition in TrSelect<BladeAngle, down, up> when dual-mode is on', () => {
+      const config = makeConfig({
+        dualModeIgnition: true,
+        ignition: 'standard',
+        ignitionUp: 'spark',
+        ignitionDown: 'stutter',
+      });
+      const ast = buildAST(config);
+      const inOut = findInOutTrL(ast);
+      const ignitionTr = inOut.args[0];
+      expect(ignitionTr.name).toBe('TrSelect');
+      expect(ignitionTr.args[0].name).toBe('BladeAngle');
+      // down came first, then up.
+      expect(ignitionTr.args[1].name).toBe('TrConcat'); // stutter
+      expect(ignitionTr.args[2].name).toBe('TrWipeSparkTip'); // spark
+    });
+
+    it('wraps retraction in TrSelect when retractionUp/Down are set', () => {
+      const config = makeConfig({
+        dualModeIgnition: true,
+        retraction: 'standard',
+        retractionUp: 'fadeout',
+        retractionDown: 'center',
+      });
+      const ast = buildAST(config);
+      const inOut = findInOutTrL(ast);
+      const retractionTr = inOut.args[1];
+      expect(retractionTr.name).toBe('TrSelect');
+      expect(retractionTr.args[0].name).toBe('BladeAngle');
+      expect(retractionTr.args[1].name).toBe('TrCenterWipeIn'); // center (down)
+      expect(retractionTr.args[2].name).toBe('TrFade'); // fadeout (up)
+    });
+
+    it('falls back to primary ignition when up/down aren\'t specified', () => {
+      const config = makeConfig({
+        dualModeIgnition: true,
+        ignition: 'spark',
+        // ignitionUp / ignitionDown intentionally omitted
+      });
+      const ast = buildAST(config);
+      const inOut = findInOutTrL(ast);
+      // Without up/down fields, the dual-mode branch shouldn't trigger —
+      // it needs at least one of them to be set.
+      expect(inOut.args[0].name).toBe('TrWipeSparkTip');
+      expect(inOut.args[0].name).not.toBe('TrSelect');
+    });
+  });
 });

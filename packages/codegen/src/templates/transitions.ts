@@ -75,4 +75,13 @@ export const transitionTemplates: Map<string, TemplateDefinition> = new Map([
       description: 'Wipe with spark effect at the tip, color + duration',
     },
   ],
+  [
+    'TrSelect',
+    {
+      name: 'TrSelect',
+      argTypes: ['FUNCTION', 'TRANSITION', 'TRANSITION'],
+      description:
+        'Select between two transitions based on a function value (e.g. BladeAngle<>). Fett263 dual-mode ignition/retraction.',
+    },
+  ],
 ]);

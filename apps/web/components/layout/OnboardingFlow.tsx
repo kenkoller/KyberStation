@@ -82,7 +82,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center"
+      className="fixed inset-0 z-[50] flex items-center justify-center"
       style={{ background: 'rgba(var(--bg-deep), 0.95)' }}
     >
       <div

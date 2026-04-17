@@ -188,6 +188,226 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
     },
     preferForInverse: true,
   },
+
+  // ─── High-confidence additions (v0.2.1) ───
+  //
+  // stab: center-out burst → direct TrCenterWipeIn.
+  {
+    id: 'stab',
+    kind: 'ignition',
+    buildAST: (ms) => tr('TrCenterWipeIn', intNode(ms)),
+    // `center` also emits TrCenterWipeIn<ms>, so this entry has
+    // preferForInverse: false — the inverse picks 'center' as canonical.
+    // To round-trip 'stab' cleanly we'd need a distinct AST shape; for now
+    // stab→center on import is accepted lossy behaviour (documented).
+    matches: (n) =>
+      n.name === 'TrCenterWipeIn' || n.name === 'TrCenterWipeInX',
+    extractMs: (n) => extractInt(n.args[0]),
+    preferForInverse: false,
+  },
+
+  // flash-fill: instant white flash, then color wipe.
+  //  → TrConcat<TrInstant, TrWipeIn<ms>>
+  {
+    id: 'flash-fill',
+    kind: 'ignition',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        raw('TrInstant'),
+        tr('TrWipeIn', intNode(ms)),
+      ),
+    matches: (n) =>
+      n.name === 'TrConcat' &&
+      n.args.length === 2 &&
+      n.args[0]?.name === 'TrInstant' &&
+      n.args[1]?.name === 'TrWipeIn',
+    extractMs: (n) => extractInt(n.args[1]?.args[0]),
+    preferForInverse: true,
+  },
+
+  // implode: retraction inward → TrCenterWipeIn used in retraction context.
+  {
+    id: 'implode',
+    kind: 'retraction',
+    buildAST: (ms) => tr('TrCenterWipeIn', intNode(ms)),
+    matches: (n) =>
+      n.name === 'TrCenterWipeIn' || n.name === 'TrCenterWipeInX',
+    extractMs: (n) => extractInt(n.args[0]),
+    // Like stab vs center, implode collides with 'center' retraction.
+    // Keep 'center' as the canonical inverse.
+    preferForInverse: false,
+  },
+
+  // ─── Medium-confidence additions (v0.2.1) ───
+  //
+  // swing: speed-reactive acceleration fill.
+  //  → TrConcat<TrFade<ms/5>, TrWipeIn<ms*4/5>>
+  {
+    id: 'swing',
+    kind: 'ignition',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        tr('TrFade', intNode(Math.round(ms / 5))),
+        tr('TrWipeIn', intNode(Math.round((ms * 4) / 5))),
+      ),
+    matches: (n) =>
+      n.name === 'TrConcat' &&
+      n.args.length === 2 &&
+      n.args[0]?.name === 'TrFade' &&
+      n.args[1]?.name === 'TrWipeIn',
+    extractMs: (n) => {
+      const first = extractInt(n.args[0]?.args[0]);
+      return first === null ? null : first * 5;
+    },
+    preferForInverse: true,
+  },
+
+  // crackle: random-flicker fill. Same approximation as swing but with a
+  // smaller initial fade-in proportion (hence swing vs crackle share shape).
+  // Collides with swing; swing is preferred canonical.
+  {
+    id: 'crackle',
+    kind: 'ignition',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        tr('TrFade', intNode(Math.round(ms / 5))),
+        tr('TrWipeIn', intNode(Math.round((ms * 4) / 5))),
+      ),
+    matches: (n) =>
+      n.name === 'TrConcat' &&
+      n.args.length === 2 &&
+      n.args[0]?.name === 'TrFade' &&
+      n.args[1]?.name === 'TrWipeIn',
+    extractMs: (n) => {
+      const first = extractInt(n.args[0]?.args[0]);
+      return first === null ? null : first * 5;
+    },
+    preferForInverse: false,
+  },
+
+  // pulse-wave: multi-wave chained ignition.
+  //  → TrConcat<TrWipeIn<ms/4>, TrDelay<ms/8>, TrWipeIn<ms/4>,
+  //             TrDelay<ms/8>, TrWipeIn<ms/2>>
+  {
+    id: 'pulse-wave',
+    kind: 'ignition',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        tr('TrWipeIn', intNode(Math.round(ms / 4))),
+        tr('TrDelay', intNode(Math.round(ms / 8))),
+        tr('TrWipeIn', intNode(Math.round(ms / 4))),
+        tr('TrDelay', intNode(Math.round(ms / 8))),
+        tr('TrWipeIn', intNode(Math.round(ms / 2))),
+      ),
+    matches: (n) =>
+      n.name === 'TrConcat' &&
+      n.args.length === 5 &&
+      n.args[0]?.name === 'TrWipeIn' &&
+      n.args[1]?.name === 'TrDelay' &&
+      n.args[2]?.name === 'TrWipeIn' &&
+      n.args[3]?.name === 'TrDelay' &&
+      n.args[4]?.name === 'TrWipeIn',
+    extractMs: (n) => {
+      const first = extractInt(n.args[0]?.args[0]);
+      return first === null ? null : first * 4;
+    },
+    preferForInverse: true,
+  },
+
+  // hyperspace: streak acceleration, approximated same as swing.
+  {
+    id: 'hyperspace',
+    kind: 'ignition',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        tr('TrFade', intNode(Math.round(ms / 5))),
+        tr('TrWipeIn', intNode(Math.round((ms * 4) / 5))),
+      ),
+    matches: () => false, // handled by the swing pattern
+    extractMs: () => null,
+    preferForInverse: false,
+  },
+
+  // ─── Low-confidence fallbacks (v0.2.1) ───
+  //
+  // These ignition/retraction IDs animate in-engine but don't have a clean
+  // OS7 `Tr*` equivalent. They emit a sensible neutral transition so
+  // exported code compiles and animates; round-trip is lossy for these.
+  // Tracked for a follow-up sprint that adds new Tr* templates (TrSpiral,
+  // TrRadialExpand, TrDissolveRandom, etc.).
+
+  { id: 'twist',      kind: 'ignition',
+    buildAST: (ms) => tr('TrWipe', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+  { id: 'fracture',   kind: 'ignition',
+    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+  { id: 'drip-up',    kind: 'ignition',
+    buildAST: (ms) => tr('TrFade', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+  { id: 'summon',     kind: 'ignition',
+    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+  { id: 'seismic',    kind: 'ignition',
+    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+
+  // Retractions: flickerOut / drain / spaghettify get medium-confidence
+  // shapes; dissolve / unravel / evaporate get neutral fades.
+  { id: 'flickerOut', kind: 'retraction',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        tr('TrFade', intNode(Math.round((ms * 15) / 100))),
+        tr('TrFade', intNode(Math.round((ms * 85) / 100))),
+      ),
+    matches: (n) =>
+      n.name === 'TrConcat' && n.args.length === 2 &&
+      n.args[0]?.name === 'TrFade' && n.args[1]?.name === 'TrFade',
+    extractMs: (n) => {
+      const a = extractInt(n.args[0]?.args[0]);
+      const b = extractInt(n.args[1]?.args[0]);
+      return a !== null && b !== null ? a + b : null;
+    },
+    preferForInverse: true },
+
+  { id: 'drain',      kind: 'retraction',
+    buildAST: (ms) =>
+      tr(
+        'TrConcat',
+        tr('TrFade', intNode(Math.round((ms * 70) / 100))),
+        tr('TrFade', intNode(Math.round((ms * 30) / 100))),
+      ),
+    matches: () => false, // shape shared with flickerOut; flickerOut wins
+    extractMs: () => null,
+    preferForInverse: false },
+
+  { id: 'spaghettify', kind: 'retraction',
+    buildAST: (ms) =>
+      tr('TrConcat', tr('TrFade', intNode(Math.round((ms * 90) / 100))), raw('TrInstant')),
+    matches: (n) =>
+      n.name === 'TrConcat' && n.args.length === 2 &&
+      n.args[0]?.name === 'TrFade' && n.args[1]?.name === 'TrInstant',
+    extractMs: (n) => {
+      const a = extractInt(n.args[0]?.args[0]);
+      return a === null ? null : Math.round((a * 100) / 90);
+    },
+    preferForInverse: true },
+
+  { id: 'dissolve',   kind: 'retraction',
+    buildAST: (ms) => tr('TrFade', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+  { id: 'unravel',    kind: 'retraction',
+    buildAST: (ms) => tr('TrFade', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
+  { id: 'evaporate',  kind: 'retraction',
+    buildAST: (ms) => tr('TrFade', intNode(ms)),
+    matches: () => false, extractMs: () => null, preferForInverse: false },
 ];
 
 // ─── Public API ───

@@ -209,8 +209,8 @@ export function StylePanel() {
           Blade Style
           <HelpTooltip text="Choose the base animation style. Each style has a unique visual character and may expose its own tunable parameters below." proffie="StylePtr<...>" />
         </h3>
-        <div className="max-h-[320px] overflow-y-auto rounded border border-border-subtle">
-          <div className="grid grid-cols-2 gap-1.5 p-1.5">
+        <div className="max-h-[360px] overflow-y-auto rounded border border-border-subtle">
+          <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-1.5 p-1.5">
             {BLADE_STYLES.map((style) => {
               const isActive = config.style === style.id;
               return (

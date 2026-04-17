@@ -86,7 +86,10 @@ export function StatusBar() {
 
   return (
     <footer
-      className="flex items-center justify-between px-3 border-t border-border-subtle bg-bg-deep text-text-muted font-mono select-none shrink-0"
+      // overflow-hidden prevents tablet/narrow layouts from pushing the
+      // status bar vertically. The middle storage cluster gets hidden on
+      // tablet via desktop:inline-flex on its parent when needed.
+      className="flex items-center justify-between px-3 border-t border-border-subtle bg-bg-deep text-text-muted font-mono select-none shrink-0 overflow-hidden whitespace-nowrap"
       style={{ height: '1.625rem' /* h-[26px] — slimmer than h-7 */ }}
       aria-label="Status bar"
     >

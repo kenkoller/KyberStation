@@ -113,7 +113,7 @@ function PortalTooltip({ visible, triggerRef, preferred, width = 'w-44', onMouse
       role="tooltip"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 60 }}
       className={[
         width, 'p-2 rounded-lg bg-bg-card border border-border-light shadow-xl',
         'transition-all duration-100 ease-out',

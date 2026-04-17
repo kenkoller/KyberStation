@@ -170,9 +170,12 @@ function ColumnResizeHandle({ index, onResizeStart, onResetWidths }: ColumnResiz
       <div
         className="w-px self-stretch rounded-full transition-colors duration-100"
         style={{
+          // Uses the canonical --accent CSS var (which every theme sets)
+          // instead of the old --color-accent alias with a Tailwind-blue
+          // fallback — the fallback broke dark/red themes like Mustafar.
           backgroundColor: hovered
-            ? 'var(--color-accent, #60a5fa)'
-            : 'var(--color-border-subtle, rgba(255,255,255,0.08))',
+            ? 'rgb(var(--accent))'
+            : 'rgb(var(--border-subtle, 255 255 255 / 0.08))',
           opacity: hovered ? 0.7 : 0.4,
         }}
       />
