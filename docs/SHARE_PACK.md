@@ -213,6 +213,46 @@ Measured on representative configs:
 
 Even the worst case scans fine from a ~3cm × 3cm printed glyph.
 
+#### What the glyph can and can't capture
+
+**v1 glyph captures all of `BladeConfig`:**
+
+- 9 colour slots (base, clash, blast, lockup, drag, melt, stab,
+  lightning, preon)
+- Style / ignition / retraction IDs
+- All timing values (ignition/retraction/preon ms)
+- All 10 spatial fields (lockup/blast/drag/melt/stab × position/radius)
+- Dual-mode ignition + up/down variants, Preon enabled, shimmer,
+  LED count
+
+This covers ~95% of what the editor produces today.
+
+**What's intentionally outside v1:**
+
+| Field | Why not in v1 | Workaround |
+|---|---|---|
+| Style-specific param bag (`[key: string]: any`) | Schema varies per style | v2 glyph format can add this as a MessagePack blob |
+| Multi-blade SaberProfile | Glyph = one blade | Future `.kybersaber` ZIP export |
+| Sound font WAV files | Too large (MB-scale) | Glyph carries a font *reference*; user supplies files |
+| OLED bitmap content | Too large | Bitmap reference only |
+| Custom Bezier easing curves | Would bloat typical glyphs | v3 if we ever ship authoring |
+| Arbitrary imported `Layers<>` trees beyond editor-generated shapes | Editor only emits patterns it understands | Parser warnings already surface this today |
+
+**Graceful overflow ladder:**
+
+1. Typical blade → glyph (20–35 chars)
+2. Max-complexity standard config → glyph (60–80 chars)
+3. v2/v3 with style params → glyph grows to 100–200 chars, QR bumps to
+   Version 5
+4. Hard ceiling (> ~250 chars, QR Version 8+) → fall back to
+   `?config=<base64>` URL with a toast: *"This blade's too intricate for
+   a glyph — here's a share link instead"*
+5. Genuine multi-blade saber → `.kybersaber` ZIP export (separate
+   feature, not in Share Pack scope)
+
+The fallback URL is always available, so no blade is ever un-shareable
+— some just don't get the pretty glyph.
+
 #### What about barcodes?
 
 Considered and rejected: 1D barcodes max out at ~40 alphanumeric chars
