@@ -19,10 +19,23 @@ import { ornateEmitter } from './parts/emitters/ornate';
 import { ventedEmitter } from './parts/emitters/vented';
 
 // Switches
+import { curvedSwitch } from './parts/switches/curved-switch';
+import { darkSwitch } from './parts/switches/dark-switch';
+import { fulcrumSwitch } from './parts/switches/fulcrum-switch';
 import { graflexSwitch } from './parts/switches/graflex';
+import { negotiatorSwitch } from './parts/switches/negotiator-switch';
+import { sageSwitch } from './parts/switches/sage-switch';
+import { ventedSwitch } from './parts/switches/vented-switch';
 
 // Grips
+import { curvedGrip } from './parts/grips/curved-grip';
+import { fulcrumGrip } from './parts/grips/fulcrum-grip';
+import { mppGrip } from './parts/grips/mpp-grip';
+import { ribbedGrip } from './parts/grips/ribbed-grip';
+import { shortGrip } from './parts/grips/short-grip';
+import { staffBody } from './parts/grips/staff-body';
 import { tTracksGrip } from './parts/grips/t-tracks';
+import { tapedGrip } from './parts/grips/taped-grip';
 
 // Pommels
 import { classicPommel } from './parts/pommels/classic';
@@ -47,8 +60,21 @@ export const PART_CATALOG: Record<string, HiltPart> = {
   [mppEmitter.id]: mppEmitter,
   [ornateEmitter.id]: ornateEmitter,
   [ventedEmitter.id]: ventedEmitter,
+  [curvedSwitch.id]: curvedSwitch,
+  [darkSwitch.id]: darkSwitch,
+  [fulcrumSwitch.id]: fulcrumSwitch,
   [graflexSwitch.id]: graflexSwitch,
+  [negotiatorSwitch.id]: negotiatorSwitch,
+  [sageSwitch.id]: sageSwitch,
+  [ventedSwitch.id]: ventedSwitch,
+  [curvedGrip.id]: curvedGrip,
+  [fulcrumGrip.id]: fulcrumGrip,
+  [mppGrip.id]: mppGrip,
+  [ribbedGrip.id]: ribbedGrip,
+  [shortGrip.id]: shortGrip,
+  [staffBody.id]: staffBody,
   [tTracksGrip.id]: tTracksGrip,
+  [tapedGrip.id]: tapedGrip,
   [classicPommel.id]: classicPommel,
   [curvedPommel.id]: curvedPommel,
   [darkPommel.id]: darkPommel,
