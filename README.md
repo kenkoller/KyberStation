@@ -131,9 +131,15 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 
 ### v0.11.1: Landing Page + Design Review Polish (Complete)
 - Replaced `redirect('/editor')` with a real first-impression landing: live BladeEngine hero (4 iconic preset rotation: Luke ROTJ, Anakin, Kylo Ren, Ahsoka), value strip, CTAs, release strip, footer.
-- Follow-on workstreams planned: alert-color token discipline, skeleton + error-state coverage across all panels, color-glyph pairing for colorblind redundancy.
+- Full design-audit polish pass shipped: alert-color token discipline (raw hex replaced with `rgb(var(--*))` theme tokens), skeleton + error-state coverage across async panels, colour-glyph pairing via new `<StatusSignal>` primitive for colorblind redundancy.
 - `.reduced-motion` class and `@media (prefers-reduced-motion: reduce)` now both hide ambient decorations (opacity: 0) instead of just stopping animation, matching the behaviour of `.ambient-off`.
 - CI infrastructure fixes: lint scripts replaced with a clearly-labeled placeholder (eslint was referenced but never installed); `/editor` and `/m` pages now wrap `useSearchParams()` in Suspense to satisfy static prerender under `output: 'export'`.
+
+### v0.11.2: Color Naming Math (Complete)
+- Colour picker name display rewritten as a three-tier algorithm (`apps/web/lib/namingMath.ts`): ~147 landmark HSL points (every curated name preserved + 42 additions across yellow-green / indigo / Legends deep-cuts) → 10-modifier grammar (`Pale`, `Deep`, `Vivid`, `Muted`, `Dawn-`, `Dusk-`, `Shadowed`, `Bleached`, `Ember-`, `Frost-`) → coordinate-mood fallback (`{Mood} {Sector} {HEX}-{HEX}`).
+- Fine-adjustment variety fixed: small nudges in the colour picker now produce different names instead of repeating the same landmark.
+- `"Unknown Crystal"` fall-through removed — every RGB now returns a distinctive, in-universe name (verified across 2,000-RGB random scan).
+- 83 new tests pinning determinism, coverage, modifier precedence, landmark preservation, and mood-word length budget. `saberColorNames.ts` is now a thin re-export shim so existing callers (`ColorPanel`, `PixelDebugOverlay`) need no changes.
 
 ## Quick Start
 
