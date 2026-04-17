@@ -441,12 +441,24 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
-## Current State (v0.11.1 — 2026-04-17)
+## Current State (2026-04-17)
 
-We shipped fourteen tagged releases in a single working day (v0.2.0 → v0.11.1),
-taking KyberStation from a partial WYSIWYG demo to a release-ready visual
-editor with a real first-impression landing page. Session notes:
-`docs/SESSION_2026-04-17.md`.
+Last git tag: **v0.10.0**. Two feature sprints have landed on `main`
+past that tag, both awaiting hardware / visual validation before a new
+tag is cut:
+
+- **Landing page + Kyber Crystal spec** (WS1 of the design polish
+  pass) — first-impression landing page replacing `redirect('/editor')`,
+  plus four crystal-design docs.
+- **WebUSB flash** (feature #16 below) — STM32 DfuSe protocol library,
+  FlashPanel UI, dry-run mode, readback verification, 43 mock-based
+  tests. **Not yet validated on real hardware.** See
+  `docs/HARDWARE_VALIDATION_TODO.md` for the three-phase checklist
+  (connect → dry run → real flash) that must pass before a `v0.11.x`
+  tag is cut.
+
+Session notes: `docs/SESSION_2026-04-17.md`.
+WebUSB protocol reference: `docs/WEBUSB_FLASH.md`.
 
 ### 23-feature brainstorm — status matrix
 
@@ -467,7 +479,7 @@ editor with a real first-impression landing page. Session notes:
 | 13 | Mobile companion route | ✅ v0.9.0 | `/m` — 12 curated presets, swipe nav, deep-link to `/editor` |
 | 14 | Validation + polish | ✅ v0.9.1 | Round-trip data-loss fix, theme-token compliance |
 | 15 | Long-tail cleanup | ✅ v0.10.0 | Spatial drag/melt/stab, parser warnings, font pairing polish |
-| 16 | **WebUSB flash** | 🔜 v0.11.0 | Spawned as standalone session; STM32 DFU with "use at your own risk" |
+| 16 | **WebUSB flash** | 🧪 merged | Protocol + UI on `main`; 43 mock tests pass. Pending hardware validation before `v0.11.x` tag — see `docs/HARDWARE_VALIDATION_TODO.md`. |
 | 17 | **Share Pack + Kyber Crystal** | 📋 spec'd | Blade-on-hilt hero + crystal-as-QR accent. Four docs: `SHARE_PACK.md`, `KYBER_CRYSTAL_VISUAL.md`, `KYBER_CRYSTAL_NAMING.md`, `KYBER_CRYSTAL_VERSIONING.md` |
 | 18 | **Community gallery (GitHub PR)** | 📋 planned | Static, PR-moderated. See `docs/COMMUNITY_GALLERY.md` |
 | 19 | Tablet-specific layout | ⏸ deferred | Existing responsive breakpoints cover it for now |
@@ -543,20 +555,28 @@ Legend: ✅ shipped · 🔜 next sprint · 📋 planned (doc exists) · ⏸ defe
    PR. Reviews are the moderation; merges are the publication. Zero
    infra, one clean audit trail, and contributor attribution via git.
 
-8. **WebUSB flash is a separate sprint.** Reassessed partway through the
-   session: it is worth doing because (a) ProffieOS Workbench has
-   normalised "flash from the browser" and (b) the only real risk
-   (bricked board) is mitigated by STM32's DFU-mode recovery. Ships with
-   a prominent "use at your own risk" disclaimer. Isolated to v0.11.0 so
-   it can't destabilise the visual editor.
+8. **WebUSB flash is a separate sprint (shipped v0.11.0).** ProffieOS
+   Workbench already proves WebUSB flashing is safe for STM32 DFU on
+   Proffieboard V3.9. The only real risk (bricked board) is mitigated
+   by STM32's BOOT-pin DFU recovery. Implementation is isolated to
+   `apps/web/lib/webusb/` + `FlashPanel.tsx` — the visual editor is
+   untouched. The protocol is tested against a pure-TypeScript DfuSe
+   mock (`apps/web/tests/webusb/`). See `docs/WEBUSB_FLASH.md` for
+   details.
+
+9. **Pre-built firmware ships as a convenience, not a requirement.** A
+   GitHub Actions matrix job (`firmware-build.yml`) compiles ProffieOS
+   7.x for V3-standard / V3-OLED / V2-standard. The FlashPanel falls
+   back gracefully (user-friendly error + file picker hint) when a
+   bundled binary is absent — power users always have the "custom .bin"
+   path via file upload, so missing binaries don't break the feature.
 
 ### Deferred items
 
-**For v0.11.0:**
+**Not yet planned:**
 
-- WebUSB flash (STM32 DFU) — primary work of the spawned session
-- Share Pack implementation (doc is planned; impl rides alongside WebUSB
-  or the session after)
+- Share Pack implementation (doc `docs/SHARE_PACK.md` exists; implementation
+  is the next candidate sprint)
 
 **Not yet planned:**
 
@@ -593,6 +613,8 @@ Added this session; tests co-located unless noted:
 | `apps/web/lib/factionStyles.ts` | Jedi / Sith / Grey / era / badge → CSS var lookup |
 | `apps/web/hooks/useCrystalAccent.ts` | Publishes `baseColor` as `--crystal-accent` |
 | `apps/web/hooks/useAudioSync.ts` | Swing-driven audio pitch/volume modulation |
+| `apps/web/lib/webusb/` | WebUSB + STM32 DfuSe protocol (v0.11.0): `DfuDevice`, `DfuSeFlasher`, memory-layout parser, connect façade |
+| `apps/web/components/editor/FlashPanel.tsx` | Disclaimer → connect → flash state machine with progress UI |
 
 ### Test coverage (top-level)
 
