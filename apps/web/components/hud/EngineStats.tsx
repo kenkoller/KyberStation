@@ -1,6 +1,7 @@
 'use client';
 
 import { ConsoleIndicator } from './ConsoleIndicator';
+import { StatusSignal, type StatusVariant } from '../shared/StatusSignal';
 
 interface EngineStatsProps {
   fps: number;          // Current frames per second
@@ -10,15 +11,21 @@ interface EngineStatsProps {
 }
 
 function getFpsColor(fps: number): string {
-  if (fps > 55) return '#22c55e';
-  if (fps > 30) return '#eab308';
-  return '#ef4444';
+  if (fps > 55) return 'rgb(var(--status-ok))';
+  if (fps > 30) return 'rgb(var(--status-warn))';
+  return 'rgb(var(--status-error))';
 }
 
 function getFpsVariant(fps: number): 'breathe' | 'blink' | 'alert' {
   if (fps > 55) return 'breathe';
   if (fps > 30) return 'blink';
   return 'alert';
+}
+
+function getFpsStatus(fps: number): StatusVariant {
+  if (fps > 55) return 'success';
+  if (fps > 30) return 'warning';
+  return 'error';
 }
 
 const monoStyle = {
@@ -40,6 +47,7 @@ export function EngineStats({
 }: EngineStatsProps) {
   const fpsColor = getFpsColor(fps);
   const variant = getFpsVariant(fps);
+  const fpsStatus = getFpsStatus(fps);
 
   return (
     <div
@@ -61,6 +69,12 @@ export function EngineStats({
           variant={variant}
           color={fpsColor}
           size={4}
+        />
+        <StatusSignal
+          variant={fpsStatus}
+          size="sm"
+          compact
+          label={`Engine performance: ${fpsStatus}`}
         />
         <span
           className="dot-matrix"
@@ -88,6 +102,7 @@ export function EngineStats({
             FPS
           </span>
           <span
+            className="inline-flex items-center gap-1"
             style={{
               ...monoStyle,
               color: fpsColor,
@@ -95,6 +110,7 @@ export function EngineStats({
             }}
             aria-label={`${Math.round(fps)} frames per second`}
           >
+            <StatusSignal variant={fpsStatus} size="sm" compact label={`Performance ${fpsStatus}`} />
             {Math.round(fps)}
           </span>
         </div>

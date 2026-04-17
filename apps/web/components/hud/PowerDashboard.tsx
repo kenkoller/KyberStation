@@ -3,6 +3,7 @@
 import { SegmentedBar } from './SegmentedBar';
 import { CornerBrackets } from './CornerBrackets';
 import { ConsoleIndicator } from './ConsoleIndicator';
+import { StatusSignal, type StatusVariant } from '../shared/StatusSignal';
 
 interface PowerDashboardProps {
   powerDraw: number;   // 0-1 normalized (estimated LED power)
@@ -12,21 +13,21 @@ interface PowerDashboardProps {
 }
 
 const POWER_STOPS: [number, string][] = [
-  [0, '#22c55e'],
-  [0.6, '#eab308'],
-  [0.85, '#ef4444'],
+  [0, 'rgb(var(--status-ok))'],
+  [0.6, 'rgb(var(--status-warn))'],
+  [0.85, 'rgb(var(--status-error))'],
 ];
 
 const MEMORY_STOPS: [number, string][] = [
-  [0, '#22c55e'],
-  [0.7, '#eab308'],
-  [0.9, '#ef4444'],
+  [0, 'rgb(var(--status-ok))'],
+  [0.7, 'rgb(var(--status-warn))'],
+  [0.9, 'rgb(var(--status-error))'],
 ];
 
 const COMPLEXITY_STOPS: [number, string][] = [
-  [0, '#22c55e'],
-  [0.5, '#eab308'],
-  [0.75, '#ef4444'],
+  [0, 'rgb(var(--status-ok))'],
+  [0.5, 'rgb(var(--status-warn))'],
+  [0.75, 'rgb(var(--status-error))'],
 ];
 
 function getStatusVariant(
@@ -43,11 +44,19 @@ function getStatusVariant(
 function getStatusColor(variant: 'breathe' | 'blink' | 'alert'): string {
   switch (variant) {
     case 'alert':
-      return '#ef4444';
+      return 'rgb(var(--status-error))';
     case 'blink':
-      return '#eab308';
+      return 'rgb(var(--status-warn))';
     default:
-      return '#22c55e';
+      return 'rgb(var(--status-ok))';
+  }
+}
+
+function variantToStatusSignal(variant: 'breathe' | 'blink' | 'alert'): StatusVariant {
+  switch (variant) {
+    case 'alert': return 'error';
+    case 'blink': return 'warning';
+    default: return 'success';
   }
 }
 
@@ -81,6 +90,12 @@ export function PowerDashboard({
             variant={variant}
             color={indicatorColor}
             size={4}
+          />
+          <StatusSignal
+            variant={variantToStatusSignal(variant)}
+            size="sm"
+            compact
+            label={`System status: ${variantToStatusSignal(variant)}`}
           />
           <span
             className="dot-matrix"

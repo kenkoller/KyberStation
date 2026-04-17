@@ -34,10 +34,12 @@
   /* ─── Faction / era / badge tokens (PresetGallery + badges) ───
      Space-separated RGB triples so they compose via Tailwind's
      `rgb(var(--x) / <alpha>)` style. */
-  --faction-jedi: 96 165 250;      /* blue */
-  --faction-sith: 248 113 113;     /* red */
-  --faction-grey: 250 204 21;      /* yellow */
-  --faction-neutral: 148 163 184;  /* slate */
+  --faction-jedi: 96 165 250;       /* blue */
+  --faction-jedi-deep: 0 68 204;    /* deeper blue for gradient stops */
+  --faction-sith: 248 113 113;      /* red */
+  --faction-sith-deep: 139 0 0;     /* deep red for gradient stops */
+  --faction-grey: 250 204 21;       /* yellow */
+  --faction-neutral: 148 163 184;   /* slate */
   --era-prequel: 147 197 253;
   --era-ot: 254 215 170;
   --era-sequel: 252 165 165;
@@ -298,8 +300,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
   50% { box-shadow: 0 0 16px rgba(74, 158, 255, 0.5); }
 }
 @keyframes retract-breathe {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 60, 60, 0.3); }
-  50% { box-shadow: 0 0 12px rgba(255, 60, 60, 0.4); }
+  /* Amber pulse — the retract button isn't an error, it's an action warning.
+     Using --badge-creative (amber 251 146 60) reserves --status-error for
+     actual failures. */
+  0%, 100% { box-shadow: 0 0 8px rgba(var(--badge-creative), 0.3); }
+  50% { box-shadow: 0 0 12px rgba(var(--badge-creative), 0.4); }
 }
 .ignite-btn-off { animation: ignite-pulse 2s ease-in-out infinite; }
 .ignite-btn-on { animation: retract-breathe 1.5s ease-in-out infinite; }
@@ -366,7 +371,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
 /* Sith-style text */
 .sw-sith-text {
   font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(180deg, #ff2020 0%, #8b0000 100%);
+  background: linear-gradient(
+    180deg,
+    rgb(var(--faction-sith)) 0%,
+    rgb(var(--faction-sith-deep)) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -375,7 +384,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
 /* Jedi-style text */
 .sw-jedi-text {
   font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(180deg, #4a9eff 0%, #0044cc 100%);
+  background: linear-gradient(
+    180deg,
+    rgb(var(--faction-jedi)) 0%,
+    rgb(var(--faction-jedi-deep)) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -418,13 +431,15 @@ html.perf-lite [style*="skeleton-shimmer"] {
   animation: blade-shimmer 3s ease-in-out infinite;
 }
 
-/* Era badge colors */
-.era-prequel { color: #ffd700; }
-.era-original { color: #4a9eff; }
-.era-sequel { color: #ff4444; }
-.era-animated { color: #00cc88; }
-.era-eu { color: #cc66ff; }
-.era-legends { color: #ff8c00; }
+/* Era badge colors — use tokens so colorblind / theme overrides flow
+   through. Token values defined at top of globals.css. Previous raw-hex
+   values were approximations; tokens are the designed palette. */
+.era-prequel { color: rgb(var(--era-prequel)); }
+.era-original { color: rgb(var(--era-ot)); }
+.era-sequel { color: rgb(var(--era-sequel)); }
+.era-animated { color: rgb(var(--era-animated)); }
+.era-eu { color: rgb(var(--era-eu)); }
+.era-legends { color: rgb(var(--badge-legends)); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AMBIENT IN-UNIVERSE ANIMATIONS
@@ -615,11 +630,13 @@ html.app-paused *::after {
 }
 
 .console-alert {
+  /* This IS an alert — stays red, but tokenised via --status-error so
+     colorblind theme overrides and future accessibility tweaks flow through. */
   display: inline-block;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ff4444;
+  background: rgb(var(--status-error));
   animation: console-alert-pulse 0.5s ease-in-out infinite;
 }
 

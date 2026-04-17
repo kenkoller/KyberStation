@@ -27,6 +27,8 @@ import {
   badgeColor,
   badgeTint,
 } from '@/lib/factionStyles';
+import { toast } from '@/lib/toastManager';
+import { FactionBadge, eraGlyph, factionGlyph } from '@/components/shared/StatusSignal';
 
 // ─── Constants ───
 
@@ -149,43 +151,51 @@ function GalleryCard({
           </div>
         )}
 
-        {/* Era badge overlay */}
-        <div className={`absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider ${getEraCssClass(preset.era)} bg-black/60 backdrop-blur-sm px-1 rounded`}>
+        {/* Era badge overlay — glyph + label for colorblind-safe signal */}
+        <div className={`absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider ${getEraCssClass(preset.era)} bg-black/60 backdrop-blur-sm px-1 rounded inline-flex items-center gap-1`}>
+          <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            {eraGlyph(preset.era)}
+          </span>
           {getEraLabel(preset.era)}
         </div>
 
-        {/* Screen-accuracy badge */}
+        {/* Screen-accuracy / Creative badge — glyph pairs with tint */}
         {preset.screenAccurate ? (
           <div
-            className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded"
+            className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded inline-flex items-center gap-1"
             style={{
               color: badgeColor('screen-accurate'),
               background: badgeTint('screen-accurate', 0.45),
             }}
           >
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
             On-Screen
           </div>
         ) : CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) ? (
           <div
-            className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded"
+            className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded inline-flex items-center gap-1"
             style={{
               color: badgeColor('creative'),
               background: badgeTint('creative', 0.45),
             }}
           >
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
             Creative
           </div>
         ) : null}
 
-        {/* Legends badge */}
+        {/* Legends badge — glyph ✧ pairs with amber tint */}
         {isLegendsPreset && (
           <div
-            className="absolute top-1 right-1.5 text-ui-xs font-bold uppercase tracking-wider px-1 rounded"
+            className="absolute top-1 right-1.5 text-ui-xs font-bold uppercase tracking-wider px-1 rounded inline-flex items-center gap-1"
             style={{
               color: badgeColor('legends'),
               background: badgeTint('legends', 0.45),
             }}
           >
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+              &#x2727;
+            </span>
             Legends
           </div>
         )}
@@ -240,14 +250,13 @@ function GalleryCard({
         >
           + List
         </span>
-        {/* Affiliation dot */}
-        <div
-          className="w-1.5 h-1.5 rounded-full shrink-0"
-          style={{ background: affiliationColor(preset.affiliation) }}
-          aria-label={preset.affiliation}
-        >
-          <span className="sr-only">{preset.affiliation}</span>
-        </div>
+        {/* Affiliation glyph — monogram pairs with color for colorblind-safe ID */}
+        <FactionBadge
+          faction={preset.affiliation}
+          size="sm"
+          className="shrink-0"
+          label={`${preset.affiliation} affiliation`}
+        />
       </div>
     </button>
   );
@@ -269,36 +278,45 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
           <h3 className="font-cinematic text-ui-sm font-bold tracking-wider text-text-primary">
             {preset.name}
           </h3>
-          <span className={`text-ui-sm font-bold uppercase tracking-wider ${getEraCssClass(preset.era)}`}>
+          <span className={`text-ui-sm font-bold uppercase tracking-wider inline-flex items-center gap-1 ${getEraCssClass(preset.era)}`}>
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+              {eraGlyph(preset.era)}
+            </span>
             {getEraLabel(preset.era)}
           </span>
           <span
-            className="text-ui-sm ml-2"
+            className="text-ui-sm ml-2 inline-flex items-center gap-1"
             style={{ color: affiliationColor(preset.affiliation) }}
           >
+            {/* Decorative glyph — adjacent UPPERCASE text already conveys meaning to AT */}
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+              {factionGlyph(preset.affiliation)}
+            </span>
             {preset.affiliation.toUpperCase()}
           </span>
           {preset.screenAccurate && (
             <span
-              className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium border"
+              className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium border inline-flex items-center gap-1"
               style={{
                 color: badgeColor('screen-accurate'),
                 background: badgeTint('screen-accurate', 0.25),
                 borderColor: badgeTint('screen-accurate', 0.4),
               }}
             >
+              <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
               On-Screen
             </span>
           )}
           {CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) && (
             <span
-              className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium border"
+              className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium border inline-flex items-center gap-1"
               style={{
                 color: badgeColor('creative'),
                 background: badgeTint('creative', 0.25),
                 borderColor: badgeTint('creative', 0.4),
               }}
             >
+              <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
               Creative
             </span>
           )}
@@ -530,7 +548,10 @@ function UserPresetCard({
               <div className="w-full rounded-full" style={{ height: '8px', background: `linear-gradient(to right, #ffffff 0%, ${hex} 10%, ${hex} 90%, ${hex}44 100%)`, boxShadow: `0 0 12px rgba(${r},${g},${b},0.5)` }} />
             </div>
           )}
-          <div className="absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider text-accent/80 bg-black/40 px-1 rounded">Custom</div>
+          <div className="absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider text-accent/80 bg-black/40 px-1 rounded inline-flex items-center gap-1">
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25C9;</span>
+            Custom
+          </div>
         </div>
         {/* Info row */}
         <div className="flex items-center gap-2 px-2.5 py-1.5">
@@ -634,8 +655,12 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
             });
             setFont(preset.fontAssociation, manifest, buffers, [...manifest.warnings, ...warnings]);
           }
-        } catch {
-          // Font load failed silently
+        } catch (err) {
+          // Surface silently-failed font auto-load so the user understands
+          // why their preset loaded without its associated font. Toast is
+          // the right surface here — the preset itself loaded fine.
+          const msg = err instanceof Error ? err.message : 'Unknown error';
+          toast.warning(`Couldn't auto-load font "${preset.fontAssociation}": ${msg}`);
         }
       }
     }
@@ -648,9 +673,13 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
       const presets = await readCollectionFile(file);
       if (presets.length > 0) {
         useUserPresetStore.getState().importPresets(presets);
+        toast.success(`Imported ${presets.length} preset(s) from ${file.name}`);
+      } else {
+        toast.warning(`No valid presets found in ${file.name}`);
       }
-    } catch {
-      // Invalid collection file
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Invalid collection file';
+      toast.error(`Import failed: ${msg}`);
     }
     e.target.value = '';
   }, []);
@@ -887,18 +916,27 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
           text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent font-sw-body touch-target"
       />
 
-      {/* Era filters */}
+      {/* Era filters — each era carries its monogram glyph alongside the label */}
       <div className="flex flex-wrap gap-1 mb-1.5">
         {ERA_FILTERS.map((era) => (
           <button
             key={era.id}
             onClick={() => setSelectedEra(era.id)}
-            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
+            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target inline-flex items-center gap-1 ${
               selectedEra === era.id
                 ? 'bg-accent-dim border-accent-border text-accent'
                 : 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
             }`}
           >
+            {era.id !== 'all' && (
+              <span
+                aria-hidden="true"
+                className={era.cssClass}
+                style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}
+              >
+                {eraGlyph(era.id)}
+              </span>
+            )}
             <span className="desktop:hidden">{era.shortLabel}</span>
             <span className="hidden desktop:inline">{era.label}</span>
             <span className="ml-1 opacity-50">{era.count}</span>
@@ -906,18 +944,29 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
         ))}
       </div>
 
-      {/* Affiliation + Sort + Legends */}
+      {/* Affiliation + Sort + Legends — each side carries its glyph monogram */}
       <div className="flex flex-wrap items-center gap-1 mb-3">
         {AFFILIATION_FILTERS.map((aff) => (
           <button
             key={aff.id}
             onClick={() => setSelectedAffiliation(aff.id)}
-            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
+            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target inline-flex items-center gap-1 ${
               selectedAffiliation === aff.id
                 ? 'bg-accent-dim border-accent-border text-accent'
                 : 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
             }`}
           >
+            {aff.id !== 'all' && (
+              <span
+                aria-hidden="true"
+                style={{
+                  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+                  color: affiliationColor(aff.id),
+                }}
+              >
+                {factionGlyph(aff.id)}
+              </span>
+            )}
             {aff.label}
           </button>
         ))}
@@ -954,7 +1003,19 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
               }`}
               style={activeStyle}
             >
-              {origin === 'all' ? 'All' : origin === 'on-screen' ? 'On-Screen' : 'Creative'}
+              {origin === 'all' ? (
+                'All'
+              ) : origin === 'on-screen' ? (
+                <span className="inline-flex items-center gap-1">
+                  <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+                  On-Screen
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+                  Creative
+                </span>
+              )}
             </button>
           );
         })}
@@ -973,7 +1034,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
           </select>
           <button
             onClick={() => setShowLegends(!showLegends)}
-            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
+            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target inline-flex items-center gap-1 ${
               showLegends
                 ? ''
                 : 'bg-bg-primary border-border-subtle text-text-muted'
@@ -988,6 +1049,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
                 : undefined
             }
           >
+            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2727;</span>
             Legends
           </button>
         </div>

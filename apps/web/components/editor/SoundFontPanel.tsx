@@ -9,6 +9,7 @@ import type { MixerValues } from '@/stores/audioMixerStore';
 import type { LibraryFontEntry } from '@kyberstation/sound';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { scoreFontForConfig, pairingLabel } from '@/lib/fontPairing';
+import { toast } from '@/lib/toastManager';
 
 // ─── Sound event types ───
 
@@ -531,9 +532,14 @@ export function SoundFontPanel() {
       const files = await loadFontFromDirectoryHandle(handle, fontName);
       if (files.length > 0) {
         await audio.loadFont(files);
+      } else {
+        toast.warning(`Font "${fontName}" has no audio files`);
       }
-    } catch {
-      // Failed to load font
+    } catch (err) {
+      // Surface font load failure — previously swallowed, leaving the
+      // user staring at a loading spinner that never produced output.
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Failed to load font "${fontName}": ${msg}`);
     } finally {
       setLibraryLoadingFont(null);
     }

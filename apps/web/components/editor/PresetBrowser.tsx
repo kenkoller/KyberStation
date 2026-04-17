@@ -18,6 +18,8 @@ import {
   LEGENDS_PRESETS,
 } from '@kyberstation/presets';
 import type { Preset, Era, Affiliation } from '@kyberstation/presets';
+import { PanelSkeleton } from '@/components/shared/Skeleton';
+import { ErrorState } from '@/components/shared/ErrorState';
 
 const ERA_OPTIONS: Array<{ id: Era | 'all'; label: string; count: number }> = [
   { id: 'all', label: 'All Eras', count: ALL_PRESETS.length },
@@ -661,7 +663,7 @@ export function PresetBrowser() {
 
           {/* Grid */}
           {isLoadingPresets ? (
-            <div className="text-ui-sm text-text-muted text-center py-6">Loading presets...</div>
+            <PanelSkeleton title="My Presets" />
           ) : filteredUserPresets.length === 0 ? (
             <div className="text-ui-sm text-text-muted text-center py-6 border border-dashed border-border-subtle rounded">
               {userPresets.length === 0
@@ -798,7 +800,19 @@ export function PresetBrowser() {
           onChange={handleImportConfig}
           className="hidden"
         />
-        {importError && <p className="text-ui-sm text-red-400 mt-2">{importError}</p>}
+        {importError && (
+          <div className="mt-2">
+            <ErrorState
+              variant="import-failed"
+              message={importError}
+              onRetry={() => {
+                setImportError(null);
+                fileInputRef.current?.click();
+              }}
+              compact
+            />
+          </div>
+        )}
         <p className="text-ui-sm text-text-muted mt-2">
           Click a preset to load it, or import a .kyberstation.json file. Share Link copies a URL
           that anyone can open to load your exact configuration.

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { PanelSkeleton } from '@/components/shared/Skeleton';
+import { ErrorState } from '@/components/shared/ErrorState';
 
 interface CommunityStyle {
   id: string;
@@ -33,88 +34,89 @@ export function CommunityGallery() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   // Load gallery data (from cache or placeholder)
-  useEffect(() => {
-    const loadGallery = () => {
-      setLoading(true);
-      try {
-        // Check localStorage cache first
-        const cached = localStorage.getItem(GALLERY_CACHE_KEY);
-        if (cached) {
-          const data = JSON.parse(cached) as { gallery: GalleryData; cachedAt: number };
-          if (Date.now() - data.cachedAt < GALLERY_CACHE_TTL) {
-            setGallery(data.gallery.styles);
-            setLoading(false);
-            return;
-          }
+  const loadGallery = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Check localStorage cache first
+      const cached = localStorage.getItem(GALLERY_CACHE_KEY);
+      if (cached) {
+        const data = JSON.parse(cached) as { gallery: GalleryData; cachedAt: number };
+        if (Date.now() - data.cachedAt < GALLERY_CACHE_TTL) {
+          setGallery(data.gallery.styles);
+          setLoading(false);
+          return;
         }
-
-        // Placeholder data — in production this fetches from GitHub Pages
-        const placeholderStyles: CommunityStyle[] = [
-          {
-            id: 'comm-1',
-            name: 'Sith Lightning',
-            author: 'DarthMaker',
-            description: 'Dark side unstable blade with lightning crackles',
-            tags: ['dark-side', 'unstable', 'lightning'],
-            style: 'unstable',
-            config: { baseColor: { r: 255, g: 0, b: 0 }, style: 'unstable', shimmer: 0.6 },
-            created: '2025-12-15',
-          },
-          {
-            id: 'comm-2',
-            name: 'Kyber Crystal Pure',
-            author: 'JediSmith',
-            description: 'Clean stable blue with subtle pulse',
-            tags: ['light-side', 'stable', 'clean'],
-            style: 'pulse',
-            config: { baseColor: { r: 0, g: 80, b: 255 }, style: 'pulse', shimmer: 0.2 },
-            created: '2025-11-20',
-          },
-          {
-            id: 'comm-3',
-            name: 'Beskar Forge',
-            author: 'MandalorianMaker',
-            description: 'Molten metal fire effect in orange-white',
-            tags: ['fire', 'mandalorian', 'forge'],
-            style: 'fire',
-            config: { baseColor: { r: 255, g: 120, b: 0 }, style: 'fire', shimmer: 0.4 },
-            created: '2026-01-05',
-          },
-          {
-            id: 'comm-4',
-            name: 'Aurora Borealis',
-            author: 'NorthernLights',
-            description: 'Shimmering aurora gradient from green to blue',
-            tags: ['gradient', 'aurora', 'nature'],
-            style: 'aurora',
-            config: { baseColor: { r: 0, g: 255, b: 128 }, style: 'aurora', shimmer: 0.5 },
-            created: '2026-02-14',
-          },
-          {
-            id: 'comm-5',
-            name: 'Temple Guard Gold',
-            author: 'JediArchives',
-            description: 'Ceremonial gold blade from the Jedi Temple',
-            tags: ['light-side', 'gold', 'temple-guard'],
-            style: 'stable',
-            config: { baseColor: { r: 255, g: 200, b: 0 }, style: 'stable', shimmer: 0.15 },
-            created: '2026-03-01',
-          },
-        ];
-
-        setGallery(placeholderStyles);
-        localStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify({
-          gallery: { styles: placeholderStyles, lastUpdated: new Date().toISOString() },
-          cachedAt: Date.now(),
-        }));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load gallery');
       }
-      setLoading(false);
-    };
 
-    loadGallery();
+      // Placeholder data — in production this fetches from GitHub Pages
+      const placeholderStyles: CommunityStyle[] = [
+        {
+          id: 'comm-1',
+          name: 'Sith Lightning',
+          author: 'DarthMaker',
+          description: 'Dark side unstable blade with lightning crackles',
+          tags: ['dark-side', 'unstable', 'lightning'],
+          style: 'unstable',
+          config: { baseColor: { r: 255, g: 0, b: 0 }, style: 'unstable', shimmer: 0.6 },
+          created: '2025-12-15',
+        },
+        {
+          id: 'comm-2',
+          name: 'Kyber Crystal Pure',
+          author: 'JediSmith',
+          description: 'Clean stable blue with subtle pulse',
+          tags: ['light-side', 'stable', 'clean'],
+          style: 'pulse',
+          config: { baseColor: { r: 0, g: 80, b: 255 }, style: 'pulse', shimmer: 0.2 },
+          created: '2025-11-20',
+        },
+        {
+          id: 'comm-3',
+          name: 'Beskar Forge',
+          author: 'MandalorianMaker',
+          description: 'Molten metal fire effect in orange-white',
+          tags: ['fire', 'mandalorian', 'forge'],
+          style: 'fire',
+          config: { baseColor: { r: 255, g: 120, b: 0 }, style: 'fire', shimmer: 0.4 },
+          created: '2026-01-05',
+        },
+        {
+          id: 'comm-4',
+          name: 'Aurora Borealis',
+          author: 'NorthernLights',
+          description: 'Shimmering aurora gradient from green to blue',
+          tags: ['gradient', 'aurora', 'nature'],
+          style: 'aurora',
+          config: { baseColor: { r: 0, g: 255, b: 128 }, style: 'aurora', shimmer: 0.5 },
+          created: '2026-02-14',
+        },
+        {
+          id: 'comm-5',
+          name: 'Temple Guard Gold',
+          author: 'JediArchives',
+          description: 'Ceremonial gold blade from the Jedi Temple',
+          tags: ['light-side', 'gold', 'temple-guard'],
+          style: 'stable',
+          config: { baseColor: { r: 255, g: 200, b: 0 }, style: 'stable', shimmer: 0.15 },
+          created: '2026-03-01',
+        },
+      ];
+
+      setGallery(placeholderStyles);
+      localStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify({
+        gallery: { styles: placeholderStyles, lastUpdated: new Date().toISOString() },
+        cachedAt: Date.now(),
+      }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load gallery');
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadGallery();
+  }, [loadGallery]);
 
   // All unique tags
   const allTags = useMemo(() => {
@@ -191,7 +193,14 @@ export function CommunityGallery() {
 
       {/* Gallery Grid */}
       {loading && <PanelSkeleton title="Community Gallery" />}
-      {error && <p className="text-ui-sm text-red-400">{error}</p>}
+      {error && !loading && (
+        <ErrorState
+          variant="load-failed"
+          message={`Couldn't reach the community gallery. ${error}`}
+          onRetry={loadGallery}
+          compact
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-2">
         {filtered.map((style) => {
