@@ -210,4 +210,28 @@ Please note that this project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
-[MIT](LICENSE)
+**KyberStation** itself is [MIT](LICENSE)-licensed.
+
+### Upstream acknowledgements
+
+- **ProffieOS** (the firmware this tool targets) is licensed under
+  [GNU GPL-3.0](LICENSES/ProffieOS-GPL-3.0.txt). KyberStation does not
+  contain any ProffieOS source code; it emits C++ configs intended to be
+  compiled *into* ProffieOS. When a user compiles a generated config and
+  distributes the resulting firmware, GPL-3.0 obligations apply to that
+  combined work — most importantly, the Corresponding Source (including
+  the generated config) must be made available to recipients.
+  KyberStation's emitter includes a GPL-3.0 attribution header in every
+  generated `config.h` to make this relationship explicit.
+- **Community style snippets** committed under
+  `packages/codegen/tests/fixtures/fett263/` are GPL-3.0 derivatives of
+  ProffieOS examples (mostly Fett263's published style library). They are
+  kept in a dedicated subdirectory with their own attribution comments;
+  see that folder's `README.md` for the contribution policy. The rest of
+  KyberStation remains MIT.
+
+### Credits
+
+- [ProffieOS](https://github.com/profezzorn/ProffieOS) by Fredrik Hübinette
+- [Fett263's Style Library](https://fett263.com/) — community configs and
+  the dual-mode ignition / edit-mode conventions this tool targets
