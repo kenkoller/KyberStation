@@ -1700,6 +1700,34 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.restore();
       };
 
+      // Blast position marker (if set) — a subtle secondary caret without
+      // radius brackets (blast has no radius). Drawn under the blade,
+      // slightly lower than the lockup caret so they don't overlap.
+      if (typeof cfg.blastPosition === 'number') {
+        const t = cfg.blastPosition;
+        const x = hit.hiltX + (hit.tipX - hit.hiltX) * t;
+        const y = hit.hiltY + (hit.tipY - hit.hiltY) * t;
+        const side = hit.thicknessTolerance * 0.35 + markerOffset + 16 * dpr;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 180, 90, 0.95)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(x + side, y);
+        ctx.lineTo(x + side + 6 * dpr, y - 4 * dpr);
+        ctx.lineTo(x + side + 6 * dpr, y + 4 * dpr);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = `${9 * dpr}px monospace`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`blast ${Math.round(t * 100)}%`, x + side + 10 * dpr, y);
+        ctx.restore();
+      }
+
       // Radius bracket at the committed lockup position.
       if (typeof cfg.lockupPosition === 'number') {
         const r = cfg.lockupRadius ?? 0.12;
@@ -2240,14 +2268,20 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   const handleCanvasPointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!useUIStore.getState().editMode) return;
+      const ui = useUIStore.getState();
+      if (!ui.editMode) return;
       const pos = pointerToBladePosition(e);
       if (pos === null) return;
-      const prev = useBladeStore.getState().config.lockupRadius;
-      updateConfig({
-        lockupPosition: pos,
-        lockupRadius: prev ?? 0.12,
-      });
+
+      if (ui.editTarget === 'blast') {
+        updateConfig({ blastPosition: pos });
+      } else {
+        const prev = useBladeStore.getState().config.lockupRadius;
+        updateConfig({
+          lockupPosition: pos,
+          lockupRadius: prev ?? 0.12,
+        });
+      }
       playUISound('button-click');
     },
     [pointerToBladePosition, updateConfig],

@@ -49,13 +49,18 @@ export interface UIStore {
   /** Orientation of the blade in fullscreen preview */
   fullscreenOrientation: FullscreenOrientation;
   /**
-   * Edit Mode — when true, clicking the blade canvas places the lockup
-   * position and the Fett263 Edit Mode define wraps emitted code in
-   * RgbArg/IntArg argument templates. Previously a local useState in
-   * CodeOutput.tsx; unified here so the canvas, output panel, and any
-   * future direct-manipulation surfaces share a single flag.
+   * Edit Mode — when true, clicking the blade canvas places an effect's
+   * spatial position (see `editTarget`) and the Fett263 Edit Mode define
+   * wraps emitted code in RgbArg/IntArg argument templates. Unified flag
+   * shared by canvas, output panel, and any future direct-manipulation
+   * surfaces.
    */
   editMode: boolean;
+  /**
+   * Which effect Edit Mode clicks place. When `editMode` is false this is
+   * ignored. Added in v0.3.0 for spatial blast alongside lockup.
+   */
+  editTarget: 'lockup' | 'blast';
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -84,6 +89,7 @@ export interface UIStore {
   setFullscreenOrientation: (o: FullscreenOrientation) => void;
   setEditMode: (on: boolean) => void;
   toggleEditMode: () => void;
+  setEditTarget: (target: 'lockup' | 'blast') => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -114,6 +120,7 @@ export const useUIStore = create<UIStore>((set) => ({
   isFullscreen: false,
   fullscreenOrientation: 'horizontal',
   editMode: false,
+  editTarget: 'lockup',
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -144,4 +151,5 @@ export const useUIStore = create<UIStore>((set) => ({
   setFullscreenOrientation: (fullscreenOrientation) => set({ fullscreenOrientation }),
   setEditMode: (editMode) => set({ editMode }),
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
+  setEditTarget: (editTarget) => set({ editTarget }),
 }));

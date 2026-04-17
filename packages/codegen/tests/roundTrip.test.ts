@@ -188,4 +188,64 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
       expect(result.reconstructedConfig?.lockupRadius).toBeUndefined();
     });
   });
+
+  describe('Preon (v0.3.0)', () => {
+    it('emits TransitionEffectL with EFFECT_PREON when preonEnabled is true', () => {
+      const result = roundTrip(
+        makeConfig({
+          preonEnabled: true,
+          preonColor: { r: 200, g: 100, b: 255 },
+          preonMs: 400,
+        }),
+      );
+      expect(result.parseErrors).toEqual([]);
+      expect(result.emittedCode).toContain('TransitionEffectL');
+      expect(result.emittedCode).toContain('EFFECT_PREON');
+    });
+
+    it('omits preon layer when preonEnabled is false/undefined', () => {
+      const withoutPreon = roundTrip(makeConfig());
+      expect(withoutPreon.emittedCode).not.toContain('EFFECT_PREON');
+    });
+
+    it('round-trips preon color and duration', () => {
+      const config = makeConfig({
+        preonEnabled: true,
+        preonColor: { r: 123, g: 45, b: 67 },
+        preonMs: 250,
+      });
+      const result = roundTrip(config);
+      expect(result.reconstructedConfig?.preonEnabled).toBe(true);
+      expect(result.reconstructedConfig?.preonColor).toEqual(config.preonColor);
+      expect(result.reconstructedConfig?.preonMs).toBe(250);
+    });
+  });
+
+  describe('Spatial blast (v0.3.0)', () => {
+    const TOLERANCE = 2 / 32768;
+
+    it('emits AlphaL<BlastL, Bump> when blastPosition is set', () => {
+      const result = roundTrip(makeConfig({ blastPosition: 0.5 }));
+      expect(result.parseErrors).toEqual([]);
+      expect(result.emittedCode).toContain('AlphaL<');
+      expect(result.emittedCode).toContain('BlastL<');
+      expect(result.emittedCode).toContain('Bump<');
+    });
+
+    it('emits bare BlastL without Bump when blastPosition is absent', () => {
+      const result = roundTrip(makeConfig());
+      expect(result.emittedCode).toContain('BlastL<');
+      expect(result.emittedCode).not.toContain('AlphaL<');
+    });
+
+    it('round-trips blastPosition across a sweep', () => {
+      for (const pos of [0, 0.25, 0.5, 0.75, 1]) {
+        const result = roundTrip(makeConfig({ blastPosition: pos }));
+        expect(result.parseErrors).toEqual([]);
+        const recovered = result.reconstructedConfig?.blastPosition;
+        expect(recovered).toBeDefined();
+        expect(Math.abs((recovered ?? 0) - pos)).toBeLessThanOrEqual(TOLERANCE);
+      }
+    });
+  });
 });

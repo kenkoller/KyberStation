@@ -308,6 +308,84 @@ export function EffectPanel() {
         </div>
       </div>
 
+      {/* Preon (ProffieOS 7+) */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
+          Preon
+          <HelpTooltip
+            text="Preon plays a short colour flash BEFORE ignition — a charging-up moment that builds anticipation. Requires ProffieOS 7.x."
+            proffie="TransitionEffectL<TrConcat<TrInstant, <color>, TrFade<ms>>, EFFECT_PREON>"
+          />
+        </h3>
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
+          <label className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={(config.preonEnabled as boolean | undefined) ?? false}
+              onChange={(e) => updateConfig({ preonEnabled: e.target.checked })}
+              className="accent-accent"
+            />
+            Enable pre-ignition flash
+          </label>
+
+          {(config.preonEnabled as boolean | undefined) && (
+            <>
+              <div className="flex items-center gap-3">
+                <label htmlFor="preon-color" className="text-ui-xs text-text-secondary w-28 shrink-0">
+                  Flash colour
+                </label>
+                <input
+                  id="preon-color"
+                  type="color"
+                  value={(() => {
+                    const c = (config.preonColor as { r: number; g: number; b: number } | undefined) ?? config.baseColor;
+                    return (
+                      '#' +
+                      [c.r, c.g, c.b]
+                        .map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0'))
+                        .join('')
+                    );
+                  })()}
+                  onChange={(e) => {
+                    const hex = e.target.value;
+                    updateConfig({
+                      preonColor: {
+                        r: parseInt(hex.slice(1, 3), 16),
+                        g: parseInt(hex.slice(3, 5), 16),
+                        b: parseInt(hex.slice(5, 7), 16),
+                      },
+                    });
+                  }}
+                  className="w-8 h-6 rounded border border-border-subtle cursor-pointer bg-transparent p-0"
+                />
+                <span className="text-ui-xs text-text-muted">
+                  Falls back to base colour if unset
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label htmlFor="preon-ms" className="text-ui-xs text-text-secondary w-28 shrink-0">
+                  Duration
+                </label>
+                <input
+                  id="preon-ms"
+                  type="range"
+                  min={50}
+                  max={2000}
+                  step={50}
+                  value={(config.preonMs as number | undefined) ?? 300}
+                  onChange={(e) => updateConfig({ preonMs: Number(e.target.value) })}
+                  className="flex-1"
+                />
+                <span className="text-ui-sm text-text-muted font-mono w-14 text-right">
+                  {(config.preonMs as number | undefined) ?? 300}ms
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Easing */}
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">

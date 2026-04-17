@@ -36,6 +36,12 @@ interface BladeConfig {
   // Spatial lockup (mirrors engine types — keep in sync; see typeIdentity.test.ts)
   lockupPosition?: number;
   lockupRadius?: number;
+  // Preon — ProffieOS 7+ pre-ignition flash
+  preonEnabled?: boolean;
+  preonColor?: RGB;
+  preonMs?: number;
+  // Spatial blast placement (Edit Mode)
+  blastPosition?: number;
   // Fett263 dual-mode ignition (mirrors engine types)
   dualModeIgnition?: boolean;
   ignitionUp?: string;
@@ -321,10 +327,59 @@ function buildBaseStyle(config: BladeConfig): StyleNode {
 function buildEffectLayers(config: BladeConfig): StyleNode[] {
   const layers: StyleNode[] = [];
 
-  // Blast layer
-  layers.push(
-    templateNode('template', 'BlastL', rgbNode(config.blastColor)),
-  );
+  // ── Preon (ProffieOS 7+) ──
+  // TransitionEffectL fires the wrapped transition on an EFFECT_PREON event,
+  // which ProffieOS raises automatically before ignition when the preon
+  // style layer is present. Shape:
+  //   TransitionEffectL<
+  //     TrConcat<TrInstant, Rgb<preonColor>, TrFade<preonMs>>,
+  //     EFFECT_PREON
+  //   >
+  if (config.preonEnabled) {
+    const preonColor = config.preonColor ?? config.baseColor;
+    const preonMs = config.preonMs ?? 300;
+    layers.push(
+      templateNode(
+        'template',
+        'TransitionEffectL',
+        templateNode(
+          'transition',
+          'TrConcat',
+          rawNode('TrInstant'),
+          rgbNode(preonColor),
+          templateNode('transition', 'TrFade', intNode(preonMs)),
+        ),
+        rawNode('EFFECT_PREON'),
+      ),
+    );
+  }
+
+  // ── Blast layer ──
+  // When `blastPosition` is set, wrap BlastL in AlphaL<..., Bump<Int<pos>, Int<16384>>>
+  // so deflects concentrate around the placed position rather than spreading
+  // uniformly. 16384 = half a blade — wide enough to feel punchy but still
+  // localised. Without blastPosition, emit the bare BlastL (byte-identical to
+  // pre-v0.3.0 output so existing presets don't see a diff).
+  if (typeof config.blastPosition === 'number') {
+    const pos = positionToProffie(clamp01(config.blastPosition));
+    layers.push(
+      templateNode(
+        'template',
+        'AlphaL',
+        templateNode('template', 'BlastL', rgbNode(config.blastColor)),
+        templateNode(
+          'function',
+          'Bump',
+          intTemplateNode(pos),
+          intTemplateNode(16384),
+        ),
+      ),
+    );
+  } else {
+    layers.push(
+      templateNode('template', 'BlastL', rgbNode(config.blastColor)),
+    );
+  }
 
   // Clash layer
   layers.push(

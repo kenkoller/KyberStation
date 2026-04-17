@@ -83,6 +83,8 @@ export function CanvasToolbar() {
   const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
   const editMode = useUIStore((s) => s.editMode);
   const toggleEditMode = useUIStore((s) => s.toggleEditMode);
+  const editTarget = useUIStore((s) => s.editTarget);
+  const setEditTarget = useUIStore((s) => s.setEditTarget);
 
   const baseHex = rgbToHex(config.baseColor.r, config.baseColor.g, config.baseColor.b);
 
@@ -96,8 +98,8 @@ export function CanvasToolbar() {
         aria-pressed={editMode}
         title={
           editMode
-            ? 'Edit Mode: click the blade to set the lockup position. Click here again to exit.'
-            : 'Enter Edit Mode to place the lockup position by clicking the blade.'
+            ? `Edit Mode: click the blade to set the ${editTarget} position. Click here again to exit.`
+            : 'Enter Edit Mode to place lockup or blast positions by clicking the blade.'
         }
         className={`touch-target px-2.5 py-1 rounded text-ui-sm font-medium border shrink-0 ${
           editMode
@@ -105,8 +107,33 @@ export function CanvasToolbar() {
             : 'bg-bg-deep border-border-subtle text-text-muted hover:text-text-primary'
         }`}
       >
-        {editMode ? 'Edit: On' : 'Edit'}
+        {editMode ? `Edit: ${editTarget === 'lockup' ? 'Lockup' : 'Blast'}` : 'Edit'}
       </button>
+
+      {/* Target selector — only visible while Edit Mode is on. */}
+      {editMode && (
+        <div
+          role="radiogroup"
+          aria-label="What the click places"
+          className="flex items-center rounded border border-border-subtle bg-bg-deep overflow-hidden shrink-0"
+        >
+          {(['lockup', 'blast'] as const).map((target) => (
+            <button
+              key={target}
+              role="radio"
+              aria-checked={editTarget === target}
+              onClick={() => setEditTarget(target)}
+              className={`px-2 py-1 text-ui-xs font-medium capitalize ${
+                editTarget === target
+                  ? 'bg-accent/30 text-accent'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {target}
+            </button>
+          ))}
+        </div>
+      )}
 
       <span className="w-px h-4 bg-border-subtle shrink-0" />
 
