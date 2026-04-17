@@ -11,7 +11,7 @@
 // Uses the full blade simulator (same BladeEngine + BladeCanvas as
 // /editor) so what you see here is what you'd flash onto hardware.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ALL_PRESETS } from '@kyberstation/presets';
 import type { Preset } from '@kyberstation/presets';
@@ -53,7 +53,7 @@ function getCuratedPresets(): Preset[] {
 
 const SWIPE_THRESHOLD = 60;
 
-export default function MobileCompanion() {
+function MobileCompanionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -205,5 +205,13 @@ export default function MobileCompanion() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function MobileCompanion() {
+  return (
+    <Suspense fallback={null}>
+      <MobileCompanionContent />
+    </Suspense>
   );
 }

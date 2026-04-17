@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { SplashScreen } from '@/components/layout/SplashScreen';
@@ -22,7 +22,7 @@ const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
  *   3. AppShell — the main editor UI.
  *   4. ToastContainer — always mounted, renders nothing when there are no toasts.
  */
-export default function EditorPage() {
+function EditorPageContent() {
   const { shareError } = useSharedConfig();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -120,5 +120,13 @@ export default function EditorPage() {
       {/* ── Toast notifications (always mounted) ── */}
       <ToastContainer />
     </>
+  );
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense fallback={null}>
+      <EditorPageContent />
+    </Suspense>
   );
 }
