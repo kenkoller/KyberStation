@@ -36,6 +36,12 @@ interface BladeConfig {
   // Spatial lockup (mirrors engine types — keep in sync; see typeIdentity.test.ts)
   lockupPosition?: number;
   lockupRadius?: number;
+  // Fett263 dual-mode ignition (mirrors engine types)
+  dualModeIgnition?: boolean;
+  ignitionUp?: string;
+  ignitionDown?: string;
+  retractionUp?: string;
+  retractionDown?: string;
   gradientEnd?: RGB;
   edgeColor?: RGB;
   [key: string]: unknown;
@@ -440,11 +446,58 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
 import { ignitionFromID, retractionFromID } from './transitionMap.js';
 import { positionToProffie, clamp01 } from './astBinding.js';
 
+/**
+ * Fett263 dual-mode ignition/retraction: if `dualModeIgnition` is set, the
+ * blade picks between two transitions based on `BladeAngle<>`. Otherwise
+ * fall back to the single-mode transition map lookup.
+ *
+ * Emitted shape (dual mode):
+ *   TrSelect<BladeAngle<>, downTransition, upTransition>
+ *
+ * Where `downTransition` is used when the blade is pointed down (angle below
+ * threshold) and `upTransition` when angled up. Matches Fett263's behaviour
+ * when `DUAL_MODE_IGNITION` / `DUAL_MODE_RETRACTION` defines are active.
+ */
+
 function buildIgnitionTransition(config: BladeConfig): StyleNode {
+  if (config.dualModeIgnition && (config.ignitionUp || config.ignitionDown)) {
+    const up = ignitionFromID(
+      config.ignitionUp ?? config.ignition,
+      config.ignitionMs,
+    );
+    const down = ignitionFromID(
+      config.ignitionDown ?? config.ignition,
+      config.ignitionMs,
+    );
+    return templateNode(
+      'transition',
+      'TrSelect',
+      templateNode('function', 'BladeAngle'),
+      down,
+      up,
+    );
+  }
   return ignitionFromID(config.ignition, config.ignitionMs);
 }
 
 function buildRetractionTransition(config: BladeConfig): StyleNode {
+  if (config.dualModeIgnition && (config.retractionUp || config.retractionDown)) {
+    const up = retractionFromID(
+      config.retractionUp ?? config.retraction,
+      config.retractionMs,
+    );
+    const down = retractionFromID(
+      config.retractionDown ?? config.retraction,
+      config.retractionMs,
+    );
+    return templateNode(
+      'transition',
+      'TrSelect',
+      templateNode('function', 'BladeAngle'),
+      down,
+      up,
+    );
+  }
   return retractionFromID(config.retraction, config.retractionMs);
 }
 
