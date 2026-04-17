@@ -447,7 +447,11 @@ html.app-paused *::after {
   transition: none !important;
 }
 
-/* Kill all ambient animations when user prefers or class is set */
+/* Kill all ambient animations when .ambient-off OR .reduced-motion is set,
+   OR the OS user prefers reduced motion. All three mechanisms must not only
+   stop the animation but also zero the opacity — otherwise the base-style
+   opacity leaves the decoration statically visible, which is exactly the
+   distraction reduced-motion users are trying to avoid. */
 .ambient-off .holo-scanline::after,
 .ambient-off .particle-drift::before,
 .ambient-off .console-blink,
@@ -469,7 +473,29 @@ html.app-paused *::after {
 .ambient-off .hud-aurebesh-scroll,
 .ambient-off .hud-data-ticker,
 .ambient-off .hud-console-indicator,
-.ambient-off .hud-holo-flicker {
+.ambient-off .hud-holo-flicker,
+.reduced-motion .holo-scanline::after,
+.reduced-motion .particle-drift::before,
+.reduced-motion .console-blink,
+.reduced-motion .console-breathe,
+.reduced-motion .console-alert,
+.reduced-motion .data-stream::before,
+.reduced-motion .energy-border,
+.reduced-motion .kyber-glow::before,
+.reduced-motion .hyperspace::before,
+.reduced-motion .holo-grid::before,
+.reduced-motion .scan-sweep-beam,
+.reduced-motion .grid-pulse-overlay,
+.reduced-motion .holo-flicker,
+.reduced-motion .corner-bracket-glow::before,
+.reduced-motion .corner-bracket-glow::after,
+.reduced-motion .energy-conduit,
+.reduced-motion .hud-scan-sweep,
+.reduced-motion .hud-corner-bracket,
+.reduced-motion .hud-aurebesh-scroll,
+.reduced-motion .hud-data-ticker,
+.reduced-motion .hud-console-indicator,
+.reduced-motion .hud-holo-flicker {
   animation: none !important;
   opacity: 0 !important;
 }
@@ -499,6 +525,7 @@ html.app-paused *::after {
   .hud-console-indicator,
   .hud-holo-flicker {
     animation: none !important;
+    opacity: 0 !important;
   }
 }
 
