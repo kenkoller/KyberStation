@@ -38,8 +38,11 @@ describe('PART_CATALOG', () => {
 
   it('getPartsByType filters correctly', () => {
     const emitters = getPartsByType('emitter');
-    expect(emitters).toHaveLength(1);
-    expect(emitters[0].id).toBe('graflex-emitter');
+    expect(emitters.length).toBeGreaterThanOrEqual(1);
+    expect(emitters.map((p) => p.id)).toContain('graflex-emitter');
+    for (const emitter of emitters) {
+      expect(emitter.type).toBe('emitter');
+    }
   });
 });
 
