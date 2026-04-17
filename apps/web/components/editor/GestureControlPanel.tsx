@@ -177,7 +177,7 @@ export function GestureControlPanel() {
               <div className="flex items-center gap-1.5">
                 <span className="text-ui-sm font-semibold">{p.label}</span>
                 {p.gestureCompatible && (
-                  <span className="text-[9px] uppercase tracking-wider font-mono px-1 py-0 rounded bg-accent/20 text-accent">
+                  <span className="text-ui-xs uppercase tracking-wider font-mono px-1 py-0 rounded bg-accent/20 text-accent">
                     Gestures
                   </span>
                 )}
@@ -216,8 +216,13 @@ export function GestureControlPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {FETT263_BUTTON_ACTIONS.map((row) => (
-                    <tr key={row.input} className="border-t border-border-subtle/50">
+                  {FETT263_BUTTON_ACTIONS.map((row, i) => (
+                    <tr
+                      key={row.input}
+                      className={`border-t border-border-subtle/50 ${
+                        i % 2 === 1 ? 'bg-bg-surface/40' : ''
+                      }`}
+                    >
                       <td className="px-2 py-1 text-text-primary font-medium">
                         {row.input}
                       </td>

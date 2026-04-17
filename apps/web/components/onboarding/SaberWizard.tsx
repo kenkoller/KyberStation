@@ -336,10 +336,13 @@ function Step1Archetype({
         and style — you can fine-tune everything afterward.
       </p>
       <div className="grid grid-cols-1 tablet:grid-cols-2 gap-2">
-        {ARCHETYPES.map((a) => (
+        {ARCHETYPES.map((a, idx) => (
           <button
             key={a.id}
             onClick={() => onSelect(a.id)}
+            // Focus the first archetype button when the wizard opens so
+            // keyboard users land in an actionable state.
+            autoFocus={idx === 0 && selected === null}
             className={`text-left p-3 rounded-panel border transition-colors ${
               selected === a.id
                 ? 'bg-accent-dim border-accent text-accent'

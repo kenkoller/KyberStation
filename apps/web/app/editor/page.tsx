@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { SplashScreen } from '@/components/layout/SplashScreen';
 import { OnboardingFlow, isOnboardingComplete } from '@/components/layout/OnboardingFlow';
 import ToastContainer from '@/components/layout/ToastContainer';
 import { useSharedConfig } from '@/hooks/useSharedConfig';
+import { ALL_PRESETS } from '@kyberstation/presets';
+import type { BladeConfig } from '@kyberstation/engine';
+import { useBladeStore } from '@/stores/bladeStore';
 
 const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
 
@@ -20,6 +24,27 @@ const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
  */
 export default function EditorPage() {
   const { shareError } = useSharedConfig();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // ── Preset query-param handoff (e.g. from /m "Edit →" link) ───────────────
+  // If the URL carries ?preset=<id>, look it up in ALL_PRESETS and load it
+  // into the store. Then strip the param so refreshing doesn't keep
+  // overriding whatever the user subsequently edits. Runs once on mount.
+  useEffect(() => {
+    const presetId = searchParams.get('preset');
+    if (!presetId) return;
+    const preset = ALL_PRESETS.find((p) => p.id === presetId);
+    if (preset) {
+      useBladeStore.getState().loadPreset(preset.config as BladeConfig);
+    }
+    // Strip the param regardless — stale ids shouldn't poison future loads.
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('preset');
+    const query = next.toString();
+    router.replace(query ? `/editor?${query}` : '/editor', { scroll: false });
+    // searchParams is a stable reference in app router; safe to depend on.
+  }, [searchParams, router]);
 
   // ── Splash ──────────────────────────────────────────────────────────────────
   // splashDone: true once the animation has finished (or was skipped).

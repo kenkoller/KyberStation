@@ -22,6 +22,11 @@ import {
   CREATIVE_COMMUNITY_PRESETS,
 } from '@kyberstation/presets';
 import type { Preset, Era, Affiliation } from '@kyberstation/presets';
+import {
+  affiliationColor,
+  badgeColor,
+  badgeTint,
+} from '@/lib/factionStyles';
 
 // ─── Constants ───
 
@@ -151,18 +156,36 @@ function GalleryCard({
 
         {/* Screen-accuracy badge */}
         {preset.screenAccurate ? (
-          <div className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded text-teal-400 bg-teal-900/60">
+          <div
+            className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded"
+            style={{
+              color: badgeColor('screen-accurate'),
+              background: badgeTint('screen-accurate', 0.45),
+            }}
+          >
             On-Screen
           </div>
         ) : CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) ? (
-          <div className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded text-orange-400 bg-orange-900/60">
+          <div
+            className="absolute bottom-1 left-1.5 text-ui-xs font-semibold uppercase tracking-wider px-1 rounded"
+            style={{
+              color: badgeColor('creative'),
+              background: badgeTint('creative', 0.45),
+            }}
+          >
             Creative
           </div>
         ) : null}
 
         {/* Legends badge */}
         {isLegendsPreset && (
-          <div className="absolute top-1 right-1.5 text-ui-xs font-bold uppercase tracking-wider text-yellow-500 bg-yellow-900/60 px-1 rounded">
+          <div
+            className="absolute top-1 right-1.5 text-ui-xs font-bold uppercase tracking-wider px-1 rounded"
+            style={{
+              color: badgeColor('legends'),
+              background: badgeTint('legends', 0.45),
+            }}
+          >
             Legends
           </div>
         )}
@@ -219,15 +242,8 @@ function GalleryCard({
         </span>
         {/* Affiliation dot */}
         <div
-          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-            preset.affiliation === 'jedi'
-              ? 'bg-blue-400'
-              : preset.affiliation === 'sith'
-                ? 'bg-red-500'
-                : preset.affiliation === 'neutral'
-                  ? 'bg-purple-400'
-                  : 'bg-gray-400'
-          }`}
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ background: affiliationColor(preset.affiliation) }}
           aria-label={preset.affiliation}
         >
           <span className="sr-only">{preset.affiliation}</span>
@@ -256,20 +272,33 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
           <span className={`text-ui-sm font-bold uppercase tracking-wider ${getEraCssClass(preset.era)}`}>
             {getEraLabel(preset.era)}
           </span>
-          <span className={`text-ui-sm ml-2 ${
-            preset.affiliation === 'jedi' ? 'text-blue-400' :
-            preset.affiliation === 'sith' ? 'text-red-400' :
-            'text-purple-400'
-          }`}>
+          <span
+            className="text-ui-sm ml-2"
+            style={{ color: affiliationColor(preset.affiliation) }}
+          >
             {preset.affiliation.toUpperCase()}
           </span>
           {preset.screenAccurate && (
-            <span className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium bg-teal-900/30 text-teal-400 border border-teal-700/40">
+            <span
+              className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium border"
+              style={{
+                color: badgeColor('screen-accurate'),
+                background: badgeTint('screen-accurate', 0.25),
+                borderColor: badgeTint('screen-accurate', 0.4),
+              }}
+            >
               On-Screen
             </span>
           )}
           {CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) && (
-            <span className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium bg-orange-900/30 text-orange-400 border border-orange-700/40">
+            <span
+              className="text-ui-xs ml-2 px-1.5 py-0.5 rounded font-medium border"
+              style={{
+                color: badgeColor('creative'),
+                background: badgeTint('creative', 0.25),
+                borderColor: badgeTint('creative', 0.4),
+              }}
+            >
               Creative
             </span>
           )}
@@ -895,23 +924,40 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
 
         {/* Origin filter */}
         <span className="text-text-muted/40 px-0.5">|</span>
-        {(['all', 'on-screen', 'creative'] as const).map((origin) => (
-          <button
-            key={origin}
-            onClick={() => setSelectedOrigin(origin)}
-            className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
-              selectedOrigin === origin
-                ? origin === 'on-screen'
-                  ? 'bg-teal-900/30 border-teal-700/50 text-teal-400'
-                  : origin === 'creative'
-                    ? 'bg-orange-900/30 border-orange-700/50 text-orange-400'
-                    : 'bg-accent-dim border-accent-border text-accent'
-                : 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
-            }`}
-          >
-            {origin === 'all' ? 'All' : origin === 'on-screen' ? 'On-Screen' : 'Creative'}
-          </button>
-        ))}
+        {(['all', 'on-screen', 'creative'] as const).map((origin) => {
+          const isActive = selectedOrigin === origin;
+          const activeStyle: React.CSSProperties | undefined = isActive
+            ? origin === 'on-screen'
+              ? {
+                  color: badgeColor('screen-accurate'),
+                  background: badgeTint('screen-accurate', 0.25),
+                  borderColor: badgeTint('screen-accurate', 0.4),
+                }
+              : origin === 'creative'
+                ? {
+                    color: badgeColor('creative'),
+                    background: badgeTint('creative', 0.25),
+                    borderColor: badgeTint('creative', 0.4),
+                  }
+                : undefined
+            : undefined;
+          return (
+            <button
+              key={origin}
+              onClick={() => setSelectedOrigin(origin)}
+              className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
+                isActive && origin === 'all'
+                  ? 'bg-accent-dim border-accent-border text-accent'
+                  : !isActive
+                    ? 'bg-bg-primary border-border-subtle text-text-muted hover:text-text-secondary'
+                    : ''
+              }`}
+              style={activeStyle}
+            >
+              {origin === 'all' ? 'All' : origin === 'on-screen' ? 'On-Screen' : 'Creative'}
+            </button>
+          );
+        })}
 
         <div className="ml-auto flex gap-1">
           <select
@@ -929,9 +975,18 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
             onClick={() => setShowLegends(!showLegends)}
             className={`px-2 py-0.5 rounded text-ui-xs font-medium transition-colors border touch-target ${
               showLegends
-                ? 'bg-yellow-900/30 border-yellow-700/50 text-yellow-400'
+                ? ''
                 : 'bg-bg-primary border-border-subtle text-text-muted'
             }`}
+            style={
+              showLegends
+                ? {
+                    color: badgeColor('legends'),
+                    background: badgeTint('legends', 0.25),
+                    borderColor: badgeTint('legends', 0.4),
+                  }
+                : undefined
+            }
           >
             Legends
           </button>

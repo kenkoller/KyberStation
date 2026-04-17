@@ -219,7 +219,7 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
           style={{ width: `${lowGain * 100}%` }}
         >
           {lowGain > 0.15 && (
-            <span className="text-[9px] font-mono text-white/90 select-none">L</span>
+            <span className="text-ui-xs font-mono text-white/90 select-none">L</span>
           )}
         </div>
         {/* High (swingh) segment */}
@@ -228,13 +228,13 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
           style={{ width: `${highGain * 100}%` }}
         >
           {highGain > 0.15 && (
-            <span className="text-[9px] font-mono text-white/90 select-none">H</span>
+            <span className="text-ui-xs font-mono text-white/90 select-none">H</span>
           )}
         </div>
         {/* Silent fill */}
         {!active && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[9px] font-mono text-text-muted/50">below threshold</span>
+            <span className="text-ui-xs font-mono text-text-muted/50">below threshold</span>
           </div>
         )}
       </div>
@@ -294,7 +294,7 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
           />
         </div>
 
-        <div className="flex items-center gap-3 mt-1 text-[9px] font-mono text-text-muted/60">
+        <div className="flex items-center gap-3 mt-1 text-ui-xs font-mono text-text-muted/60">
           <span className="flex items-center gap-1">
             <span className="inline-block w-1.5 h-1.5 bg-yellow-400/70" />
             swing threshold
@@ -383,7 +383,7 @@ export function SmoothSwingPanel() {
             >
               {v}
               {v === 'V2' && (
-                <span className="ml-1 text-[9px] text-accent-secondary opacity-80">rec</span>
+                <span className="ml-1 text-ui-xs text-accent-secondary opacity-80">rec</span>
               )}
             </button>
           ))}

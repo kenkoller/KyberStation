@@ -7,10 +7,51 @@ import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig } from '@kyberstation/codegen';
 import type { ReconstructedConfig } from '@kyberstation/codegen';
+import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
 import { generateQRDataUrl, downloadQR } from '@/lib/qrCode';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+
+/**
+ * Map a `ReconstructedConfig` (output of `reconstructConfig`) into a full
+ * `BladeConfig` suitable for `loadPreset`. Previously the Apply button
+ * inlined this conversion but only passed the base 11 fields — dropping
+ * spatial lockup, spatial blast, Preon, and extended colours silently on
+ * import round-trip. Centralising + widening here means a single file edit
+ * whenever BladeConfig gains a new field the reconstructor recovers.
+ */
+export function applyReconstructedConfig(
+  cppResult: ReconstructedConfig,
+  ledCount: number,
+): BladeConfig {
+  return {
+    baseColor: cppResult.baseColor ?? { r: 0, g: 0, b: 255 },
+    clashColor: cppResult.clashColor ?? { r: 255, g: 255, b: 255 },
+    blastColor: cppResult.blastColor ?? { r: 255, g: 255, b: 255 },
+    lockupColor: cppResult.lockupColor ?? { r: 255, g: 255, b: 255 },
+    // Extended effect colours — recovered by container resolution.
+    dragColor: cppResult.dragColor,
+    lightningColor: cppResult.lightningColor,
+    meltColor: cppResult.meltColor,
+    style: cppResult.style ?? 'stable',
+    ignition: cppResult.ignition ?? 'standard',
+    retraction: cppResult.retraction ?? 'standard',
+    ignitionMs: cppResult.ignitionMs ?? 300,
+    retractionMs: cppResult.retractionMs ?? 800,
+    // Spatial effects (Edit Mode).
+    lockupPosition: cppResult.lockupPosition,
+    lockupRadius: cppResult.lockupRadius,
+    blastPosition: cppResult.blastPosition,
+    blastRadius: cppResult.blastRadius,
+    // Preon — pre-ignition flash.
+    preonEnabled: cppResult.preonEnabled,
+    preonColor: cppResult.preonColor,
+    preonMs: cppResult.preonMs,
+    shimmer: 0,
+    ledCount: ledCount || 144,
+  };
+}
 
 /** Maps user-facing board names to Proffie config board IDs */
 const PROFFIE_BOARD_MAP: Record<string, 'proffieboard_v2' | 'proffieboard_v3'> = {
@@ -294,7 +335,7 @@ export function CodeOutput() {
                 type="checkbox"
                 checked={editMode}
                 onChange={(e) => setEditMode(e.target.checked)}
-                className="w-3 h-3 rounded border-border-subtle accent-[var(--color-accent)]"
+                className="w-3 h-3 rounded border-border-subtle accent-accent"
               />
               <span className="text-ui-sm font-medium text-text-secondary flex items-center gap-1">
                 Fett263 Edit Mode
@@ -469,19 +510,9 @@ export function CodeOutput() {
                 <button
                   onClick={() => {
                     if (!cppResult) return;
-                    loadPreset({
-                      baseColor: cppResult.baseColor ?? { r: 0, g: 0, b: 255 },
-                      clashColor: cppResult.clashColor ?? { r: 255, g: 255, b: 255 },
-                      blastColor: cppResult.blastColor ?? { r: 255, g: 255, b: 255 },
-                      lockupColor: cppResult.lockupColor ?? { r: 255, g: 255, b: 255 },
-                      style: cppResult.style ?? 'stable',
-                      ignition: cppResult.ignition ?? 'standard',
-                      retraction: cppResult.retraction ?? 'standard',
-                      ignitionMs: cppResult.ignitionMs ?? 300,
-                      retractionMs: cppResult.retractionMs ?? 800,
-                      shimmer: 0,
-                      ledCount: config.ledCount || 144,
-                    });
+                    loadPreset(
+                      applyReconstructedConfig(cppResult, config.ledCount || 144),
+                    );
                     setShowCppImport(false);
                     setCppInput('');
                     setCppResult(null);

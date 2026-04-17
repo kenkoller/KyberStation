@@ -724,7 +724,7 @@ export function TimelinePanel() {
                     step={0.05}
                     value={evt.intensity}
                     onChange={(e) => updateEventIntensity(evt.id, Number(e.target.value))}
-                    className="flex-1 h-1 accent-[var(--color-accent)]"
+                    className="flex-1 h-1 accent-accent"
                   />
                   <span className="text-ui-xs text-text-muted tabular-nums w-6 text-right">
                     {Math.round(evt.intensity * 100)}%

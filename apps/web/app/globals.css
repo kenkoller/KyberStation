@@ -31,6 +31,21 @@
   --status-warn: 234 179 8;
   --status-error: 239 68 68;
   --status-info: 59 130 246;
+  /* ─── Faction / era / badge tokens (PresetGallery + badges) ───
+     Space-separated RGB triples so they compose via Tailwind's
+     `rgb(var(--x) / <alpha>)` style. */
+  --faction-jedi: 96 165 250;      /* blue */
+  --faction-sith: 248 113 113;     /* red */
+  --faction-grey: 250 204 21;      /* yellow */
+  --faction-neutral: 148 163 184;  /* slate */
+  --era-prequel: 147 197 253;
+  --era-ot: 254 215 170;
+  --era-sequel: 252 165 165;
+  --era-animated: 134 239 172;
+  --era-eu: 196 181 253;
+  --badge-legends: 234 179 8;
+  --badge-creative: 251 146 60;
+  --badge-screen-accurate: 45 212 191;
   /* ─── Font Scale ─── */
   --font-scale: 1;
 }

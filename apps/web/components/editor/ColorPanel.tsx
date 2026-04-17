@@ -297,7 +297,7 @@ export function ColorPanel() {
             }}
             aria-label="As-on-blade preview (Neopixel approximation)"
           />
-          <div className="text-[9px] text-text-muted leading-tight font-mono text-center">
+          <div className="text-ui-xs text-text-muted leading-tight font-mono text-center">
             sRGB<br />on-blade
           </div>
         </div>

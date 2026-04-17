@@ -118,11 +118,11 @@ function PixelTooltip({ pixel, x, y, containerH }: TooltipProps) {
         <span className="text-[10px] font-mono font-semibold text-accent tracking-widest">
           #{pixel.index.toString().padStart(3, '0')}
         </span>
-        <span className="ml-auto text-[9px] font-mono text-text-muted truncate">{hex}</span>
+        <span className="ml-auto text-ui-xs font-mono text-text-muted truncate">{hex}</span>
       </div>
 
       {/* SW name */}
-      <p className="text-[9px] font-cinematic text-amber-400/80 truncate mb-1.5 tracking-wide">
+      <p className="text-ui-xs font-cinematic text-amber-400/80 truncate mb-1.5 tracking-wide">
         {swName}
       </p>
 
@@ -149,8 +149,8 @@ interface DebugRowProps {
 function DebugRow({ label, value, color = 'text-text-primary' }: DebugRowProps) {
   return (
     <>
-      <span className="text-[9px] font-mono text-text-muted">{label}</span>
-      <span className={`text-[9px] font-mono ${color} tabular-nums`}>{value}</span>
+      <span className="text-ui-xs font-mono text-text-muted">{label}</span>
+      <span className={`text-ui-xs font-mono ${color} tabular-nums`}>{value}</span>
     </>
   );
 }
@@ -184,7 +184,7 @@ function PinnedCard({ pixel, anchorPct, vertical, onUnpin }: PinnedCardProps) {
         'absolute z-40 select-none',
         'w-40 rounded-lg border border-accent-border/70',
         'bg-bg-deep/95 backdrop-blur-sm shadow-lg shadow-black/60',
-        'p-2 text-[9px] font-mono',
+        'p-2 text-ui-xs font-mono',
       ].join(' ')}
       style={{
         ...positionStyle,
@@ -212,7 +212,7 @@ function PinnedCard({ pixel, anchorPct, vertical, onUnpin }: PinnedCardProps) {
       </div>
 
       {/* SW name */}
-      <p className="text-[9px] font-cinematic text-amber-400/70 truncate mb-1.5">
+      <p className="text-ui-xs font-cinematic text-amber-400/70 truncate mb-1.5">
         {swName}
       </p>
 
@@ -261,7 +261,7 @@ function RangeStats({ pixels }: RangeStatsProps) {
         'absolute bottom-1 left-1/2 -translate-x-1/2 z-50 pointer-events-none',
         'flex items-center gap-2 px-3 py-1 rounded-full',
         'border border-accent-border/50 bg-bg-deep/95 backdrop-blur-sm',
-        'text-[9px] font-mono text-text-secondary shadow-lg',
+        'text-ui-xs font-mono text-text-secondary shadow-lg',
       ].join(' ')}
     >
       <span className="text-accent font-semibold">{count} px</span>

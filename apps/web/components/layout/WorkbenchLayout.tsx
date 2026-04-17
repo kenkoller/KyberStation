@@ -525,7 +525,7 @@ export function WorkbenchLayout() {
           >
             <span className="hidden desktop:inline">{label}</span>
             <span className="desktop:hidden">{key || label.slice(0, 2)}</span>
-            {key && <kbd className="hidden desktop:inline ml-1 text-[9px] text-text-muted/50">{key}</kbd>}
+            {key && <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{key}</kbd>}
           </button>
         ))}
       </div>
