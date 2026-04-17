@@ -1,8 +1,15 @@
 # Kyber Crystal — Visual Design Spec
 
-**Status:** Design-phase, pre-implementation. Companion docs:
-`KYBER_CRYSTAL_NAMING.md`, `KYBER_CRYSTAL_VERSIONING.md`,
-`SHARE_PACK.md`.
+**Status:** Design-phase for aesthetics; implementation in progress.
+Companion docs: `KYBER_CRYSTAL_3D.md` (Three.js rendering architecture
+— the production renderer), `KYBER_CRYSTAL_NAMING.md`,
+`KYBER_CRYSTAL_VERSIONING.md`, `SHARE_PACK.md`.
+
+> **Renderer commitment:** The SVG mockups in §5 of this document are
+> **placeholder concept art only.** The production renderer uses
+> Three.js per `KYBER_CRYSTAL_3D.md`. The SVGs document target palette,
+> silhouette, and motif — NOT the actual render output. Do not use
+> them as a spec.
 
 **One-line goal:** Give every saber a visually unique, lore-faithful,
 scannable kyber crystal that morphs as the user edits their config,

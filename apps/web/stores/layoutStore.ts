@@ -23,6 +23,7 @@ export type PanelId =
   | 'oled-preview'
   | 'theme-picker'
   | 'gradient-builder'
+  | 'my-crystal'
   // Dynamics tab
   | 'effect-triggers'
   | 'effect-config'
@@ -91,8 +92,9 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
   { id: 'layer-stack',         label: 'Layer Stack',        description: 'Composite multiple styles with blend modes',               tab: 'design',   defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'gradient-builder',    label: 'Gradient Builder',   description: 'Design multi-stop color gradients for your blade',         tab: 'design',   defaultColumn: 2, defaultOrder: 1, collapsible: true  },
   { id: 'randomizer',          label: 'Randomizer',         description: 'Generate random style combinations for inspiration',       tab: 'design',   defaultColumn: 3, defaultOrder: 0, collapsible: true  },
-  { id: 'oled-preview',        label: 'OLED Preview',       description: 'Preview the hilt OLED display for this style',             tab: 'design',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
-  { id: 'theme-picker',        label: 'Theme Picker',       description: 'Change the canvas background and UI theme',                tab: 'design',   defaultColumn: 3, defaultOrder: 2, collapsible: true  },
+  { id: 'my-crystal',          label: 'My Crystal',         description: 'Live 3D kyber crystal reflecting this saber\'s config',    tab: 'design',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
+  { id: 'oled-preview',        label: 'OLED Preview',       description: 'Preview the hilt OLED display for this style',             tab: 'design',   defaultColumn: 3, defaultOrder: 2, collapsible: true  },
+  { id: 'theme-picker',        label: 'Theme Picker',       description: 'Change the canvas background and UI theme',                tab: 'design',   defaultColumn: 3, defaultOrder: 3, collapsible: true  },
 
   // ── Dynamics ──
   // Primary — expanded by default

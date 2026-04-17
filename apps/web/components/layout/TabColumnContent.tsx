@@ -35,6 +35,7 @@ import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
 import { ComparisonView } from '@/components/editor/ComparisonView';
 import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
+import { CrystalPanel } from '@/components/editor/CrystalPanel';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
@@ -278,6 +279,8 @@ function renderPanel(panelId: string): React.ReactNode {
       return <ParameterBank />;
     case 'randomizer':
       return <Randomizer />;
+    case 'my-crystal':
+      return <CrystalPanel />;
     case 'layer-stack':
       return <LayerStack />;
     case 'oled-preview':
