@@ -29,6 +29,7 @@ import { PowerDrawPanel } from '@/components/editor/PowerDrawPanel';
 import { StorageBudgetPanel } from '@/components/editor/StorageBudgetPanel';
 import { SaberProfileManager } from '@/components/editor/SaberProfileManager';
 import { CardWriter } from '@/components/editor/CardWriter';
+import { FlashPanel } from '@/components/editor/FlashPanel';
 import { CompatibilityPanel } from '@/components/editor/CompatibilityPanel';
 import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
@@ -348,6 +349,8 @@ function renderPanel(panelId: string): React.ReactNode {
       return <SaberProfileManager />;
     case 'card-writer':
       return <CardWriter />;
+    case 'flash-to-saber':
+      return <FlashPanel />;
     case 'compatibility':
       // Board compatibility matrix — Proffie V3/V2, CFX, GH, Xeno, etc.
       return <CompatibilityPanel />;
