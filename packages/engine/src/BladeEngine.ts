@@ -96,6 +96,8 @@ export class BladeEngine {
   private _extendProgress: number = 0;
   private _topology: BladeTopology;
   private _elapsedTime: number = 0;
+  /** Preon elapsed ms — counts up while in PREON state, resets on leave. */
+  private _preonElapsed: number = 0;
 
   // ─── Caches ───
   private styleCache: Map<string, BladeStyle> = new Map();
@@ -141,11 +143,21 @@ export class BladeEngine {
    * Begin blade ignition. Transitions OFF -> IGNITING.
    * If already ON or IGNITING, this is a no-op.
    */
-  ignite(): void {
+  ignite(config?: BladeConfig): void {
     if (this._state === BladeState.ON || this._state === BladeState.IGNITING) {
       return;
     }
-    this._state = BladeState.IGNITING;
+    // Preon flash precedes the main ignition when enabled. ProffieOS
+    // fires an EFFECT_PREON event internally; we simulate it here as a
+    // timed pre-state that tints the blade toward preonColor before
+    // starting the real ignition animation. The transition to IGNITING
+    // happens in update() once _preonElapsed >= preonMs.
+    if (config?.preonEnabled) {
+      this._state = BladeState.PREON;
+      this._preonElapsed = 0;
+    } else {
+      this._state = BladeState.IGNITING;
+    }
     // If currently retracting, we resume from current progress
     // (allows re-ignite during retraction)
     this.segmentDelayProgress.clear();
@@ -166,9 +178,9 @@ export class BladeEngine {
   /**
    * Immediately toggle between ignite and retract based on current state.
    */
-  toggle(): void {
+  toggle(config?: BladeConfig): void {
     if (this._state === BladeState.OFF || this._state === BladeState.RETRACTING) {
-      this.ignite();
+      this.ignite(config);
     } else {
       this.retract();
     }
@@ -178,13 +190,18 @@ export class BladeEngine {
    * Replay the ignition animation — retract quickly then re-ignite.
    * Useful for previewing ignition/retraction style changes.
    */
-  replayIgnition(): void {
+  replayIgnition(config?: BladeConfig): void {
     this._state = BladeState.OFF;
     this._extendProgress = 0;
+    this._preonElapsed = 0;
     this.segmentDelayProgress.clear();
     this.leds.clear();
-    // Start igniting from scratch
-    this._state = BladeState.IGNITING;
+    // Start igniting from scratch (possibly via PREON if enabled)
+    if (config?.preonEnabled) {
+      this._state = BladeState.PREON;
+    } else {
+      this._state = BladeState.IGNITING;
+    }
   }
 
   // ─── Effect controls ───
@@ -265,6 +282,37 @@ export class BladeEngine {
 
     // (b) Update easing functions if config has changed
     this.updateEasings(config);
+
+    // (b.5) Preon phase — pre-ignition colour flash. Progress through the
+    //       preon duration, then transition to IGNITING so the normal
+    //       extend-progress pipeline takes over.
+    if (this._state === BladeState.PREON) {
+      const preonMs = config.preonMs ?? 300;
+      this._preonElapsed += deltaMs;
+      if (this._preonElapsed >= preonMs) {
+        // Preon complete — hand off to ignition.
+        this._state = BladeState.IGNITING;
+        this._preonElapsed = 0;
+      } else {
+        // Paint the blade with the preon flash colour. Intensity rises
+        // linearly over the first half of preonMs and fades over the
+        // second half — matches the TrConcat<TrInstant, Rgb, TrFade<>>
+        // emission the codegen side produces.
+        const t = this._preonElapsed / preonMs;
+        const pulse = t < 0.5 ? t * 2 : 1 - (t - 0.5) * 2;
+        const pc = config.preonColor ?? config.baseColor;
+        const r = Math.round(pc.r * pulse);
+        const g = Math.round(pc.g * pulse);
+        const b = Math.round(pc.b * pulse);
+        this.leds.clear();
+        for (let i = 0; i < this.leds.count; i++) {
+          this.leds.setPixel(i, r, g, b);
+        }
+        // Skip the normal render pipeline — blade is "off" electrically
+        // but showing the preon tint.
+        return;
+      }
+    }
 
     // (c) Update ignition/retraction progress
     this.updateExtendProgress(deltaMs, config);

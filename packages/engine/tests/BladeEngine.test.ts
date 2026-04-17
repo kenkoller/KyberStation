@@ -440,4 +440,60 @@ describe('BladeEngine', () => {
       expect(engine.extendProgress).toBe(0);
     });
   });
+
+  describe('preon', () => {
+    it('ignite(config) transitions OFF → PREON when preonEnabled', () => {
+      const engine = new BladeEngine();
+      const config: BladeConfig = { ...makeTestConfig(), preonEnabled: true };
+      engine.ignite(config);
+      expect(engine.state).toBe(BladeState.PREON);
+    });
+
+    it('ignite(config) goes straight to IGNITING when preonEnabled is false/unset', () => {
+      const engine = new BladeEngine();
+      engine.ignite(makeTestConfig());
+      expect(engine.state).toBe(BladeState.IGNITING);
+    });
+
+    it('preon auto-advances to IGNITING after preonMs elapsed', () => {
+      const engine = new BladeEngine();
+      const config: BladeConfig = {
+        ...makeTestConfig(),
+        preonEnabled: true,
+        preonMs: 100,
+      };
+      engine.ignite(config);
+      expect(engine.state).toBe(BladeState.PREON);
+      // 8 frames × 16ms = 128ms > 100ms preon; state should have flipped.
+      runFrames(engine, config, 8);
+      expect(engine.state).not.toBe(BladeState.PREON);
+      expect([BladeState.IGNITING, BladeState.ON]).toContain(engine.state);
+    });
+
+    it('during PREON the blade is painted with preonColor (or baseColor fallback)', () => {
+      const engine = new BladeEngine();
+      const config: BladeConfig = {
+        ...makeTestConfig(),
+        preonEnabled: true,
+        preonMs: 500,
+        preonColor: { r: 200, g: 50, b: 255 },
+      };
+      engine.ignite(config);
+      // One frame into preon — pulse should have a non-zero value since
+      // the intensity ramps from 0 over the first half.
+      engine.update(125, config); // 25% into preon → intensity ≈ 0.5
+      const pixels = engine.getPixels();
+      // Purple tint — red and blue channels both non-zero, green low.
+      expect(pixels[0]).toBeGreaterThan(40);
+      expect(pixels[2]).toBeGreaterThan(60);
+      expect(pixels[1]).toBeLessThan(pixels[0]);
+    });
+
+    it('replayIgnition(config) honours preon', () => {
+      const engine = new BladeEngine();
+      const config: BladeConfig = { ...makeTestConfig(), preonEnabled: true };
+      engine.replayIgnition(config);
+      expect(engine.state).toBe(BladeState.PREON);
+    });
+  });
 });

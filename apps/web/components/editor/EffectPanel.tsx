@@ -308,6 +308,126 @@ export function EffectPanel() {
         </div>
       </div>
 
+      {/* Spatial effects — fine-tune the positions set via canvas Edit Mode */}
+      <div>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
+          Spatial Effects
+          <HelpTooltip
+            text="Positions for lockup and blast effects along the blade. Easier to set by clicking the blade in Edit Mode; these sliders let you dial in exact values."
+          />
+        </h3>
+        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
+          {/* Lockup position */}
+          <div className="flex items-center gap-3">
+            <label htmlFor="lockup-pos" className="text-ui-xs text-text-secondary w-28 shrink-0">
+              Lockup pos
+            </label>
+            <input
+              id="lockup-pos"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round(((config.lockupPosition as number | undefined) ?? 0.5) * 100)}
+              onChange={(e) =>
+                updateConfig({
+                  lockupPosition: Number(e.target.value) / 100,
+                  lockupRadius: (config.lockupRadius as number | undefined) ?? 0.12,
+                })
+              }
+              className="flex-1"
+            />
+            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
+              {typeof config.lockupPosition === 'number'
+                ? `${Math.round(config.lockupPosition * 100)}%`
+                : '—'}
+            </span>
+            <button
+              onClick={() => updateConfig({ lockupPosition: undefined, lockupRadius: undefined })}
+              title="Clear lockup position (falls back to runtime default)"
+              className="text-ui-xs text-text-muted hover:text-text-primary px-1"
+            >
+              ×
+            </button>
+          </div>
+          {/* Lockup radius */}
+          <div className="flex items-center gap-3">
+            <label htmlFor="lockup-rad" className="text-ui-xs text-text-secondary w-28 shrink-0">
+              Lockup radius
+            </label>
+            <input
+              id="lockup-rad"
+              type="range"
+              min={2}
+              max={40}
+              step={1}
+              value={Math.round(((config.lockupRadius as number | undefined) ?? 0.12) * 100)}
+              onChange={(e) =>
+                updateConfig({ lockupRadius: Number(e.target.value) / 100 })
+              }
+              disabled={typeof config.lockupPosition !== 'number'}
+              className="flex-1 disabled:opacity-40"
+            />
+            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
+              {Math.round(((config.lockupRadius as number | undefined) ?? 0.12) * 100)}%
+            </span>
+          </div>
+
+          {/* Blast position */}
+          <div className="flex items-center gap-3 pt-1 border-t border-border-subtle/50">
+            <label htmlFor="blast-pos" className="text-ui-xs text-text-secondary w-28 shrink-0">
+              Blast pos
+            </label>
+            <input
+              id="blast-pos"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round(((config.blastPosition as number | undefined) ?? 0.5) * 100)}
+              onChange={(e) =>
+                updateConfig({ blastPosition: Number(e.target.value) / 100 })
+              }
+              className="flex-1"
+            />
+            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
+              {typeof config.blastPosition === 'number'
+                ? `${Math.round(config.blastPosition * 100)}%`
+                : '—'}
+            </span>
+            <button
+              onClick={() => updateConfig({ blastPosition: undefined, blastRadius: undefined })}
+              title="Clear blast position (random default)"
+              className="text-ui-xs text-text-muted hover:text-text-primary px-1"
+            >
+              ×
+            </button>
+          </div>
+          {/* Blast radius */}
+          <div className="flex items-center gap-3">
+            <label htmlFor="blast-rad" className="text-ui-xs text-text-secondary w-28 shrink-0">
+              Blast radius
+            </label>
+            <input
+              id="blast-rad"
+              type="range"
+              min={10}
+              max={100}
+              step={5}
+              value={Math.round(((config.blastRadius as number | undefined) ?? 0.5) * 100)}
+              onChange={(e) =>
+                updateConfig({ blastRadius: Number(e.target.value) / 100 })
+              }
+              disabled={typeof config.blastPosition !== 'number'}
+              className="flex-1 disabled:opacity-40"
+            />
+            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
+              {Math.round(((config.blastRadius as number | undefined) ?? 0.5) * 100)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Preon (ProffieOS 7+) */}
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">

@@ -58,7 +58,7 @@ export function useBladeEngine() {
     // If ignition or retraction style changed while blade is on, replay ignition
     // so the user immediately sees the new animation
     if ((ignitionChanged || retractionChanged) && useBladeStore.getState().isOn) {
-      engine.replayIgnition();
+      engine.replayIgnition(useBladeStore.getState().config);
     }
 
     // Style changes are picked up automatically by renderSegment reading config.style,
@@ -66,7 +66,9 @@ export function useBladeEngine() {
   }, [config.ignition, config.retraction, config.style]);
 
   const ignite = useCallback(() => {
-    engineRef.current?.ignite();
+    // Pass the current config so the engine can trigger the PREON
+    // pre-state when config.preonEnabled is on.
+    engineRef.current?.ignite(useBladeStore.getState().config);
     useBladeStore.getState().setIsOn(true);
     useBladeStore.getState().addEffectLog(`${new Date().toLocaleTimeString()}: IGNITION`);
   }, []);

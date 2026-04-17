@@ -10,6 +10,10 @@ import {
 import type { HarmonyType } from '@kyberstation/engine';
 import { getSaberColorName } from '@/lib/saberColorNames';
 import { playUISound } from '@/lib/uiSounds';
+import {
+  srgbToNeopixelPreview,
+  rgbToHex as neopixelRgbToHex,
+} from '@/lib/neopixelColor';
 
 // ─── Canon saber color presets ───
 
@@ -278,9 +282,25 @@ export function ColorPanel() {
       {/* ── Color preview + hex input ── */}
       <div className="flex items-center gap-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
         <div
-          className="w-14 h-14 rounded-lg border border-white/10 shrink-0"
-          style={{ backgroundColor: rgbToHex(activeColor.r, activeColor.g, activeColor.b) }}
-        />
+          className="flex flex-col gap-0.5 shrink-0"
+          title="Top: picker (sRGB). Bottom: as-on-blade (Neopixel + polycarbonate diffusion approximation)."
+        >
+          <div
+            className="w-14 h-7 rounded-t-lg border border-white/10"
+            style={{ backgroundColor: rgbToHex(activeColor.r, activeColor.g, activeColor.b) }}
+            aria-label="Picker colour (sRGB)"
+          />
+          <div
+            className="w-14 h-7 rounded-b-lg border border-white/10"
+            style={{
+              backgroundColor: neopixelRgbToHex(srgbToNeopixelPreview(activeColor)),
+            }}
+            aria-label="As-on-blade preview (Neopixel approximation)"
+          />
+          <div className="text-[9px] text-text-muted leading-tight font-mono text-center">
+            sRGB<br />on-blade
+          </div>
+        </div>
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <input
