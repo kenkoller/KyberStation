@@ -52,6 +52,8 @@ export interface ReconstructedConfig {
   preonMs?: number;
   /** Spatial blast centre 0..1 recovered from `AlphaL<BlastL<...>, Bump<...>>` Bump position. */
   blastPosition?: number;
+  /** Spatial blast wave-size 0..1 recovered from the Bump second arg. */
+  blastRadius?: number;
   confidence: number;
   warnings: string[];
   rawAST: StyleNode;
@@ -432,7 +434,10 @@ function resolvePreon(ast: StyleNode): {
  * Recover spatial-blast position from an AlphaL<BlastL<...>, Bump<...>>
  * wrapper (inverse of the spatial-blast emission branch).
  */
-function resolveSpatialBlast(ast: StyleNode): { blastPosition?: number } {
+function resolveSpatialBlast(ast: StyleNode): {
+  blastPosition?: number;
+  blastRadius?: number;
+} {
   const nodes = findNodes(
     ast,
     (n) =>
@@ -445,7 +450,11 @@ function resolveSpatialBlast(ast: StyleNode): { blastPosition?: number } {
   const bump = nodes[0].args[1];
   const posRaw = extractInt(bump.args[0]);
   if (posRaw === null) return {};
-  return { blastPosition: posRaw / 32768 };
+  const sizeRaw = extractInt(bump.args[1]);
+  return {
+    blastPosition: posRaw / 32768,
+    blastRadius: sizeRaw === null ? undefined : sizeRaw / 32768,
+  };
 }
 
 /** Find the first color in the tree that isn't inside a known effect layer. */
@@ -577,6 +586,7 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
     preonColor: preon.preonColor,
     preonMs: preon.preonMs,
     blastPosition: spatialBlast.blastPosition,
+    blastRadius: spatialBlast.blastRadius,
     confidence: Math.round(confidence * 100) / 100,
     warnings,
     rawAST: ast,

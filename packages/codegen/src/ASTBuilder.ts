@@ -42,6 +42,7 @@ interface BladeConfig {
   preonMs?: number;
   // Spatial blast placement (Edit Mode)
   blastPosition?: number;
+  blastRadius?: number;
   // Fett263 dual-mode ignition (mirrors engine types)
   dualModeIgnition?: boolean;
   ignitionUp?: string;
@@ -362,6 +363,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   // pre-v0.3.0 output so existing presets don't see a diff).
   if (typeof config.blastPosition === 'number') {
     const pos = positionToProffie(clamp01(config.blastPosition));
+    const waveSize = positionToProffie(clamp01(config.blastRadius ?? 0.5));
     layers.push(
       templateNode(
         'template',
@@ -371,7 +373,7 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
           'function',
           'Bump',
           intTemplateNode(pos),
-          intTemplateNode(16384),
+          intTemplateNode(waveSize),
         ),
       ),
     );

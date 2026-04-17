@@ -8,6 +8,8 @@ export interface RGB {
 
 export enum BladeState {
   OFF = 'off',
+  /** ProffieOS 7+ pre-ignition flash — blade tints to preonColor before IGNITING. */
+  PREON = 'preon',
   IGNITING = 'igniting',
   ON = 'on',
   RETRACTING = 'retracting',
@@ -255,6 +257,8 @@ export interface BladeConfig {
   // ── Spatial Blast (Edit Mode extension) ──
   /** When set, blast deflects appear at this position along the blade (0..1). Undefined = random position (default OS behaviour). */
   blastPosition?: number;
+  /** Blast wave size as a fraction of blade length, 0..1. Default 0.5 (half blade). */
+  blastRadius?: number;
 
   // Style-specific params
   gradientEnd?: RGB;
