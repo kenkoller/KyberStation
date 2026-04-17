@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { encodeBMP, decodeBMP } from '@kyberstation/engine';
 import type { OLEDResolution } from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { ErrorState } from '@/components/shared/ErrorState';
 
 type Tool = 'pencil' | 'eraser' | 'line' | 'rect' | 'fill';
 
@@ -69,6 +70,7 @@ export function OLEDEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const activeFrame = frames[activeFrameIdx];
   const pixels = activeFrame?.pixels ?? createEmptyPixels(dims.w, dims.h);
@@ -289,8 +291,9 @@ export function OLEDEditor() {
   const handleImportBMP = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const arrayBuf = await file.arrayBuffer();
+    setImportError(null);
     try {
+      const arrayBuf = await file.arrayBuffer();
       const result = decodeBMP(new Uint8Array(arrayBuf));
       pushUndo();
       const newFrames = [...frames];
@@ -302,7 +305,7 @@ export function OLEDEditor() {
         setResolution('128x32');
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to import BMP');
+      setImportError(err instanceof Error ? err.message : 'Failed to import BMP');
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -473,6 +476,18 @@ export function OLEDEditor() {
         )}
         <input ref={fileInputRef} type="file" accept=".bmp" onChange={handleImportBMP} className="hidden" />
       </div>
+
+      {importError && (
+        <ErrorState
+          variant="import-failed"
+          message={importError}
+          onRetry={() => {
+            setImportError(null);
+            fileInputRef.current?.click();
+          }}
+          compact
+        />
+      )}
 
       <p className="text-ui-xs text-text-muted">
         {frames.length} frame{frames.length !== 1 ? 's' : ''}. Export creates 1-bit monochrome BMP files compatible with ProffieOS OLED displays.

@@ -10,6 +10,7 @@ import type { CardTemplate } from '@kyberstation/presets';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { downloadCardTemplate, readCardTemplateFile } from '@/lib/bladeConfigIO';
 import { playUISound } from '@/lib/uiSounds';
+import { toast } from '@/lib/toastManager';
 
 function ProfileCard({
   profile,
@@ -352,8 +353,10 @@ function CardPresetComposer({ profile }: { profile: SaberProfile }) {
           config: entry.config,
         });
       }
-    } catch {
-      // Invalid template file
+      toast.success(`Loaded ${entries.length} preset(s) from template`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Invalid template file';
+      toast.error(`Template import failed: ${msg}`);
     }
     e.target.value = '';
   };
@@ -489,14 +492,21 @@ export function SaberProfileManager() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert('File too large. Max 5 MB.');
+      toast.error('Profile import failed: file too large (max 5 MB)');
       e.target.value = '';
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       const result = importProfile(reader.result as string);
-      if (!result) alert('Invalid profile file.');
+      if (!result) {
+        toast.error('Profile import failed: file is not a valid KyberStation saber profile');
+      } else {
+        toast.success(`Imported profile "${file.name}"`);
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Profile import failed: could not read file');
     };
     reader.readAsText(file);
     e.target.value = '';
