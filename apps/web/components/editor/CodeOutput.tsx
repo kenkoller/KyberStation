@@ -335,7 +335,7 @@ export function CodeOutput() {
                 type="checkbox"
                 checked={editMode}
                 onChange={(e) => setEditMode(e.target.checked)}
-                className="w-3 h-3 rounded border-border-subtle accent-[var(--color-accent)]"
+                className="w-3 h-3 rounded border-border-subtle accent-accent"
               />
               <span className="text-ui-sm font-medium text-text-secondary flex items-center gap-1">
                 Fett263 Edit Mode

@@ -186,7 +186,7 @@ function LayerToggle({ id, isVisible, onToggle }: LayerToggleProps) {
             aria-hidden="true"
           />
           <p className="text-ui-xs font-semibold text-text-primary">{layer.label}</p>
-          <span className="ml-auto text-[9px] text-text-muted uppercase tracking-wider">
+          <span className="ml-auto text-ui-xs text-text-muted uppercase tracking-wider">
             {layer.category}
           </span>
         </div>

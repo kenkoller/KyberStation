@@ -177,7 +177,7 @@ export function GestureControlPanel() {
               <div className="flex items-center gap-1.5">
                 <span className="text-ui-sm font-semibold">{p.label}</span>
                 {p.gestureCompatible && (
-                  <span className="text-[9px] uppercase tracking-wider font-mono px-1 py-0 rounded bg-accent/20 text-accent">
+                  <span className="text-ui-xs uppercase tracking-wider font-mono px-1 py-0 rounded bg-accent/20 text-accent">
                     Gestures
                   </span>
                 )}

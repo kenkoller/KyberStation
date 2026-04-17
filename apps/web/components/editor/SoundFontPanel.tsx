@@ -82,10 +82,14 @@ const FORMAT_LABELS: Record<string, string> = {
   generic: 'GEN',
 };
 
-const COMPLETENESS_COLORS: Record<string, { dot: string; text: string; label: string }> = {
-  complete: { dot: 'bg-green-400', text: 'text-green-400', label: 'Complete' },
-  partial: { dot: 'bg-yellow-400', text: 'text-yellow-400', label: 'Partial' },
-  minimal: { dot: 'bg-red-400', text: 'text-red-400', label: 'Minimal' },
+// Status-token backed completeness colours. The `dot` and `text` values are
+// CSS colour strings (rgb() consuming the --status-ok/warn/error vars) so
+// they apply via inline style and automatically track colour-blind mode +
+// theme overrides.
+const COMPLETENESS_COLORS: Record<string, { color: string; label: string }> = {
+  complete: { color: 'rgb(var(--status-ok))', label: 'Complete' },
+  partial: { color: 'rgb(var(--status-warn))', label: 'Partial' },
+  minimal: { color: 'rgb(var(--status-error))', label: 'Minimal' },
 };
 
 // ─── Font Library Tab ───
@@ -335,9 +339,10 @@ function FontLibraryRow({
       }`}
     >
       <div className="flex items-center gap-2 px-2 py-1.5">
-        {/* Completeness dot */}
+        {/* Completeness dot — colour tracks the --status-* theme tokens */}
         <span
-          className={`w-2 h-2 rounded-full shrink-0 ${comp.dot}`}
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ background: comp.color }}
           title={comp.label}
           aria-label={`Completeness: ${comp.label}`}
         />
@@ -347,7 +352,10 @@ function FontLibraryRow({
           onClick={onToggleExpand}
           className="flex-1 text-left min-w-0"
         >
-          <span className={`text-ui-sm truncate block ${isActive ? 'text-accent font-medium' : 'text-text-primary'}`}>
+          <span
+            className={`text-ui-sm truncate block ${isActive ? 'text-accent font-medium' : 'text-text-primary'}`}
+            title={font.name}
+          >
             {font.name}
             {isActive && <span className="ml-1 text-accent text-ui-xs">(loaded)</span>}
           </span>
@@ -356,7 +364,7 @@ function FontLibraryRow({
         {/* Pairing badge — only shown when score is meaningful */}
         {pair.tag !== 'neutral' && (
           <span
-            className="text-[9px] uppercase tracking-wider font-mono px-1 py-0.5 rounded shrink-0"
+            className="text-ui-xs uppercase tracking-wider font-mono px-1 py-0.5 rounded shrink-0"
             style={{
               color: pair.color,
               background: `${pair.color.replace('rgb(', 'rgba(').replace(')', ' / 0.12)')}`,
@@ -415,9 +423,9 @@ function FontLibraryRow({
           </div>
           <div className="flex gap-3 mt-1.5 text-ui-xs text-text-muted">
             <span>{formatBytes(font.totalSizeBytes)}</span>
-            <span className={comp.text}>{comp.label}</span>
+            <span style={{ color: comp.color }}>{comp.label}</span>
             {font.missingCategories.length > 0 && (
-              <span className="text-yellow-400/70">
+              <span style={{ color: 'rgb(var(--status-warn) / 0.7)' }}>
                 Missing: {font.missingCategories.join(', ')}
               </span>
             )}

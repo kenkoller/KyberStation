@@ -566,7 +566,7 @@ export function CardWriter() {
                 onChange={() => togglePreset('current')}
                 disabled={isWorking}
                 aria-label="Include current style preset in export"
-                className="accent-[var(--color-accent)] w-3.5 h-3.5"
+                className="accent-accent w-3.5 h-3.5"
               />
               <div
                 className="w-3 h-3 rounded-sm shrink-0"
@@ -673,7 +673,7 @@ export function CardWriter() {
               onChange={(e) => setAutoBackup(e.target.checked)}
               disabled={isWorking}
               aria-label="Auto-backup existing config before overwriting"
-              className="accent-[var(--color-accent)] w-3.5 h-3.5"
+              className="accent-accent w-3.5 h-3.5"
             />
             <span className="text-ui-xs text-text-secondary">
               Auto-backup existing config before overwriting

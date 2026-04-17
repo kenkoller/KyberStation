@@ -554,7 +554,7 @@ export function EffectPanel() {
               type="checkbox"
               checked={!!config.dualModeIgnition}
               onChange={(e) => updateConfig({ dualModeIgnition: e.target.checked })}
-              className="w-3 h-3 rounded border-border-subtle accent-[var(--color-accent)]"
+              className="w-3 h-3 rounded border-border-subtle accent-accent"
             />
             <span className="text-ui-xs text-text-secondary">Enable angle-based ignition switching</span>
           </label>
