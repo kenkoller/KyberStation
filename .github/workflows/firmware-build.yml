@@ -1,0 +1,95 @@
+name: Firmware build
+
+# Builds ProffieOS 7.x binaries for every variant we ship in the WebUSB
+# flash panel. Uploads each .bin as a workflow artefact, and — when the
+# trigger is a release — attaches the same binaries to the release.
+#
+# Triggers:
+#   - manual (workflow_dispatch) — rebuild binaries without cutting a release
+#   - release published — attach fresh binaries to the release
+#
+# The committed binaries under apps/web/public/firmware/ are NOT updated
+# by this workflow; they are updated by hand with the artefacts from a
+# green run, so the commit history stays readable and diffs stay sane.
+
+on:
+  workflow_dispatch:
+    inputs:
+      proffieos_ref:
+        description: 'ProffieOS git ref to build (tag, branch, or commit)'
+        required: false
+        default: 'master'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build ${{ matrix.variant.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - id: v3-standard
+            name: Proffieboard V3 (standard)
+            fqbn: 'proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmmc1,usb=cdc_msc'
+            config: v3-standard.h
+          - id: v3-oled
+            name: Proffieboard V3 + OLED
+            fqbn: 'proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmmc1,usb=cdc_msc'
+            config: v3-oled.h
+          - id: v2-standard
+            name: Proffieboard V2 (standard)
+            fqbn: 'proffieboard:stm32l4:ProffieboardV2-L433CC:dosfs=sdmmc1,usb=cdc_msc'
+            config: v2-standard.h
+
+    steps:
+      - name: Checkout KyberStation
+        uses: actions/checkout@v4
+
+      - name: Checkout ProffieOS
+        uses: actions/checkout@v4
+        with:
+          repository: profezzorn/ProffieOS
+          ref: ${{ inputs.proffieos_ref || 'master' }}
+          path: proffieos
+
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install Proffieboard core
+        run: |
+          arduino-cli config add board_manager.additional_urls \
+            https://profezzorn.github.io/arduino-proffieboard/package_proffieboard_index.json
+          arduino-cli core update-index
+          arduino-cli core install proffieboard:stm32l4
+
+      - name: Stage build config
+        run: |
+          cp firmware-configs/${{ matrix.variant.config }} proffieos/config/config.h
+
+      - name: Compile
+        run: |
+          arduino-cli compile \
+            --fqbn "${{ matrix.variant.fqbn }}" \
+            --output-dir build/${{ matrix.variant.id }} \
+            proffieos
+
+      - name: Rename binary
+        run: |
+          cp build/${{ matrix.variant.id }}/*.bin \
+             build/${{ matrix.variant.id }}/proffieos-7x-${{ matrix.variant.id }}.bin
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: proffieos-7x-${{ matrix.variant.id }}
+          path: build/${{ matrix.variant.id }}/proffieos-7x-${{ matrix.variant.id }}.bin
+          retention-days: 90
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/${{ matrix.variant.id }}/proffieos-7x-${{ matrix.variant.id }}.bin
