@@ -44,6 +44,12 @@ export function applyReconstructedConfig(
     lockupRadius: cppResult.lockupRadius,
     blastPosition: cppResult.blastPosition,
     blastRadius: cppResult.blastRadius,
+    dragPosition: cppResult.dragPosition,
+    dragRadius: cppResult.dragRadius,
+    meltPosition: cppResult.meltPosition,
+    meltRadius: cppResult.meltRadius,
+    stabPosition: cppResult.stabPosition,
+    stabRadius: cppResult.stabRadius,
     // Preon — pre-ignition flash.
     preonEnabled: cppResult.preonEnabled,
     preonColor: cppResult.preonColor,

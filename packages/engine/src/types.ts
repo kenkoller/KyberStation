@@ -245,6 +245,18 @@ export interface BladeConfig {
   lockupPosition?: number;
   /** Lockup radius (half-extent in each direction) as a fraction of blade length, 0..1. Default 0.12. */
   lockupRadius?: number;
+  /** Drag lockup centre position along the blade (0..1). Undefined = non-positional. */
+  dragPosition?: number;
+  /** Drag lockup radius (fraction of blade length). Default 0.15. */
+  dragRadius?: number;
+  /** Melt lockup centre position along the blade (0..1). Undefined = non-positional. */
+  meltPosition?: number;
+  /** Melt lockup radius (fraction of blade length). Default 0.18. */
+  meltRadius?: number;
+  /** Stab effect centre position (0..1). Stab is usually centre-initiated. */
+  stabPosition?: number;
+  /** Stab effect radius (fraction of blade length). Default 0.2. */
+  stabRadius?: number;
 
   // ── Preon (ProffieOS 7+) ──
   /** Enable the PREON effect — a short colour flash that plays BEFORE ignition. */

@@ -36,6 +36,12 @@ interface BladeConfig {
   // Spatial lockup (mirrors engine types — keep in sync; see typeIdentity.test.ts)
   lockupPosition?: number;
   lockupRadius?: number;
+  dragPosition?: number;
+  dragRadius?: number;
+  meltPosition?: number;
+  meltRadius?: number;
+  stabPosition?: number;
+  stabRadius?: number;
   // Preon — ProffieOS 7+ pre-ignition flash
   preonEnabled?: boolean;
   preonColor?: RGB;
@@ -355,6 +361,41 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
     );
   }
 
+  // ── Stab layer (v0.10.0) ──
+  // Stab is not emitted in the baseline preset output. When `stabPosition`
+  // is set the user has opted into a spatial stab flash, so we emit a
+  // TransitionEffectL that fires on EFFECT_STAB with a Bump-masked flash.
+  // Uses clashColor as the stab flash tint (matches ProffieOS convention —
+  // stab is a localised "impact" feel, visually close to clash).
+  if (typeof config.stabPosition === 'number') {
+    const pos = positionToProffie(clamp01(config.stabPosition));
+    const size = positionToProffie(clamp01(config.stabRadius ?? 0.2));
+    layers.push(
+      templateNode(
+        'template',
+        'TransitionEffectL',
+        templateNode(
+          'transition',
+          'TrConcat',
+          rawNode('TrInstant'),
+          templateNode(
+            'template',
+            'AlphaL',
+            rgbNode(config.clashColor),
+            templateNode(
+              'function',
+              'Bump',
+              intTemplateNode(pos),
+              intTemplateNode(size),
+            ),
+          ),
+          templateNode('transition', 'TrFade', intNode(200)),
+        ),
+        rawNode('EFFECT_STAB'),
+      ),
+    );
+  }
+
   // ── Blast layer ──
   // When `blastPosition` is set, wrap BlastL in AlphaL<..., Bump<Int<pos>, Int<16384>>>
   // so deflects concentrate around the placed position rather than spreading
@@ -429,17 +470,37 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   }
 
   // Drag lockup
+  // When `dragPosition` is set, wrap the LockupTrL in AlphaL<..., Bump<>>
+  // so drag energy concentrates at the placed position rather than
+  // covering the entire blade contact zone.
   const dragColor = config.dragColor ?? { r: 255, g: 150, b: 0 };
-  layers.push(
-    templateNode(
-      'template',
-      'LockupTrL',
-      templateNode('template', 'AudioFlickerL', rgbNode(dragColor)),
-      rawNode('TrInstant'),
-      templateNode('transition', 'TrFade', intNode(400)),
-      rawNode('SaberBase::LOCKUP_DRAG'),
-    ),
+  const dragLayer = templateNode(
+    'template',
+    'LockupTrL',
+    templateNode('template', 'AudioFlickerL', rgbNode(dragColor)),
+    rawNode('TrInstant'),
+    templateNode('transition', 'TrFade', intNode(400)),
+    rawNode('SaberBase::LOCKUP_DRAG'),
   );
+  if (typeof config.dragPosition === 'number') {
+    const pos = positionToProffie(clamp01(config.dragPosition));
+    const size = positionToProffie(clamp01(config.dragRadius ?? 0.15));
+    layers.push(
+      templateNode(
+        'template',
+        'AlphaL',
+        dragLayer,
+        templateNode(
+          'function',
+          'Bump',
+          intTemplateNode(pos),
+          intTemplateNode(size),
+        ),
+      ),
+    );
+  } else {
+    layers.push(dragLayer);
+  }
 
   // Lightning block lockup
   const lightningColor = config.lightningColor ?? { r: 100, g: 100, b: 255 };
@@ -464,33 +525,50 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
 
   // Melt lockup
   const meltColor = config.meltColor ?? { r: 255, g: 200, b: 0 };
-  layers.push(
+  const meltLayer = templateNode(
+    'template',
+    'LockupTrL',
     templateNode(
-      'template',
-      'LockupTrL',
+      'mix',
+      'Mix',
+      templateNode(
+        'function',
+        'SmoothStep',
+        intTemplateNode(26000),
+        intTemplateNode(4000),
+      ),
+      rawNode('Black'),
       templateNode(
         'mix',
         'Mix',
+        templateNode('function', 'NoisySoundLevel'),
+        rgbNode(meltColor),
+        rawNode('White'),
+      ),
+    ),
+    rawNode('TrInstant'),
+    templateNode('transition', 'TrFade', intNode(500)),
+    rawNode('SaberBase::LOCKUP_MELT'),
+  );
+  if (typeof config.meltPosition === 'number') {
+    const pos = positionToProffie(clamp01(config.meltPosition));
+    const size = positionToProffie(clamp01(config.meltRadius ?? 0.18));
+    layers.push(
+      templateNode(
+        'template',
+        'AlphaL',
+        meltLayer,
         templateNode(
           'function',
-          'SmoothStep',
-          intTemplateNode(26000),
-          intTemplateNode(4000),
-        ),
-        rawNode('Black'),
-        templateNode(
-          'mix',
-          'Mix',
-          templateNode('function', 'NoisySoundLevel'),
-          rgbNode(meltColor),
-          rawNode('White'),
+          'Bump',
+          intTemplateNode(pos),
+          intTemplateNode(size),
         ),
       ),
-      rawNode('TrInstant'),
-      templateNode('transition', 'TrFade', intNode(500)),
-      rawNode('SaberBase::LOCKUP_MELT'),
-    ),
-  );
+    );
+  } else {
+    layers.push(meltLayer);
+  }
 
   return layers;
 }
