@@ -9,7 +9,14 @@
 import type { HiltPart } from './types';
 
 // Emitters
+import { compactEmitter } from './parts/emitters/compact';
+import { curvedEmitter } from './parts/emitters/curved';
+import { dualEmitterBottom } from './parts/emitters/dual-bottom';
+import { dualEmitterTop } from './parts/emitters/dual-top';
 import { graflexEmitter } from './parts/emitters/graflex';
+import { mppEmitter } from './parts/emitters/mpp';
+import { ornateEmitter } from './parts/emitters/ornate';
+import { ventedEmitter } from './parts/emitters/vented';
 
 // Switches
 import { graflexSwitch } from './parts/switches/graflex';
@@ -21,7 +28,14 @@ import { tTracksGrip } from './parts/grips/t-tracks';
 import { classicPommel } from './parts/pommels/classic';
 
 export const PART_CATALOG: Record<string, HiltPart> = {
+  [compactEmitter.id]: compactEmitter,
+  [curvedEmitter.id]: curvedEmitter,
+  [dualEmitterBottom.id]: dualEmitterBottom,
+  [dualEmitterTop.id]: dualEmitterTop,
   [graflexEmitter.id]: graflexEmitter,
+  [mppEmitter.id]: mppEmitter,
+  [ornateEmitter.id]: ornateEmitter,
+  [ventedEmitter.id]: ventedEmitter,
   [graflexSwitch.id]: graflexSwitch,
   [tTracksGrip.id]: tTracksGrip,
   [classicPommel.id]: classicPommel,
