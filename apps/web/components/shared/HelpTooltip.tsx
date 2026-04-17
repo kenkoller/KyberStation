@@ -150,7 +150,13 @@ export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProp
         position: 'fixed',
         top: pos.top,
         left: pos.left,
-        zIndex: 9999,
+        // Z-index tiers (KyberStation):
+        //   60 — tooltips (above modals, below hard gates)
+        //   50 — modals + onboarding flow
+        //   40 — toast stack
+        //   30 — floating UI (fullscreen preview, status bar)
+        //   100 — splash screen (hard gate, first-run only)
+        zIndex: 60,
       }}
       className={`w-56 max-w-[75vw] p-2.5 rounded-lg bg-bg-card border border-border-light shadow-xl
         transition-all duration-150 ease-out ${originClasses[pos.resolved] ?? 'origin-bottom'}

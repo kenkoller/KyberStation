@@ -77,7 +77,14 @@ export default function EditorPage() {
       {appReady && (
         <>
           {shareError && (
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-md bg-red-900/80 border border-red-700/50 text-red-300 text-ui-xs font-mono shadow-lg">
+            <div
+              className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-md text-ui-xs font-mono shadow-lg border"
+              style={{
+                background: 'rgb(var(--status-error) / 0.2)',
+                borderColor: 'rgb(var(--status-error) / 0.5)',
+                color: 'rgb(var(--status-error))',
+              }}
+            >
               {shareError}
             </div>
           )}

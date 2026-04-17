@@ -90,16 +90,19 @@ export function FPSCounter({ visible = true }: FPSCounterProps) {
     );
   }
 
-  const colorClass =
+  // Bind to theme status tokens so colourblind / high-contrast overrides
+  // take effect automatically. See --status-ok/warn/error in globals.css.
+  const statusColor =
     displayFPS >= 50
-      ? 'text-green-400'
+      ? 'rgb(var(--status-ok))'
       : displayFPS >= 30
-        ? 'text-yellow-400'
-        : 'text-red-400';
+        ? 'rgb(var(--status-warn))'
+        : 'rgb(var(--status-error))';
 
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded bg-bg-surface/40 font-mono text-ui-xs tabular-nums select-none ${colorClass}`}
+      className="inline-flex items-center px-1.5 py-0.5 rounded bg-bg-surface/40 font-mono text-ui-xs tabular-nums select-none"
+      style={{ color: statusColor }}
       aria-label={`${displayFPS} frames per second`}
       title="Canvas render FPS"
     >

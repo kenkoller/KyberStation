@@ -172,6 +172,9 @@ export function CodeOutput() {
     try {
       const encoded = await encodeConfig(config);
       const url = buildShareUrl(encoded);
+      // QR codes are machine-read — use fixed high-contrast colours
+      // rather than theme tokens so scanners consistently recognise them
+      // regardless of which UI theme is active.
       const dataUrl = generateQRDataUrl(url, {
         size: 256,
         fgColor: '#ffffff',
@@ -240,7 +243,7 @@ export function CodeOutput() {
               <span className="inline-block w-8 text-right text-text-muted select-none mr-4 shrink-0">
                 {i + 1}
               </span>
-              <span className="text-[#a0b0c8]">{line}</span>
+              <span className="text-text-secondary">{line}</span>
             </div>
           ))}
         </pre>
@@ -372,7 +375,12 @@ export function CodeOutput() {
           className="hidden"
         />
         {importError && (
-          <p className="text-ui-sm text-red-400 mt-2">{importError}</p>
+          <p
+            className="text-ui-sm mt-2"
+            style={{ color: 'rgb(var(--status-error))' }}
+          >
+            {importError}
+          </p>
         )}
 
         {/* QR Code Display */}

@@ -99,7 +99,7 @@ export function CanvasToolbar() {
             ? 'Edit Mode: click the blade to set the lockup position. Click here again to exit.'
             : 'Enter Edit Mode to place the lockup position by clicking the blade.'
         }
-        className={`px-2 py-0.5 rounded text-ui-sm font-medium border shrink-0 ${
+        className={`touch-target px-2.5 py-1 rounded text-ui-sm font-medium border shrink-0 ${
           editMode
             ? 'bg-accent/20 border-accent text-accent'
             : 'bg-bg-deep border-border-subtle text-text-muted hover:text-text-primary'
