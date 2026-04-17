@@ -34,10 +34,12 @@
   /* ─── Faction / era / badge tokens (PresetGallery + badges) ───
      Space-separated RGB triples so they compose via Tailwind's
      `rgb(var(--x) / <alpha>)` style. */
-  --faction-jedi: 96 165 250;      /* blue */
-  --faction-sith: 248 113 113;     /* red */
-  --faction-grey: 250 204 21;      /* yellow */
-  --faction-neutral: 148 163 184;  /* slate */
+  --faction-jedi: 96 165 250;       /* blue */
+  --faction-jedi-deep: 0 68 204;    /* deeper blue for gradient stops */
+  --faction-sith: 248 113 113;      /* red */
+  --faction-sith-deep: 139 0 0;     /* deep red for gradient stops */
+  --faction-grey: 250 204 21;       /* yellow */
+  --faction-neutral: 148 163 184;   /* slate */
   --era-prequel: 147 197 253;
   --era-ot: 254 215 170;
   --era-sequel: 252 165 165;
@@ -369,7 +371,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
 /* Sith-style text */
 .sw-sith-text {
   font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(180deg, #ff2020 0%, #8b0000 100%);
+  background: linear-gradient(
+    180deg,
+    rgb(var(--faction-sith)) 0%,
+    rgb(var(--faction-sith-deep)) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -378,7 +384,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
 /* Jedi-style text */
 .sw-jedi-text {
   font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(180deg, #4a9eff 0%, #0044cc 100%);
+  background: linear-gradient(
+    180deg,
+    rgb(var(--faction-jedi)) 0%,
+    rgb(var(--faction-jedi-deep)) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
