@@ -438,3 +438,164 @@ pnpm typecheck                  # TypeScript strict check
 - Commits: Conventional Commits (feat:, fix:, refactor:, docs:, test:)
 - PRs: Must pass CI, must have tests for new engine/codegen code
 - Branch naming: `feat/description`, `fix/description`, `refactor/description`
+
+---
+
+## Current State (v0.10.0 — 2026-04-17)
+
+We shipped thirteen tagged releases in a single working day (v0.2.0 → v0.10.0),
+taking KyberStation from a partial WYSIWYG demo to a release-ready visual
+editor. Session notes: `docs/SESSION_2026-04-17.md`.
+
+### 23-feature brainstorm — status matrix
+
+| # | Feature | Status | Notes |
+|---|---|---|---|
+| 1 | WYSIWYG Edit Mode | ✅ v0.2.0 | Click blade → moves caret, updates config, re-emits code |
+| 2 | Spatial lockup placement | ✅ v0.2.0 | `AlphaL<LockupTrL<…>, Bump<Int<pos>, Int<size>>>` round-trips |
+| 3 | Dual-mode ignition | ✅ v0.2.1 | `TrSelect` with saber-up / saber-down variants |
+| 4 | Preon editor | ✅ v0.3.0 | `TransitionEffectL<…, EFFECT_PREON>` + engine preview |
+| 5 | Spatial blast placement | ✅ v0.3.0 | Position + radius round-trip through `Bump` |
+| 6 | Blade-accurate colour | ✅ v0.3.1 | Neopixel gamma + diffusion preview |
+| 7 | Saber Wizard (onboarding) | ✅ v0.4.0 | 3-step: archetype → colour → vibe |
+| 8 | Sound font pairing | ✅ v0.5.0 | Keyword scoring, "Recommended / Compatible" labels |
+| 9 | Crystal reactive glow | ✅ v0.5.0 | `--crystal-accent` CSS var follows base colour |
+| 10 | Prop file visual UI | ✅ v0.6.0 | 5 prop files, button-action map reference |
+| 11 | Timeline easing curves | ✅ v0.7.0 | 8 named curves with inline SVG preview |
+| 12 | Audio-visual sync | ✅ v0.8.0 | Motion swing → audio pitch/volume via `useAudioSync` |
+| 13 | Mobile companion route | ✅ v0.9.0 | `/m` — 12 curated presets, swipe nav, deep-link to `/editor` |
+| 14 | Validation + polish | ✅ v0.9.1 | Round-trip data-loss fix, theme-token compliance |
+| 15 | Long-tail cleanup | ✅ v0.10.0 | Spatial drag/melt/stab, parser warnings, font pairing polish |
+| 16 | **WebUSB flash** | 🔜 v0.11.0 | Spawned as standalone session; STM32 DFU with "use at your own risk" |
+| 17 | **Share Pack** | 📋 planned | Jedi-Holocron card: PNG + GIF + seed code. See `docs/SHARE_PACK.md` |
+| 18 | **Community gallery (GitHub PR)** | 📋 planned | Static, PR-moderated. See `docs/COMMUNITY_GALLERY.md` |
+| 19 | Tablet-specific layout | ⏸ deferred | Existing responsive breakpoints cover it for now |
+| 20 | More spatial effects | ✅ v0.10.0 | drag/melt/stab positioning completed |
+| 21 | Hosted gallery + voting | ⏸ deferred | Requires backend; GitHub-PR gallery is the pragmatic alternative |
+| 22 | Electron USB serial | ⏸ deferred | Superseded by WebUSB flash (v0.11.0) |
+| 23 | Plugin-authored styles | ⏸ deferred | Worth revisiting once the style API stabilises |
+
+Legend: ✅ shipped · 🔜 next sprint · 📋 planned (doc exists) · ⏸ deferred
+
+### Architecture decisions made this session
+
+1. **BladeConfig mirror + drift-sentinel.** `.npmrc` sets
+   `node-linker=hoisted` + `symlink=false`, so `packages/codegen` can't
+   `import` from `packages/engine` at compile time. Instead of a refactor we
+   keep a **mirror** of `BladeConfig` in `packages/codegen/src/ASTBuilder.ts`,
+   and a vitest test (`typeIdentity.test.ts`) imports the real engine type
+   through a vitest-only alias and asserts structural equivalence. Drift
+   fails CI.
+
+2. **`astBinding.ts` six-seam façade.** `configToAST` / `astToCode` /
+   `codeToAST` / `astToConfig` / `syncFromConfig` / `syncFromCode` live in
+   one module. Pure math (`hitToLED`, `positionToProffie`, `clamp01`) lives
+   alongside. One import path for everything that crosses the config ↔ AST
+   ↔ text boundary.
+
+3. **Transition map as single source of truth.** `packages/codegen/src/transitionMap.ts`
+   holds every transition ID with `{ kind, buildAST(ms), matches(node),
+   extractMs(node), preferForInverse }`. Fixed the pre-existing
+   `standard ↔ scroll` round-trip swap where emitter and parser each had
+   their own half of the mapping.
+
+4. **Lexer consumes `::`.** `packages/codegen/src/parser/Lexer.ts` now
+   treats `SaberBase::LOCKUP_NORMAL` as one token. Previously the lexer
+   split on `:`, making `LockupTrL<..., SaberBase::LOCKUP_NORMAL>` look
+   like 5 args to the parser and triggering spurious arg-count warnings.
+
+5. **GPL-3.0 attribution chain.** KyberStation source is MIT. ProffieOS
+   fixtures and template reference material derived from the ProffieOS
+   project are GPL-3.0; `LICENSES/ProffieOS-GPL-3.0.txt` carries the full
+   text and `README.md` documents the aggregate-work separation (§5). Fett263
+   prop file helpers sit under the same aggregate.
+
+6. **Theme-token discipline.** All colour / radius / size decisions must
+   reference a CSS variable, not a Tailwind arbitrary hex. Enforced via
+   `git grep` checks in the v0.9.1 verification pass. Exception:
+   `OLEDPreview.tsx` intentionally hardcodes black/white to simulate the
+   hardware OLED — that is a simulation concern, not a theme concern.
+
+7. **Community gallery via GitHub PR.** Instead of hosting a backend for
+   submissions + voting, curated presets live in
+   `packages/presets/src/characters/community/` and contributors open a
+   PR. Reviews are the moderation; merges are the publication. Zero
+   infra, one clean audit trail, and contributor attribution via git.
+
+8. **WebUSB flash is a separate sprint.** Reassessed partway through the
+   session: it is worth doing because (a) ProffieOS Workbench has
+   normalised "flash from the browser" and (b) the only real risk
+   (bricked board) is mitigated by STM32's DFU-mode recovery. Ships with
+   a prominent "use at your own risk" disclaimer. Isolated to v0.11.0 so
+   it can't destabilise the visual editor.
+
+### Deferred items
+
+**For v0.11.0:**
+
+- WebUSB flash (STM32 DFU) — primary work of the spawned session
+- Share Pack implementation (doc is planned; impl rides alongside WebUSB
+  or the session after)
+
+**Not yet planned:**
+
+- Tablet-specific layout adaptations beyond the existing breakpoints
+- Hosted community gallery with voting / comments / profile pages
+- Plugin-authored styles (third-party `BladeStyle` implementations)
+- OAuth / account system
+- Telemetry / analytics
+- Server-side blade rendering for the OG-image social preview
+- A real installer (`.dmg` / `.msi`) — currently `.app` bundle via
+  symlink is the Mac install story
+
+**Intentional deviations from the brainstorm:**
+
+- The "community gallery with voting" (item #21) is replaced with the
+  GitHub-PR model (item #18). If demand justifies the cost later, the
+  former can layer on top of the latter without breaking contributors.
+- "More spatial effects" (item #20) turned into drag/melt/stab
+  positioning rather than new effect types — user-value was higher in
+  making existing effects placeable than adding more.
+
+### New utilities (reusable)
+
+Added this session; tests co-located unless noted:
+
+| Module | Purpose |
+|---|---|
+| `packages/codegen/src/astBinding.ts` | Six-seam config ↔ AST ↔ code façade + pure math |
+| `packages/codegen/src/transitionMap.ts` | Single source of truth for ignition / retraction ID ↔ AST |
+| `packages/codegen/src/parser/ConfigReconstructor.ts` | Container-based colour + spatial field recovery |
+| `apps/web/lib/neopixelColor.ts` | sRGB → linear + WS2812b bias + diffusion desaturation |
+| `apps/web/lib/easingMath.ts` | 8 named curves including bounce + elastic (SSR-safe) |
+| `apps/web/lib/fontPairing.ts` | Keyword-based font ↔ config scoring + pairing label |
+| `apps/web/lib/factionStyles.ts` | Jedi / Sith / Grey / era / badge → CSS var lookup |
+| `apps/web/hooks/useCrystalAccent.ts` | Publishes `baseColor` as `--crystal-accent` |
+| `apps/web/hooks/useAudioSync.ts` | Swing-driven audio pitch/volume modulation |
+
+### Test coverage (top-level)
+
+- **Engine**: style output stability, effect activation / decay, ignition
+  masks, motion simulation determinism
+- **Codegen**: AST round-trip (config → code → config), transition map
+  inverse coverage, parser warnings, type-identity drift sentinel,
+  reconstructor spatial field recovery
+- **Web**: applyReconstructedConfig import round-trip, factionStyles
+  lookup, easingMath numeric stability, fontPairing scoring
+
+### Verification shortcuts
+
+```bash
+# Type / lint / test health
+pnpm -w typecheck && pnpm -w lint && pnpm -w test
+
+# Theme-token discipline
+git grep "accent-\[var(--color-accent)\]" apps/web      # must be zero
+git grep "text-\[9px\]" apps/web                        # must be zero
+
+# Visual QA: Journey 6 round-trip (manual)
+# 1. Build config with Preon ON + lockup 33% + blast 50% + dual-mode ignition
+# 2. Copy emitted code
+# 3. Paste into C++ import panel → Parse → Apply
+# 4. Confirm every field above survives unchanged
+```
