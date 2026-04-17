@@ -1,10 +1,22 @@
 'use client';
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 import { useDeviceMotion } from '@/hooks/useDeviceMotion';
+import type { ChoreographerState } from '@/lib/crystal/cameraChoreographer';
+
+// Dynamic import — keeps Three.js out of the SSR bundle (scene only mounts
+// when the user triggers the crystal reveal).
+const CrystalRevealScene = dynamic(
+  () =>
+    import('@/components/editor/CrystalRevealScene').then(
+      (m) => m.CrystalRevealScene,
+    ),
+  { ssr: false },
+);
 
 // ── Effect definitions (mirrors EffectTriggerBar) ──────────────────────────
 
@@ -39,6 +51,19 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
   const isOn = useBladeStore((s) => s.isOn);
   const motionSim = useBladeStore((s) => s.motionSim);
   const setMotionSim = useBladeStore((s) => s.setMotionSim);
+  const topology = useBladeStore((s) => s.topology);
+
+  // ─── Crystal reveal state ──────────────────────────────────────────
+  // Only available when the active topology has an 'accent-crystal'
+  // segment (ACCENT_TOPOLOGY). On other topologies the button is hidden.
+  const hasCrystalChamber = useMemo(
+    () => topology.segments.some((seg) => seg.role === 'accent-crystal'),
+    [topology.segments],
+  );
+  const [revealActive, setRevealActive] = useState(false);
+  const [revealState, setRevealState] = useState<ChoreographerState>('idle');
+  // Button is disabled mid-animation to prevent stacked dolly calls
+  const revealBusy = revealState === 'dolly-in' || revealState === 'dolly-out';
 
   // Overlay visibility (auto-hide after HIDE_DELAY_MS of no movement)
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -112,11 +137,25 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
     }
   }, [isFullscreen, motionEnabled, stopListening, setMotionSim]);
 
+  // When fullscreen closes, snap the crystal reveal back to idle
+  useEffect(() => {
+    if (!isFullscreen) {
+      setRevealActive(false);
+      setRevealState('idle');
+    }
+  }, [isFullscreen]);
+
   // Keyboard: Escape exits, orientation toggle with O
   useEffect(() => {
     if (!isFullscreen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // If the crystal reveal is active, Escape first returns to the
+        // saber view; a second Escape then closes fullscreen.
+        if (revealActive) {
+          setRevealActive(false);
+          return;
+        }
         toggleFullscreen();
         return;
       }
@@ -134,7 +173,7 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isFullscreen, toggleFullscreen, orientation, setOrientation, isOn, onTriggerEffect]);
+  }, [isFullscreen, toggleFullscreen, orientation, setOrientation, isOn, onTriggerEffect, revealActive]);
 
   if (!isFullscreen) return null;
 
@@ -165,6 +204,25 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
           panelMode
         />
       </div>
+
+      {/* ── Crystal reveal 3D overlay ────────────────────────────── */}
+      {/* Mounts on first use, stays mounted while reveal has happened so
+          that dolly-out animates smoothly. Fades behind 2D canvas when
+          fully idle. */}
+      {hasCrystalChamber && (revealActive || revealState !== 'idle') && (
+        <div
+          className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+          style={{
+            opacity: revealState === 'idle' ? 0 : 1,
+          }}
+          aria-hidden="true"
+        >
+          <CrystalRevealScene
+            active={revealActive}
+            onStateChange={setRevealState}
+          />
+        </div>
+      )}
 
       {/* ── Paused indicator ─────────────────────────────────────── */}
       {isPaused && (
@@ -250,8 +308,44 @@ export function FullscreenPreview({ engineRef, onTriggerEffect }: FullscreenPrev
             </button>
           )}
 
-          {/* Divider */}
-          <span className="w-px h-8 bg-cyan-900/50" />
+          {/* Crystal reveal toggle — only shown when ACCENT_TOPOLOGY is active */}
+          {hasCrystalChamber && (
+            <>
+              <button
+                onClick={() => setRevealActive((v) => !v)}
+                disabled={revealBusy}
+                title={
+                  revealActive
+                    ? 'Back to saber'
+                    : 'Show Kyber Crystal'
+                }
+                aria-label={
+                  revealActive
+                    ? 'Return to saber view'
+                    : 'Reveal the Kyber Crystal inside the hilt'
+                }
+                aria-pressed={revealActive}
+                className={[
+                  'h-8 px-2.5 flex items-center gap-1.5 rounded border transition-all duration-100 active:scale-90 text-[10px] font-bold tracking-wider',
+                  revealBusy
+                    ? 'border-cyan-900/30 bg-black/40 text-cyan-900 cursor-not-allowed'
+                    : revealActive
+                      ? 'border-cyan-300/80 bg-cyan-900/60 text-cyan-100 shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                      : 'border-cyan-700/50 bg-cyan-950/60 text-cyan-300 hover:bg-cyan-800/60 hover:border-cyan-400/70 hover:text-cyan-100 hover:shadow-[0_0_8px_rgba(34,211,238,0.4)]',
+                ].join(' ')}
+              >
+                {/* Diamond/crystal glyph */}
+                <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <polygon points="8,2 13,7 8,14 3,7" />
+                  <line x1="3" y1="7" x2="13" y2="7" />
+                </svg>
+                {revealActive ? 'BLADE' : 'CRYSTAL'}
+              </button>
+
+              {/* Divider */}
+              <span className="w-px h-8 bg-cyan-900/50" />
+            </>
+          )}
 
           {/* Orientation toggle */}
           <button
