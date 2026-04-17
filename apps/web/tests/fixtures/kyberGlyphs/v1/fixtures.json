@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "visualVersion": 1,
+  "description": "Known-good v1 Kyber Glyph encodings. Future schema changes must still decode these losslessly. If a fixture fails to decode, the format has broken its stability contract — bump KYBER_GLYPH_VERSION rather than editing this file.",
+  "fixtures": [
+    {
+      "name": "default-obi-wan",
+      "description": "Canonical default config (Obi-Wan ANH). Smallest valid glyph.",
+      "input": {
+        "config": {
+          "name": "Obi-Wan ANH",
+          "baseColor": {
+            "r": 0,
+            "g": 140,
+            "b": 255
+          },
+          "clashColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "lockupColor": {
+            "r": 255,
+            "g": 200,
+            "b": 80
+          },
+          "blastColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "style": "stable",
+          "ignition": "standard",
+          "retraction": "standard",
+          "ignitionMs": 300,
+          "retractionMs": 800,
+          "shimmer": 0.1,
+          "ledCount": 144
+        }
+      },
+      "glyph": "CNO.9HAX4ifU3jB5CE1DMR"
+    },
+    {
+      "name": "custom-jedi-stable",
+      "description": "A non-default blue stable blade with explicit user name.",
+      "input": {
+        "config": {
+          "name": "Meridian",
+          "baseColor": {
+            "r": 100,
+            "g": 180,
+            "b": 255
+          },
+          "clashColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "lockupColor": {
+            "r": 255,
+            "g": 200,
+            "b": 80
+          },
+          "blastColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "style": "stable",
+          "ignition": "standard",
+          "retraction": "standard",
+          "ignitionMs": 300,
+          "retractionMs": 800,
+          "shimmer": 0.1,
+          "ledCount": 144
+        }
+      },
+      "glyph": "JED.6a9JeVLiHwNo6muBkQ8UALY9fCDj4PaKVRM44NGVYiWb6Cs1pAZXnB1mryWCVfZUnRrv85Rmx"
+    },
+    {
+      "name": "sith-unstable-red",
+      "description": "Classic Sith: unstable style, red base, spatial lockup.",
+      "input": {
+        "config": {
+          "name": "Darth Revan",
+          "baseColor": {
+            "r": 255,
+            "g": 30,
+            "b": 20
+          },
+          "clashColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "lockupColor": {
+            "r": 255,
+            "g": 200,
+            "b": 80
+          },
+          "blastColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "style": "unstable",
+          "ignition": "standard",
+          "retraction": "standard",
+          "ignitionMs": 300,
+          "retractionMs": 800,
+          "shimmer": 0.3,
+          "ledCount": 144,
+          "lockupPosition": 0.33,
+          "lockupRadius": 0.15
+        }
+      },
+      "glyph": "SIT.5dPvikbL7jniDr1H3sJKCyU8qqc8MCxA2pKacD9snemmV2pdAWX22rrKvNa5q1ZFFGrwJ8uYCfzhzkBKSyQB8S542KadZEePBUoxTwupSWehPx3DiugzuAP1AMW8LGs9XmDmtNEBMBDSKHqnmtik9CDE9wwhEGWavugkMpb"
+    },
+    {
+      "name": "max-complexity",
+      "description": "All v1 BladeConfig fields populated — stress test for size + lossless round-trip.",
+      "input": {
+        "config": {
+          "name": "Darth Vader — battle-hardened",
+          "baseColor": {
+            "r": 255,
+            "g": 40,
+            "b": 20
+          },
+          "clashColor": {
+            "r": 255,
+            "g": 240,
+            "b": 220
+          },
+          "lockupColor": {
+            "r": 255,
+            "g": 180,
+            "b": 60
+          },
+          "blastColor": {
+            "r": 255,
+            "g": 255,
+            "b": 255
+          },
+          "style": "unstable",
+          "ignition": "stutter",
+          "retraction": "dissolve",
+          "ignitionMs": 450,
+          "retractionMs": 900,
+          "shimmer": 0.35,
+          "ledCount": 160,
+          "dragColor": {
+            "r": 255,
+            "g": 100,
+            "b": 0
+          },
+          "meltColor": {
+            "r": 255,
+            "g": 80,
+            "b": 20
+          },
+          "lightningColor": {
+            "r": 180,
+            "g": 200,
+            "b": 255
+          },
+          "lockupPosition": 0.33,
+          "lockupRadius": 0.15,
+          "blastPosition": 0.6,
+          "blastRadius": 0.45,
+          "preonEnabled": true,
+          "preonColor": {
+            "r": 60,
+            "g": 0,
+            "b": 120
+          },
+          "preonMs": 350,
+          "dualModeIgnition": true,
+          "ignitionUp": "scroll",
+          "ignitionDown": "spark",
+          "retractionUp": "dissolve",
+          "retractionDown": "drain"
+        }
+      },
+      "glyph": "SIT.3D6KeYgNJtv9Ycv3fNvV1DD9Fx4wH6hdDyLuRPeQrNgv7fN4QSFnkA4yRAAMCkRjAC8qVssxpX9fN2GN4U3uY4yzBNo419WtWpaUGuPmxw9nQaK89GGi1CLokGXCtvBczG4jsjVzajYV37tWptPbUuWmgP29otMmYuyqytRAQQDX1yhzY4TR6aoWGWPUXwvMx9zkvgy2rcTygYUSjJBpWzm2WkwBhNAnXxWyFaRWbTPkogVFgAzea2vohG8qmGpN7jzEtdSq2yGkKY5qi4sgJNiomWYECBa9HQb3Z9bmpWKVSsbmHbKHzfhECRudxSStwV8ydRFXU5uHiiCCmP6bY8cFjc9yi6SQnhc7mAcN8X2jkbigRjftLFspLeHjN3rF1zSXC5Mv6A1LexeaXNXRrJs5tPRcJHfw92PxkqhT6PPM4A9sqd3m1mWfzZMmQujwEQDryLRvQ4js1SCzrCjJimqMyTKfvsiK4UJc"
+    }
+  ]
+}

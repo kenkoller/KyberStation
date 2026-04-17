@@ -6,11 +6,13 @@
 // plus action buttons for triggering animations and exporting a card
 // snapshot.
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useBladeStore } from '@/stores/bladeStore';
 import { selectForm, CRYSTAL_FORMS } from '@/lib/crystal';
 import type { CrystalHandle, AnimationTrigger } from '@/lib/crystal';
+import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
+import { toast } from '@/lib/toastManager';
 
 // Dynamic import keeps Three.js out of the SSR bundle
 const KyberCrystal = dynamic(
@@ -34,6 +36,18 @@ export function CrystalPanel() {
   const form = selectForm(config);
   const formInfo = CRYSTAL_FORMS[form];
 
+  // Real Kyber Glyph (v1) reflecting the current config. Re-encodes on
+  // every config change; deterministic per config so the QR surface
+  // only regenerates when something actually changed.
+  const glyph = useMemo(() => {
+    try {
+      return encodeGlyphFromConfig(config);
+    } catch (err) {
+      console.warn('[crystal] glyph encode failed:', err);
+      return 'SPC.ERR';
+    }
+  }, [config]);
+
   const trigger = useCallback(
     (kind: AnimationTrigger, label: string) => {
       handleRef.current?.trigger(kind);
@@ -54,6 +68,27 @@ export function CrystalPanel() {
     setLastAction('Snapshot saved');
   }, [form]);
 
+  const copyGlyph = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(glyph);
+      toast.success('Glyph copied to clipboard');
+      setLastAction('Glyph copied');
+    } catch {
+      toast.error("Couldn't copy glyph — clipboard permission denied");
+    }
+  }, [glyph]);
+
+  const copyShareUrl = useCallback(async () => {
+    try {
+      const url = `${window.location.origin}/editor?s=${encodeURIComponent(glyph)}`;
+      await navigator.clipboard.writeText(url);
+      toast.success('Share link copied');
+      setLastAction('Link copied');
+    } catch {
+      toast.error("Couldn't copy share link — clipboard permission denied");
+    }
+  }, [glyph]);
+
   return (
     <div className="flex flex-col gap-3 p-3">
       {/* Crystal live render — square aspect for consistent framing */}
@@ -62,6 +97,7 @@ export function CrystalPanel() {
           onReady={(h) => {
             handleRef.current = h;
           }}
+          glyph={glyph}
           qrEnabled
           interactive
         />
@@ -96,6 +132,33 @@ export function CrystalPanel() {
       >
         Save crystal snapshot
       </button>
+
+      {/* Glyph sharing */}
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={copyGlyph}
+          className="py-1.5 text-ui-xs font-mono border border-border-subtle rounded bg-bg-panel hover:bg-bg-hover transition-colors"
+          title={glyph}
+        >
+          Copy glyph
+        </button>
+        <button
+          type="button"
+          onClick={copyShareUrl}
+          className="py-1.5 text-ui-xs font-mono border border-border-subtle rounded bg-bg-panel hover:bg-bg-hover transition-colors"
+        >
+          Copy share link
+        </button>
+      </div>
+
+      {/* Glyph preview — monospace, truncated */}
+      <div
+        className="text-ui-xs text-text-muted font-mono text-center truncate"
+        title={glyph}
+      >
+        {glyph.length > 28 ? `${glyph.slice(0, 28)}…` : glyph}
+      </div>
 
       {lastAction && (
         <div className="text-ui-xs text-text-muted font-mono text-center">
