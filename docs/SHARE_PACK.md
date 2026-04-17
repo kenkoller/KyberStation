@@ -86,6 +86,147 @@ aspect, renders cleanly as a WhatsApp / iMessage thumbnail too). Layout:
 - The QR inside the crystal IS the functional share mechanism; even at
   this small size, printed at business-card scale it scans
 - Never dominates — if in doubt, render it smaller
+- For multi-blade sabers, the crystal accent shows the appropriate
+  multi-crystal arrangement (paired for saberstaff, primary+quillons
+  for crossguard — see "Multi-blade saber silhouettes" below)
+
+## Blade-to-scale (the saber looks like the user built)
+
+The card should visually represent the saber the user actually designed.
+No default-size rendering that makes a shoto look identical to a combat
+blade.
+
+**Blade length logic:**
+
+- `ledCount` correlates to physical blade length via strip spacing:
+  - `ledCount / 4 ≈ inches` for 1/4-inch spacing (most common Neopixel)
+  - `ledCount / 2 ≈ inches` for 1/2-inch spacing (diffused strip)
+- Typical sizes:
+  - 144 LEDs ≈ 36" full combat blade
+  - 108 LEDs ≈ 27" standard blade
+  - 72 LEDs ≈ 18" shoto
+  - 36 LEDs ≈ 9" training blade / dagger
+  - 200+ LEDs ≈ long combat saber
+
+**Card rendering rules:**
+
+- **Hilt width is fixed** (~180px on a 1200×675 canvas) regardless of
+  configuration — keeps the visual anchor consistent
+- **Blade length scales proportionally.** A 36" blade fills ~85% of the
+  hero area width; a shoto fills ~40%; a dagger fills ~20% with generous
+  negative space
+- **Negative space is honest, not filled.** A shoto preset gets lots of
+  blank hero area — that's the correct visual representation, and it
+  makes the card visibly distinct from a full-length preset
+- **Glow/bloom scale with blade length** — a shoto has a smaller bloom
+  radius than a combat blade
+- **Emitter flare stays proportional to the hilt**, not the blade
+
+This matters because users who build shotos, daggers, or oversized
+combat blades deserve to SEE their build reflected on the card. Blade-
+to-scale means the artefact reads as *their* saber, not a generic
+template.
+
+## Multi-blade saber silhouettes
+
+The card template accommodates single-blade and multi-emitter sabers
+from day one. Workbench editing for multi-blade lands in v0.15; card
+*rendering* is ready for it now so imported multi-blade configs look
+right even before the workbench can edit them.
+
+### Silhouette per saber type
+
+**Single-blade (default):**
+- Hilt at centre-bottom of hero area, blade extending upward/rightward
+- Occupies the hero region as described above
+
+**Dual-blade / saberstaff (Maul, Asajj Ventress, Pong Krell):**
+- Hilt at horizontal centre, extending *both* directions
+- Blade A extends left; Blade B extends right
+- Each blade scales to its own `ledCount` (asymmetric blades supported:
+  Blade A might be 108 LEDs, Blade B might be 72 LEDs for a non-symmetric
+  build)
+- Crystal accent shows *two* kyber crystals, paired side-by-side
+
+**Crossguard (Kylo Ren-style):**
+- Single primary hilt at centre-bottom
+- Primary blade extends full-length from the top of the hilt
+- Two short quillon blades extend laterally from the hilt midpoint
+- Quillon blades use their own `BladeConfig` (typically a shorter,
+  spikier configuration — Kylo's are unstable)
+- Crystal accent shows primary crystal + two smaller accent crystals
+  flanking it
+
+**Darksaber:**
+- Distinctive hilt silhouette (squared, Mandalorian-styled)
+- Single short blade extending upward — always renders shorter than a
+  standard blade to match the ~30" canon length
+- Blade is *black* with a *white* edge-glow (inversion of normal
+  neopixel render)
+- Crystal accent uses the Form 4 Obsidian Bipyramid
+
+**Unsupported-yet (shows read-only in v1 workbench):**
+- Tri-blade emitters from a middle-grip (some Rebels Inquisitor
+  configurations) — glyph format supports it, but card silhouette for
+  this specific topology is TBD in v0.15+
+
+### Import-time degradation
+
+If a user on a single-blade-only workbench imports a multi-blade crystal
+via scan:
+
+1. Crystal decodes normally (glyph format supports multi-blade from v1)
+2. Saber Card displays the correct multi-blade silhouette
+3. Crystal Vault stores the complete multi-blade config
+4. Workbench shows a read-only preview of all blades
+5. Only Blade A is editable; other blades show a soft notice
+   *"Multi-blade editing arrives in v0.15. Until then, Blade B preserves
+   its scanned configuration."*
+
+No data loss. No broken round-trip.
+
+## Public Archive indicator
+
+When a crystal's config has been contributed to the community gallery
+(via the GitHub-PR flow documented in `COMMUNITY_GALLERY.md`), its Saber
+Card surfaces a small badge in the header strip:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ◈ KYBERSTATION   ARCHIVE DATA CARD   [ ✦ IN THE ARCHIVE ]   │ ← badge visible
+│                                                              │   when contributed
+│                                                              │
+│  ... (rest of card) ...                                      │
+```
+
+**Detection is purely client-side:**
+
+1. Card renderer hashes the current `saberConfig` payload
+2. Compares the hash against the index file shipped in the preset bundle
+   (`packages/presets/src/characters/community/_index.ts`)
+3. If hash matches a gallery entry, renders the badge + gallery metadata
+
+**Additional tags** surface below the base "IN THE ARCHIVE" badge if a
+maintainer has tagged the gallery entry:
+
+- `[ ★ FEATURED ]` — maintainer-highlighted
+- `[ ⚜ LEGENDARY ]` — community favourite
+- `[ ✎ RECENTLY ADDED ]` — new within the last 30 days
+
+All tags are maintainer-curated via PR comments/labels in the community
+gallery repo. Zero backend; zero moderation burden beyond normal PR
+review.
+
+**Contributor attribution** also appears in the card footer when a
+preset is in the archive:
+
+```
+│  Contributed by @alice · Archived 2026-05-02                 │
+│  github.com/kenkoller/KyberStation                           │
+```
+
+Gives credit where it's due and makes the GitHub-PR contribution model
+visible to everyone who views a Saber Card of an archived preset.
 
 ## Four share formats (all planned, user chose all four)
 

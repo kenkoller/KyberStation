@@ -504,11 +504,37 @@ Output of the 2026-04-17 12-question design review. Plan lives at
 
 | Version | Sprint | Status | Notes |
 |---|---|---|---|
+| v0.11.1 | **Design Review Polish Pass** | 🚧 in progress | Four workstreams from the "not-look-AI-built" audit. Plan: `~/.claude/plans/i-m-curious-what-the-glistening-island.md`. **WS1 Landing Page** shipped on `feat/landing-page` (awaiting merge). **WS2 Alert-color discipline**, **WS3 Skeleton+ErrorState coverage**, **WS4 Color-glyph pairing** planned but not started. |
 | v0.12.0 | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session. |
-| v0.13.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Every panel visible simultaneously, nothing hidden. Cosplay + fan-film + livestream-optimised. |
-| v0.14.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. 5 lanes: Prequel/OT/Sequel deep cuts, Legends/KOTOR/SWTOR, Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Cross-franchise "inspired by" presets. Could 4-5× the preset library in one session. |
+| v0.13.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Blade+hilt hero full-width; flanking setup (left) + quick-options (right) sidebars; pixel-level LED debug row synced 1:1 beneath the hero; analysis panels stacked in a bottom row; status-ticker at the base. Cosplay + fan-film + livestream-optimised. |
+| v0.14.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. Deep-cut lanes: Prequel/OT/Sequel Jedi & Sith, Legends/KOTOR/SWTOR (incl. Dark Forces / Jedi Knight / Outcast / Academy), Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Space-combat (Rogue Squadron / X-Wing / TIE Fighter / Squadrons / Rebel Assault), Cross-franchise "inspired by". Could 4-5× the preset library in one session. |
+| v0.15.0 | **Multi-Blade Workbench** | 📋 planned | Channel-strip UI for editing dual-blade sabers / saberstaffs / crossguards. Blade-switching in the workbench. Sync / Unsync toggle for symmetry vs independence. Glyph format already supports multi-blade from v1, so this is purely the editing UI side. |
 
-Legend: ✅ shipped · 🔜 next sprint · 📋 planned (doc exists) · ⏸ deferred
+Legend: ✅ shipped · 🧪 complete, awaiting merge · 🚧 in progress · 🔜 next sprint · 📋 planned (doc exists) · ⏸ deferred
+
+### Cross-session coordination (as of 2026-04-17)
+
+Multiple claude sessions have been running in parallel on this project. Key
+discipline to preserve during this phase:
+
+1. **Read `~/.claude/plans/i-m-curious-what-the-glistening-island.md` before
+   starting any UI work.** It catalogs the four design-review workstreams
+   and their file footprints, along with hand-off protocol for conflicts.
+2. **Branch per workstream. Never commit directly to main** during this
+   multi-session phase. `feat/landing-page`, `feat/alert-color-discipline`,
+   `feat/skeleton-coverage`, `feat/color-glyph-pairing`,
+   `feat/kyber-crystal-spec-v2` are live. WebUSB lives on
+   `claude/stoic-wing-81bb99`.
+3. **Before starting any workstream,** `git fetch origin && git log --oneline
+   origin/main ^HEAD && git diff origin/main --name-only` to see what's
+   moved.
+4. **Kyber Crystal design spec** (this doc batch) is pure docs + one new
+   `apps/web/lib/` file — zero overlap with any workstream's component or
+   `globals.css` footprint. Safe to run in parallel with all four design
+   workstreams and with WebUSB merge.
+5. **When merging to main**, suggested order: WebUSB (v0.11.0) first,
+   then WS1 (Landing Page), then Kyber Crystal spec batch, then WS2-4 as
+   they complete. Each merge creates a clean base for the next.
 
 ### Architecture decisions made this session
 

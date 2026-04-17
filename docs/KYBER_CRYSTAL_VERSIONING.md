@@ -52,10 +52,71 @@ compression:
   = kyber glyph
 ```
 
-**Version 1** (initial ship) supports:
-- All declared `BladeConfig` fields as of v0.11.0
-- Ignores unknown fields during decode (forward compat)
+**Version 1** (initial ship) — **the complete robust schema, not a minimal
+first draft.** Future-proofing decision made during the design-spec
+brainstorm: we ship v1 with the full reasonable footprint so future glyphs
+don't need format migrations for the most common needs.
+
+### v1 schema coverage
+
+**All 70 declared `BladeConfig` fields** (as of v0.11.0). Every field round-
+trips losslessly. Delta-encoded against a canonical default so typical
+payloads stay small:
+
+- 9 colour slots (base, clash, blast, lockup, drag, melt, stab, lightning,
+  preon)
+- Style / ignition / retraction IDs with easing curve references
+- All timing values (ignition/retraction/preon ms)
+- All 10 spatial fields (lockup/blast/drag/melt/stab × position/radius)
+- Dual-mode ignition + up/down variants
+- All noise, motion-reactivity, colour-dynamics, spatial-pattern, blend/
+  layer, tip/emitter params
+- Image-scroll references
+- Shimmer, LED count, hardware strip type
+
+**Multi-blade as a first-class concept.** `blades: BladeConfig[]`. Single-
+blade sabers have a length-1 array. Saberstaffs get 2 entries. Crossguards
+get primary + quillon accents. Every blade is a complete independent
+`BladeConfig` — different colours, styles, spatial effects, timings per
+blade.
+
+**Saber configuration metadata:**
+
+```ts
+{
+  payloadVersion: 1,
+  visualVersion: 1,
+  saberType: 'single' | 'dual' | 'saberstaff' | 'crossguard' | 'darksaber',
+  blades: BladeConfig[],          // length matches saberType
+  hiltModel: string,              // enum ID from curated hilt library
+  soundFontRef: string | null,    // font ID, NEVER the audio files
+  oledBitmapRef: string | null,   // bitmap ID, NEVER the bitmap data
+  propFileId: 'fett263' | 'sa22c' | 'bc' | 'shtok' | 'default',
+  publicName: string | null,      // moderated at share-time
+  // privateName stays local, NEVER embedded
+  createdAt: number,              // unix timestamp
+  kyberstationVersion: string,    // "0.11.0" etc.
+  extras: Record<string, unknown>, // escape hatch for unknown future fields
+}
+```
+
+**What stays OUT of v1 (by design):**
+
+| Excluded | Why | Future path |
+|---|---|---|
+| User-authored custom hilt SVGs | Payload ballooning (SVG blobs are kB-scale) | v2 as optional compressed blob, or separate `.hilt` artefact referenced by hash |
+| Custom sound font audio data | Piracy concern (fonts are typically paid) | Never. Reference only. |
+| Custom OLED bitmaps | Size + licensed art concerns | Reference only in v1; v2 can add user-authored blobs if demand warrants |
+| Plugin-authored style code | Arbitrary code = security risk when scanned | Separate sandboxed plugin distribution system (not share payload) |
+| Motion recording (user-recorded swings) | Size + privacy | Never in share payload |
+
+### v1 decoder behaviour
+
+- Ignores unknown fields during decode (forward compat with future v2+ additions)
 - Omits default-valued fields during encode (payload minimization)
+- Graceful degradation: if `extras` contains keys a future reader doesn't
+  understand, it preserves them but doesn't render — round-trips through
+  the reader unchanged
 
 ### Evolution rules
 
