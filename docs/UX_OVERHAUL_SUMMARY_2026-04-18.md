@@ -1,6 +1,6 @@
-# UX Overhaul Session Summary — 2026-04-18 (overnight + morning continuation)
+# UX Overhaul Session Summary — 2026-04-18 (overnight + morning + extended)
 
-**Status:** 15 of 27 deferred items resolved in-session. 12 remaining items are bigger sprints — next-session prompts in [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md).
+**Status:** **25 of 27** deferred items resolved in-session. Only 2 remain (both conflicting heavy edits to ColorPanel — safer for solo future sessions). Prompts in [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md).
 **Branch:** `test/launch-readiness-2026-04-18` · PR [#31](https://github.com/kenkoller/KyberStation/pull/31)
 **UX North Star:** `docs/UX_NORTH_STAR.md` is the rubric (updated in-session to resolve the §8 ceremonial-display-type question — Orbitron now sanctioned as the third ceremonial face).
 
@@ -73,9 +73,24 @@ Root cause: engine tick loop lived inside `BladeCanvas.tsx`'s `useAnimationFrame
 ### Navigation (item #24)
 - **#24 `<MobileTabBar>`** — fixed bottom tab bar at phone breakpoint. 4 tabs: Saber (/m), Editor, Gallery, Docs. Hidden at tablet+ and on /m (preserves chrome-free mode). Suspense-wrapped for static-export compatibility. Proper active-state detection including `?tab=gallery` URL param.
 
-## Still deferred — 12 items for next sessions
+## Extended round — 9 more items shipped (Wave 1 + Wave 2 of this round)
 
-See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) for ready-to-paste prompts. These are **intentionally not touched** because they're bigger design decisions or feature sprints that deserve dedicated context.
+**Wave 1 (7 parallel agents):**
+- **#8 Math-expression + modulation routing** — design-only scoping. `docs/MODULATION_ROUTING_V1.1.md` (9-section architecture doc) + `packages/engine/src/modulation/` type-only scaffold. Parser rec: peggy. Kyber Glyph v2 migration plan.
+- **#9 + #10 LayerStack live thumbnails + solo/mute/bypass** — 40×8 per-row canvas with round-robin throttling at 10+ layers, three-state layer compositor (bypass > solo-group-mute > mute > active), solo banner, structured-clone round-trip tested.
+- **#11 TimelinePanel ETC Eos cue-list** — segmented Timeline/Cue List toggle. Tabular row per event with inline-editable time/duration/notes. Keyboard nav (Arrow/Enter/Esc/Delete). Click-column re-sort with aria-sort. Shared store, no data duplication.
+- **#12 Severance-inverted haptic drag curve** — ColorPanel ScrubLabel replaces linear pixel-to-value with smoothstep-blended zones (0.25× precision / 1.0× normal / 1.5× accel, saturated at 64px). Shift/Alt modifier overrides preserved. iOS haptic hint at zone boundaries.
+- **#14 Preset lineage + VCV author/version** — Preset type extended with author/version/parentId/createdAt (all optional). 33 canonical presets backfilled. PresetGallery subtitle shows author + version badge. Kyber Glyph deliberately untouched (lineage is gallery concept, not shareable blade-config concept).
+- **#17 CardWriter Scarif commit ceremony** — new `useCommitCeremony()` hook (FlashPanel-reusable). Amber warm halo during writing (24/48px dual-ring box-shadow keyframed), green verified flash, red error flash, 220ms glyph cross-fade on stage transitions, triple-gated reduced-motion.
+- **#19 SaberProfileManager SWTOR character-sheet** — complete layout redesign. Profile pill-tab strip. Hero row with live `<ProfileHeroBlade>` (96×300 driven by profile's baseColor) + JBM Bold clamp(32px, 6.5vw, 64px) name. Category grid: BLADE SPECS / EQUIPPED STYLE / SOUND FONT / SMOOTHSWING / BUTTON MAP.
+
+**Wave 2 (2 parallel agents):**
+- **#6 `<CollapsibleSection>` shared primitive** — threaded through 19 sections across StylePanel / EffectPanel / LayerStack / GradientBuilder / VisualSettingsPanel. `persistKey` opts into localStorage persistence (`kyber.collapsible.*` namespace).
+- **#15 SmoothSwing → LayerStack plate** — refactored from sibling panel to specialized layer type. State lives on the layer; moves with reorder/duplicate/undo. New SMOOTHSWING_DEFAULTS constant. Legacy panel slot redirects to relocation notice for persisted layouts.
+
+## Still deferred — 2 items for next sessions
+
+Both heavily modify ColorPanel (just touched by #12 Severance curve agent) — serialized for safety.
 
 ### Landing (5)
 - Orbitron wordmark (ceremonial carve-out decision — should the "KYBERSTATION" mark stay Orbitron as a cinematic exception?)
@@ -84,25 +99,11 @@ See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) for ready-to-paste prompts. These are
 - Value strip 3-col tightness at 768–900px
 - Release-strip version pill styling
 
-### Editor core (6)
-- #6 `CollapsibleSection` shared primitive + threading through ~15 sections
-- #7 Drag-to-scrub shared Slider primitive (ColorPanel's ScrubLabel would inform it)
-- #8 Math-expression + modulation routing — explicit v1.1 per §4/§8
-- #9 LayerStack live per-row thumbnails (per-layer offscreen engine render)
-- #10 LayerStack solo/mute/bypass (Ableton device-chain pattern)
-- #11 TimelinePanel ETC Eos cue-list (parallel tabular view)
+### Color/Preset/Audio (2)
+- **#7 Shared `<DragToScrub>` / Slider primitive** — extract the drag mechanics from ColorPanel's `ScrubLabel` (now enhanced with #12 Severance curve) into a reusable primitive, apply across numeric inputs + sliders elsewhere (Dynamics, Timeline easing, BladeHardwarePanel numerics). See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) §7.
+- **#16 Full Figma color model** — add opacity + blend modes to `BladeColor` type, ColorPanel UI, engine compositor, codegen warning for unsupported modes, Kyber Glyph v2 migration. See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) §16.
 
-### Color/Preset/Audio (3)
-- #12 Severance-inverted haptic drag curve (motion-design decision on ColorPanel feel)
-- #14 Preset lineage graph + VCV author/version fields (requires `Preset` type extension)
-- #15 SmoothSwing → LayerStack plate refactor (blocked by #9/#10)
-- #16 Full Figma color model (opacity/blend modes)
-
-### Output/Export (2)
-- #17 Full Scarif physical-slot motion ceremony for CardWriter (extended motion work)
-- #19 Full SWTOR-inverted character-sheet layout for SaberProfileManager
-
-All deferred items have dedicated prompts in [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) ready to paste into new Claude Code sessions.
+Both should be done in sequence (#7 first to establish the primitive, then #16 to build on it). Both touch the same file (`ColorPanel.tsx`), so running them in parallel risks merge conflicts.
 
 ## Architecture observations (for future sprints)
 
@@ -113,9 +114,23 @@ All deferred items have dedicated prompts in [`NEXT_SESSIONS.md`](NEXT_SESSIONS.
 ## Test state after all changes (final)
 
 - `pnpm -w typecheck` — 11/11 tasks pass
-- `pnpm -w test` — **~2,540+ tests passing** (web test count grew from 402 → 445+ across the session as new regression tests landed: useBreakpoint-hydration (9), undoTracking (4), keyboardShortcuts (10), canonicalDefaultConfigDrift (3), filenameReveal (9), radialGauge (8), plus engine test growth +49 from the 7 newly-exposed effects)
+- `pnpm -w test` — **~2,627 tests passing** across the workspace (538 web tests in 34 files + 457 engine + 1,323 codegen + 260 boards + presets + sound)
+- Web test count grew from 402 at session start → 538 at close: +136 regression tests across this session
 - No regressions from any agent or commit
-- New primitives shipped with full regression coverage: `useFilenameReveal`, `<RadialGauge>`, `<MobileTabBar>`, `useModalDialog`, `historyRestoreFlag`
+
+**New primitives shipped this session (all with regression coverage):**
+- `useFilenameReveal` + `<FilenameReveal>` — stagger-in motion primitive per §7
+- `<RadialGauge>` — 270° integrity gauge with criticalStateChange pulse
+- `<MobileTabBar>` — route-level mobile navigation
+- `useModalDialog` — shared ESC + focus trap + restore
+- `historyRestoreFlag` + `<undoTracking>` — regression-safe undo
+- `<CollapsibleSection>` — shared disclosure primitive with localStorage persistence
+- `useCommitCeremony` — reusable Scarif motion hook (CardWriter today, FlashPanel future)
+- `<RadialGauge>`'s `classifyTier` + `formatReadoutValue` helpers
+- `severanceDragCurve` pure function
+- `packages/engine/src/modulation/` type scaffold for v1.1
+- `packages/presets/src/types.ts` lineage extension (author/version/parentId/createdAt)
+- SmoothSwing layer type + `SmoothSwingLayerConfig` + `SMOOTHSWING_DEFAULTS`
 
 ## Per-area deep-dive docs
 

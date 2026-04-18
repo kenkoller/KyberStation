@@ -1,6 +1,6 @@
 # Next-Session Prompts — Remaining UX Overhaul Items
 
-**Session context:** 2026-04-18 overnight UX overhaul closed 15 of 27 deferred items. 12 items remain, each large enough to warrant its own session. This doc has a ready-to-paste prompt per item so you can spin up dedicated Claude Code sessions.
+**Session context:** The 2026-04-18 UX overhaul session closed **25 of 27** deferred items. Only 2 remain (#7 DragToScrub + #16 Figma color model). Both heavily modify `ColorPanel.tsx` which #12 Severance drag curve just updated — serializing them to their own sessions is the safer path.
 
 **Branch baseline:** All new work should start from `test/launch-readiness-2026-04-18` OR from `main` once PR [#31](https://github.com/kenkoller/KyberStation/pull/31) is merged.
 
