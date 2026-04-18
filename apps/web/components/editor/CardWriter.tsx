@@ -22,6 +22,7 @@ import {
 } from '@/lib/cardDetector';
 import { generateStyleCode } from '@kyberstation/codegen';
 import { playUISound } from '@/lib/uiSounds';
+import { useCommitCeremony, phaseToStage } from '@/hooks/useCommitCeremony';
 
 // ─── Preset Registry ───
 // Same presets used in PresetBrowser, kept minimal here for the card writer.
@@ -497,10 +498,123 @@ export function CardWriter() {
     config.baseColor.b,
   );
 
+  // ─── Commit Ceremony (UX North Star §7) ───
+  // Map granular WritePhase to ceremonial stage and drive the ambient
+  // envelope (amber writing-halo / green verified-flash / red error-flash)
+  // via CSS keyframes. External `stage` source means triggerStage is a
+  // no-op; the CardWriter state-machine is authoritative.
+  const ceremony = useCommitCeremony({ stage: phaseToStage(phase) });
+
   // ─── Render ───
 
   return (
-    <div>
+    <div
+      className={ceremony.ambientClassName}
+      style={ceremony.envelopeStyle}
+      data-commit-stage={ceremony.stage}
+    >
+      {/* Co-located styles — the commitCeremony motion primitive lives here
+          rather than in globals.css so the envelope stays scoped to this
+          panel (and any future consumer that imports the hook can bring its
+          own scoped style block). Keyframes read from CSS custom properties
+          already defined in the theme (--accent-warm, --status-ok,
+          --status-error) so colorblind overrides still apply. */}
+      <style>{`
+        .commit-ceremony {
+          position: relative;
+          transition: box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes commit-ceremony-writing-halo {
+          0%   { box-shadow: 0 0 0 0 rgb(var(--accent-warm) / 0); }
+          40%  { box-shadow: 0 0 24px 4px rgb(var(--accent-warm) / 0.45), 0 0 48px 12px rgb(var(--accent-warm) / 0.22); }
+          70%  { box-shadow: 0 0 24px 4px rgb(var(--accent-warm) / 0.45), 0 0 48px 12px rgb(var(--accent-warm) / 0.22); }
+          100% { box-shadow: 0 0 12px 2px rgb(var(--accent-warm) / 0.2), 0 0 24px 6px rgb(var(--accent-warm) / 0.08); }
+        }
+        .commit-ceremony--writing {
+          animation: commit-ceremony-writing-halo var(--commit-ceremony-halo-duration, 1200ms) cubic-bezier(0.33, 1, 0.68, 1) both;
+        }
+        @keyframes commit-ceremony-verified-flash {
+          0%   { box-shadow: 0 0 0 0 rgb(var(--status-ok) / 0); }
+          20%  { box-shadow: 0 0 32px 6px rgb(var(--status-ok) / 0.55), 0 0 64px 16px rgb(var(--status-ok) / 0.25); }
+          60%  { box-shadow: 0 0 20px 4px rgb(var(--status-ok) / 0.3), 0 0 40px 10px rgb(var(--status-ok) / 0.12); }
+          100% { box-shadow: 0 0 0 0 rgb(var(--status-ok) / 0); }
+        }
+        .commit-ceremony--verified {
+          animation: commit-ceremony-verified-flash 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes commit-ceremony-error-flash {
+          0%   { box-shadow: 0 0 0 0 rgb(var(--status-error) / 0); }
+          25%  { box-shadow: 0 0 24px 4px rgb(var(--status-error) / 0.5), 0 0 48px 12px rgb(var(--status-error) / 0.22); }
+          100% { box-shadow: 0 0 0 0 rgb(var(--status-error) / 0); }
+        }
+        .commit-ceremony--error {
+          animation: commit-ceremony-error-flash 780ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .commit-ceremony--prepared {
+          box-shadow: 0 0 12px 2px rgb(var(--accent-warm) / 0.15);
+        }
+        .commit-ceremony--idle {
+          box-shadow: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .commit-ceremony,
+          .commit-ceremony--writing,
+          .commit-ceremony--verified,
+          .commit-ceremony--error,
+          .commit-ceremony--prepared,
+          .commit-ceremony--idle,
+          .commit-ceremony--reduced {
+            animation: none !important;
+            box-shadow: none !important;
+            transition: none !important;
+          }
+        }
+        .reduced-motion .commit-ceremony,
+        .reduced-motion .commit-ceremony--writing,
+        .reduced-motion .commit-ceremony--verified,
+        .reduced-motion .commit-ceremony--error,
+        .reduced-motion .commit-ceremony--prepared,
+        .reduced-motion .commit-ceremony--reduced,
+        html.perf-lite .commit-ceremony,
+        html.perf-lite .commit-ceremony--writing,
+        html.perf-lite .commit-ceremony--verified,
+        html.perf-lite .commit-ceremony--error,
+        html.perf-lite .commit-ceremony--prepared,
+        html.perf-lite .commit-ceremony--reduced {
+          animation: none !important;
+          box-shadow: none !important;
+          transition: none !important;
+        }
+        /* Stage-glyph cross-fade. Consumer keys an element with the
+           stage id so React re-mounts on change; the animation hides
+           the hard cut a raw unmount would produce. */
+        @keyframes commit-ceremony-glyph-in {
+          0%   { opacity: 0; transform: translateY(-2px); filter: blur(1.5px); }
+          100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+        }
+        .commit-ceremony-glyph {
+          display: inline-flex;
+          animation: commit-ceremony-glyph-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .commit-ceremony-glyph,
+          .commit-ceremony-glyph--reduced {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+            filter: none !important;
+          }
+        }
+        .reduced-motion .commit-ceremony-glyph,
+        .reduced-motion .commit-ceremony-glyph--reduced,
+        html.perf-lite .commit-ceremony-glyph,
+        html.perf-lite .commit-ceremony-glyph--reduced {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+        }
+      `}</style>
       <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-4">
         SD Card Writer
       </h3>
@@ -1042,7 +1156,18 @@ function CommitCeremonyStrip({
                 }
                 aria-label={`${stage.label}: ${tone}`}
               >
-                <span className="shrink-0 text-ui-xs font-mono" aria-hidden="true">
+                {/* Keyed on `tone` so React re-mounts the glyph span on
+                    stage transitions, triggering the cross-fade
+                    keyframe. Hard cuts between glyphs (○ → ◉ → ✓)
+                    previously felt like a flicker; the 220ms cross-fade
+                    smooths them per UX North Star §7 (stage transitions
+                    cross-fade the previous stage's glyph/label rather
+                    than hard-cut). */}
+                <span
+                  key={`glyph-${stage.key}-${tone}`}
+                  className="commit-ceremony-glyph shrink-0 text-ui-xs font-mono"
+                  aria-hidden="true"
+                >
                   {glyph}
                 </span>
                 <span className="text-ui-xs font-mono uppercase tracking-wider truncate">
