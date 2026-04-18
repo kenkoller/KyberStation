@@ -24,36 +24,40 @@ interface ColorPreset {
   category: 'jedi' | 'sith' | 'neutral' | 'custom';
 }
 
+// RGB values below are derived from the corresponding `namingMath.ts` landmark
+// HSL coords so clicking a preset lands on a tier-1 landmark-exact name in the
+// color readout (e.g. "Obi-Wan Blue" → "Obi-Wan Azure"). Keep presets in sync
+// with the landmark table — the landmark is the source of truth for the name.
 const COLOR_PRESETS: ColorPreset[] = [
   // Jedi blues
-  { id: 'jedi-blue', label: 'Jedi Blue', color: { r: 0, g: 0, b: 255 }, category: 'jedi' },
-  { id: 'obi-wan-blue', label: 'Obi-Wan Blue', color: { r: 0, g: 140, b: 255 }, category: 'jedi' },
-  { id: 'anakin-blue', label: 'Anakin Blue', color: { r: 0, g: 80, b: 255 }, category: 'jedi' },
-  { id: 'luke-esb', label: 'Luke ESB', color: { r: 0, g: 135, b: 255 }, category: 'jedi' },
+  { id: 'jedi-blue', label: 'Jedi Blue', color: { r: 10, g: 57, b: 230 }, category: 'jedi' },              // Jedi Guardian (227, 92, 47)
+  { id: 'obi-wan-blue', label: 'Obi-Wan Blue', color: { r: 22, g: 114, b: 243 }, category: 'jedi' },       // Obi-Wan Azure (215, 90, 52)
+  { id: 'anakin-blue', label: 'Anakin Blue', color: { r: 15, g: 34, b: 245 }, category: 'jedi' },          // Anakin Skywalker (235, 92, 51)
+  { id: 'luke-esb', label: 'Luke ESB', color: { r: 22, g: 114, b: 243 }, category: 'jedi' },               // Obi-Wan Azure (215, 90, 52) — hero-blue, shared with Obi-Wan
   // Jedi greens
-  { id: 'luke-rotj', label: 'Luke ROTJ Green', color: { r: 0, g: 255, b: 0 }, category: 'jedi' },
-  { id: 'qui-gon', label: 'Qui-Gon Green', color: { r: 0, g: 220, b: 0 }, category: 'jedi' },
-  { id: 'yoda-green', label: 'Yoda Green', color: { r: 80, g: 255, b: 20 }, category: 'jedi' },
-  { id: 'kit-fisto', label: 'Kit Fisto Green', color: { r: 20, g: 255, b: 60 }, category: 'jedi' },
+  { id: 'luke-rotj', label: 'Luke ROTJ Green', color: { r: 6, g: 234, b: 25 }, category: 'jedi' },         // Luke ROTJ Green (125, 95, 47)
+  { id: 'qui-gon', label: 'Qui-Gon Green', color: { r: 54, g: 210, b: 30 }, category: 'jedi' },            // Qui-Gon Sage (112, 75, 47)
+  { id: 'yoda-green', label: 'Yoda Green', color: { r: 50, g: 245, b: 20 }, category: 'jedi' },            // Yoda Verdant (112, 92, 52)
+  { id: 'kit-fisto', label: 'Kit Fisto Green', color: { r: 17, g: 238, b: 109 }, category: 'jedi' },       // Kit Fisto Emerald (145, 87, 50)
   // Jedi other
-  { id: 'mace-purple', label: 'Mace Purple', color: { r: 128, g: 0, b: 255 }, category: 'jedi' },
-  { id: 'temple-yellow', label: 'Temple Guard Yellow', color: { r: 255, g: 200, b: 0 }, category: 'jedi' },
-  { id: 'rey-yellow', label: 'Rey Yellow', color: { r: 255, g: 180, b: 0 }, category: 'jedi' },
-  { id: 'ahsoka-white', label: 'Ahsoka White', color: { r: 255, g: 255, b: 255 }, category: 'jedi' },
+  { id: 'mace-purple', label: 'Mace Purple', color: { r: 132, g: 11, b: 218 }, category: 'jedi' },         // Mace Windu Violet (275, 90, 45)
+  { id: 'temple-yellow', label: 'Temple Guard Yellow', color: { r: 245, g: 190, b: 10 }, category: 'jedi' }, // Temple Guard Gold (46, 92, 50)
+  { id: 'rey-yellow', label: 'Rey Yellow', color: { r: 245, g: 206, b: 10 }, category: 'jedi' },           // Rey Skywalker Gold (50, 92, 50)
+  { id: 'ahsoka-white', label: 'Ahsoka White', color: { r: 248, g: 247, b: 247 }, category: 'jedi' },      // Purified Kyber (0, 3, 97) — highest-priority achromatic
   // Sith reds
-  { id: 'sith-red', label: 'Sith Red', color: { r: 255, g: 0, b: 0 }, category: 'sith' },
-  { id: 'vader-red', label: 'Vader Red', color: { r: 255, g: 0, b: 0 }, category: 'sith' },
-  { id: 'kylo-red', label: 'Kylo Unstable Red', color: { r: 255, g: 14, b: 0 }, category: 'sith' },
-  { id: 'dooku-red', label: 'Dooku Red', color: { r: 200, g: 0, b: 0 }, category: 'sith' },
-  { id: 'maul-red', label: 'Maul Red', color: { r: 255, g: 0, b: 10 }, category: 'sith' },
-  { id: 'ventress-red', label: 'Ventress Red', color: { r: 240, g: 0, b: 20 }, category: 'sith' },
+  { id: 'sith-red', label: 'Sith Red', color: { r: 228, g: 12, b: 12 }, category: 'sith' },                // Sith Crimson (0, 90, 47)
+  { id: 'vader-red', label: 'Vader Red', color: { r: 249, g: 16, b: 20 }, category: 'sith' },              // Vader Bloodshine (359, 95, 52)
+  { id: 'kylo-red', label: 'Kylo Unstable Red', color: { r: 245, g: 38, b: 15 }, category: 'sith' },       // Kylo Unstable (6, 92, 51)
+  { id: 'dooku-red', label: 'Dooku Red', color: { r: 175, g: 29, b: 29 }, category: 'sith' },              // Inquisitor Red (0, 72, 40) — dark crimson, closest landmark
+  { id: 'maul-red', label: 'Maul Red', color: { r: 201, g: 8, b: 8 }, category: 'sith' },                  // Maul Fury (0, 92, 41)
+  { id: 'ventress-red', label: 'Ventress Red', color: { r: 228, g: 7, b: 7 }, category: 'sith' },          // Asajj Ventress Crimson (0, 94, 46)
   // Neutral / special
-  { id: 'darksaber-white', label: 'Darksaber', color: { r: 255, g: 255, b: 255 }, category: 'neutral' },
-  { id: 'cal-cyan', label: 'Cal Kestis Cyan', color: { r: 0, g: 200, b: 255 }, category: 'neutral' },
-  { id: 'cal-orange', label: 'Cal Kestis Orange', color: { r: 255, g: 90, b: 0 }, category: 'neutral' },
-  { id: 'cal-magenta', label: 'Cal Kestis Magenta', color: { r: 255, g: 0, b: 180 }, category: 'neutral' },
-  { id: 'revan-purple', label: 'Revan Purple', color: { r: 160, g: 0, b: 255 }, category: 'neutral' },
-  { id: 'mara-jade', label: 'Mara Jade Purple-Blue', color: { r: 100, g: 0, b: 220 }, category: 'neutral' },
+  { id: 'darksaber-white', label: 'Darksaber', color: { r: 255, g: 255, b: 255 }, category: 'neutral' },   // No corresponding namingMath landmark — the color is the source of truth for this name
+  { id: 'cal-cyan', label: 'Cal Kestis Cyan', color: { r: 20, g: 200, b: 245 }, category: 'neutral' },     // Cal Kestis Cyan (192, 92, 52)
+  { id: 'cal-orange', label: 'Cal Kestis Orange', color: { r: 245, g: 116, b: 10 }, category: 'neutral' }, // Cal Kestis Orange (27, 92, 50)
+  { id: 'cal-magenta', label: 'Cal Kestis Magenta', color: { r: 228, g: 12, b: 149 }, category: 'neutral' }, // Cal Kestis Magenta (322, 90, 47)
+  { id: 'revan-purple', label: 'Revan Purple', color: { r: 68, g: 16, b: 198 }, category: 'neutral' },     // Revan Indigo (257, 85, 42)
+  { id: 'mara-jade', label: 'Mara Jade Purple-Blue', color: { r: 76, g: 38, b: 227 }, category: 'neutral' }, // Satele Shan Blue-Violet (252, 77, 52) — closest purple-blue landmark
 ];
 
 // ─── Clash color suggestions (complementary) ───
