@@ -17,6 +17,7 @@ import {
   type UISoundPreset,
   getUISoundEngine,
 } from '../../lib/uiSounds';
+import { useModalDialog } from '../../hooks/useModalDialog';
 
 const ONBOARDING_KEY = 'kyberstation-onboarding-complete';
 
@@ -80,8 +81,30 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
     onComplete();
   }, [onComplete]);
 
+  // Modal a11y: ESC-to-skip, focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: true,
+    onClose: skip,
+  });
+
+  // Which heading is currently visible — used for aria-labelledby so
+  // screen readers announce the right step title as it changes.
+  const headingId =
+    step === 'welcome'
+      ? 'onboarding-title-welcome'
+      : step === 'performance'
+        ? 'onboarding-title-performance'
+        : step === 'sound'
+          ? 'onboarding-title-sound'
+          : 'onboarding-title-aurebesh';
+
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={headingId}
+      {...(step === 'welcome' ? { 'aria-describedby': 'onboarding-desc-welcome' } : {})}
       className="fixed inset-0 z-[50] flex items-center justify-center"
       style={{ background: 'rgba(var(--bg-deep), 0.95)' }}
     >
@@ -162,17 +185,23 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
     <div className="text-center">
       <h2
+        id="onboarding-title-welcome"
         className="font-cinematic text-ui-xl mb-2"
         style={{ color: 'rgb(var(--text-primary))', letterSpacing: '0.2em' }}
       >
         WELCOME
       </h2>
-      <p className="text-ui-sm mb-6" style={{ color: 'rgb(var(--text-secondary))' }}>
+      <p
+        id="onboarding-desc-welcome"
+        className="text-ui-sm mb-6"
+        style={{ color: 'rgb(var(--text-secondary))' }}
+      >
         Let&apos;s configure your experience. These settings can be changed
         anytime in the settings panel.
       </p>
       <button
         onClick={onNext}
+        data-autofocus
         className="btn-hum corner-rounded"
         style={{
           background: 'rgb(var(--accent))',
@@ -222,6 +251,7 @@ function PerformanceStep({
   return (
     <div>
       <h2
+        id="onboarding-title-performance"
         className="font-cinematic text-ui-lg mb-1 text-center"
         style={{ color: 'rgb(var(--text-primary))', letterSpacing: '0.15em' }}
       >
@@ -290,6 +320,7 @@ function SoundStep({
   return (
     <div>
       <h2
+        id="onboarding-title-sound"
         className="font-cinematic text-ui-lg mb-1 text-center"
         style={{ color: 'rgb(var(--text-primary))', letterSpacing: '0.15em' }}
       >
@@ -354,6 +385,7 @@ function AurebeshStep({
   return (
     <div>
       <h2
+        id="onboarding-title-aurebesh"
         className="font-cinematic text-ui-lg mb-1 text-center"
         style={{ color: 'rgb(var(--text-primary))', letterSpacing: '0.15em' }}
       >

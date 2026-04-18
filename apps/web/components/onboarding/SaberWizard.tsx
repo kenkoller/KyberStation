@@ -9,6 +9,7 @@
 import { useState, useCallback } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { playUISound } from '@/lib/uiSounds';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import type { BladeConfig } from '@kyberstation/engine';
 
 interface SaberWizardProps {
@@ -209,13 +210,22 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
     close();
   }, [archetype, color, vibe, currentConfig, loadPreset, close]);
 
+  // Modal a11y: ESC-to-close, focus trap, initial + restore focus.
+  // Hook is always called (rules-of-hooks); it no-ops when `open` is false.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: open,
+    onClose: close,
+  });
+
   if (!open) return null;
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="saber-wizard-title"
+      aria-describedby="saber-wizard-step-label"
       className="fixed inset-0 z-[50] flex items-center justify-center p-4"
       style={{ background: 'rgba(var(--bg-deep), 0.85)' }}
     >
@@ -226,7 +236,7 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
             <h2 id="saber-wizard-title" className="text-ui-base font-semibold text-text-primary">
               Saber Wizard
             </h2>
-            <p className="text-ui-xs text-text-muted">
+            <p id="saber-wizard-step-label" className="text-ui-xs text-text-muted">
               Step {step} of 3 · {step === 1 ? 'Archetype' : step === 2 ? 'Colour' : 'Vibe'}
             </p>
           </div>
@@ -340,9 +350,9 @@ function Step1Archetype({
           <button
             key={a.id}
             onClick={() => onSelect(a.id)}
-            // Focus the first archetype button when the wizard opens so
-            // keyboard users land in an actionable state.
-            autoFocus={idx === 0 && selected === null}
+            // Initial-focus target for keyboard users when the wizard
+            // opens. Picked up by `useModalDialog` via [data-autofocus].
+            {...(idx === 0 && selected === null ? { 'data-autofocus': true } : {})}
             className={`text-left p-3 rounded-panel border transition-colors ${
               selected === a.id
                 ? 'bg-accent-dim border-accent text-accent'
