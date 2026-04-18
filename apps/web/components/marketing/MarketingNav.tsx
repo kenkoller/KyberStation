@@ -8,6 +8,7 @@ const LINKS: ReadonlyArray<{ href: string; label: string }> = [
   { href: '/features', label: 'Features' },
   { href: '/showcase', label: 'Showcase' },
   { href: '/changelog', label: 'Changelog' },
+  { href: '/community', label: 'Community' },
   { href: '/docs', label: 'Docs' },
   { href: '/faq', label: 'FAQ' },
 ];
