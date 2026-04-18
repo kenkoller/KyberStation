@@ -183,3 +183,32 @@ Effect ribbon has 15 buttons (Retract + 14 effects). Enumerated buttons: `Clash,
 - [x] **13 retractions** clicked: Standard, Scroll, Fade Out, Center In, Shatter, Dissolve, Flicker Out, Unravel, Drain, Implode, Evaporate, Spaghettify, Custom Curve. All OK. Zero exceptions.
 - [ ] Visual-distinctness check pending Ken.
 - Label overlap note: "Standard", "Scroll", "Custom Curve" appear in both ignition and retraction lists; my script correctly picks the right one by index.
+
+## P7 — Colors (2026-04-18)
+
+Current base color at load: `#008CFF` / "Dusk-Bo-Katan Azure" (tier-2 modifier + landmark).
+
+- [x] **Naming math alive** — verified across multiple preset clicks:
+  - Mace Purple (`#8000FF`) → "Mace Windu Violet" (tier-1 landmark ✓)
+  - Ahsoka White (`#FFFFFF`) → "Purified Kyber" (tier-1 landmark ✓)
+  - Pure blue (`#0000FF`) → "Dawn-Anakin Skywalker" (tier-2 modifier+landmark ✓)
+- [ ] **P7-001 (QUICK fix, SHIP-WITH-NOTE):** Canon preset buttons define hexes that don't match the naming-math landmark HSL coordinates. Specific example: `ColorPanel.tsx:30` "Obi-Wan Blue" = `rgb(0,140,255)` = HSL(207, 100%, 50%), but `namingMath.ts:226` "Obi-Wan Azure" = HSL(215, 90%, 52%). Deltas large enough (Δh=8, Δs=10) that preset clicks land in a nearby landmark's orbit ("Dusk-Bo-Katan Azure") instead of hitting the intended character landmark. **Recommended fix:** update ColorPanel preset RGBs to match `namingMath.ts` landmark HSL coords (or vice versa). Audit all 19 canon preset buttons for this drift. One canonical source of truth would be better long-term.
+- [ ] **T7.1 / T7.2 / T7.3 / T7.4** — live slider updates, hex-input→slider sync, clash/lockup/blast per-channel color changes — preview RAF throttled; need Ken's foreground eye.
+- Confirmed via introspection: 2 hex inputs for base color (likely popover + panel mirror), 36 sliders total across page, Clash/Lockup/Blast tab structure present.
+
+## P8 — Presets + Gallery (2026-04-18)
+
+- [x] Gallery renders: **186 presets** visible across 5 eras (Prequel 25, OT, Sequel, Animated, EU Creative, Legends).
+- [x] Filter chips present: Era, Affiliation (Jedi/Sith/Neutral), Origin (On-Screen/Creative), Sort (A-Z), Legends toggle.
+- [x] Search input + `Save Current` + `Gallery/My Presets/Community` tab switches all rendered.
+- [x] **Tile click loads preset** — verified by clicking "Obi-Wan Kenobi (ANH)" tile, switching to Design tab, observed base color changed from `#008CFF` (app default) to `#009BFF` (canonical Obi-Wan ANH color) ✓. Gallery handler `PresetGallery.tsx:767 handleSelect` fires `loadPreset(preset.config)` + `setDetailPreset(preset)` correctly.
+- [x] **"+ List" nested button works** — adds preset to Output queue. Verified "Output(1)" count appeared.
+- [ ] **P8-001 (SHIP-WITH-NOTE):** Workbench's `preset-detail` panel slot at `apps/web/components/layout/TabColumnContent.tsx:338-340` renders `<ComingSoon label="Preset Detail" />`. Users who have this panel docked in their workbench layout will see a "Coming soon" placeholder. Options: (a) ship a real PresetDetail panel here (the internal `PresetGallery.tsx:267 PresetDetail` component may be reusable), (b) remove the slot from the registry so it can't be docked, (c) leave as-is and accept the "Coming soon" visibility. Not strictly blocking launch but visible work-in-progress surface.
+- [ ] T8.5 (Obi-Wan ANH film accuracy), T8.6 (Kylo Ren), T8.7 (Vader) — Ken's foreground eye needed to confirm style/ignition/color combos feel film-accurate.
+- **Methodology note (my mistake worth recording):** clicking a gallery tile while on the Gallery tab doesn't visibly update the hex input — because the ColorPanel (which contains the hex input) is mounted only in the Design tab. My initial false-positive SHIP-BLOCKER reading came from reading stale state on an unmounted component. Future phase tests: when checking store-bound UI state, verify the component is mounted, or read the store directly.
+
+## P9 — Sound fonts + pairing (2026-04-18)
+
+- [x] Audio tab loads cleanly. Rich structure: FONT LIBRARY (Sound Fonts / Library / EQ + Effects sub-tabs), FONT PREVIEW panel (empty-state: "Select a font from the library to preview"), MIXER / EQ, EFFECT PRESETS, SMOOTHSWING CONFIG (V1/V2 toggle, swing threshold/sharpness/strength, hum & accent, live crossfade preview), SOUND EVENTS (Hum, Swing, Clash, Blast, Drag, Lockup).
+- [x] **FIXED inline: P9-001 (SHIP-WITH-NOTE, QUICK):** Dev-facing note was visible in production UI at bottom of SmoothSwing panel: `"NOTE These values are ready to wire into audioMixerStore or a dedicated smoothSwingStore for persistence and codegen integration."` — surfaced internal store names + a "not wired up yet" admission. Fix: removed lines 434–444 of `apps/web/components/editor/SmoothSwingPanel.tsx` (the `{/* ── Wiring note ── */}` block). Typecheck clean. Source verified (0 grep matches post-fix).
+- [ ] **T9.2–T9.5 (PENDING-KEN):** Font playback (T9.2), blade-style → font-pairing recommendation labels (T9.3/T9.4), font-folder name propagation (T9.5) — require a loaded font + preset switches; audio preview playback in preview-mode also hits user-gesture requirements for AudioContext.

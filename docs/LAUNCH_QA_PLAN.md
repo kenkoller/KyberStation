@@ -630,9 +630,9 @@ Claude updates this table as each phase completes.
 | P4 | ✅ | 2026-04-18 | All 29 styles cycled, zero exceptions, zero console errors. Visual distinctness needs Ken's foreground check (RAF throttled in preview). |
 | P5 | ⚠️ | 2026-04-18 | All 14 UI-ribbon effects click cleanly. **FINDING-P5-001:** engine defines 21 effects per CLAUDE.md but UI exposes only 14 — Fragment, Bifurcate, GhostEcho, Splinter, Coronary, GlitchMatrix, Siphon missing from ribbon. T5.2 rapid-fire Clash overlap needs Ken's eye. |
 | P6 | ✅ | 2026-04-18 | All 19 ignitions + 13 retractions clicked without exception or console error. Visual distinctness needs Ken. |
-| P7 | ⏳ | | |
-| P8 | ⏳ | | |
-| P9 | ⏳ | | |
+| P7 | ⚠️ | 2026-04-18 | Naming math working (Mace Purple→"Mace Windu Violet" ✓, Ahsoka White→"Purified Kyber" ✓, #0000FF→"Dawn-Anakin Skywalker" tier-2 modifier+landmark ✓). **FINDING-P7-001 (QUICK):** Canon preset button hexes don't align with naming-math landmark HSL coords — e.g. "Obi-Wan Blue" preset = rgb(0,140,255)=HSL(207,100%,50%) but "Obi-Wan Azure" landmark = HSL(215,90%,52%). Preset clicks return nearest-landmark name (e.g. "Dusk-Bo-Katan Azure") rather than the character-named landmark. Fix: sync ColorPanel preset hexes to landmark HSL coords. T7.1 slider live-update needs Ken's eye (RAF throttled). |
+| P8 | ⚠️ | 2026-04-18 | Gallery renders 186 presets across Prequel/OT/Sequel/Animated/EU/Legends eras. Tile click works (Obi-Wan ANH → `#009BFF` base color applied ✓). "+ List" → adds to Output queue (Output count went to 1 ✓). **FINDING-P8-001 (SHIP-WITH-NOTE):** Workbench's `preset-detail` panel slot renders `<ComingSoon label="Preset Detail" />` per `TabColumnContent.tsx:340` — users who have this panel docked see a "Coming soon" placeholder. Either implement the panel, remove the slot, or hide the column default. T8.5–T8.7 film-accuracy checks for Obi-Wan/Kylo/Vader need Ken's eye. |
+| P9 | ⚠️ | 2026-04-18 | Audio tab loads cleanly. Font Library + Font Preview + Mixer/EQ + SmoothSwing Config + Effect Presets + Sound Events panels all render. **FIXED inline: FINDING-P9-001 (dev-note visible in UI)** — removed the "These values are ready to wire into audioMixerStore..." block from `SmoothSwingPanel.tsx:434-444`. Typecheck clean post-fix. Font preview/pairing behavior (T9.2–T9.5) needs Ken's eye with actual font loaded. |
 | P10 | ⏳ | | |
 | P11 | ⏳ | | |
 | P12 | ⏳ | | |

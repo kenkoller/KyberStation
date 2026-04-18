@@ -431,18 +431,6 @@ export function SmoothSwingPanel() {
         <CrossfadeViz config={config} />
       </div>
 
-      {/* ── Wiring note ── */}
-      <div className="rounded border border-border-subtle bg-bg-elevated px-3 py-2">
-        <p className="text-[10px] font-mono text-text-muted leading-snug">
-          <span className="text-accent-secondary">NOTE</span>
-          {' '}These values are ready to wire into{' '}
-          <span className="text-text-secondary">audioMixerStore</span>
-          {' '}or a dedicated{' '}
-          <span className="text-text-secondary">smoothSwingStore</span>
-          {' '}for persistence and codegen integration.
-        </p>
-      </div>
-
     </div>
   );
 }
