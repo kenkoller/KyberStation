@@ -2,13 +2,16 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://kyberstation.com',
+  ),
   title: 'KyberStation — Lightsaber Style Editor',
   description:
     'Universal Saber Style Engine — Design, preview, and export lightsaber blade styles',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icons/icon-192.png',
-    apple: '/icons/icon-512.png',
+    icon: '/icon-1024.png',
+    apple: '/icon-1024.png',
   },
   appleWebApp: {
     capable: true,

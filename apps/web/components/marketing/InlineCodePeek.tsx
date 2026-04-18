@@ -19,7 +19,7 @@ export interface InlineCodePeekProps {
 // Approximate, not a parser. Miscolored identifiers are fine — we only
 // need visual separation of templates / keywords / numbers / strings.
 
-type TokenKind =
+export type TokenKind =
   | 'plain'
   | 'keyword'
   | 'template'
@@ -28,7 +28,7 @@ type TokenKind =
   | 'comment'
   | 'preproc';
 
-interface Token {
+export interface Token {
   kind: TokenKind;
   value: string;
 }
@@ -62,7 +62,7 @@ const isIdentCont = (c: string): boolean =>
   isIdentStart(c) || (c >= '0' && c <= '9');
 const isDigit = (c: string): boolean => c >= '0' && c <= '9';
 
-function tokenize(src: string): Token[] {
+export function tokenize(src: string): Token[] {
   const tokens: Token[] = [];
   const push = (kind: TokenKind, value: string): void => {
     if (!value) return;
