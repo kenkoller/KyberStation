@@ -1182,6 +1182,55 @@ html.aurebesh-full [data-no-aurebesh] {
   animation: panel-wipe-in-vertical 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
+/* ─── filenameReveal() — UX North Star §7 motion primitive ───
+ *
+ * Large-type stagger-in of an identifier when it changes.
+ * Used by CodeOutput hero header + PresetGallery detail title.
+ * Per-character delay is applied inline via `style` so the CSS is
+ * size-agnostic — consumers pick their typography scale.
+ * `animation-fill-mode: both` pins the pre- and post-animation state.
+ */
+@keyframes filename-reveal-in {
+  0% {
+    opacity: 0;
+    transform: translateY(0.25em);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.filename-reveal-char {
+  display: inline-block;
+  white-space: pre;
+  animation: filename-reveal-in var(--filename-reveal-duration, 400ms)
+    cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--filename-reveal-delay, 0ms);
+}
+
+/* Reduced-motion / lite-perf: snap to final state, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  .filename-reveal-char {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+.reduced-motion .filename-reveal-char,
+html.perf-lite .filename-reveal-char {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
 /* ─── Modal Hologram Entry ─── */
 
 @keyframes modal-holo-enter {

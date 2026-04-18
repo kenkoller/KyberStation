@@ -13,6 +13,7 @@ import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
 import { generateQRDataUrl, downloadQR } from '@/lib/qrCode';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { ErrorState } from '@/components/shared/ErrorState';
+import { FilenameReveal } from '@/hooks/useFilenameReveal';
 import { toast } from '@/lib/toastManager';
 
 /**
@@ -269,13 +270,14 @@ export function CodeOutput() {
             <div className="text-ui-xs uppercase tracking-widest text-text-muted font-mono">
               Generated
             </div>
-            <div
-              className="font-mono font-bold uppercase truncate leading-none tracking-tight text-accent"
+            {/* filenameReveal() — re-mounts on identifier change to replay CSS stagger. */}
+            <FilenameReveal
+              key={styleIdentifier}
+              text={styleIdentifier}
+              className="block font-mono font-bold uppercase truncate leading-none tracking-tight text-accent"
               style={{ fontSize: 'clamp(20px, 3.2vw, 34px)', marginTop: '4px' }}
               title={styleIdentifier}
-            >
-              {styleIdentifier}
-            </div>
+            />
           </div>
           <div className="text-ui-xs font-mono text-text-muted tabular-nums shrink-0 flex flex-col items-end gap-0.5">
             <span>ProffieOS 7.x / {profileBoard}</span>

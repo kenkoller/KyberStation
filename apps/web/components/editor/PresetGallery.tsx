@@ -31,6 +31,7 @@ import {
 } from '@/lib/factionStyles';
 import { toast } from '@/lib/toastManager';
 import { FactionBadge, eraGlyph, factionGlyph } from '@/components/shared/StatusSignal';
+import { FilenameReveal } from '@/hooks/useFilenameReveal';
 
 // ─── Constants ───
 
@@ -288,8 +289,15 @@ export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () 
     <div className="bg-bg-surface rounded-lg border border-border-subtle p-4 mt-3">
       <div className="flex items-start justify-between mb-3">
         <div>
+          {/* filenameReveal() — preset-load reveal. Key by id so the motion
+              replays whenever the user selects a different preset. */}
           <h3 className="font-cinematic text-ui-sm font-bold tracking-wider text-text-primary">
-            {preset.name}
+            <FilenameReveal
+              key={preset.id}
+              text={preset.name}
+              className="inline-block"
+              aria-label={preset.name}
+            />
           </h3>
           <span className={`text-ui-sm font-bold uppercase tracking-wider inline-flex items-center gap-1 ${getEraCssClass(preset.era)}`}>
             <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
