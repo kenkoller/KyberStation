@@ -1,5 +1,9 @@
 # KyberStation Development Guide
 
+> How to get a working local dev environment: prerequisites, first-time setup,
+> everyday commands, and the test/typecheck/lint loop. For repo architecture,
+> see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Prerequisites
 
 - **Node.js** 20+ (24.x recommended)

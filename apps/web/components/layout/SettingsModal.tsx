@@ -122,6 +122,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     layout: false,
     shortcuts: false,
     display: false,
+    feedback: false,
   });
 
   const toggleSection = useCallback((key: keyof typeof sections) => {
@@ -584,6 +585,92 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Feedback ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Feedback"
+              open={sections.feedback}
+              onToggle={() => toggleSection('feedback')}
+            />
+            {sections.feedback && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  KyberStation is a hobby project and your feedback shapes what comes next. Every report and suggestion goes to GitHub Issues — no account needed to read, a free GitHub account is required to post.
+                </p>
+
+                <div className="space-y-2">
+                  <a
+                    href="https://github.com/kenkoller/KyberStation/issues/new?template=bug_report.md&labels=bug"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+                    onClick={() => playUISound('toggle-on')}
+                  >
+                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">🐞</span>
+                    <div className="min-w-0">
+                      <div className="text-ui-sm font-medium text-text-primary">Report a bug</div>
+                      <div className="text-ui-xs text-text-muted mt-0.5">Something is broken or behaving unexpectedly</div>
+                    </div>
+                  </a>
+
+                  <a
+                    href="https://github.com/kenkoller/KyberStation/issues/new?template=feature_request.md&labels=enhancement"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+                    onClick={() => playUISound('toggle-on')}
+                  >
+                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">💡</span>
+                    <div className="min-w-0">
+                      <div className="text-ui-sm font-medium text-text-primary">Suggest a feature</div>
+                      <div className="text-ui-xs text-text-muted mt-0.5">Something new you'd like to see added</div>
+                    </div>
+                  </a>
+
+                  <a
+                    href="https://github.com/kenkoller/KyberStation/issues/new?template=style_request.md&labels=style-request"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+                    onClick={() => playUISound('toggle-on')}
+                  >
+                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">⚔️</span>
+                    <div className="min-w-0">
+                      <div className="text-ui-sm font-medium text-text-primary">Request a blade style or preset</div>
+                      <div className="text-ui-xs text-text-muted mt-0.5">A new style, effect, ignition, or character preset</div>
+                    </div>
+                  </a>
+
+                  <a
+                    href="https://github.com/kenkoller/KyberStation/discussions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+                    onClick={() => playUISound('toggle-on')}
+                  >
+                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">💬</span>
+                    <div className="min-w-0">
+                      <div className="text-ui-sm font-medium text-text-primary">Ask a question / start a discussion</div>
+                      <div className="text-ui-xs text-text-muted mt-0.5">For anything that isn't a bug or concrete feature</div>
+                    </div>
+                  </a>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between border-t border-border-subtle pt-3">
+                  <a
+                    href="https://github.com/kenkoller/KyberStation"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-ui-xs text-text-muted hover:text-accent transition-colors"
+                  >
+                    View source on GitHub →
+                  </a>
+                  <span className="text-ui-xs text-text-muted">MIT licensed</span>
                 </div>
               </div>
             )}

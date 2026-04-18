@@ -9,23 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Tracking work on the v1.0 path. Current in-flight sprints:
+Tracking work on the v1.0 path.
 
 - **v0.11.1 — Design Review Polish Pass** (shipped): alert-color
   discipline, skeleton + error-state coverage, color-glyph pairing for
   accessibility, CHANGELOG + README assets, housekeeping
-- **v0.11.2 — Color Naming Math** (partial): three-tier algorithmic
+- **v0.11.2 — Color Naming Math** (shipped): three-tier algorithmic
   naming (landmark + modifier + coordinate-mood) expanding ~120
-  curated names into 1,500+ HSL coverage. PR #21 merged, polish PR #23
-  in flight
-- **v0.11.3 — Modular Hilt Library** (this release): 33 reusable
-  line-art SVG parts composed into 8 canonical hilt assemblies
-  (Graflex, MPP, Negotiator, Count, Shoto Sage, Vented Crossguard,
-  Staff, Fulcrum), authored across 3 parallel artist-agents on top of
-  a strict-typed composer + `HiltRenderer` with horizontal / vertical
-  orientation. 8 new SVG hilt options added to the editor's `Hilt`
-  picker (marked with ✦)
-- **v0.12.0 — Kyber Crystal Three.js renderer** (upcoming): full 3D
+  curated names into 1,500+ HSL coverage
+- **v0.11.3 — Modular Hilt Library** (shipped): 33 reusable line-art
+  SVG parts composed into 8 canonical hilt assemblies (Graflex, MPP,
+  Negotiator, Count, Shoto Sage, Vented Crossguard, Staff, Fulcrum),
+  authored across 3 parallel artist-agents on top of a strict-typed
+  composer + `HiltRenderer` with horizontal / vertical orientation. 8
+  new SVG hilt options added to the editor's `Hilt` picker (marked
+  with ✦)
+- **v0.12.0 — Kyber Crystal Three.js renderer** (shipped): full 3D
   crystal component with PBR materials, 5 procedural Forms, bleed +
   heal + first-discovery animations, scannable QR embedded, card
   snapshot pipeline
@@ -38,8 +37,73 @@ Tracking work on the v1.0 path. Current in-flight sprints:
   editing dual-blade / saberstaff / crossguard sabers (glyph format
   already supports multi-blade from v1)
 
+### Branch protection — server-side active
+
+After the KyberStation owner upgraded to GitHub Pro (2026-04-17
+afternoon), `pnpm run branch-protection:setup` applied the
+`main-protection` ruleset (id `15217927`) on `refs/heads/main`:
+
+- `non_fast_forward` blocks force-push to main
+- `deletion` blocks main-branch deletion
+- `pull_request` (0 approvals required) blocks direct pushes — all
+  changes must go through a PR
+- `required_status_checks: build-and-test` requires CI green before
+  merge
+
+Client-side `.githooks/pre-push` remains active as defense-in-depth.
+
+### Deferred items (documented, awaiting dedicated pickup)
+
+- Hardware validation of WebUSB flash against real Proffieboard V2.2
+  and V3.9 — see `docs/HARDWARE_VALIDATION_TODO.md`
+- Real ESLint enforcement across packages (stub lint scripts currently)
+- `CANONICAL_DEFAULT_CONFIG` drift-sentinel test pattern
+- Shared `<HiltMesh>` extraction between `BladeCanvas3D.tsx` and
+  `CrystalRevealScene.tsx`
+- Crystal Vault panel (scanned-crystal collection)
+- Re-attunement UI for visual-version upgrades
+- Favicon replacement from crystal snapshot pipeline
+- `SHARE_PACK.md` §4 size-estimate table refresh (current doc understates
+  max glyph size; real measurements from PR #20 hit ~490 chars at max)
+
 See `~/.claude/plans/declarative-strolling-dragonfly.md` for the
-orchestration plan that scopes these sprints.
+orchestration plan that scopes the current sprints, and
+`docs/SESSION_2026-04-17.md` Part 2 for the full session summary.
+
+## [0.11.2] — 2026-04-17
+
+### Changed
+
+- **Color naming system rewritten** as three-tier algorithmic model in
+  new `apps/web/lib/namingMath.ts`. Replaces the 121-entry flat
+  lookup in `saberColorNames.ts` with:
+  - **Tier 1 — Landmarks** (~147 curated Star Wars character/location
+    names) at exact HSL points. Every landmark from the original
+    dataset preserved verbatim
+  - **Tier 2 — Modifier grammar** (10 modifiers: `Pale`, `Deep`,
+    `Vivid`, `Muted`, `Dawn-`, `Dusk-`, `Shadowed`, `Bleached`,
+    `Ember-`, `Frost-`) applied to nearby-landmark colors. 147 × 10 =
+    1,470+ modifier-expanded names algorithmically
+  - **Tier 3 — Coordinate-mood fallback** for colors outside any
+    landmark's orbit. Pattern: `{ColourMood} Sector {hex}-{hex}` —
+    e.g., `Crimson Sector 4E-92`, `Azurine Outer Rim 6D-F7`
+- `saberColorNames.ts` becomes a thin shim that re-exports
+  `getSaberColorName` from `namingMath.ts`. No call sites need to
+  change; every caller stays working.
+
+### Fixed
+
+- Every possible RGB now returns a distinctive, evocative name. Zero
+  "Unknown Crystal" fallbacks across the full HSL space.
+- Minute color adjustments no longer produce repeated names — modifier
+  layers discriminate between neighboring hues.
+
+### Notes
+
+- All existing tests still pass (backward-compatible signature)
+- New test suite (`namingMath.test.ts`) covers landmark preservation,
+  modifier-trigger boundaries, coordinate-mood stability, and
+  1000-sample coverage
 
 ---
 

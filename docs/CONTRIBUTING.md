@@ -1,5 +1,18 @@
 # Contributing to KyberStation
 
+> **Current contribution policy:** Outside pull requests are not currently
+> accepted while the project is still taking shape. **Bug reports, feature
+> ideas, and style requests are very welcome** — the best way to help right
+> now is to [file an issue](https://github.com/kenkoller/KyberStation/issues/new/choose)
+> or start a thread in
+> [GitHub Discussions](https://github.com/kenkoller/KyberStation/discussions).
+> This policy will likely change as the project stabilizes; revisit at 30 days
+> post-launch.
+>
+> This document still documents how the codebase is organized and how new
+> styles / effects / boards / presets are added, so you can dig in if you're
+> forking or just curious how it works.
+
 ## Getting Started
 
 1. Clone the repo and install dependencies:
@@ -64,11 +77,16 @@ See [STYLE_AUTHORING.md](./STYLE_AUTHORING.md) for the full guide.
 ### UI changes (`apps/web/`)
 
 - Components live in `apps/web/components/`
-- State is in Zustand stores (`apps/web/stores/`) — 8 stores for different domains (blade, UI, presets, profiles, audio, mixer, accessibility, preset list)
+- State is in Zustand stores (`apps/web/stores/`) — 13 stores for different
+  domains (blade, ui, layout, layer, visualization, history, userPreset,
+  presetList, saberProfile, audioFont, audioMixer, accessibility, timeline)
 - Use Tailwind CSS for styling, Radix UI for primitives
 - Use `HelpTooltip` for contextual help on feature headings
 - Keep components focused — one panel, one responsibility
 - All new interactive elements must have ARIA labels and 44px min touch targets
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the bigger picture on how the
+engine, codegen, and UI packages fit together.
 
 ## Code Style
 
@@ -77,7 +95,9 @@ See [STYLE_AUTHORING.md](./STYLE_AUTHORING.md) for the full guide.
 - Co-locate tests with the package they test
 - Use Conventional Commits for commit messages
 
-## Pull Request Process
+## Pull Request Process (for when contributions open)
+
+When the contribution policy opens up, the expected flow will be:
 
 1. Create a feature branch: `feat/your-feature`
 2. Make changes, add tests
@@ -86,9 +106,16 @@ See [STYLE_AUTHORING.md](./STYLE_AUTHORING.md) for the full guide.
 5. Open a PR with a clear description of what and why
 6. PRs must pass CI and have tests for new engine/codegen code
 
+Until then, please hold off on PRs — issues and discussions are the most
+useful way to contribute.
+
 ## Reporting Issues
 
 Use GitHub Issues with the appropriate template:
 - **Bug report** — Something broken
 - **Feature request** — Something new
 - **Style request** — New blade style or preset
+
+For general questions or open-ended discussion, use
+[GitHub Discussions](https://github.com/kenkoller/KyberStation/discussions)
+rather than filing an issue.

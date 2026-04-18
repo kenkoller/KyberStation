@@ -1,6 +1,9 @@
 # Style Authoring Guide
 
-How to add a new blade style to KyberStation.
+> Step-by-step guide for adding a new blade style to the engine: class
+> skeleton, `getColor()` signature, codegen registration, and UI wiring.
+> Companion to [CONTRIBUTING.md](./CONTRIBUTING.md) and
+> [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Overview
 

@@ -1,5 +1,9 @@
 # KyberStation Architecture
 
+> A top-to-bottom view of how KyberStation is organized: the engine-first
+> package layout, the AST-based code generator, and the React UI that sits on
+> top of them. Start here if you're reading the codebase for the first time.
+
 ## Design Principles
 
 1. **Engine-first** — `packages/engine` is the source of truth for all blade behavior. The web UI is a thin rendering layer over the engine's LED array output. The engine has zero DOM dependencies and runs headless in browser, tests, or Electron.

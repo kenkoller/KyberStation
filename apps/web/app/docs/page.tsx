@@ -16,16 +16,118 @@ interface Section {
 
 const SECTIONS: Section[] = [
   // ────────────────────────────────────────────────────────
-  // 1. Getting Started
+  // 0. Welcome (new-user landing)
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'welcome',
+    title: 'Welcome to KyberStation',
+    content: [
+      'KyberStation is a free, open-source tool for designing lightsaber blade styles. You can use it to create a custom look for your saber, preview it in real time, and export the code or config file needed to flash it to your hardware.',
+      'You do not need to be a programmer to use it. If you just want to browse preset designs from characters across the saga and export one to your saber, that works too. If you want to dive deep, build your own blade style from scratch, tune the individual ignition and effect parameters, and hand-craft your dream saber — that also works.',
+      'Everything runs in your browser. There is no account to create, no data collected, no server. Your designs are saved locally on your device. If you ever want to share a design with a friend, you can copy a short "Kyber Code" URL that encodes the full config.',
+    ],
+    list: [
+      'Own a Proffieboard? KyberStation generates the ProffieOS C++ code you paste into your config.h file.',
+      'Own a CFX, Golden Harvest, Xenopixel, or other board? Compatibility profiles tell you exactly which features work on your hardware, and generated configs use the right format for your board.',
+      'Do not own a saber yet? Use KyberStation as a design tool to experiment before you buy.',
+      'On mobile? The app is installable as a PWA — add it to your home screen and it runs like a native app.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // 0.5. Your First 5 Minutes (tutorial)
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'first-5-minutes',
+    title: 'Your First 5 Minutes',
+    content: [
+      'The fastest way to understand what KyberStation does is to try it. Here is a short walkthrough — each step takes a few seconds.',
+    ],
+    subsections: [
+      {
+        subtitle: '1. Ignite the blade',
+        content: [
+          'Press Space (or click the IGNITE button in the toolbar). The virtual blade powers on and you see the current style animating. Press Space again to retract it.',
+        ],
+      },
+      {
+        subtitle: '2. Try different blade styles',
+        content: [
+          'Open the Style panel (bottom of the screen). Click through a few styles — Stable, Unstable, Fire, Plasma Storm. The blade updates instantly. Every style has its own character.',
+        ],
+      },
+      {
+        subtitle: '3. Trigger combat effects',
+        content: [
+          'With the blade ignited, press C for Clash, B for Blast, or hold L to toggle Lockup. Press N for Force Lightning. These are the same events that happen when you actually swing a real saber.',
+        ],
+      },
+      {
+        subtitle: '4. Change the color',
+        content: [
+          'Open the Colors panel. Click the color swatch to open the picker and change the base color. The blade updates in real time.',
+        ],
+      },
+      {
+        subtitle: '5. Browse character presets',
+        content: [
+          'Open the Gallery panel. Pick any preset — Obi-Wan Kenobi, Darth Maul, Ahsoka Tano, Kylo Ren, whoever. Click to load their canonical blade configuration. You can customize from there or use it as-is.',
+        ],
+      },
+      {
+        subtitle: '6. Export it',
+        content: [
+          'Open the Output panel and click Generate. For Proffie users, you get a block of ProffieOS C++ code you can paste into your config.h. For other boards, you get the right config format for your hardware.',
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // 0.75. Glossary (vocabulary help)
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'glossary',
+    title: 'Glossary',
+    content: [
+      'Short definitions for the saber and ProffieOS terms KyberStation uses. Skim this now, or come back when something in the UI is unfamiliar.',
+    ],
+    list: [
+      'Baselit — A blade lit by LEDs at the hilt end, shining up a polycarbonate tube. Simpler than Neopixel, but cannot do per-pixel effects.',
+      'Blade strip — The string of addressable LEDs inside a Neopixel blade. Each LED is individually controllable.',
+      'Blast — A deflected blaster bolt. Renders as a bright ring at a random position on the blade.',
+      'CFX — A premium saber board (Golden Harvest CFX / GHv3 family) with its own sound and config format.',
+      'Clash — Blade-on-blade collision. Produces a brief flash at the contact point.',
+      'config.h — The main configuration file for ProffieOS firmware. KyberStation generates the style and preset sections of this file.',
+      'Drag — Effect for dragging the blade along a surface. Sustained heat glow near the tip.',
+      'Flashing — Writing new firmware to your saber board over USB. KyberStation supports in-browser WebUSB flashing for Proffieboard V3.',
+      'IMU — Inertial Measurement Unit. The accelerometer and gyroscope inside a saber board that detect swings, clashes, and orientation.',
+      'Kyber Code — KyberStation\'s compact URL format for sharing a complete blade design via a single link.',
+      'Lockup — When two blades are pressed together and held. Sustained electrical activity at the contact point.',
+      'Melt — Effect where the blade is held against a surface and melts through it. Sustained tip glow with molten drip behavior.',
+      'Neopixel — An addressable RGB LED (technically WS2812B). A "Neopixel blade" is a blade with a full strip of these LEDs.',
+      'Preset — A single saved blade design: style, colors, effects, ignition, and parameters bundled together. Most boards hold multiple presets you cycle through.',
+      'Proffieboard — A popular open-source saber board created by Fredrik Hübinette. Runs ProffieOS.',
+      'ProffieOS — The open-source firmware that runs on Proffieboards. KyberStation targets ProffieOS 7.x.',
+      'Prop file — A C++ header that defines how buttons and gestures control the saber. KyberStation defaults to saber_fett263_buttons.h (Fett263\'s prop).',
+      'Responsive style — A style whose animation reacts to motion, swing speed, or other runtime input. Contrasts with a smooth style that animates on its own.',
+      'SmoothSwing — A swing-sound system that crossfades between high- and low-intensity swing samples based on actual swing speed. More realistic than single-file swing triggers.',
+      'Smooth style — A style whose animation is self-contained and does not require motion input to look alive.',
+      'Xenopixel — A budget-friendly saber board, popular with first-time builders. Uses preloaded effect files rather than runtime C++ config.',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // 1. Getting Started (UI orientation)
   // ────────────────────────────────────────────────────────
   {
     id: 'getting-started',
-    title: 'Getting Started',
+    title: 'The Editor Workspace',
     content: [
-      'KyberStation is a visual saber style editor, real-time blade simulator, and config generator for ProffieOS 7.x sabers. It runs entirely in your browser with no server required — all project data is stored locally in IndexedDB.',
       'The main editor workspace has three areas: a compact canvas strip at the top showing your blade preview, a toolbar for quick style/effect controls, and a tabbed panel area below for detailed configuration.',
       'Click IGNITE (or press Space) to power on the virtual blade and see your style in action. Use the effect buttons (Clash, Blast, Lockup, etc.) to preview how your saber reacts to combat events. Every change updates the blade preview in real-time.',
       'The tabbed panels at the bottom give you full control: Style for blade style selection, Colors for palette editing, Effects for combat effect tuning, Ignition for ignition/retraction animations, Params for advanced parameters, Audio for sound font management, Gallery for presets, and Output for code generation and SD card export.',
+      'KyberStation runs entirely in your browser with no server required — all project data is stored locally in your browser\'s IndexedDB. Clearing site data in your browser will erase your local presets and configurations, so make sure to export any designs you want to keep.',
     ],
   },
 
@@ -51,6 +153,8 @@ const SECTIONS: Section[] = [
       'Aurora — Northern-lights flowing color waves. Slow, organic color bands drift along the blade like aurora borealis.',
       'Cinder — Ember and lava-flow with hot spots and cooling dark regions. Embers brighten and fade organically, creating a smoldering blade effect.',
       'Prism — Rainbow light splitting and recombining. White light separates into spectral colors that shift and blend across the blade.',
+      'Painted — Hand-painted colors at user-defined positions along the blade, with smooth blending between them. Useful for multi-color gradients and character-specific color zones.',
+      'Image Scroll — Scrolls image pixel data across the blade over time. Designed for light-painting photography: wave the saber during a long exposure and the full image appears in the photo.',
       'Gravity — Color pools toward whichever end of the blade points down, using accelerometer input. The center of brightness follows gravity with smooth Gaussian distribution.',
       'Data Stream — Digital data packets traveling from emitter to tip. Multiple concurrent light pulses scroll along the blade like a data bus, each with unique speed and color variation.',
       'Ember — Streams of glowing embers drifting upward along the blade. Multiple ember particles rise with organic movement and height-based dimming.',
@@ -362,6 +466,43 @@ const SECTIONS: Section[] = [
   },
 
   // ────────────────────────────────────────────────────────
+  // Flashing cross-reference
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'flashing',
+    title: 'Flashing Your Saber',
+    content: [
+      'Once you have a design you like, the final step is getting the config onto your board. KyberStation stops at "generate the code" — the actual flash depends on which board you own.',
+    ],
+    subsections: [
+      {
+        subtitle: 'Proffieboard V3 via WebUSB (easiest)',
+        content: [
+          'Open the Flash to Saber panel in the Output tab. Connect your board in DFU mode (hold the BOOT button while plugging in USB), pick a firmware variant, acknowledge the risk disclaimer, and click Flash. The entire process happens in the browser — no Arduino IDE and no driver installation on macOS. Requires a Chromium-based browser.',
+        ],
+      },
+      {
+        subtitle: 'Proffieboard via Arduino CLI (traditional path)',
+        content: [
+          'If you prefer the classic workflow — or need to flash a Proffieboard V2 — the complete step-by-step guide is in the repository under docs/PROFFIEOS_FLASHING_GUIDE.md. It covers cable selection, board manager installation, the exact compile and upload commands, the config.h section structure, and every code-generation bug we have seen with its fix. The guide has been validated against real hardware (Proffieboard V3.9, ProffieOS 7.x).',
+        ],
+      },
+      {
+        subtitle: 'Non-Proffie boards',
+        content: [
+          'CFX, Golden Harvest, Xenopixel, Verso, and other non-Proffie boards each have their own flashing tool. KyberStation produces the correct config format for your board — the board maker\'s documentation tells you how to apply it. Consult the support resources that came with your saber.',
+        ],
+      },
+      {
+        subtitle: 'Before you flash — back things up',
+        content: [
+          'Back up your SD card contents and your original config.h before flashing. The Proffieboard has readout protection enabled: once you flash, the previous firmware and config cannot be recovered from the board. The flashing guide includes a pre-flash backup checklist.',
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
   // Scene Themes (existing)
   // ────────────────────────────────────────────────────────
   {
@@ -620,6 +761,155 @@ const SECTIONS: Section[] = [
       'Cmd+Z (Mac) or Ctrl+Z (Windows) — Undo the last change.',
       'Cmd+Shift+Z or Cmd+Y — Redo the last undone change.',
       'Each history entry is labeled with a human-readable description of what changed (e.g., "Change base color", "Switch to Fire style").',
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Troubleshooting
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'troubleshooting',
+    title: 'Troubleshooting',
+    content: [
+      'The common rough edges and how to get past them. If you hit something that is not listed here, please file an issue — the more specific reports come in, the more complete this section gets over time.',
+    ],
+    subsections: [
+      {
+        subtitle: 'The blade preview looks frozen or never starts',
+        content: [
+          'Browsers block autoplaying animations and audio until you interact with the page. Click anywhere in the editor — or press Space to ignite — and the engine starts. If the FPS counter in the header stays at zero, try a hard refresh (Cmd/Ctrl+Shift+R).',
+        ],
+      },
+      {
+        subtitle: 'Colors look different on my real blade than in the preview',
+        content: [
+          'The in-browser preview approximates WS2812B gamma and diffusion-tube softening, but the real blade also depends on LED type, diffuser thickness, ambient lighting, and your camera\'s white balance. Treat the preview as a design guide, not a pixel-perfect match. For closer results, adjust the Diffusion setting in the Hardware panel to match your physical blade.',
+        ],
+      },
+      {
+        subtitle: 'Generated code will not compile',
+        content: [
+          'KyberStation emits the blade style code that goes inside your config.h — not a complete standalone file. You still need the CONFIG_TOP, CONFIG_PROP, and CONFIG_BUTTONS sections with their #include lines. The most common errors are: missing maxLedsPerStrip, missing SaberBase:: prefix on lockup types, and placing the prop #include in the wrong section. Every known error has an entry in the Flashing Guide\'s "Code Generation Bugs and Fixes" table — see the Flashing Your Saber section above for the link.',
+        ],
+      },
+      {
+        subtitle: 'Sound fonts not detected by the Font Library',
+        content: [
+          'The Font Library uses the File System Access API, which is only available in Chromium-based browsers (Chrome, Edge, Arc, Brave). On Firefox and Safari you will see a notice — use drag-and-drop in the Sound Fonts tab to load individual fonts instead.',
+        ],
+      },
+      {
+        subtitle: 'My presets disappeared',
+        content: [
+          'Presets live in your browser\'s IndexedDB. Clearing site data, switching browser profiles, or opening the app in an incognito / private window resets that storage. To keep a backup, open the Output tab and export your preset collection as a .kyberstation-collection.json file. You can re-import it later on any device.',
+        ],
+      },
+      {
+        subtitle: 'WebUSB flash fails to connect',
+        content: [
+          'The board has to be in DFU mode before WebUSB can talk to it — hold the BOOT button while plugging in USB, or use the specific BOOT-button sequence for your board. Only Chromium-based browsers support WebUSB. macOS does not need driver installation; on Windows you may need to install the ST generic WinUSB driver via Zadig. The full recovery procedure is in docs/WEBUSB_FLASH.md.',
+        ],
+      },
+      {
+        subtitle: 'The editor feels slow on my laptop or phone',
+        content: [
+          'Open Settings → Performance Tier and drop to Medium or Lite. That alone reclaims most of the frame budget. You can also disable the visualization stack and the per-pixel debug overlay — those are the heaviest components. Older mobile devices run best in Lite mode with the fullscreen preview.',
+        ],
+      },
+      {
+        subtitle: 'Blade appears too short or too long',
+        content: [
+          'Check the Blade Length setting in the Hardware panel. LED count adjusts automatically (roughly 3.66 LEDs per inch) but must match the actual LED count in your physical blade — mismatched counts leave the tip dark or overflow the strip.',
+        ],
+      },
+      {
+        subtitle: 'The PWA install icon does not appear',
+        content: [
+          'Only Chromium browsers show the install icon in the address bar. Safari on iOS uses Share → Add to Home Screen. Firefox does not install PWAs. Details for each platform are in the Installing section below.',
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Installing KyberStation (PWA)
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'installing',
+    title: 'Installing KyberStation',
+    content: [
+      'KyberStation is a Progressive Web App (PWA). You can install it to your desktop or mobile device so it launches from its own icon, runs in its own window, and works offline after the first visit. There is no app store download, no account creation, and no installer to run.',
+    ],
+    subsections: [
+      {
+        subtitle: 'Desktop (Chrome, Edge, Brave, Arc)',
+        content: [
+          'Look for a small install icon in the right side of the address bar — it looks like a monitor with a downward arrow. Click it, then confirm "Install". KyberStation will appear in your Applications folder (macOS) or Start menu (Windows). It launches in its own window, separate from the browser.',
+          'You can uninstall at any time by opening the installed app, clicking the three-dot menu, and choosing "Uninstall KyberStation".',
+        ],
+      },
+      {
+        subtitle: 'iPhone and iPad (Safari)',
+        content: [
+          'Tap the Share button at the bottom of Safari. Scroll down in the share sheet and tap "Add to Home Screen". Confirm the name and tap Add. KyberStation appears as a home-screen icon and launches full-screen like a native app.',
+        ],
+      },
+      {
+        subtitle: 'Android (Chrome)',
+        content: [
+          'Chrome will often prompt "Install KyberStation" at the bottom of the screen on your first visit. If it does not, open the three-dot menu and choose "Install app" or "Add to Home Screen".',
+        ],
+      },
+      {
+        subtitle: 'Offline use',
+        content: [
+          'After your first visit, the app shell is cached locally. If your internet drops, you can still open and use KyberStation. Your presets and projects are stored in your browser\'s local database, so they do not require a network connection.',
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────
+  // Feedback & Community
+  // ────────────────────────────────────────────────────────
+  {
+    id: 'feedback',
+    title: 'Feedback & Community',
+    content: [
+      'KyberStation is a hobby project built by one person, and it is actively shaped by feedback from the community. If something is broken, confusing, or missing — please say so. The single best thing you can do to help the project is file a report when you hit a rough edge.',
+      'You can also reach the feedback links directly from inside the app: open Settings (gear icon in the header), scroll to the Feedback section, and pick the right option for what you want to share.',
+    ],
+    subsections: [
+      {
+        subtitle: 'Report a bug',
+        content: [
+          'If something is broken, behaves unexpectedly, or produces wrong output: file a bug report on GitHub. Include your board type, browser, operating system, and any console errors if you have them.',
+        ],
+      },
+      {
+        subtitle: 'Suggest a feature',
+        content: [
+          'If there is something KyberStation does not do yet that you think it should: file a feature request on GitHub. Mention your use case — why you need this and how you would use it. That context helps prioritize what gets built.',
+        ],
+      },
+      {
+        subtitle: 'Request a blade style or preset',
+        content: [
+          'If you have a specific character, era, or aesthetic you want supported: file a style/preset request. Reference material (a clip or screenshot from canon, existing ProffieOS code that achieves the look, etc.) makes these much easier to build.',
+        ],
+      },
+      {
+        subtitle: 'Ask a question or discuss',
+        content: [
+          'For general questions, discussion, or just sharing what you have built: use GitHub Discussions rather than opening an issue. Discussions are better for open-ended conversation.',
+        ],
+      },
+      {
+        subtitle: 'About contributions',
+        content: [
+          'Outside pull requests are not currently accepted while the project is still taking shape. This is not personal — it is a time-management decision to avoid the project consuming all my free time. The policy will likely change as things stabilize. In the meantime, issues and feature discussions are the most useful way to help.',
+        ],
+      },
     ],
   },
 ];

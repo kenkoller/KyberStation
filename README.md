@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/kenkoller/KyberStation/actions/workflows/ci.yml/badge.svg)](https://github.com/kenkoller/KyberStation/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
+[![Feedback Welcome](https://img.shields.io/badge/feedback-welcome-brightgreen.svg)](https://github.com/kenkoller/KyberStation/issues/new/choose)
 
 **Visual blade style editor, real-time simulator, and config generator for custom lightsabers.**
 
@@ -14,7 +14,7 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 
 ## Features
 
-### Blade Engine (82+ source files, 398+ tests)
+### Blade Engine (150+ source files across packages, 700+ tests)
 - **29 blade styles** — Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage
 - **21 effect types** — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon
 - **19 ignition + 13 retraction animations** with 10 easing curves and custom easing support
@@ -177,7 +177,7 @@ kyberstation/
 │   ├── app/               # Pages: landing, editor, share link handler
 │   ├── components/        # Editor panels, shared UI, layout
 │   ├── hooks/             # useBladeEngine, useAnimationFrame, etc.
-│   ├── stores/            # Zustand stores (13 total: blade, UI, layout, visualization, history, presets, profiles, audio, mixer, accessibility, theme)
+│   ├── stores/            # Zustand stores (13 total: blade, ui, layout, layer, visualization, history, userPreset, presetList, saberProfile, audioFont, audioMixer, accessibility, timeline)
 │   └── lib/               # Config I/O, Kyber Code encoding, IndexedDB
 ├── packages/engine/       # Headless blade simulation engine
 │   ├── styles/            # 29 style implementations
@@ -208,16 +208,21 @@ kyberstation/
 | Testing | Vitest + React Testing Library |
 | Build | pnpm workspaces (Turborepo optional) |
 
-## Contributing
+## Feedback
 
-Contributions are welcome! Please read the [Contributing Guide](docs/CONTRIBUTING.md) before submitting a PR.
+KyberStation is a hobby project built by one person. Outside pull requests are
+not currently accepted while the project is still taking shape — this policy
+will likely change as things stabilize. In the meantime, bug reports, feature
+ideas, and style requests are the most useful way to help.
 
 - **Bug reports** — [File an issue](https://github.com/kenkoller/KyberStation/issues/new?template=bug_report.md)
 - **Feature requests** — [File an issue](https://github.com/kenkoller/KyberStation/issues/new?template=feature_request.md)
 - **New blade styles or presets** — [File a style request](https://github.com/kenkoller/KyberStation/issues/new?template=style_request.md)
 - **Questions & discussion** — [GitHub Discussions](https://github.com/kenkoller/KyberStation/discussions)
 
-Please note that this project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
+The [Contributing Guide](docs/CONTRIBUTING.md) documents the repo structure and
+how new styles, effects, boards, and presets are added — useful reference even
+if you can't submit a PR yet. This project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
