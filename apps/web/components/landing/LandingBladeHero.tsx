@@ -112,7 +112,15 @@ export function LandingBladeHero({ className }: LandingBladeHeroProps) {
       const sliceH = CANVAS_H / count;
       for (let i = 0; i < count; i++) {
         const off = i * 3;
-        cx.fillStyle = `rgb(${pixels[off]},${pixels[off + 1]},${pixels[off + 2]})`;
+        const r = pixels[off], g = pixels[off + 1], b = pixels[off + 2];
+        // Rec. 709 luminance — skip drawing dim pixels so they stay
+        // transparent (clearRect leaves them alpha=0). This is what kills the
+        // "old-color halo around empty blade" bug between preset cycles:
+        // the CSS drop-shadow only fires on opaque pixels, and an empty /
+        // retracting blade should have no opaque pixels to cast halo from.
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        if (lum < 8) continue;
+        cx.fillStyle = `rgb(${r},${g},${b})`;
         cx.fillRect(0, CANVAS_H - (i + 1) * sliceH, CANVAS_W, sliceH + 0.5);
       }
     };
@@ -169,7 +177,8 @@ export function LandingBladeHero({ className }: LandingBladeHeroProps) {
           background: `radial-gradient(ellipse 40% 80% at center, ${accentCss} 0%, transparent 70%)`,
           opacity: 0.35,
           filter: 'blur(40px)',
-          transition: 'background 600ms ease',
+          // No transition — snaps with the preset change so we never have
+          // a mid-transition "old bloom around new blade" flash.
         }}
       />
       <canvas
@@ -181,7 +190,9 @@ export function LandingBladeHero({ className }: LandingBladeHeroProps) {
           width: '6px',
           height: 'min(72vh, 600px)',
           filter: `drop-shadow(0 0 8px ${accentCss}) drop-shadow(0 0 24px ${accentCss})`,
-          transition: 'filter 600ms ease',
+          // No transition — halo color snaps with the preset change so we
+          // never render a mid-transition halo around a blade that's
+          // already a different colour.
         }}
       />
     </div>
