@@ -639,7 +639,7 @@ Claude updates this table as each phase completes.
 | P13 | ⏳ | | |
 | P14 | ⏳ | | |
 | P15 | ⏳ | | |
-| P16 | ⏳ | | |
+| P16 | ⚠️ | 2026-04-18 | SettingsModal verified: all 7 sections render (Performance / Aurebesh / UI Sounds / Layout / Shortcuts / Feedback / Display). Feedback section expanded — 4 paths (bug/feature/style-or-preset/discussion), correct URLs with template+label prefills, `target="_blank"` + `rel="noopener noreferrer"` ✓. **FINDING-P16-001 (SHIP-WITH-NOTE):** On first navigation to `/editor` via `window.location.href = ...`, AppShell sometimes renders MobileShell at 1440×900 (5 `mobile-tab-*` IDs observed despite `matchMedia('(min-width:1440px)')` = true). `useBreakpoint()` hook default is 'desktop' which should fall through to `<WorkbenchLayout />`. A hard reload corrects the layout. Real users might see mobile chrome on desktop under certain navigation paths. Worth an hour of investigation before launch. |
 | P17 | ⏳ | | |
 | P18 | ⏳ | | |
 | P19 | ⏳ | | |

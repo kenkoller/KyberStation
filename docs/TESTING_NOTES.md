@@ -212,3 +212,17 @@ Current base color at load: `#008CFF` / "Dusk-Bo-Katan Azure" (tier-2 modifier +
 - [x] Audio tab loads cleanly. Rich structure: FONT LIBRARY (Sound Fonts / Library / EQ + Effects sub-tabs), FONT PREVIEW panel (empty-state: "Select a font from the library to preview"), MIXER / EQ, EFFECT PRESETS, SMOOTHSWING CONFIG (V1/V2 toggle, swing threshold/sharpness/strength, hum & accent, live crossfade preview), SOUND EVENTS (Hum, Swing, Clash, Blast, Drag, Lockup).
 - [x] **FIXED inline: P9-001 (SHIP-WITH-NOTE, QUICK):** Dev-facing note was visible in production UI at bottom of SmoothSwing panel: `"NOTE These values are ready to wire into audioMixerStore or a dedicated smoothSwingStore for persistence and codegen integration."` — surfaced internal store names + a "not wired up yet" admission. Fix: removed lines 434–444 of `apps/web/components/editor/SmoothSwingPanel.tsx` (the `{/* ── Wiring note ── */}` block). Typecheck clean. Source verified (0 grep matches post-fix).
 - [ ] **T9.2–T9.5 (PENDING-KEN):** Font playback (T9.2), blade-style → font-pairing recommendation labels (T9.3/T9.4), font-folder name propagation (T9.5) — require a loaded font + preset switches; audio preview playback in preview-mode also hits user-gesture requirements for AudioContext.
+
+## P16 — Settings modal + Feedback section (2026-04-18)
+
+- [x] Full settings modal opens from the ⚙ "Open settings" gear button in the WorkbenchLayout header.
+- [x] 7 sections visible: Performance Tier / Aurebesh Mode / UI Sounds / Layout / Keyboard Shortcuts / **Feedback** / Display. All collapsible via `▾` toggle.
+- [x] **Feedback section is excellent** — expanded to find:
+  - Humble intro copy: *"KyberStation is a hobby project and your feedback shapes what comes next. Every report and suggestion goes to GitHub Issues — no account needed to read, a free GitHub account is required to post."*
+  - **4 paths** (richer than originally scoped):
+    1. 🐞 Report a bug → `template=bug_report.md&labels=bug`
+    2. 💡 Suggest a feature → `template=feature_request.md&labels=enhancement`
+    3. ⚔️ Request a blade style or preset
+    4. 💬 Ask a question / start a discussion
+  - All links: `target="_blank"` + `rel="noopener noreferrer"` (security-clean)
+- [ ] **P16-001 (SHIP-WITH-NOTE, worth investigation):** Hydration/layout-bootstrap bug — AppShell sometimes renders MobileShell (detected via `[id^="mobile-tab-"]` presence — 5 mobile-tab IDs) at 1440×900 viewport. `matchMedia('(min-width:1440px)')` reports true but the layout decision was already made earlier. Full-page reload corrects the layout. Possibly `useBreakpoint()` initial SSR state not matching client viewport, combined with AppShell taking the layout branch before the useEffect re-fires. Affected path observed: after `window.location.href = '/editor'` navigation and a `preview_stop → preview_start` cycle. Real users might hit this on first visit or after reload under certain timing. **Recommended next step:** read the SSR'd HTML at 1440 viewport, compare to post-hydration DOM, and either (a) switch AppShell to matchMedia-based decision inside a `useLayoutEffect`, or (b) add a hydration guard.
