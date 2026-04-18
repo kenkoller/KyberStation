@@ -641,10 +641,10 @@ Claude updates this table as each phase completes.
 | P15 | ⏳ | | |
 | P16 | ✅ | 2026-04-18 | SettingsModal verified: 7 sections + Feedback (4 paths). **FIXED P16-001:** `useBreakpoint` now uses a lazy `useState` initializer reading `window.innerWidth` synchronously when available, SSR-fallback to 'desktop'. 9 regression tests pinning boundaries (0/599/600/1023/1024/1280/1439/1440) and SSR-fallback. Eliminates the first-render-shows-default class of viewport-conditional bugs. |
 | P17 | ⏳ | | |
-| P18 | ⏳ | | |
-| P19 | ⏳ | | |
+| P18 | ✅ | 2026-04-18 | `/editor?s=CNO.9HAX4ifU3jB5CE1DMR` (real v1 Kyber Glyph) loaded + decoded + applied + URL stripped to `/editor`. Round-trip verified: re-serialized glyph in My Crystal panel matches the original. 22-char base58 format with `CNO.` archetype prefix working. Legacy `?config=<base64>` path not re-tested this session (verified in prior sessions per CLAUDE.md §8). |
+| P19 | ✅ | 2026-04-18 | "My Crystal" panel renders 292×292 WebGL2 canvas. Form 1 = "Natural" (default). Animation triggers present: Clash / Saved / Discovery / Attune. Buttons: Save crystal snapshot / Copy glyph / Copy share link. Glyph displays inline: `CNO.9HAX4ifU3jB5CE1DMR`. QR scannable check + all 5 Form switch visual distinction + 13 animation play-through need Ken's foreground eye. |
 | P20 | ⏳ | | |
-| P21 | ⏳ | | |
+| P21 | ✅ | 2026-04-18 | Output tab loads. Generated ProffieOS C++ renders: `StylePtr<Layers<AudioFlicker<Rgb<0,140,255>, Mix<Int<16384>, Rgb<0,140,255>, White>>>...>`. "Copy to Clipboard" buttons (×2) + "Download .h" + "Export Config" + "Download ZIP" (×2) + "Export BMP" all present. JetBrains Mono font in code block (Andor register per UX North Star). Full config.h mode + Arduino-compile check need Ken's eye. |
 | P22 | ⏳ | | |
 | P23 | ⏳ | | |
 | P24 | ⏳ | | |
@@ -658,7 +658,7 @@ Claude updates this table as each phase completes.
 | P32 | ✅ | 2026-04-18 | Onboarding walkthrough verified: `WELCOME → VISUAL QUALITY → COCKPIT SOUNDS → TYPOGRAPHY → editor`. **FIXED P32-001 (a11y):** both OnboardingFlow and SaberWizard now have `role="dialog"` + `aria-modal` + `aria-labelledby` + ESC/focus-trap/focus-restore via new shared `useModalDialog` hook. T32.2 wizard full step-walk and T32.3 `firstIgnition()` ceremony need Ken's foreground eye. Follow-up: 4 other modals (SaberProfileManager Copy Presets, SplashScreen, PresetGallery/PresetBrowser/AccessibilityPanel, SettingsModal) are now easy wins now that `useModalDialog` exists — logged. |
 | P33 | ⏳ | | |
 | P34 | ⏳ | | |
-| P35 | ⏳ | | |
+| P35 | ✅ | 2026-04-18 | Infra verified: `apps/web/components/shared/ErrorState.tsx` + `Skeleton.tsx` + `LoadingSkeleton.tsx` exist. Consumers: OLEDEditor, CodeOutput, PresetBrowser, CommunityGallery. 4 active `animate-pulse` elements at runtime (live skeletons). Force-error simulation not run from preview. |
 | P36 | ⏳ | | |
 | P37 | ⏳ | | |
 
