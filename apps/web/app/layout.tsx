@@ -22,10 +22,8 @@ export const metadata: Metadata = {
   description:
     'Universal Saber Style Engine — Design, preview, and export lightsaber blade styles',
   manifest: '/manifest.json',
-  icons: {
-    icon: '/icons/icon-192.png',
-    apple: '/icons/icon-512.png',
-  },
+  // Favicon + apple-touch-icon provided via Next's file-based convention:
+  // apps/web/app/icon.svg + apps/web/app/apple-icon.svg.
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

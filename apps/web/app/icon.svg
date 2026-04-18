@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- KyberStation favicon — stylized Kyber Crystal bipyramid.
+       Dark instrument-panel background, cyan kyber glow, white core.
+       Reads at 16x16: vertical diamond silhouette with a bright heart. -->
+  <rect width="32" height="32" rx="6" fill="#0a0a10"/>
+  <!-- Outer facets (bipyramid silhouette) -->
+  <path d="M16 3 L25 12 L16 29 L7 12 Z" fill="#008CFF" fill-opacity="0.22"/>
+  <!-- Mid facets -->
+  <path d="M16 5 L23 13 L16 27 L9 13 Z" fill="#008CFF" fill-opacity="0.55"/>
+  <!-- Inner crystal body with centerline highlight -->
+  <path d="M16 7 L21 14 L16 25 L11 14 Z" fill="#5EC3FF"/>
+  <!-- Vertical centerline (the kyber heart) -->
+  <path d="M16 7 L16 25" stroke="#E6F6FF" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Bright core dot -->
+  <circle cx="16" cy="14" r="1.4" fill="#FFFFFF"/>
+</svg>
