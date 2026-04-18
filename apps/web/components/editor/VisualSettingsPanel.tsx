@@ -176,7 +176,7 @@ export function VisualSettingsPanel({ className = '' }: VisualSettingsPanelProps
             border: '1px solid var(--border-subtle)',
             cursor: 'pointer',
             padding: '6px 12px',
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
           }}
         >
           Re-run setup wizard
@@ -242,7 +242,7 @@ function OptionRow({
           color: isActive
             ? 'rgb(var(--accent))'
             : 'rgb(var(--text-primary))',
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
           fontWeight: isActive ? 600 : 400,
         }}
       >

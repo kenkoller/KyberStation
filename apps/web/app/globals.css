@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+/* Inter + JetBrains Mono are self-hosted via next/font in app/layout.tsx and
+   published as CSS custom properties (--font-inter, --font-jetbrains-mono).
+   Only Orbitron and Exo 2 still need @import for the cinematic / SW-body
+   display faces kept for intentional exceptions per UX North Star §6. */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
 
@@ -197,7 +200,10 @@ body {
   padding: 0;
   background: rgb(var(--bg-primary));
   color: rgb(var(--text-primary));
-  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+  /* UX North Star §6 — Inter is the default for chrome + labels. Explicit
+     `font-mono` utility usages continue to pick up JetBrains Mono through
+     the Tailwind stack. */
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -339,7 +345,7 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* Secondary cinematic font */
 .font-sw-body {
-  font-family: 'Exo 2', 'IBM Plex Mono', sans-serif;
+  font-family: 'Exo 2', 'JetBrains Mono', sans-serif;
 }
 
 /* Crawl text styling (opening crawl feel) */
@@ -950,7 +956,7 @@ html.aurebesh-full .code-output,
 html.aurebesh-full .error-message,
 html.aurebesh-full .keyboard-shortcut,
 html.aurebesh-full [data-no-aurebesh] {
-  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -959,7 +965,7 @@ html.aurebesh-full [data-no-aurebesh] {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .dot-matrix {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: calc(8px * var(--font-scale));
   line-height: 1.4;
   letter-spacing: 0.2em;
@@ -968,7 +974,7 @@ html.aurebesh-full [data-no-aurebesh] {
 }
 
 .dot-matrix-bright {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   font-size: calc(8px * var(--font-scale));
   line-height: 1.4;
   letter-spacing: 0.2em;

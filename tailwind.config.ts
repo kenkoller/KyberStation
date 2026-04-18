@@ -29,14 +29,24 @@ const config: Config = {
         },
       },
       fontFamily: {
+        // UX North Star §6: Inter for chrome + labels.
+        sans: [
+          'var(--font-inter)',
+          'Inter',
+          'system-ui',
+          'sans-serif',
+        ],
+        // UX North Star §6: JetBrains Mono for all data / numerics / code /
+        // identifiers / ceremonial display. Replaces IBM Plex Mono.
         mono: [
-          'IBM Plex Mono',
+          'var(--font-jetbrains-mono)',
+          'JetBrains Mono',
           'SF Mono',
           'Fira Code',
           'monospace',
         ],
         cinematic: ['Orbitron', 'Exo 2', 'sans-serif'],
-        'sw-body': ['Exo 2', 'IBM Plex Mono', 'sans-serif'],
+        'sw-body': ['Exo 2', 'JetBrains Mono', 'sans-serif'],
         aurebesh: ['FT Aurebesh', 'monospace'],
       },
       borderRadius: {

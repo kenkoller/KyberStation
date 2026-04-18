@@ -92,8 +92,8 @@ export interface StatusSignalProps {
  *   <StatusSignal variant="active" compact label="Connected" />
  *
  * Uses CSS custom-property color tokens only — never hardcoded hex.
- * Glyph font is IBM Plex Mono (already in the app stack) so the shapes
- * align visually with the rest of the telemetry numerics.
+ * Glyph font is JetBrains Mono (already in the app stack via next/font) so
+ * the shapes align visually with the rest of the telemetry numerics.
  */
 export function StatusSignal({
   variant,
@@ -124,7 +124,7 @@ export function StatusSignal({
         aria-label={!glyphIsDecorative && label && showText ? label : undefined}
         style={{
           color,
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
           // Slight optical adjustment — these unicode glyphs render a hair
           // lower than the baseline text they sit next to.
           lineHeight: 1,
@@ -198,7 +198,7 @@ export function EraBadge({
         aria-hidden={!ariaLabel ? true : undefined}
         style={{
           color,
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
           lineHeight: 1,
         }}
       >
@@ -244,7 +244,7 @@ export function FactionBadge({
         aria-hidden={!ariaLabel ? true : undefined}
         style={{
           color,
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
           lineHeight: 1,
         }}
       >

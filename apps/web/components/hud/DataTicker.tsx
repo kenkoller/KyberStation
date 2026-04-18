@@ -44,7 +44,7 @@ export function DataTicker({
         style={{
           display: 'inline-block',
           whiteSpace: 'nowrap',
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
           fontSize: 7,
           letterSpacing: '0.05em',
           color: 'rgba(var(--accent), 0.15)',

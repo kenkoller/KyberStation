@@ -29,7 +29,7 @@ function getFpsStatus(fps: number): StatusVariant {
 }
 
 const monoStyle = {
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
   fontSize: 10,
   lineHeight: 1.6,
 } as const;

@@ -155,7 +155,7 @@ function GalleryCard({
 
         {/* Era badge overlay — glyph + label for colorblind-safe signal */}
         <div className={`absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider ${getEraCssClass(preset.era)} bg-black/60 backdrop-blur-sm px-1 rounded inline-flex items-center gap-1`}>
-          <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+          <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
             {eraGlyph(preset.era)}
           </span>
           {getEraLabel(preset.era)}
@@ -170,7 +170,7 @@ function GalleryCard({
               background: badgeTint('screen-accurate', 0.45),
             }}
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2713;</span>
             On-Screen
           </div>
         ) : CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) ? (
@@ -181,7 +181,7 @@ function GalleryCard({
               background: badgeTint('creative', 0.45),
             }}
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25B2;</span>
             Creative
           </div>
         ) : null}
@@ -195,7 +195,7 @@ function GalleryCard({
               background: badgeTint('legends', 0.45),
             }}
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
               &#x2727;
             </span>
             Legends
@@ -281,7 +281,7 @@ export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () 
             {preset.name}
           </h3>
           <span className={`text-ui-sm font-bold uppercase tracking-wider inline-flex items-center gap-1 ${getEraCssClass(preset.era)}`}>
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
               {eraGlyph(preset.era)}
             </span>
             {getEraLabel(preset.era)}
@@ -291,7 +291,7 @@ export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () 
             style={{ color: affiliationColor(preset.affiliation) }}
           >
             {/* Decorative glyph — adjacent UPPERCASE text already conveys meaning to AT */}
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
               {factionGlyph(preset.affiliation)}
             </span>
             {preset.affiliation.toUpperCase()}
@@ -305,7 +305,7 @@ export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () 
                 borderColor: badgeTint('screen-accurate', 0.4),
               }}
             >
-              <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+              <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2713;</span>
               On-Screen
             </span>
           )}
@@ -318,7 +318,7 @@ export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () 
                 borderColor: badgeTint('creative', 0.4),
               }}
             >
-              <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+              <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25B2;</span>
               Creative
             </span>
           )}
@@ -557,7 +557,7 @@ function UserPresetCard({
             </div>
           )}
           <div className="absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider text-accent/80 bg-black/40 px-1 rounded inline-flex items-center gap-1">
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25C9;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25C9;</span>
             Custom
           </div>
         </div>
@@ -941,7 +941,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
               <span
                 aria-hidden="true"
                 className={era.cssClass}
-                style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}
+                style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}
               >
                 {eraGlyph(era.id)}
               </span>
@@ -969,7 +969,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
               <span
                 aria-hidden="true"
                 style={{
-                  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+                  fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
                   color: affiliationColor(aff.id),
                 }}
               >
@@ -1016,12 +1016,12 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
                 'All'
               ) : origin === 'on-screen' ? (
                 <span className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+                  <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2713;</span>
                   On-Screen
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+                  <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25B2;</span>
                   Creative
                 </span>
               )}
@@ -1058,7 +1058,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
                 : undefined
             }
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2727;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2727;</span>
             Legends
           </button>
         </div>

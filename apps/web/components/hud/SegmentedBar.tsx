@@ -49,7 +49,7 @@ export function SegmentedBar({
         <div className="flex items-center justify-between gap-2">
           <span
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
               fontSize: 9,
               color: 'rgb(var(--text-secondary))',
               textTransform: 'uppercase',
@@ -60,7 +60,7 @@ export function SegmentedBar({
           </span>
           <span
             style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
               fontSize: 9,
               color: 'rgb(var(--text-muted))',
             }}

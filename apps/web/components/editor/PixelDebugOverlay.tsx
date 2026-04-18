@@ -680,7 +680,7 @@ function TickMarks({ ledCount, interval, vertical, pixelToAnchorPct, hoveredPixe
               className="ml-0.5 leading-none"
               style={{
                 fontSize:    '7px',
-                fontFamily:  'IBM Plex Mono, Fira Code, monospace',
+                fontFamily:  'var(--font-jetbrains-mono), JetBrains Mono, Fira Code, monospace',
                 color:       isHovered ? 'rgba(0,200,255,0.9)' : 'rgba(255,255,255,0.25)',
                 letterSpacing: '0.02em',
               }}
@@ -708,7 +708,7 @@ function TickMarks({ ledCount, interval, vertical, pixelToAnchorPct, hoveredPixe
               className="mt-0.5 leading-none"
               style={{
                 fontSize:    '7px',
-                fontFamily:  'IBM Plex Mono, Fira Code, monospace',
+                fontFamily:  'var(--font-jetbrains-mono), JetBrains Mono, Fira Code, monospace',
                 color:       isHovered ? 'rgba(0,200,255,0.9)' : 'rgba(255,255,255,0.25)',
                 letterSpacing: '0.02em',
               }}

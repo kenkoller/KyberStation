@@ -72,7 +72,7 @@ export function CircularGauge({
         <span
           className="absolute"
           style={{
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
             fontSize,
             color: 'rgb(var(--text-primary))',
             lineHeight: 1,
@@ -99,7 +99,7 @@ export function CircularGauge({
       {label && (
         <span
           style={{
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
             fontSize: labelSize,
             color: 'rgb(var(--text-muted))',
             textTransform: 'uppercase',

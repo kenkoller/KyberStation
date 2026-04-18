@@ -78,7 +78,7 @@ export function MotionTelemetry({
             <span
               className="absolute"
               style={{
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
                 fontSize: Math.max(10, gaugeSize * 0.22),
                 color: 'rgb(var(--text-primary))',
                 lineHeight: 1,
@@ -114,7 +114,7 @@ export function MotionTelemetry({
             <span
               className="absolute"
               style={{
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
                 fontSize: Math.max(10, gaugeSize * 0.22),
                 color: 'rgb(var(--text-primary))',
                 lineHeight: 1,
