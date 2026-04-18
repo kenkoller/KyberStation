@@ -6,17 +6,20 @@ interface ValueCellProps {
 
 function ValueCell({ index, title, detail }: ValueCellProps) {
   return (
-    <div className="relative pl-6 md:pl-0">
+    <div
+      className="relative pl-4 md:pl-0 md:border-l-0 border-l"
+      style={{ borderLeftColor: 'rgb(var(--accent) / 0.25)' }}
+    >
       <div
-        className="font-mono text-xs tracking-widest mb-3 tabular-nums"
+        className="font-mono text-xs tracking-widest mb-4 tabular-nums"
         style={{ color: 'rgb(var(--accent) / 0.7)' }}
       >
         {index}
       </div>
-      <h2 className="font-cinematic text-lg tracking-[0.2em] text-text-primary mb-3 uppercase">
+      <h2 className="font-sans text-base tracking-[0.12em] font-semibold text-text-primary mb-3 uppercase">
         {title}
       </h2>
-      <p className="text-sm md:text-[15px] text-text-secondary leading-relaxed">
+      <p className="font-sans text-[15px] text-text-secondary leading-relaxed">
         {detail}
       </p>
     </div>

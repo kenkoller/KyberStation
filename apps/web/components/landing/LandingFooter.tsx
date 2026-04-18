@@ -45,13 +45,13 @@ export function LandingFooter() {
           </a>
         </div>
 
-        <p className="text-xs max-w-2xl mx-auto leading-relaxed">
+        <p className="text-[13px] max-w-2xl mx-auto leading-relaxed text-text-secondary/80">
           KyberStation source is MIT-licensed. ProffieOS template reference
           material is GPL-3.0 and is distributed as an aggregate work under the
           terms of that license.
         </p>
 
-        <p className="text-xs max-w-2xl mx-auto leading-relaxed text-text-muted/80">
+        <p className="text-[13px] max-w-2xl mx-auto leading-relaxed">
           ProffieOS and Proffieboard are community projects, not affiliated
           with Lucasfilm Ltd. or The Walt Disney Company. &quot;Lightsaber&quot;
           is a registered trademark of Lucasfilm Ltd. KyberStation is fan-made

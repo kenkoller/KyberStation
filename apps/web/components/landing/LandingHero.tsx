@@ -25,7 +25,7 @@ export function LandingHero() {
         <h1 className="font-cinematic text-[clamp(1.75rem,7vw,5.5rem)] font-bold tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.16em] text-text-primary mb-6 leading-none">
           KYBERSTATION
         </h1>
-        <p className="font-sw-body text-base md:text-xl text-text-secondary leading-relaxed max-w-2xl mx-auto">
+        <p className="font-sans text-base md:text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto">
           A visual editor for lightsaber blade styles. Design by hand, preview
           with motion and sound, generate ProffieOS code, and export straight
           to SD card. No guesswork, no trial-and-error compiles.
