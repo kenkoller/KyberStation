@@ -10,6 +10,7 @@ import {
   useHiltSelection,
   type HiltGeometry,
 } from '@/components/hilt/HiltSelector';
+import { HiltMesh } from '@/components/hilt/HiltMesh';
 
 // ─── Constants ───
 
@@ -17,124 +18,6 @@ const BLADE_FULL_LENGTH = 4.0;
 const BLADE_RADIUS = 0.06;
 const GLOW_RADIUS = 0.14;
 const BLADE_SEGMENTS = 32;
-
-// ─── Hilt Mesh ───
-
-interface HiltMeshProps {
-  geometry: HiltGeometry;
-}
-
-function HiltMesh({ geometry }: HiltMeshProps) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  const {
-    hiltLength,
-    gripDiameter,
-    emitterDiameter,
-    pommelDiameter,
-    guardThickness,
-    guardDiameter,
-    gripRidges,
-  } = geometry;
-
-  const gripRadius = gripDiameter / 2;
-  const emitterRadius = emitterDiameter / 2;
-  const pommelRadius = pommelDiameter / 2;
-
-  return (
-    <group ref={groupRef} position={[0, -hiltLength / 2, 0]}>
-      {/* Main grip body */}
-      <mesh position={[0, hiltLength / 2, 0]}>
-        <cylinderGeometry args={[emitterRadius, gripRadius, hiltLength * 0.6, 24]} />
-        <meshStandardMaterial
-          color="#2a2a32"
-          metalness={0.85}
-          roughness={0.25}
-        />
-      </mesh>
-
-      {/* Lower grip section */}
-      <mesh position={[0, hiltLength * 0.12, 0]}>
-        <cylinderGeometry args={[gripRadius, pommelRadius, hiltLength * 0.35, 24]} />
-        <meshStandardMaterial
-          color="#1e1e26"
-          metalness={0.8}
-          roughness={0.3}
-        />
-      </mesh>
-
-      {/* Grip ridges */}
-      {gripRidges > 0 &&
-        Array.from({ length: gripRidges }).map((_, i) => {
-          const y = hiltLength * 0.15 + (i / (gripRidges - 1 || 1)) * hiltLength * 0.55;
-          return (
-            <mesh key={`ridge-${i}`} position={[0, y, 0]}>
-              <torusGeometry args={[gripRadius + 0.005, 0.008, 8, 24]} />
-              <meshStandardMaterial
-                color="#1a1a22"
-                metalness={0.9}
-                roughness={0.15}
-              />
-            </mesh>
-          );
-        })}
-
-      {/* Emitter shroud */}
-      <mesh position={[0, hiltLength * 0.85, 0]}>
-        <cylinderGeometry args={[emitterRadius + 0.02, emitterRadius, hiltLength * 0.12, 24]} />
-        <meshStandardMaterial
-          color="#555560"
-          metalness={0.9}
-          roughness={0.15}
-        />
-      </mesh>
-
-      {/* Emitter ring */}
-      <mesh position={[0, hiltLength * 0.92, 0]}>
-        <torusGeometry args={[emitterRadius + 0.01, 0.015, 8, 24]} />
-        <meshStandardMaterial
-          color="#6a6a74"
-          metalness={0.95}
-          roughness={0.1}
-        />
-      </mesh>
-
-      {/* Guard ring (if present) */}
-      {guardThickness > 0 && (
-        <mesh position={[0, hiltLength * 0.78, 0]}>
-          <torusGeometry args={[guardDiameter / 2, guardThickness / 2, 8, 24]} />
-          <meshStandardMaterial
-            color="#555560"
-            metalness={0.9}
-            roughness={0.2}
-          />
-        </mesh>
-      )}
-
-      {/* Pommel cap */}
-      <mesh position={[0, -0.02, 0]}>
-        <cylinderGeometry args={[pommelRadius + 0.02, pommelRadius - 0.01, 0.08, 24]} />
-        <meshStandardMaterial
-          color="#3a3a42"
-          metalness={0.85}
-          roughness={0.2}
-        />
-      </mesh>
-
-      {/* Activation button */}
-      <mesh position={[gripRadius + 0.015, hiltLength * 0.55, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.015, 12]} />
-        <meshStandardMaterial
-          color="#cc0000"
-          emissive="#cc0000"
-          emissiveIntensity={0.3}
-          metalness={0.5}
-          roughness={0.4}
-        />
-      </mesh>
-    </group>
-  );
-}
 
 // ─── Blade Mesh ───
 
