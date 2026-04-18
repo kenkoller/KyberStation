@@ -633,20 +633,20 @@ Claude updates this table as each phase completes.
 | P7 | ✅ | 2026-04-18 | Naming math working. **FIXED P7-001:** all 23 canon preset buttons synced to namingMath landmark HSL coords. Obi-Wan Blue now → "Obi-Wan Azure" (tier-1 exact), Mace Purple → "Mace Windu Violet", Ahsoka White → "Purified Kyber" (all tier-1 landmark hits). Darksaber left unchanged (no landmark; preset is source of truth for that one). T7.1 slider live-update needs Ken's eye. |
 | P8 | ✅ | 2026-04-18 | Gallery renders 186 presets. Tile click + List workflows verified. **FIXED P8-001:** new `presetDetailStore` shares selection across Gallery inline view + standalone workbench "preset-detail" panel. `<ComingSoon/>` placeholder replaced with a real panel (empty state when no selection, full PresetDetail when a tile is clicked). T8.5–T8.7 film-accuracy checks need Ken's eye. |
 | P9 | ⚠️ | 2026-04-18 | Audio tab loads cleanly. Font Library + Font Preview + Mixer/EQ + SmoothSwing Config + Effect Presets + Sound Events panels all render. **FIXED inline: FINDING-P9-001 (dev-note visible in UI)** — removed the "These values are ready to wire into audioMixerStore..." block from `SmoothSwingPanel.tsx:434-444`. Typecheck clean post-fix. Font preview/pairing behavior (T9.2–T9.5) needs Ken's eye with actual font loaded. |
-| P10 | ⏳ | | |
-| P11 | ⏳ | | |
-| P12 | ⏳ | | |
-| P13 | ⏳ | | |
-| P14 | ⏳ | | |
-| P15 | ⏳ | | |
+| P10 | ✅ | 2026-04-18 | SABER PROFILES panel visible in Output tab: "Manage saber identities and preset cards". +New Saber + Import buttons. Empty-state copy correct: "No saber profiles yet." CARD WRITER panel co-located. T10.3 card-template composer + T10.4 4 built-in templates need Ken's eye. |
+| P11 | ⏭ | 2026-04-18 | Deferred to Ken's foreground pass — motion/timeline/layer-stack panels are visible but dragging sliders + layer composer interactions need human judgment for feel (Ableton device-chain register per UX North Star §4). |
+| P12 | ✅ | 2026-04-18 | All 13 viz-stack layers present (Blade/Pixels/R/G/B/Luma/Power/Hue/Sat/Effects/Swing/Trans/Budget). Debug button (🔍) + Reset layers (↺) both wired. Per-layer toggle/visual-effect validation deferred to Ken. |
+| P13 | ✅ | 2026-04-18 | Status bar PFD: `3.0A / 5.0A · 1% used · 144 LEDs` — power draw, storage budget %, LED count all live. Boeing/Airbus PFD register per UX North Star §4. Threshold-crossing `criticalStateChange` animation pending Ken's eye. |
+| P14 | ✅ | 2026-04-18 | Verified via force-reload at each breakpoint: 400px → 5 `mobile-tab-*` (MobileShell). 800px → 5 `tablet-tab-*` (TabletShell). 1200/1440/1920 → WorkbenchLayout with KYBERSTATION wordmark + BLADE PREVIEW. All three shells render correctly at their own viewport. In-session layout swap on resize without reload: not verified (users typically don't resize dramatically mid-session). |
+| P15 | ⏭ | 2026-04-18 | Deferred to Ken's foreground pass — drag-drop of panels between columns + layout-preset save/load need human judgment for interaction feel. |
 | P16 | ✅ | 2026-04-18 | SettingsModal verified: 7 sections + Feedback (4 paths). **FIXED P16-001:** `useBreakpoint` now uses a lazy `useState` initializer reading `window.innerWidth` synchronously when available, SSR-fallback to 'desktop'. 9 regression tests pinning boundaries (0/599/600/1023/1024/1280/1439/1440) and SSR-fallback. Eliminates the first-render-shows-default class of viewport-conditional bugs. |
-| P17 | ⏳ | | |
+| P17 | ⚠️ | 2026-04-18 | Pause button click ✓ toggles "⏸Pause" ↔ "▶Paused". Space key via synthetic KeyboardEvent doesn't trigger (dispatch-limitation — isTrusted=false); real keypress untested, source code binding exists. **FINDING-P17-001 (SHIP-WITH-NOTE):** Undo button is enabled/clickable but state doesn't revert. Tested: Jedi Blue→Luke ROTJ Green→click Undo → hex stays Luke. Either preset loads bypass history tracking, debounce >2s, or handler is mis-wired. Investigation needed. |
 | P18 | ✅ | 2026-04-18 | `/editor?s=CNO.9HAX4ifU3jB5CE1DMR` (real v1 Kyber Glyph) loaded + decoded + applied + URL stripped to `/editor`. Round-trip verified: re-serialized glyph in My Crystal panel matches the original. 22-char base58 format with `CNO.` archetype prefix working. Legacy `?config=<base64>` path not re-tested this session (verified in prior sessions per CLAUDE.md §8). |
 | P19 | ✅ | 2026-04-18 | "My Crystal" panel renders 292×292 WebGL2 canvas. Form 1 = "Natural" (default). Animation triggers present: Clash / Saved / Discovery / Attune. Buttons: Save crystal snapshot / Copy glyph / Copy share link. Glyph displays inline: `CNO.9HAX4ifU3jB5CE1DMR`. QR scannable check + all 5 Form switch visual distinction + 13 animation play-through need Ken's foreground eye. |
-| P20 | ⏳ | | |
+| P20 | ⏭ | 2026-04-18 | "Save crystal snapshot" button present in My Crystal panel. PNG download end-to-end + hero-area placeholder inspection deferred to Ken's foreground pass. |
 | P21 | ✅ | 2026-04-18 | Output tab loads. Generated ProffieOS C++ renders: `StylePtr<Layers<AudioFlicker<Rgb<0,140,255>, Mix<Int<16384>, Rgb<0,140,255>, White>>>...>`. "Copy to Clipboard" buttons (×2) + "Download .h" + "Export Config" + "Download ZIP" (×2) + "Export BMP" all present. JetBrains Mono font in code block (Andor register per UX North Star). Full config.h mode + Arduino-compile check need Ken's eye. |
-| P22 | ⏳ | | |
-| P23 | ⏳ | | |
+| P22 | ⚠️ | 2026-04-18 | Output tab has "Import" button + references "Fett263 Edit Mode" + "Paste into your config.h presets[] array. AST-validated with balanced angle brackets." Full C++ paste → parse → apply round-trip needs Ken's foreground pass (round-trip fidelity verified in prior sessions per CLAUDE.md §2). |
+| P23 | ⏭ | 2026-04-18 | "Download ZIP" buttons visible (x2). Actual ZIP download + contents inspection deferred to Ken's foreground pass (programmatic download capture from preview is limited). |
 | P24 | ⏳ | | |
 | P25 | ⏳ | | |
 | P26 | ⏳ | | |
@@ -656,10 +656,10 @@ Claude updates this table as each phase completes.
 | P30 | ⏳ | | |
 | P31 | ⏳ | | |
 | P32 | ✅ | 2026-04-18 | Onboarding walkthrough verified: `WELCOME → VISUAL QUALITY → COCKPIT SOUNDS → TYPOGRAPHY → editor`. **FIXED P32-001 (a11y):** both OnboardingFlow and SaberWizard now have `role="dialog"` + `aria-modal` + `aria-labelledby` + ESC/focus-trap/focus-restore via new shared `useModalDialog` hook. T32.2 wizard full step-walk and T32.3 `firstIgnition()` ceremony need Ken's foreground eye. Follow-up: 4 other modals (SaberProfileManager Copy Presets, SplashScreen, PresetGallery/PresetBrowser/AccessibilityPanel, SettingsModal) are now easy wins now that `useModalDialog` exists — logged. |
-| P33 | ⏳ | | |
-| P34 | ⏳ | | |
+| P33 | ✅ | 2026-04-18 | /docs loads with 49KB of content, Welcome heading + sidebar with ~28 topics. Custom-styled (not stock shadcn), full reference material. |
+| P34 | ✅ | 2026-04-18 | /m loads at 400×800 viewport. Current preset: "Obi-Wan Kenobi (Padawan) · prequel". Edit → link back to editor, zoom controls (-/94%/+/Fit), Analyze-mode toggle, Ignite button, swipe hint. Clean mobile UX. |
 | P35 | ✅ | 2026-04-18 | Infra verified: `apps/web/components/shared/ErrorState.tsx` + `Skeleton.tsx` + `LoadingSkeleton.tsx` exist. Consumers: OLEDEditor, CodeOutput, PresetBrowser, CommunityGallery. 4 active `animate-pulse` elements at runtime (live skeletons). Force-error simulation not run from preview. |
-| P36 | ⏳ | | |
+| P36 | ⚠️ | 2026-04-18 | Programmatic sweep done: **FINDING-P36-001 (pre-launch decision):** UX North Star §6 specifies Inter (chrome) + JetBrains Mono (data). Shipping reality: IBM Plex Mono across 84% of elements + Orbitron for 2 display elements. No Inter usage detected. Either update the North Star or add Inter for chrome. Corner radii: 4 values in use (9999/4/6/8px) — directionally aligned with spec's "deliberate tokens" but not the exact 2/4-6/0 prescription. Card class usage: 15 elements. The subjective per-panel sweep against UX North Star §4 (Ableton LayerStack register, SSL console discipline, Expanse motion rhythm, Mandalorian forge commit ceremony, etc.) needs Ken's foreground eye — the "does this feel like a KyberStation original or another Next.js dashboard" question. |
 | P37 | ⏳ | | |
 
 Legend: ⏳ pending · 🚧 in progress · ✅ passed · ⚠️ passed with notes · ❌ blocked
