@@ -178,9 +178,23 @@ function MobileCompanionContent() {
 
       {/* ── Ignite control ──────────────────────────────────────────── */}
       <div className="shrink-0 px-4 pb-4 pt-2">
+        {/* Empty-state affordance — nudge users toward the primary action
+             when the blade is off. Pulses subtly so it reads as "press me"
+             without dominating the view. */}
+        {!isOn && (
+          <p
+            className="text-ui-xs font-cinematic tracking-[0.32em] uppercase text-center mb-2 animate-pulse"
+            style={{ color: 'rgb(var(--accent) / 0.75)' }}
+            aria-hidden="true"
+          >
+            Tap to Ignite
+          </p>
+        )}
         <button
           onClick={toggleWithAudio}
-          className="w-full h-14 rounded-lg font-semibold text-ui-lg transition-colors flex items-center justify-center gap-2"
+          className={`w-full h-14 rounded-lg font-semibold text-ui-lg transition-colors flex items-center justify-center gap-2 ${
+            !isOn ? 'animate-pulse' : ''
+          }`}
           style={{
             background: isOn
               ? 'rgb(var(--crystal-accent, var(--accent)) / 0.18)'

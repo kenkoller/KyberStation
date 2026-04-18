@@ -26,7 +26,7 @@ export function LandingCTAs() {
         <Link
           href="/editor?tab=gallery"
           aria-label="Browse the preset gallery"
-          className="inline-flex items-center justify-center w-full lg:w-auto lg:min-w-[220px] px-8 py-3.5 rounded-[2px] text-text-secondary hover:text-text-primary font-cinematic text-sm tracking-[0.22em] uppercase transition-colors"
+          className="inline-flex items-center justify-center w-full lg:w-auto lg:min-w-[220px] px-8 py-3.5 rounded-[2px] border border-border-subtle text-text-secondary hover:text-text-primary font-cinematic text-sm tracking-[0.22em] uppercase transition-colors hover:bg-bg-surface"
         >
           Browse Gallery
         </Link>

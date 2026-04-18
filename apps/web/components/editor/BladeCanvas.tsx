@@ -2502,8 +2502,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   return (
     <div className="flex flex-col h-full w-full gap-1.5">
-      {/* ── Blade Config Bar (mobile only — desktop uses CanvasToolbar + BladeHardwarePanel) ── */}
-      {!mobileFullscreen && <div className="desktop:hidden">{configBar}</div>}
+      {/* ── Blade Config Bar (tablet only — desktop uses CanvasToolbar + BladeHardwarePanel;
+             phone uses the Design tab's BladeHardwarePanel to reduce crunch) ── */}
+      {!mobileFullscreen && <div className="hidden tablet:block desktop:hidden">{configBar}</div>}
 
       {/* ── Canvas Container ── */}
       <div
