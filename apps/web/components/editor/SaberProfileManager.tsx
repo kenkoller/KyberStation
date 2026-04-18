@@ -103,7 +103,23 @@ function ProfileCard({
         <button onClick={onExport} className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors" aria-label={`Export ${profile.name}`}>
           Export
         </button>
-        <button onClick={onDelete} className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-red-400/60 hover:text-red-400 hover:border-red-800/30 transition-colors" aria-label={`Delete ${profile.name}`}>
+        <button
+          onClick={onDelete}
+          className="px-2 py-1 rounded text-ui-xs border transition-colors hover:border-transparent"
+          style={{
+            borderColor: 'rgb(var(--border-subtle))',
+            color: 'rgb(var(--status-error) / 0.7)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'rgb(var(--status-error))';
+            e.currentTarget.style.borderColor = 'rgb(var(--status-error) / 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'rgb(var(--status-error) / 0.7)';
+            e.currentTarget.style.borderColor = 'rgb(var(--border-subtle))';
+          }}
+          aria-label={`Delete ${profile.name}`}
+        >
           Delete
         </button>
       </div>
@@ -178,7 +194,16 @@ function CardConfigSwitcher({
           </button>
           <button
             onClick={() => deleteCardConfig(profile.id, profile.activeCardConfigId)}
-            className="px-1.5 py-0.5 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-red-400 hover:border-red-400/40 transition-colors"
+            className="px-1.5 py-0.5 rounded text-ui-xs border border-border-subtle text-text-muted transition-colors"
+            style={{ ['--danger-color' as string]: 'rgb(var(--status-error))' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'rgb(var(--status-error))';
+              e.currentTarget.style.borderColor = 'rgb(var(--status-error) / 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '';
+              e.currentTarget.style.borderColor = '';
+            }}
             title="Delete active config"
           >
             Del
@@ -285,12 +310,28 @@ function CardEntryRow({
         )}
       </div>
 
-      {/* Source badge */}
-      <span className={`text-ui-xs shrink-0 px-1 py-px rounded border ${
-        entry.source.type === 'builtin' ? 'border-blue-800/30 text-blue-400/60' :
-        entry.source.type === 'custom' ? 'border-accent-border/30 text-accent/60' :
-        'border-border-subtle text-text-muted/60'
-      }`}>{sourceBadge}</span>
+      {/* Source badge — tokenised identity colours */}
+      <span
+        className="text-ui-xs shrink-0 px-1 py-px rounded border"
+        style={
+          entry.source.type === 'builtin'
+            ? {
+                color: 'rgb(var(--status-info) / 0.65)',
+                borderColor: 'rgb(var(--status-info) / 0.3)',
+              }
+            : entry.source.type === 'custom'
+              ? {
+                  color: 'rgb(var(--accent) / 0.65)',
+                  borderColor: 'rgb(var(--accent) / 0.3)',
+                }
+              : {
+                  color: 'rgb(var(--text-muted) / 0.65)',
+                  borderColor: 'rgb(var(--border-subtle))',
+                }
+        }
+      >
+        {sourceBadge}
+      </span>
 
       {/* Style */}
       <span className="text-ui-xs text-text-muted shrink-0">{entry.config.style}</span>
@@ -298,7 +339,10 @@ function CardEntryRow({
       {/* Remove */}
       <button
         onClick={() => removeCardEntry(profileId, configId, entry.id)}
-        className="text-text-muted hover:text-red-400 text-ui-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        className="text-text-muted text-ui-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        style={{ ['--hover-color' as string]: 'rgb(var(--status-error))' }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'rgb(var(--status-error))'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = ''; }}
         aria-label={`Remove ${entry.presetName}`}
       >
         &times;
@@ -630,11 +674,28 @@ export function SaberProfileManager() {
               onExport={() => handleExport(profile.id)}
               onEdit={() => { setEditingId(profile.id); setEditNotes(profile.notes); }}
             />
-            {/* Delete confirmation */}
+            {/* Delete confirmation — tokenised, Linear-flat */}
             {deleteConfirm === profile.id && (
-              <div className="mt-1 p-2 bg-red-900/20 border border-red-800/30 rounded text-ui-xs text-red-400 flex items-center gap-2">
+              <div
+                className="mt-1 p-2 rounded text-ui-xs flex items-center gap-2 border"
+                style={{
+                  background: 'rgb(var(--status-error) / 0.1)',
+                  borderColor: 'rgb(var(--status-error) / 0.3)',
+                  color: 'rgb(var(--status-error))',
+                }}
+              >
+                <span aria-hidden="true">✕</span>
                 <span>Delete &quot;{profile.name}&quot;? This cannot be undone.</span>
-                <button onClick={() => handleDelete(profile.id)} className="px-2 py-0.5 rounded bg-red-900/40 border border-red-700/50 font-medium">Confirm</button>
+                <button
+                  onClick={() => handleDelete(profile.id)}
+                  className="px-2 py-0.5 rounded font-medium border"
+                  style={{
+                    background: 'rgb(var(--status-error) / 0.2)',
+                    borderColor: 'rgb(var(--status-error) / 0.5)',
+                  }}
+                >
+                  Confirm
+                </button>
                 <button onClick={() => setDeleteConfirm(null)} className="px-2 py-0.5 rounded border border-border-subtle text-text-muted">Cancel</button>
               </div>
             )}
@@ -655,9 +716,28 @@ export function SaberProfileManager() {
       </div>
 
       {profiles.length === 0 && (
-        <p className="text-ui-xs text-text-muted italic">
-          No saber profiles yet. Create one to start managing presets per saber.
-        </p>
+        <div className="rounded-panel border border-dashed border-border-subtle bg-bg-surface/50 p-5 text-center space-y-2">
+          <div
+            className="font-mono uppercase tracking-widest text-text-muted"
+            style={{ fontSize: 'clamp(11px, 1.4vw, 14px)' }}
+            aria-hidden="true"
+          >
+            ∅ · NO PROFILES
+          </div>
+          <p className="text-ui-sm text-text-primary font-medium">
+            No saber profiles yet.
+          </p>
+          <p className="text-ui-xs text-text-muted max-w-sm mx-auto leading-relaxed">
+            A saber profile stores one physical lightsaber&rsquo;s hardware — board type, SD card, preset list, and card configs.
+            Create your first one to start building cards.
+          </p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="mt-2 px-3 py-1.5 rounded text-ui-xs font-medium bg-accent-dim border border-accent-border text-accent hover:bg-accent/20 transition-colors"
+          >
+            + Create First Saber
+          </button>
+        </div>
       )}
 
       {/* Card Preset Composer for active profile */}

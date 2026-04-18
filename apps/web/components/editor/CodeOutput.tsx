@@ -247,8 +247,45 @@ export function CodeOutput() {
     }
   }, [config]);
 
+  // Derived identifier for BR2049 hero header treatment.
+  const styleIdentifier = useMemo(() => {
+    if (isMultiPreset) return `config.h / ${presetListEntries.length} PRESETS`;
+    const styleName = (config.name ?? config.style ?? 'blade_style')
+      .toString()
+      .replace(/\s+/g, '_')
+      .toLowerCase();
+    return `${styleName}.h`;
+  }, [isMultiPreset, presetListEntries.length, config.name, config.style]);
+
+  const codeLineCount = lines.length;
+  const codeByteCount = code.length;
+
   return (
     <div>
+      {/* BR2049-scale display header — identifier + proffie version strip */}
+      <div className="mb-3 px-3 py-3 bg-black/40 rounded-panel border border-border-subtle">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="text-ui-xs uppercase tracking-widest text-text-muted font-mono">
+              Generated
+            </div>
+            <div
+              className="font-mono font-bold uppercase truncate leading-none tracking-tight text-accent"
+              style={{ fontSize: 'clamp(20px, 3.2vw, 34px)', marginTop: '4px' }}
+              title={styleIdentifier}
+            >
+              {styleIdentifier}
+            </div>
+          </div>
+          <div className="text-ui-xs font-mono text-text-muted tabular-nums shrink-0 flex flex-col items-end gap-0.5">
+            <span>ProffieOS 7.x / {profileBoard}</span>
+            <span className="text-text-secondary">
+              {codeLineCount} LINES · {(codeByteCount / 1024).toFixed(1)} KB
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Helper text for non-technical users */}
       <div className="mb-3 px-3 py-2.5 bg-bg-surface rounded-lg border border-border-subtle">
         <p className="text-ui-xs text-text-secondary leading-relaxed">

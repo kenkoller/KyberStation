@@ -682,26 +682,32 @@ export function CardWriter() {
         </div>
       )}
 
-      {/* Pre-export Validation Notices */}
+      {/* Pre-export Validation Notices — tokenised aviation state colors */}
       {validationNotices.length > 0 && (
         <div className="mb-4 space-y-1.5">
-          {validationNotices.map((notice, i) => (
-            <div
-              key={i}
-              className={`text-ui-xs px-3 py-2 rounded flex items-start gap-2 ${
-                notice.type === 'error'
-                  ? 'bg-red-900/20 text-red-400 border border-red-800/30'
-                  : notice.type === 'warning'
-                    ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-800/30'
-                    : 'bg-blue-900/20 text-blue-400 border border-blue-800/30'
-              }`}
-            >
-              <span className="shrink-0 mt-px">
-                {notice.type === 'error' ? '\u2717' : notice.type === 'warning' ? '\u26A0' : '\u2139'}
-              </span>
-              <span>{notice.text}</span>
-            </div>
-          ))}
+          {validationNotices.map((notice, i) => {
+            const token =
+              notice.type === 'error'
+                ? '--status-error'
+                : notice.type === 'warning'
+                  ? '--status-warn'
+                  : '--status-info';
+            const glyph = notice.type === 'error' ? '✕' : notice.type === 'warning' ? '⚠' : 'i';
+            return (
+              <div
+                key={i}
+                className="text-ui-xs px-3 py-2 rounded flex items-start gap-2 border"
+                style={{
+                  color: `rgb(var(${token}))`,
+                  background: `rgb(var(${token}) / 0.1)`,
+                  borderColor: `rgb(var(${token}) / 0.3)`,
+                }}
+              >
+                <span className="shrink-0 mt-px" aria-hidden="true">{glyph}</span>
+                <span>{notice.text}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -732,7 +738,14 @@ export function CardWriter() {
             )}
             <div className="flex justify-between">
               <span className="text-text-muted">Edit Mode (Fett263)</span>
-              <span className={configSummary.editModeEnabled ? 'text-green-400' : 'text-text-muted'}>
+              <span
+                className="font-medium"
+                style={{
+                  color: configSummary.editModeEnabled
+                    ? 'rgb(var(--status-ok))'
+                    : 'rgb(var(--text-muted))',
+                }}
+              >
                 {configSummary.editModeEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>
@@ -792,18 +805,33 @@ export function CardWriter() {
         </div>
       )}
 
+      {/* Multi-stage commit ceremony — Rogue One Scarif physical-slot progression
+          (prepare → detect → backup → write → verify). Shows aviation state
+          colours (green/amber/red) for each stage. Only visible while working
+          or immediately after a card-write attempt. */}
+      {(isWorking || (outputMethod === 'card' && phase === 'done')) && (
+        <CommitCeremonyStrip phase={phase} isWorking={isWorking} />
+      )}
+
       {/* Status Messages */}
       {statusMessages.length > 0 && (
         <div className="mt-3 space-y-1 max-h-[200px] overflow-y-auto">
-          {statusMessages.map((msg, i) => (
-            <div
-              key={i}
-              className={`text-ui-sm px-2.5 py-1.5 rounded flex items-start gap-1.5 ${statusColorClasses(msg.type)}`}
-            >
-              <span className="shrink-0 mt-px">{statusIcon(msg.type)}</span>
-              <span>{msg.text}</span>
-            </div>
-          ))}
+          {statusMessages.map((msg, i) => {
+            const style = statusColorStyle(msg.type);
+            const hasStyle = Object.keys(style).length > 0;
+            return (
+              <div
+                key={i}
+                className={`text-ui-sm px-2.5 py-1.5 rounded flex items-start gap-1.5 border ${
+                  hasStyle ? '' : 'bg-bg-surface text-text-muted border-border-subtle'
+                }`}
+                style={hasStyle ? style : undefined}
+              >
+                <span className="shrink-0 mt-px" aria-hidden="true">{statusIcon(msg.type)}</span>
+                <span>{msg.text}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -928,16 +956,128 @@ function statusIcon(type: StatusMessage['type']): string {
   }
 }
 
-function statusColorClasses(type: StatusMessage['type']): string {
-  switch (type) {
-    case 'success':
-      return 'bg-green-900/20 text-green-400 border border-green-800/30';
-    case 'error':
-      return 'bg-red-900/20 text-red-400 border border-red-800/30';
-    case 'warning':
-      return 'bg-yellow-900/20 text-yellow-400 border border-yellow-800/30';
-    case 'info':
-    default:
-      return 'bg-bg-surface text-text-muted border border-border-subtle';
+// ─── Commit Ceremony Strip ───
+// Scarif-style physical-slot progression. Five stages mapped to aviation
+// colors: green (complete), amber (active), red (error), grey (pending).
+
+const COMMIT_STAGES: Array<{ key: WritePhase | 'prepare'; label: string }> = [
+  { key: 'selecting', label: 'Select' },
+  { key: 'detecting', label: 'Detect' },
+  { key: 'backing_up', label: 'Backup' },
+  { key: 'writing', label: 'Write' },
+  { key: 'verifying', label: 'Verify' },
+];
+
+function stageTone(
+  stageKey: WritePhase,
+  currentPhase: WritePhase,
+): 'complete' | 'active' | 'error' | 'pending' {
+  if (currentPhase === 'error') {
+    return stageKey === 'verifying' ? 'error' : 'pending';
   }
+  if (currentPhase === 'done') return 'complete';
+  const order: WritePhase[] = [
+    'selecting',
+    'detecting',
+    'backing_up',
+    'writing',
+    'verifying',
+  ];
+  const currentIdx = order.indexOf(currentPhase);
+  const stageIdx = order.indexOf(stageKey);
+  if (currentIdx < 0 || stageIdx < 0) return 'pending';
+  if (stageIdx < currentIdx) return 'complete';
+  if (stageIdx === currentIdx) return 'active';
+  return 'pending';
+}
+
+function CommitCeremonyStrip({
+  phase,
+  isWorking,
+}: {
+  phase: WritePhase;
+  isWorking: boolean;
+}) {
+  return (
+    <div className="mt-3 bg-bg-surface rounded-panel border border-border-subtle px-3 py-2.5">
+      <div className="text-ui-xs uppercase tracking-widest text-text-muted mb-2">
+        Commit Sequence
+      </div>
+      <div className="flex items-center gap-1">
+        {COMMIT_STAGES.map((stage, i) => {
+          const tone = stageTone(stage.key as WritePhase, phase);
+          const tokenVar =
+            tone === 'complete'
+              ? '--status-ok'
+              : tone === 'active'
+                ? '--status-warn'
+                : tone === 'error'
+                  ? '--status-error'
+                  : null;
+          const glyph =
+            tone === 'complete'
+              ? '✓'
+              : tone === 'active'
+                ? '◉'
+                : tone === 'error'
+                  ? '✕'
+                  : '○';
+          return (
+            <div key={stage.key} className="flex items-center gap-1 flex-1 min-w-0">
+              <div
+                className={`flex items-center gap-1.5 px-1.5 py-1 rounded border flex-1 min-w-0 transition-colors ${
+                  tone === 'active' && isWorking ? 'animate-pulse' : ''
+                }`}
+                style={
+                  tokenVar
+                    ? {
+                        color: `rgb(var(${tokenVar}))`,
+                        borderColor: `rgb(var(${tokenVar}) / 0.4)`,
+                        background: `rgb(var(${tokenVar}) / 0.08)`,
+                      }
+                    : {
+                        color: 'rgb(var(--text-muted))',
+                        borderColor: 'rgb(var(--border-subtle))',
+                      }
+                }
+                aria-label={`${stage.label}: ${tone}`}
+              >
+                <span className="shrink-0 text-ui-xs font-mono" aria-hidden="true">
+                  {glyph}
+                </span>
+                <span className="text-ui-xs font-mono uppercase tracking-wider truncate">
+                  {stage.label}
+                </span>
+              </div>
+              {i < COMMIT_STAGES.length - 1 && (
+                <span
+                  className="text-text-muted text-ui-xs shrink-0"
+                  aria-hidden="true"
+                >
+                  ›
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function statusColorStyle(type: StatusMessage['type']): React.CSSProperties {
+  const token =
+    type === 'success'
+      ? '--status-ok'
+      : type === 'error'
+        ? '--status-error'
+        : type === 'warning'
+          ? '--status-warn'
+          : null;
+  if (!token) return {};
+  return {
+    color: `rgb(var(${token}))`,
+    background: `rgb(var(${token}) / 0.1)`,
+    borderColor: `rgb(var(${token}) / 0.3)`,
+  };
 }

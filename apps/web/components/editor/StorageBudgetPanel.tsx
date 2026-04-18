@@ -1,12 +1,16 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { useAudioFontStore } from '@/stores/audioFontStore';
 import { estimateTotal, formatBytes, CARD_SIZES } from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
+// Identity colors for budget categories — not theme tokens; these are
+// category markers that must stay distinguishable even when the caller
+// colorblind-toggles the app. They pair with text labels in the breakdown
+// list so they remain accessible as redundant identifiers.
 const CATEGORY_COLORS: Record<string, string> = {
   font: '#4f8ff7',
   config: '#8b5cf6',
@@ -14,6 +18,19 @@ const CATEGORY_COLORS: Record<string, string> = {
   music: '#10b981',
   system: '#6b7280',
 };
+
+// Usage thresholds — crossing these triggers a 180ms pulse + 600ms decay
+// per the `criticalStateChange` motion primitive from UX_NORTH_STAR §7.
+const WARN_THRESHOLD = 75;
+const CRITICAL_THRESHOLD = 90;
+
+type UsageTier = 'ok' | 'warn' | 'critical';
+
+function usageTier(percent: number): UsageTier {
+  if (percent >= CRITICAL_THRESHOLD) return 'critical';
+  if (percent >= WARN_THRESHOLD) return 'warn';
+  return 'ok';
+}
 
 export function StorageBudgetPanel() {
   const presetListEntries = usePresetListStore((s) => s.entries);
@@ -60,6 +77,30 @@ export function StorageBudgetPanel() {
     });
   }, [entries, cardSize, musicTracks, fontSizeOverrides]);
 
+  const currentTier = usageTier(budget.usagePercent);
+  const prevTierRef = useRef<UsageTier>(currentTier);
+  const [pulseKey, setPulseKey] = useState(0);
+
+  // `criticalStateChange` pulse: fire the 180ms pulse + 600ms decay whenever
+  // the tier escalates (ok→warn, warn→critical, ok→critical).
+  useEffect(() => {
+    const prev = prevTierRef.current;
+    const escalated =
+      (prev === 'ok' && currentTier !== 'ok') ||
+      (prev === 'warn' && currentTier === 'critical');
+    if (escalated) {
+      setPulseKey((k) => k + 1);
+    }
+    prevTierRef.current = currentTier;
+  }, [currentTier]);
+
+  const tierTokenVar =
+    currentTier === 'critical'
+      ? '--status-error'
+      : currentTier === 'warn'
+        ? '--status-warn'
+        : '--status-ok';
+
   return (
     <div className="space-y-3">
       <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
@@ -92,14 +133,30 @@ export function StorageBudgetPanel() {
         />
       </div>
 
-      {/* Usage Bar */}
-      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
+      {/* Usage Bar — `criticalStateChange` pulse on tier escalation
+          (180ms scale + color-shift, 600ms decay, per UX_NORTH_STAR §7). */}
+      <style>{`
+        @keyframes sb-threshold-pulse {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 var(--threshold-color, transparent); }
+          20% { transform: scale(1.015); box-shadow: 0 0 0 4px var(--threshold-color-glow, transparent); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+        }
+        .sb-threshold-pulse { animation: sb-threshold-pulse 780ms ease-out; }
+      `}</style>
+      <div
+        key={`usage-${pulseKey}`}
+        className={`bg-bg-surface rounded-panel p-3 border border-border-subtle ${pulseKey > 0 ? 'sb-threshold-pulse' : ''}`}
+        style={{
+          ['--threshold-color' as string]: `rgb(var(${tierTokenVar}))`,
+          ['--threshold-color-glow' as string]: `rgb(var(${tierTokenVar}) / 0.35)`,
+        }}
+      >
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-ui-sm text-text-secondary">{formatBytes(budget.totalBytes)} used</span>
-          <span className={`text-ui-sm font-medium ${
-            budget.usagePercent >= 90 ? 'text-red-400' :
-            budget.usagePercent >= 75 ? 'text-yellow-400' : 'text-green-400'
-          }`}>
+          <span
+            className="text-ui-sm font-medium font-mono tabular-nums"
+            style={{ color: `rgb(var(${tierTokenVar}))` }}
+          >
             {budget.usagePercent.toFixed(1)}%
           </span>
         </div>
@@ -146,18 +203,28 @@ export function StorageBudgetPanel() {
         ))}
       </div>
 
-      {/* Warnings */}
-      {budget.usagePercent >= 80 && (
-        <div className={`text-ui-xs p-2 rounded border ${
-          budget.usagePercent >= 95
-            ? 'bg-red-900/20 border-red-800/30 text-red-400'
-            : 'bg-yellow-900/20 border-yellow-800/30 text-yellow-400'
-        }`}>
-          {budget.usagePercent >= 95
-            ? 'SD card nearly full. Remove fonts or reduce preset count.'
-            : 'SD card usage above 80%. Consider a larger card or fewer fonts.'}
-        </div>
-      )}
+      {/* Warnings — tokenised to --status-warn / --status-error */}
+      {budget.usagePercent >= 80 && (() => {
+        const warnTier = budget.usagePercent >= 95 ? '--status-error' : '--status-warn';
+        const glyph = budget.usagePercent >= 95 ? '✕' : '⚠';
+        return (
+          <div
+            className="text-ui-xs p-2 rounded border flex items-start gap-2"
+            style={{
+              color: `rgb(var(${warnTier}))`,
+              background: `rgb(var(${warnTier}) / 0.1)`,
+              borderColor: `rgb(var(${warnTier}) / 0.3)`,
+            }}
+          >
+            <span aria-hidden="true" className="shrink-0">{glyph}</span>
+            <span>
+              {budget.usagePercent >= 95
+                ? 'SD card nearly full. Remove fonts or reduce preset count.'
+                : 'SD card usage above 80%. Consider a larger card or fewer fonts.'}
+            </span>
+          </div>
+        );
+      })()}
     </div>
   );
 }

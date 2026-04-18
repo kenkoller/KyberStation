@@ -84,19 +84,35 @@ export function OutputWorkflowGuide() {
           return (
             <div
               key={step.number}
-              className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border transition-colors ${
+              className="flex items-start gap-3 px-3 py-2.5 rounded-lg border transition-colors"
+              style={
                 done
-                  ? 'bg-green-950/20 border-green-800/30'
-                  : 'bg-bg-surface border-border-subtle'
-              }`}
+                  ? {
+                      background: 'rgb(var(--status-ok) / 0.1)',
+                      borderColor: 'rgb(var(--status-ok) / 0.3)',
+                    }
+                  : {
+                      background: 'rgb(var(--bg-surface))',
+                      borderColor: 'rgb(var(--border-subtle))',
+                    }
+              }
             >
               {/* Step number badge */}
               <span
-                className={`flex items-center justify-center w-6 h-6 rounded-full text-ui-xs font-bold shrink-0 mt-0.5 ${
+                className="flex items-center justify-center w-6 h-6 rounded-full text-ui-xs font-bold shrink-0 mt-0.5 border font-mono"
+                style={
                   done
-                    ? 'bg-green-900/40 text-green-400 border border-green-700/40'
-                    : 'bg-bg-deep text-text-muted border border-border-subtle'
-                }`}
+                    ? {
+                        background: 'rgb(var(--status-ok) / 0.2)',
+                        color: 'rgb(var(--status-ok))',
+                        borderColor: 'rgb(var(--status-ok) / 0.4)',
+                      }
+                    : {
+                        background: 'rgb(var(--bg-deep))',
+                        color: 'rgb(var(--text-muted))',
+                        borderColor: 'rgb(var(--border-subtle))',
+                      }
+                }
               >
                 {done ? '\u2713' : step.number}
               </span>
@@ -104,9 +120,10 @@ export function OutputWorkflowGuide() {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div
-                  className={`text-ui-xs font-semibold ${
-                    done ? 'text-green-400' : 'text-text-primary'
-                  }`}
+                  className="text-ui-xs font-semibold"
+                  style={{
+                    color: done ? 'rgb(var(--status-ok))' : 'rgb(var(--text-primary))',
+                  }}
                 >
                   {step.title}
                 </div>
@@ -120,9 +137,19 @@ export function OutputWorkflowGuide() {
       </div>
 
       {!hasPresets && (
-        <div className="text-ui-xs text-yellow-400 bg-yellow-900/15 border border-yellow-800/25 rounded-lg px-3 py-2">
-          Start by creating a Saber Profile below and adding presets to your card config.
-          You can add your current editor design with the &quot;+ Add Current&quot; button.
+        <div
+          className="text-ui-xs rounded-lg px-3 py-2 border flex items-start gap-2"
+          style={{
+            color: 'rgb(var(--status-warn))',
+            background: 'rgb(var(--status-warn) / 0.08)',
+            borderColor: 'rgb(var(--status-warn) / 0.25)',
+          }}
+        >
+          <span aria-hidden="true" className="shrink-0">⚠</span>
+          <span>
+            Start by creating a Saber Profile below and adding presets to your card config.
+            You can add your current editor design with the &quot;+ Add Current&quot; button.
+          </span>
         </div>
       )}
     </div>
