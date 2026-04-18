@@ -52,7 +52,7 @@ export function MarketingNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/editor"
-            className="btn-hum inline-flex items-center font-cinematic text-[11px] tracking-[0.2em] uppercase px-4 py-1.5 rounded-[2px] transition-colors whitespace-nowrap"
+            className="btn-hum inline-flex items-center font-cinematic text-[11px] tracking-[0.2em] uppercase px-4 py-2.5 md:py-1.5 rounded-[2px] transition-colors whitespace-nowrap"
             style={{
               background: 'rgb(var(--accent) / 0.10)',
               border: '1px solid rgb(var(--accent) / 0.45)',
@@ -67,7 +67,7 @@ export function MarketingNav() {
             aria-label="Toggle navigation menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-[2px] text-text-secondary hover:text-text-primary hover:bg-bg-surface transition-colors"
+            className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-[2px] text-text-secondary hover:text-text-primary hover:bg-bg-surface transition-colors"
           >
             <svg
               aria-hidden="true"
@@ -107,7 +107,7 @@ export function MarketingNav() {
                   key={href}
                   href={href}
                   onClick={() => setOpen(false)}
-                  className={`dot-matrix px-2 py-2.5 rounded-[2px] transition-colors ${
+                  className={`dot-matrix px-3 py-3 rounded-[2px] transition-colors ${
                     active
                       ? 'text-text-primary bg-bg-surface'
                       : 'text-text-muted hover:text-text-secondary hover:bg-bg-surface'

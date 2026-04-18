@@ -54,7 +54,7 @@ export function PresetCard({ preset }: PresetCardProps) {
       </div>
 
       <div className="relative p-4 md:p-5">
-        <div className="flex items-center gap-2 mb-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2 text-[11px]">
           <EraBadge era={preset.era} label={`Era: ${preset.era}`} />
           <span className="text-text-muted" aria-hidden="true">
             ·

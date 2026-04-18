@@ -66,7 +66,7 @@ export function ShowcaseGrid({ presets }: ShowcaseGridProps) {
       >
         <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="relative flex-1 min-w-[200px]">
+            <label className="relative w-full sm:flex-1 sm:min-w-[200px]">
               <span className="sr-only">Search presets</span>
               <input
                 type="search"
@@ -77,12 +77,12 @@ export function ShowcaseGrid({ presets }: ShowcaseGridProps) {
               />
             </label>
 
-            <label className="flex items-center gap-2 text-[12px] text-text-secondary cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-[12px] text-text-secondary cursor-pointer select-none py-2">
               <input
                 type="checkbox"
                 checked={screenOnly}
                 onChange={(e) => setScreenOnly(e.target.checked)}
-                className="accent-accent"
+                className="accent-accent w-4 h-4"
               />
               <span>Screen-accurate only</span>
             </label>
@@ -91,7 +91,7 @@ export function ShowcaseGrid({ presets }: ShowcaseGridProps) {
               <button
                 type="button"
                 onClick={clearAll}
-                className="dot-matrix tabular-nums text-text-muted hover:text-text-primary transition-colors px-2 py-1"
+                className="dot-matrix tabular-nums text-text-muted hover:text-text-primary transition-colors px-3 py-2"
               >
                 CLEAR ALL ×
               </button>
@@ -186,7 +186,7 @@ function FilterRow<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className="px-3 py-1 rounded-[2px] text-[11px] font-mono uppercase tracking-[0.1em] transition-colors"
+            className="px-3 py-2 rounded-[2px] text-[11px] font-mono uppercase tracking-[0.1em] transition-colors"
             style={{
               background: active
                 ? 'rgb(var(--accent) / 0.15)'
