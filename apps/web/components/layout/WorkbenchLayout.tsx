@@ -8,6 +8,7 @@ import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useUIStore } from '@/stores/uiStore';
 import type { ActiveTab } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { playUISound, getUISoundEngine } from '@/lib/uiSounds';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
@@ -43,6 +44,7 @@ import { DataTicker } from '@/components/hud/DataTicker';
 import { ScanSweep } from '@/components/hud/ScanSweep';
 import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
+import { LATEST_VERSION } from '@/lib/version';
 import Link from 'next/link';
 
 // ─── HUD status messages for the header DataTicker ───
@@ -151,6 +153,13 @@ export function WorkbenchLayout() {
 
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
+
+  // Active saber profile name — used in the header breadcrumb alongside
+  // the version string. Falls back to undefined when no profile exists.
+  const activeSaberName = useSaberProfileStore((s) => {
+    const active = s.profiles.find((p) => p.id === s.activeProfileId);
+    return active?.name;
+  });
 
   // ── Pixel buffer for VisualizationStack ──
   // Capture the engine's live Uint8Array once after mount. getPixels() returns
@@ -307,10 +316,28 @@ export function WorkbenchLayout() {
         />
         {/* Left cluster: logo + project name */}
         <div className="flex items-center gap-3">
-          <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
-            <span className="text-white">KYBER</span>
-            <span className="text-accent">STATION</span>
-          </h1>
+          <div className="flex flex-col leading-none">
+            <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
+              <span className="text-white">KYBER</span>
+              <span className="text-accent">STATION</span>
+            </h1>
+            {/* Version + active saber breadcrumb — single source of truth
+                via `@/lib/version`. JetBrains Mono / tabular-nums per UX
+                North Star (monospace for version + telemetry data). */}
+            <span
+              className="font-mono text-text-muted tabular-nums select-none tracking-wide"
+              style={{ fontSize: 9, marginTop: 1 }}
+              aria-label={`KyberStation version ${LATEST_VERSION}${activeSaberName ? `, active saber ${activeSaberName}` : ''}`}
+            >
+              v{LATEST_VERSION}
+              {activeSaberName && (
+                <>
+                  <span className="text-text-muted/60 mx-1" aria-hidden="true">·</span>
+                  <span>{activeSaberName}</span>
+                </>
+              )}
+            </span>
+          </div>
           <span className="text-ui-xs text-text-muted font-sw-body hidden desktop:inline">
             Universal Saber Style Engine
           </span>

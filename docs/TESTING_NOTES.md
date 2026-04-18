@@ -134,3 +134,12 @@ Running per `docs/LAUNCH_QA_PLAN.md`. Bugs tiered as Blocker / Quick / Medium / 
 - [x] lint: placeholder (eslint not configured — known-deferred per CLAUDE.md)
 
 **Finding (resolved in-session, not a bug):** First typecheck + test run failed with `Cannot find module 'msgpackr'` / `'pako'` / `'qrcode'` / `'bs58'`. Packages ARE declared in `apps/web/package.json` but node_modules was stale. `pnpm install` (added 39, removed 62) recovered. No code change needed. Noting here so future sessions know to run `pnpm install` after every branch-switch involving dependency changes.
+
+## P1 — Pre-flight smoke (2026-04-18)
+
+Five routes tested: `/`, `/editor`, `/gallery`, `/docs`, `/m`. Zero runtime console errors anywhere.
+
+- [x] **P1-001 + P1-002 (FIXED):** Landing release strip showed `V 0.11.0 · LONG-TAIL CLEANUP · 2026-04-17`; editor breadcrumb also stale. Root cause: `LandingReleaseStrip.tsx` read `apps/web/package.json#version` (stuck at 0.11.0). Fix: new `apps/web/lib/version.ts` as single source of truth exporting `LATEST_VERSION='0.11.3'`, `LATEST_CODENAME='Modular Hilt Library'`, `LATEST_DATE='2026-04-17'`. Landing strip + editor breadcrumb both consume it. `package.json` version bumped 0.11.0→0.11.3 for consistency.
+- [x] **P1-003 (FIXED):** `/gallery` returned 404. Landing "BROWSE GALLERY" CTA already pointed to `/editor?tab=gallery` (correct flow), but direct URL access broke and `CLAUDE.md` claimed `app/gallery/page.tsx` existed. Fix: added 7-line redirect stub at `apps/web/app/gallery/page.tsx` using `next/navigation`'s `redirect()`. `CLAUDE.md` structure comment updated to `# Redirect to /editor?tab=gallery`.
+- [x] **P1-004 (FIXED):** `/editor?tab=<name>` URL param was ignored. Landing → Gallery journey was quietly broken (landed on Design tab). Fix: `apps/web/app/editor/page.tsx` now reads `searchParams.get('tab')`, validates against `['design','dynamics','audio','gallery','output']`, calls `useUIStore.getState().setActiveTab(tab)` on mount, then strips the param from URL via `router.replace`. Coexists with existing `?preset=` and `?s=<glyph>` handlers. Edge cases handled: uppercase → normalized, invalid → ignored (default stays).
+- [x] **Methodology note (agent 3 finding):** Next.js dev server's Fast Refresh file watcher occasionally serves stale compiled chunks after edits to `apps/web/app/editor/page.tsx`. Symptom: source file newer than `.next/static/chunks/app/editor/page.js` by >5min. Remedy: `preview_stop` + `preview_start`. Worth preserving for later sessions.

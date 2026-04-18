@@ -624,7 +624,7 @@ Claude updates this table as each phase completes.
 | Phase | Status | Date | Notes |
 |---|---|---|---|
 | P0 | ✅ | 2026-04-18 | typecheck clean · 402 web tests + engine/codegen suites pass · lint placeholder (known-deferred). Hit a stale-node_modules false failure on first run; `pnpm install` recovered. Logged to TESTING_NOTES.md. |
-| P1 | ⏳ | | |
+| P1 | ✅ | 2026-04-18 | 5 routes loaded, zero console errors. 4 findings; all fixed in-session: P1-001/002 stale version strings (unified via `lib/version.ts`, package.json bumped 0.11.0→0.11.3); P1-003 `/gallery` 404 (added redirect to `/editor?tab=gallery`); P1-004 `?tab=X` URL param ignored (wired to `uiStore.setActiveTab` in editor page). All 4 fixes verified end-to-end via preview_eval. |
 | P2 | ⏳ | | |
 | P3 | ⏳ | | |
 | P4 | ⏳ | | |

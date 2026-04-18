@@ -10,8 +10,24 @@ import { useSharedConfig } from '@/hooks/useSharedConfig';
 import { ALL_PRESETS } from '@kyberstation/presets';
 import type { BladeConfig } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useUIStore, type ActiveTab } from '@/stores/uiStore';
 
 const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
+
+// Valid tab identifiers accepted by the `?tab=` URL param. Kept in sync with
+// `ActiveTab` in `uiStore.ts`; a runtime guard is used so unknown values are
+// ignored instead of corrupting the store.
+const VALID_TABS: readonly ActiveTab[] = [
+  'design',
+  'dynamics',
+  'audio',
+  'gallery',
+  'output',
+] as const;
+
+function isValidTab(v: string): v is ActiveTab {
+  return (VALID_TABS as readonly string[]).includes(v);
+}
 
 /**
  * Editor entry point.
@@ -44,6 +60,33 @@ function EditorPageContent() {
     const query = next.toString();
     router.replace(query ? `/editor?${query}` : '/editor', { scroll: false });
     // searchParams is a stable reference in app router; safe to depend on.
+  }, [searchParams, router]);
+
+  // ── Tab query-param handoff (e.g. from landing-page "BROWSE GALLERY" CTA)
+  // If the URL carries ?tab=<name> and <name> maps to a valid ActiveTab,
+  // switch the editor to that tab on mount. Unknown / absent values are
+  // ignored (no crash, keeps default). The param is stripped so a refresh
+  // doesn't override tab changes the user subsequently makes.
+  //
+  // Coexists with `?s=<glyph>` / `?config=<base64>` (handled by
+  // useSharedConfig) and `?preset=<id>` above — we only touch the `tab`
+  // key, preserving everything else through the stripping step.
+  useEffect(() => {
+    const rawTab = searchParams.get('tab');
+    if (!rawTab) return;
+    const normalized = rawTab.toLowerCase();
+    if (isValidTab(normalized)) {
+      useUIStore.getState().setActiveTab(normalized);
+    }
+    // Strip the param whether valid or not — prevents stale values from
+    // re-firing on refresh. Read from `window.location.search` rather than
+    // the (possibly stale) `searchParams` snapshot so we don't clobber
+    // writes made by other effects that already ran this cycle (e.g.
+    // `useSharedConfig` stripping `?s=<glyph>` via `history.replaceState`).
+    const live = new URLSearchParams(window.location.search);
+    live.delete('tab');
+    const query = live.toString();
+    router.replace(query ? `/editor?${query}` : '/editor', { scroll: false });
   }, [searchParams, router]);
 
   // ── Splash ──────────────────────────────────────────────────────────────────

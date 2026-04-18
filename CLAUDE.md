@@ -52,7 +52,7 @@ kyberstation/
 │   │   │   ├── editor/
 │   │   │   │   └── page.tsx          # Main editor workspace
 │   │   │   ├── gallery/
-│   │   │   │   └── page.tsx          # Community style gallery
+│   │   │   │   └── page.tsx          # Redirect stub → /editor?tab=gallery
 │   │   │   └── docs/
 │   │   │       └── page.tsx          # Built-in ProffieOS reference
 │   │   ├── components/
