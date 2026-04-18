@@ -17,7 +17,7 @@ export function LandingHero() {
 
       <div className="relative z-10 w-full text-center px-6">
         <div
-          className="dot-matrix mb-6 opacity-70"
+          className="dot-matrix mb-6"
           aria-label="Universal Saber Style Engine"
         >
           UNIVERSAL · SABER · STYLE · ENGINE

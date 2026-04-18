@@ -966,7 +966,7 @@ html.aurebesh-full [data-no-aurebesh] {
 
 .dot-matrix {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-  font-size: calc(8px * var(--font-scale));
+  font-size: calc(10px * var(--font-scale));
   line-height: 1.4;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -975,7 +975,7 @@ html.aurebesh-full [data-no-aurebesh] {
 
 .dot-matrix-bright {
   font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-  font-size: calc(8px * var(--font-scale));
+  font-size: calc(10px * var(--font-scale));
   line-height: 1.4;
   letter-spacing: 0.2em;
   text-transform: uppercase;
