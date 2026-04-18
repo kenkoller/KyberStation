@@ -28,6 +28,13 @@ export function useKeyboardShortcuts(handlers: {
         case 'KeyN': effectType = 'lightning'; break;
         case 'KeyS': effectType = 'stab'; break;
         case 'KeyF': effectType = 'force'; break;
+        case 'KeyR': effectType = 'fragment'; break;
+        case 'KeyV': effectType = 'bifurcate'; break;
+        case 'KeyG': effectType = 'ghostEcho'; break;
+        case 'KeyP': effectType = 'splinter'; break;
+        case 'KeyE': effectType = 'coronary'; break;
+        case 'KeyX': effectType = 'glitchMatrix'; break;
+        case 'KeyH': effectType = 'siphon'; break;
       }
 
       if (!effectType) return;

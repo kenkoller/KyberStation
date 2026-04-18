@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { playUISound } from '@/lib/uiSounds';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import {
   getPerformanceTier,
   setPerformanceTier,
@@ -111,8 +112,18 @@ export interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<Element | null>(null);
+  // Play the close SFX before propagating, then delegate focus restore
+  // to the shared hook.
+  const handleClose = useCallback(() => {
+    playUISound('modal-close');
+    onClose();
+  }, [onClose]);
+
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen,
+    onClose: handleClose,
+  });
 
   // ── Section collapse state ──
   const [sections, setSections] = useState({
@@ -205,54 +216,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     });
   }, []);
 
-  // ── Focus trap ──
-  // ── Sound on open/close ──
+  // ── Sound on open ──
   useEffect(() => {
     if (isOpen) {
       playUISound('modal-open');
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    previousFocusRef.current = document.activeElement;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const focusables = dialog.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        playUISound('modal-close');
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    dialog.addEventListener('keydown', handleKeyDown);
-    return () => {
-      dialog.removeEventListener('keydown', handleKeyDown);
-      (previousFocusRef.current as HTMLElement)?.focus?.();
-    };
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -263,22 +232,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={(e) => {
-        if (e.target === e.currentTarget) { playUISound('modal-close'); onClose(); }
+        if (e.target === e.currentTarget) handleClose();
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="App settings"
+      aria-labelledby="settings-modal-title"
     >
       <div className="bg-bg-secondary border border-border-light rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle shrink-0">
           <div>
-            <h2 className="text-ui-lg font-semibold text-text-primary tracking-wide">Settings</h2>
+            <h2 id="settings-modal-title" className="text-ui-lg font-semibold text-text-primary tracking-wide">Settings</h2>
             <p className="text-ui-xs text-text-muted mt-0.5">KyberStation configuration</p>
           </div>
           <button
             type="button"
-            onClick={() => { playUISound('modal-close'); onClose(); }}
+            onClick={handleClose}
             className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors text-lg"
             aria-label="Close settings"
           >
@@ -554,6 +523,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       { key: 'M', action: 'Melt (toggle)' },
                       { key: 'F', action: 'Force' },
                       { key: 'W', action: 'Shockwave' },
+                      { key: 'R', action: 'Fragment' },
+                      { key: 'V', action: 'Bifurcate' },
+                      { key: 'G', action: 'Ghost Echo' },
+                      { key: 'P', action: 'Splinter' },
+                      { key: 'E', action: 'Coronary' },
+                      { key: 'X', action: 'Glitch Matrix' },
+                      { key: 'H', action: 'Siphon' },
                     ] as const).map(({ key, action }) => (
                       <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
                         <span className="text-ui-sm text-text-secondary">{action}</span>
@@ -774,7 +750,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </p>
           <button
             type="button"
-            onClick={() => { playUISound('modal-close'); onClose(); }}
+            onClick={handleClose}
             className="px-4 py-1.5 rounded border border-border-subtle text-ui-sm font-medium text-text-muted hover:text-text-primary hover:border-border-light transition-colors"
           >
             Done
