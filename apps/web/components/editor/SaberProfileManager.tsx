@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import type { SaberProfile, CardPresetEntry } from '@/stores/saberProfileStore';
 import { useBladeStore } from '@/stores/bladeStore';
-import { estimateTotal, formatBytes, CARD_SIZES } from '@kyberstation/engine';
+import { useAudioFontStore } from '@/stores/audioFontStore';
+import { estimateTotal, formatBytes, CARD_SIZES, BladeEngine } from '@kyberstation/engine';
+import type { BladeConfig, RGB } from '@kyberstation/engine';
 import { CARD_TEMPLATES } from '@kyberstation/presets';
 import type { CardTemplate } from '@kyberstation/presets';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
@@ -13,23 +15,408 @@ import { playUISound } from '@/lib/uiSounds';
 import { toast } from '@/lib/toastManager';
 import { useModalDialog } from '@/hooks/useModalDialog';
 
-function ProfileCard({
-  profile,
-  isActive,
+// ─── Helpers ───
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
+}
+
+function sanitizeFontName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .substring(0, 32) || 'font';
+}
+
+/**
+ * Derive the "representative" config for a saber profile — the active card
+ * config's first entry, falling back to the current editor config if none.
+ */
+function getRepresentativeConfig(profile: SaberProfile, fallback: BladeConfig): BladeConfig {
+  const activeConfig = profile.cardConfigs.find((c) => c.id === profile.activeCardConfigId) ?? profile.cardConfigs[0];
+  if (activeConfig && activeConfig.entries.length > 0) return activeConfig.entries[0].config;
+  return fallback;
+}
+
+// ─── Mini-Blade Hero (co-located) ───
+
+/**
+ * Compact live blade preview driven by a specific BladeConfig. Mirrors the
+ * shape of <LandingBladeHero> but sized ~100×300 and colour-locked to the
+ * passed config rather than rotating through presets. Used in the
+ * SaberProfileManager character-sheet hero.
+ */
+const MINI_CANVAS_W = 36;
+const MINI_CANVAS_H = 540;
+
+function ProfileHeroBlade({ config }: { config: BladeConfig }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const configRef = useRef<BladeConfig>(config);
+  configRef.current = config;
+
+  // Re-ignite when base colour changes so the halo matches the new saber
+  const colorKey = `${config.baseColor.r},${config.baseColor.g},${config.baseColor.b}`;
+
+  useEffect(() => {
+    const engine = new BladeEngine();
+    engine.ignite(configRef.current);
+
+    // Warm up to steady-state before first paint
+    const FRAME_DT = 16;
+    const warmupFrames = Math.ceil((configRef.current.ignitionMs ?? 300) / FRAME_DT) + 8;
+    for (let i = 0; i < warmupFrames; i++) {
+      engine.update(FRAME_DT, configRef.current);
+    }
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d') ?? null;
+    if (!canvas || !ctx) return;
+
+    let cancelled = false;
+    let lastTime = performance.now();
+
+    const drawPixels = () => {
+      const c = canvasRef.current;
+      if (!c) return;
+      const cx = c.getContext('2d');
+      if (!cx) return;
+      const pixels = engine.getPixels();
+      const count = pixels.length / 3;
+      cx.clearRect(0, 0, MINI_CANVAS_W, MINI_CANVAS_H);
+      const sliceH = MINI_CANVAS_H / count;
+      for (let i = 0; i < count; i++) {
+        const off = i * 3;
+        const r = pixels[off], g = pixels[off + 1], b = pixels[off + 2];
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        if (lum < 8) continue;
+        cx.fillStyle = `rgb(${r},${g},${b})`;
+        cx.fillRect(0, MINI_CANVAS_H - (i + 1) * sliceH, MINI_CANVAS_W, sliceH + 0.5);
+      }
+    };
+
+    drawPixels();
+
+    const tick = (time: number) => {
+      if (cancelled) return;
+      const dt = Math.min(48, time - lastTime);
+      lastTime = time;
+      engine.update(dt, configRef.current);
+      drawPixels();
+      requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+
+    return () => {
+      cancelled = true;
+    };
+    // Rebuild engine when colour changes so ignition matches
+  }, [colorKey]);
+
+  const accentCss = `rgb(${config.baseColor.r | 0},${config.baseColor.g | 0},${config.baseColor.b | 0})`;
+
+  return (
+    <div className="relative shrink-0" aria-hidden="true" style={{ width: 96, height: 300 }}>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 50% 75% at center, ${accentCss} 0%, transparent 70%)`,
+          opacity: 0.3,
+          filter: 'blur(24px)',
+        }}
+      />
+      <canvas
+        ref={canvasRef}
+        width={MINI_CANVAS_W}
+        height={MINI_CANVAS_H}
+        className="relative block mx-auto rounded-full"
+        style={{
+          width: 4,
+          height: 300,
+          filter: `drop-shadow(0 0 6px ${accentCss}) drop-shadow(0 0 16px ${accentCss})`,
+        }}
+      />
+    </div>
+  );
+}
+
+// ─── Flat Section Header (Linear / LayerStack register) ───
+
+function SectionHeader({ label, help }: { label: string; help?: string }) {
+  return (
+    <h4 className="text-ui-xs text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1 section-header">
+      {label}
+      {help && <HelpTooltip text={help} />}
+    </h4>
+  );
+}
+
+// ─── Labelled Data Row (chrome=Inter label, value=JBM) ───
+
+function DataRow({ label, value, mono = true }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1 border-b border-border-subtle/40 last:border-b-0">
+      <span className="text-ui-xs text-text-muted shrink-0">{label}</span>
+      <span className={`text-ui-xs text-text-primary text-right truncate ${mono ? 'font-mono tabular-nums' : ''}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// ─── Profile Tab Strip (compact switcher) ───
+
+function ProfileTabStrip({
+  profiles,
+  activeProfileId,
   onSwitch,
-  onDuplicate,
-  onDelete,
-  onExport,
-  onEdit,
+}: {
+  profiles: SaberProfile[];
+  activeProfileId: string | null;
+  onSwitch: (id: string) => void;
+}) {
+  if (profiles.length === 0) return null;
+  return (
+    <div className="flex items-center gap-1 flex-wrap" role="tablist" aria-label="Saber profiles">
+      {profiles.map((p) => {
+        const isActive = p.id === activeProfileId;
+        return (
+          <button
+            key={p.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onSwitch(p.id)}
+            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
+              isActive
+                ? 'bg-accent-dim border-accent-border text-accent'
+                : 'border-border-subtle text-text-muted hover:text-text-primary'
+            }`}
+          >
+            {p.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Character-Sheet Hero ───
+
+function ProfileHero({
+  profile,
+  representativeConfig,
 }: {
   profile: SaberProfile;
-  isActive: boolean;
-  onSwitch: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-  onExport: () => void;
-  onEdit: () => void;
+  representativeConfig: BladeConfig;
 }) {
+  // Use the profile name as-is; the JBM Bold ceremonial scale lives in the class
+  return (
+    <div className="flex items-stretch gap-4 py-4">
+      {/* Mini live blade preview (left) */}
+      <ProfileHeroBlade config={representativeConfig} />
+
+      {/* Profile identity block (right) */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div
+          className="font-mono font-bold text-text-primary leading-tight tracking-tight break-words"
+          style={{ fontSize: 'clamp(32px, 6.5vw, 64px)', letterSpacing: '-0.02em' }}
+          title={profile.name}
+        >
+          {profile.name}
+        </div>
+        {profile.chassisType && (
+          <div className="text-ui-sm text-text-secondary font-mono mt-1 truncate">
+            {profile.chassisType}
+          </div>
+        )}
+        <div className="flex items-center gap-3 mt-2 text-ui-xs text-text-muted font-mono tabular-nums flex-wrap">
+          <span>{profile.boardType}</span>
+          <span aria-hidden="true">·</span>
+          <span>{profile.cardSize}</span>
+          <span aria-hidden="true">·</span>
+          <span>
+            {(() => {
+              const cc = profile.cardConfigs.find((c) => c.id === profile.activeCardConfigId) ?? profile.cardConfigs[0];
+              const count = cc?.entries.length ?? 0;
+              return `${count} preset${count !== 1 ? 's' : ''}`;
+            })()}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Character-Sheet Category Blocks ───
+
+function BladeSpecsBlock({ profile, config }: { profile: SaberProfile; config: BladeConfig }) {
+  const stripType = (config as BladeConfig & { stripType?: string }).stripType ?? 'single';
+  return (
+    <section className="space-y-1">
+      <SectionHeader label="Blade Specs" help="Hardware topology and timing for the blade itself: LED count, strip type, ignition and retraction durations, and base shimmer amount." />
+      <div>
+        <DataRow label="LED Count" value={config.ledCount} />
+        <DataRow label="Strip" value={stripType} mono={false} />
+        <DataRow label="Ignition" value={`${config.ignition} · ${config.ignitionMs}ms`} />
+        <DataRow label="Retraction" value={`${config.retraction} · ${config.retractionMs}ms`} />
+        <DataRow label="Shimmer" value={(config.shimmer * 100).toFixed(0) + '%'} />
+        <DataRow label="Board" value={profile.boardType} mono={false} />
+      </div>
+    </section>
+  );
+}
+
+function ButtonMapBlock({ profile }: { profile: SaberProfile }) {
+  // Button map isn't in the profile model today — show a hint instead of faking data
+  return (
+    <section className="space-y-1">
+      <SectionHeader label="Button Map" help="Prop-file button action mapping. Configure via the Proffie prop file reference." />
+      <div className="text-ui-xs text-text-muted italic py-2">
+        Button mapping lives in the prop-file reference panel.
+        {profile.boardType.includes('Proffie') ? ' Default: saber_fett263_buttons.h.' : ''}
+      </div>
+    </section>
+  );
+}
+
+function EquippedStyleBlock({ config }: { config: BladeConfig }) {
+  const swatch = (label: string, c: RGB | undefined) => {
+    if (!c) return null;
+    const hex = rgbToHex(c.r, c.g, c.b);
+    return (
+      <div className="flex items-center gap-2 py-1">
+        <span
+          className="w-3 h-3 rounded-sm shrink-0 border border-white/10"
+          style={{ backgroundColor: hex }}
+          aria-hidden="true"
+        />
+        <span className="text-ui-xs text-text-muted w-14 shrink-0">{label}</span>
+        <span className="text-ui-xs text-text-primary font-mono tabular-nums">{hex.toUpperCase()}</span>
+      </div>
+    );
+  };
+  return (
+    <section className="space-y-1">
+      <SectionHeader label="Equipped Style" help="The style and colour palette bound to this profile's active preset." />
+      <div>
+        <DataRow label="Style" value={config.style} mono={false} />
+        {config.name && <DataRow label="Preset" value={config.name} mono={false} />}
+        <div className="mt-2 space-y-0">
+          {swatch('Base', config.baseColor)}
+          {swatch('Clash', config.clashColor)}
+          {swatch('Lockup', config.lockupColor)}
+          {swatch('Blast', config.blastColor)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EquippedFontBlock({ profile }: { profile: SaberProfile }) {
+  const fontName = useAudioFontStore((s) => s.fontName);
+  const activeConfig = profile.cardConfigs.find((c) => c.id === profile.activeCardConfigId) ?? profile.cardConfigs[0];
+  const firstPresetFont = activeConfig?.entries[0]?.fontName;
+  return (
+    <section className="space-y-1">
+      <SectionHeader label="Equipped Sound Font" help="The sound font directory loaded for preview. Individual presets can override this via the Card Preset composer." />
+      <div>
+        <DataRow label="Loaded" value={fontName ?? <span className="text-text-muted italic">none</span>} />
+        <DataRow label="First Preset" value={firstPresetFont ?? <span className="text-text-muted italic">n/a</span>} />
+        <DataRow
+          label="Mapped"
+          value={`${Object.keys(profile.fontAssignments).length} font${Object.keys(profile.fontAssignments).length !== 1 ? 's' : ''}`}
+        />
+      </div>
+    </section>
+  );
+}
+
+function SmoothSwingBlock({ config }: { config: BladeConfig }) {
+  const c = config as BladeConfig & {
+    swingSharpness?: number;
+    swingThreshold?: number;
+    accentSwingSpeed?: number;
+    version?: string;
+  };
+  return (
+    <section className="space-y-1">
+      <SectionHeader label="SmoothSwing" help="SmoothSwing V1/V2 crossfade parameters. Configure via the SmoothSwing panel." />
+      <div>
+        <DataRow label="Version" value={c.version ?? 'V2'} />
+        <DataRow label="Sharpness" value={c.swingSharpness ?? <span className="text-text-muted italic">default</span>} />
+        <DataRow label="Threshold" value={c.swingThreshold ?? <span className="text-text-muted italic">default</span>} />
+        <DataRow label="Accent Speed" value={c.accentSwingSpeed ?? <span className="text-text-muted italic">default</span>} />
+      </div>
+    </section>
+  );
+}
+
+// ─── Character Sheet Actions ───
+
+function CharacterSheetActions({
+  profile,
+  onEdit,
+  onDuplicate,
+  onExport,
+  onDelete,
+}: {
+  profile: SaberProfile;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onExport: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      <button
+        onClick={onEdit}
+        className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors"
+        aria-label={`Edit ${profile.name}`}
+      >
+        Edit Notes
+      </button>
+      <button
+        onClick={onDuplicate}
+        className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors"
+        aria-label={`Duplicate ${profile.name}`}
+      >
+        Duplicate
+      </button>
+      <button
+        onClick={onExport}
+        className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors"
+        aria-label={`Export ${profile.name}`}
+      >
+        Export
+      </button>
+      <button
+        onClick={onDelete}
+        className="px-2 py-1 rounded text-ui-xs border transition-colors"
+        style={{
+          borderColor: 'rgb(var(--border-subtle))',
+          color: 'rgb(var(--status-error) / 0.7)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = 'rgb(var(--status-error))';
+          e.currentTarget.style.borderColor = 'rgb(var(--status-error) / 0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = 'rgb(var(--status-error) / 0.7)';
+          e.currentTarget.style.borderColor = 'rgb(var(--border-subtle))';
+        }}
+        aria-label={`Delete ${profile.name}`}
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+
+// ─── Storage Bar (inline for character sheet) ───
+
+function ProfileStorageBar({ profile }: { profile: SaberProfile }) {
   const budget = useMemo(() => {
     const activeConfig = profile.cardConfigs.find((c) => c.id === profile.activeCardConfigId) ?? profile.cardConfigs[0];
     const entries = activeConfig?.entries ?? profile.presetEntries;
@@ -42,91 +429,30 @@ function ProfileCard({
   }, [profile]);
 
   return (
-    <div className={`rounded-panel p-3 border transition-colors ${
-      isActive ? 'bg-accent-dim border-accent-border' : 'bg-bg-surface border-border-subtle hover:border-border-light'
-    }`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="text-ui-base font-medium text-text-primary truncate">{profile.name}</h4>
-            {isActive && <span className="text-ui-xs text-accent font-medium">Active</span>}
-          </div>
-          {profile.chassisType && (
-            <p className="text-ui-xs text-text-muted mt-0.5">{profile.chassisType}</p>
-          )}
-          <div className="flex items-center gap-3 mt-1.5 text-ui-xs text-text-muted">
-            <span>{profile.boardType}</span>
-            <span>{profile.cardSize}</span>
-            <span>{(() => {
-              const cc = profile.cardConfigs.find((c) => c.id === profile.activeCardConfigId) ?? profile.cardConfigs[0];
-              const count = cc?.entries.length ?? profile.presetEntries.length;
-              return `${count} preset${count !== 1 ? 's' : ''}`;
-            })()}</span>
-          </div>
-          {/* Storage bar */}
-          <div className="mt-2">
-            <div
-              className="h-1.5 bg-bg-deep rounded-full overflow-hidden"
-              role="progressbar"
-              aria-valuenow={Math.round(budget.usagePercent)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`SD card usage for ${profile.name}`}
-            >
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.min(100, budget.usagePercent)}%`,
-                  backgroundColor: budget.usagePercent >= 90 ? 'rgb(var(--status-error))' :
-                    budget.usagePercent >= 75 ? 'rgb(var(--status-warn))' : 'rgb(var(--status-ok))',
-                }}
-              />
-            </div>
-            <span className="text-ui-xs text-text-muted">{formatBytes(budget.totalBytes)} / {profile.cardSize}</span>
-          </div>
-        </div>
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between">
+        <span className="text-ui-xs text-text-muted uppercase tracking-wider">SD Card</span>
+        <span className="text-ui-xs font-mono tabular-nums text-text-primary">
+          {formatBytes(budget.totalBytes)} / {profile.cardSize}
+        </span>
       </div>
-
-      {/* Actions */}
-      <div className="flex gap-1.5 mt-3">
-        {!isActive && (
-          <button onClick={onSwitch} className="px-2 py-1 rounded text-ui-xs font-medium bg-accent-dim border border-accent-border text-accent hover:bg-accent/20 transition-colors" aria-label={`Switch to ${profile.name}`}>
-            Switch
-          </button>
-        )}
-        <button onClick={onEdit} className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors" aria-label={`Edit ${profile.name}`}>
-          Edit
-        </button>
-        <button onClick={onDuplicate} className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors" aria-label={`Duplicate ${profile.name}`}>
-          Duplicate
-        </button>
-        <button onClick={onExport} className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors" aria-label={`Export ${profile.name}`}>
-          Export
-        </button>
-        <button
-          onClick={onDelete}
-          className="px-2 py-1 rounded text-ui-xs border transition-colors hover:border-transparent"
+      <div
+        className="h-1.5 bg-bg-deep rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={Math.round(budget.usagePercent)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`SD card usage for ${profile.name}`}
+      >
+        <div
+          className="h-full rounded-full transition-all"
           style={{
-            borderColor: 'rgb(var(--border-subtle))',
-            color: 'rgb(var(--status-error) / 0.7)',
+            width: `${Math.min(100, budget.usagePercent)}%`,
+            backgroundColor: budget.usagePercent >= 90 ? 'rgb(var(--status-error))' :
+              budget.usagePercent >= 75 ? 'rgb(var(--status-warn))' : 'rgb(var(--status-ok))',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'rgb(var(--status-error))';
-            e.currentTarget.style.borderColor = 'rgb(var(--status-error) / 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'rgb(var(--status-error) / 0.7)';
-            e.currentTarget.style.borderColor = 'rgb(var(--border-subtle))';
-          }}
-          aria-label={`Delete ${profile.name}`}
-        >
-          Delete
-        </button>
+        />
       </div>
-
-      {profile.notes && (
-        <p className="text-ui-xs text-text-muted mt-2 italic">{profile.notes}</p>
-      )}
     </div>
   );
 }
@@ -212,21 +538,6 @@ function CardConfigSwitcher({
       )}
     </div>
   );
-}
-
-// ─── Helpers ───
-
-function rgbToHex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b].map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
-}
-
-function sanitizeFontName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
-    .substring(0, 32) || 'font';
 }
 
 // ─── Card Preset Entry Row ───
@@ -497,6 +808,7 @@ export function SaberProfileManager() {
   const exportProfile = useSaberProfileStore((s) => s.exportProfile);
   const importProfile = useSaberProfileStore((s) => s.importProfile);
   const copyPresetsToProfile = useSaberProfileStore((s) => s.copyPresetsToProfile);
+  const fallbackConfig = useBladeStore((s) => s.config);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -582,10 +894,16 @@ export function SaberProfileManager() {
     }
   };
 
+  const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
+  const representativeConfig = activeProfile
+    ? getRepresentativeConfig(activeProfile, fallbackConfig)
+    : null;
+
   return (
     <div className="space-y-4">
+      {/* ── Panel header ── */}
       <div className="flex items-center justify-between">
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1 section-header">
           Saber Profiles
           <HelpTooltip text="Manage multiple lightsabers. Each profile stores its own preset list, font assignments, and card settings. Copy presets between sabers or export/import entire profiles." />
         </h3>
@@ -607,7 +925,7 @@ export function SaberProfileManager() {
         </div>
       </div>
 
-      {/* Create form */}
+      {/* ── Create form ── */}
       {showCreate && (
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-2">
           <div className="grid grid-cols-2 gap-2">
@@ -661,23 +979,38 @@ export function SaberProfileManager() {
         </div>
       )}
 
-      {/* Profile list */}
-      <div className="space-y-2">
-        {profiles.map((profile) => (
-          <div key={profile.id}>
-            <ProfileCard
-              profile={profile}
-              isActive={profile.id === activeProfileId}
-              onSwitch={() => { playUISound('preset-loaded'); switchProfile(profile.id); }}
-              onDuplicate={() => duplicateProfile(profile.id)}
-              onDelete={() => handleDelete(profile.id)}
-              onExport={() => handleExport(profile.id)}
-              onEdit={() => { setEditingId(profile.id); setEditNotes(profile.notes); }}
-            />
+      {/* ── Profile tab strip (switcher for non-active profiles) ── */}
+      {profiles.length > 1 && (
+        <ProfileTabStrip
+          profiles={profiles}
+          activeProfileId={activeProfileId}
+          onSwitch={(id) => { playUISound('preset-loaded'); switchProfile(id); }}
+        />
+      )}
+
+      {/* ── Active profile: character sheet ── */}
+      {activeProfile && representativeConfig && (
+        <div className="bg-bg-surface rounded-panel border border-border-subtle overflow-hidden">
+          {/* Hero */}
+          <div className="px-4 pt-3 pb-2 border-b border-border-subtle/60">
+            <ProfileHero profile={activeProfile} representativeConfig={representativeConfig} />
+            <div className="mt-2">
+              <ProfileStorageBar profile={activeProfile} />
+            </div>
+            <div className="mt-3">
+              <CharacterSheetActions
+                profile={activeProfile}
+                onEdit={() => { setEditingId(activeProfile.id); setEditNotes(activeProfile.notes); }}
+                onDuplicate={() => duplicateProfile(activeProfile.id)}
+                onExport={() => handleExport(activeProfile.id)}
+                onDelete={() => handleDelete(activeProfile.id)}
+              />
+            </div>
+
             {/* Delete confirmation — tokenised, Linear-flat */}
-            {deleteConfirm === profile.id && (
+            {deleteConfirm === activeProfile.id && (
               <div
-                className="mt-1 p-2 rounded text-ui-xs flex items-center gap-2 border"
+                className="mt-2 p-2 rounded text-ui-xs flex items-center gap-2 border flex-wrap"
                 style={{
                   background: 'rgb(var(--status-error) / 0.1)',
                   borderColor: 'rgb(var(--status-error) / 0.3)',
@@ -685,9 +1018,9 @@ export function SaberProfileManager() {
                 }}
               >
                 <span aria-hidden="true">✕</span>
-                <span>Delete &quot;{profile.name}&quot;? This cannot be undone.</span>
+                <span>Delete &quot;{activeProfile.name}&quot;? This cannot be undone.</span>
                 <button
-                  onClick={() => handleDelete(profile.id)}
+                  onClick={() => handleDelete(activeProfile.id)}
                   className="px-2 py-0.5 rounded font-medium border"
                   style={{
                     background: 'rgb(var(--status-error) / 0.2)',
@@ -699,22 +1032,42 @@ export function SaberProfileManager() {
                 <button onClick={() => setDeleteConfirm(null)} className="px-2 py-0.5 rounded border border-border-subtle text-text-muted">Cancel</button>
               </div>
             )}
+
             {/* Edit notes */}
-            {editingId === profile.id && (
-              <div className="mt-1 p-2 bg-bg-surface border border-border-subtle rounded space-y-1.5">
-                <label htmlFor={`notes-${profile.id}`} className="text-ui-xs text-text-muted block">Notes</label>
-                <textarea id={`notes-${profile.id}`} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} placeholder="e.g., Bass speaker, crystal chamber wired..." className="w-full bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary placeholder:text-text-muted resize-none" />
-                <div className="flex gap-1.5">
+            {editingId === activeProfile.id && (
+              <div className="mt-2 p-2 bg-bg-deep border border-border-subtle rounded space-y-1.5">
+                <label htmlFor={`notes-${activeProfile.id}`} className="text-ui-xs text-text-muted block">Notes</label>
+                <textarea id={`notes-${activeProfile.id}`} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} placeholder="e.g., Bass speaker, crystal chamber wired..." className="w-full bg-bg-surface border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary placeholder:text-text-muted resize-none" />
+                <div className="flex gap-1.5 flex-wrap">
                   <button onClick={handleEditSave} className="px-2 py-1 rounded text-ui-xs font-medium bg-accent-dim border border-accent-border text-accent">Save</button>
                   <button onClick={() => setEditingId(null)} className="px-2 py-1 rounded text-ui-xs text-text-muted border border-border-subtle">Cancel</button>
-                  <button onClick={() => { setShowCopyModal(profile.id); setEditingId(null); }} className="px-2 py-1 rounded text-ui-xs text-accent border border-accent-border/40">Copy Presets To...</button>
+                  <button onClick={() => { setShowCopyModal(activeProfile.id); setEditingId(null); }} className="px-2 py-1 rounded text-ui-xs text-accent border border-accent-border/40">Copy Presets To...</button>
                 </div>
               </div>
             )}
-          </div>
-        ))}
-      </div>
 
+            {/* Saved notes surfaced in hero (read-only) */}
+            {activeProfile.notes && editingId !== activeProfile.id && (
+              <p className="mt-2 text-ui-xs text-text-muted italic border-l-2 border-border-subtle/60 pl-2">
+                {activeProfile.notes}
+              </p>
+            )}
+          </div>
+
+          {/* Category blocks — responsive: 1 col at narrow, 2 col at tablet+ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 px-4 py-4">
+            <BladeSpecsBlock profile={activeProfile} config={representativeConfig} />
+            <EquippedStyleBlock config={representativeConfig} />
+            <EquippedFontBlock profile={activeProfile} />
+            <SmoothSwingBlock config={representativeConfig} />
+            <div className="md:col-span-2">
+              <ButtonMapBlock profile={activeProfile} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Empty state (preserved) ── */}
       {profiles.length === 0 && (
         <div className="rounded-panel border border-dashed border-border-subtle bg-bg-surface/50 p-5 text-center space-y-2">
           <div
@@ -740,22 +1093,18 @@ export function SaberProfileManager() {
         </div>
       )}
 
-      {/* Card Preset Composer for active profile */}
-      {(() => {
-        const active = profiles.find((p) => p.id === activeProfileId);
-        if (!active) return null;
-        return (
-          <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
-            <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
-              Card Presets
-              <HelpTooltip text="Compose the preset list for your SD card. Each card config is an independent set of presets. The active config is used for code generation and SD card export." />
-            </h4>
-            <CardPresetComposer profile={active} />
-          </div>
-        );
-      })()}
+      {/* ── Card Preset Composer for active profile ── */}
+      {activeProfile && (
+        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle">
+          <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1 section-header">
+            Card Presets
+            <HelpTooltip text="Compose the preset list for your SD card. Each card config is an independent set of presets. The active config is used for code generation and SD card export." />
+          </h4>
+          <CardPresetComposer profile={activeProfile} />
+        </div>
+      )}
 
-      {/* Copy presets modal */}
+      {/* ── Copy presets modal ── */}
       {showCopyModal && (
         <CopyPresetsModal
           sourceProfileId={showCopyModal}
