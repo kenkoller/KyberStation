@@ -111,21 +111,30 @@ function GalleryCard({
   preset,
   isActive,
   onSelect,
+  parentName,
 }: {
   preset: Preset;
   isActive: boolean;
   onSelect: () => void;
+  /** Human-readable name of the preset this one descends from, if any. */
+  parentName?: string;
 }) {
   const { r, g, b } = preset.config.baseColor;
   const hex = rgbToHex(r, g, b);
   const isLegendsPreset = isLegends(preset);
   const { src: thumbnail, isAnimating, onMouseEnter, onMouseLeave } = usePresetAnimation(preset.config as BladeConfig);
 
+  // Lineage tooltip — browser `title` has a built-in hover-delay and is
+  // the right primitive for a low-value, opt-in hint. HelpTooltip is
+  // reserved for '?' help icons.
+  const lineageHint = parentName ? `Variant of ${parentName}` : undefined;
+
   return (
     <button
       onClick={onSelect}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      title={lineageHint}
       className={`gallery-card w-full shrink-0 text-left rounded-lg overflow-hidden border transition-all ${
         isActive
           ? 'border-accent ring-1 ring-accent/30'
@@ -261,16 +270,24 @@ function GalleryCard({
           label={`${preset.affiliation} affiliation`}
         />
       </div>
-      {/* Identity subtitle — character + tier for VCV-style browsable attribution */}
+      {/* Identity subtitle — character + author for VCV-style browsable
+          attribution. Falls back to tier when author is unknown. Version
+          (when set) surfaces on the far right, mirroring the VCV Rack
+          library's author/version dual-column layout. */}
       <div
         className="flex items-center gap-1.5 px-2.5 pb-1.5 text-ui-xs text-text-muted font-mono truncate"
         aria-hidden="true"
       >
         <span className="truncate">{preset.character}</span>
         <span className="opacity-40 shrink-0">·</span>
-        <span className="uppercase tracking-wider shrink-0 opacity-70">
-          {preset.tier}
+        <span className="uppercase tracking-wider shrink-0 opacity-70 truncate">
+          {preset.author ?? preset.tier}
         </span>
+        {preset.version && (
+          <span className="ml-auto shrink-0 opacity-50 tabular-nums">
+            v{preset.version}
+          </span>
+        )}
       </div>
     </button>
   );
@@ -1091,6 +1108,11 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
             preset={preset}
             isActive={config.name === preset.config.name}
             onSelect={() => handleSelect(preset)}
+            parentName={
+              preset.parentId
+                ? ALL_PRESETS.find((p) => p.id === preset.parentId)?.name
+                : undefined
+            }
           />
         ))}
       </div>

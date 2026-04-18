@@ -10,6 +10,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Obi-Wan\'s first lightsaber as a Padawan, wielded during the Battle of Naboo against Darth Maul.',
     hiltNotes: 'Slim cylindrical hilt with ridged grip section and thin neck.',
@@ -40,6 +41,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Obi-Wan\'s third lightsaber, used throughout the Clone Wars and the duel on Mustafar.',
     hiltNotes:
@@ -71,6 +73,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The maverick Jedi Master\'s lightsaber, used in the fateful duel against Darth Maul on Naboo.',
     hiltNotes: 'Simple, utilitarian hilt with ribbed grip and flat pommel.',
@@ -102,6 +105,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Anakin\'s second lightsaber, later passed to Luke. The most iconic hilt in Star Wars.',
     hiltNotes:
@@ -134,6 +138,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The only purple lightsaber of the Jedi Order, reflecting Windu\'s unique Vaapad fighting style.',
     hiltNotes:
@@ -168,6 +173,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Grand Master Yoda\'s short-bladed lightsaber, sized for his diminutive form but devastating in combat.',
     hiltNotes: 'Compact shoto-length hilt with rounded pommel and simple design.',
@@ -199,6 +205,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The elegant curved-hilt lightsaber of the Sith Lord and former Jedi, optimized for Form II Makashi.',
     hiltNotes:
@@ -230,6 +237,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Darth Maul\'s iconic double-bladed lightsaber, a weapon of terror and acrobatic combat.',
     hiltNotes: 'Long staff hilt with emitters on both ends. Can be split into two single sabers.',
@@ -264,6 +272,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Nautolan Jedi Master\'s lightsaber, designed to function underwater on his homeworld.',
     hiltNotes: 'Hilt with dual activation switches and waterproof design.',
@@ -293,6 +302,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Jedi Master Plo Koon\'s lightsaber, wielded by the Kel Dor pilot and Council member.',
     hiltNotes: 'Gauntlet-style hilt adapted for his clawed Kel Dor hands.',
@@ -323,6 +333,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Twi\'lek Jedi Knight Aayla Secura\'s lightsaber, carried through the Clone Wars until Order 66.',
     hiltNotes: 'Slim cylindrical hilt with tapered emitter and blue accents.',
@@ -351,6 +362,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Mirialan Jedi Master Luminara Unduli\'s lightsaber, reflecting her disciplined and graceful combat style.',
     hiltNotes: 'Ornate hilt with stepped emitter and decorative grip patterns.',
@@ -379,6 +391,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Padawan Barriss Offee\'s lightsaber, wielded before her fall to the dark side and betrayal of the Jedi.',
     hiltNotes: 'Slender hilt similar in design to her master Luminara\'s.',
@@ -407,6 +420,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Togruta Jedi Master Shaak Ti\'s lightsaber, carried during the defense of Kamino and beyond.',
     hiltNotes: 'Curved-neck hilt with flared emitter, designed for her Ataru and Makashi techniques.',
@@ -435,6 +449,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Cerean Jedi Master Ki-Adi-Mundi\'s lightsaber, carried from Geonosis through the Outer Rim Sieges.',
     hiltNotes: 'Long hilt with stepped emitter and ribbed grip section.',
@@ -463,6 +478,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Jedi Master Depa Billaba\'s lightsaber, later passed to her Padawan Caleb Dume (Kanan Jarrus).',
     hiltNotes: 'Elegant hilt with gold accents, reflecting her position on the Jedi Council.',
@@ -491,6 +507,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Nightbrother warrior\'s double-bladed lightsaber with a distinctive yellow-green blade.',
     hiltNotes: 'Heavy double-bladed hilt with a brutalist, primitive design.',
@@ -524,6 +541,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Ventress\'s paired curved-hilt lightsabers that can connect at the pommels to form a double-blade.',
     hiltNotes:
@@ -559,6 +577,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Trophies stolen from defeated Jedi. Grievous wields up to four sabers simultaneously — blue and green blades collected from his victims.',
     hiltNotes:
@@ -589,6 +608,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Sith Lord\'s concealed lightsaber, an elegant Phrik-alloy weapon hidden within the Supreme Chancellor\'s robes.',
     hiltNotes:
@@ -621,6 +641,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Anakin\'s first lightsaber, destroyed in the Geonosis droid factory. A youthful, slightly brighter blue than his later saber.',
     hiltNotes: 'Wider, bulkier hilt with visible green and red wiring. Built as a Padawan.',
@@ -649,6 +670,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Zabrak Jedi Master Agen Kolar\'s blue lightsaber. Accompanied Mace Windu to arrest Palpatine.',
     hiltNotes: 'Standard Jedi Council hilt with ribbed grip.',
@@ -677,6 +699,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Iktotchi Jedi Master\'s green lightsaber. An ace pilot and swordsman on the Jedi Council.',
     hiltNotes: 'Rugged hilt design built for aggressive combat.',
@@ -705,6 +728,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Zabrak Jedi Master Eeth Koth\'s green lightsaber. Known for his exceptional resilience and pain tolerance.',
     config: {
@@ -732,6 +756,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Jedi Master Stass Allie\'s green lightsaber. A healer and Council member killed during Order 66 on Saleucami.',
     config: {
