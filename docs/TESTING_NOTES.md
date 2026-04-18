@@ -160,3 +160,26 @@ Programmatic sweep. `document.hidden: true` in preview mode throttles requestAni
 - [x] **T3.5 (PASS-CLICKABLE):** Zoom-in + Zoom-out buttons exist (`aria-label="Zoom in"` / `"Zoom out"`) and respond to clicks. Visual effect unverifiable from preview since no blade is ignited.
 - [ ] **T3.2 (PENDING-KEN):** "Live-data breathes at rest" — RAF throttled in preview under `document.hidden:true`. Requires foreground-Chrome check.
 - **Note:** Fresh-state (IndexedDB cleared) triggers the 4-step WELCOME onboarding modal. Good UX discovery. Phase 32 will test this flow in detail. For all subsequent phases, I'm using "Skip setup" to reach the editor directly.
+- **THREE.Clock deprecation warning** (minor): console shows `THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` Fire a follow-up to migrate when convenient. Not blocking.
+
+## P4 — All 29 blade styles (2026-04-18)
+
+Programmatic click-cycle through `Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon Blade, Plasma Storm, Crystal Shatter, Aurora, Cinder, Prism, Data Stream, Gravity, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moiré, Cascade, Vortex, Nebula, Tidal, Mirage, Painted, Image Scroll`.
+
+- [x] 29/29 click cleanly; zero exceptions thrown, zero console errors, blade stays ignited through all 29 switches, canvas count stable.
+- [ ] Visual-distinctness check (T4 pass criterion) deferred to Ken's foreground-Chrome walk. Preview's RAF is throttled under `document.hidden:true`, so all 29 styles return identical pixel signatures in automated sampling — NOT evidence they look the same; evidence that only a single frame was rendered.
+
+## P5 — Effects (2026-04-18)
+
+Effect ribbon has 15 buttons (Retract + 14 effects). Enumerated buttons: `Clash, Blast, Stab, Lockup, Lightning, Drag, Melt, Force, Shockwave, Scatter, Ripple, Freeze, Overcharge, Invert` — shortcut letter doubled in button text (e.g. "ClashCC", "OverchargeOv").
+
+- [x] 14/14 UI effects click cleanly; zero console errors.
+- [ ] **P5-001 (SHIP-WITH-NOTE):** 7 effects defined in the engine per CLAUDE.md (Fragment, Bifurcate, GhostEcho, Splinter, Coronary, GlitchMatrix, Siphon) have no UI ribbon button. Users cannot trigger them via one-click from the editor. Either: (a) add them to the ribbon, (b) scope them to style-config-only access and document, (c) remove them from the engine if they're unshipped code. Root-cause this before launch — 7 defined but inaccessible is a release-smell.
+- [ ] T5.2 rapid-fire Clash overlap behavior — deferred to Ken's foreground check.
+
+## P6 — Ignitions + Retractions (2026-04-18)
+
+- [x] **19 ignitions** clicked: Standard, Scroll, Spark, Center Out, Wipe, Stutter, Glitch, Twist, Swing, Stab, Crackle, Fracture, Flash Fill, Pulse Wave, Drip Up, Hyperspace, Summon, Seismic, Custom Curve. All OK. Zero exceptions, zero console errors.
+- [x] **13 retractions** clicked: Standard, Scroll, Fade Out, Center In, Shatter, Dissolve, Flicker Out, Unravel, Drain, Implode, Evaporate, Spaghettify, Custom Curve. All OK. Zero exceptions.
+- [ ] Visual-distinctness check pending Ken.
+- Label overlap note: "Standard", "Scroll", "Custom Curve" appear in both ignition and retraction lists; my script correctly picks the right one by index.

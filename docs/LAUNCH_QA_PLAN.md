@@ -627,9 +627,9 @@ Claude updates this table as each phase completes.
 | P1 | ✅ | 2026-04-18 | 5 routes loaded, zero console errors. 4 findings; all fixed in-session: P1-001/002 stale version strings (unified via `lib/version.ts`, package.json bumped 0.11.0→0.11.3); P1-003 `/gallery` 404 (added redirect to `/editor?tab=gallery`); P1-004 `?tab=X` URL param ignored (wired to `uiStore.setActiveTab` in editor page). All 4 fixes verified end-to-end via preview_eval. |
 | P2 | ⚠️ | 2026-04-18 | Programmatic checks done. 2 findings logged (P2-001 no docs link on landing, P2-002 stale RELEASE NOTES target). Hero animation unverifiable from preview (RAF throttled under `document.hidden:true`) — Ken's foreground-tab check still pending for T2.1/T2.2/T2.7. |
 | P3 | ⚠️ | 2026-04-18 | Core functional ✓. T3.1 editor loads, T3.3 Ignite works (cyan default blade), T3.4 Retract works. T3.2 (live-data breathes) + T3.5 (zoom visual) unverifiable from preview due to RAF throttling. No defects. |
-| P4 | ⏳ | | |
-| P5 | ⏳ | | |
-| P6 | ⏳ | | |
+| P4 | ✅ | 2026-04-18 | All 29 styles cycled, zero exceptions, zero console errors. Visual distinctness needs Ken's foreground check (RAF throttled in preview). |
+| P5 | ⚠️ | 2026-04-18 | All 14 UI-ribbon effects click cleanly. **FINDING-P5-001:** engine defines 21 effects per CLAUDE.md but UI exposes only 14 — Fragment, Bifurcate, GhostEcho, Splinter, Coronary, GlitchMatrix, Siphon missing from ribbon. T5.2 rapid-fire Clash overlap needs Ken's eye. |
+| P6 | ✅ | 2026-04-18 | All 19 ignitions + 13 retractions clicked without exception or console error. Visual distinctness needs Ken. |
 | P7 | ⏳ | | |
 | P8 | ⏳ | | |
 | P9 | ⏳ | | |
