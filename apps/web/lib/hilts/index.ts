@@ -16,6 +16,13 @@ export {
 export {
   ASSEMBLY_CATALOG,
   allAssemblies,
+  countAssembly,
+  fulcrumPairAssembly,
   getAssembly,
   graflexAssembly,
+  mppAssembly,
+  negotiatorAssembly,
+  renVentAssembly,
+  shotoSageAssembly,
+  zabrakStaffAssembly,
 } from './assemblies';

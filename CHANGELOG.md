@@ -11,12 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path. Current in-flight sprints:
 
-- **v0.11.1 — Design Review Polish Pass** (this release): alert-color
+- **v0.11.1 — Design Review Polish Pass** (shipped): alert-color
   discipline, skeleton + error-state coverage, color-glyph pairing for
   accessibility, CHANGELOG + README assets, housekeeping
-- **v0.11.2 — Color Naming Math** (upcoming): three-tier algorithmic
+- **v0.11.2 — Color Naming Math** (partial): three-tier algorithmic
   naming (landmark + modifier + coordinate-mood) expanding ~120
-  curated names into 1,500+ HSL coverage
+  curated names into 1,500+ HSL coverage. PR #21 merged, polish PR #23
+  in flight
+- **v0.11.3 — Modular Hilt Library** (this release): 33 reusable
+  line-art SVG parts composed into 8 canonical hilt assemblies
+  (Graflex, MPP, Negotiator, Count, Shoto Sage, Vented Crossguard,
+  Staff, Fulcrum), authored across 3 parallel artist-agents on top of
+  a strict-typed composer + `HiltRenderer` with horizontal / vertical
+  orientation. 8 new SVG hilt options added to the editor's `Hilt`
+  picker (marked with ✦)
 - **v0.12.0 — Kyber Crystal Three.js renderer** (upcoming): full 3D
   crystal component with PBR materials, 5 procedural Forms, bleed +
   heal + first-discovery animations, scannable QR embedded, card
@@ -32,6 +40,50 @@ Tracking work on the v1.0 path. Current in-flight sprints:
 
 See `~/.claude/plans/declarative-strolling-dragonfly.md` for the
 orchestration plan that scopes these sprints.
+
+---
+
+## [0.11.3] — 2026-04-17
+
+### Added
+
+- **Modular hilt library** (`apps/web/lib/hilts/`) — a composable
+  parts + assemblies architecture. Every hilt is an ordered stack of
+  discrete parts (emitter, shroud, switch, grip, pommel, accent-ring)
+  that mate via three interface-diameter classes (narrow 1.0",
+  standard 1.25", wide 1.5"). 33 original MIT-licensed line-art SVG
+  parts ship across 5 type directories.
+- **8 canonical assemblies** curated from the parts: `graflex`,
+  `mpp`, `negotiator`, `count`, `shoto-sage`, `ren-vent` (5-part
+  crossguard including the quillon), `zabrak-staff` (double-emitter
+  saberstaff), and `fulcrum-pair` (dual-shoto compact).
+- **`HiltRenderer`** (`apps/web/components/hilt/HiltRenderer.tsx`) —
+  pure React inline SVG renderer with opaque metal-gradient body +
+  line-art detail strokes. Supports `vertical` (emitter up) and
+  `horizontal` (emitter right) orientations via internal viewBox
+  rotation.
+- **Editor integration** — 8 new `✦`-tagged options in the Hilt
+  picker route through the SVG renderer overlay, coexisting with
+  the 9 existing canvas-primitive hilts as a zero-risk addition.
+- **Authoring docs** — `docs/HILT_PART_SPEC.md` (canvas, connectors,
+  palette, file structure) and `docs/HILT_STAGE_2_BRIEFING.md` (the
+  3-agent parallel fan-out plan) define the contribution path for
+  community-PR'd parts.
+
+### Tested
+
+- 18 tests across `hiltComposer.test.ts` and `hiltCatalog.test.ts`
+  — composition stacking, connector strict + permissive modes,
+  emitter tracking, catalog conformance (canvas width 48, connector
+  cx=24), per-part spec validation, and round-trip composition of
+  every shipped assembly.
+
+### Legal
+
+- All shipped SVG parts are original hand-drawn line art, MIT
+  under the same licence as the rest of the project. Reference
+  commercial packs used only on-device during authoring — never
+  redistributed.
 
 ---
 
