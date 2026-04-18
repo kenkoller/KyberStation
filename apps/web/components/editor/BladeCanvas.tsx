@@ -2081,7 +2081,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   }, [config.ledCount, theme]);
 
   // ─── Main render loop (throttled to 2fps when reduced motion is on) ───
-  useAnimationFrame((deltaMs) => {
+  useAnimationFrame((_deltaMs) => {
     const engine = engineRef.current;
     const canvas = canvasRef.current;
     if (!engine || !canvas) return;
@@ -2093,20 +2093,18 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cw = w * dpr;
     const ch = h * dpr;
 
-    // Skip engine updates when paused — keeps last frame frozen
-    const animPaused = useUIStore.getState().animationPaused;
-    if (!animPaused) {
-      engine.update(deltaMs, config);
-    }
+    // Engine update + bladeState sync are driven by useBladeEngine's
+    // global tick loop (saber-visibility fix 2026-04-18) — not here. That
+    // way engine advances correctly even when BladeCanvas isn't mounted
+    // (e.g. 3D mode, fullscreen reveal overlay).
 
-    // FPS tracking
+    // FPS tracking (draw-rate, kept here because it's paint-time specific)
     const now = performance.now();
     fpsFrames.current.push(now);
     while (fpsFrames.current.length > 0 && fpsFrames.current[0]! < now - 1000) {
       fpsFrames.current.shift();
     }
     useBladeStore.getState().setFps(fpsFrames.current.length);
-    useBladeStore.getState().setBladeState(engine.state);
 
     ctx.clearRect(0, 0, cw, ch);
 
@@ -2225,7 +2223,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         drawEditModeOverlay(ctx, bladeHitRef.current);
       }
 
-      drawViewLabel(ctx, viewMode);
+      if (!mobileFullscreen) drawViewLabel(ctx, viewMode);
 
     } else {
       // ══════════════════════════════════════════════════
@@ -2281,7 +2279,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         drawEditModeOverlay(ctx, bladeHitRef.current);
       }
 
-      drawViewLabel(ctx, viewMode);
+      if (!mobileFullscreen) drawViewLabel(ctx, viewMode);
     }
   }, { maxFps: reducedMotion ? 2 : undefined });
 
@@ -2555,51 +2553,53 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             />
           </div>
         )}
-        {/* Zoom controls overlay */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
-          <button
-            onClick={() => setZoom((prevZoom) => {
-              const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
-              const bs = getBaseScale();
-              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-              setPanX(clampPanX(newPanX, newZoom));
-              return newZoom;
-            })}
-            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
-            {zoomDisplayValue}%
-          </span>
-          <button
-            onClick={() => setZoom((prevZoom) => {
-              const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
-              const bs = getBaseScale();
-              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-              setPanX(clampPanX(newPanX, newZoom));
-              return newZoom;
-            })}
-            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-          <button
-            onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
-            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
-            aria-label="Fit blade to panel"
-          >
-            Fit
-          </button>
-        </div>
-        {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles) */}
-        {!panelMode && (
+        {/* Zoom controls overlay — hidden in mobileFullscreen mode (`/m` preset browser) */}
+        {!mobileFullscreen && (
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
+            <button
+              onClick={() => setZoom((prevZoom) => {
+                const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
+                const bs = getBaseScale();
+                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+                setPanX(clampPanX(newPanX, newZoom));
+                return newZoom;
+              })}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
+              {zoomDisplayValue}%
+            </span>
+            <button
+              onClick={() => setZoom((prevZoom) => {
+                const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
+                const bs = getBaseScale();
+                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+                setPanX(clampPanX(newPanX, newZoom));
+                return newZoom;
+              })}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
+              aria-label="Fit blade to panel"
+            >
+              Fit
+            </button>
+          </div>
+        )}
+        {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles; hidden in mobileFullscreen so `/m` stays a clean preset browser) */}
+        {!panelMode && !mobileFullscreen && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
             <button
               onClick={() => useUIStore.getState().toggleAnalyzeMode()}
@@ -2611,10 +2611,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             </button>
           </div>
         )}
-        {/* Blade length label */}
-        <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
-          {bladeLength}" blade
-        </div>
+        {/* Blade length label — hidden in mobileFullscreen to keep the `/m` preset browser clean */}
+        {!mobileFullscreen && (
+          <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
+            {bladeLength}" blade
+          </div>
+        )}
         {/* Panel resize handles (vertical analyze mode only — hidden in panelMode) */}
         {!panelMode && vertical && analyzeMode && viewMode === 'blade' && (
           <>
