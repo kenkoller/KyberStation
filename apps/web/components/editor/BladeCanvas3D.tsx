@@ -170,6 +170,14 @@ function Scene({ hiltGeometry }: SceneProps) {
   const ignitionMs = useBladeStore((s) => s.config.ignitionMs);
   const retractionMs = useBladeStore((s) => s.config.retractionMs);
 
+  // Auto-frame: center the camera on the midpoint of the fully-lit blade+hilt
+  // stack so both the hilt and the tip fit vertically with breathing room.
+  // Stack spans Y = 0 (hilt base) to Y = hiltLength*0.92 + BLADE_FULL_LENGTH (tip).
+  const stackTop = hiltGeometry.hiltLength * 0.92 + BLADE_FULL_LENGTH;
+  const stackBottom = 0;
+  const stackMidY = (stackTop + stackBottom) / 2;
+  const stackHeight = stackTop - stackBottom;
+
   return (
     <>
       {/* Lighting */}
@@ -189,13 +197,13 @@ function Scene({ hiltGeometry }: SceneProps) {
         hiltLength={hiltGeometry.hiltLength}
       />
 
-      {/* Camera controls */}
+      {/* Camera controls — target stack midpoint so full blade fits vertically */}
       <OrbitControls
         makeDefault
         enablePan={false}
-        minDistance={2}
-        maxDistance={12}
-        target={[0, 1.5, 0]}
+        minDistance={stackHeight * 0.6}
+        maxDistance={stackHeight * 3}
+        target={[0, stackMidY, 0]}
         enableDamping
         dampingFactor={0.1}
       />
@@ -224,6 +232,18 @@ interface BladeCanvas3DProps {
 export function BladeCanvas3DInner({ className }: BladeCanvas3DProps) {
   const { selectedHilt, selectHilt } = useHiltSelection();
 
+  // Auto-frame: size camera so the full hilt+blade stack fits vertically.
+  // Stack spans Y=0 → Y=hiltLength*0.92+BLADE_FULL_LENGTH; target the midpoint
+  // and place the camera at a distance that gives ~20% vertical breathing room
+  // at the chosen FOV.
+  const CAMERA_FOV = 40;
+  const stackTop = selectedHilt.hiltLength * 0.92 + BLADE_FULL_LENGTH;
+  const stackMidY = stackTop / 2;
+  const stackHeight = stackTop;
+  const halfFovRad = (CAMERA_FOV / 2) * (Math.PI / 180);
+  // 1.2 factor = 20% breathing room beyond the tip + base.
+  const cameraDistance = (stackHeight * 1.2) / (2 * Math.tan(halfFovRad));
+
   return (
     <div className={`relative w-full h-full flex flex-col ${className ?? ''}`}>
       {/* Hilt selector row */}
@@ -236,7 +256,10 @@ export function BladeCanvas3DInner({ className }: BladeCanvas3DProps) {
       {/* 3D Canvas */}
       <div className="flex-1 min-h-0">
         <Canvas
-          camera={{ position: [0, 2, 5], fov: 40 }}
+          // key forces a remount when the hilt changes so the initial camera
+          // position is reapplied (Canvas bakes camera props on first mount).
+          key={selectedHilt.id}
+          camera={{ position: [0, stackMidY, cameraDistance], fov: CAMERA_FOV }}
           gl={{
             antialias: true,
             alpha: true,
