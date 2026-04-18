@@ -623,7 +623,7 @@ Claude updates this table as each phase completes.
 
 | Phase | Status | Date | Notes |
 |---|---|---|---|
-| P0 | ⏳ | | |
+| P0 | ✅ | 2026-04-18 | typecheck clean · 402 web tests + engine/codegen suites pass · lint placeholder (known-deferred). Hit a stale-node_modules false failure on first run; `pnpm install` recovered. Logged to TESTING_NOTES.md. |
 | P1 | ⏳ | | |
 | P2 | ⏳ | | |
 | P3 | ⏳ | | |

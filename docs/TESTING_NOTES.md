@@ -120,3 +120,17 @@ Testing feedback and bugs. Items marked [x] are fixed; unmarked [ ] are open.
 - [ ] Blade color correct
 - [ ] Effects (clash, lockup, blast) work
 - [ ] Existing presets survive
+
+---
+
+# Launch-Readiness QA Sweep (2026-04-18 onward)
+
+Running per `docs/LAUNCH_QA_PLAN.md`. Bugs tiered as Blocker / Quick / Medium / Large; launch severity as SHIP-BLOCKER / SHIP-WITH-NOTE / POST-LAUNCH.
+
+## P0 — Automated baseline (2026-04-18)
+
+- [x] typecheck: clean (11 tasks, 0 errors)
+- [x] tests: 402 web tests + engine/codegen suites pass (21 web test files)
+- [x] lint: placeholder (eslint not configured — known-deferred per CLAUDE.md)
+
+**Finding (resolved in-session, not a bug):** First typecheck + test run failed with `Cannot find module 'msgpackr'` / `'pako'` / `'qrcode'` / `'bs58'`. Packages ARE declared in `apps/web/package.json` but node_modules was stale. `pnpm install` (added 39, removed 62) recovered. No code change needed. Noting here so future sessions know to run `pnpm install` after every branch-switch involving dependency changes.
