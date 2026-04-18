@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
@@ -433,6 +434,11 @@ function formatRelativeDate(ts: number): string {
 }
 
 function SavePresetModal({ onClose }: { onClose: () => void }) {
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: true,
+    onClose,
+  });
   const config = useBladeStore((s) => s.config);
   const fontName = useAudioFontStore((s) => s.fontName);
   const savePreset = useUserPresetStore((s) => s.savePreset);
@@ -466,21 +472,22 @@ function SavePresetModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-label="Save preset"
+      aria-labelledby="preset-gallery-save-modal-title"
     >
       <div className="bg-bg-secondary border border-border-light rounded-lg shadow-xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-          <h3 className="text-ui-base font-semibold text-text-primary flex items-center gap-1">Save As Preset <HelpTooltip text="Save the current blade style, colors, and all parameters as a reusable preset in your personal collection." /></h3>
+          <h3 id="preset-gallery-save-modal-title" className="text-ui-base font-semibold text-text-primary flex items-center gap-1">Save As Preset <HelpTooltip text="Save the current blade style, colors, and all parameters as a reusable preset in your personal collection." /></h3>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors" aria-label="Close">&times;</button>
         </div>
         <div className="p-4 space-y-3">
           <div>
             <label htmlFor="save-preset-name" className="text-ui-xs text-text-muted block mb-1">Name</label>
-            <input id="save-preset-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-bg-deep border border-border-subtle rounded px-2.5 py-1.5 text-ui-sm text-text-primary focus:outline-none focus:border-accent" autoFocus />
+            <input id="save-preset-name" data-autofocus type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-bg-deep border border-border-subtle rounded px-2.5 py-1.5 text-ui-sm text-text-primary focus:outline-none focus:border-accent" />
             {existingPreset && <p className="text-ui-xs text-yellow-400 mt-0.5">A preset with this name exists.</p>}
           </div>
           <div>

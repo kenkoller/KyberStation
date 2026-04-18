@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import type { ColorblindMode } from '@/stores/accessibilityStore';
+import { useModalDialog } from '@/hooks/useModalDialog';
 
 const COLORBLIND_OPTIONS: Array<{ value: ColorblindMode; label: string; description: string }> = [
   { value: 'none', label: 'None', description: 'Default color palette' },
@@ -12,47 +12,11 @@ const COLORBLIND_OPTIONS: Array<{ value: ColorblindMode; label: string; descript
 ];
 
 export function AccessibilityPanel({ onClose }: { onClose: () => void }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<Element | null>(null);
-
-  // Focus trap: save previous focus, trap Tab within dialog, Escape to close
-  useEffect(() => {
-    previousFocusRef.current = document.activeElement;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const focusables = dialog.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    dialog.addEventListener('keydown', handleKeyDown);
-    return () => {
-      dialog.removeEventListener('keydown', handleKeyDown);
-      (previousFocusRef.current as HTMLElement)?.focus?.();
-    };
-  }, [onClose]);
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: true,
+    onClose,
+  });
 
   const highContrast = useAccessibilityStore((s) => s.highContrast);
   const setHighContrast = useAccessibilityStore((s) => s.setHighContrast);
@@ -71,12 +35,12 @@ export function AccessibilityPanel({ onClose }: { onClose: () => void }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-label="Accessibility settings"
+      aria-labelledby="a11y-panel-title"
     >
       <div className="bg-bg-secondary border border-border-light rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
-          <h2 className="text-ui-lg font-semibold text-text-primary">Accessibility Settings</h2>
+          <h2 id="a11y-panel-title" className="text-ui-lg font-semibold text-text-primary">Accessibility Settings</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors"
@@ -97,6 +61,7 @@ export function AccessibilityPanel({ onClose }: { onClose: () => void }) {
                 id="a11y-high-contrast"
                 role="switch"
                 aria-checked={highContrast}
+                data-autofocus
                 onClick={() => setHighContrast(!highContrast)}
                 className={`relative w-10 h-5 rounded-full transition-colors ${
                   highContrast ? 'bg-accent' : 'bg-bg-deep border border-border-subtle'

@@ -11,6 +11,7 @@ import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { downloadCardTemplate, readCardTemplateFile } from '@/lib/bladeConfigIO';
 import { playUISound } from '@/lib/uiSounds';
 import { toast } from '@/lib/toastManager';
+import { useModalDialog } from '@/hooks/useModalDialog';
 
 function ProfileCard({
   profile,
@@ -676,39 +677,98 @@ export function SaberProfileManager() {
 
       {/* Copy presets modal */}
       {showCopyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setShowCopyModal(null); }}>
-          <div className="bg-bg-secondary border border-border-light rounded-lg shadow-xl w-full max-w-sm mx-4 p-4 space-y-3">
-            <h4 className="text-ui-base font-medium text-text-primary">Copy Presets</h4>
-            {(() => {
-              const source = profiles.find((p) => p.id === showCopyModal);
-              if (!source || source.presetEntries.length === 0) return <p className="text-ui-xs text-text-muted">No presets to copy.</p>;
-              return (
-                <>
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {source.presetEntries.map((entry) => (
-                      <label key={entry.id} className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer hover:bg-bg-surface rounded px-2 py-1">
-                        <input type="checkbox" checked={selectedPresets.has(entry.id)} onChange={() => { const s = new Set(selectedPresets); s.has(entry.id) ? s.delete(entry.id) : s.add(entry.id); setSelectedPresets(s); }} />
-                        {entry.presetName}
-                      </label>
-                    ))}
-                  </div>
-                  <div>
-                    <label htmlFor="copy-target" className="text-ui-xs text-text-muted block mb-1">Copy to:</label>
-                    <select id="copy-target" value={copyTarget} onChange={(e) => setCopyTarget(e.target.value)} className="w-full bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary">
-                      <option value="">Select target saber...</option>
-                      {profiles.filter((p) => p.id !== showCopyModal).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button onClick={handleCopyPresets} disabled={!copyTarget || selectedPresets.size === 0} className="px-3 py-1.5 rounded text-ui-xs font-medium bg-accent-dim border border-accent-border text-accent hover:bg-accent/20 transition-colors disabled:opacity-40">Copy {selectedPresets.size} Preset{selectedPresets.size !== 1 ? 's' : ''}</button>
-                    <button onClick={() => setShowCopyModal(null)} className="px-3 py-1.5 rounded text-ui-xs text-text-muted border border-border-subtle">Cancel</button>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+        <CopyPresetsModal
+          sourceProfileId={showCopyModal}
+          profiles={profiles}
+          selectedPresets={selectedPresets}
+          onTogglePreset={(id) => {
+            const s = new Set(selectedPresets);
+            s.has(id) ? s.delete(id) : s.add(id);
+            setSelectedPresets(s);
+          }}
+          copyTarget={copyTarget}
+          onCopyTargetChange={setCopyTarget}
+          onConfirm={handleCopyPresets}
+          onClose={() => setShowCopyModal(null)}
+        />
       )}
+    </div>
+  );
+}
+
+// ─── Copy Presets Modal ───
+
+function CopyPresetsModal({
+  sourceProfileId,
+  profiles,
+  selectedPresets,
+  onTogglePreset,
+  copyTarget,
+  onCopyTargetChange,
+  onConfirm,
+  onClose,
+}: {
+  sourceProfileId: string;
+  profiles: SaberProfile[];
+  selectedPresets: Set<string>;
+  onTogglePreset: (id: string) => void;
+  copyTarget: string;
+  onCopyTargetChange: (v: string) => void;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: true,
+    onClose,
+  });
+
+  const source = profiles.find((p) => p.id === sourceProfileId);
+  const hasPresets = Boolean(source && source.presetEntries.length > 0);
+
+  return (
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="copy-presets-modal-title"
+    >
+      <div className="bg-bg-secondary border border-border-light rounded-lg shadow-xl w-full max-w-sm mx-4 p-4 space-y-3">
+        <h4 id="copy-presets-modal-title" className="text-ui-base font-medium text-text-primary">Copy Presets</h4>
+        {!hasPresets || !source ? (
+          <p className="text-ui-xs text-text-muted">No presets to copy.</p>
+        ) : (
+          <>
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {source.presetEntries.map((entry) => (
+                <label key={entry.id} className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer hover:bg-bg-surface rounded px-2 py-1">
+                  <input type="checkbox" checked={selectedPresets.has(entry.id)} onChange={() => onTogglePreset(entry.id)} />
+                  {entry.presetName}
+                </label>
+              ))}
+            </div>
+            <div>
+              <label htmlFor="copy-target" className="text-ui-xs text-text-muted block mb-1">Copy to:</label>
+              <select
+                id="copy-target"
+                data-autofocus
+                value={copyTarget}
+                onChange={(e) => onCopyTargetChange(e.target.value)}
+                className="w-full bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary"
+              >
+                <option value="">Select target saber...</option>
+                {profiles.filter((p) => p.id !== sourceProfileId).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-1.5">
+              <button onClick={onConfirm} disabled={!copyTarget || selectedPresets.size === 0} className="px-3 py-1.5 rounded text-ui-xs font-medium bg-accent-dim border border-accent-border text-accent hover:bg-accent/20 transition-colors disabled:opacity-40">Copy {selectedPresets.size} Preset{selectedPresets.size !== 1 ? 's' : ''}</button>
+              <button onClick={onClose} className="px-3 py-1.5 rounded text-ui-xs text-text-muted border border-border-subtle">Cancel</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
