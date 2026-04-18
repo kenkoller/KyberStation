@@ -226,3 +226,17 @@ Current base color at load: `#008CFF` / "Dusk-Bo-Katan Azure" (tier-2 modifier +
     4. 💬 Ask a question / start a discussion
   - All links: `target="_blank"` + `rel="noopener noreferrer"` (security-clean)
 - [ ] **P16-001 (SHIP-WITH-NOTE, worth investigation):** Hydration/layout-bootstrap bug — AppShell sometimes renders MobileShell (detected via `[id^="mobile-tab-"]` presence — 5 mobile-tab IDs) at 1440×900 viewport. `matchMedia('(min-width:1440px)')` reports true but the layout decision was already made earlier. Full-page reload corrects the layout. Possibly `useBreakpoint()` initial SSR state not matching client viewport, combined with AppShell taking the layout branch before the useEffect re-fires. Affected path observed: after `window.location.href = '/editor'` navigation and a `preview_stop → preview_start` cycle. Real users might hit this on first visit or after reload under certain timing. **Recommended next step:** read the SSR'd HTML at 1440 viewport, compare to post-hydration DOM, and either (a) switch AppShell to matchMedia-based decision inside a `useLayoutEffect`, or (b) add a hydration guard.
+
+## P32 — Onboarding / SaberWizard (2026-04-18)
+
+- [x] **First-run Welcome modal appears** after IndexedDB wipe + reload. 4-step flow:
+  1. **WELCOME** — "Let's configure your experience" + GET STARTED + Skip setup
+  2. **VISUAL QUALITY** — FULL / MEDIUM / LITE perf tier selection
+  3. **COCKPIT SOUNDS** — SILENT / SUBTLE / FULL IMMERSION UI-sound tier
+  4. **TYPOGRAPHY** — STANDARD / AUREBESH LABELS / FULL AUREBESH typeface tier
+  Then FINISH → drops into editor with full chrome rendered correctly.
+- [x] **UX quality note:** thematic copy ("COCKPIT SOUNDS", "FULL IMMERSION", "AUREBESH LABELS") is on-brand for the UX North Star hobbyist-instrument register. Not generic-AI / SaaS-default.
+- [x] `✦Wizard` button in header opens a SaberWizard modal.
+- [ ] **P32-001 (SHIP-WITH-NOTE, a11y):** Welcome/onboarding modal container lacks `role="dialog"` and `aria-modal="true"`. Screen reader users won't be informed it's a modal requiring action. Focus-trap behavior also unverified. Fix: add ARIA attributes + focus-trap. Likely the SaberWizard modal has the same issue — verify.
+- [ ] **T32.2 SaberWizard 3-step flow (PENDING-KEN):** my programmatic step-walk didn't cleanly traverse all steps — Ken should walk through manually and confirm archetype → color → vibe produces a complete working preset.
+- [ ] **T32.3 `firstIgnition()` ceremony (PENDING-KEN):** cinematic dim-chrome + ignite + audio + restore sequence — preview RAF throttling makes animation timing unverifiable from here.
