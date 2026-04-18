@@ -160,7 +160,7 @@ Programmatic sweep. `document.hidden: true` in preview mode throttles requestAni
 - [x] **T3.5 (PASS-CLICKABLE):** Zoom-in + Zoom-out buttons exist (`aria-label="Zoom in"` / `"Zoom out"`) and respond to clicks. Visual effect unverifiable from preview since no blade is ignited.
 - [ ] **T3.2 (PENDING-KEN):** "Live-data breathes at rest" — RAF throttled in preview under `document.hidden:true`. Requires foreground-Chrome check.
 - **Note:** Fresh-state (IndexedDB cleared) triggers the 4-step WELCOME onboarding modal. Good UX discovery. Phase 32 will test this flow in detail. For all subsequent phases, I'm using "Skip setup" to reach the editor directly.
-- **THREE.Clock deprecation warning** (minor): console shows `THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` Fire a follow-up to migrate when convenient. Not blocking.
+- **THREE.Clock deprecation warning** (minor, upstream): console shows `THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` Investigated 2026-04-18 on `test/launch-readiness-2026-04-18` — KyberStation source has **zero** `new THREE.Clock()` instantiations in `apps/web/` or `packages/`. The warning originates upstream from `@react-three/fiber@8.18.0` (`events-776716bd.esm.js:1308` does `clock: new THREE.Clock()` in its store setup). No migration possible from our code. Resolution path: wait for R3F to migrate, or upgrade to a future R3F release that uses `THREE.Timer`. Not blocking for launch.
 
 ## P4 — All 29 blade styles (2026-04-18)
 
