@@ -655,7 +655,7 @@ Claude updates this table as each phase completes.
 | P29 | ⏳ | | |
 | P30 | ⏳ | | |
 | P31 | ⏳ | | |
-| P32 | ⏳ | | |
+| P32 | ⚠️ | 2026-04-18 | First-run onboarding walkthrough: `WELCOME → VISUAL QUALITY → COCKPIT SOUNDS → TYPOGRAPHY → editor`. Thematic copy (Aurebesh option, "cockpit" framing) is on-brand per UX North Star §5. Editor chrome renders correctly after FINISH. **FINDING-P32-001 (SHIP-WITH-NOTE, a11y):** Welcome modal container has no `role="dialog"` or `aria-modal="true"` — screen reader users won't be informed it requires action. ✦Wizard button opens SaberWizard modal ✓ (full step-walk via preview was incomplete — Ken should walk it through manually to verify 3-step archetype → color → vibe produces a complete working preset). T32.3 `firstIgnition()` ceremony not verifiable from preview. |
 | P33 | ⏳ | | |
 | P34 | ⏳ | | |
 | P35 | ⏳ | | |
