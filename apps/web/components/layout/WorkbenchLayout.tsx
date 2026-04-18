@@ -539,10 +539,17 @@ export function WorkbenchLayout() {
           { type: 'force',     label: 'Force',     key: 'F' },
           { type: 'shockwave', label: 'Shockwave', key: 'W' },
           { type: 'scatter',   label: 'Scatter',   key: '' },
+          { type: 'fragment',  label: 'Fragment',  key: '' },
           { type: 'ripple',    label: 'Ripple',    key: '' },
           { type: 'freeze',    label: 'Freeze',    key: '' },
           { type: 'overcharge', label: 'Overcharge', key: '' },
+          { type: 'bifurcate', label: 'Bifurcate', key: '' },
           { type: 'invert',    label: 'Invert',    key: '' },
+          { type: 'ghostEcho', label: 'Ghost Echo', key: '' },
+          { type: 'splinter',  label: 'Splinter',  key: '' },
+          { type: 'coronary',  label: 'Coronary',  key: '' },
+          { type: 'glitchMatrix', label: 'Glitch Matrix', key: '' },
+          { type: 'siphon',    label: 'Siphon',    key: '' },
         ] as const).map(({ type, label, key }) => (
           <button
             key={type}

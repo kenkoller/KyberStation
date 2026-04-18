@@ -42,6 +42,13 @@ const ALL_EFFECTS: EffectType[] = [
   'lightning',
   'stab',
   'force',
+  'fragment',
+  'bifurcate',
+  'ghostEcho',
+  'splinter',
+  'coronary',
+  'glitchMatrix',
+  'siphon',
 ];
 
 // Sustained effects stay active until release() is called
