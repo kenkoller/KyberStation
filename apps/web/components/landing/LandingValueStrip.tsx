@@ -7,7 +7,7 @@ interface ValueCellProps {
 function ValueCell({ index, title, detail }: ValueCellProps) {
   return (
     <div
-      className="relative pl-4 md:pl-0 md:border-l-0 border-l"
+      className="relative pl-4 lg:pl-0 lg:border-l-0 border-l"
       style={{ borderLeftColor: 'rgb(var(--accent) / 0.25)' }}
     >
       <div
@@ -29,7 +29,7 @@ function ValueCell({ index, title, detail }: ValueCellProps) {
 export function LandingValueStrip() {
   return (
     <section className="relative border-t border-border-subtle py-16 md:py-24">
-      <div className="max-w-6xl mx-auto px-6 md:px-8 grid md:grid-cols-3 gap-10 md:gap-16">
+      <div className="max-w-6xl mx-auto px-6 md:px-8 grid lg:grid-cols-3 gap-10 lg:gap-16">
         <ValueCell
           index="01 / DESIGN"
           title="WYSIWYG, not config editing"
