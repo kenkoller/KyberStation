@@ -449,7 +449,42 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
-## Current State (2026-04-17)
+## Current State (2026-04-18, end of UX overhaul session)
+
+**Active branch: `test/launch-readiness-2026-04-18` / PR [#31](https://github.com/kenkoller/KyberStation/pull/31) — NOT YET MERGED, awaiting Ken's walkthrough.**
+
+Last git tag: **v0.10.0**. No tag cut since — everything landed on `main` is accumulating behind v0.10.0 awaiting Ken's launch-readiness decision.
+
+### Current session accomplishments (2026-04-18)
+
+- **Phase 1 QA sweep** — 28 of 37 launch-readiness phases. 11 findings fixed inline. `docs/LAUNCH_QA_PLAN.md` is the authoritative plan.
+- **UX overhaul pass** — **25 of 27** UX North Star deferred items shipped across 3 waves. Only #7 (shared DragToScrub primitive) + #16 (full Figma color model) remain, both deferred to future solo sessions because they conflict on ColorPanel edits.
+- **New primitives shipped:** `<CollapsibleSection>`, `useFilenameReveal`, `<RadialGauge>`, `<MobileTabBar>`, `useModalDialog`, `useCommitCeremony`, `historyRestoreFlag`, `<LayerThumbnail>`, modulation-routing type scaffold.
+- **Typography migrated** per §6 to Inter + JetBrains Mono + Orbitron (Orbitron ratified as the third ceremonial face in §5/§6/§8).
+- **Test count:** 538 web tests + 457 engine + 1,323 codegen + 260 boards + presets + sound = **~2,627 passing**. +136 new regression tests this session.
+
+### What's waiting
+
+- **Ken's app walkthrough.** Everything is on the test branch ready for a real-Chrome visual QA pass. Findings from his walk become the next round.
+- **Hardware validation** (P24–P28): WebUSB flash on real Proffieboard V3.9 per `docs/HARDWARE_VALIDATION_TODO.md`. Dedicated session needed.
+- **Deep a11y audit** (P29): VoiceOver walk, WCAG contrast sweep, keyboard-only nav
+- **Perf deep-dive** (P30): LCP / FPS / memory
+- **Cross-browser matrix** (P31): Safari / Firefox / Edge + mobile Safari / mobile Chrome
+- **Launch-triage** (P37): go/no-go after above
+- **2 remaining UX items** (#7, #16) — prompts in `docs/NEXT_SESSIONS.md`
+- **CHANGELOG + version tag** — deliberately deferred; Ken controls this call
+
+### Key session docs for future-Claude (or Ken)
+
+- [`docs/UX_NORTH_STAR.md`](docs/UX_NORTH_STAR.md) — updated this session; Orbitron now the sanctioned third ceremonial face per §5/§6/§8
+- [`docs/UX_OVERHAUL_SUMMARY_2026-04-18.md`](docs/UX_OVERHAUL_SUMMARY_2026-04-18.md) — full session synthesis, all 25 items + their docs references
+- [`docs/NEXT_SESSIONS.md`](docs/NEXT_SESSIONS.md) — ready-to-paste prompts for the 2 remaining items
+- [`docs/LAUNCH_QA_PLAN.md`](docs/LAUNCH_QA_PLAN.md) — 37-phase QA plan with per-phase status
+- [`docs/TESTING_NOTES.md`](docs/TESTING_NOTES.md) — session finding log
+- [`docs/MODULATION_ROUTING_V1.1.md`](docs/MODULATION_ROUTING_V1.1.md) — new this session; v1.1 architecture scoping for math expressions + modulation
+- Per-area audit docs: `UX_OVERHAUL_{LANDING,EDITOR_CORE,COLOR_PRESET_AUDIO,OUTPUT_EXPORT,MOBILE,SABER_VISIBILITY}_2026-04-18.md`
+
+### Pre-session state (legacy context — kept for history)
 
 Last git tag: **v0.10.0**. Multiple feature sprints have landed on
 `main` past that tag:
