@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { MobileTabBar } from '@/components/layout/MobileTabBar';
 import './globals.css';
 
 // UX North Star §6 — Inter for chrome + labels, JetBrains Mono for all data /
@@ -51,11 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         )}
       </head>
-      <body className="bg-bg-primary text-text-primary font-sans antialiased min-h-screen">
+      <body className="bg-bg-primary text-text-primary font-sans antialiased min-h-screen phone:pb-[calc(56px+env(safe-area-inset-bottom))]">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-accent focus:text-white focus:px-4 focus:py-2 focus:rounded">
           Skip to main content
         </a>
         {children}
+        <MobileTabBar />
       </body>
     </html>
   );
