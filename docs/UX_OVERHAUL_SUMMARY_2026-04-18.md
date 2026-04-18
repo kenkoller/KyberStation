@@ -1,8 +1,8 @@
-# UX Overhaul Session Summary — 2026-04-18 (overnight)
+# UX Overhaul Session Summary — 2026-04-18 (overnight + morning continuation)
 
-**Status:** Wave 1 complete. Wave 2 (big design decisions) awaits Ken's morning walkthrough.
+**Status:** 15 of 27 deferred items resolved in-session. 12 remaining items are bigger sprints — next-session prompts in [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md).
 **Branch:** `test/launch-readiness-2026-04-18` · PR [#31](https://github.com/kenkoller/KyberStation/pull/31)
-**UX North Star:** `docs/UX_NORTH_STAR.md` is the rubric.
+**UX North Star:** `docs/UX_NORTH_STAR.md` is the rubric (updated in-session to resolve the §8 ceremonial-display-type question — Orbitron now sanctioned as the third ceremonial face).
 
 ## What was done
 
@@ -45,9 +45,37 @@ Root cause: engine tick loop lived inside `BladeCanvas.tsx`'s `useAnimationFrame
 - Mobile `/editor` blade preview height fixed (120px → min-h-[260px])
 - Mobile header touch targets bumped to 44×44 minimum
 
-## Deferred for Ken's design judgment (NOT fixed)
+## Additional items resolved during Ken's walkthrough (morning continuation)
 
-These are **intentionally not touched** because they're bigger design decisions that deserve your input.
+### Landing polish (items #1-5)
+- **#1 Orbitron wordmark** — sanctioned as the third ceremonial display face. UX North Star §5/§6/§8 updated to reflect the three-face system (Inter + JetBrains Mono + Orbitron).
+- **#2 Dot-matrix subtitle size** — bumped from 8px → 10px globally; landing-hero-specific override to clamp(12px, 1.4vw, 16px). Removed redundant `opacity-70` compound-fade.
+- **#3 Blade bloom halo bug** — `drawPixels` now skips pixels below luminance 8 (stays transparent via clearRect) so CSS drop-shadow doesn't cast around empty-canvas retracts. Removed 600ms filter/background transitions so halo color snaps with preset changes. Side benefit: unstable/crackle blade styles (Kylo) now read cleanly — halo only on bright segments.
+- **#4 Value strip 3-col tightness** — deferred switch from md: (768px) to lg: (1024px). Eliminates the 768-1023px cramped zone.
+- **#5 Release-strip version pill** — left alone per Ken's design call (already minimal + functional).
+
+### Landing hero restructure (Ken's second-look)
+- Removed the "A DAW for your lightsaber." tagline + descriptive paragraph
+- Repositioned "UNIVERSAL · SABER · STYLE · ENGINE" from ABOVE KYBERSTATION to BELOW it
+- Resulting minimalist movie-title-card hierarchy: blade → KYBERSTATION → engine subtitle → CTAs
+
+### Mobile polish (items #22, #23, #25, #26, #27)
+- **#22 PauseButton** — added `touch-target` utility class (44×44 min on mobile, unchanged on desktop)
+- **#23 Mobile editor density** — inline 7-dropdown config bar now hidden at phone breakpoint (was duplicating Design tab)
+- **#25 `/m` "TAP TO IGNITE" hint** — pulsing hint + button animation when blade is off
+- **#26 BROWSE GALLERY border** — added `border-border-subtle` for button-register consistency at 400px
+- **#27 3D camera framing** — auto-frame calculation from hilt+blade stack height; no more top-40% crop
+
+### Motion + primitives (items #13, #18, #20, #21)
+- **#13 + #20 `filenameReveal()`** — new `useFilenameReveal` hook + `<FilenameReveal>` component. CSS-only stagger-in (§7 spec: 400ms ease-out). Applied to CodeOutput hero header + PresetGallery detail h3. Reduced-motion safe.
+- **#18 + #21 `<RadialGauge>`** — shared primitive with 270° arc, tick marks, JetBrains Mono readout, status-tier colors, `criticalStateChange` pulse. Replaces linear bars in StorageBudgetPanel + PowerDrawPanel.
+
+### Navigation (item #24)
+- **#24 `<MobileTabBar>`** — fixed bottom tab bar at phone breakpoint. 4 tabs: Saber (/m), Editor, Gallery, Docs. Hidden at tablet+ and on /m (preserves chrome-free mode). Suspense-wrapped for static-export compatibility. Proper active-state detection including `?tab=gallery` URL param.
+
+## Still deferred — 12 items for next sessions
+
+See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) for ready-to-paste prompts. These are **intentionally not touched** because they're bigger design decisions or feature sprints that deserve dedicated context.
 
 ### Landing (5)
 - Orbitron wordmark (ceremonial carve-out decision — should the "KYBERSTATION" mark stay Orbitron as a cinematic exception?)
@@ -57,36 +85,24 @@ These are **intentionally not touched** because they're bigger design decisions 
 - Release-strip version pill styling
 
 ### Editor core (6)
-- `CollapsibleSection` component referenced by CLAUDE.md but doesn't exist — threading it through ~15 sections is its own sprint
-- Drag-to-scrub infrastructure requires a shared Slider primitive (would unify with ColorPanel's ScrubLabel)
-- Math-expression + modulation routing per §4/§8 is explicitly v1.1
-- LayerStack live per-row thumbnails (needs per-layer offscreen engine render)
-- LayerStack solo/mute (touches layer store + canvas)
-- TimelinePanel ETC Eos-style cue-list (parallel view, not replacement for current)
+- #6 `CollapsibleSection` shared primitive + threading through ~15 sections
+- #7 Drag-to-scrub shared Slider primitive (ColorPanel's ScrubLabel would inform it)
+- #8 Math-expression + modulation routing — explicit v1.1 per §4/§8
+- #9 LayerStack live per-row thumbnails (per-layer offscreen engine render)
+- #10 LayerStack solo/mute/bypass (Ableton device-chain pattern)
+- #11 TimelinePanel ETC Eos cue-list (parallel tabular view)
 
-### Color/Preset/Audio (5)
-- Severance-inverted haptic curve (motion-design decision)
-- BR2049 filename-reveal animation primitive
-- Outer Wilds lineage graph + VCV author/version fields (requires `Preset` type extension)
-- SmoothSwing → LayerStack plate refactor (waits on LayerStack plate API)
-- Full Figma color model (opacity/blend modes on base)
+### Color/Preset/Audio (3)
+- #12 Severance-inverted haptic drag curve (motion-design decision on ColorPanel feel)
+- #14 Preset lineage graph + VCV author/version fields (requires `Preset` type extension)
+- #15 SmoothSwing → LayerStack plate refactor (blocked by #9/#10)
+- #16 Full Figma color model (opacity/blend modes)
 
-### Output/Export (5)
-- Full Scarif physical-slot motion ceremony for CardWriter (big motion design)
-- Returnal radial gauge redesign for StorageBudgetPanel
-- Full SWTOR character-sheet layout for SaberProfileManager (redesign)
-- `filenameReveal()` animation primitive for CodeOutput hero
-- PowerDrawPanel radial gauge rework
+### Output/Export (2)
+- #17 Full Scarif physical-slot motion ceremony for CardWriter (extended motion work)
+- #19 Full SWTOR-inverted character-sheet layout for SaberProfileManager
 
-### Mobile (5)
-- `PauseButton` inner-button size (shared component — needs design-system pass)
-- Mobile editor density (hide the inline 7-dropdown config bar on phone breakpoint)
-- Bottom tab bar for mobile
-- `/m` "Tap Ignite" empty-state affordance
-- `BROWSE GALLERY` CTA border at 400px
-
-### Editor core — 3D view camera framing (from saber-visibility audit)
-- When fully extended, the blade extends above the 3D camera's visible Y range (top ~40% cropped). Design call on framing — not a bug.
+All deferred items have dedicated prompts in [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) ready to paste into new Claude Code sessions.
 
 ## Architecture observations (for future sprints)
 
@@ -94,11 +110,12 @@ These are **intentionally not touched** because they're bigger design decisions 
 
 **`CrystalRevealScene` blade always full** — intentional per the scene's design (the reveal is about zooming INTO the crystal, not watching the blade animate).
 
-## Test state after all changes
+## Test state after all changes (final)
 
 - `pnpm -w typecheck` — 11/11 tasks pass
-- `pnpm -w test` — 428 web tests + 457 engine + 1323 codegen + 260 boards + 40 sound = **~2,508 tests passing**
-- No regressions from any agent
+- `pnpm -w test` — **~2,540+ tests passing** (web test count grew from 402 → 445+ across the session as new regression tests landed: useBreakpoint-hydration (9), undoTracking (4), keyboardShortcuts (10), canonicalDefaultConfigDrift (3), filenameReveal (9), radialGauge (8), plus engine test growth +49 from the 7 newly-exposed effects)
+- No regressions from any agent or commit
+- New primitives shipped with full regression coverage: `useFilenameReveal`, `<RadialGauge>`, `<MobileTabBar>`, `useModalDialog`, `historyRestoreFlag`
 
 ## Per-area deep-dive docs
 
