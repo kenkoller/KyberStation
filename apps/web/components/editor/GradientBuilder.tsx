@@ -1,6 +1,7 @@
 'use client';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 
 interface GradientStop {
   position: number;
@@ -180,32 +181,34 @@ export function GradientBuilder() {
 
   return (
     <div
-      className="space-y-2"
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      <div className="flex items-center justify-between">
-        <h4 className="text-ui-sm text-text-muted uppercase tracking-wider">Gradient Stops</h4>
-        {/* Interpolation mode */}
-        <div className="flex gap-1" role="radiogroup" aria-label="Interpolation mode">
-          {INTERPOLATION_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              role="radio"
-              aria-checked={interpolation === opt.id}
-              onClick={() => updateConfig({ gradientInterpolation: opt.id })}
-              className={`px-1.5 py-0.5 rounded text-ui-xs border transition-colors ${
-                interpolation === opt.id
-                  ? 'bg-accent-dim border-accent-border text-accent'
-                  : 'border-border-subtle text-text-muted hover:text-text-secondary'
-              }`}
-              title={opt.description}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <CollapsibleSection
+        title="Gradient Stops"
+        defaultOpen={true}
+        persistKey="GradientBuilder.stops"
+        headerAccessory={
+          <div className="flex gap-1" role="radiogroup" aria-label="Interpolation mode">
+            {INTERPOLATION_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                role="radio"
+                aria-checked={interpolation === opt.id}
+                onClick={() => updateConfig({ gradientInterpolation: opt.id })}
+                className={`px-1.5 py-0.5 rounded text-ui-xs border transition-colors ${
+                  interpolation === opt.id
+                    ? 'bg-accent-dim border-accent-border text-accent'
+                    : 'border-border-subtle text-text-muted hover:text-text-secondary'
+                }`}
+                title={opt.description}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        }
+      >
 
       {/* Stop color inputs positioned above the bar */}
       <div className="relative h-8">
@@ -303,6 +306,7 @@ export function GradientBuilder() {
       <p className="text-ui-xs text-text-muted">
         Click bar to add stops. Drag stops to reposition. Select + Delete to remove (min 2).
       </p>
+      </CollapsibleSection>
     </div>
   );
 }

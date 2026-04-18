@@ -9,6 +9,7 @@ import { GradientMixer } from './GradientMixer';
 import { BladePainter } from './BladePainter';
 import { ImageScrollPanel } from './ImageScrollPanel';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 
 const BLADE_STYLES = [
   { id: 'stable', label: 'Stable', desc: 'Classic solid blade' },
@@ -204,11 +205,14 @@ export function StylePanel() {
   return (
     <div className="space-y-2">
       {/* Style buttons */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Blade Style
+      <CollapsibleSection
+        title="Blade Style"
+        defaultOpen={true}
+        persistKey="StylePanel.blade-style"
+        headerAccessory={
           <HelpTooltip text="Choose the base animation style. Each style has a unique visual character and may expose its own tunable parameters below." proffie="StylePtr<...>" />
-        </h3>
+        }
+      >
         <div className="max-h-[360px] overflow-y-auto rounded border border-border-subtle">
           <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-1.5 p-1.5">
             {BLADE_STYLES.map((style) => {
@@ -238,15 +242,18 @@ export function StylePanel() {
             })}
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Style-Specific Parameters */}
       {STYLE_PARAMS[config.style] && (
-        <div>
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-            Style Parameters
+        <CollapsibleSection
+          title="Style Parameters"
+          defaultOpen={true}
+          persistKey="StylePanel.style-parameters"
+          headerAccessory={
             <HelpTooltip text="Fine-tune the selected style's behavior. These sliders are specific to the current style — switching styles may show different parameters." />
-          </h3>
+          }
+        >
           <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
             {STYLE_PARAMS[config.style].map((param) => (
               <StyleParamSlider
@@ -265,15 +272,18 @@ export function StylePanel() {
             {config.style === 'painted' && <BladePainter />}
             {config.style === 'imageScroll' && <ImageScrollPanel />}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Colors */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Colors
+      <CollapsibleSection
+        title="Colors"
+        defaultOpen={true}
+        persistKey="StylePanel.colors"
+        headerAccessory={
           <HelpTooltip text="Quick color pickers for base blade and effect trigger colors. For advanced color editing with HSL sliders, harmony wheels, and canon presets, use the full Color Panel." proffie="Rgb<r,g,b>" />
-        </h3>
+        }
+      >
         <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           <ColorPickerRow label="Base" colorKey="baseColor" color={config.baseColor} />
           <ColorPickerRow label="Clash" colorKey="clashColor" color={config.clashColor} />
@@ -294,14 +304,17 @@ export function StylePanel() {
             />
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Core Parameters (brightness, LED count) */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Hardware
+      <CollapsibleSection
+        title="Hardware"
+        defaultOpen={false}
+        persistKey="StylePanel.hardware"
+        headerAccessory={
           <HelpTooltip text="LED brightness and count. These should match your physical blade setup for accurate simulation. See also: Blade Hardware panel for topology and strip config, Power Draw for battery estimates." proffie="MaxLedsPerStrip" />
-        </h3>
+        }
+      >
         <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
           <div className="flex items-center gap-3">
             <label htmlFor="hw-brightness" className="text-ui-xs text-text-secondary w-20 shrink-0">Brightness</label>
@@ -335,7 +348,7 @@ export function StylePanel() {
             </span>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Parameter Bank (quick-access + advanced accordion groups) */}
       <ParameterBank />

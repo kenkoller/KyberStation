@@ -5,6 +5,7 @@ import { usePerformanceTier } from '../../hooks/usePerformanceTier';
 import { useAurebesh } from '../../hooks/useAurebesh';
 import { useUISound } from '../../hooks/useUISound';
 import { resetOnboarding } from '../layout/OnboardingFlow';
+import { CollapsibleSection } from '../shared/CollapsibleSection';
 import type { PerformanceTier } from '../../lib/performanceTier';
 import type { AurebeshMode } from '../../lib/aurebesh';
 import type { UISoundPreset } from '../../lib/uiSounds';
@@ -66,7 +67,11 @@ export function VisualSettingsPanel({ className = '' }: VisualSettingsPanelProps
       </div>
 
       {/* ─── Performance Tier ─── */}
-      <SettingsSection title="VISUAL QUALITY">
+      <CollapsibleSection
+        title="Visual Quality"
+        defaultOpen={true}
+        persistKey="VisualSettings.quality"
+      >
         <div className="flex flex-col gap-1.5">
           <OptionRow
             label="Full"
@@ -110,10 +115,14 @@ export function VisualSettingsPanel({ className = '' }: VisualSettingsPanelProps
         >
           Reset to auto-detect
         </button>
-      </SettingsSection>
+      </CollapsibleSection>
 
       {/* ─── Sound ─── */}
-      <SettingsSection title="COCKPIT SOUNDS">
+      <CollapsibleSection
+        title="Cockpit Sounds"
+        defaultOpen={true}
+        persistKey="VisualSettings.sound"
+      >
         <div className="flex flex-col gap-1.5">
           <OptionRow
             label="Silent"
@@ -134,10 +143,14 @@ export function VisualSettingsPanel({ className = '' }: VisualSettingsPanelProps
             onClick={() => handleSoundChange('full')}
           />
         </div>
-      </SettingsSection>
+      </CollapsibleSection>
 
       {/* ─── Aurebesh ─── */}
-      <SettingsSection title="TYPOGRAPHY">
+      <CollapsibleSection
+        title="Typography"
+        defaultOpen={false}
+        persistKey="VisualSettings.typography"
+      >
         <div className="flex flex-col gap-1.5">
           <OptionRow
             label="Standard"
@@ -158,7 +171,7 @@ export function VisualSettingsPanel({ className = '' }: VisualSettingsPanelProps
             onClick={() => handleAurebeshChange('full')}
           />
         </div>
-      </SettingsSection>
+      </CollapsibleSection>
 
       {/* ─── Reset ─── */}
       <div
@@ -187,29 +200,6 @@ export function VisualSettingsPanel({ className = '' }: VisualSettingsPanelProps
 }
 
 // ─── Sub-components ───
-
-function SettingsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span
-        className="dot-matrix"
-        style={{
-          fontSize: 'calc(8px * var(--font-scale))',
-          opacity: 0.7,
-        }}
-      >
-        {title}
-      </span>
-      {children}
-    </div>
-  );
-}
 
 function OptionRow({
   label,

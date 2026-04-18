@@ -1,6 +1,7 @@
 'use client';
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 
 const EASING_PRESETS = [
   { id: 'linear', label: 'Linear' },
@@ -68,11 +69,14 @@ export function EffectPanel() {
   return (
     <div className="space-y-2">
       {/* Ignition */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Ignition Style
+      <CollapsibleSection
+        title="Ignition Style"
+        defaultOpen={true}
+        persistKey="EffectPanel.ignition"
+        headerAccessory={
           <HelpTooltip text="How the blade extends when activated. Controls the visual transition from off to on." proffie="InOutTrL<TrWipe<300>>" />
-        </h3>
+        }
+      >
         <div className="grid grid-cols-2 gap-1.5">
           {IGNITION_STYLES.map((style) => (
             <button
@@ -209,14 +213,17 @@ export function EffectPanel() {
             </div>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
       {/* Retraction */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Retraction Style
+      <CollapsibleSection
+        title="Retraction Style"
+        defaultOpen={true}
+        persistKey="EffectPanel.retraction"
+        headerAccessory={
           <HelpTooltip text="How the blade retracts when deactivated. Controls the visual transition from on to off." proffie="InOutTrL<..., TrWipeIn<300>>" />
-        </h3>
+        }
+      >
         <div className="grid grid-cols-2 gap-1.5">
           {RETRACTION_STYLES.map((style) => (
             <button
@@ -264,14 +271,17 @@ export function EffectPanel() {
             </div>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
       {/* Duration sliders */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Timing
+      <CollapsibleSection
+        title="Timing"
+        defaultOpen={true}
+        persistKey="EffectPanel.timing"
+        headerAccessory={
           <HelpTooltip text="Duration in milliseconds for ignition and retraction animations. Lower = faster, higher = more dramatic. Typical range: 200-800ms." />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <div className="flex items-center gap-3">
             <label htmlFor="timing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
@@ -306,16 +316,19 @@ export function EffectPanel() {
             </span>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Spatial effects — fine-tune the positions set via canvas Edit Mode */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Spatial Effects
+      <CollapsibleSection
+        title="Spatial Effects"
+        defaultOpen={false}
+        persistKey="EffectPanel.spatial"
+        headerAccessory={
           <HelpTooltip
             text="Positions for lockup and blast effects along the blade. Easier to set by clicking the blade in Edit Mode; these sliders let you dial in exact values."
           />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           {/* Lockup position */}
           <div className="flex items-center gap-3">
@@ -426,17 +439,20 @@ export function EffectPanel() {
             </span>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Preon (ProffieOS 7+) */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Preon
+      <CollapsibleSection
+        title="Preon"
+        defaultOpen={false}
+        persistKey="EffectPanel.preon"
+        headerAccessory={
           <HelpTooltip
             text="Preon plays a short colour flash BEFORE ignition — a charging-up moment that builds anticipation. Requires ProffieOS 7.x."
             proffie="TransitionEffectL<TrConcat<TrInstant, <color>, TrFade<ms>>, EFFECT_PREON>"
           />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <label className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer">
             <input
@@ -504,14 +520,17 @@ export function EffectPanel() {
             </>
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Easing */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Easing Curves
+      <CollapsibleSection
+        title="Easing Curves"
+        defaultOpen={false}
+        persistKey="EffectPanel.easing"
+        headerAccessory={
           <HelpTooltip text="Controls the acceleration profile of ignition/retraction animations. Linear = constant speed. Ease In = starts slow. Ease Out = ends slow. Bounce/Elastic add physical spring effects." proffie="TrEaseX<TrWipe<300>, 5>" />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <div className="flex items-center gap-3">
             <label htmlFor="easing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
@@ -540,14 +559,17 @@ export function EffectPanel() {
             </select>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Dual-Mode Ignition */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Dual-Mode Ignition
+      <CollapsibleSection
+        title="Dual-Mode Ignition"
+        defaultOpen={false}
+        persistKey="EffectPanel.dual-mode"
+        headerAccessory={
           <HelpTooltip text="When enabled, blade angle selects between two different ignition/retraction animations. Tilt up for one, tilt down for another. See also: Motion Simulation panel to test angle values." proffie="TrSelect<BladeAngle<>, TrWipe<>, TrWipeIn<>>" />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           <label className="touch-target flex items-center gap-2 cursor-pointer">
             <input
@@ -634,14 +656,17 @@ export function EffectPanel() {
             </>
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Effect Customization */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Effect Customization
+      <CollapsibleSection
+        title="Effect Customization"
+        defaultOpen={false}
+        persistKey="EffectPanel.customization"
+        headerAccessory={
           <HelpTooltip text="Fine-tune the visual behavior of clash, blast, and stab effects. These settings control location, intensity, count, spread, and depth." />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           {/* Clash controls */}
           <div className="space-y-2">
@@ -723,15 +748,18 @@ export function EffectPanel() {
             </div>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Custom Curve Controls */}
       {(config.ignition === 'custom-curve' || config.retraction === 'custom-curve') && (
-        <div>
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-            Curve Controls
+        <CollapsibleSection
+          title="Curve Controls"
+          defaultOpen={true}
+          persistKey="EffectPanel.curve-controls"
+          headerAccessory={
             <HelpTooltip text="Adjust the cubic Bezier control points to shape the ignition/retraction profile. X controls timing, Y controls intensity." />
-          </h3>
+          }
+        >
           <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             {config.ignition === 'custom-curve' && (
               <div>
@@ -790,15 +818,18 @@ export function EffectPanel() {
               </div>
             )}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Effect log */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Effect Log
+      <CollapsibleSection
+        title="Effect Log"
+        defaultOpen={false}
+        persistKey="EffectPanel.effect-log"
+        headerAccessory={
           <HelpTooltip text="Chronological record of triggered effects during this session. Use keyboard shortcuts or toolbar buttons to trigger effects." />
-        </h3>
+        }
+      >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle max-h-[250px] overflow-y-auto">
           {effectLog.length === 0 ? (
             <p className="text-ui-xs text-text-muted italic">
@@ -817,7 +848,7 @@ export function EffectPanel() {
             </div>
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Keyboard shortcuts */}
       <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle">
