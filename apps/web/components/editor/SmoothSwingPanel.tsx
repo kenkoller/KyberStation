@@ -167,7 +167,7 @@ function SliderRow({ meta, value, onChange }: SliderRowProps) {
           [&::-webkit-slider-thumb]:hover:scale-125"
       />
 
-      <p className="text-[10px] leading-snug text-text-muted mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <p className="text-ui-xs leading-snug text-text-muted mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {meta.hint}
       </p>
     </div>
@@ -205,9 +205,9 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
           Crossfade Preview
         </span>
         {active ? (
-          <span className="text-[10px] font-mono text-accent-secondary">ACTIVE</span>
+          <span className="text-ui-xs font-mono text-accent-secondary">ACTIVE</span>
         ) : (
-          <span className="text-[10px] font-mono text-text-muted/50">SILENT</span>
+          <span className="text-ui-xs font-mono text-text-muted/50">SILENT</span>
         )}
       </div>
 
@@ -215,8 +215,11 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
       <div className="relative h-5 rounded overflow-hidden bg-bg-surface flex">
         {/* Low (swingl) segment */}
         <div
-          className="h-full transition-all duration-75 bg-blue-500/70 flex items-center justify-center"
-          style={{ width: `${lowGain * 100}%` }}
+          className="h-full transition-all duration-75 flex items-center justify-center"
+          style={{
+            width: `${lowGain * 100}%`,
+            background: 'rgb(var(--status-cyan, 56 189 248) / 0.7)',
+          }}
         >
           {lowGain > 0.15 && (
             <span className="text-ui-xs font-mono text-white/90 select-none">L</span>
@@ -240,9 +243,12 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted">
+      <div className="flex items-center gap-3 text-ui-xs font-mono text-text-muted">
         <span className="flex items-center gap-1">
-          <span className="inline-block w-2 h-2 rounded-sm bg-blue-500/70" />
+          <span
+            className="inline-block w-2 h-2 rounded-sm"
+            style={{ background: 'rgb(var(--status-cyan, 56 189 248) / 0.7)' }}
+          />
           swingl (low) {active ? `${Math.round(lowGain * 100)}%` : ''}
         </span>
         <span className="flex items-center gap-1">
@@ -254,10 +260,10 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
       {/* Sim speed slider */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
-          <label className="text-[10px] font-mono text-text-muted">
+          <label className="text-ui-xs font-mono text-text-muted">
             Simulated Swing Speed
           </label>
-          <span className="text-[10px] font-mono tabular-nums text-text-secondary">
+          <span className="text-ui-xs font-mono tabular-nums text-text-secondary">
             {speedPct}%
           </span>
         </div>
@@ -282,25 +288,37 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
           />
           {/* Threshold tick */}
           <div
-            className="absolute top-0 -translate-y-0.5 w-px h-2.5 bg-yellow-400/70 pointer-events-none"
-            style={{ left: `${thresholdNorm * 100}%` }}
+            className="absolute top-0 -translate-y-0.5 w-px h-2.5 pointer-events-none"
+            style={{
+              left: `${thresholdNorm * 100}%`,
+              background: 'rgb(var(--status-warn) / 0.7)',
+            }}
             title="Swing Threshold"
           />
           {/* Accent speed tick */}
           <div
-            className="absolute top-0 -translate-y-0.5 w-px h-2.5 bg-red-400/60 pointer-events-none"
-            style={{ left: `${accentNorm * 100}%` }}
+            className="absolute top-0 -translate-y-0.5 w-px h-2.5 pointer-events-none"
+            style={{
+              left: `${accentNorm * 100}%`,
+              background: 'rgb(var(--status-error) / 0.6)',
+            }}
             title="Accent Swing Speed"
           />
         </div>
 
         <div className="flex items-center gap-3 mt-1 text-ui-xs font-mono text-text-muted/60">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-1.5 h-1.5 bg-yellow-400/70" />
+            <span
+              className="inline-block w-1.5 h-1.5"
+              style={{ background: 'rgb(var(--status-warn) / 0.7)' }}
+            />
             swing threshold
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-1.5 h-1.5 bg-red-400/60" />
+            <span
+              className="inline-block w-1.5 h-1.5"
+              style={{ background: 'rgb(var(--status-error) / 0.6)' }}
+            />
             accent trigger
           </span>
         </div>
@@ -351,20 +369,33 @@ export function SmoothSwingPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-ui-sm font-mono text-text-primary">SmoothSwing</h3>
-          <p className="text-[10px] text-text-muted mt-0.5 leading-snug">
+          <p className="text-ui-xs text-text-muted mt-0.5 leading-snug">
             Crossfades paired swingl/swingh files based on blade speed
           </p>
         </div>
         <button
           onClick={handleReset}
           disabled={!isDirty}
-          className="text-[10px] font-mono px-2 py-1 rounded border border-border-subtle
+          className="text-ui-xs font-mono px-2 py-1 rounded border border-border-subtle
             text-text-muted hover:text-text-secondary hover:border-border-strong
             disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
           Reset
         </button>
       </div>
+
+      {/* ── Preview-only disclosure ── */}
+      <p
+        className="text-ui-xs font-mono leading-snug px-2 py-1 rounded border"
+        style={{
+          color: 'rgb(var(--status-warn) / 0.85)',
+          background: 'rgb(var(--status-warn) / 0.08)',
+          borderColor: 'rgb(var(--status-warn) / 0.3)',
+        }}
+      >
+        Preview only — tune parameters to try them in the crossfade viz.
+        Values are not persisted or exported yet (planned as a LayerStack plate in v1.0).
+      </p>
 
       {/* ── Version selector ── */}
       <div>
@@ -388,7 +419,7 @@ export function SmoothSwingPanel() {
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-text-muted mt-1.5 leading-snug">
+        <p className="text-ui-xs text-text-muted mt-1.5 leading-snug">
           {config.version === 'V2'
             ? 'V2 uses per-pair seamless looping with speed-reactive crossfade. Recommended for all new fonts.'
             : 'V1 uses a simpler gain approach with less smooth transitions. Legacy support only.'}

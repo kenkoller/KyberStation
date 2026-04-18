@@ -215,7 +215,7 @@ function GalleryCard({
       </div>
 
       {/* Compact info row */}
-      <div className="flex items-center gap-2 px-2.5 py-1.5">
+      <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-0">
         {/* Color swatch */}
         <div
           className="w-3 h-3 rounded-full shrink-0 border border-white/10"
@@ -259,6 +259,17 @@ function GalleryCard({
           className="shrink-0"
           label={`${preset.affiliation} affiliation`}
         />
+      </div>
+      {/* Identity subtitle — character + tier for VCV-style browsable attribution */}
+      <div
+        className="flex items-center gap-1.5 px-2.5 pb-1.5 text-ui-xs text-text-muted font-mono truncate"
+        aria-hidden="true"
+      >
+        <span className="truncate">{preset.character}</span>
+        <span className="opacity-40 shrink-0">·</span>
+        <span className="uppercase tracking-wider shrink-0 opacity-70">
+          {preset.tier}
+        </span>
       </div>
     </button>
   );

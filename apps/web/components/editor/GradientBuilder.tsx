@@ -285,7 +285,14 @@ export function GradientBuilder() {
             onClick={() => handleDeleteStop(selectedIndex)}
             disabled={stops.length <= 2}
             aria-label="Delete selected gradient stop"
-            className="text-ui-xs px-1.5 py-0.5 rounded border border-border-subtle text-red-400 hover:bg-red-900/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="text-ui-xs px-1.5 py-0.5 rounded border border-border-subtle disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            style={{ color: 'rgb(var(--status-error))' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgb(var(--status-error) / 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '';
+            }}
           >
             Delete
           </button>

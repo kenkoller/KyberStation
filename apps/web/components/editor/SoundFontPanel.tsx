@@ -215,7 +215,7 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
       <div className="flex items-center justify-between gap-2">
         <div className="text-ui-sm text-text-secondary truncate flex-1 flex items-center gap-1" title={libraryPath}>
           <span className="text-text-muted">Library:</span>{' '}
-          <span className="text-accent font-medium">{libraryPath}</span>
+          <span className="text-accent font-mono font-medium">{libraryPath}</span>
           {libraryFonts.length > 0 && (
             <span className="text-text-muted ml-1">({libraryFonts.length} fonts)</span>
           )}
@@ -369,7 +369,7 @@ function FontLibraryRow({
           className="flex-1 text-left min-w-0"
         >
           <span
-            className={`text-ui-sm truncate block ${isActive ? 'text-accent font-medium' : 'text-text-primary'}`}
+            className={`text-ui-sm font-mono truncate block ${isActive ? 'text-accent font-medium' : 'text-text-primary'}`}
             title={font.name}
           >
             {font.name}
@@ -426,13 +426,13 @@ function FontLibraryRow({
       {/* Expanded details */}
       {isExpanded && (
         <div className="px-2 pb-2 pt-1 border-t border-border-subtle">
-          <div className="grid grid-cols-3 gap-1 text-ui-xs">
+          <div className="grid grid-cols-3 gap-1 text-ui-xs font-mono">
             {Object.entries(font.categories)
               .filter(([, count]) => (count ?? 0) > 0)
               .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))
               .map(([cat, count]) => (
                 <div key={cat} className="flex justify-between bg-bg-deep rounded px-1.5 py-0.5">
-                  <span className="text-text-secondary capitalize">{cat}</span>
+                  <span className="text-text-secondary">{cat}</span>
                   <span className="text-text-muted">{count}</span>
                 </div>
               ))}
@@ -618,7 +618,7 @@ export function SoundFontPanel() {
               ) : fontName ? (
                 <div className="flex items-center justify-between">
                   <span>
-                    <span className="text-accent font-medium">{fontName}</span>
+                    <span className="text-accent font-mono font-medium">{fontName}</span>
                     <span className="text-text-muted"> ({manifest?.files.length ?? 0} files)</span>
                   </span>
                   <button
@@ -689,7 +689,7 @@ export function SoundFontPanel() {
               <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
                 Font Contents
               </h4>
-              <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-1.5 text-ui-sm">
+              <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-1.5 text-ui-sm font-mono">
                 {Object.entries(manifest.categories)
                   .filter(([, count]) => count > 0)
                   .sort(([, a], [, b]) => b - a)
@@ -702,7 +702,7 @@ export function SoundFontPanel() {
                           hasBuffers ? 'bg-bg-deep' : 'bg-bg-deep opacity-50'
                         }`}
                       >
-                        <span className="text-text-secondary capitalize">{category}</span>
+                        <span className="text-text-secondary">{category}</span>
                         <span
                           className={hasBuffers ? '' : 'text-text-muted'}
                           style={hasBuffers ? { color: 'rgb(var(--status-ok))' } : undefined}

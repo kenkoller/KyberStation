@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, type PointerEvent as ReactPointerEvent } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
@@ -129,6 +129,79 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
     g: Math.round(hue2rgb(p, q, h) * 255),
     b: Math.round(hue2rgb(p, q, h - 1/3) * 255),
   };
+}
+
+// ─── Blender-style drag-to-scrub label ───
+// Horizontal pointer drag on the label nudges the numeric value by `step` per
+// pixel; Shift = 10×, Alt = 0.1×. Keeps the native <input type="range"> for
+// keyboard + screen readers so we don't regress accessibility while adding
+// the "feels right" haptic scrub §4 calls for.
+
+function ScrubLabel({
+  htmlFor,
+  text,
+  value,
+  min,
+  max,
+  step = 1,
+  onScrub,
+  className = '',
+}: {
+  htmlFor: string;
+  text: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onScrub: (next: number) => void;
+  className?: string;
+}) {
+  const stateRef = useRef<{ startX: number; startValue: number; pointerId: number } | null>(null);
+
+  const handlePointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLLabelElement>) => {
+      if (e.button !== 0) return;
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+      stateRef.current = { startX: e.clientX, startValue: value, pointerId: e.pointerId };
+    },
+    [value],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: ReactPointerEvent<HTMLLabelElement>) => {
+      const s = stateRef.current;
+      if (!s || s.pointerId !== e.pointerId) return;
+      const dx = e.clientX - s.startX;
+      const multiplier = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
+      const delta = dx * step * multiplier;
+      const next = Math.min(max, Math.max(min, s.startValue + delta));
+      onScrub(next);
+    },
+    [min, max, step, onScrub],
+  );
+
+  const handlePointerUp = useCallback((e: ReactPointerEvent<HTMLLabelElement>) => {
+    const s = stateRef.current;
+    if (s && s.pointerId === e.pointerId) {
+      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+      stateRef.current = null;
+    }
+  }, []);
+
+  return (
+    <label
+      htmlFor={htmlFor}
+      title={`Drag to scrub (Shift 10×, Alt 0.1×). Click input to type.`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className={`font-mono cursor-ew-resize select-none touch-none ${className}`}
+      style={{ touchAction: 'none' }}
+    >
+      {text}
+    </label>
+  );
 }
 
 // ─── Color channel names ───
@@ -290,12 +363,12 @@ export function ColorPanel() {
           title="Top: picker (sRGB). Bottom: as-on-blade (Neopixel + polycarbonate diffusion approximation)."
         >
           <div
-            className="w-14 h-7 rounded-t-lg border border-white/10"
+            className="w-14 h-7 rounded-t-sm border border-white/10"
             style={{ backgroundColor: rgbToHex(activeColor.r, activeColor.g, activeColor.b) }}
             aria-label="Picker colour (sRGB)"
           />
           <div
-            className="w-14 h-7 rounded-b-lg border border-white/10"
+            className="w-14 h-7 rounded-b-sm border border-white/10"
             style={{
               backgroundColor: neopixelRgbToHex(srgbToNeopixelPreview(activeColor)),
             }}
@@ -359,7 +432,16 @@ export function ColorPanel() {
         <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
           {/* Hue */}
           <div className="flex items-center gap-2">
-            <label htmlFor="hsl-hue" className="text-ui-sm text-text-secondary w-6">H</label>
+            <ScrubLabel
+              htmlFor="hsl-hue"
+              text="H"
+              value={hsl.h}
+              min={0}
+              max={360}
+              step={1}
+              onScrub={(v) => handleHSLChange('h', Math.round(v))}
+              className="text-ui-sm text-text-secondary w-6"
+            />
             <input
               id="hsl-hue"
               type="range"
@@ -377,7 +459,16 @@ export function ColorPanel() {
 
           {/* Saturation */}
           <div className="flex items-center gap-2">
-            <label htmlFor="hsl-saturation" className="text-ui-sm text-text-secondary w-6">S</label>
+            <ScrubLabel
+              htmlFor="hsl-saturation"
+              text="S"
+              value={hsl.s}
+              min={0}
+              max={100}
+              step={0.5}
+              onScrub={(v) => handleHSLChange('s', Math.round(v))}
+              className="text-ui-sm text-text-secondary w-6"
+            />
             <input
               id="hsl-saturation"
               type="range"
@@ -392,7 +483,16 @@ export function ColorPanel() {
 
           {/* Lightness */}
           <div className="flex items-center gap-2">
-            <label htmlFor="hsl-lightness" className="text-ui-sm text-text-secondary w-6">L</label>
+            <ScrubLabel
+              htmlFor="hsl-lightness"
+              text="L"
+              value={hsl.l}
+              min={0}
+              max={100}
+              step={0.5}
+              onScrub={(v) => handleHSLChange('l', Math.round(v))}
+              className="text-ui-sm text-text-secondary w-6"
+            />
             <input
               id="hsl-lightness"
               type="range"
@@ -416,7 +516,16 @@ export function ColorPanel() {
         <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
           {(['r', 'g', 'b'] as const).map((ch) => (
             <div key={ch} className="flex items-center gap-2">
-              <label htmlFor={`rgb-${ch}`} className="text-ui-sm text-text-secondary w-6 uppercase">{ch}</label>
+              <ScrubLabel
+                htmlFor={`rgb-${ch}`}
+                text={ch.toUpperCase()}
+                value={activeColor[ch]}
+                min={0}
+                max={255}
+                step={1}
+                onScrub={(v) => handleRGBChange(ch, Math.round(v))}
+                className="text-ui-sm text-text-secondary w-6"
+              />
               <input
                 id={`rgb-${ch}`}
                 type="range"

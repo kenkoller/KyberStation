@@ -21,6 +21,7 @@ import {
 import type { Preset, Era, Affiliation } from '@kyberstation/presets';
 import { PanelSkeleton } from '@/components/shared/Skeleton';
 import { ErrorState } from '@/components/shared/ErrorState';
+import { affiliationColor } from '@/lib/factionStyles';
 
 const ERA_OPTIONS: Array<{ id: Era | 'all'; label: string; count: number }> = [
   { id: 'all', label: 'All Eras', count: ALL_PRESETS.length },
@@ -145,18 +146,17 @@ function PresetCard({
           {preset.config.ignitionMs}ms
         </div>
 
+        {/* Identity subtitle — character + tier */}
+        <div className="text-ui-xs text-text-muted/70 font-mono mt-0.5 truncate">
+          {preset.character} <span className="opacity-40">·</span>{' '}
+          <span className="uppercase tracking-wider">{preset.tier}</span>
+        </div>
+
         {/* Affiliation + Add to list */}
         <div className="flex items-center justify-between mt-1">
           <div
-            className={`text-ui-xs font-medium uppercase tracking-wider ${
-              preset.affiliation === 'jedi'
-                ? 'text-blue-400'
-                : preset.affiliation === 'sith'
-                  ? 'text-red-400'
-                  : preset.affiliation === 'neutral'
-                    ? 'text-purple-400'
-                    : 'text-text-muted'
-            }`}
+            className="text-ui-xs font-medium uppercase tracking-wider"
+            style={{ color: affiliationColor(preset.affiliation) }}
           >
             {preset.affiliation}
           </div>
