@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { RadialGauge } from '@/components/shared/RadialGauge';
 
 // ─── Power Constants ───
 
@@ -98,12 +99,13 @@ export function PowerDrawPanel() {
     };
   }, [ledCount, stripType, stripCount, baseColor, briScale, batteryIdx]);
 
-  // Visual intensity — how full is the power gauge. Tokenised to the
-  // global status palette so the aviation R/G/B semantic reads the same
-  // across all 30 themes.
-  const gaugePercent = Math.min(100, (stats.colorMA / BOARD_MAX_MA) * 100);
-  const gaugeTokenVar =
-    gaugePercent > 80 ? '--status-error' : gaugePercent > 50 ? '--status-warn' : '--status-ok';
+  // Convert mA → A for the radial gauge. The existing warn/critical
+  // boundaries (50% / 80% of the 5A board max) translate to 2.5A / 4A
+  // thresholds on the amp scale, so behaviour matches the old bar gauge.
+  const drawAmps = stats.colorMA / 1000;
+  const budgetAmps = BOARD_MAX_MA / 1000;
+  const warnAmps = budgetAmps * 0.50;
+  const criticalAmps = budgetAmps * 0.80;
 
   return (
     <div className="space-y-3">
@@ -112,36 +114,27 @@ export function PowerDrawPanel() {
         <HelpTooltip text="Estimated LED power consumption based on your blade configuration, current color, and brightness. WS2812B LEDs draw up to 60mA per LED at full white. Proffieboard V3.9 supports up to 5A continuous. See also: Blade Hardware panel for LED count and strip config." proffie="maxLedsPerStrip / PowerPINS<>" />
       </h3>
 
-      {/* Main power gauge */}
-      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-2">
-        <div className="flex items-baseline justify-between">
-          <span className="text-ui-sm text-text-secondary">Current Draw</span>
-          <span
-            className="text-lg font-bold font-mono tabular-nums"
-            style={{ color: `rgb(var(${gaugeTokenVar}))` }}
-          >
+      {/* Radial integrity gauge — same treatment as the Storage Budget
+          panel so the two status-critical panels read as a pair. */}
+      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle flex items-center gap-4">
+        <RadialGauge
+          value={drawAmps}
+          max={budgetAmps}
+          unit="A"
+          label="POWER"
+          tiers={{ warn: warnAmps, critical: criticalAmps }}
+          glyphPairing
+          size={120}
+          pulseOnThresholdCrossing
+        />
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="text-ui-sm text-text-secondary">Current Draw</div>
+          <div className="text-lg font-bold font-mono tabular-nums text-text-primary">
             {stats.colorMA.toLocaleString()} mA
-          </span>
-        </div>
-        <div
-          className="h-3 bg-bg-deep rounded-full overflow-hidden"
-          role="progressbar"
-          aria-valuenow={Math.round(gaugePercent)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Power draw gauge"
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${gaugePercent}%`,
-              background: `rgb(var(${gaugeTokenVar}))`,
-            }}
-          />
-        </div>
-        <div className="flex justify-between text-ui-xs text-text-muted">
-          <span>0 mA</span>
-          <span>{BOARD_MAX_MA.toLocaleString()} mA max</span>
+          </div>
+          <div className="text-ui-xs text-text-muted">
+            of {BOARD_MAX_MA.toLocaleString()} mA max ({budgetAmps.toFixed(0)}A)
+          </div>
         </div>
       </div>
 
