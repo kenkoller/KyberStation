@@ -218,7 +218,8 @@ export function StylePanel() {
                   key={style.id}
                   onClick={() => { playUISound('button-click'); setStyle(style.id); playUISound('success'); }}
                   title={style.desc}
-                  className={`text-left px-2 py-1 rounded text-ui-xs transition-colors border-l-[3px] border-r border-t border-b ${
+                  aria-pressed={isActive}
+                  className={`touch-target text-left px-2 py-1.5 rounded text-ui-sm transition-colors border-l-[3px] border-r border-t border-b ${
                     isActive
                       ? 'border-l-accent bg-accent-dim border-r-accent-border border-t-accent-border border-b-accent-border text-accent'
                       : 'border-l-transparent bg-bg-surface border-r-border-subtle border-t-border-subtle border-b-border-subtle text-text-secondary hover:text-text-primary hover:border-l-border-light'
@@ -230,7 +231,7 @@ export function StylePanel() {
                       baseColor={config.baseColor}
                       gradientEnd={config.gradientEnd}
                     />
-                    <span className="font-medium text-ui-base">{style.label}</span>
+                    <span className="font-medium truncate">{style.label}</span>
                   </div>
                 </button>
               );

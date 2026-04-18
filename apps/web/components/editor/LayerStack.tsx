@@ -521,7 +521,7 @@ function LayerRow({
               moveLayer(layer.id, 'up');
             }}
             disabled={!canMoveUp}
-            className={`text-ui-xs leading-none px-0.5 ${
+            className={`touch-target text-ui-xs leading-none px-1 ${
               canMoveUp
                 ? 'text-text-muted hover:text-accent'
                 : 'text-text-muted/20 cursor-default'
@@ -537,7 +537,7 @@ function LayerRow({
               moveLayer(layer.id, 'down');
             }}
             disabled={!canMoveDown}
-            className={`text-ui-xs leading-none px-0.5 ${
+            className={`touch-target text-ui-xs leading-none px-1 ${
               canMoveDown
                 ? 'text-text-muted hover:text-accent'
                 : 'text-text-muted/20 cursor-default'
@@ -555,7 +555,7 @@ function LayerRow({
             e.stopPropagation();
             toggleVisibility(layer.id);
           }}
-          className={`text-ui-xs shrink-0 w-5 text-center transition-colors ${
+          className={`touch-target text-ui-sm shrink-0 w-5 text-center transition-colors ${
             layer.visible ? 'text-text-secondary hover:text-accent' : 'text-text-muted/30'
           }`}
           title={layer.visible ? 'Hide layer' : 'Show layer'}
@@ -617,7 +617,7 @@ function LayerRow({
             e.stopPropagation();
             duplicateLayer(layer.id);
           }}
-          className="text-ui-sm text-text-muted/50 hover:text-accent transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+          className="touch-target text-ui-sm text-text-muted/50 hover:text-accent focus:opacity-100 transition-colors opacity-0 group-hover:opacity-100 shrink-0 w-5"
           title="Duplicate layer"
           aria-label="Duplicate layer"
         >
@@ -630,7 +630,7 @@ function LayerRow({
             e.stopPropagation();
             removeLayer(layer.id);
           }}
-          className="text-ui-sm text-text-muted/50 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+          className="touch-target text-ui-sm text-text-muted/50 hover:text-red-400 focus:opacity-100 transition-colors opacity-0 group-hover:opacity-100 shrink-0 w-5"
           title="Remove layer"
           aria-label="Remove layer"
         >
@@ -674,18 +674,23 @@ export function LayerStack() {
     <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-ui-xs text-text-muted uppercase tracking-wider flex items-center gap-1">
-          {layers.length} layer{layers.length !== 1 ? 's' : ''} /{' '}
-          <span className="text-accent font-mono">Layers&lt;&gt;</span>
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
+          Layer Stack
           <HelpTooltip text="Stack multiple visual layers to compose complex blade styles. Base layers provide the primary look, Effect layers add combat reactions, Accent layers create tip/hilt highlights, and Mix layers blend two styles. Order matters: top layers render on top. See also: Color Panel for per-layer colors." proffie="Layers<base, BlastL<>, SimpleClashL<>, ...>" />
+        </h3>
+        <span className="text-ui-xs text-text-muted tabular-nums" aria-live="polite">
+          {layers.length} layer{layers.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Layer list */}
       <div className="space-y-1">
         {displayLayers.length === 0 && (
-          <div className="text-ui-sm text-text-muted italic text-center py-4">
-            No layers. Add a base layer to get started.
+          <div className="flex flex-col items-center justify-center gap-1.5 py-4 px-3 rounded border border-dashed border-border-subtle/60 bg-bg-surface/40">
+            <span className="text-ui-sm text-text-secondary font-medium">No layers yet</span>
+            <span className="text-ui-xs text-text-muted text-center max-w-[240px] leading-relaxed">
+              Start with a Base layer, then stack Effect / Accent / Mix layers on top to compose.
+            </span>
           </div>
         )}
         {displayLayers.map((layer) => (
@@ -711,7 +716,7 @@ export function LayerStack() {
       {/* Selected layer config */}
       {selectedLayerId && (
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle mt-2">
-          <h4 className="text-ui-xs text-accent uppercase tracking-wider font-semibold mb-2 flex items-center gap-1">
+          <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
             Layer Config
             <HelpTooltip text="Settings specific to the selected layer. Base layers choose a style, Effect layers pick a trigger type (clash, blast, etc.), Accent layers set position along the blade, and Mix layers blend two styles with a ratio." />
           </h4>

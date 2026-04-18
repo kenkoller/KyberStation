@@ -102,7 +102,7 @@ export function EffectPanel() {
               Full extend (blade always reaches full length)
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Flicker Count</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Flicker Count</span>
               <input
                 type="range" min={5} max={60} step={1}
                 value={(config.stutterCount as number | undefined) ?? 30}
@@ -115,7 +115,7 @@ export function EffectPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Amplitude</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Amplitude</span>
               <input
                 type="range" min={1} max={30} step={1}
                 value={(config.stutterAmplitude as number | undefined) ?? 10}
@@ -133,7 +133,7 @@ export function EffectPanel() {
         {config.ignition === 'glitch' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Density</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Density</span>
               <input
                 type="range" min={1} max={20} step={1}
                 value={(config.glitchDensity as number | undefined) ?? 3}
@@ -146,7 +146,7 @@ export function EffectPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Intensity</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Intensity</span>
               <input
                 type="range" min={10} max={100} step={5}
                 value={(config.glitchIntensity as number | undefined) ?? 100}
@@ -164,7 +164,7 @@ export function EffectPanel() {
         {config.ignition === 'spark' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Spark Size</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Spark Size</span>
               <input
                 type="range" min={1} max={15} step={1}
                 value={(config.sparkSize as number | undefined) ?? 5}
@@ -177,7 +177,7 @@ export function EffectPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Trail</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Trail</span>
               <input
                 type="range" min={1} max={20} step={1}
                 value={(config.sparkTrail as number | undefined) ?? 5}
@@ -195,7 +195,7 @@ export function EffectPanel() {
         {config.ignition === 'wipe' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Softness</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Softness</span>
               <input
                 type="range" min={1} max={20} step={1}
                 value={(config.wipeSoftness as number | undefined) ?? 3}
@@ -237,7 +237,7 @@ export function EffectPanel() {
         {config.retraction === 'shatter' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Fragment Size</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Fragment Size</span>
               <input
                 type="range" min={5} max={50} step={1}
                 value={(config.shatterScale as number | undefined) ?? 20}
@@ -250,7 +250,7 @@ export function EffectPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Fade Speed</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Fade Speed</span>
               <input
                 type="range" min={10} max={100} step={5}
                 value={(config.shatterDimSpeed as number | undefined) ?? 100}
@@ -647,7 +647,7 @@ export function EffectPanel() {
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Clash</span>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Location</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Location</span>
               <input
                 type="range" min={0} max={100} step={1}
                 value={(config.clashLocation as number | undefined) ?? 50}
@@ -660,7 +660,7 @@ export function EffectPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Intensity</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Intensity</span>
               <input
                 type="range" min={0} max={100} step={1}
                 value={(config.clashIntensity as number | undefined) ?? 75}
@@ -678,7 +678,7 @@ export function EffectPanel() {
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Blast</span>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Count</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Count</span>
               <input
                 type="range" min={1} max={5} step={1}
                 value={(config.blastCount as number | undefined) ?? 1}
@@ -691,7 +691,7 @@ export function EffectPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Spread</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Spread</span>
               <input
                 type="range" min={0} max={100} step={1}
                 value={(config.blastSpread as number | undefined) ?? 50}
@@ -709,7 +709,7 @@ export function EffectPanel() {
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Stab</span>
             <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-20 shrink-0">Depth</span>
+              <span className="text-ui-xs text-text-muted w-28 shrink-0">Depth</span>
               <input
                 type="range" min={0} max={100} step={1}
                 value={(config.stabDepth as number | undefined) ?? 80}
