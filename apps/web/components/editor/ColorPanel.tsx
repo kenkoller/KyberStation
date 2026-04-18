@@ -132,10 +132,121 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
 }
 
 // ─── Blender-style drag-to-scrub label ───
-// Horizontal pointer drag on the label nudges the numeric value by `step` per
-// pixel; Shift = 10×, Alt = 0.1×. Keeps the native <input type="range"> for
-// keyboard + screen readers so we don't regress accessibility while adding
-// the "feels right" haptic scrub §4 calls for.
+// Horizontal pointer drag on the label nudges the numeric value. Modifiers
+// bypass the curve entirely (Shift = 10× linear, Alt = 0.1× linear). For the
+// default (no-modifier) drag we apply a "Severance-inverted" piecewise cubic
+// curve (see `severanceDragCurve` below) so small movements feel precise and
+// large movements accelerate — the haptic "feels right" scrub §4 of the
+// UX North Star calls for. Keeps the native <input type="range"> for keyboard
+// + screen reader users so we don't regress accessibility.
+
+// Zone boundaries in CSS pixels of horizontal drag distance from pointerdown.
+// Tuned against NEXT_SESSIONS.md §12:
+//   |dx| < FINE_ZONE_PX               → fine-step  (~0.25×)
+//   FINE_ZONE_PX ≤ |dx| < NORMAL_ZONE_PX → smooth ramp to 1×
+//   |dx| ≥ NORMAL_ZONE_PX             → smooth ramp up to 1.5× accelerated
+export const FINE_ZONE_PX = 4;
+export const NORMAL_ZONE_PX = 16;
+const FINE_MULT = 0.25;
+const NORMAL_MULT = 1;
+const ACCEL_MULT = 1.5;
+// The "accelerated zone" saturates near this drag distance so value growth
+// stays bounded-rate for very long drags instead of running away cubically.
+const ACCEL_SATURATION_PX = 64;
+
+// Definite integral of smoothstep s(t) = 3t² - 2t³ from 0 to t, clamped.
+//   S(t) = t³ - t⁴/2
+// Mean of smoothstep over [0,1] is S(1) = 0.5 — so blending linearly
+// between two multiplier values via a smoothstep-weighted integral gives
+// the same total travel as using the midpoint as an average. That's the
+// analytic identity that keeps the piecewise curve continuous.
+function smoothstepIntegral(t: number): number {
+  if (t <= 0) return 0;
+  if (t >= 1) return 0.5;
+  return t * t * t - (t * t * t * t) / 2;
+}
+
+/**
+ * Severance-inverted drag curve: maps a signed horizontal delta (pixels) to
+ * a scaled delta (pixels). The scaled result is later multiplied by `step`
+ * to produce the value change to apply to the numeric field.
+ *
+ * Conceptually this is the antiderivative of a piecewise slope function:
+ *   slope(|dx|) = 0.25×                              for |dx| ≤ 4
+ *   slope(|dx|) = 0.25 + 0.75·smoothstep(t₂)         for 4 < |dx| ≤ 16
+ *   slope(|dx|) = 1.0  + 0.5 ·smoothstep(t₃)         for 16 < |dx| ≤ 64
+ *   slope(|dx|) = 1.5×                               for |dx| > 64
+ * where t₂, t₃ are the normalized position inside each zone.
+ *
+ * The returned value is the integral of that slope from 0 to |dx|, signed
+ * to match `dx`. By construction this is:
+ *   - curve(0) = 0, odd-symmetric
+ *   - Monotonically non-decreasing in |dx|
+ *   - C⁰-continuous at zone boundaries (value matches)
+ *   - C¹-continuous at zone boundaries (slope matches — smoothstep has
+ *     zero derivatives at its endpoints, so the slope ramp blends smoothly
+ *     into the linear caps on either side)
+ */
+export function severanceDragCurve(dx: number): number {
+  const sign = dx < 0 ? -1 : 1;
+  const abs = Math.abs(dx);
+
+  // Zone 1: pure fine-step linear.
+  if (abs <= FINE_ZONE_PX) {
+    return sign * abs * FINE_MULT;
+  }
+  const zone1EndValue = FINE_ZONE_PX * FINE_MULT; // = 1.0 @ 4px × 0.25
+
+  // Zone 2: slope = FINE_MULT + (NORMAL_MULT - FINE_MULT) · smoothstep(t)
+  // where t = (abs - FINE_ZONE_PX) / zone2Span.
+  const zone2Span = NORMAL_ZONE_PX - FINE_ZONE_PX; // 12
+  if (abs <= NORMAL_ZONE_PX) {
+    const travel = abs - FINE_ZONE_PX;
+    const t = travel / zone2Span;
+    // Integral of the blended slope over [0, travel]:
+    //   = FINE_MULT · travel + (NORMAL_MULT - FINE_MULT) · zone2Span · S(t)
+    const blendedIntegral =
+      FINE_MULT * travel +
+      (NORMAL_MULT - FINE_MULT) * zone2Span * smoothstepIntegral(t);
+    return sign * (zone1EndValue + blendedIntegral);
+  }
+  // End of zone 2: use S(1) = 0.5 exactly.
+  const zone2EndValue =
+    zone1EndValue +
+    FINE_MULT * zone2Span +
+    (NORMAL_MULT - FINE_MULT) * zone2Span * 0.5;
+  // = 1 + 0.25·12 + 0.75·12·0.5 = 1 + 3 + 4.5 = 8.5
+
+  // Zone 3: slope ramps smoothly from NORMAL_MULT → ACCEL_MULT.
+  const zone3Span = ACCEL_SATURATION_PX - NORMAL_ZONE_PX; // 48
+  if (abs <= ACCEL_SATURATION_PX) {
+    const travel = abs - NORMAL_ZONE_PX;
+    const t = travel / zone3Span;
+    const blendedIntegral =
+      NORMAL_MULT * travel +
+      (ACCEL_MULT - NORMAL_MULT) * zone3Span * smoothstepIntegral(t);
+    return sign * (zone2EndValue + blendedIntegral);
+  }
+  // End of zone 3: S(1) = 0.5 again.
+  const zone3EndValue =
+    zone2EndValue +
+    NORMAL_MULT * zone3Span +
+    (ACCEL_MULT - NORMAL_MULT) * zone3Span * 0.5;
+  // = 8.5 + 1.0·48 + 0.5·48·0.5 = 8.5 + 48 + 12 = 68.5
+
+  // Zone 4: saturated linear at ACCEL_MULT.
+  return sign * (zone3EndValue + (abs - ACCEL_SATURATION_PX) * ACCEL_MULT);
+}
+
+// Classify a drag distance into a discrete zone for boundary-crossing haptics.
+// Not exported directly to components — used only by the internal vibrate hint.
+export type ScrubZone = 'fine' | 'normal' | 'accel';
+export function scrubZoneFor(dx: number): ScrubZone {
+  const abs = Math.abs(dx);
+  if (abs < FINE_ZONE_PX) return 'fine';
+  if (abs < NORMAL_ZONE_PX) return 'normal';
+  return 'accel';
+}
 
 function ScrubLabel({
   htmlFor,
@@ -156,13 +267,23 @@ function ScrubLabel({
   onScrub: (next: number) => void;
   className?: string;
 }) {
-  const stateRef = useRef<{ startX: number; startValue: number; pointerId: number } | null>(null);
+  const stateRef = useRef<{
+    startX: number;
+    startValue: number;
+    pointerId: number;
+    lastZone: ScrubZone;
+  } | null>(null);
 
   const handlePointerDown = useCallback(
     (e: ReactPointerEvent<HTMLLabelElement>) => {
       if (e.button !== 0) return;
       (e.currentTarget as Element).setPointerCapture(e.pointerId);
-      stateRef.current = { startX: e.clientX, startValue: value, pointerId: e.pointerId };
+      stateRef.current = {
+        startX: e.clientX,
+        startValue: value,
+        pointerId: e.pointerId,
+        lastZone: 'fine',
+      };
     },
     [value],
   );
@@ -172,8 +293,43 @@ function ScrubLabel({
       const s = stateRef.current;
       if (!s || s.pointerId !== e.pointerId) return;
       const dx = e.clientX - s.startX;
-      const multiplier = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
-      const delta = dx * step * multiplier;
+
+      // Modifiers bypass the curve entirely — users reach for Shift / Alt
+      // precisely when they want deterministic linear scrubbing.
+      let scaledPixels: number;
+      if (e.shiftKey) {
+        scaledPixels = dx * 10;
+      } else if (e.altKey) {
+        scaledPixels = dx * 0.1;
+      } else {
+        scaledPixels = severanceDragCurve(dx);
+
+        // Zone-boundary haptic hint. Feature-detected, reduced-motion aware.
+        // Only fires in the default (no-modifier) curve path — Shift/Alt are
+        // explicit user overrides that shouldn't buzz.
+        const zone = scrubZoneFor(dx);
+        if (zone !== s.lastZone) {
+          s.lastZone = zone;
+          if (
+            typeof navigator !== 'undefined' &&
+            typeof navigator.vibrate === 'function' &&
+            !(
+              typeof window !== 'undefined' &&
+              typeof window.matchMedia === 'function' &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            )
+          ) {
+            try {
+              navigator.vibrate(5);
+            } catch {
+              // Some browsers throw on vibrate() in insecure / permissioned
+              // contexts; haptics are a progressive enhancement.
+            }
+          }
+        }
+      }
+
+      const delta = scaledPixels * step;
       const next = Math.min(max, Math.max(min, s.startValue + delta));
       onScrub(next);
     },
