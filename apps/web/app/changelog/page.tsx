@@ -1,19 +1,20 @@
-import type { Metadata } from 'next';
 import { MarketingShell } from '@/components/marketing/MarketingShell';
 import { MarketingHero } from '@/components/marketing/MarketingHero';
 import { ChangelogMarkdown } from '@/components/marketing/ChangelogMarkdown';
 import { loadChangelog } from '@/lib/changelogParser';
+import { pageMetadata } from '@/lib/pageMetadata';
 import pkg from '../../package.json';
 
 const LATEST_VERSION = pkg.version;
 const LATEST_CODENAME = 'Long-tail cleanup';
 const LATEST_DATE = '2026-04-17';
 
-export const metadata: Metadata = {
-  title: 'Changelog — KyberStation',
+export const metadata = pageMetadata({
+  title: 'Changelog',
   description:
     'Release history for KyberStation — every feature, fix, and architectural decision, pulled live from CHANGELOG.md.',
-};
+  path: '/changelog',
+});
 
 // Revalidate once an hour in case CHANGELOG.md updates without a redeploy.
 export const revalidate = 3600;

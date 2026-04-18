@@ -1,13 +1,14 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MarketingShell } from '@/components/marketing/MarketingShell';
 import { MarketingHero } from '@/components/marketing/MarketingHero';
+import { pageMetadata } from '@/lib/pageMetadata';
 
-export const metadata: Metadata = {
-  title: 'FAQ — KyberStation',
+export const metadata = pageMetadata({
+  title: 'FAQ',
   description:
     'Frequently asked questions about KyberStation: hardware compatibility, licensing, safety, browser support, and contribution policy.',
-};
+  path: '/faq',
+});
 
 interface QA {
   q: string;

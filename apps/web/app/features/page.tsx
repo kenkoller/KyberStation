@@ -1,15 +1,24 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MarketingShell } from '@/components/marketing/MarketingShell';
 import { MarketingHero } from '@/components/marketing/MarketingHero';
 import { MarketingSection } from '@/components/marketing/MarketingSection';
 import { FeatureCard } from '@/components/marketing/FeatureCard';
+import { pageMetadata } from '@/lib/pageMetadata';
 
-export const metadata: Metadata = {
-  title: 'Features — KyberStation',
+export const metadata = pageMetadata({
+  title: 'Features',
   description:
     'A complete walkthrough of what KyberStation does: visual blade editor, engine-accurate simulation, ProffieOS code generation, WebUSB flash, and a growing preset library.',
-};
+  path: '/features',
+  keywords: [
+    'proffieboard',
+    'proffieos',
+    'lightsaber',
+    'neopixel',
+    'blade style editor',
+    'saber fonts',
+  ],
+});
 
 export default function FeaturesPage() {
   return (
