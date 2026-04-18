@@ -143,3 +143,20 @@ Five routes tested: `/`, `/editor`, `/gallery`, `/docs`, `/m`. Zero runtime cons
 - [x] **P1-003 (FIXED):** `/gallery` returned 404. Landing "BROWSE GALLERY" CTA already pointed to `/editor?tab=gallery` (correct flow), but direct URL access broke and `CLAUDE.md` claimed `app/gallery/page.tsx` existed. Fix: added 7-line redirect stub at `apps/web/app/gallery/page.tsx` using `next/navigation`'s `redirect()`. `CLAUDE.md` structure comment updated to `# Redirect to /editor?tab=gallery`.
 - [x] **P1-004 (FIXED):** `/editor?tab=<name>` URL param was ignored. Landing → Gallery journey was quietly broken (landed on Design tab). Fix: `apps/web/app/editor/page.tsx` now reads `searchParams.get('tab')`, validates against `['design','dynamics','audio','gallery','output']`, calls `useUIStore.getState().setActiveTab(tab)` on mount, then strips the param from URL via `router.replace`. Coexists with existing `?preset=` and `?s=<glyph>` handlers. Edge cases handled: uppercase → normalized, invalid → ignored (default stays).
 - [x] **Methodology note (agent 3 finding):** Next.js dev server's Fast Refresh file watcher occasionally serves stale compiled chunks after edits to `apps/web/app/editor/page.tsx`. Symptom: source file newer than `.next/static/chunks/app/editor/page.js` by >5min. Remedy: `preview_stop` + `preview_start`. Worth preserving for later sessions.
+
+## P2 — First impressions, landing page (2026-04-18)
+
+Programmatic sweep. `document.hidden: true` in preview mode throttles requestAnimationFrame, so any animation verification needs a foreground-Chrome tab by a human.
+
+- [ ] **P2-001 (SHIP-WITH-NOTE):** Landing page has zero docs link. All 8 links enumerated — Open Editor / Launch Wizard / Browse Gallery in hero, Release Notes (GitHub) in release strip, GitHub + Issues + Editor in footer, skip-to-main a11y link. `/docs` exists with 28 topics but is unreachable from landing. Recommended fix: add a small "Read the docs" text link adjacent to the primary CTAs, or in the footer.
+- [ ] **P2-002 (minor):** `RELEASE NOTES →` link points to `https://github.com/kenkoller/KyberStation/releases` but repo hasn't tagged a release since v0.10.0 (per CHANGELOG) — users click and see stale info. Options: (a) start tagging releases, (b) point link to `CHANGELOG.md` on GitHub, (c) point to `/docs#changelog`. Recommendation: (a) + (b) belt-and-suspenders.
+- [ ] **P2-???-pending-Ken:** hero animation (T2.1), value-copy humble-vs-corporate tone (T2.2), overall generic-AI-app gut check (T2.7). Cannot evaluate from preview — human foreground-Chrome judgment needed.
+
+## P3 — Editor core rendering (2026-04-18)
+
+- [x] **T3.1 (PASS):** `/editor` loads. 7 canvases (1 main blade preview + pixel strip + RGB graph + OLED preview + Kyber Crystal + smaller). 5 tabs: Design / Dynamics / Audio / Gallery / Output. 421 interactive buttons total.
+- [x] **T3.3 (PASS):** Ignite button works. Blade renders (cyan default). Button text switches to "Retract".
+- [x] **T3.4 (PASS):** Retract button works. Blade clears. Button text switches back to "Ignite".
+- [x] **T3.5 (PASS-CLICKABLE):** Zoom-in + Zoom-out buttons exist (`aria-label="Zoom in"` / `"Zoom out"`) and respond to clicks. Visual effect unverifiable from preview since no blade is ignited.
+- [ ] **T3.2 (PENDING-KEN):** "Live-data breathes at rest" — RAF throttled in preview under `document.hidden:true`. Requires foreground-Chrome check.
+- **Note:** Fresh-state (IndexedDB cleared) triggers the 4-step WELCOME onboarding modal. Good UX discovery. Phase 32 will test this flow in detail. For all subsequent phases, I'm using "Skip setup" to reach the editor directly.
