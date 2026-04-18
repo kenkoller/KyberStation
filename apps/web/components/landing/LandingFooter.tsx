@@ -34,6 +34,15 @@ export function LandingFooter() {
           >
             Editor
           </a>
+          <span aria-hidden="true" className="text-text-muted/50">
+            ·
+          </span>
+          <a
+            href="/docs"
+            className="hover:text-text-secondary transition-colors"
+          >
+            Docs
+          </a>
         </div>
 
         <p className="text-xs max-w-2xl mx-auto leading-relaxed">

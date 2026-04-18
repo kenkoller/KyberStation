@@ -1,7 +1,7 @@
 import { LATEST_VERSION, LATEST_CODENAME, LATEST_DATE } from '@/lib/version';
 
 const REPO_RELEASES_URL =
-  'https://github.com/kenkoller/KyberStation/releases';
+  'https://github.com/kenkoller/KyberStation/blob/main/CHANGELOG.md';
 
 export function LandingReleaseStrip() {
   return (
