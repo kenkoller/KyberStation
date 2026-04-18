@@ -3,6 +3,10 @@
 import { useEffect, useCallback } from 'react';
 import { useHistoryStore } from '@/stores/historyStore';
 import { useBladeStore } from '@/stores/bladeStore';
+import {
+  beginHistoryRestore,
+  endHistoryRestore,
+} from '@/stores/historyRestoreFlag';
 import { playUISound } from '@/lib/uiSounds';
 
 /**
@@ -27,7 +31,15 @@ export function UndoRedoButtons() {
     if (!canUndo) return;
     const entry = undo();
     if (entry) {
-      setConfig(entry.snapshot);
+      // Guard the setConfig call so useHistoryTracking's subscription
+      // does not re-push this restored snapshot onto the stack. See
+      // historyRestoreFlag.ts for rationale.
+      beginHistoryRestore();
+      try {
+        setConfig(entry.snapshot);
+      } finally {
+        endHistoryRestore();
+      }
       playUISound('button-click');
     }
   }, [canUndo, undo, setConfig]);
@@ -36,7 +48,12 @@ export function UndoRedoButtons() {
     if (!canRedo) return;
     const entry = redo();
     if (entry) {
-      setConfig(entry.snapshot);
+      beginHistoryRestore();
+      try {
+        setConfig(entry.snapshot);
+      } finally {
+        endHistoryRestore();
+      }
       playUISound('button-click');
     }
   }, [canRedo, redo, setConfig]);

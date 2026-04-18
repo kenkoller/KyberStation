@@ -12,6 +12,7 @@
 import { useEffect, useRef } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useHistoryStore } from '@/stores/historyStore';
+import { isRestoringFromHistory } from '@/stores/historyRestoreFlag';
 import type { BladeConfig } from '@kyberstation/engine';
 
 const DEBOUNCE_MS = 300;
@@ -88,6 +89,16 @@ export function useHistoryTracking() {
 
       // Skip if config reference hasn't changed (e.g. topology-only update)
       if (next === prev) return;
+
+      // Skip snapshots applied by undo/redo — otherwise the restored
+      // snapshot is re-pushed onto the history stack, which wipes the
+      // future stack (breaking redo) and creates a "zombie" past entry
+      // that matches the current config (so a second undo appears to
+      // do nothing). See P17-001.
+      if (isRestoringFromHistory()) {
+        prevConfigRef.current = next;
+        return;
+      }
 
       const label = prevConfigRef.current
         ? deriveLabel(prevConfigRef.current, next)
