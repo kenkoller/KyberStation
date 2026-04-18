@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
+import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 
 type RenderMode = 'photorealistic' | 'pixel';
 
@@ -124,7 +125,30 @@ const HILT_STYLES: HiltStyle[] = [
   { id: 'kylo', label: 'Kylo (Crossguard)', pommelW: 16, gripW: 100, shroudW: 20, emitterW: 48, hiltH: 24, shroudInset: 3, emitterFlare: 8, ribSpacing: 5, hasButton: false, hasWindowPort: false, metalTint: '#404040' },
   { id: 'ahsoka', label: 'Ahsoka (Fulcrum)', pommelW: 24, gripW: 90, shroudW: 28, emitterW: 42, hiltH: 24, shroudInset: 5, emitterFlare: 5, ribSpacing: 4, hasButton: true, hasWindowPort: false, metalTint: '#e0e0f0' },
   { id: 'cal', label: 'Cal Kestis', pommelW: 20, gripW: 115, shroudW: 18, emitterW: 32, hiltH: 26, shroudInset: 3, emitterFlare: 3, ribSpacing: 6, hasButton: true, hasWindowPort: true, metalTint: '#c0a070' },
+  // Modular SVG assemblies — routed through HiltRenderer overlay instead of canvas primitives.
+  // Primitive values kept for the canvas-path fallback so the hilt toolbar geometry remains coherent
+  // if the SVG overlay ever misses (defensive — shouldn't happen in practice).
+  { id: 'graflex-svg', label: 'Graflex ✦', pommelW: 18, gripW: 120, shroudW: 16, emitterW: 30, hiltH: 26, shroudInset: 2, emitterFlare: 2, ribSpacing: 4, hasButton: true, hasWindowPort: true, metalTint: '' },
+  { id: 'mpp-svg', label: 'MPP ✦', pommelW: 16, gripW: 120, shroudW: 12, emitterW: 32, hiltH: 24, shroudInset: 2, emitterFlare: 2, ribSpacing: 4, hasButton: true, hasWindowPort: false, metalTint: '' },
+  { id: 'negotiator-svg', label: 'Negotiator ✦', pommelW: 20, gripW: 110, shroudW: 20, emitterW: 32, hiltH: 26, shroudInset: 3, emitterFlare: 3, ribSpacing: 5, hasButton: true, hasWindowPort: false, metalTint: '' },
+  { id: 'count-svg', label: 'Count ✦', pommelW: 24, gripW: 110, shroudW: 18, emitterW: 30, hiltH: 28, shroudInset: 3, emitterFlare: 3, ribSpacing: 6, hasButton: true, hasWindowPort: false, metalTint: '' },
+  { id: 'shoto-sage-svg', label: 'Shoto (Sage) ✦', pommelW: 12, gripW: 70, shroudW: 10, emitterW: 22, hiltH: 20, shroudInset: 2, emitterFlare: 1, ribSpacing: 5, hasButton: false, hasWindowPort: false, metalTint: '' },
+  { id: 'ren-vent-svg', label: 'Vented Crossguard ✦', pommelW: 14, gripW: 100, shroudW: 20, emitterW: 40, hiltH: 26, shroudInset: 3, emitterFlare: 6, ribSpacing: 5, hasButton: false, hasWindowPort: false, metalTint: '' },
+  { id: 'zabrak-staff-svg', label: 'Staff ✦', pommelW: 0, gripW: 180, shroudW: 0, emitterW: 24, hiltH: 22, shroudInset: 0, emitterFlare: 1, ribSpacing: 8, hasButton: false, hasWindowPort: false, metalTint: '' },
+  { id: 'fulcrum-pair-svg', label: 'Fulcrum ✦', pommelW: 18, gripW: 90, shroudW: 14, emitterW: 22, hiltH: 22, shroudInset: 3, emitterFlare: 2, ribSpacing: 5, hasButton: true, hasWindowPort: false, metalTint: '' },
 ];
+
+/** Hilt style ids whose rendering is delegated to the modular SVG HiltRenderer overlay */
+const SVG_HILT_STYLE_TO_ASSEMBLY: Record<string, string> = {
+  'graflex-svg': 'graflex',
+  'mpp-svg': 'mpp',
+  'negotiator-svg': 'negotiator',
+  'count-svg': 'count',
+  'shoto-sage-svg': 'shoto-sage',
+  'ren-vent-svg': 'ren-vent',
+  'zabrak-staff-svg': 'zabrak-staff',
+  'fulcrum-pair-svg': 'fulcrum-pair',
+};
 
 // ─── Diffusion tube types ───
 
@@ -621,6 +645,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   // ─── Draw metallic hilt (uses selected hilt style) ───
   const drawHilt = useCallback((ctx: CanvasRenderingContext2D, bladeColor: { r: number; g: number; b: number } | null, scale: number) => {
     if (!showHilt) return; // Hilt visibility toggle
+    // Modular SVG assemblies render via HiltRenderer overlay — skip canvas primitive path.
+    if (SVG_HILT_STYLE_TO_ASSEMBLY[hiltStyle]) return;
     const hs = HILT_STYLES.find(h => h.id === hiltStyle) ?? HILT_STYLES[0];
 
     // Compute hilt geometry from style
@@ -2503,6 +2529,32 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             cursor: editMode ? 'crosshair' : undefined,
           }}
         />
+        {/*
+          Modular SVG hilt overlay (v0.11.2 Stage 1).
+          Right edge approximates BLADE_START / DESIGN_W = 274 / 1200 ≈ 22.8%.
+          Pan/zoom-aware alignment is a Stage 3 refinement — this Phase-1
+          placement validates the SVG pipeline end-to-end.
+        */}
+        {SVG_HILT_STYLE_TO_ASSEMBLY[hiltStyle] && showHilt && (
+          <div
+            className="absolute pointer-events-none flex items-center"
+            style={{
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: '22.8%',
+              justifyContent: 'flex-end',
+              paddingRight: '2px',
+            }}
+            aria-hidden="true"
+          >
+            <HiltRenderer
+              assemblyId={SVG_HILT_STYLE_TO_ASSEMBLY[hiltStyle]}
+              orientation="horizontal"
+              longAxisSize={180}
+            />
+          </div>
+        )}
         {/* Zoom controls overlay */}
         <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
           <button
