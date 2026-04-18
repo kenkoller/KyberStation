@@ -28,6 +28,7 @@ export function useKeyboardShortcuts(handlers: {
         case 'KeyN': effectType = 'lightning'; break;
         case 'KeyS': effectType = 'stab'; break;
         case 'KeyF': effectType = 'force'; break;
+        case 'KeyW': effectType = 'shockwave'; break;
         case 'KeyR': effectType = 'fragment'; break;
         case 'KeyV': effectType = 'bifurcate'; break;
         case 'KeyG': effectType = 'ghostEcho'; break;
