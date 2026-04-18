@@ -1,12 +1,14 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { useLayerStore } from '@/stores/layerStore';
+import { useLayerStore, SMOOTHSWING_DEFAULTS } from '@/stores/layerStore';
 import type { LayerType, BlendMode, LayerRenderState } from '@/stores/layerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import {
   LayerThumbnail,
   HIGH_DENSITY_THRESHOLD,
 } from './LayerThumbnail';
+import { SmoothSwingPlate } from './SmoothSwingPanel';
 
 // ─── Constants ───
 
@@ -76,6 +78,10 @@ const TYPE_BADGES: Record<LayerType, { color: string; label: string }> = {
   effect: { color: 'bg-yellow-500', label: 'E' },
   accent: { color: 'bg-green-500', label: 'A' },
   mix: { color: 'bg-purple-500', label: 'M' },
+  // SmoothSwing is a modulator plate — no pixel output. Slate badge +
+  // \u25CE glyph in the thumbnail keeps it visually distinct from the
+  // visual-layer rows without borrowing a visual-layer color.
+  smoothswing: { color: 'bg-slate-400', label: 'S' },
 };
 
 // ─── Helpers ───
@@ -104,6 +110,44 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 128, g: 128, b: 128 };
 }
 
+// ─── Plate thumbnail ───
+//
+// Modulator plates (SmoothSwing, future audio routing plates) don't
+// render pixel output, so the animated LayerThumbnail is inappropriate.
+// This static badge matches LayerThumbnail's footprint so row heights
+// stay uniform, and communicates "this is a plate, not a visual layer"
+// via a \u25CE (circled bullet) glyph and a theme-token background.
+//
+// Render-state visuals mirror LayerThumbnail: bypass -> low-contrast
+// hatch tone, mute -> honest black, active -> accent surface.
+function PlateThumbnail({ renderState }: { renderState: LayerRenderState }) {
+  const tone =
+    renderState === 'skipped'
+      ? { bg: 'rgb(var(--bg-surface))', fg: 'rgb(var(--text-muted) / 0.35)' }
+      : renderState === 'muted'
+        ? { bg: 'rgb(8, 10, 14)', fg: 'rgb(var(--text-muted) / 0.4)' }
+        : { bg: 'rgb(var(--bg-elevated))', fg: 'rgb(var(--accent))' };
+  return (
+    <span
+      className="shrink-0 rounded-sm border border-border-subtle/50 flex items-center justify-center text-ui-xs font-mono select-none"
+      style={{
+        width: 40,
+        height: 8,
+        background: tone.bg,
+        color: tone.fg,
+        // Pixel-aligned glyph; the canvas equivalent is THUMBNAIL_WIDTH x
+        // THUMBNAIL_HEIGHT so we match it exactly to avoid row-height jitter.
+        lineHeight: '8px',
+        fontSize: '8px',
+      }}
+      aria-hidden="true"
+      title="SmoothSwing plate \u2014 audio modulator (no pixel output)"
+    >
+      {'\u25CE'}
+    </span>
+  );
+}
+
 // ─── Add Layer Dropdown ───
 
 function AddLayerDropdown({ onClose }: { onClose: () => void }) {
@@ -128,6 +172,10 @@ function AddLayerDropdown({ onClose }: { onClose: () => void }) {
           name: 'Mix Layer',
           config: { mixRatio: 50, styleA: 'stable', styleB: 'fire' },
         },
+        smoothswing: {
+          name: 'SmoothSwing',
+          config: { ...SMOOTHSWING_DEFAULTS },
+        },
       };
 
       const preset = defaults[type];
@@ -149,6 +197,7 @@ function AddLayerDropdown({ onClose }: { onClose: () => void }) {
     { type: 'effect', label: 'Add Effect Layer', desc: 'Clash, blast, lockup...' },
     { type: 'accent', label: 'Add Accent Layer', desc: 'Tip/hilt accent stripe' },
     { type: 'mix', label: 'Add Mix Layer', desc: 'Blend two styles' },
+    { type: 'smoothswing', label: 'Add SmoothSwing Plate', desc: 'Audio swing-pair crossfade (modulator)' },
   ];
 
   return (
@@ -473,6 +522,12 @@ function LayerConfigPanel({ layerId }: { layerId: string }) {
       return <AccentLayerConfig layerId={layerId} />;
     case 'mix':
       return <MixLayerConfig layerId={layerId} />;
+    case 'smoothswing':
+      // Specialized modulator plate. The plate's own header tells users
+      // they're looking at SmoothSwing and lets them reset; the rest of
+      // the row controls (B/M/S, reorder, delete) are inherited from
+      // the generic LayerRow.
+      return <SmoothSwingPlate layerId={layerId} />;
   }
 }
 
@@ -608,6 +663,12 @@ function LayerRow({
   const staggerTurn = shouldStagger ? rowIndex % Math.max(1, totalRows) : undefined;
   const staggerTotal = shouldStagger ? totalRows : undefined;
 
+  // SmoothSwing is an audio-modulation plate — it produces no pixel
+  // output, so the pixel-per-column LayerThumbnail is wrong for it.
+  // We swap in a static plate badge instead so users immediately
+  // recognise "this row is a modulator, not a visual layer".
+  const isPlate = layer.type === 'smoothswing';
+
   return (
     <div
       className={`group border transition-colors rounded ${
@@ -681,13 +742,18 @@ function LayerRow({
           aria-label={`${layer.type} layer`}
         />
 
-        {/* Live thumbnail — 40x8 px */}
-        <LayerThumbnail
-          layer={layer}
-          renderState={renderState}
-          staggerTurn={staggerTurn}
-          staggerTotal={staggerTotal}
-        />
+        {/* Live thumbnail — 40x8 px. Plates (SmoothSwing etc.) render a
+            static glyph badge instead, since they don't emit pixels. */}
+        {isPlate ? (
+          <PlateThumbnail renderState={renderState} />
+        ) : (
+          <LayerThumbnail
+            layer={layer}
+            renderState={renderState}
+            staggerTurn={staggerTurn}
+            staggerTotal={staggerTotal}
+          />
+        )}
 
         {/* Layer name */}
         <span
@@ -726,34 +792,48 @@ function LayerRow({
           />
         </div>
 
-        {/* Opacity indicator (click to expand slider) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowOpacity(!showOpacity);
-          }}
-          className="text-ui-xs text-text-muted font-mono shrink-0 hover:text-accent transition-colors w-8 text-right"
-          title="Opacity"
-          aria-label="Toggle opacity slider"
-        >
-          {Math.round(layer.opacity * 100)}%
-        </button>
+        {/* Opacity + blend-mode only apply to visual (pixel-output) layers.
+            Plates (SmoothSwing) route audio, so we render a subtle
+            "PLATE" label in the same footprint for visual consistency. */}
+        {isPlate ? (
+          <span
+            className="text-ui-xs text-text-muted font-mono shrink-0 uppercase tracking-wider w-20 text-right select-none"
+            title="Modulator plate \u2014 no pixel compositing"
+          >
+            plate
+          </span>
+        ) : (
+          <>
+            {/* Opacity indicator (click to expand slider) */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOpacity(!showOpacity);
+              }}
+              className="text-ui-xs text-text-muted font-mono shrink-0 hover:text-accent transition-colors w-8 text-right"
+              title="Opacity"
+              aria-label="Toggle opacity slider"
+            >
+              {Math.round(layer.opacity * 100)}%
+            </button>
 
-        {/* Blend mode dropdown */}
-        <select
-          value={layer.blendMode}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => setBlendMode(layer.id, e.target.value as BlendMode)}
-          className="text-ui-xs bg-transparent border-none text-text-muted cursor-pointer shrink-0 w-12 p-0"
-          title="Blend mode"
-          aria-label="Blend mode"
-        >
-          {BLEND_MODES.map((bm) => (
-            <option key={bm.id} value={bm.id}>
-              {bm.label}
-            </option>
-          ))}
-        </select>
+            {/* Blend mode dropdown */}
+            <select
+              value={layer.blendMode}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setBlendMode(layer.id, e.target.value as BlendMode)}
+              className="text-ui-xs bg-transparent border-none text-text-muted cursor-pointer shrink-0 w-12 p-0"
+              title="Blend mode"
+              aria-label="Blend mode"
+            >
+              {BLEND_MODES.map((bm) => (
+                <option key={bm.id} value={bm.id}>
+                  {bm.label}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
 
         {/* Duplicate */}
         <button
@@ -782,8 +862,8 @@ function LayerRow({
         </button>
       </div>
 
-      {/* Opacity slider (expanded) */}
-      {showOpacity && (
+      {/* Opacity slider (expanded) — visual layers only. */}
+      {showOpacity && !isPlate && (
         <div className="flex items-center gap-2 px-3 pb-2">
           <label className="text-ui-xs text-text-muted shrink-0">Opacity</label>
           <input
@@ -904,11 +984,16 @@ export function LayerStack() {
       {/* Selected layer config */}
       {selectedLayerId && (
         <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle mt-2">
-          <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
-            Layer Config
-            <HelpTooltip text="Settings specific to the selected layer. Base layers choose a style, Effect layers pick a trigger type (clash, blast, etc.), Accent layers set position along the blade, and Mix layers blend two styles with a ratio." />
-          </h4>
-          <LayerConfigPanel layerId={selectedLayerId} />
+          <CollapsibleSection
+            title="Layer Config"
+            defaultOpen={true}
+            persistKey="LayerStack.layer-config"
+            headerAccessory={
+              <HelpTooltip text="Settings specific to the selected layer. Base layers choose a style, Effect layers pick a trigger type (clash, blast, etc.), Accent layers set position along the blade, and Mix layers blend two styles with a ratio." />
+            }
+          >
+            <LayerConfigPanel layerId={selectedLayerId} />
+          </CollapsibleSection>
         </div>
       )}
 

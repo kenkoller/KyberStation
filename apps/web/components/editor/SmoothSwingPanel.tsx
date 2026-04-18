@@ -1,39 +1,32 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  useLayerStore,
+  SMOOTHSWING_DEFAULTS,
+  type SmoothSwingLayerConfig,
+  type SmoothSwingVersion,
+} from '@/stores/layerStore';
 
 // ---------------------------------------------------------------------------
-// SmoothSwing configuration types + defaults
+// SmoothSwing — now lives as a specialized modulator plate inside LayerStack.
+//
+// Per UX North Star §4 (Bitwig plate-in-device-chain pattern), SmoothSwing
+// configuration is no longer a sibling panel. Instead, users add a
+// "SmoothSwing" layer from LayerStack's Add-Layer menu; the plate below
+// renders as the expanded view for that layer. State lives on the layer
+// (config reorders, duplicates, and round-trips with Kyber Glyph alongside
+// the rest of the saber design) and obeys audition controls (bypass / mute
+// / solo) the same way visual layers do — e.g. "solo this plate" previews
+// the SmoothSwing sound in isolation.
 // ---------------------------------------------------------------------------
-
-type SmoothSwingVersion = 'V1' | 'V2';
-
-interface SmoothSwingConfig {
-  version: SmoothSwingVersion;
-  swingThreshold: number;    // 0–500    — min speed to trigger swing audio
-  swingSharpness: number;    // 0.0–5.0  — how quickly crossfade reacts
-  swingStrength: number;     // 0–2000   — volume scaling for swing sounds
-  humVolume: number;         // 0–5      — background hum volume
-  accentSwingSpeed: number;  // 0–600    — threshold for accent swings
-  accentSwingLength: number; // 50–500ms — accent sound overlay duration
-}
-
-const DEFAULTS: SmoothSwingConfig = {
-  version: 'V2',
-  swingThreshold: 250,
-  swingSharpness: 1.75,
-  swingStrength: 700,
-  humVolume: 3,
-  accentSwingSpeed: 300,
-  accentSwingLength: 150,
-};
 
 // ---------------------------------------------------------------------------
 // Parameter metadata
 // ---------------------------------------------------------------------------
 
 interface ParamMeta {
-  key: keyof Omit<SmoothSwingConfig, 'version'>;
+  key: keyof Omit<SmoothSwingLayerConfig, 'version'>;
   label: string;
   hint: string;
   min: number;
@@ -53,7 +46,7 @@ const PARAMS: ParamMeta[] = [
   {
     key: 'swingSharpness',
     label: 'Swing Sharpness',
-    hint: 'How quickly the low↔high crossfade responds to speed changes. Higher = snappier transitions.',
+    hint: 'How quickly the low\u2194high crossfade responds to speed changes. Higher = snappier transitions.',
     min: 0, max: 5, step: 0.05, unit: '', decimals: 2,
   },
   {
@@ -83,14 +76,14 @@ const PARAMS: ParamMeta[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Crossfade visualiser helpers
+// Crossfade visualiser helpers (pure — exported for reuse + testing)
 // ---------------------------------------------------------------------------
 
 /**
  * Compute low/high gain levels from a normalised speed (0–1), mirroring
  * the SmoothSwingEngine.update() logic so the preview is accurate.
  */
-function computeCrossfade(
+export function computeCrossfade(
   normSpeed: number,
   sharpness: number,
 ): { lowGain: number; highGain: number; active: boolean } {
@@ -100,13 +93,40 @@ function computeCrossfade(
     return { lowGain: 0, highGain: 0, active: false };
   }
 
-  // Map SILENCE_THRESHOLD..1 → 0..1
+  // Map SILENCE_THRESHOLD..1 -> 0..1
   const raw = (normSpeed - SILENCE_THRESHOLD) / (1 - SILENCE_THRESHOLD);
   // Apply sharpness as a power curve: > 1 biases toward high faster, < 1 slower
   const shaped = Math.pow(raw, Math.max(0.2, 1 / Math.max(sharpness, 0.2)));
   const t = Math.max(0, Math.min(1, shaped));
 
   return { lowGain: 1 - t, highGain: t, active: true };
+}
+
+/**
+ * Coerce an unknown `BladeLayer.config` into a fully-populated
+ * SmoothSwingLayerConfig, substituting defaults for any missing fields.
+ * Exported so LayerStack + other consumers can read config uniformly.
+ */
+export function readSmoothSwingConfig(
+  raw: Record<string, unknown>,
+): SmoothSwingLayerConfig {
+  const num = (key: keyof SmoothSwingLayerConfig, fallback: number): number => {
+    const v = raw[key];
+    return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+  };
+  const version: SmoothSwingVersion =
+    raw.version === 'V1' || raw.version === 'V2'
+      ? (raw.version as SmoothSwingVersion)
+      : SMOOTHSWING_DEFAULTS.version;
+  return {
+    version,
+    swingThreshold: num('swingThreshold', SMOOTHSWING_DEFAULTS.swingThreshold),
+    swingSharpness: num('swingSharpness', SMOOTHSWING_DEFAULTS.swingSharpness),
+    swingStrength: num('swingStrength', SMOOTHSWING_DEFAULTS.swingStrength),
+    humVolume: num('humVolume', SMOOTHSWING_DEFAULTS.humVolume),
+    accentSwingSpeed: num('accentSwingSpeed', SMOOTHSWING_DEFAULTS.accentSwingSpeed),
+    accentSwingLength: num('accentSwingLength', SMOOTHSWING_DEFAULTS.accentSwingLength),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -127,7 +147,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 interface SliderRowProps {
   meta: ParamMeta;
   value: number;
-  onChange: (key: keyof Omit<SmoothSwingConfig, 'version'>, value: number) => void;
+  onChange: (key: keyof Omit<SmoothSwingLayerConfig, 'version'>, value: number) => void;
 }
 
 function SliderRow({ meta, value, onChange }: SliderRowProps) {
@@ -179,7 +199,7 @@ function SliderRow({ meta, value, onChange }: SliderRowProps) {
 // ---------------------------------------------------------------------------
 
 interface CrossfadeVizProps {
-  config: SmoothSwingConfig;
+  config: SmoothSwingLayerConfig;
 }
 
 function CrossfadeViz({ config }: CrossfadeVizProps) {
@@ -328,47 +348,63 @@ function CrossfadeViz({ config }: CrossfadeVizProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Main panel
+// SmoothSwingPlate — rendered by LayerStack as the expanded view for a
+// `smoothswing` layer type. Reads and writes the layer's config directly
+// via layerStore, so state moves with the layer when reordered/duplicated
+// and round-trips through history/undo alongside the rest of the stack.
 // ---------------------------------------------------------------------------
 
-export function SmoothSwingPanel() {
-  const [config, setConfig] = useState<SmoothSwingConfig>({ ...DEFAULTS });
+export interface SmoothSwingPlateProps {
+  layerId: string;
+}
 
-  // NOTE: SmoothSwing parameters are not yet wired to audioMixerStore — the
-  // mixer store tracks EQ/effects mixer values. These settings are ready to
-  // be persisted once a smoothSwingConfig slice is added to audioMixerStore
-  // or a dedicated smoothSwingStore is created.
+export function SmoothSwingPlate({ layerId }: SmoothSwingPlateProps) {
+  const layer = useLayerStore((s) => s.layers.find((l) => l.id === layerId));
+  const updateLayerConfig = useLayerStore((s) => s.updateLayerConfig);
 
-  const handleVersion = useCallback((v: SmoothSwingVersion) => {
-    setConfig((prev) => ({ ...prev, version: v }));
-  }, []);
+  // Coerce whatever's in the layer.config into a fully populated
+  // SmoothSwingLayerConfig so partial persistence / migration from older
+  // saves always has a safe starting point.
+  const config = useMemo<SmoothSwingLayerConfig>(
+    () => readSmoothSwingConfig(layer?.config ?? {}),
+    [layer?.config],
+  );
+
+  const handleVersion = useCallback(
+    (v: SmoothSwingVersion) => {
+      updateLayerConfig(layerId, { version: v });
+    },
+    [layerId, updateLayerConfig],
+  );
 
   const handleParam = useCallback(
-    (key: keyof Omit<SmoothSwingConfig, 'version'>, value: number) => {
-      setConfig((prev) => ({ ...prev, [key]: value }));
+    (key: keyof Omit<SmoothSwingLayerConfig, 'version'>, value: number) => {
+      updateLayerConfig(layerId, { [key]: value });
     },
-    [],
+    [layerId, updateLayerConfig],
   );
 
   const handleReset = useCallback(() => {
-    setConfig({ ...DEFAULTS });
-  }, []);
+    updateLayerConfig(layerId, { ...SMOOTHSWING_DEFAULTS });
+  }, [layerId, updateLayerConfig]);
 
   const isDirty = useMemo(
     () =>
-      (Object.keys(DEFAULTS) as Array<keyof SmoothSwingConfig>).some(
-        (k) => config[k] !== DEFAULTS[k],
+      (Object.keys(SMOOTHSWING_DEFAULTS) as Array<keyof SmoothSwingLayerConfig>).some(
+        (k) => config[k] !== SMOOTHSWING_DEFAULTS[k],
       ),
     [config],
   );
 
-  return (
-    <div className="flex flex-col gap-2 p-3 text-text-primary">
+  if (!layer) return null;
 
-      {/* ── Header ── */}
+  return (
+    <div className="flex flex-col gap-2 text-text-primary">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-ui-sm font-mono text-text-primary">SmoothSwing</h3>
+          <h4 className="text-ui-sm font-mono text-text-primary">SmoothSwing Plate</h4>
           <p className="text-ui-xs text-text-muted mt-0.5 leading-snug">
             Crossfades paired swingl/swingh files based on blade speed
           </p>
@@ -384,20 +420,7 @@ export function SmoothSwingPanel() {
         </button>
       </div>
 
-      {/* ── Preview-only disclosure ── */}
-      <p
-        className="text-ui-xs font-mono leading-snug px-2 py-1 rounded border"
-        style={{
-          color: 'rgb(var(--status-warn) / 0.85)',
-          background: 'rgb(var(--status-warn) / 0.08)',
-          borderColor: 'rgb(var(--status-warn) / 0.3)',
-        }}
-      >
-        Preview only — tune parameters to try them in the crossfade viz.
-        Values are not persisted or exported yet (planned as a LayerStack plate in v1.0).
-      </p>
-
-      {/* ── Version selector ── */}
+      {/* Version selector */}
       <div>
         <SectionHeader>Algorithm Version</SectionHeader>
         <div className="flex gap-2">
@@ -426,7 +449,7 @@ export function SmoothSwingPanel() {
         </p>
       </div>
 
-      {/* ── Swing parameters ── */}
+      {/* Swing parameters */}
       <div>
         <SectionHeader>Swing Parameters</SectionHeader>
         <div className="space-y-2">
@@ -441,7 +464,7 @@ export function SmoothSwingPanel() {
         </div>
       </div>
 
-      {/* ── Hum & accent ── */}
+      {/* Hum & accent */}
       <div>
         <SectionHeader>Hum &amp; Accent</SectionHeader>
         <div className="space-y-2">
@@ -456,12 +479,70 @@ export function SmoothSwingPanel() {
         </div>
       </div>
 
-      {/* ── Crossfade visualiser ── */}
+      {/* Crossfade visualiser */}
       <div>
         <SectionHeader>Live Crossfade Preview</SectionHeader>
         <CrossfadeViz config={config} />
       </div>
 
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Legacy SmoothSwingPanel export — preserved for any stale layout configs
+// that still reference the `smoothswing-config` panel slot.
+//
+// Per item #15 of the UX North Star remaining-items list, SmoothSwing is
+// no longer a sibling panel; it lives inside LayerStack as a plate. This
+// guidance panel redirects users who land here from a persisted layout
+// and gives them a one-click path to the new home.
+// ---------------------------------------------------------------------------
+
+export function SmoothSwingPanel() {
+  const addLayer = useLayerStore((s) => s.addLayer);
+  const layers = useLayerStore((s) => s.layers);
+  const selectLayer = useLayerStore((s) => s.selectLayer);
+
+  const existing = useMemo(
+    () => layers.find((l) => l.type === 'smoothswing'),
+    [layers],
+  );
+
+  const handleAdd = useCallback(() => {
+    if (existing) {
+      selectLayer(existing.id);
+      return;
+    }
+    addLayer({
+      type: 'smoothswing',
+      name: 'SmoothSwing',
+      visible: true,
+      opacity: 1,
+      blendMode: 'normal',
+      config: { ...SMOOTHSWING_DEFAULTS },
+    });
+  }, [addLayer, existing, selectLayer]);
+
+  return (
+    <div className="flex flex-col gap-3 p-4 text-text-primary">
+      <div>
+        <h3 className="text-ui-sm font-mono text-text-primary">SmoothSwing has moved</h3>
+        <p className="text-ui-xs text-text-muted mt-1 leading-snug">
+          SmoothSwing now lives inside the Layer Stack as a modulator plate,
+          so its settings reorder and duplicate with your saber design.
+          {existing
+            ? ' A SmoothSwing layer is already on your stack.'
+            : ' Add a SmoothSwing layer from the Layer Stack to tune it.'}
+        </p>
+      </div>
+      <button
+        onClick={handleAdd}
+        className="self-start px-3 py-1.5 rounded text-ui-xs font-mono border border-accent-primary
+          bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 transition-colors"
+      >
+        {existing ? 'Select SmoothSwing Layer' : 'Add SmoothSwing Layer'}
+      </button>
     </div>
   );
 }

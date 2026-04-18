@@ -198,6 +198,14 @@ function resolveStyle(layer: BladeLayer): ResolvedStyle {
         };
       return { primary: fallback(), flatColor: color };
     }
+    case 'smoothswing': {
+      // Modulator plates have no pixel output; LayerStack swaps the
+      // canvas thumbnail for a static badge, so this path is normally
+      // unreachable. Kept as a safety net: render a neutral flat tone
+      // so a stray `smoothswing` layer passed into this component
+      // degrades gracefully instead of crashing.
+      return { primary: fallback(), flatColor: { r: 60, g: 70, b: 90 } };
+    }
   }
 }
 

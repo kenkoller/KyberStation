@@ -22,6 +22,12 @@ import { GestureControlPanel } from '@/components/editor/GestureControlPanel';
 import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { SoundFontPanel } from '@/components/editor/SoundFontPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
+// SmoothSwingPanel is kept as a fallback for persisted layouts that still
+// reference the legacy `smoothswing-config` panel slot. It now renders a
+// "SmoothSwing has moved" notice and a one-click action to add (or
+// select) the SmoothSwing layer in LayerStack — per item #15 of the
+// 2026-04-18 UX overhaul, SmoothSwing lives inside LayerStack as a
+// modulator plate rather than as a sibling panel.
 import { SmoothSwingPanel } from '@/components/editor/SmoothSwingPanel';
 import { PresetGallery, PresetDetail } from '@/components/editor/PresetGallery';
 import { usePresetDetailStore } from '@/stores/presetDetailStore';
@@ -298,6 +304,16 @@ function EffectPresetsPanel() {
  * that panel.  This is passed to ColumnGrid as the renderPanel prop.
  */
 function renderPanel(panelId: string): React.ReactNode {
+  // Legacy alias: 'smoothswing-config' is a panel slot from before the
+  // 2026-04-18 UX overhaul. Persisted layouts on returning users' machines
+  // may still reference it, so we route it to SmoothSwingPanel (which now
+  // renders a "SmoothSwing has moved \u2014 add a plate in LayerStack" notice)
+  // rather than letting it fall through to ComingSoon. Users can drop the
+  // panel from their column at that point.
+  if (panelId === 'smoothswing-config') {
+    return <SmoothSwingPanel />;
+  }
+
   switch (panelId as PanelId) {
     // ── Design ──
     case 'style-select':
@@ -348,8 +364,6 @@ function renderPanel(panelId: string): React.ReactNode {
       return <AudioPanel />;
     case 'effect-presets':
       return <EffectPresetsPanel />;
-    case 'smoothswing-config':
-      return <SmoothSwingPanel />;
 
     // ── Gallery ──
     case 'gallery-browser':

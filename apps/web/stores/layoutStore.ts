@@ -36,7 +36,10 @@ export type PanelId =
   | 'font-preview'
   | 'mixer-eq'
   | 'effect-presets'
-  | 'smoothswing-config'
+  // NOTE: 'smoothswing-config' used to live here as a sibling panel. As of
+  // the 2026-04-18 UX overhaul (item #15), SmoothSwing is a modulator
+  // plate inside LayerStack instead. The legacy string is preserved in
+  // renderPanel() so persisted layouts still find a friendly landing.
   // Gallery tab
   | 'gallery-browser'
   | 'builtin-presets'
@@ -112,7 +115,9 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
   // Secondary — collapsed by default
   { id: 'mixer-eq',            label: 'Mixer / EQ',         description: 'Shape your saber\'s audio with EQ and effects',            tab: 'audio',    defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'effect-presets',      label: 'Effect Presets',     description: 'One-click audio effect chains for common sounds',          tab: 'audio',    defaultColumn: 2, defaultOrder: 1, collapsible: true  },
-  { id: 'smoothswing-config',  label: 'SmoothSwing Config', description: 'Tune SmoothSwing crossfade and swing response',           tab: 'audio',    defaultColumn: 3, defaultOrder: 0, collapsible: true  },
+  // SmoothSwing lives inside LayerStack as a modulator plate now \u2014
+  // see the 'smoothswing' layer type in layerStore.ts and SmoothSwingPlate
+  // in SmoothSwingPanel.tsx.
 
   // ── Gallery ──
   // Primary — single expanded gallery browser
@@ -156,7 +161,6 @@ export const DEFAULT_COLLAPSED_PANELS: ReadonlySet<PanelId> = new Set<PanelId>([
   // Audio — secondary
   'mixer-eq',
   'effect-presets',
-  'smoothswing-config',
   // Gallery — secondary
   'preset-detail',
   // Output — secondary (power-draw, compatibility, oled-editor are advanced)

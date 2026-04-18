@@ -2,8 +2,53 @@ import { create } from 'zustand';
 
 // ─── Types ───
 
-export type LayerType = 'base' | 'effect' | 'accent' | 'mix';
+/**
+ * Layer types supported by the compositor.
+ *
+ * The visual types — base / effect / accent / mix — each output per-pixel
+ * RGB into the LED buffer. The `smoothswing` type is a *modulator plate*:
+ * it produces no pixel output of its own; instead it configures the
+ * audio-side SmoothSwing crossfade that pairs swingl/swingh files. It
+ * lives in the layer stack so that it reorders and duplicates with the
+ * rest of the saber design (Bitwig's plate-in-device-chain pattern), and
+ * so audition controls (bypass/mute/solo) can isolate the swing engine
+ * the same way they isolate a visual layer.
+ */
+export type LayerType = 'base' | 'effect' | 'accent' | 'mix' | 'smoothswing';
 export type BlendMode = 'normal' | 'add' | 'multiply' | 'screen';
+
+/**
+ * Algorithm version for the SmoothSwing crossfade engine. V2 is the
+ * ProffieOS 7.x default (per-pair seamless looping with speed-reactive
+ * crossfade). V1 is legacy and kept for config round-trips only.
+ */
+export type SmoothSwingVersion = 'V1' | 'V2';
+
+/**
+ * Full configuration for a SmoothSwing modulator plate. These map 1:1
+ * to the ProffieOS SmoothSwing defines; `version` additionally selects
+ * between the V1 and V2 algorithms at emit-time.
+ */
+export interface SmoothSwingLayerConfig {
+  version: SmoothSwingVersion;
+  swingThreshold: number;    // 0–500    min speed to trigger swing audio
+  swingSharpness: number;    // 0.0–5.0  crossfade reactivity
+  swingStrength: number;     // 0–2000   volume scaling for swing sounds
+  humVolume: number;         // 0–5      background hum volume
+  accentSwingSpeed: number;  // 0–600    threshold for accent swings
+  accentSwingLength: number; // 50–500ms accent overlay duration
+}
+
+/** Safe defaults sourced from ProffieOS 7.x SmoothSwing V2 recommendations. */
+export const SMOOTHSWING_DEFAULTS: SmoothSwingLayerConfig = {
+  version: 'V2',
+  swingThreshold: 250,
+  swingSharpness: 1.75,
+  swingStrength: 700,
+  humVolume: 3,
+  accentSwingSpeed: 300,
+  accentSwingLength: 150,
+};
 
 export interface BladeLayer {
   id: string;
@@ -30,10 +75,11 @@ export interface BladeLayer {
   config: Record<string, unknown>; // layer-specific params
 }
 
-// For 'base' layers:   config has { style: string, color: RGB }
-// For 'effect' layers:  config has { effectType: string, color: RGB, size: number }
-// For 'accent' layers:  config has { style: string, color: RGB, position: number, width: number }
-// For 'mix' layers:     config has { mixRatio: number, styleA: string, styleB: string }
+// For 'base' layers:        config has { style: string, color: RGB }
+// For 'effect' layers:       config has { effectType: string, color: RGB, size: number }
+// For 'accent' layers:       config has { style: string, color: RGB, position: number, width: number }
+// For 'mix' layers:          config has { mixRatio: number, styleA: string, styleB: string }
+// For 'smoothswing' layers:  config has SmoothSwingLayerConfig fields (see above)
 
 /**
  * Effective render state for a layer after applying bypass / mute / solo logic.
