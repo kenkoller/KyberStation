@@ -16,24 +16,16 @@ export function LandingHero() {
       </div>
 
       <div className="relative z-10 w-full text-center px-6">
+        <h1 className="font-cinematic text-[clamp(1.75rem,7vw,5.5rem)] font-bold tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.16em] text-text-primary mb-4 leading-none">
+          KYBERSTATION
+        </h1>
         <div
-          className="dot-matrix mb-6"
+          className="dot-matrix"
           aria-label="Universal Saber Style Engine"
           style={{ fontSize: 'clamp(12px, 1.4vw, 16px)' }}
         >
           UNIVERSAL · SABER · STYLE · ENGINE
         </div>
-        <h1 className="font-cinematic text-[clamp(1.75rem,7vw,5.5rem)] font-bold tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.16em] text-text-primary mb-4 leading-none">
-          KYBERSTATION
-        </h1>
-        <p className="font-sans text-xl md:text-2xl lg:text-3xl text-text-primary font-light tracking-tight leading-snug mb-6">
-          A DAW for your lightsaber.
-        </p>
-        <p className="font-sans text-base md:text-lg text-text-secondary leading-relaxed max-w-2xl mx-auto">
-          Design by hand. Preview with motion and sound. Generate ProffieOS
-          code, and export straight to SD card. No guesswork, no trial-and-error
-          compiles.
-        </p>
       </div>
     </section>
   );
