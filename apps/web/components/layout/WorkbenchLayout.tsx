@@ -25,6 +25,7 @@ import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { FPSCounter } from '@/components/layout/FPSCounter';
 import { SettingsModal } from '@/components/layout/SettingsModal';
+import { KeyboardShortcutsModal } from '@/components/layout/KeyboardShortcutsModal';
 import { SaberWizard } from '@/components/onboarding/SaberWizard';
 import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
@@ -214,10 +215,23 @@ export function WorkbenchLayout() {
     }
   }, [audio]);
 
+  // ── Modal visibility state ──
+  // Declared before `handlers` so that `openShortcutsHelp` is in scope
+  // when the keyboard-shortcut memo references it.
+  const [showSettings, setShowSettings] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const openShortcutsHelp = useCallback(() => setShowShortcutsHelp(true), []);
+
   // ── Keyboard shortcuts + timeline ──
   const handlers = useMemo(
-    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
-    [toggleWithAudio, triggerEffectWithAudio, releaseEffect],
+    () => ({
+      toggle: toggleWithAudio,
+      triggerEffect: triggerEffectWithAudio,
+      releaseEffect,
+      openHelp: openShortcutsHelp,
+    }),
+    [toggleWithAudio, triggerEffectWithAudio, releaseEffect, openShortcutsHelp],
   );
   useKeyboardShortcuts(handlers);
   useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
@@ -230,11 +244,6 @@ export function WorkbenchLayout() {
     const id = requestAnimationFrame(() => setEngineReady(true));
     return () => cancelAnimationFrame(id);
   }, [engineRef]);
-
-  // ── Settings modal state ──
-  const [showSettings, setShowSettings] = useState(false);
-  // ── Saber Wizard state ──
-  const [showWizard, setShowWizard] = useState(false);
 
   // ── Tab drag-to-reorder state ──
   const orderedTabs = useOrderedTabs();
@@ -403,6 +412,15 @@ export function WorkbenchLayout() {
           >
             <span aria-hidden="true">✦</span>
             <span className="hidden tablet:inline">Wizard</span>
+          </button>
+
+          <button
+            onClick={openShortcutsHelp}
+            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+          >
+            ?
           </button>
 
           <button
@@ -661,6 +679,10 @@ export function WorkbenchLayout() {
        * SETTINGS MODAL
        * ════════════════════════════════════════════════════ */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+      />
       <SaberWizard open={showWizard} onClose={() => setShowWizard(false)} />
     </div>
   );
