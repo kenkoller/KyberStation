@@ -4,6 +4,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
 import { useAudioFontStore } from '@/stores/audioFontStore';
+import { usePresetDetailStore } from '@/stores/presetDetailStore';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, downloadCollection, readCollectionFile } from '@/lib/bladeConfigIO';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
@@ -264,7 +265,7 @@ function GalleryCard({
 
 // ─── Detail Panel ───
 
-function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void }) {
+export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void }) {
   const { r, g, b } = preset.config.baseColor;
   const hex = rgbToHex(r, g, b);
   const clashHex = rgbToHex(preset.config.clashColor.r, preset.config.clashColor.g, preset.config.clashColor.b);
@@ -608,7 +609,8 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
   const [showLegends, setShowLegends] = useState(false);
   const [selectedOrigin, setSelectedOrigin] = useState<'all' | 'on-screen' | 'creative'>('all');
   const [sortMode, setSortMode] = useState<SortMode>('name');
-  const [detailPreset, setDetailPreset] = useState<Preset | null>(null);
+  const detailPreset = usePresetDetailStore((s) => s.detailPreset);
+  const setDetailPreset = usePresetDetailStore((s) => s.setDetailPreset);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   // My Presets

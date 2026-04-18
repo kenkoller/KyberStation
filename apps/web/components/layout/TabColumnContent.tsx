@@ -23,7 +23,8 @@ import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { SoundFontPanel } from '@/components/editor/SoundFontPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { SmoothSwingPanel } from '@/components/editor/SmoothSwingPanel';
-import { PresetGallery } from '@/components/editor/PresetGallery';
+import { PresetGallery, PresetDetail } from '@/components/editor/PresetGallery';
+import { usePresetDetailStore } from '@/stores/presetDetailStore';
 import { CodeOutput } from '@/components/editor/CodeOutput';
 import { PowerDrawPanel } from '@/components/editor/PowerDrawPanel';
 import { StorageBudgetPanel } from '@/components/editor/StorageBudgetPanel';
@@ -60,6 +61,34 @@ function FontPreviewPlaceholder() {
       <span className="text-ui-xs text-text-muted/50">Select a font from the library to preview</span>
     </div>
   );
+}
+
+// ─── Preset Detail standalone panel ───────────────────────────────────────────
+
+/**
+ * Standalone workbench-slot panel for the preset-detail view. Reads the
+ * currently-selected preset from `presetDetailStore` — the same store the
+ * PresetGallery writes to when a user clicks a preset tile — so docking
+ * this panel anywhere in the layout keeps it in sync with gallery
+ * selection automatically. Shows a useful empty state when no preset is
+ * currently selected.
+ */
+function PresetDetailPanelConnected() {
+  const detailPreset = usePresetDetailStore((s) => s.detailPreset);
+  const clearDetailPreset = usePresetDetailStore((s) => s.clearDetailPreset);
+
+  if (!detailPreset) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
+        <span className="text-ui-sm text-text-muted font-mono">No preset selected</span>
+        <span className="text-ui-xs text-text-muted/60">
+          Open the Gallery and click a preset tile to view its details here.
+        </span>
+      </div>
+    );
+  }
+
+  return <PresetDetail preset={detailPreset} onClose={clearDetailPreset} />;
 }
 
 // ─── ThemePickerPanel wrapper (needs store-bound props) ───────────────────────
@@ -336,8 +365,9 @@ function renderPanel(panelId: string): React.ReactNode {
       // Legacy slot — redirects to the unified gallery on the community tab
       return <PresetGallery initialTab="community" />;
     case 'preset-detail':
-      // Future: detail view for a selected preset with full metadata + variations
-      return <ComingSoon label="Preset Detail" />;
+      // Reads selected preset from presetDetailStore — stays in sync with
+      // any click-to-select action inside PresetGallery automatically.
+      return <PresetDetailPanelConnected />;
 
     // ── Output ──
     case 'output-workflow':
