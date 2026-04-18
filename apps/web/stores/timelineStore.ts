@@ -56,6 +56,7 @@ export interface TimelineState {
   updateEventDuration: (id: string, eventDuration: number) => void;
   updateEventEasing: (id: string, easingCurve: EasingCurve) => void;
   updateEventIntensity: (id: string, intensity: number) => void;
+  updateEventLabel: (id: string, label: string) => void;
   setDuration: (duration: number) => void;
   setPlaying: (playing: boolean) => void;
   setCurrentTime: (time: number) => void;
@@ -134,6 +135,13 @@ export const useTimelineStore = create<TimelineState>((set) => ({
     set((state) => ({
       events: state.events.map((e) =>
         e.id === id ? { ...e, intensity: Math.max(0, Math.min(1, intensity)) } : e,
+      ),
+    })),
+
+  updateEventLabel: (id, label) =>
+    set((state) => ({
+      events: state.events.map((e) =>
+        e.id === id ? { ...e, label: label.length > 0 ? label : undefined } : e,
       ),
     })),
 
