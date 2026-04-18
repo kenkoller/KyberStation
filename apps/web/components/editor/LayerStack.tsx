@@ -1,8 +1,12 @@
 'use client';
 import { useState, useCallback } from 'react';
 import { useLayerStore } from '@/stores/layerStore';
-import type { LayerType, BlendMode } from '@/stores/layerStore';
+import type { LayerType, BlendMode, LayerRenderState } from '@/stores/layerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import {
+  LayerThumbnail,
+  HIGH_DENSITY_THRESHOLD,
+} from './LayerThumbnail';
 
 // ─── Constants ───
 
@@ -474,12 +478,99 @@ function LayerConfigPanel({ layerId }: { layerId: string }) {
 
 // ─── Layer Row ───
 
+/**
+ * Map a render state to the triple of buttons' visual tokens.
+ *
+ * Uses `--status-*` tokens rather than raw red/green/yellow so color
+ * theming and a11y contrast tune centrally. Glyph pairing follows the
+ * StatusSignal convention — every color-coded signal has a typographic
+ * fallback:
+ *
+ *   Bypass — ▢ (outlined square)   — status-info / muted when off
+ *   Mute   — ▽ (empty triangle)     — status-warn when engaged
+ *   Solo   — ◉ (bullseye)            — status-ok when engaged (the
+ *            chosen signal for "isolated and playing")
+ *
+ * We deliberately avoid red for "solo on" — in DAWs red-solo is common
+ * but conflicts with `--status-error` semantics and colorblind-safe
+ * palette discipline. Green (status-ok) + ◉ reads as "active signal"
+ * without implying failure.
+ */
+const AUDITION_BUTTON_TOKENS = {
+  bypass: {
+    label: 'B',
+    title: 'Bypass — skip layer in compositor (zero CPU)',
+    glyphOn: '\u25A2',   // ▢
+    glyphOff: '\u25A2',  // ▢
+    colorOn: 'rgb(var(--status-info))',
+    colorOff: 'rgb(var(--text-muted))',
+    bgOn: 'rgba(var(--status-info), 0.15)',
+  },
+  mute: {
+    label: 'M',
+    title: 'Mute — composite as black (still pays CPU)',
+    glyphOn: '\u25BD',   // ▽
+    glyphOff: '\u25BD',  // ▽
+    colorOn: 'rgb(var(--status-warn))',
+    colorOff: 'rgb(var(--text-muted))',
+    bgOn: 'rgba(var(--status-warn), 0.15)',
+  },
+  solo: {
+    label: 'S',
+    title: 'Solo — render only soloed layers',
+    glyphOn: '\u25C9',   // ◉
+    glyphOff: '\u25CB',  // ○
+    colorOn: 'rgb(var(--status-ok))',
+    colorOff: 'rgb(var(--text-muted))',
+    bgOn: 'rgba(var(--status-ok), 0.15)',
+  },
+} as const;
+
+function AuditionButton({
+  kind,
+  active,
+  onClick,
+}: {
+  kind: 'bypass' | 'mute' | 'solo';
+  active: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const tokens = AUDITION_BUTTON_TOKENS[kind];
+  return (
+    <button
+      onClick={onClick}
+      className="touch-target shrink-0 w-5 h-5 text-ui-xs leading-none flex items-center justify-center rounded border transition-colors font-mono"
+      style={{
+        color: active ? tokens.colorOn : tokens.colorOff,
+        background: active ? tokens.bgOn : 'transparent',
+        borderColor: active ? tokens.colorOn : 'rgb(var(--border-subtle))',
+      }}
+      title={`${tokens.title} (${active ? 'on' : 'off'})`}
+      aria-label={`${kind} ${active ? 'on' : 'off'}`}
+      aria-pressed={active}
+      role="switch"
+      aria-checked={active}
+    >
+      <span aria-hidden="true" className="text-ui-xs">
+        {active ? tokens.glyphOn : tokens.glyphOff}
+      </span>
+      <span className="sr-only">{tokens.label}</span>
+    </button>
+  );
+}
+
 function LayerRow({
   layerId,
   isSelected,
+  rowIndex,
+  totalRows,
 }: {
   layerId: string;
   isSelected: boolean;
+  /** 0-indexed position in the rendered row list (for stagger). */
+  rowIndex: number;
+  /** Total rendered rows (for stagger). */
+  totalRows: number;
 }) {
   const layer = useLayerStore((s) => s.layers.find((l) => l.id === layerId));
   const layerCount = useLayerStore((s) => s.layers.length);
@@ -491,6 +582,16 @@ function LayerRow({
   const moveLayer = useLayerStore((s) => s.moveLayer);
   const removeLayer = useLayerStore((s) => s.removeLayer);
   const duplicateLayer = useLayerStore((s) => s.duplicateLayer);
+  const toggleBypass = useLayerStore((s) => s.toggleBypass);
+  const toggleMute = useLayerStore((s) => s.toggleMute);
+  const toggleSolo = useLayerStore((s) => s.toggleSolo);
+  // Subscribe to the derived render state at this level; cheap (just
+  // reads two booleans + iterates `layers` once). The subscription
+  // re-fires when `layers` changes, which is correct — solo state
+  // toggling must propagate to every row.
+  const renderState: LayerRenderState = useLayerStore((s) =>
+    s.getRenderState(layerId),
+  );
 
   const [showOpacity, setShowOpacity] = useState(false);
 
@@ -499,6 +600,13 @@ function LayerRow({
   const badge = TYPE_BADGES[layer.type];
   const canMoveUp = layerIndex < layerCount - 1;
   const canMoveDown = layerIndex > 0;
+
+  // Stagger thumbnail updates when row count is high. Below the
+  // threshold we let every thumbnail update every frame; above it we
+  // round-robin to keep total frame cost under the 16ms budget.
+  const shouldStagger = totalRows >= HIGH_DENSITY_THRESHOLD;
+  const staggerTurn = shouldStagger ? rowIndex % Math.max(1, totalRows) : undefined;
+  const staggerTotal = shouldStagger ? totalRows : undefined;
 
   return (
     <div
@@ -573,6 +681,14 @@ function LayerRow({
           aria-label={`${layer.type} layer`}
         />
 
+        {/* Live thumbnail — 40x8 px */}
+        <LayerThumbnail
+          layer={layer}
+          renderState={renderState}
+          staggerTurn={staggerTurn}
+          staggerTotal={staggerTotal}
+        />
+
         {/* Layer name */}
         <span
           className={`flex-1 text-ui-base truncate ${
@@ -581,6 +697,34 @@ function LayerRow({
         >
           {layer.name}
         </span>
+
+        {/* Audition controls: Bypass / Mute / Solo */}
+        <div className="flex items-center gap-0.5 shrink-0" role="group" aria-label="Audition controls">
+          <AuditionButton
+            kind="bypass"
+            active={layer.bypass}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleBypass(layer.id);
+            }}
+          />
+          <AuditionButton
+            kind="mute"
+            active={layer.mute}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMute(layer.id);
+            }}
+          />
+          <AuditionButton
+            kind="solo"
+            active={layer.solo}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSolo(layer.id);
+            }}
+          />
+        </div>
 
         {/* Opacity indicator (click to expand slider) */}
         <button
@@ -662,6 +806,45 @@ function LayerRow({
 
 // ─── Main Component ───
 
+/**
+ * Banner shown above the layer list whenever any layer has solo=true.
+ * Click "Clear solo" to remove solo from every layer at once.
+ */
+function SoloBanner() {
+  const soloedCount = useLayerStore(
+    (s) => s.layers.filter((l) => l.solo).length,
+  );
+  const totalCount = useLayerStore((s) => s.layers.length);
+  const clearSolo = useLayerStore((s) => s.clearSolo);
+
+  if (soloedCount === 0) return null;
+
+  return (
+    <button
+      onClick={clearSolo}
+      className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded text-ui-xs font-medium transition-colors"
+      style={{
+        background: 'rgba(var(--status-ok), 0.1)',
+        border: '1px solid rgba(var(--status-ok), 0.4)',
+        color: 'rgb(var(--status-ok))',
+      }}
+      title="Click to exit solo mode for all layers"
+      aria-label={`Solo mode active — ${soloedCount} of ${totalCount} layers isolated. Click to clear solo.`}
+    >
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden="true" className="text-ui-sm">{'\u25C9'}</span>
+        <span className="tracking-wider uppercase">
+          Solo active — {soloedCount} of {totalCount} layer
+          {totalCount !== 1 ? 's' : ''} isolated
+        </span>
+      </span>
+      <span className="underline decoration-dotted opacity-80 hover:opacity-100">
+        Clear solo
+      </span>
+    </button>
+  );
+}
+
 export function LayerStack() {
   const layers = useLayerStore((s) => s.layers);
   const selectedLayerId = useLayerStore((s) => s.selectedLayerId);
@@ -669,6 +852,7 @@ export function LayerStack() {
 
   // Render layers bottom-to-top: reverse for display (top layer at top of list)
   const displayLayers = [...layers].reverse();
+  const totalRows = displayLayers.length;
 
   return (
     <div className="space-y-2">
@@ -676,12 +860,14 @@ export function LayerStack() {
       <div className="flex items-center justify-between">
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
           Layer Stack
-          <HelpTooltip text="Stack multiple visual layers to compose complex blade styles. Base layers provide the primary look, Effect layers add combat reactions, Accent layers create tip/hilt highlights, and Mix layers blend two styles. Order matters: top layers render on top. See also: Color Panel for per-layer colors." proffie="Layers<base, BlastL<>, SimpleClashL<>, ...>" />
+          <HelpTooltip text="Stack multiple visual layers to compose complex blade styles. Base layers provide the primary look, Effect layers add combat reactions, Accent layers create tip/hilt highlights, and Mix layers blend two styles. Order matters: top layers render on top. Per-row B/M/S buttons control Bypass (skip entirely), Mute (composite as black), and Solo (isolate). See also: Color Panel for per-layer colors." proffie="Layers<base, BlastL<>, SimpleClashL<>, ...>" />
         </h3>
         <span className="text-ui-xs text-text-muted tabular-nums" aria-live="polite">
           {layers.length} layer{layers.length !== 1 ? 's' : ''}
         </span>
       </div>
+
+      <SoloBanner />
 
       {/* Layer list */}
       <div className="space-y-1">
@@ -693,11 +879,13 @@ export function LayerStack() {
             </span>
           </div>
         )}
-        {displayLayers.map((layer) => (
+        {displayLayers.map((layer, idx) => (
           <LayerRow
             key={layer.id}
             layerId={layer.id}
             isSelected={selectedLayerId === layer.id}
+            rowIndex={idx}
+            totalRows={totalRows}
           />
         ))}
       </div>

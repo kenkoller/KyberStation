@@ -50,6 +50,12 @@ export type {
   BladeLengthConfig,
 } from './types.js';
 
+// ─── Style factory ───
+// Exposes the style registry for standalone style evaluation (e.g. the
+// LayerStack per-row thumbnails, which render each layer's output
+// without spinning up a full BladeEngine).
+export { createStyle } from './styles/index.js';
+
 // ─── Animation Templates ───
 export { ANIMATION_TEMPLATES, getTemplatesByCategory, getCategories } from './animations/templates.js';
 export type { AnimationTemplate, AnimationCategory, AnimationTemplateEvent } from './animations/templates.js';
