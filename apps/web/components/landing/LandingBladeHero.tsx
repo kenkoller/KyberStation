@@ -5,27 +5,25 @@ import type { BladeConfig } from '@kyberstation/engine';
 import { MiniSaber } from '@/components/shared/MiniSaber';
 
 /**
- * Landing page hero — two horizontal sabers framing the KYBERSTATION
- * title. Both are ALWAYS ignited; their colors / styles / presets
- * morph live in place, as if the owner is adjusting the blade with the
- * saber lit. Ignition + retraction live in the editor — this hero is
- * pure "watch what the blade can do" theater.
+ * Landing page hero saber — a single horizontal saber rendered per call.
+ * Parent (LandingHero) renders two instances as siblings around the
+ * title block so the title sits BETWEEN the two sabers in a flex column:
  *
- * Composition:
+ *   [top]     ═════════════════[HILT]
+ *             KYBERSTATION
+ *   [bottom]  [HILT]═════════════════
  *
- *   ═════════════════[HILT]   ← top saber: hilt left, blade right
- *          KYBERSTATION
- *   [HILT]═════════════════   ← bottom saber: hilt right, blade left
+ * Both sabers are ALWAYS ignited; their colors / styles / presets
+ * morph live in place while the blade stays lit — ignition + retraction
+ * live in the editor. This hero is pure "watch what the blade can do"
+ * theater.
  *
- * The black backboard banner (25% opacity) sits behind the title and
- * between the two sabers; it sits INSIDE the hero section so sabers
- * above/below read as brackets framing the nameplate.
- *
- * Top cycles canonical hero colors (Anakin, Luke, Vader, Mace, Rey,
- * Ahsoka, Cal, Revan). Bottom cycles creative showpiece styles
- * (Fire, Aurora, Plasma, DataStream, CrystalShatter, Helix, Nebula,
- * Photon). Each pool advances every 3.5 s; the bottom is offset by
- * 1.75 s so the two morph on alternating beats.
+ * `which='top'` cycles canonical hero colors (Anakin → Luke → Vader →
+ * Mace → Rey → Ahsoka → Cal → Revan). `which='bottom'` cycles creative
+ * showpiece styles (Fire → Aurora → Plasma → DataStream →
+ * CrystalShatter → Helix → Nebula → Photon). Each pool advances every
+ * 3.5s; the bottom is offset by 1.75s so the two morph on alternating
+ * beats.
  */
 
 const LANDING_HILT_ID = 'graflex';
@@ -78,96 +76,53 @@ const MORPH_INTERVAL_MS = 3500;
 const BOTTOM_OFFSET_MS = 1750;
 
 interface LandingBladeHeroProps {
+  which: 'top' | 'bottom';
   className?: string;
 }
 
-export function LandingBladeHero({ className }: LandingBladeHeroProps) {
-  const [topIdx, setTopIdx] = useState(0);
-  const [bottomIdx, setBottomIdx] = useState(0);
+export function LandingBladeHero({ which, className }: LandingBladeHeroProps) {
+  const pool = which === 'top' ? TOP_POOL : BOTTOM_POOL;
+  const hiltPosition: 'start' | 'end' = which === 'top' ? 'start' : 'end';
+  const initialDelayMs = which === 'top' ? 0 : BOTTOM_OFFSET_MS;
 
-  // Top saber morphs on the beat; bottom morphs on the off-beat.
+  const [idx, setIdx] = useState(0);
+
   useEffect(() => {
-    const topTimer = setInterval(() => {
-      setTopIdx((i) => (i + 1) % TOP_POOL.length);
+    // Offset the bottom saber's first morph by BOTTOM_OFFSET_MS so top
+    // and bottom swap on alternating beats.
+    const startTimer = setTimeout(() => {
+      setIdx((i) => (i + 1) % pool.length);
+    }, MORPH_INTERVAL_MS + initialDelayMs);
+    const intervalTimer = setInterval(() => {
+      setIdx((i) => (i + 1) % pool.length);
     }, MORPH_INTERVAL_MS);
-
-    const bottomStart = setTimeout(() => {
-      setBottomIdx((i) => (i + 1) % BOTTOM_POOL.length);
-    }, BOTTOM_OFFSET_MS);
-    const bottomTimer = setInterval(() => {
-      setBottomIdx((i) => (i + 1) % BOTTOM_POOL.length);
-    }, MORPH_INTERVAL_MS);
-
     return () => {
-      clearInterval(topTimer);
-      clearTimeout(bottomStart);
-      clearInterval(bottomTimer);
+      clearTimeout(startTimer);
+      clearInterval(intervalTimer);
     };
-  }, []);
+  }, [pool, initialDelayMs]);
 
-  const topConfig = TOP_POOL[topIdx];
-  const bottomConfig = BOTTOM_POOL[bottomIdx];
-  const topAccent = `rgb(${topConfig.baseColor.r},${topConfig.baseColor.g},${topConfig.baseColor.b})`;
-  const bottomAccent = `rgb(${bottomConfig.baseColor.r},${bottomConfig.baseColor.g},${bottomConfig.baseColor.b})`;
+  const config = pool[idx];
 
   return (
-    // `absolute inset-0` so the top/bottom-offset sabers inside have a
-    // concrete parent to anchor to. The parent LandingHero renders this
-    // inside its own absolute-inset-0 wrapper so the whole hero section
-    // becomes the reference frame.
     <div
-      className={`absolute inset-0 pointer-events-none ${className ?? ''}`}
-      aria-label="Kyber saber preview — colors and styles morph while ignited"
+      className={`relative pointer-events-none ${className ?? ''}`}
+      aria-label={`${which === 'top' ? 'Upper' : 'Lower'} kyber saber preview — ${
+        which === 'top'
+          ? 'canonical hero colors'
+          : 'creative blade styles'
+      } morphing while ignited`}
     >
-      {/* Bloom halos — top and bottom blade colors bleed into the
-          surrounding dark, giving each saber its own presence. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-[180px] pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 60% 100% at 50% 50%, ${topAccent} 0%, transparent 70%)`,
-          opacity: 0.22,
-          filter: 'blur(40px)',
-        }}
+      <MiniSaber
+        config={config}
+        hiltId={LANDING_HILT_ID}
+        orientation="horizontal"
+        hiltPosition={hiltPosition}
+        bladeLength={720}
+        bladeThickness={10}
+        hiltLength={72}
+        controlledIgnited={true}
       />
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-[180px] pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 60% 100% at 50% 50%, ${bottomAccent} 0%, transparent 70%)`,
-          opacity: 0.22,
-          filter: 'blur(40px)',
-        }}
-      />
-
-      {/* Saber stack — uses the parent hero section's flex layout. The
-          banner-and-title block is rendered by the parent between
-          these two sabers, so we emit them as absolutely-positioned
-          layers top/bottom of the hero section. */}
-      <div className="absolute inset-x-0 top-[clamp(40px,8vh,100px)] flex justify-center">
-        <MiniSaber
-          config={topConfig}
-          hiltId={LANDING_HILT_ID}
-          orientation="horizontal"
-          hiltPosition="start"
-          bladeLength={720}
-          bladeThickness={10}
-          hiltLength={72}
-          controlledIgnited={true}
-        />
-      </div>
-      <div className="absolute inset-x-0 bottom-[clamp(40px,8vh,100px)] flex justify-center">
-        <MiniSaber
-          config={bottomConfig}
-          hiltId={LANDING_HILT_ID}
-          orientation="horizontal"
-          hiltPosition="end"
-          bladeLength={720}
-          bladeThickness={10}
-          hiltLength={72}
-          controlledIgnited={true}
-        />
-      </div>
     </div>
   );
 }
