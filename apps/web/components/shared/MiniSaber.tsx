@@ -332,7 +332,20 @@ export function MiniSaber({
           width: isVertical ? `${bladeThickness}px` : `${bladeLength}px`,
           height: isVertical ? `${bladeLength}px` : `${bladeThickness}px`,
           filter: `drop-shadow(0 0 6px ${accentCss}) drop-shadow(0 0 18px ${accentCss})`,
-          borderRadius: `${Math.max(2, bladeThickness / 2)}px`,
+          // Round only the tip end so the hilt end sits flush against
+          // the emitter. border-radius order is top-left top-right
+          // bottom-right bottom-left.
+          borderRadius: (() => {
+            const r = Math.max(2, bladeThickness / 2);
+            if (isVertical) {
+              return hiltPosition === 'end'
+                ? `0 0 ${r}px ${r}px` // hilt at top, tip at bottom → round bottom
+                : `${r}px ${r}px 0 0`; // hilt at bottom, tip at top → round top
+            }
+            return hiltPosition === 'end'
+              ? `${r}px 0 0 ${r}px` // hilt at right, tip at left → round left
+              : `0 ${r}px ${r}px 0`; // hilt at left, tip at right → round right
+          })(),
         }}
       />
     </div>
