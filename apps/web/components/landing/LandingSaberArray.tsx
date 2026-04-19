@@ -1,18 +1,24 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { BladeConfig } from '@kyberstation/engine';
 import { MiniSaber } from '@/components/shared/MiniSaber';
 
 /**
- * Landing-page breadth showcase — 8 canonical saber designs rendered
- * live + simultaneously so a first-time visitor sees "this tool makes
- * lightsabers like THESE" at a glance.
+ * Landing-page breadth showcase — two sets of 8 sabers alternating, to
+ * answer "what can this tool actually build?" in two beats:
  *
- * Each card pairs a screen-canon character preset with the hilt
- * design most associated with that character, so visitors can map
- * "this is Obi-Wan's actual hilt" to "I could build my own the same
- * way". Ignitions are staggered so all 8 don't light at once — each
- * card gets a short initialDelay that's a function of its index.
+ *   Set 1 — Canonical (screen-accurate Jedi/Sith icons)
+ *   Set 2 — Creative (showpiece blade styles no other editor has)
+ *
+ * All 8 cards ignite simultaneously, dwell, retract simultaneously,
+ * swap to the next set, repeat. The parent orchestrates ignition via
+ * MiniSaber's `controlledIgnited` prop so all 8 stay phase-locked
+ * regardless of per-engine timing variance.
+ *
+ * Vertical orientation per Ken's 2026-04-19 direction: hilt at bottom,
+ * blade rising up. Hilts use the neutral chrome accent so the blade
+ * stays the hero.
  */
 
 interface ArrayPreset {
@@ -42,11 +48,8 @@ const baseConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
     ...overrides,
   }) as BladeConfig;
 
-// ─── Canonical character-to-hilt pairings (ratified in the walkthrough
-//     on 2026-04-19 with Ken's explicit curation). Order is left-to-right
-//     top-to-bottom in a 4-col grid; the sequence flows through the three
-//     eras (prequels → OT → sequels) for a cinematic-history read. ───
-const ARRAY_PRESETS: ArrayPreset[] = [
+// ─── Set 1: Canonical screen-accurate sabers ───────────────────────────────
+const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Obi-Wan',
     character: 'Obi-Wan Kenobi · ANH',
@@ -124,15 +127,140 @@ const ARRAY_PRESETS: ArrayPreset[] = [
   },
 ];
 
-// Stagger each card's first ignition by this much * idx. 260ms gives a
-// cinematic wave without feeling sluggish (8 cards fully ignited by ~2s).
-const IGNITION_STAGGER_MS = 260;
+// ─── Set 2: Creative showpiece blades ──────────────────────────────────────
+// Each one pairs a distinctive engine style with a fresh color + hilt
+// combination the user could build in the editor. This is the "and
+// then some" — things no other Proffie editor renders.
+const CREATIVE_SET: ArrayPreset[] = [
+  {
+    label: 'Inferno',
+    character: 'Style · Fire',
+    hiltId: 'ren-vent',
+    config: baseConfig({
+      baseColor: { r: 255, g: 106, b: 12 },
+      style: 'fire',
+      shimmer: 0.1,
+    }),
+  },
+  {
+    label: 'Aurora',
+    character: 'Style · Aurora',
+    hiltId: 'negotiator',
+    config: baseConfig({
+      baseColor: { r: 40, g: 240, b: 170 },
+      style: 'aurora',
+      shimmer: 0.08,
+    }),
+  },
+  {
+    label: 'Plasma Storm',
+    character: 'Style · Plasma',
+    hiltId: 'count',
+    config: baseConfig({
+      baseColor: { r: 196, g: 40, b: 245 },
+      style: 'plasma',
+      shimmer: 0.08,
+    }),
+  },
+  {
+    label: 'Data Stream',
+    character: 'Style · DataStream',
+    hiltId: 'graflex',
+    config: baseConfig({
+      baseColor: { r: 60, g: 255, b: 120 },
+      style: 'dataStream',
+      shimmer: 0.05,
+    }),
+  },
+  {
+    label: 'Crystal Shatter',
+    character: 'Style · CrystalShatter',
+    hiltId: 'shoto-sage',
+    config: baseConfig({
+      baseColor: { r: 130, g: 200, b: 255 },
+      style: 'crystalShatter',
+      shimmer: 0.09,
+    }),
+  },
+  {
+    label: 'Helix',
+    character: 'Style · Helix',
+    hiltId: 'mpp',
+    config: baseConfig({
+      baseColor: { r: 255, g: 200, b: 40 },
+      style: 'helix',
+      shimmer: 0.06,
+    }),
+  },
+  {
+    label: 'Nebula',
+    character: 'Style · Nebula',
+    hiltId: 'zabrak-staff',
+    config: baseConfig({
+      baseColor: { r: 180, g: 70, b: 255 },
+      style: 'nebula',
+      shimmer: 0.08,
+    }),
+  },
+  {
+    label: 'Photon Burst',
+    character: 'Style · Photon',
+    hiltId: 'fulcrum-pair',
+    config: baseConfig({
+      baseColor: { r: 255, g: 250, b: 200 },
+      style: 'photon',
+      shimmer: 0.07,
+    }),
+  },
+];
+
+const SETS: ArrayPreset[][] = [CANONICAL_SET, CREATIVE_SET];
+
+// Cycle timing. "Slow-moving slideshow" per Ken's direction — give the
+// visitor time to read each card before the retract.
+const DWELL_MS = 8000;
+const RETRACT_MS = 900;
+const POST_RETRACT_PAUSE_MS = 300;
 
 interface LandingSaberArrayProps {
   className?: string;
 }
 
 export function LandingSaberArray({ className }: LandingSaberArrayProps) {
+  const [setIdx, setSetIdx] = useState(0);
+  const [ignited, setIgnited] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const runCycle = () => {
+      if (cancelled) return;
+      // Phase 1: ignited dwell
+      timeoutId = setTimeout(() => {
+        if (cancelled) return;
+        setIgnited(false);
+        // Phase 2: wait for retraction animation to finish
+        timeoutId = setTimeout(() => {
+          if (cancelled) return;
+          // Phase 3: swap set + ignite again
+          setSetIdx((i) => (i + 1) % SETS.length);
+          setIgnited(true);
+          runCycle();
+        }, RETRACT_MS + POST_RETRACT_PAUSE_MS);
+      }, DWELL_MS);
+    };
+
+    runCycle();
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const activeSet = SETS[setIdx];
+  const setLabel = setIdx === 0 ? 'SCREEN-ACCURATE' : 'PURE CREATIVE';
+
   return (
     <section
       className={`relative py-16 px-6 ${className ?? ''}`}
@@ -146,53 +274,52 @@ export function LandingSaberArray({ className }: LandingSaberArrayProps) {
           >
             EIGHT HILTS. INFINITE BLADES.
           </h2>
-          <p className="dot-matrix" style={{ fontSize: 'clamp(11px, 1.2vw, 14px)' }}>
-            SCREEN-ACCURATE · ALL LIVE-RENDERED
+          <p
+            className="dot-matrix transition-opacity duration-500"
+            style={{ fontSize: 'clamp(11px, 1.2vw, 14px)' }}
+          >
+            {setLabel} · ALL LIVE-RENDERED
           </p>
         </div>
 
-        <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 sm:gap-5">
-          {ARRAY_PRESETS.map((preset, i) => {
+        {/* 4-col desktop / 2-col tablet / 2-col phone. The 2-col phone
+            keeps the row of blades readable on narrow screens while
+            still showing >1 at a time so the "array" concept survives. */}
+        <div className="grid grid-cols-2 tablet:grid-cols-2 desktop:grid-cols-4 gap-4 sm:gap-5">
+          {activeSet.map((preset) => {
             const { r, g, b } = preset.config.baseColor;
             const accentCss = `rgb(${r},${g},${b})`;
             return (
               <article
-                key={preset.label}
-                className="relative group flex flex-col items-stretch rounded-lg border border-border-subtle bg-bg-card/60 backdrop-blur-sm p-4 overflow-hidden transition-colors hover:border-border-light"
-                style={{
-                  // Soft accent wash so each card carries its saber's color
-                  // even before the blade ignites.
-                  boxShadow: `inset 0 0 40px 0 rgba(${r},${g},${b},0.05)`,
-                }}
+                key={`${setIdx}-${preset.label}`}
+                className="relative flex flex-col items-center rounded-lg border border-border-subtle bg-bg-card/60 backdrop-blur-sm p-4 pb-3 overflow-hidden transition-colors hover:border-border-light"
               >
-                {/* Subtle halo behind the saber */}
+                {/* Ambient halo anchored to the saber's axis */}
                 <div
                   aria-hidden="true"
                   className="absolute inset-0 pointer-events-none"
                   style={{
-                    background: `radial-gradient(ellipse 80% 30% at center, ${accentCss} 0%, transparent 65%)`,
-                    opacity: 0.12,
-                    filter: 'blur(20px)',
+                    background: `radial-gradient(ellipse 30% 70% at center, ${accentCss} 0%, transparent 65%)`,
+                    opacity: 0.14,
+                    filter: 'blur(28px)',
                   }}
                 />
 
-                {/* Saber composition */}
-                <div className="relative flex items-center justify-center py-6 min-h-[88px]">
+                {/* Vertical saber — hilt at bottom, blade rising up */}
+                <div className="relative flex items-end justify-center w-full" style={{ minHeight: '360px' }}>
                   <MiniSaber
                     config={preset.config}
                     hiltId={preset.hiltId}
-                    orientation="horizontal"
-                    bladeLength={180}
-                    bladeThickness={5}
-                    hiltLength={48}
-                    dwellMs={4800}
-                    initialDelayMs={i * IGNITION_STAGGER_MS}
-                    cycle={true}
+                    orientation="vertical"
+                    bladeLength={300}
+                    bladeThickness={6}
+                    hiltLength={72}
+                    controlledIgnited={ignited}
                   />
                 </div>
 
-                {/* Identity caption — character on top, hilt id below */}
-                <div className="relative mt-2 text-center">
+                {/* Identity caption */}
+                <div className="relative mt-3 text-center">
                   <div className="font-cinematic text-ui-base font-bold tracking-[0.06em] text-text-primary">
                     {preset.label.toUpperCase()}
                   </div>

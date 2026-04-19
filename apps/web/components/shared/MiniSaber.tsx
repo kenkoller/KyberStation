@@ -5,6 +5,14 @@ import { BladeEngine } from '@kyberstation/engine';
 import type { BladeConfig, RGB } from '@kyberstation/engine';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 
+/**
+ * Neutral chrome tint applied to the hilt's accent parts. The design
+ * intent is that the blade is the hero — hilts shouldn't compete with
+ * vibrant color. A restrained cool silver reads as "metal" regardless
+ * of what color the blade is.
+ */
+const NEUTRAL_HILT_ACCENT = 'rgb(178, 182, 192)';
+
 export interface MiniSaberProps {
   /** Blade config (passed to BladeEngine). */
   config: BladeConfig;
@@ -26,6 +34,19 @@ export interface MiniSaberProps {
   initialDelayMs?: number;
   /** When false, engine holds the ignited state forever (no retract/cycle). */
   cycle?: boolean;
+  /**
+   * When defined, overrides the self-cycle behavior — the blade is
+   * ignited iff this is true, retracted otherwise. Toggle it externally
+   * to drive the cycle from a parent (e.g. an array that synchronizes
+   * all 8 sabers). Supersedes `cycle` + `initialDelayMs` when set.
+   */
+  controlledIgnited?: boolean;
+  /**
+   * Override the hilt's accent colour. Defaults to a neutral cool
+   * silver so the blade stays the hero. Pass `'blade'` to use the
+   * current blade colour as the accent (legacy color-tinted behaviour).
+   */
+  hiltAccent?: string | 'blade';
   /** Extra container class. */
   className?: string;
   /** Optional aria-label; defaults to the hilt's assembly display name. */
@@ -58,12 +79,17 @@ export function MiniSaber({
   dwellMs = 5400,
   initialDelayMs = 0,
   cycle = true,
+  controlledIgnited,
+  hiltAccent,
   className,
   ariaLabel,
 }: MiniSaberProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const configRef = useRef(config);
   configRef.current = config;
+  const controlledRef = useRef(controlledIgnited);
+  controlledRef.current = controlledIgnited;
+  const isControlled = controlledIgnited !== undefined;
   const [accent, setAccent] = useState<RGB>(config.baseColor);
 
   const isVertical = orientation === 'vertical';
@@ -84,8 +110,12 @@ export function MiniSaber({
     if (!ctx) return;
 
     // Warm to steady-state before the first paint to avoid a flash of
-    // unlit blade on mount (when no initial delay is set).
-    if (cycle === false || initialDelayMs <= 0) {
+    // unlit blade on mount (when no initial delay is set and the blade
+    // should start ignited).
+    const startIgnited = isControlled
+      ? controlledRef.current === true
+      : cycle === false || initialDelayMs <= 0;
+    if (startIgnited) {
       engine.ignite();
       const FRAME_DT = 16;
       const warmupFrames =
@@ -102,6 +132,9 @@ export function MiniSaber({
     let retractScheduled = false;
     let igniteScheduledAt = 0;
     let firstIgnited = initialDelayMs <= 0 || cycle === false;
+    let lastControlled: boolean | undefined = isControlled
+      ? controlledRef.current
+      : undefined;
 
     const drawPixels = () => {
       const pixels = engine.getPixels();
@@ -145,23 +178,34 @@ export function MiniSaber({
       const dt = Math.min(48, time - lastTime);
       lastTime = time;
 
-      if (!firstIgnited && time >= cycleStart) {
-        engine.ignite();
-        firstIgnited = true;
-      }
-
-      if (cycle && firstIgnited) {
-        const elapsed = time - cycleStart;
-        if (!retractScheduled && elapsed > dwellMs) {
-          engine.retract();
-          retractScheduled = true;
-          igniteScheduledAt =
-            time + (configRef.current.retractionMs ?? 420) + 60;
+      if (isControlled) {
+        // Parent-driven mode — watch the ref for toggles and forward
+        // them to the engine once per change.
+        const want = controlledRef.current;
+        if (want !== undefined && want !== lastControlled) {
+          if (want) engine.ignite();
+          else engine.retract();
+          lastControlled = want;
         }
-        if (retractScheduled && time >= igniteScheduledAt) {
+      } else {
+        if (!firstIgnited && time >= cycleStart) {
           engine.ignite();
-          retractScheduled = false;
-          cycleStart = time + (configRef.current.ignitionMs ?? 320);
+          firstIgnited = true;
+        }
+
+        if (cycle && firstIgnited) {
+          const elapsed = time - cycleStart;
+          if (!retractScheduled && elapsed > dwellMs) {
+            engine.retract();
+            retractScheduled = true;
+            igniteScheduledAt =
+              time + (configRef.current.retractionMs ?? 420) + 60;
+          }
+          if (retractScheduled && time >= igniteScheduledAt) {
+            engine.ignite();
+            retractScheduled = false;
+            cycleStart = time + (configRef.current.ignitionMs ?? 320);
+          }
         }
       }
 
@@ -210,6 +254,12 @@ export function MiniSaber({
   }, []);
 
   const accentCss = `rgb(${accent.r | 0},${accent.g | 0},${accent.b | 0})`;
+  // Hilt accent: neutral chrome by default so the blade stays the hero.
+  // Callers can pass 'blade' to get the old color-tinted behaviour.
+  const resolvedHiltAccent =
+    hiltAccent === 'blade'
+      ? accentCss
+      : (hiltAccent ?? NEUTRAL_HILT_ACCENT);
 
   return (
     <div
@@ -223,7 +273,7 @@ export function MiniSaber({
         assemblyId={hiltId}
         orientation={orientation}
         longAxisSize={hiltLength}
-        accentOverride={accentCss}
+        accentOverride={resolvedHiltAccent}
         className="shrink-0"
         ariaLabel=""
       />
