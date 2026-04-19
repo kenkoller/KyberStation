@@ -42,7 +42,26 @@ import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
 import { ComparisonView } from '@/components/editor/ComparisonView';
 import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
-import { CrystalPanel } from '@/components/editor/CrystalPanel';
+import dynamic from 'next/dynamic';
+
+// CrystalPanel pulls in the Three.js Kyber Crystal renderer. Even though
+// the heavy three.js payload is already dynamic inside the panel, the
+// panel module itself (and its transitive static imports) used to
+// evaluate on every editor mount because TabColumnContent is always
+// loaded. Deferring the panel module to actual render-time keeps it
+// out of the editor page bundle for users who never open the "My
+// Crystal" panel. See the 2026-04-19 perf audit §2.
+const CrystalPanel = dynamic(
+  () => import('@/components/editor/CrystalPanel').then((m) => m.CrystalPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="text-ui-xs text-text-muted italic p-3">
+        Loading crystal…
+      </div>
+    ),
+  },
+);
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';

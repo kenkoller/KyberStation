@@ -27,8 +27,12 @@
   /* Full-value: rgba with baked-in alpha */
   --accent-dim: rgba(74, 158, 255, 0.08);
   --accent-border: rgba(74, 158, 255, 0.20);
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-light: rgba(255, 255, 255, 0.08);
+  /* Raised from 0.04 / 0.08 (≈1.75:1 / 2.5:1) to clear WCAG 1.4.11
+     UI-component contrast (≥3:1) per the 2026-04-19 a11y audit. The
+     "subtle" look is preserved; the increase is within-noise visually
+     but meaningful for legibility — esp. in non-dark-adapted viewing. */
+  --border-subtle: rgba(255, 255, 255, 0.15);
+  --border-light: rgba(255, 255, 255, 0.22);
   /* Ambient + crystal */
   --ambient-intensity: 1;
   --crystal-color: #4a9eff;

@@ -747,10 +747,24 @@ function LayerRow({
           : 'border-border-subtle bg-bg-surface hover:border-border-light'
       }`}
     >
-      {/* Main row — compact at ~36px */}
+      {/* Main row — compact at ~36px. role="button" + tabIndex makes the
+          whole row keyboard-selectable (Enter/Space toggle). The inner
+          buttons (reorder, B/M/S, duplicate, delete) remain independently
+          focusable and stopPropagation prevents them from re-firing the
+          row's select. See the 2026-04-19 a11y audit P1. */}
       <div
         className="flex items-center gap-1 px-2 py-1.5 cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-pressed={isSelected}
+        aria-label={`${isSelected ? 'Deselect' : 'Select'} layer ${layer.name}`}
         onClick={() => selectLayer(isSelected ? null : layer.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            selectLayer(isSelected ? null : layer.id);
+          }
+        }}
       >
         {/* Reorder arrows */}
         <div className="flex flex-col shrink-0" aria-label="Reorder">

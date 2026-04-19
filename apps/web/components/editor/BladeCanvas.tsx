@@ -1004,30 +1004,38 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const br = glow.bloomRadius;
     const bi = glow.bloomIntensity;
 
-    // Continuous bloom: 14 passes with geometric radius progression.
-    // Each overlaps its neighbors significantly → no visible banding.
-    const passCount = 14;
-    for (let i = 0; i < passCount; i++) {
-      const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
-      // Radius: exponential from 2px to 100px
-      const radius = 2 + 98 * Math.pow(t, 1.4);
-      // Alpha: tighter passes are more opaque, wider are subtle
-      const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
+    // Skip the 14-pass bloom pipeline (+ bridge glow) when the blade is
+    // off or bloom intensity is zero — there's nothing to glow. Saves
+    // ~50% of frame budget during the retracted state. The blade-body
+    // pass below still runs; it self-skips unlit LEDs at the pixel
+    // level. See the 2026-04-19 perf audit quick-win #5.
+    const bloomActive = activeCount > 0 && bi > 0;
+    if (bloomActive) {
+      // Continuous bloom: 14 passes with geometric radius progression.
+      // Each overlaps its neighbors significantly → no visible banding.
+      const passCount = 14;
+      for (let i = 0; i < passCount; i++) {
+        const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
+        // Radius: exponential from 2px to 100px
+        const radius = 2 + 98 * Math.pow(t, 1.4);
+        // Alpha: tighter passes are more opaque, wider are subtle
+        const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
+        ctx.save();
+        ctx.filter = `blur(${radius * scale * br}px)`;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(offscreen, 0, 0);
+        ctx.restore();
+      }
+
+      // Bridge glow — soft additive fill between bloom and blade body
       ctx.save();
-      ctx.filter = `blur(${radius * scale * br}px)`;
+      ctx.filter = `blur(${2.5 * scale * br}px)`;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = 0.35 * bi * shimmer;
       ctx.drawImage(offscreen, 0, 0);
       ctx.restore();
     }
-
-    // Bridge glow — soft additive fill between bloom and blade body
-    ctx.save();
-    ctx.filter = `blur(${2.5 * scale * br}px)`;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.35 * bi * shimmer;
-    ctx.drawImage(offscreen, 0, 0);
-    ctx.restore();
 
     // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
     for (let i = 0; i < ledCount; i++) {
