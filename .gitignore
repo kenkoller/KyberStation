@@ -43,6 +43,11 @@ KyberStation.iconset/
 .icon-tmp/
 KyberStation-icon.svg
 
+# Override the global `Icon?` macOS pattern for our PWA icons dir —
+# the generated 192 / 512 / maskable assets must be tracked.
+!apps/web/public/icons/
+!apps/web/public/icons/**
+
 # Personal data / external source
 89sabers sdcard OG/
 ProffieOS/

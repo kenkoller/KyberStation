@@ -177,6 +177,8 @@ pnpm typecheck        # TypeScript strict check
 
 Monorepo powered by pnpm workspaces. Engine-first design — the simulation engine is the source of truth, and the UI is a thin rendering layer.
 
+See [docs/MARKETING_SITE.md](docs/MARKETING_SITE.md) for the public marketing site's architecture — routes, component layers, theme tokens, reduced-motion discipline, accessibility baselines, SEO/OG plumbing, and the extensibility cookbook.
+
 ```
 kyberstation/
 ├── apps/web/              # Next.js 14 web application (App Router)

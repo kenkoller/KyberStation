@@ -11,6 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path.
 
+- **Marketing site** (in flight, PR #32): five-page public marketing
+  site under `apps/web/app/` — `/features`, `/showcase`, `/changelog`,
+  `/faq`, `/community`. Twelve shared marketing components
+  (`MarketingShell`, `MarketingNav`, `MarketingHero`,
+  `MarketingSection`, `FeatureCard`, `PresetCard`, `ShowcaseGrid`,
+  `ChangelogMarkdown`, `ScrollReveal`, `LiveBladePreview`,
+  `InlineCodePeek`, `CopyButton`). SEO + social preview
+  infrastructure: `sitemap.ts`, `robots.ts`, `siteConfig.ts`,
+  `pageMetadata.ts`, `metadataBase` on root layout, real
+  192 / 512 / maskable favicons. `/showcase` filters the full
+  214-preset library by era / faction / screen-accurate + search.
+  `/features` runs four live blades from the real BladeEngine
+  inline + a formatted ProffieOS code sample. `/changelog` reads
+  this file at build time with 1h revalidation. +44 tests (446
+  total). Architecture reference at `docs/MARKETING_SITE.md`.
+  **Not deployed yet** — merging this PR only lands the code; the
+  kyberstation.com domain + hosting wire-up is separate.
 - **v0.11.1 — Design Review Polish Pass** (shipped): alert-color
   discipline, skeleton + error-state coverage, color-glyph pairing for
   accessibility, CHANGELOG + README assets, housekeeping

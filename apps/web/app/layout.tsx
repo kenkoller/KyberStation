@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     'Universal Saber Style Engine — Design, preview, and export lightsaber blade styles',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon-1024.png',
-    apple: '/icon-1024.png',
+    icon: '/icons/icon-192.png',
+    apple: '/icons/icon-512.png',
   },
   appleWebApp: {
     capable: true,
