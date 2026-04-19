@@ -21,6 +21,19 @@ export interface MiniSaberProps {
   /** vertical = hilt at bottom, blade rising up. horizontal = hilt at left,
    *  blade extending right. Default vertical. */
   orientation?: 'vertical' | 'horizontal';
+  /**
+   * Which end of the saber the hilt sits on:
+   *   - 'start' (default): natural — hilt at the "start" of the axis
+   *     (bottom for vertical, left for horizontal), blade extends toward
+   *     the "end" (up / right).
+   *   - 'end': reversed — hilt at the "end" of the axis (top / right),
+   *     blade extends toward the "start" (down / left). Used when we
+   *     want a saber pointing back at the viewer or mirrored opposite
+   *     another saber in the layout.
+   *
+   * The LED draw direction follows — LED 0 always sits next to the hilt.
+   */
+  hiltPosition?: 'start' | 'end';
   /** Blade length along its long axis, in CSS pixels. */
   bladeLength?: number;
   /** Blade thickness (core), in CSS pixels. The halo extends beyond. */
@@ -73,6 +86,7 @@ export function MiniSaber({
   config,
   hiltId,
   orientation = 'vertical',
+  hiltPosition = 'start',
   bladeLength = 600,
   bladeThickness = 8,
   hiltLength = 120,
@@ -157,15 +171,20 @@ export function MiniSaber({
         if (lum < 8) continue;
         ctx.fillStyle = `rgb(${r},${g},${b})`;
 
+        // LED 0 always sits next to the hilt. The axis direction flips
+        // based on `hiltPosition` so the blade grows away from the hilt
+        // wherever the hilt is placed.
         if (isVertical) {
-          // Hilt at bottom → LED i at the i-th slice counting UP from the
-          // bottom (i=0 is the LED nearest the hilt).
-          const y = canvasH - (i + 1) * slice;
+          const y =
+            hiltPosition === 'end'
+              ? i * slice // hilt at top → LEDs grow downward
+              : canvasH - (i + 1) * slice; // hilt at bottom → LEDs grow upward
           ctx.fillRect(0, y, shortAxis, slice + 0.5);
         } else {
-          // Hilt at left → LED i at the i-th slice counting RIGHT from
-          // the left (i=0 is the LED nearest the hilt).
-          const x = i * slice;
+          const x =
+            hiltPosition === 'end'
+              ? canvasW - (i + 1) * slice // hilt at right → LEDs grow leftward
+              : i * slice; // hilt at left → LEDs grow rightward
           ctx.fillRect(x, 0, slice + 0.5, shortAxis);
         }
       }
@@ -261,22 +280,47 @@ export function MiniSaber({
       ? accentCss
       : (hiltAccent ?? NEUTRAL_HILT_ACCENT);
 
+  // Flex direction reflects hiltPosition. For vertical, `flex-col-reverse`
+  // puts the first child (hilt) at the bottom (hiltPosition='start');
+  // `flex-col` puts it at the top (hiltPosition='end'). Analogous for
+  // horizontal: `flex-row` = hilt at left (start), `flex-row-reverse` =
+  // hilt at right (end).
+  const flexDirection = isVertical
+    ? hiltPosition === 'end'
+      ? 'flex-col'
+      : 'flex-col-reverse'
+    : hiltPosition === 'end'
+      ? 'flex-row-reverse'
+      : 'flex-row';
+
   return (
     <div
-      className={`relative flex items-center justify-center ${
-        isVertical ? 'flex-col-reverse' : 'flex-row'
-      } ${className ?? ''}`}
+      className={`relative flex items-center justify-center ${flexDirection} ${className ?? ''}`}
       aria-label={ariaLabel}
     >
-      {/* Hilt */}
-      <HiltRenderer
-        assemblyId={hiltId}
-        orientation={orientation}
-        longAxisSize={hiltLength}
-        accentOverride={resolvedHiltAccent}
+      {/* Hilt — mirrored via CSS when hiltPosition='end' so the emitter
+          always faces the blade. The SVG itself always draws with
+          emitter at the "start" end; the outer transform flips it
+          when we render the hilt on the opposite side. */}
+      <div
         className="shrink-0"
-        ariaLabel=""
-      />
+        style={{
+          transform:
+            hiltPosition === 'end'
+              ? isVertical
+                ? 'scaleY(-1)'
+                : 'scaleX(-1)'
+              : undefined,
+        }}
+      >
+        <HiltRenderer
+          assemblyId={hiltId}
+          orientation={orientation}
+          longAxisSize={hiltLength}
+          accentOverride={resolvedHiltAccent}
+          ariaLabel=""
+        />
+      </div>
       {/* Blade */}
       <canvas
         ref={canvasRef}

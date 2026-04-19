@@ -1,22 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { BladeConfig } from '@kyberstation/engine';
 import { MiniSaber } from '@/components/shared/MiniSaber';
 
 /**
- * Landing page hero saber. A single full-height MiniSaber that rotates
- * through 4 canonical presets (Luke ROTJ → Anakin → Kylo → Ahsoka) so
- * the first-impression visual shows the app's range without overwhelming
- * the hero. The 8-saber breadth showcase lives in `LandingSaberArray`
- * below the CTAs.
+ * Landing page hero — two horizontal sabers framing the KYBERSTATION
+ * title. Both are ALWAYS ignited; their colors / styles / presets
+ * morph live in place, as if the owner is adjusting the blade with the
+ * saber lit. Ignition + retraction live in the editor — this hero is
+ * pure "watch what the blade can do" theater.
+ *
+ * Composition:
+ *
+ *   ═════════════════[HILT]   ← top saber: hilt left, blade right
+ *          KYBERSTATION
+ *   [HILT]═════════════════   ← bottom saber: hilt right, blade left
+ *
+ * The black backboard banner (25% opacity) sits behind the title and
+ * between the two sabers; it sits INSIDE the hero section so sabers
+ * above/below read as brackets framing the nameplate.
+ *
+ * Top cycles canonical hero colors (Anakin, Luke, Vader, Mace, Rey,
+ * Ahsoka, Cal, Revan). Bottom cycles creative showpiece styles
+ * (Fire, Aurora, Plasma, DataStream, CrystalShatter, Helix, Nebula,
+ * Photon). Each pool advances every 3.5 s; the bottom is offset by
+ * 1.75 s so the two morph on alternating beats.
  */
 
-interface HeroPreset {
-  label: string;
-  hiltId: string;
-  config: BladeConfig;
-}
+const LANDING_HILT_ID = 'graflex';
 
 const baseConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
   ({
@@ -38,109 +50,122 @@ const baseConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
     ...overrides,
   }) as BladeConfig;
 
-// Hilt stays consistent across every saber on the landing page — the
-// Graflex reads as "the" lightsaber hilt for most viewers (Luke ANH)
-// and lets the blade stay the hero without the hilt competing for
-// attention. Ratified with Ken on 2026-04-19.
-const LANDING_HILT_ID = 'graflex';
-
-const HERO_PRESETS: HeroPreset[] = [
-  {
-    label: 'Luke ROTJ',
-    hiltId: LANDING_HILT_ID,
-    config: baseConfig({
-      baseColor: { r: 60, g: 255, b: 40 },
-      style: 'rotoscope',
-      shimmer: 0.05,
-    }),
-  },
-  {
-    label: 'Anakin',
-    hiltId: LANDING_HILT_ID,
-    config: baseConfig({
-      baseColor: { r: 0, g: 135, b: 255 },
-      style: 'stable',
-    }),
-  },
-  {
-    label: 'Kylo Ren',
-    hiltId: LANDING_HILT_ID,
-    config: baseConfig({
-      baseColor: { r: 255, g: 40, b: 20 },
-      style: 'unstable',
-      ignition: 'crackle',
-    }),
-  },
-  {
-    label: 'Ahsoka',
-    hiltId: LANDING_HILT_ID,
-    config: baseConfig({
-      baseColor: { r: 250, g: 245, b: 225 },
-      style: 'stable',
-      shimmer: 0.04,
-    }),
-  },
+// ─── Top saber: canonical hero colors ──────────────────────────────────────
+const TOP_POOL: BladeConfig[] = [
+  baseConfig({ baseColor: { r: 15, g: 105, b: 245 }, style: 'stable' }),   // Anakin
+  baseConfig({ baseColor: { r: 6, g: 234, b: 25 }, style: 'rotoscope' }),   // Luke ROTJ
+  baseConfig({ baseColor: { r: 228, g: 12, b: 12 }, style: 'stable' }),    // Vader
+  baseConfig({ baseColor: { r: 132, g: 11, b: 218 }, style: 'stable' }),   // Mace
+  baseConfig({ baseColor: { r: 245, g: 206, b: 10 }, style: 'stable' }),   // Rey
+  baseConfig({ baseColor: { r: 248, g: 247, b: 247 }, style: 'stable' }),  // Ahsoka
+  baseConfig({ baseColor: { r: 20, g: 200, b: 245 }, style: 'stable' }),   // Cal cyan
+  baseConfig({ baseColor: { r: 68, g: 16, b: 198 }, style: 'stable' }),    // Revan indigo
 ];
 
-const DWELL_MS = 5400;
-const IGNITION_BUFFER_MS = 320;
-const RETRACTION_BUFFER_MS = 420;
-const PRESET_CYCLE_MS = DWELL_MS + IGNITION_BUFFER_MS + RETRACTION_BUFFER_MS + 120;
+// ─── Bottom saber: creative showpiece styles ───────────────────────────────
+const BOTTOM_POOL: BladeConfig[] = [
+  baseConfig({ baseColor: { r: 255, g: 106, b: 12 }, style: 'fire', shimmer: 0.1 }),
+  baseConfig({ baseColor: { r: 40, g: 240, b: 170 }, style: 'aurora', shimmer: 0.08 }),
+  baseConfig({ baseColor: { r: 196, g: 40, b: 245 }, style: 'plasma', shimmer: 0.08 }),
+  baseConfig({ baseColor: { r: 60, g: 255, b: 120 }, style: 'dataStream', shimmer: 0.05 }),
+  baseConfig({ baseColor: { r: 130, g: 200, b: 255 }, style: 'crystalShatter', shimmer: 0.09 }),
+  baseConfig({ baseColor: { r: 255, g: 200, b: 40 }, style: 'helix', shimmer: 0.06 }),
+  baseConfig({ baseColor: { r: 180, g: 70, b: 255 }, style: 'nebula', shimmer: 0.08 }),
+  baseConfig({ baseColor: { r: 255, g: 250, b: 200 }, style: 'photon', shimmer: 0.07 }),
+];
+
+const MORPH_INTERVAL_MS = 3500;
+const BOTTOM_OFFSET_MS = 1750;
 
 interface LandingBladeHeroProps {
   className?: string;
 }
 
 export function LandingBladeHero({ className }: LandingBladeHeroProps) {
-  const [presetIdx, setPresetIdx] = useState(0);
-  // A bumped key forces MiniSaber to remount with the next preset's
-  // hilt + config, picking up the ignite/dwell/retract cycle cleanly
-  // instead of trying to mid-animate through it.
-  const cycleKey = useRef(0);
+  const [topIdx, setTopIdx] = useState(0);
+  const [bottomIdx, setBottomIdx] = useState(0);
 
+  // Top saber morphs on the beat; bottom morphs on the off-beat.
   useEffect(() => {
-    const iv = setInterval(() => {
-      setPresetIdx((i) => (i + 1) % HERO_PRESETS.length);
-      cycleKey.current += 1;
-    }, PRESET_CYCLE_MS);
-    return () => clearInterval(iv);
+    const topTimer = setInterval(() => {
+      setTopIdx((i) => (i + 1) % TOP_POOL.length);
+    }, MORPH_INTERVAL_MS);
+
+    const bottomStart = setTimeout(() => {
+      setBottomIdx((i) => (i + 1) % BOTTOM_POOL.length);
+    }, BOTTOM_OFFSET_MS);
+    const bottomTimer = setInterval(() => {
+      setBottomIdx((i) => (i + 1) % BOTTOM_POOL.length);
+    }, MORPH_INTERVAL_MS);
+
+    return () => {
+      clearInterval(topTimer);
+      clearTimeout(bottomStart);
+      clearInterval(bottomTimer);
+    };
   }, []);
 
-  const active = HERO_PRESETS[presetIdx];
-  const { r, g, b } = active.config.baseColor;
-  const accentCss = `rgb(${r},${g},${b})`;
+  const topConfig = TOP_POOL[topIdx];
+  const bottomConfig = BOTTOM_POOL[bottomIdx];
+  const topAccent = `rgb(${topConfig.baseColor.r},${topConfig.baseColor.g},${topConfig.baseColor.b})`;
+  const bottomAccent = `rgb(${bottomConfig.baseColor.r},${bottomConfig.baseColor.g},${bottomConfig.baseColor.b})`;
 
   return (
+    // `absolute inset-0` so the top/bottom-offset sabers inside have a
+    // concrete parent to anchor to. The parent LandingHero renders this
+    // inside its own absolute-inset-0 wrapper so the whole hero section
+    // becomes the reference frame.
     <div
-      className={`relative ${className ?? ''}`}
-      aria-label={`${active.label} lightsaber — hero preview`}
-      data-active-preset={active.label}
+      className={`absolute inset-0 pointer-events-none ${className ?? ''}`}
+      aria-label="Kyber saber preview — colors and styles morph while ignited"
     >
-      {/* Ambient halo — radial bloom behind the blade, snaps with preset */}
+      {/* Bloom halos — top and bottom blade colors bleed into the
+          surrounding dark, giving each saber its own presence. */}
       <div
-        className="absolute inset-0"
         aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-[180px] pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse 40% 80% at center, ${accentCss} 0%, transparent 70%)`,
-          opacity: 0.35,
+          background: `radial-gradient(ellipse 60% 100% at 50% 50%, ${topAccent} 0%, transparent 70%)`,
+          opacity: 0.22,
           filter: 'blur(40px)',
         }}
       />
-      <div className="relative flex items-center justify-center">
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-[180px] pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 60% 100% at 50% 50%, ${bottomAccent} 0%, transparent 70%)`,
+          opacity: 0.22,
+          filter: 'blur(40px)',
+        }}
+      />
+
+      {/* Saber stack — uses the parent hero section's flex layout. The
+          banner-and-title block is rendered by the parent between
+          these two sabers, so we emit them as absolutely-positioned
+          layers top/bottom of the hero section. */}
+      <div className="absolute inset-x-0 top-[clamp(40px,8vh,100px)] flex justify-center">
         <MiniSaber
-          key={cycleKey.current}
-          config={active.config}
-          hiltId={active.hiltId}
-          orientation="vertical"
-          /* Fixed px so SSR output matches the first client render — a
-             viewport-relative calc would cause a hydration mismatch.
-             If we want responsiveness, do it via CSS clamp() on the
-             MiniSaber style, not JS. */
-          bladeLength={540}
+          config={topConfig}
+          hiltId={LANDING_HILT_ID}
+          orientation="horizontal"
+          hiltPosition="start"
+          bladeLength={720}
           bladeThickness={10}
-          hiltLength={140}
-          dwellMs={DWELL_MS}
-          cycle={true}
+          hiltLength={72}
+          controlledIgnited={true}
+        />
+      </div>
+      <div className="absolute inset-x-0 bottom-[clamp(40px,8vh,100px)] flex justify-center">
+        <MiniSaber
+          config={bottomConfig}
+          hiltId={LANDING_HILT_ID}
+          orientation="horizontal"
+          hiltPosition="end"
+          bladeLength={720}
+          bladeThickness={10}
+          hiltLength={72}
+          controlledIgnited={true}
         />
       </div>
     </div>
