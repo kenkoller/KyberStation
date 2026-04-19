@@ -20,7 +20,10 @@
   --accent-warm: 255 107 53;
   --text-primary: 208 212 220;
   --text-secondary: 138 143 154;
-  --text-muted: 74 78 88;
+  /* text-muted raised from `74 78 88` (#4a4e58, ≈1.6:1) to clear WCAG AA
+     body-text contrast (≈4.7:1 on --bg-primary). Used in ~654 places —
+     one-line change per the 2026-04-19 a11y audit. */
+  --text-muted: 110 115 130;
   /* Full-value: rgba with baked-in alpha */
   --accent-dim: rgba(74, 158, 255, 0.08);
   --accent-border: rgba(74, 158, 255, 0.20);

@@ -189,35 +189,43 @@ export function CollapsibleSection({
 
   const ariaLabel = rest['aria-label'] ?? title;
 
+  // Header: disclosure <button> + optional accessory rendered as a SIBLING
+  // (not a descendant). Callers commonly pass a <HelpTooltip /> — itself a
+  // <button> — as `headerAccessory`; nesting it inside the disclosure
+  // <button> would be an HTML spec violation + React hydration warning
+  // ("button cannot be a descendant of button"). See the 2026-04-19 a11y
+  // audit P0 for the rationale.
   return (
     <div className={className}>
-      <button
-        type="button"
-        onClick={handleToggle}
-        onKeyDown={handleKeyDown}
-        aria-expanded={open}
-        aria-controls={regionId}
-        aria-label={ariaLabel}
-        className="w-full flex items-center gap-1.5 text-left py-1 hover:text-text-primary transition-colors"
-      >
-        <span
-          aria-hidden="true"
-          className={`inline-block text-ui-xs leading-none text-text-muted transition-transform duration-150 ${
-            open ? '' : '-rotate-90'
-          }`}
-          style={{ width: '0.75em' }}
+      <div className="w-full flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={handleToggle}
+          onKeyDown={handleKeyDown}
+          aria-expanded={open}
+          aria-controls={regionId}
+          aria-label={ariaLabel}
+          className="flex-1 flex items-center gap-1.5 text-left py-1 hover:text-text-primary transition-colors"
         >
-          {'\u25BE'}{/* ▾ */}
-        </span>
-        <span className="text-ui-xs text-text-muted uppercase tracking-wider flex-1">
-          {title}
-        </span>
+          <span
+            aria-hidden="true"
+            className={`inline-block text-ui-xs leading-none text-text-muted transition-transform duration-150 ${
+              open ? '' : '-rotate-90'
+            }`}
+            style={{ width: '0.75em' }}
+          >
+            {'\u25BE'}{/* ▾ */}
+          </span>
+          <span className="text-ui-xs text-text-muted uppercase tracking-wider flex-1">
+            {title}
+          </span>
+        </button>
         {headerAccessory ? (
-          <span className="shrink-0 flex items-center" onClick={(e) => e.stopPropagation()}>
+          <span className="shrink-0 flex items-center">
             {headerAccessory}
           </span>
         ) : null}
-      </button>
+      </div>
       <div
         id={regionId}
         role="region"

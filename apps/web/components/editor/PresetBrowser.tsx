@@ -83,16 +83,23 @@ function PresetCard({
   const isLegendsPreset = isLegends(preset);
   const { src: thumbnail, isAnimating, onMouseEnter, onMouseLeave } = usePresetAnimation(preset.config as BladeConfig);
 
+  // Card-select <button> + sibling "+ List" <button>, wrapped in a
+  // relative <div> so the actions are structurally unrelated (no
+  // nested-interactive) and independently keyboard-focusable. See the
+  // 2026-04-19 a11y audit P0.
   return (
-    <button
-      onClick={onSelect}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className={`card-hover text-left rounded-panel overflow-hidden transition-colors border ${
+    <div
+      className={`card-hover relative rounded-panel overflow-hidden transition-colors border ${
         isActive
           ? 'bg-accent-dim border-accent-border'
           : 'bg-bg-surface border-border-subtle hover:border-border-light'
       }`}
+    >
+    <button
+      onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className="w-full text-left"
       title={preset.description}
     >
       {/* Engine-rendered blade thumbnail */}
@@ -152,7 +159,7 @@ function PresetCard({
           <span className="uppercase tracking-wider">{preset.tier}</span>
         </div>
 
-        {/* Affiliation + Add to list */}
+        {/* Affiliation */}
         <div className="flex items-center justify-between mt-1">
           <div
             className="text-ui-xs font-medium uppercase tracking-wider"
@@ -160,27 +167,28 @@ function PresetCard({
           >
             {preset.affiliation}
           </div>
-          <span
-            role="button"
-            tabIndex={-1}
-            onClick={(e) => {
-              e.stopPropagation();
-              usePresetListStore.getState().addEntry({
-                presetName: preset.name,
-                fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-                config: preset.config as BladeConfig,
-                sourcePresetId: preset.id,
-              });
-            }}
-            className="text-ui-xs px-1 py-0.5 rounded border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors touch-target"
-            title="Add to preset list"
-            aria-label={`Add ${preset.name} to preset list`}
-          >
-            + List
-          </span>
+          {/* "+ List" was a nested <span role="button"> here; now a
+              sibling <button> anchored absolutely at the same spot. */}
         </div>
       </div>
     </button>
+      <button
+        type="button"
+        onClick={() => {
+          usePresetListStore.getState().addEntry({
+            presetName: preset.name,
+            fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            config: preset.config as BladeConfig,
+            sourcePresetId: preset.id,
+          });
+        }}
+        className="absolute right-2 bottom-2 text-ui-xs px-1 py-0.5 rounded border border-border-subtle bg-bg-surface/90 text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors z-10 touch-target"
+        title="Add to preset list"
+        aria-label={`Add ${preset.name} to preset list`}
+      >
+        + List
+      </button>
+    </div>
   );
 }
 

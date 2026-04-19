@@ -309,6 +309,7 @@ export function EffectPanel() {
               <button
                 onClick={() => updateConfig({ lockupPosition: undefined, lockupRadius: undefined })}
                 title="Clear lockup position (falls back to runtime default)"
+                aria-label="Clear lockup position"
                 className="text-ui-xs text-text-muted hover:text-text-primary px-1"
               >
                 ×
@@ -343,6 +344,7 @@ export function EffectPanel() {
               <button
                 onClick={() => updateConfig({ blastPosition: undefined, blastRadius: undefined })}
                 title="Clear blast position (random default)"
+                aria-label="Clear blast position"
                 className="text-ui-xs text-text-muted hover:text-text-primary px-1"
               >
                 ×

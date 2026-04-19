@@ -129,17 +129,25 @@ function GalleryCard({
   // reserved for '?' help icons.
   const lineageHint = parentName ? `Variant of ${parentName}` : undefined;
 
+  // The card is wrapped in a <div> so the main `<button>` (preset-select)
+  // can live alongside a sibling `<button>` for the "+ List" action. They
+  // used to be nested, which violated the HTML interactive-content model
+  // and left the "+ List" affordance keyboard-unreachable (tabIndex={-1}).
+  // See the 2026-04-19 a11y audit P0.
   return (
+    <div
+      className={`gallery-card-wrapper w-full shrink-0 relative rounded-lg overflow-hidden border transition-all ${
+        isActive
+          ? 'border-accent ring-1 ring-accent/30'
+          : 'border-border-subtle hover:border-border-light'
+      } bg-bg-card`}
+    >
     <button
       onClick={onSelect}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       title={lineageHint}
-      className={`gallery-card w-full shrink-0 text-left rounded-lg overflow-hidden border transition-all ${
-        isActive
-          ? 'border-accent ring-1 ring-accent/30'
-          : 'border-border-subtle hover:border-border-light'
-      } bg-bg-card`}
+      className="gallery-card w-full text-left"
     >
       {/* Full-width horizontal blade strip */}
       <div className="relative w-full overflow-hidden bg-[#0a0c14]" style={{ height: '40px' }}>
@@ -243,25 +251,11 @@ function GalleryCard({
         <span className="text-ui-xs text-text-muted ml-auto shrink-0">
           {STYLE_LABELS[preset.config.style] ?? preset.config.style}
         </span>
-        {/* Add to preset list */}
-        <span
-          role="button"
-          tabIndex={-1}
-          onClick={(e) => {
-            e.stopPropagation();
-            usePresetListStore.getState().addEntry({
-              presetName: preset.name,
-              fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-              config: preset.config as BladeConfig,
-              sourcePresetId: preset.id,
-            });
-          }}
-          className="text-ui-xs px-1 py-0.5 rounded border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors shrink-0 touch-target"
-          title="Add to preset list"
-          aria-label={`Add ${preset.name} to preset list`}
-        >
-          + List
-        </span>
+        {/* "+ List" affordance used to live here as a <span role="button">
+            nested inside the card's outer <button>. That was a nested-
+            interactive violation and also left the action unreachable by
+            keyboard (tabIndex={-1}). It now renders as a sibling <button>
+            below — same visual position, keyboard-focusable, a11y-clean. */}
         {/* Affiliation glyph — monogram pairs with color for colorblind-safe ID */}
         <FactionBadge
           faction={preset.affiliation}
@@ -290,6 +284,26 @@ function GalleryCard({
         )}
       </div>
     </button>
+      {/* Sibling + List button — absolutely positioned in the info-row
+          area where it used to live as a nested span. Keyboard-focusable,
+          independently tab-indexed. */}
+      <button
+        type="button"
+        onClick={() => {
+          usePresetListStore.getState().addEntry({
+            presetName: preset.name,
+            fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            config: preset.config as BladeConfig,
+            sourcePresetId: preset.id,
+          });
+        }}
+        className="absolute right-10 bottom-[26px] text-ui-xs px-1 py-0.5 rounded border border-border-subtle bg-bg-card/90 text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors z-10 touch-target"
+        title="Add to preset list"
+        aria-label={`Add ${preset.name} to preset list`}
+      >
+        + List
+      </button>
+    </div>
   );
 }
 

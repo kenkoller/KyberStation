@@ -4,6 +4,7 @@ import { Canvas, useFrame, type RootState } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { BladeState } from '@kyberstation/engine';
 import {
   HiltSelector,
@@ -231,6 +232,7 @@ interface BladeCanvas3DProps {
 
 export function BladeCanvas3DInner({ className }: BladeCanvas3DProps) {
   const { selectedHilt, selectHilt } = useHiltSelection();
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
   // Auto-frame: size camera so the full hilt+blade stack fits vertically.
   // Stack spans Y=0 → Y=hiltLength*0.92+BLADE_FULL_LENGTH; target the midpoint
@@ -260,6 +262,12 @@ export function BladeCanvas3DInner({ className }: BladeCanvas3DProps) {
           // position is reapplied (Canvas bakes camera props on first mount).
           key={selectedHilt.id}
           camera={{ position: [0, stackMidY, cameraDistance], fov: CAMERA_FOV }}
+          // Honor reduced-motion: R3F renders only when invalidated instead
+          // of the default 60fps loop. The blade still draws when state
+          // changes (ignition / retraction / clash) because those call
+          // invalidate() via Scene's setState; it just doesn't spin
+          // continuously. See the 2026-04-19 a11y audit P1.
+          frameloop={reducedMotion ? 'demand' : 'always'}
           gl={{
             antialias: true,
             alpha: true,

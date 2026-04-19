@@ -294,6 +294,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
+  // Scratch canvas reused by the diffusion-blur pass. Allocated lazily
+  // and resized in-place whenever the main canvas resizes (mirrors the
+  // offscreenRef resize path at line ~437). Previously we allocated a
+  // fresh <canvas> every frame, which caused GC churn (see the
+  // 2026-04-19 perf audit P0).
+  const diffusionTempRef = useRef<HTMLCanvasElement | null>(null);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
@@ -437,6 +443,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       if (offscreenRef.current) {
         offscreenRef.current.width = w * dpr;
         offscreenRef.current.height = h * dpr;
+      }
+      if (diffusionTempRef.current) {
+        diffusionTempRef.current.width = w * dpr;
+        diffusionTempRef.current.height = h * dpr;
       }
     };
 
@@ -959,10 +969,22 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     if (diffusion.blurKernel > 0) {
       offCtx.save();
       offCtx.filter = `blur(${diffusion.blurKernel * scale}px)`;
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = cw;
-      tempCanvas.height = ch;
+      // Reuse a single scratch canvas across frames — allocating a
+      // fresh <canvas> every frame was a GC-churn source per the
+      // 2026-04-19 perf audit P0. Size is kept in sync with the main
+      // canvas via the ResizeObserver callback above.
+      let tempCanvas = diffusionTempRef.current;
+      if (!tempCanvas) {
+        tempCanvas = document.createElement('canvas');
+        tempCanvas.width = cw;
+        tempCanvas.height = ch;
+        diffusionTempRef.current = tempCanvas;
+      } else if (tempCanvas.width !== cw || tempCanvas.height !== ch) {
+        tempCanvas.width = cw;
+        tempCanvas.height = ch;
+      }
       const tempCtx = tempCanvas.getContext('2d')!;
+      tempCtx.clearRect(0, 0, cw, ch);
       tempCtx.drawImage(offscreen, 0, 0);
       offCtx.clearRect(0, 0, cw, ch);
       offCtx.drawImage(tempCanvas, 0, 0);
