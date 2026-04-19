@@ -38,10 +38,16 @@ const baseConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
     ...overrides,
   }) as BladeConfig;
 
+// Hilt stays consistent across every saber on the landing page — the
+// Graflex reads as "the" lightsaber hilt for most viewers (Luke ANH)
+// and lets the blade stay the hero without the hilt competing for
+// attention. Ratified with Ken on 2026-04-19.
+const LANDING_HILT_ID = 'graflex';
+
 const HERO_PRESETS: HeroPreset[] = [
   {
     label: 'Luke ROTJ',
-    hiltId: 'mpp',
+    hiltId: LANDING_HILT_ID,
     config: baseConfig({
       baseColor: { r: 60, g: 255, b: 40 },
       style: 'rotoscope',
@@ -50,7 +56,7 @@ const HERO_PRESETS: HeroPreset[] = [
   },
   {
     label: 'Anakin',
-    hiltId: 'negotiator',
+    hiltId: LANDING_HILT_ID,
     config: baseConfig({
       baseColor: { r: 0, g: 135, b: 255 },
       style: 'stable',
@@ -58,7 +64,7 @@ const HERO_PRESETS: HeroPreset[] = [
   },
   {
     label: 'Kylo Ren',
-    hiltId: 'ren-vent',
+    hiltId: LANDING_HILT_ID,
     config: baseConfig({
       baseColor: { r: 255, g: 40, b: 20 },
       style: 'unstable',
@@ -67,7 +73,7 @@ const HERO_PRESETS: HeroPreset[] = [
   },
   {
     label: 'Ahsoka',
-    hiltId: 'shoto-sage',
+    hiltId: LANDING_HILT_ID,
     config: baseConfig({
       baseColor: { r: 250, g: 245, b: 225 },
       style: 'stable',

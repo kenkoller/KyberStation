@@ -53,7 +53,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Obi-Wan',
     character: 'Obi-Wan Kenobi · ANH',
-    hiltId: 'negotiator',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 22, g: 114, b: 243 },
       style: 'stable',
@@ -62,7 +62,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Luke',
     character: 'Luke Skywalker · ROTJ',
-    hiltId: 'mpp',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 6, g: 234, b: 25 },
       style: 'rotoscope',
@@ -72,7 +72,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Kylo Ren',
     character: 'Ben Solo · TFA',
-    hiltId: 'ren-vent',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 245, g: 38, b: 15 },
       style: 'unstable',
@@ -82,7 +82,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Darth Maul',
     character: 'Maul · TPM',
-    hiltId: 'zabrak-staff',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 201, g: 8, b: 8 },
       style: 'stable',
@@ -91,7 +91,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Ahsoka',
     character: 'Ahsoka Tano · Rebels',
-    hiltId: 'shoto-sage',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 248, g: 247, b: 247 },
       style: 'stable',
@@ -101,7 +101,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Mace Windu',
     character: 'Mace Windu · AOTC',
-    hiltId: 'count',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 132, g: 11, b: 218 },
       style: 'stable',
@@ -119,7 +119,7 @@ const CANONICAL_SET: ArrayPreset[] = [
   {
     label: 'Ezra',
     character: 'Ezra Bridger · Rebels',
-    hiltId: 'fulcrum-pair',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 0, g: 135, b: 255 },
       style: 'stable',
@@ -135,7 +135,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Inferno',
     character: 'Style · Fire',
-    hiltId: 'ren-vent',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 255, g: 106, b: 12 },
       style: 'fire',
@@ -145,7 +145,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Aurora',
     character: 'Style · Aurora',
-    hiltId: 'negotiator',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 40, g: 240, b: 170 },
       style: 'aurora',
@@ -155,7 +155,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Plasma Storm',
     character: 'Style · Plasma',
-    hiltId: 'count',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 196, g: 40, b: 245 },
       style: 'plasma',
@@ -175,7 +175,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Crystal Shatter',
     character: 'Style · CrystalShatter',
-    hiltId: 'shoto-sage',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 130, g: 200, b: 255 },
       style: 'crystalShatter',
@@ -185,7 +185,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Helix',
     character: 'Style · Helix',
-    hiltId: 'mpp',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 255, g: 200, b: 40 },
       style: 'helix',
@@ -195,7 +195,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Nebula',
     character: 'Style · Nebula',
-    hiltId: 'zabrak-staff',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 180, g: 70, b: 255 },
       style: 'nebula',
@@ -205,7 +205,7 @@ const CREATIVE_SET: ArrayPreset[] = [
   {
     label: 'Photon Burst',
     character: 'Style · Photon',
-    hiltId: 'fulcrum-pair',
+    hiltId: 'graflex',
     config: baseConfig({
       baseColor: { r: 255, g: 250, b: 200 },
       style: 'photon',
@@ -272,7 +272,7 @@ export function LandingSaberArray({ className }: LandingSaberArrayProps) {
             id="landing-saber-array-heading"
             className="font-cinematic text-2xl sm:text-3xl md:text-4xl font-bold tracking-[0.08em] text-text-primary mb-2"
           >
-            EIGHT HILTS. INFINITE BLADES.
+            ONE HILT. INFINITE BLADES.
           </h2>
           <p
             className="dot-matrix transition-opacity duration-500"
