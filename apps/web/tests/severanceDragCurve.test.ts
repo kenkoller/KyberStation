@@ -1,8 +1,10 @@
-// ─── Severance-inverted drag curve (ColorPanel ScrubLabel) ───
+// ─── Severance-inverted drag curve (shared by every editor scrub field) ───
 //
-// Pins the shape of the piecewise cubic scrub curve in ColorPanel so a
-// future edit doesn't silently regress the haptic "feels right" tuning
-// from NEXT_SESSIONS.md §12.
+// Pins the shape of the piecewise cubic scrub curve so a future edit
+// doesn't silently regress the haptic "feels right" tuning from
+// NEXT_SESSIONS.md §12. Originally lived inside ColorPanel; the curve now
+// powers the shared `useDragToScrub` hook so the same pins guarantee
+// consistent tactile behaviour across every slider that uses it.
 //
 // Zones, in CSS pixels of horizontal drag distance from pointerdown:
 //   |dx| < 4  → fine-step  (slope 0.25×)
@@ -15,7 +17,7 @@ import {
   NORMAL_ZONE_PX,
   scrubZoneFor,
   severanceDragCurve,
-} from '../components/editor/ColorPanel';
+} from '../lib/severanceDragCurve';
 
 describe('severanceDragCurve', () => {
   it('returns 0 for zero delta', () => {

@@ -2,6 +2,7 @@
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { ScrubField } from '@/components/shared/ScrubField';
 
 const EASING_PRESETS = [
   { id: 'linear', label: 'Linear' },
@@ -105,112 +106,90 @@ export function EffectPanel() {
               />
               Full extend (blade always reaches full length)
             </label>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Flicker Count</span>
-              <input
-                type="range" min={5} max={60} step={1}
-                value={(config.stutterCount as number | undefined) ?? 30}
-                onChange={(e) => updateConfig({ stutterCount: Number(e.target.value) })}
-                aria-label="Stutter flicker count"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.stutterCount as number | undefined) ?? 30}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Amplitude</span>
-              <input
-                type="range" min={1} max={30} step={1}
-                value={(config.stutterAmplitude as number | undefined) ?? 10}
-                onChange={(e) => updateConfig({ stutterAmplitude: Number(e.target.value) })}
-                aria-label="Stutter amplitude"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.stutterAmplitude as number | undefined) ?? 10}%
-              </span>
-            </div>
+            <ScrubField
+              label="Flicker Count"
+              min={5} max={60} step={1}
+              value={(config.stutterCount as number | undefined) ?? 30}
+              onChange={(v) => updateConfig({ stutterCount: v })}
+              ariaLabel="Stutter flicker count"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
+            <ScrubField
+              label="Amplitude"
+              min={1} max={30} step={1}
+              value={(config.stutterAmplitude as number | undefined) ?? 10}
+              onChange={(v) => updateConfig({ stutterAmplitude: v })}
+              ariaLabel="Stutter amplitude"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
         )}
         {/* Glitch parameters */}
         {config.ignition === 'glitch' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Density</span>
-              <input
-                type="range" min={1} max={20} step={1}
-                value={(config.glitchDensity as number | undefined) ?? 3}
-                onChange={(e) => updateConfig({ glitchDensity: Number(e.target.value) })}
-                aria-label="Glitch pixel density"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.glitchDensity as number | undefined) ?? 3}%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Intensity</span>
-              <input
-                type="range" min={10} max={100} step={5}
-                value={(config.glitchIntensity as number | undefined) ?? 100}
-                onChange={(e) => updateConfig({ glitchIntensity: Number(e.target.value) })}
-                aria-label="Glitch intensity"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.glitchIntensity as number | undefined) ?? 100}%
-              </span>
-            </div>
+            <ScrubField
+              label="Density"
+              min={1} max={20} step={1}
+              value={(config.glitchDensity as number | undefined) ?? 3}
+              onChange={(v) => updateConfig({ glitchDensity: v })}
+              ariaLabel="Glitch pixel density"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
+            <ScrubField
+              label="Intensity"
+              min={10} max={100} step={5}
+              value={(config.glitchIntensity as number | undefined) ?? 100}
+              onChange={(v) => updateConfig({ glitchIntensity: v })}
+              ariaLabel="Glitch intensity"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
         )}
         {/* Spark parameters */}
         {config.ignition === 'spark' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Spark Size</span>
-              <input
-                type="range" min={1} max={15} step={1}
-                value={(config.sparkSize as number | undefined) ?? 5}
-                onChange={(e) => updateConfig({ sparkSize: Number(e.target.value) })}
-                aria-label="Spark tip size"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.sparkSize as number | undefined) ?? 5}%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Trail</span>
-              <input
-                type="range" min={1} max={20} step={1}
-                value={(config.sparkTrail as number | undefined) ?? 5}
-                onChange={(e) => updateConfig({ sparkTrail: Number(e.target.value) })}
-                aria-label="Spark trail length"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.sparkTrail as number | undefined) ?? 5}%
-              </span>
-            </div>
+            <ScrubField
+              label="Spark Size"
+              min={1} max={15} step={1}
+              value={(config.sparkSize as number | undefined) ?? 5}
+              onChange={(v) => updateConfig({ sparkSize: v })}
+              ariaLabel="Spark tip size"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
+            <ScrubField
+              label="Trail"
+              min={1} max={20} step={1}
+              value={(config.sparkTrail as number | undefined) ?? 5}
+              onChange={(v) => updateConfig({ sparkTrail: v })}
+              ariaLabel="Spark trail length"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
         )}
         {/* Wipe parameters */}
         {config.ignition === 'wipe' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Softness</span>
-              <input
-                type="range" min={1} max={20} step={1}
-                value={(config.wipeSoftness as number | undefined) ?? 3}
-                onChange={(e) => updateConfig({ wipeSoftness: Number(e.target.value) })}
-                aria-label="Wipe edge softness"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.wipeSoftness as number | undefined) ?? 3}%
-              </span>
-            </div>
+            <ScrubField
+              label="Softness"
+              min={1} max={20} step={1}
+              value={(config.wipeSoftness as number | undefined) ?? 3}
+              onChange={(v) => updateConfig({ wipeSoftness: v })}
+              ariaLabel="Wipe edge softness"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
         )}
       </CollapsibleSection>
@@ -243,32 +222,25 @@ export function EffectPanel() {
         {/* Shatter retraction parameters */}
         {config.retraction === 'shatter' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Fragment Size</span>
-              <input
-                type="range" min={5} max={50} step={1}
-                value={(config.shatterScale as number | undefined) ?? 20}
-                onChange={(e) => updateConfig({ shatterScale: Number(e.target.value) })}
-                aria-label="Shatter fragment scale"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.shatterScale as number | undefined) ?? 20}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Fade Speed</span>
-              <input
-                type="range" min={10} max={100} step={5}
-                value={(config.shatterDimSpeed as number | undefined) ?? 100}
-                onChange={(e) => updateConfig({ shatterDimSpeed: Number(e.target.value) })}
-                aria-label="Shatter fade speed"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.shatterDimSpeed as number | undefined) ?? 100}%
-              </span>
-            </div>
+            <ScrubField
+              label="Fragment Size"
+              min={5} max={50} step={1}
+              value={(config.shatterScale as number | undefined) ?? 20}
+              onChange={(v) => updateConfig({ shatterScale: v })}
+              ariaLabel="Shatter fragment scale"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
+            <ScrubField
+              label="Fade Speed"
+              min={10} max={100} step={5}
+              value={(config.shatterDimSpeed as number | undefined) ?? 100}
+              onChange={(v) => updateConfig({ shatterDimSpeed: v })}
+              ariaLabel="Shatter fade speed"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
         )}
       </CollapsibleSection>
@@ -283,38 +255,24 @@ export function EffectPanel() {
         }
       >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-          <div className="flex items-center gap-3">
-            <label htmlFor="timing-ignition" className="text-ui-xs text-text-secondary w-28 shrink-0">Ignition</label>
-            <input
-              id="timing-ignition"
-              type="range"
-              min={100}
-              max={1500}
-              step={50}
-              value={config.ignitionMs}
-              onChange={(e) => updateConfig({ ignitionMs: Number(e.target.value) })}
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-14 text-right">
-              {config.ignitionMs}ms
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <label htmlFor="timing-retraction" className="text-ui-xs text-text-secondary w-28 shrink-0">Retraction</label>
-            <input
-              id="timing-retraction"
-              type="range"
-              min={100}
-              max={1500}
-              step={50}
-              value={config.retractionMs}
-              onChange={(e) => updateConfig({ retractionMs: Number(e.target.value) })}
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-14 text-right">
-              {config.retractionMs}ms
-            </span>
-          </div>
+          <ScrubField
+            id="timing-ignition"
+            label="Ignition"
+            min={100} max={1500} step={50}
+            value={config.ignitionMs}
+            onChange={(v) => updateConfig({ ignitionMs: v })}
+            unit="ms"
+            readoutClassName="w-14"
+          />
+          <ScrubField
+            id="timing-retraction"
+            label="Retraction"
+            min={100} max={1500} step={50}
+            value={config.retractionMs}
+            onChange={(v) => updateConfig({ retractionMs: v })}
+            unit="ms"
+            readoutClassName="w-14"
+          />
         </div>
       </CollapsibleSection>
 
@@ -331,113 +289,76 @@ export function EffectPanel() {
       >
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           {/* Lockup position */}
-          <div className="flex items-center gap-3">
-            <label htmlFor="lockup-pos" className="text-ui-xs text-text-secondary w-28 shrink-0">
-              Lockup pos
-            </label>
-            <input
-              id="lockup-pos"
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={Math.round(((config.lockupPosition as number | undefined) ?? 0.5) * 100)}
-              onChange={(e) =>
-                updateConfig({
-                  lockupPosition: Number(e.target.value) / 100,
-                  lockupRadius: (config.lockupRadius as number | undefined) ?? 0.12,
-                })
-              }
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
-              {typeof config.lockupPosition === 'number'
+          <ScrubField
+            id="lockup-pos"
+            label="Lockup pos"
+            min={0} max={100} step={1}
+            value={Math.round(((config.lockupPosition as number | undefined) ?? 0.5) * 100)}
+            onChange={(v) =>
+              updateConfig({
+                lockupPosition: v / 100,
+                lockupRadius: (config.lockupRadius as number | undefined) ?? 0.12,
+              })
+            }
+            format={() =>
+              typeof config.lockupPosition === 'number'
                 ? `${Math.round(config.lockupPosition * 100)}%`
-                : '—'}
-            </span>
-            <button
-              onClick={() => updateConfig({ lockupPosition: undefined, lockupRadius: undefined })}
-              title="Clear lockup position (falls back to runtime default)"
-              className="text-ui-xs text-text-muted hover:text-text-primary px-1"
-            >
-              ×
-            </button>
-          </div>
+                : '—'
+            }
+            inlineAccessory={
+              <button
+                onClick={() => updateConfig({ lockupPosition: undefined, lockupRadius: undefined })}
+                title="Clear lockup position (falls back to runtime default)"
+                className="text-ui-xs text-text-muted hover:text-text-primary px-1"
+              >
+                ×
+              </button>
+            }
+          />
           {/* Lockup radius */}
-          <div className="flex items-center gap-3">
-            <label htmlFor="lockup-rad" className="text-ui-xs text-text-secondary w-28 shrink-0">
-              Lockup radius
-            </label>
-            <input
-              id="lockup-rad"
-              type="range"
-              min={2}
-              max={40}
-              step={1}
-              value={Math.round(((config.lockupRadius as number | undefined) ?? 0.12) * 100)}
-              onChange={(e) =>
-                updateConfig({ lockupRadius: Number(e.target.value) / 100 })
-              }
-              disabled={typeof config.lockupPosition !== 'number'}
-              className="flex-1 disabled:opacity-40"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
-              {Math.round(((config.lockupRadius as number | undefined) ?? 0.12) * 100)}%
-            </span>
-          </div>
+          <ScrubField
+            id="lockup-rad"
+            label="Lockup radius"
+            min={2} max={40} step={1}
+            value={Math.round(((config.lockupRadius as number | undefined) ?? 0.12) * 100)}
+            onChange={(v) => updateConfig({ lockupRadius: v / 100 })}
+            unit="%"
+            disabled={typeof config.lockupPosition !== 'number'}
+          />
 
           {/* Blast position */}
-          <div className="flex items-center gap-3 pt-1 border-t border-border-subtle/50">
-            <label htmlFor="blast-pos" className="text-ui-xs text-text-secondary w-28 shrink-0">
-              Blast pos
-            </label>
-            <input
-              id="blast-pos"
-              type="range"
-              min={0}
-              max={100}
-              step={1}
-              value={Math.round(((config.blastPosition as number | undefined) ?? 0.5) * 100)}
-              onChange={(e) =>
-                updateConfig({ blastPosition: Number(e.target.value) / 100 })
-              }
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
-              {typeof config.blastPosition === 'number'
+          <ScrubField
+            id="blast-pos"
+            label="Blast pos"
+            min={0} max={100} step={1}
+            value={Math.round(((config.blastPosition as number | undefined) ?? 0.5) * 100)}
+            onChange={(v) => updateConfig({ blastPosition: v / 100 })}
+            format={() =>
+              typeof config.blastPosition === 'number'
                 ? `${Math.round(config.blastPosition * 100)}%`
-                : '—'}
-            </span>
-            <button
-              onClick={() => updateConfig({ blastPosition: undefined, blastRadius: undefined })}
-              title="Clear blast position (random default)"
-              className="text-ui-xs text-text-muted hover:text-text-primary px-1"
-            >
-              ×
-            </button>
-          </div>
+                : '—'
+            }
+            className="gap-3 pt-1 border-t border-border-subtle/50"
+            inlineAccessory={
+              <button
+                onClick={() => updateConfig({ blastPosition: undefined, blastRadius: undefined })}
+                title="Clear blast position (random default)"
+                className="text-ui-xs text-text-muted hover:text-text-primary px-1"
+              >
+                ×
+              </button>
+            }
+          />
           {/* Blast radius */}
-          <div className="flex items-center gap-3">
-            <label htmlFor="blast-rad" className="text-ui-xs text-text-secondary w-28 shrink-0">
-              Blast radius
-            </label>
-            <input
-              id="blast-rad"
-              type="range"
-              min={10}
-              max={100}
-              step={5}
-              value={Math.round(((config.blastRadius as number | undefined) ?? 0.5) * 100)}
-              onChange={(e) =>
-                updateConfig({ blastRadius: Number(e.target.value) / 100 })
-              }
-              disabled={typeof config.blastPosition !== 'number'}
-              className="flex-1 disabled:opacity-40"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-12 text-right">
-              {Math.round(((config.blastRadius as number | undefined) ?? 0.5) * 100)}%
-            </span>
-          </div>
+          <ScrubField
+            id="blast-rad"
+            label="Blast radius"
+            min={10} max={100} step={5}
+            value={Math.round(((config.blastRadius as number | undefined) ?? 0.5) * 100)}
+            onChange={(v) => updateConfig({ blastRadius: v / 100 })}
+            unit="%"
+            disabled={typeof config.blastPosition !== 'number'}
+          />
         </div>
       </CollapsibleSection>
 
@@ -499,24 +420,15 @@ export function EffectPanel() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
-                <label htmlFor="preon-ms" className="text-ui-xs text-text-secondary w-28 shrink-0">
-                  Duration
-                </label>
-                <input
-                  id="preon-ms"
-                  type="range"
-                  min={50}
-                  max={2000}
-                  step={50}
-                  value={(config.preonMs as number | undefined) ?? 300}
-                  onChange={(e) => updateConfig({ preonMs: Number(e.target.value) })}
-                  className="flex-1"
-                />
-                <span className="text-ui-sm text-text-muted font-mono w-14 text-right">
-                  {(config.preonMs as number | undefined) ?? 300}ms
-                </span>
-              </div>
+              <ScrubField
+                id="preon-ms"
+                label="Duration"
+                min={50} max={2000} step={50}
+                value={(config.preonMs as number | undefined) ?? 300}
+                onChange={(v) => updateConfig({ preonMs: v })}
+                unit="ms"
+                readoutClassName="w-14"
+              />
             </>
           )}
         </div>
@@ -583,22 +495,15 @@ export function EffectPanel() {
 
           {config.dualModeIgnition && (
             <>
-              <div className="flex items-center gap-3">
-                <label htmlFor="dual-angle-threshold" className="text-ui-xs text-text-secondary w-28 shrink-0">Angle Threshold</label>
-                <input
-                  id="dual-angle-threshold"
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={(config.ignitionAngleThreshold ?? 0.3) * 100}
-                  onChange={(e) => updateConfig({ ignitionAngleThreshold: Number(e.target.value) / 100 })}
-                  className="flex-1"
-                />
-                <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-                  {Math.round((config.ignitionAngleThreshold ?? 0.3) * 100)}%
-                </span>
-              </div>
+              <ScrubField
+                id="dual-angle-threshold"
+                label="Angle Threshold"
+                min={0} max={100} step={5}
+                value={Math.round((config.ignitionAngleThreshold ?? 0.3) * 100)}
+                onChange={(v) => updateConfig({ ignitionAngleThreshold: v / 100 })}
+                unit="%"
+                readoutClassName="w-10"
+              />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="dual-ignition-up" className="text-ui-xs text-text-muted uppercase mb-1 block">Ignition Up</label>
@@ -671,81 +576,65 @@ export function EffectPanel() {
           {/* Clash controls */}
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Clash</span>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Location</span>
-              <input
-                type="range" min={0} max={100} step={1}
-                value={(config.clashLocation as number | undefined) ?? 50}
-                onChange={(e) => updateConfig({ clashLocation: Number(e.target.value) })}
-                aria-label="Clash location on blade"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.clashLocation as number | undefined) ?? 50}%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Intensity</span>
-              <input
-                type="range" min={0} max={100} step={1}
-                value={(config.clashIntensity as number | undefined) ?? 75}
-                onChange={(e) => updateConfig({ clashIntensity: Number(e.target.value) })}
-                aria-label="Clash intensity"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.clashIntensity as number | undefined) ?? 75}%
-              </span>
-            </div>
+            <ScrubField
+              label="Location"
+              min={0} max={100} step={1}
+              value={(config.clashLocation as number | undefined) ?? 50}
+              onChange={(v) => updateConfig({ clashLocation: v })}
+              ariaLabel="Clash location on blade"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
+            <ScrubField
+              label="Intensity"
+              min={0} max={100} step={1}
+              value={(config.clashIntensity as number | undefined) ?? 75}
+              onChange={(v) => updateConfig({ clashIntensity: v })}
+              ariaLabel="Clash intensity"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
 
           {/* Blast controls */}
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Blast</span>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Count</span>
-              <input
-                type="range" min={1} max={5} step={1}
-                value={(config.blastCount as number | undefined) ?? 1}
-                onChange={(e) => updateConfig({ blastCount: Number(e.target.value) })}
-                aria-label="Blast mark count"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.blastCount as number | undefined) ?? 1}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Spread</span>
-              <input
-                type="range" min={0} max={100} step={1}
-                value={(config.blastSpread as number | undefined) ?? 50}
-                onChange={(e) => updateConfig({ blastSpread: Number(e.target.value) })}
-                aria-label="Blast mark spread"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.blastSpread as number | undefined) ?? 50}%
-              </span>
-            </div>
+            <ScrubField
+              label="Count"
+              min={1} max={5} step={1}
+              value={(config.blastCount as number | undefined) ?? 1}
+              onChange={(v) => updateConfig({ blastCount: v })}
+              ariaLabel="Blast mark count"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
+            <ScrubField
+              label="Spread"
+              min={0} max={100} step={1}
+              value={(config.blastSpread as number | undefined) ?? 50}
+              onChange={(v) => updateConfig({ blastSpread: v })}
+              ariaLabel="Blast mark spread"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
 
           {/* Stab controls */}
           <div className="space-y-2">
             <span className="text-ui-xs text-text-muted uppercase tracking-wider font-semibold">Stab</span>
-            <div className="flex items-center gap-2">
-              <span className="text-ui-xs text-text-muted w-28 shrink-0">Depth</span>
-              <input
-                type="range" min={0} max={100} step={1}
-                value={(config.stabDepth as number | undefined) ?? 80}
-                onChange={(e) => updateConfig({ stabDepth: Number(e.target.value) })}
-                aria-label="Stab effect depth"
-                className="flex-1"
-              />
-              <span className="text-ui-xs text-text-muted font-mono w-7 text-right">
-                {(config.stabDepth as number | undefined) ?? 80}%
-              </span>
-            </div>
+            <ScrubField
+              label="Depth"
+              min={0} max={100} step={1}
+              value={(config.stabDepth as number | undefined) ?? 80}
+              onChange={(v) => updateConfig({ stabDepth: v })}
+              ariaLabel="Stab effect depth"
+              unit="%"
+              className="gap-2"
+              readoutClassName="w-7"
+            />
           </div>
         </div>
       </CollapsibleSection>
@@ -765,26 +654,23 @@ export function EffectPanel() {
               <div>
                 <label className="text-ui-xs text-text-muted uppercase mb-1.5 block">Ignition Curve</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['x1', 'y1', 'x2', 'y2'].map((label, i) => (
-                    <div key={label} className="flex items-center gap-2">
-                      <span className="text-ui-xs text-text-muted w-6">{label}</span>
-                      <input
-                        type="range"
-                        aria-label={`Ignition curve control point ${label}`}
-                        min={0}
-                        max={100}
-                        value={(config.ignitionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100}
-                        onChange={(e) => {
-                          const curve = [...(config.ignitionCurve ?? [0.25, 0.1, 0.25, 1.0])] as [number, number, number, number];
-                          curve[i] = Number(e.target.value) / 100;
-                          updateConfig({ ignitionCurve: curve });
-                        }}
-                        className="flex-1"
-                      />
-                      <span className="text-ui-xs text-text-muted font-mono w-8">
-                        {((config.ignitionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100).toFixed(0)}
-                      </span>
-                    </div>
+                  {(['x1', 'y1', 'x2', 'y2'] as const).map((label, i) => (
+                    <ScrubField
+                      key={label}
+                      label={label}
+                      ariaLabel={`Ignition curve control point ${label}`}
+                      min={0} max={100}
+                      value={(config.ignitionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100}
+                      onChange={(v) => {
+                        const curve = [...(config.ignitionCurve ?? [0.25, 0.1, 0.25, 1.0])] as [number, number, number, number];
+                        curve[i] = v / 100;
+                        updateConfig({ ignitionCurve: curve });
+                      }}
+                      format={(v) => v.toFixed(0)}
+                      className="gap-2"
+                      labelClassName="w-6"
+                      readoutClassName="w-8"
+                    />
                   ))}
                 </div>
               </div>
@@ -793,26 +679,23 @@ export function EffectPanel() {
               <div>
                 <label className="text-ui-xs text-text-muted uppercase mb-1.5 block">Retraction Curve</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['x1', 'y1', 'x2', 'y2'].map((label, i) => (
-                    <div key={label} className="flex items-center gap-2">
-                      <span className="text-ui-xs text-text-muted w-6">{label}</span>
-                      <input
-                        type="range"
-                        aria-label={`Retraction curve control point ${label}`}
-                        min={0}
-                        max={100}
-                        value={(config.retractionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100}
-                        onChange={(e) => {
-                          const curve = [...(config.retractionCurve ?? [0.25, 0.1, 0.25, 1.0])] as [number, number, number, number];
-                          curve[i] = Number(e.target.value) / 100;
-                          updateConfig({ retractionCurve: curve });
-                        }}
-                        className="flex-1"
-                      />
-                      <span className="text-ui-xs text-text-muted font-mono w-8">
-                        {((config.retractionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100).toFixed(0)}
-                      </span>
-                    </div>
+                  {(['x1', 'y1', 'x2', 'y2'] as const).map((label, i) => (
+                    <ScrubField
+                      key={label}
+                      label={label}
+                      ariaLabel={`Retraction curve control point ${label}`}
+                      min={0} max={100}
+                      value={(config.retractionCurve?.[i] ?? [0.25, 0.1, 0.25, 1.0][i]) * 100}
+                      onChange={(v) => {
+                        const curve = [...(config.retractionCurve ?? [0.25, 0.1, 0.25, 1.0])] as [number, number, number, number];
+                        curve[i] = v / 100;
+                        updateConfig({ retractionCurve: curve });
+                      }}
+                      format={(v) => v.toFixed(0)}
+                      className="gap-2"
+                      labelClassName="w-6"
+                      readoutClassName="w-8"
+                    />
                   ))}
                 </div>
               </div>

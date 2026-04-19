@@ -1,9 +1,11 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useId, useState, useCallback, type ReactNode } from 'react';
 import { useLayerStore, SMOOTHSWING_DEFAULTS } from '@/stores/layerStore';
 import type { LayerType, BlendMode, LayerRenderState } from '@/stores/layerStore';
+import { useDragToScrub } from '@/hooks/useDragToScrub';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { ScrubField } from '@/components/shared/ScrubField';
 import {
   LayerThumbnail,
   HIGH_DENSITY_THRESHOLD,
@@ -85,6 +87,116 @@ const TYPE_BADGES: Record<LayerType, { color: string; label: string }> = {
 };
 
 // ─── Helpers ───
+
+/**
+ * Label-above-slider scrub field for the layer config panels. Applies
+ * `useDragToScrub` to the stacked label so the whole block participates
+ * in the shared scrub primitive. Visual shape matches the surrounding
+ * layer-config rows — label above, slider + readout below.
+ */
+function StackedScrub({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+  ariaLabel,
+  unit,
+  format,
+}: {
+  label: ReactNode;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (v: number) => void;
+  ariaLabel?: string;
+  unit?: string;
+  format?: (v: number) => string;
+}) {
+  const id = useId();
+  const inputId = `stacked-scrub-${id}`;
+  const handlers = useDragToScrub<HTMLLabelElement>({ value, min, max, step, onScrub: onChange });
+  const formatted = format ? format(value) : String(value);
+  return (
+    <div>
+      <label
+        htmlFor={inputId}
+        {...handlers}
+        className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block cursor-ew-resize select-none touch-none"
+        style={{ touchAction: 'none' }}
+        title="Drag to scrub (Shift 10×, Alt 0.1×). Click slider to type."
+      >
+        {label}
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          id={inputId}
+          type="range"
+          min={min} max={max} step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="flex-1"
+          aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
+        />
+        <span className="text-ui-sm text-text-muted font-mono w-8 text-right">
+          {formatted}{unit ?? ''}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Mix-ratio scrub row — stacked label with an A/B-anchored slider below.
+ * Carries its own handler so the "Mix Ratio" label itself scrubs; the
+ * native slider keeps keyboard + screen reader parity.
+ */
+function MixRatioScrub({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const id = useId();
+  const inputId = `mix-ratio-${id}`;
+  const handlers = useDragToScrub<HTMLLabelElement>({
+    value,
+    min: 0,
+    max: 100,
+    step: 1,
+    onScrub: onChange,
+  });
+  return (
+    <div>
+      <label
+        htmlFor={inputId}
+        {...handlers}
+        className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block cursor-ew-resize select-none touch-none"
+        style={{ touchAction: 'none' }}
+        title="Drag to scrub (Shift 10×, Alt 0.1×). Click slider to type."
+      >
+        Mix Ratio
+      </label>
+      <div className="flex items-center gap-2">
+        <span className="text-ui-xs text-text-muted">A</span>
+        <input
+          id={inputId}
+          type="range"
+          min={0} max={100}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="flex-1"
+          aria-label="Mix ratio between Style A and Style B"
+        />
+        <span className="text-ui-xs text-text-muted">B</span>
+        <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{value}%</span>
+      </div>
+    </div>
+  );
+}
 
 function rgbToHex(r: number, g: number, b: number): string {
   return (
@@ -344,23 +456,14 @@ function EffectLayerConfig({ layerId }: { layerId: string }) {
         </div>
       </div>
       {/* Intensity */}
-      <div>
-        <label className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block">
-          Intensity
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={size}
-            onChange={(e) => updateConfig(layerId, { size: Number(e.target.value) })}
-            className="flex-1"
-            aria-label="Effect intensity"
-          />
-          <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{size}%</span>
-        </div>
-      </div>
+      <StackedScrub
+        label="Intensity"
+        min={0} max={100}
+        value={size}
+        onChange={(v) => updateConfig(layerId, { size: v })}
+        ariaLabel="Effect intensity"
+        unit="%"
+      />
     </div>
   );
 }
@@ -400,41 +503,23 @@ function AccentLayerConfig({ layerId }: { layerId: string }) {
         </div>
       </div>
       {/* Position */}
-      <div>
-        <label className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block">
-          Position (0 = hilt, 100 = tip)
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={position}
-            onChange={(e) => updateConfig(layerId, { position: Number(e.target.value) })}
-            className="flex-1"
-            aria-label="Accent position"
-          />
-          <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{position}%</span>
-        </div>
-      </div>
+      <StackedScrub
+        label="Position (0 = hilt, 100 = tip)"
+        min={0} max={100}
+        value={position}
+        onChange={(v) => updateConfig(layerId, { position: v })}
+        ariaLabel="Accent position"
+        unit="%"
+      />
       {/* Width */}
-      <div>
-        <label className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block">
-          Width
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={1}
-            max={50}
-            value={width}
-            onChange={(e) => updateConfig(layerId, { width: Number(e.target.value) })}
-            className="flex-1"
-            aria-label="Accent width"
-          />
-          <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{width}%</span>
-        </div>
-      </div>
+      <StackedScrub
+        label="Width"
+        min={1} max={50}
+        value={width}
+        onChange={(v) => updateConfig(layerId, { width: v })}
+        ariaLabel="Accent width"
+        unit="%"
+      />
     </div>
   );
 }
@@ -469,25 +554,10 @@ function MixLayerConfig({ layerId }: { layerId: string }) {
         </select>
       </div>
       {/* Mix Ratio */}
-      <div>
-        <label className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block">
-          Mix Ratio
-        </label>
-        <div className="flex items-center gap-2">
-          <span className="text-ui-xs text-text-muted">A</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={mixRatio}
-            onChange={(e) => updateConfig(layerId, { mixRatio: Number(e.target.value) })}
-            className="flex-1"
-            aria-label="Mix ratio between Style A and Style B"
-          />
-          <span className="text-ui-xs text-text-muted">B</span>
-          <span className="text-ui-sm text-text-muted font-mono w-8 text-right">{mixRatio}%</span>
-        </div>
-      </div>
+      <MixRatioScrub
+        value={mixRatio}
+        onChange={(v) => updateConfig(layerId, { mixRatio: v })}
+      />
       {/* Style B */}
       <div>
         <label className="text-ui-xs text-text-muted uppercase tracking-wider mb-1 block">
@@ -864,21 +934,17 @@ function LayerRow({
 
       {/* Opacity slider (expanded) — visual layers only. */}
       {showOpacity && !isPlate && (
-        <div className="flex items-center gap-2 px-3 pb-2">
-          <label className="text-ui-xs text-text-muted shrink-0">Opacity</label>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={Math.round(layer.opacity * 100)}
-            onChange={(e) => setOpacity(layer.id, Number(e.target.value) / 100)}
-            className="flex-1"
-            aria-label="Layer opacity"
-          />
-          <span className="text-ui-sm text-text-muted font-mono w-8 text-right">
-            {Math.round(layer.opacity * 100)}%
-          </span>
-        </div>
+        <ScrubField
+          label="Opacity"
+          min={0} max={100}
+          value={Math.round(layer.opacity * 100)}
+          onChange={(v) => setOpacity(layer.id, v / 100)}
+          ariaLabel="Layer opacity"
+          unit="%"
+          className="gap-2 px-3 pb-2"
+          labelClassName="w-auto"
+          readoutClassName="w-8"
+        />
       )}
     </div>
   );

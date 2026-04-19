@@ -458,10 +458,10 @@ Last git tag: **v0.10.0**. No tag cut since — everything landed on `main` is a
 ### Current session accomplishments (2026-04-18)
 
 - **Phase 1 QA sweep** — 28 of 37 launch-readiness phases. 11 findings fixed inline. `docs/LAUNCH_QA_PLAN.md` is the authoritative plan.
-- **UX overhaul pass** — **25 of 27** UX North Star deferred items shipped across 3 waves. Only #7 (shared DragToScrub primitive) + #16 (full Figma color model) remain, both deferred to future solo sessions because they conflict on ColorPanel edits.
-- **New primitives shipped:** `<CollapsibleSection>`, `useFilenameReveal`, `<RadialGauge>`, `<MobileTabBar>`, `useModalDialog`, `useCommitCeremony`, `historyRestoreFlag`, `<LayerThumbnail>`, modulation-routing type scaffold.
+- **UX overhaul pass** — **26 of 27** UX North Star deferred items shipped across 3 waves + a 2026-04-18 follow-up session (item #7 DragToScrub primitive + 5-panel migration). Only **#16 Figma color model** remains.
+- **New primitives shipped:** `<CollapsibleSection>`, `useFilenameReveal`, `<RadialGauge>`, `<MobileTabBar>`, `useModalDialog`, `useCommitCeremony`, `historyRestoreFlag`, `<LayerThumbnail>`, modulation-routing type scaffold, **`useDragToScrub` + `<ScrubField>`** (2026-04-18 follow-up).
 - **Typography migrated** per §6 to Inter + JetBrains Mono + Orbitron (Orbitron ratified as the third ceremonial face in §5/§6/§8).
-- **Test count:** 538 web tests + 457 engine + 1,323 codegen + 260 boards + presets + sound = **~2,627 passing**. +136 new regression tests this session.
+- **Test count:** 547 web tests + 457 engine + 1,323 codegen + 260 boards + presets + sound = **~2,636 passing**. +145 new regression tests this session.
 
 ### What's waiting
 
@@ -471,7 +471,7 @@ Last git tag: **v0.10.0**. No tag cut since — everything landed on `main` is a
 - **Perf deep-dive** (P30): LCP / FPS / memory
 - **Cross-browser matrix** (P31): Safari / Firefox / Edge + mobile Safari / mobile Chrome
 - **Launch-triage** (P37): go/no-go after above
-- **2 remaining UX items** (#7, #16) — prompts in `docs/NEXT_SESSIONS.md`
+- **1 remaining UX item** (#16 Figma color model) — prompt in `docs/NEXT_SESSIONS.md`
 - **CHANGELOG + version tag** — deliberately deferred; Ken controls this call
 
 ### Key session docs for future-Claude (or Ken)

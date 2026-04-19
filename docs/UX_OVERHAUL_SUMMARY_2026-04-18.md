@@ -88,9 +88,7 @@ Root cause: engine tick loop lived inside `BladeCanvas.tsx`'s `useAnimationFrame
 - **#6 `<CollapsibleSection>` shared primitive** — threaded through 19 sections across StylePanel / EffectPanel / LayerStack / GradientBuilder / VisualSettingsPanel. `persistKey` opts into localStorage persistence (`kyber.collapsible.*` namespace).
 - **#15 SmoothSwing → LayerStack plate** — refactored from sibling panel to specialized layer type. State lives on the layer; moves with reorder/duplicate/undo. New SMOOTHSWING_DEFAULTS constant. Legacy panel slot redirects to relocation notice for persisted layouts.
 
-## Still deferred — 2 items for next sessions
-
-Both heavily modify ColorPanel (just touched by #12 Severance curve agent) — serialized for safety.
+## Still deferred — 1 item for next sessions
 
 ### Landing (5)
 - Orbitron wordmark (ceremonial carve-out decision — should the "KYBERSTATION" mark stay Orbitron as a cinematic exception?)
@@ -99,11 +97,19 @@ Both heavily modify ColorPanel (just touched by #12 Severance curve agent) — s
 - Value strip 3-col tightness at 768–900px
 - Release-strip version pill styling
 
-### Color/Preset/Audio (2)
-- **#7 Shared `<DragToScrub>` / Slider primitive** — extract the drag mechanics from ColorPanel's `ScrubLabel` (now enhanced with #12 Severance curve) into a reusable primitive, apply across numeric inputs + sliders elsewhere (Dynamics, Timeline easing, BladeHardwarePanel numerics). See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) §7.
+### Color/Preset/Audio (1)
 - **#16 Full Figma color model** — add opacity + blend modes to `BladeColor` type, ColorPanel UI, engine compositor, codegen warning for unsupported modes, Kyber Glyph v2 migration. See [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) §16.
 
-Both should be done in sequence (#7 first to establish the primitive, then #16 to build on it). Both touch the same file (`ColorPanel.tsx`), so running them in parallel risks merge conflicts.
+## Shipped after the original wrap-up
+
+- **#7 Shared `<DragToScrub>` / Slider primitive** — extracted ColorPanel's `ScrubLabel` drag mechanics into:
+  - `apps/web/lib/severanceDragCurve.ts` — pure curve + zone helpers (11 tests pinned)
+  - `apps/web/hooks/useDragToScrub.ts` — pointer-lifecycle hook + pure `computeScrubValue` helper (9 new tests)
+  - `apps/web/components/shared/ScrubField.tsx` — opinionated `label + range + readout` wrapper for the common case
+  - ColorPanel's `ScrubLabel` now delegates to the hook (same behaviour, same tests)
+  - Migrated five high-traffic panels: **EffectPanel** (24 sliders) + StylePanel (3) + MotionSimPanel (3) + LayerStack (5, via new `StackedScrub`/`MixRatioScrub` helpers) + SmoothSwingPanel's `SliderRow` (6 plate params).
+  - Keyboard + SR users unchanged (native `<input type="range">` kept in every consumer).
+  - 547 web tests pass (+9 new), 2,636 workspace total.
 
 ## Architecture observations (for future sprints)
 

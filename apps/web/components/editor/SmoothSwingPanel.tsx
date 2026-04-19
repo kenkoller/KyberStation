@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import {
   useLayerStore,
   SMOOTHSWING_DEFAULTS,
   type SmoothSwingLayerConfig,
   type SmoothSwingVersion,
 } from '@/stores/layerStore';
+import { useDragToScrub } from '@/hooks/useDragToScrub';
 
 // ---------------------------------------------------------------------------
 // SmoothSwing — now lives as a specialized modulator plate inside LayerStack.
@@ -156,10 +157,27 @@ function SliderRow({ meta, value, onChange }: SliderRowProps) {
       ? String(value)
       : value.toFixed(meta.decimals);
 
+  const reactId = useId();
+  const inputId = `smoothswing-${meta.key}-${reactId}`;
+
+  const pointerHandlers = useDragToScrub<HTMLLabelElement>({
+    value,
+    min: meta.min,
+    max: meta.max,
+    step: meta.step,
+    onScrub: (next) => onChange(meta.key, next),
+  });
+
   return (
     <div className="group">
       <div className="flex items-baseline justify-between mb-0.5">
-        <label className="text-ui-xs text-text-secondary font-mono">
+        <label
+          htmlFor={inputId}
+          {...pointerHandlers}
+          className="text-ui-xs text-text-secondary font-mono cursor-ew-resize select-none touch-none"
+          style={{ touchAction: 'none' }}
+          title="Drag to scrub (Shift 10×, Alt 0.1×). Click slider to type."
+        >
           {meta.label}
         </label>
         <span className="text-ui-xs font-mono text-accent-primary tabular-nums">
@@ -169,6 +187,7 @@ function SliderRow({ meta, value, onChange }: SliderRowProps) {
       </div>
 
       <input
+        id={inputId}
         type="range"
         min={meta.min}
         max={meta.max}

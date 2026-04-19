@@ -1,6 +1,7 @@
 'use client';
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { ScrubField } from '@/components/shared/ScrubField';
 
 export function MotionSimPanel() {
   const motionSim = useBladeStore((s) => s.motionSim);
@@ -18,21 +19,16 @@ export function MotionSimPanel() {
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
           {/* Swing Speed */}
           <div>
-            <div className="flex items-center gap-3">
-              <label htmlFor="motion-swing" className="text-ui-xs text-text-secondary w-24 shrink-0 flex items-center gap-1">Swing Speed <HelpTooltip text="How fast the saber is being swung. Drives AudioFlicker intensity and SmoothSwing crossfade. 0 = still, 100 = full swing." proffie="SwingSpeed<>" position="right" /></label>
-              <input
-                id="motion-swing"
-                type="range"
-                min={0}
-                max={100}
-                value={motionSim.swing}
-                onChange={(e) => setMotionSim({ swing: Number(e.target.value) })}
-                className="flex-1"
-              />
-              <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-                {motionSim.swing}%
-              </span>
-            </div>
+            <ScrubField
+              id="motion-swing"
+              label={<>Swing Speed <HelpTooltip text="How fast the saber is being swung. Drives AudioFlicker intensity and SmoothSwing crossfade. 0 = still, 100 = full swing." proffie="SwingSpeed<>" position="right" /></>}
+              min={0} max={100}
+              value={motionSim.swing}
+              onChange={(v) => setMotionSim({ swing: v })}
+              unit="%"
+              labelClassName="w-24 flex items-center gap-1"
+              readoutClassName="w-10"
+            />
             <div className="flex justify-between text-ui-xs text-text-muted mt-1 ml-[108px]">
               <span>Still</span>
               <span>Full Swing</span>
@@ -41,21 +37,16 @@ export function MotionSimPanel() {
 
           {/* Blade Angle */}
           <div>
-            <div className="flex items-center gap-3">
-              <label htmlFor="motion-angle" className="text-ui-xs text-text-secondary w-24 shrink-0 flex items-center gap-1">Blade Angle <HelpTooltip text="Tilt of the blade relative to the ground. Used by angle-responsive styles and Dual-Mode Ignition. See also: Effect Panel for angle-based ignition switching." proffie="BladeAngle<>" position="right" /></label>
-              <input
-                id="motion-angle"
-                type="range"
-                min={0}
-                max={100}
-                value={motionSim.angle}
-                onChange={(e) => setMotionSim({ angle: Number(e.target.value) })}
-                className="flex-1"
-              />
-              <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-                {motionSim.angle - 50 > 0 ? '+' : ''}{motionSim.angle - 50}
-              </span>
-            </div>
+            <ScrubField
+              id="motion-angle"
+              label={<>Blade Angle <HelpTooltip text="Tilt of the blade relative to the ground. Used by angle-responsive styles and Dual-Mode Ignition. See also: Effect Panel for angle-based ignition switching." proffie="BladeAngle<>" position="right" /></>}
+              min={0} max={100}
+              value={motionSim.angle}
+              onChange={(v) => setMotionSim({ angle: v })}
+              format={(v) => `${v - 50 > 0 ? '+' : ''}${v - 50}`}
+              labelClassName="w-24 flex items-center gap-1"
+              readoutClassName="w-10"
+            />
             <div className="flex justify-between text-ui-xs text-text-muted mt-1 ml-[108px]">
               <span>Down</span>
               <span>Level</span>
@@ -65,21 +56,16 @@ export function MotionSimPanel() {
 
           {/* Twist */}
           <div>
-            <div className="flex items-center gap-3">
-              <label htmlFor="motion-twist" className="text-ui-xs text-text-secondary w-24 shrink-0 flex items-center gap-1">Twist <HelpTooltip text="Rotational twist of the hilt. Used by twist-on ignition and twist-responsive effects. Negative = counter-clockwise, positive = clockwise." proffie="TwistAngle<>" position="right" /></label>
-              <input
-                id="motion-twist"
-                type="range"
-                min={0}
-                max={100}
-                value={motionSim.twist}
-                onChange={(e) => setMotionSim({ twist: Number(e.target.value) })}
-                className="flex-1"
-              />
-              <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-                {motionSim.twist - 50 > 0 ? '+' : ''}{motionSim.twist - 50}
-              </span>
-            </div>
+            <ScrubField
+              id="motion-twist"
+              label={<>Twist <HelpTooltip text="Rotational twist of the hilt. Used by twist-on ignition and twist-responsive effects. Negative = counter-clockwise, positive = clockwise." proffie="TwistAngle<>" position="right" /></>}
+              min={0} max={100}
+              value={motionSim.twist}
+              onChange={(v) => setMotionSim({ twist: v })}
+              format={(v) => `${v - 50 > 0 ? '+' : ''}${v - 50}`}
+              labelClassName="w-24 flex items-center gap-1"
+              readoutClassName="w-10"
+            />
             <div className="flex justify-between text-ui-xs text-text-muted mt-1 ml-[108px]">
               <span>CCW</span>
               <span>Neutral</span>

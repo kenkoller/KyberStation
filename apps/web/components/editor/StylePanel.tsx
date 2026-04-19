@@ -10,6 +10,7 @@ import { BladePainter } from './BladePainter';
 import { ImageScrollPanel } from './ImageScrollPanel';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { ScrubField } from '@/components/shared/ScrubField';
 
 const BLADE_STYLES = [
   { id: 'stable', label: 'Stable', desc: 'Classic solid blade' },
@@ -144,25 +145,20 @@ function StyleParamSlider({
   value: number;
   onChange: (value: number) => void;
 }) {
-  const inputId = `style-param-${param.key}`;
-
+  const decimals = param.step < 1 ? (param.step < 0.1 ? 2 : 1) : 0;
   return (
-    <div className="flex items-center gap-3">
-      <label htmlFor={inputId} className="text-ui-xs text-text-secondary w-24 shrink-0">{param.label}</label>
-      <input
-        id={inputId}
-        type="range"
-        min={param.min}
-        max={param.max}
-        step={param.step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1"
-      />
-      <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-        {value.toFixed(param.step < 1 ? (param.step < 0.1 ? 2 : 1) : 0)}
-      </span>
-    </div>
+    <ScrubField
+      id={`style-param-${param.key}`}
+      label={param.label}
+      min={param.min}
+      max={param.max}
+      step={param.step}
+      value={value}
+      onChange={onChange}
+      format={(v) => v.toFixed(decimals)}
+      labelClassName="w-24"
+      readoutClassName="w-10"
+    />
   );
 }
 
@@ -316,37 +312,25 @@ export function StylePanel() {
         }
       >
         <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
-          <div className="flex items-center gap-3">
-            <label htmlFor="hw-brightness" className="text-ui-xs text-text-secondary w-20 shrink-0">Brightness</label>
-            <input
-              id="hw-brightness"
-              type="range"
-              min={10}
-              max={100}
-              value={brightness}
-              onChange={(e) => setBrightness(Number(e.target.value))}
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-              {brightness}%
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <label htmlFor="hw-led-count" className="text-ui-xs text-text-secondary w-20 shrink-0">LED Count</label>
-            <input
-              id="hw-led-count"
-              type="range"
-              min={36}
-              max={288}
-              step={12}
-              value={config.ledCount}
-              onChange={(e) => updateConfig({ ledCount: Number(e.target.value) })}
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-              {config.ledCount}
-            </span>
-          </div>
+          <ScrubField
+            id="hw-brightness"
+            label="Brightness"
+            min={10} max={100}
+            value={brightness}
+            onChange={setBrightness}
+            unit="%"
+            labelClassName="w-20"
+            readoutClassName="w-10"
+          />
+          <ScrubField
+            id="hw-led-count"
+            label="LED Count"
+            min={36} max={288} step={12}
+            value={config.ledCount}
+            onChange={(v) => updateConfig({ ledCount: v })}
+            labelClassName="w-20"
+            readoutClassName="w-10"
+          />
         </div>
       </CollapsibleSection>
 

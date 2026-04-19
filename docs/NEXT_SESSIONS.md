@@ -1,6 +1,6 @@
 # Next-Session Prompts — Remaining UX Overhaul Items
 
-**Session context:** The 2026-04-18 UX overhaul session closed **25 of 27** deferred items. Only 2 remain (#7 DragToScrub + #16 Figma color model). Both heavily modify `ColorPanel.tsx` which #12 Severance drag curve just updated — serializing them to their own sessions is the safer path.
+**Session context:** The 2026-04-18 UX overhaul session closed **25 of 27** deferred items. A follow-up session on the same day shipped **#7 DragToScrub**, leaving only **#16 Figma color model** as the last outstanding UX item. See [`UX_OVERHAUL_SUMMARY_2026-04-18.md`](UX_OVERHAUL_SUMMARY_2026-04-18.md) for the #7 landing details.
 
 **Branch baseline:** All new work should start from `test/launch-readiness-2026-04-18` OR from `main` once PR [#31](https://github.com/kenkoller/KyberStation/pull/31) is merged.
 
@@ -31,7 +31,13 @@
 
 ---
 
-## Item #7 — Shared `<DragToScrub>` / Slider primitive
+## Item #7 — Shared `<DragToScrub>` / Slider primitive — **✅ SHIPPED 2026-04-18**
+
+Delivered as `apps/web/lib/severanceDragCurve.ts` (pure curve) + `apps/web/hooks/useDragToScrub.ts` (pointer hook + pure `computeScrubValue`) + `apps/web/components/shared/ScrubField.tsx` (opinionated wrapper). ColorPanel delegates to the hook; EffectPanel, StylePanel, MotionSimPanel, LayerStack, and SmoothSwingPanel's SliderRow all migrated. Keyboard + SR users unchanged.
+
+---
+
+### Historical prompt (kept for reference)
 
 **Why it matters:** `ColorPanel.tsx` already has `<ScrubLabel>` (shipped in this session's overhaul). Numeric inputs + sliders across the app should have consistent drag-to-scrub behavior per UX North Star §6 (Blender + TouchDesigner reference). Right now they're inconsistent.
 
