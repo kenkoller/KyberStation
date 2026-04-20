@@ -13,7 +13,6 @@ export default defineConfig({
       '@kyberstation/codegen': path.resolve(__dirname, '../../packages/codegen/src'),
       '@kyberstation/presets': path.resolve(__dirname, '../../packages/presets/src'),
       '@kyberstation/sound': path.resolve(__dirname, '../../packages/sound/src'),
-      '@kyberstation/boards': path.resolve(__dirname, '../../packages/boards/src'),
     },
   },
 });

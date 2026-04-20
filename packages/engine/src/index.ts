@@ -75,9 +75,9 @@ export type { StorageBudget, StorageBreakdownItem } from './storage/StorageEstim
 export { encodeBMP, decodeBMP, getResolutionDims } from './oled/BMPCodec.js';
 export type { OLEDResolution, BMPDecodeResult } from './oled/BMPCodec.js';
 
-// ─── Parameter Groups ───
-export { PARAMETER_GROUPS } from './parameterGroups.js';
-export type { ParameterGroup, ParameterDef, ParameterOption } from './parameterGroups.js';
+// PARAMETER_GROUPS export removed along with parameterGroups.ts per the
+// 2026-04-19 dead-code audit — zero consumers inside or outside the
+// engine package.
 
 export {
   BladeState,

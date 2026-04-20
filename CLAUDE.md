@@ -449,11 +449,40 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
-## Current State (2026-04-18, end of UX overhaul session)
+## Current State (2026-04-20, mid-walkthrough + cleanup session)
 
-**Active branch: `test/launch-readiness-2026-04-18` / PR [#31](https://github.com/kenkoller/KyberStation/pull/31) — NOT YET MERGED, awaiting Ken's walkthrough.**
+**Active branch: `test/launch-readiness-2026-04-18` / PR [#31](https://github.com/kenkoller/KyberStation/pull/31) — NOT YET MERGED. Awaiting full walkthrough + merge decision.**
 
-Last git tag: **v0.10.0**. No tag cut since — everything landed on `main` is accumulating behind v0.10.0 awaiting Ken's launch-readiness decision.
+Last git tag: **v0.10.0**. No tag cut since; PR #31 is the staging area for everything past v0.10.0.
+
+### 2026-04-19 session
+
+- **#7 DragToScrub primitive shipped** (26/27 UX North Star items complete). `useDragToScrub` hook + `<ScrubField>` wrapper + `severanceDragCurve` lib. Migrated 5 high-traffic panels (EffectPanel 24 sliders, StylePanel, MotionSimPanel, LayerStack, SmoothSwingPanel). Only **#16 Figma color model** remains from UX North Star.
+- **P0 launch-readiness sweep** (commit 71ea296 → f9cca7e):
+  - `--text-muted` contrast raised across `:root` + all 30 themes (≈1.6:1 → ≈4.4:1 WCAG AA).
+  - CollapsibleSection nested-button hydration warning fixed (header accessory now sibling of the disclosure button).
+  - PresetGallery + PresetBrowser "+ List" lifted out of the card button into a sibling keyboard-focusable button.
+  - BladeCanvas diffusion blur: canvas-per-frame alloc → reused `diffusionTempRef` (killed 60 allocs/sec of GC churn).
+  - `useAnimationFrame` default-consumes reduced-motion.
+- **P1 a11y + perf batch** (commit f9cca7e):
+  - `--border-subtle` / `--border-light` raised for WCAG 3:1 UI-component contrast, across all 30 themes.
+  - LayerStack rows + GradientMixer saved-row now keyboard-focusable.
+  - FlashPanel radio-label nested-button restructured (radio label + picker button now siblings).
+  - PWA icons regenerated from `icon-1024.png`; 672KB orphan removed.
+  - CrystalPanel lazy-mount via `next/dynamic` (reverted in the next session — see below).
+  - BladeCanvas bloom pipeline early-skip when blade is retracted (~50% frame budget recovered in that state).
+- **3 launch audit docs**: [LAUNCH_A11Y_AUDIT_2026-04-19.md](docs/LAUNCH_A11Y_AUDIT_2026-04-19.md), [LAUNCH_PERF_AUDIT_2026-04-19.md](docs/LAUNCH_PERF_AUDIT_2026-04-19.md), [LAUNCH_DEADCODE_AUDIT_2026-04-19.md](docs/LAUNCH_DEADCODE_AUDIT_2026-04-19.md).
+- **Design-reference ingestion**: Claude Design reference parked at [docs/design-reference/2026-04-19-claude-design/](docs/design-reference/2026-04-19-claude-design/). Gap analysis at [docs/DESIGN_REFERENCE_2026-04-19.md](docs/DESIGN_REFERENCE_2026-04-19.md). Harvest plan: Cmd+K palette + density toggle + token refinements pre-launch; structural redesign deferred post-launch.
+
+### 2026-04-20 session
+
+- **Editor ChunkLoadError fixed** — reverted the CrystalPanel `next/dynamic` wrapper from the P1 batch; pattern was unstable under Turbopack HMR. Static import restored; the Three.js payload is still code-split by CrystalPanel's own internal `dynamic`.
+- **Landing page rework** (Ken's walkthrough drove this end-to-end):
+  - Shared `<MiniSaber>` primitive (`apps/web/components/shared/MiniSaber.tsx`): canonical hilt SVG + lightweight canvas blade + CSS drop-shadow halo. Props for orientation, hiltPosition (start/end), controlled ignition, `animated` on/off (static-till-hover pattern), neutral chrome hilt accent by default.
+  - **Hero**: two horizontal sabers flanking the title, always ignited, colors + styles morph live in place (no retract). Top cycles 8 canonical hero colors, bottom cycles 8 creative styles, staggered beats. Graflex hilt throughout for brand consistency. Tip-only border-radius so the hilt end sits flush.
+  - **Hero composition**: flex column — top saber (translateY -15px) → KYBERSTATION title + subtitle + CTAs (moved inside the hero from the standalone LandingCTAs section) → bottom saber (translateY +25px). Hilt:blade ratio 4:1 (180px hilt, 720px blade) to match real Graflex proportions.
+  - **LandingSaberArray**: edge-to-edge dual-marquee gallery with 80 unique presets (40 canonical characters + 40 creative-style variants). Static by default, hover ignites the live engine tick + pauses that row. Click opens the preset directly in `/editor?s=<glyph>` (glyphs encoded once at module load). IntersectionObserver lazy-mount keeps startup cost flat regardless of pool size. Cards alternate canonical/creative type at every index, hue-spread so adjacent cards rarely share a color. 140s/170s per-row loop (premium-slow). 800ms ease-in/out on hover.
+- **Cleanup pass**: applied the dead-code shortlist from the 2026-04-19 audit. Removed 5 orphan files (LoadingSkeleton, usePWA, MotionTelemetry, PowerDashboard, EngineStats), 6 unused `@radix-ui/*` deps, `idb-keyval`, `bezier-easing`, the `@kyberstation/boards` wiring sites in apps/web (the package itself stays intact), the `@kyberstation/engine` workspace dep from presets, and `PARAMETER_GROUPS` + its file. Typecheck + all 547 web tests still pass.
 
 ### Current session accomplishments (2026-04-18)
 
