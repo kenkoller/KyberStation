@@ -113,6 +113,9 @@ export function LandingBladeHero({ which, className }: LandingBladeHeroProps) {
           : 'creative blade styles'
       } morphing while ignited`}
     >
+      {/* 4:1 blade:hilt ratio matches real-world Graflex (~27 cm hilt,
+          ~100 cm blade). 10:1 looked thin — hilt got lost as the blade
+          visually stretched the composition. */}
       <MiniSaber
         config={config}
         hiltId={LANDING_HILT_ID}
@@ -120,7 +123,7 @@ export function LandingBladeHero({ which, className }: LandingBladeHeroProps) {
         hiltPosition={hiltPosition}
         bladeLength={720}
         bladeThickness={10}
-        hiltLength={72}
+        hiltLength={180}
         controlledIgnited={true}
       />
     </div>
