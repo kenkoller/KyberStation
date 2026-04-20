@@ -181,28 +181,64 @@ function spreadByHue<T extends { config: BladeConfig }>(items: T[]): T[] {
   return out;
 }
 
-// ─── Precompute glyph URLs + spread orders at module load ─────────────────
+// ─── Precompute glyph URLs + intermingled split at module load ─────────────
 //
 // encodeGlyphFromConfig is pure JS and runs fine during SSR. Doing it
 // once per preset keeps the click URLs free at render time.
+//
+// Strategy per Ken's 2026-04-20 feedback: the canonical pool is almost
+// entirely `style: 'stable'` — visually static even when animated, so
+// the old "top row = canonicals, bottom row = creatives" split left
+// the top row looking dead. Fix:
+//
+//   1. Hue-spread each pool separately so within-type color runs are
+//      broken up (no cluster of blue Jedi, no cluster of green styles).
+//   2. Zip the two spread pools — canonical, creative, canonical,
+//      creative — so every pair of adjacent cards is type-mixed.
+//   3. Split the final list by index parity into two rows. Both rows
+//      get ~half canonicals + ~half creatives, with the hue spread
+//      preserved at the within-row cadence.
+//
+// Result: each row alternates "familiar face, wild style, familiar
+// face, wild style" while still avoiding adjacent same-color cards.
 
 interface ResolvedPreset extends ArrayPreset {
   href: string;
 }
 
-function resolve(pool: ArrayPreset[]): ResolvedPreset[] {
-  return spreadByHue(pool).map((p) => ({
-    ...p,
-    href: `/editor?s=${encodeGlyphFromConfig(p.config)}`,
-  }));
+function zipHueSpread(
+  a: ArrayPreset[],
+  b: ArrayPreset[],
+): ArrayPreset[] {
+  const spreadA = spreadByHue(a);
+  const spreadB = spreadByHue(b);
+  const out: ArrayPreset[] = [];
+  const max = Math.max(spreadA.length, spreadB.length);
+  for (let i = 0; i < max; i++) {
+    if (i < spreadA.length) out.push(spreadA[i]);
+    if (i < spreadB.length) out.push(spreadB[i]);
+  }
+  return out;
 }
 
-const TOP_ROW = resolve(CANONICAL_SOURCE);
-const BOTTOM_ROW = resolve(CREATIVE_SOURCE);
+const INTERMINGLED: ResolvedPreset[] = zipHueSpread(
+  CANONICAL_SOURCE,
+  CREATIVE_SOURCE,
+).map((p) => ({
+  ...p,
+  href: `/editor?s=${encodeGlyphFromConfig(p.config)}`,
+}));
+
+// Split into halves — NOT parity. zipHueSpread strictly alternates
+// canonical / creative, so parity-split would separate them back into
+// single-type rows. Half-split keeps the alternation inside each row.
+const HALF = Math.floor(INTERMINGLED.length / 2);
+const TOP_ROW = INTERMINGLED.slice(0, HALF);
+const BOTTOM_ROW = INTERMINGLED.slice(HALF);
 
 // ─── Marquee timing (per-row, slightly de-synced) ──────────────────────────
-const TOP_ROW_DURATION_S = 90;
-const BOTTOM_ROW_DURATION_S = 110;
+const TOP_ROW_DURATION_S = 140;
+const BOTTOM_ROW_DURATION_S = 170;
 
 interface LandingSaberArrayProps {
   className?: string;
@@ -288,7 +324,7 @@ function MarqueeRow({ presets, direction, durationS }: MarqueeRowProps) {
 // Wraps a MiniSaber + label in a Next.js <Link>. Lazy-mounts the
 // saber via IntersectionObserver so ~160 card-level DOM articles
 // only pay engine-warmup cost when they scroll into view. Hover
-// transitions are 400ms ease-in-out so pointer-in / pointer-out
+// transitions are 800ms ease-in-out so pointer-in / pointer-out
 // reads as intentional rather than twitchy.
 
 interface MarqueeCardProps {
@@ -334,11 +370,11 @@ function MarqueeCard({ cardKey, preset, isHovered, onHoverChange }: MarqueeCardP
       style={{
         width: '200px',
         borderColor: isHovered ? `rgba(${r},${g},${b},0.55)` : 'rgb(var(--border-subtle))',
-        // Ease in/out so hover state changes feel intentional. 400ms
+        // Ease in/out so hover state changes feel intentional. 800ms
         // matches the human perception window for "deliberate" vs
         // "twitchy" transitions.
         transition:
-          'border-color 400ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+          'border-color 800ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 800ms cubic-bezier(0.4, 0, 0.2, 1)',
         boxShadow: isHovered
           ? `0 0 30px 0 rgba(${r},${g},${b},0.22)`
           : 'none',
@@ -357,7 +393,7 @@ function MarqueeCard({ cardKey, preset, isHovered, onHoverChange }: MarqueeCardP
           opacity: isHovered ? 0.22 : 0.1,
           filter: 'blur(24px)',
           transition:
-            'opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+            'opacity 800ms cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       />
 
