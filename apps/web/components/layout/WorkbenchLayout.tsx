@@ -316,12 +316,16 @@ export function WorkbenchLayout() {
       {/* ════════════════════════════════════════════════════
        * 1. HEADER BAR
        * ════════════════════════════════════════════════════ */}
-      <header className="relative flex items-center justify-between px-4 py-1.5 border-b border-border-subtle bg-bg-secondary shrink-0">
-        {/* HUD: decorative data ticker running behind header content */}
+      <header className="relative flex items-center justify-between px-4 py-2 border-b border-border-subtle bg-bg-secondary shrink-0">
+        {/* HUD: decorative data ticker clipped to a thin strip along the
+            bottom edge of the header. Previously `inset-0` filled the entire
+            header, which pushed ticker text up against the undo/redo buttons
+            on thin-padded layouts. The dedicated strip keeps the ambient
+            data readout clearly separate from the foreground controls. */}
         <DataTicker
           data={HUD_TICKER_MESSAGES}
           speed={30}
-          className="absolute inset-0 flex items-end pb-px pointer-events-none"
+          className="absolute left-0 right-0 bottom-0 h-3 flex items-end pb-px pointer-events-none"
         />
         {/* Left cluster: logo + project name */}
         <div className="flex items-center gap-3">
@@ -438,8 +442,8 @@ export function WorkbenchLayout() {
        * 2. BLADE + VISUALIZATION STACK — always visible
        * ════════════════════════════════════════════════════ */}
       <section
-        className="shrink-0 border-b border-border-subtle bg-bg-primary flex"
-        style={{ height: 280 }}
+        className="shrink-0 border-b border-border-subtle bg-bg-primary flex overflow-hidden"
+        style={{ height: 320 }}
         role="region"
         aria-label="Blade visualization"
       >
