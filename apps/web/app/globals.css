@@ -277,6 +277,32 @@ input[type='range']::-moz-range-thumb {
   box-shadow: 0 0 6px rgb(var(--accent) / 0.3);
 }
 
+/* ─── Landing-page marquee (components/landing/LandingSaberArray.tsx) ─── */
+/* The marquee track duplicates its content exactly once, so translating
+   the track by -50% of its own width scrolls through one pool's worth
+   of cards and loops seamlessly. Paired with `animation-play-state:
+   paused` on hover so stopping the drift is instant. */
+
+@keyframes kyber-marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes kyber-marquee-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+/* Respect OS reduced-motion: freeze the marquee at rest. */
+@media (prefers-reduced-motion: reduce) {
+  [style*="kyber-marquee"] {
+    animation: none !important;
+  }
+}
+.reduced-motion [style*="kyber-marquee"] {
+  animation: none !important;
+}
+
 /* ─── Skeleton shimmer (used by components/shared/Skeleton.tsx) ─── */
 
 @keyframes skeleton-shimmer {

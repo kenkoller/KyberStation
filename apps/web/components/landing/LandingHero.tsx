@@ -63,7 +63,7 @@ export function LandingHero() {
         </div>
       </div>
 
-      <div style={{ transform: 'translateY(10px)' }}>
+      <div style={{ transform: 'translateY(25px)' }}>
         <LandingBladeHero which="bottom" />
       </div>
     </section>
