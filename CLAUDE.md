@@ -449,11 +449,95 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
-## Current State (2026-04-20, mid-walkthrough + cleanup session)
+## Current State (2026-04-21, UI overhaul v2 sprint shipped — awaiting walkthrough)
 
-**Active branch: `test/launch-readiness-2026-04-18` / PR [#31](https://github.com/kenkoller/KyberStation/pull/31) — NOT YET MERGED. Awaiting full walkthrough + merge decision.**
+**Active branch: `feat/ui-overhaul-v2` — 28 commits past `main` (v0.13.0). NOT YET MERGED. Awaiting Ken's walkthrough. Next session is queued for more UI / UX updates on top of this branch.**
 
-Last git tag: **v0.10.0**. No tag cut since; PR #31 is the staging area for everything past v0.10.0.
+**Sibling branch: `feat/w5-performance-bar`** — 1 commit (W5 PerformanceBar). `feat/ui-overhaul-v2` was cut from this so merging it first would be redundant; the W5 commit is already included on the overhaul branch.
+
+Last git tag: **v0.13.0** (launch readiness, merged via PR #31).
+
+### 2026-04-21 session — UI Overhaul v2 (11 waves)
+
+Shipped the entire 10-wave plan in [`docs/UI_OVERHAUL_v2_PROPOSAL.md`](docs/UI_OVERHAUL_v2_PROPOSAL.md) plus a post-plan OV11 polish wave. Walkthrough checklist lives at the end of this block.
+
+Planning artifacts (both on branch):
+- [`docs/UI_OVERHAUL_v2_PROPOSAL.md`](docs/UI_OVERHAUL_v2_PROPOSAL.md) — 14-section spec with all 12 structural decisions locked across two rounds of back-and-forth.
+- [`docs/NEXT_OVERHAUL_SESSION.md`](docs/NEXT_OVERHAUL_SESSION.md) — the 3-lane handoff prompt doc that seeded the parallel-agent fan-out (agent outputs were merged back to `feat/ui-overhaul-v2` during this session; the doc is preserved as a reference for future parallel sprints).
+
+**Waves shipped (12 total commits on `feat/ui-overhaul-v2` past main, plus 17 absorbed via Lane B / Lane C merge commits):**
+
+| Wave | Landed via | Content |
+|---|---|---|
+| OV1 | `5d45806` | Dedupe 6 panel slots (3 gallery aliases / gesture-config dup / font-preview stub / comparison-view). Panel count: 29 → 23. |
+| OV2 | `5e1404b` + [`apps/web/lib/bladeRenderMetrics.ts`](apps/web/lib/bladeRenderMetrics.ts) + 18 tests | Blade-length fidelity fix: `computeBladeRenderMetrics` shares BladeCanvas's auto-fit geometry with PixelStripPanel + RGBGraphPanel so all three per-LED surfaces line up visually. |
+| OV3 | `ff11990` (Lane B merge) | Gallery tab edge-to-edge marquee. Reused landing's `LandingSaberArray` shape via new `SaberMarqueeArray` primitive. NEW SABER + SURPRISE ME cards, filter rail. PresetGallery slimmed 1151 → 241 lines. Randomizer panel slot deleted (component kept for DesignPanel inline use). |
+| OV4 | `64f3322` (Lane C merge) — `DeliveryRail.tsx` + `CardWriterModal` + `FlashPanelModal` + `lib/storageBudget.ts` hook + 11 tests | Persistent 50px bottom bar: PROFILE / STORAGE / EXPORT / FLASH / CONN. Always visible on every tab. |
+| OV5 | `64f3322` — `AnalysisRail.tsx` + `AnalysisExpandOverlay.tsx` + 15 tests | Split VisualizationStack by layer-shape: 9 line-graph layers → left AnalysisRail; 3 pixel-shaped stay with blade; scalar moved to Delivery rail. Section 2 restructured horizontal. PerformanceBar gated to Design tab. |
+| OV6 | `4908ba3` | Tab merge 5 → 4: `Gallery / Design / Audio / Output`. Dynamics panels absorbed into Design (effect-triggers / motion-simulation / effect-config / ignition-retraction all land on the merged Design tab). ⌘-shortcut reshuffle. `migrateDynamicsIntoDesign` layoutStore migration function for any persisted `dynamics` state. ⌘5 freed for OV8. |
+| OV7 | `3f6cb26` — `components/editor/Inspector.tsx` (205 lines) | Right-column Inspector on Design tab. 5 tabs: STATE / STYLE / COLOR / EFFECTS / ROUTING. Composes existing panels (StylePanel + EffectPanel + ColorPanel + GradientBuilder + IgnitionRetractionPanel + GestureControlPanel) rather than deep-extracting — lower risk, same familiar surfaces. ROUTING tab is a v1.1 placeholder. |
+| OV8 | `4f73f46` — `BladeEngine.captureStateFrame` API + `components/editor/StateGrid.tsx` + 6 engine tests | `captureStateFrame(state, config, effectHeld?, { progress, settleMs })` allocates a scratch engine, forces the target state, returns a COPY of the pixel buffer. Used by Inspector STATE tab (9 per-row snapshots that refresh on config change) and by StateGrid (full-workbench takeover of the blade-preview region). Toggle: `[ SINGLE | ALL STATES ]` chip in the canvas-area controls + ⌘5 / Ctrl+5. Desktop + Design-tab only. Main engine untouched (scratch engine per call). |
+| OV9 | `0b1c5d6` + `3639eba` + `b5e6c4c` + `012a7a1` + 18 tests | MiniGalleryPicker primitive + 52 static SVG thumbnails (20 styles / 19 ignitions / 13 retractions). StylePanel, EffectPanel (ignition + retraction), and extracted `IgnitionRetractionPanel.tsx` all migrated. Static-till-hover; accent-token thumbnails track active theme. |
+| OV10 | `88f2fd3` | Responsive polish. Inspector 320px at `desktop:` / 400px at `xl:`. PerformanceBar macro grid `overflow-x-auto`. StateGrid header right-pads 280px to avoid toggle-cluster collision. DeliveryRail already had `compact` breakpoint from Lane C. |
+| **OV11** | `6cd94e7` — `components/shared/ResizeHandle.tsx` + `REGION_LIMITS` + localStorage (`kyberstation-ui-layout`) | Drag-to-resize handles on all 4 main-region seams (AnalysisRail width / Inspector width / section-2 height / PerformanceBar height). Double-click resets; arrow keys = 8px step, Shift-arrow = 24px. Redundant borders between resize-seam regions removed (handles carry the seam). Panel-grid desktop padding p-4 → p-2 for a tighter feel. |
+
+**Test count after sprint:** 2,799 passing workspace-wide (was ~2,636). Per-package:
+- `sound` 40 · `presets` 9 · `boards` 260 · `codegen` 1,323 · `engine` 463 (+6 new `captureStateFrame`) · `web` 704 (+125 across OV1–OV11)
+- Typecheck clean on every package.
+
+**What the editor looks like now (desktop, `feat/ui-overhaul-v2` tip):**
+
+```
+┌───────────────────────────────────────────────────────┐
+│ HEADER                                                │
+├───────────────────────────────────────────────────────┤
+│ STATUSBAR (11-segment PFD)                            │
+├───────────────────────────────────────────────────────┤
+│ TABS: GALLERY ⌘1 · DESIGN ⌘2 · AUDIO ⌘3 · OUTPUT ⌘4  │
+├──────┬─────────────────────────────────────┬──────────┤
+│ ANAL │                                     │ INSPECTOR│  ← section 2 (draggable heights + widths)
+│ YSIS │  Blade canvas + pixel strip + RGB   │ ┌─tabs─┐ │
+│ RAIL │  OR 9-state takeover (⌘5)           │ │STATE │ │
+│ (drag│                                     │ │STYLE │ │
+│ to   │                                     │ │COLOR │ │
+│ resi)│                                     │ │EFFEC │ │
+│      │                                     │ │ROUTI │ │
+├──────┴─────────────────────────────────────┴──────────┤
+│ ═══ drag-to-resize ═══                                │
+├───────────────────────────────────────────────────────┤
+│ ACTION BAR: IGNITE + Clash/Blast/Lockup/Stab + LIVE   │
+├───────────────────────────────────────────────────────┤
+│ PANEL GRID (column-resize handles, tighter p-2 gutters)│
+├───────────────────────────────────────────────────────┤
+│ ═══ drag-to-resize ═══                                │
+├───────────────────────────────────────────────────────┤
+│ PERFORMANCE BAR (Design tab only, draggable height)   │
+├───────────────────────────────────────────────────────┤
+│ DELIVERY RAIL: PROFILE · STOR · EXPORT · FLASH · CONN │
+├───────────────────────────────────────────────────────┤
+│ DATA TICKER (ambient bottom chrome)                   │
+└───────────────────────────────────────────────────────┘
+```
+
+**Walkthrough checklist for Ken (handoff for next session):**
+- Toggle ⌘1–⌘4 — confirm Gallery / Design / Audio / Output switch
+- On Design: click `All States` chip → 9-row grid renders with per-state snapshots (CLASH flash, BLAST mark, LOCKUP warm bumps, IGNITING half-extension)
+- Change baseColor in Inspector COLOR tab → all 9 state rows update
+- Hit ⌘5 → toggles STATE takeover mode
+- Gallery tab: NEW SABER card opens wizard; SURPRISE ME randomizes + jumps to Design
+- DeliveryRail: EXPORT opens CardWriter modal; FLASH opens FlashPanel modal
+- Drag handles between: AnalysisRail / blade / Inspector / section 2 bottom / above PerformanceBar. Double-click resets. Values persist in localStorage (`kyberstation-ui-layout`).
+- Resize to 1024px → confirm no layout overlaps; resize to 1600px → Inspector grows to 400px.
+
+**Loose ends worth flagging:**
+- Dead local branches from the parallel-agent fan-out: `feat/ov3-gallery-marquee` / `feat/ov4-ov5-layout-restructure` / `feat/ov9-mini-galleries` / `feat/ui-overhaul-v2-local`. All fully subsumed into `feat/ui-overhaul-v2` via the Lane B / Lane C merge commits or cherry-pick (Lane A). Safely deletable with `git branch -D` once the overhaul branch merges to main.
+- Nothing pushed to remote — `feat/ui-overhaul-v2` and `feat/w5-performance-bar` live locally only. Ken's call on when to push.
+- `CrystalPanel` size reduction from proposal §12b.3 not yet applied (it's still at its shipped size on Design column 3). Micro-sprint candidate when Ken gets to it.
+- PerformanceBar knob label/readout spacing can compress on <780px-tall viewports — not a desktop regression, worth revisiting in a layout polish pass.
+
+### Pre-2026-04-21 legacy sessions (kept for history)
+
+### 2026-04-20 session (pre-v0.13.0)
 
 ### 2026-04-19 session
 
