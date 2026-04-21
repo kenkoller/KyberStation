@@ -1,6 +1,6 @@
 # Hardware validation TODO — v0.11.0 WebUSB flash
 
-**Status**: Phases A + B + C ✅ **all complete on 2026-04-20 (macOS, Proffieboard V3.9, 89sabers)**, including recovery re-flash. Three real DFU protocol bugs caught + fixed. Cross-platform (Windows/Linux) and cross-board (V2, V3-OLED) still pending.
+**Status**: Phases A + B + C ✅ **all complete on 2026-04-20 (89sabers Proffieboard V3.9, macOS + Brave)**, including recovery re-flash. Three real DFU protocol bugs caught + fixed. Brave is Chromium-based; Chrome/Edge/Arc should behave identically but are not independently verified. Cross-platform (Windows/Linux) and cross-board (V2, V3-OLED) still pending.
 
 Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugged in. The WebUSB flasher has passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
 
@@ -9,7 +9,7 @@ Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugg
 Phase A surfaced a real macOS-specific release-blocker that was never exercised by the mock tests:
 
 - **Symptom**: connect succeeded at the USB layer but `connect.ts` threw `"Connected device has no writable internal-flash region. Refusing to flash."`
-- **Root cause**: Chrome on macOS returns `null` for `USBAlternateInterface.interfaceName` on DFU alternate interfaces, even when the device advertises valid string descriptors. Windows and Linux populate the field natively; macOS does not. Our parser had nothing to parse.
+- **Root cause**: Chromium on macOS returns `null` for `USBAlternateInterface.interfaceName` on DFU alternate interfaces, even when the device advertises valid string descriptors — affects every Chromium-based browser on macOS (Chrome, Brave, Edge, Arc). Windows and Linux populate the field natively; macOS does not. Our parser had nothing to parse.
 - **Confirmation**: a raw `GET_DESCRIPTOR(string, index N)` control transfer against the already-authorized device returned the expected DfuSe strings (`@Internal Flash  /0x08000000/0256*0002Kg`, etc.) — so the strings are on the board, just not surfaced through WebUSB's JS API on macOS.
 - **Fix** (on `test/launch-readiness-2026-04-18`, uncommitted at time of writing): `DfuDevice.loadAlternates()` now falls back to reading the raw configuration descriptor + string descriptors directly when any alternate comes back nameless. Regression test covers the null-`interfaceName` path with a `macosNullInterfaceNames` mock option.
 - **Outcome**: hard-refresh → reconnect produced the expected `STMicroelectronics STM32 BOOTLOADER — 512 KiB flash ready` banner and `findInternalFlash()` returned the correct 256×2KiB region. Phase A green.
@@ -110,7 +110,7 @@ Recovery plan is documented in `docs/WEBUSB_FLASH.md` under "Recovery procedure"
 
 ## What's still pending (post-2026-04-20)
 
-Validated **only** on macOS (Sonoma) + Chrome + Proffieboard V3.9 (89sabers, STM32L452RE). Before promoting WebUSB flash to "validated for launch on all supported configurations":
+Validated **only** on macOS 15 (Sonoma) + Brave + Proffieboard V3.9 (89sabers, STM32L452RE). Brave is Chromium-based; Chrome/Edge/Arc should behave identically but are not independently verified. Before promoting WebUSB flash to "validated for launch on all supported configurations":
 
 - **Windows + Chrome/Edge** — different WebUSB driver path (WinUSB), historically the most fragile in the WebUSB ecosystem.
 - **Linux + Chrome** — udev rules required, often a sharp edge for new users; worth a smoke test.
