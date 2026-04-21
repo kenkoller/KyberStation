@@ -71,10 +71,15 @@ export function Inspector({ className, engineRef }: InspectorProps) {
 
   return (
     <aside
-      className={['flex flex-col bg-bg-secondary/60 border-l border-border-subtle', className ?? ''].join(' ')}
+      className={[
+        'flex flex-col bg-bg-secondary/60 border-l border-border-subtle shrink-0',
+        // OV10: narrower on tablet-adjacent desktop widths so the blade
+        // canvas gets a larger share; expands to 400px once there's room.
+        'w-[320px] xl:w-[400px]',
+        className ?? '',
+      ].join(' ')}
       role="region"
       aria-label="Inspector"
-      style={{ width: 400, flexShrink: 0 }}
     >
       {/* Tab bar */}
       <div

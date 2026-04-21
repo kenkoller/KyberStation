@@ -70,7 +70,15 @@ export function StateGrid({ engineRef, className }: StateGridProps) {
     >
       <div
         className="font-mono uppercase text-text-muted px-3 py-1.5 border-b border-border-subtle shrink-0"
-        style={{ fontSize: 10, letterSpacing: '0.1em' }}
+        style={{
+          fontSize: 10,
+          letterSpacing: '0.1em',
+          // OV10: reserve right-side room for the SINGLE/ALL STATES +
+          // 2D/3D + Fullscreen controls cluster that lives on top of
+          // the same canvas region. Without this pad the header text
+          // collides with the buttons at 1024px-ish widths.
+          paddingRight: 280,
+        }}
       >
         All states · config-driven snapshots · {ledCount} LEDs
       </div>

@@ -295,9 +295,13 @@ export function PerformanceBar({ engineRef }: PerformanceBarProps) {
           </div>
         </div>
 
-        {/* CENTER — 8-macro grid (2 rows × 4 cols) */}
+        {/* CENTER — 8-macro grid (2 rows × 4 cols by default). OV10
+            (2026-04-21): at narrower desktop widths the 4-column layout
+            can get cramped; fall back to a horizontally-scrollable
+            single-row layout at tablet breakpoints so knob centers stay
+            at their natural 54px size and labels remain legible. */}
         <div
-          className="grid grid-rows-2 grid-cols-4 gap-x-2 gap-y-1 items-center justify-items-center px-3 py-2"
+          className="grid grid-rows-2 grid-cols-4 gap-x-2 gap-y-1 items-center justify-items-center px-3 py-2 overflow-x-auto"
           role="group"
           aria-label="Macro knobs"
         >
