@@ -17,6 +17,29 @@ export type VisualizationLayerId =
   | 'transition-progress' // Ignition/retraction mask position
   | 'storage-budget';     // Storage budget indicator
 
+// ─── Layer Shape ───
+//
+// Added 2026-04-21 in Lane C (OV5 AnalysisRail split). Each layer
+// declares its geometry so the split between "stays with the blade
+// preview" and "moves to the left-side AnalysisRail" can be driven by
+// data rather than a heuristic in the component:
+//
+//   'pixel'     — per-LED renderer (blade, pixel-strip, effect-overlay).
+//                 Occupies the full blade render width and must share
+//                 the same `bladeRenderWidth` as the blade canvas
+//                 (OV2 parity). Stays in the blade preview region.
+//
+//   'line-graph'— cross-blade analytical waveform (luminance, power,
+//                 hue, saturation, RGB channels, swing, transition).
+//                 Narrow-column layout; moves to the AnalysisRail.
+//
+//   'scalar'    — single-value gauge (storage-budget). Belongs on the
+//                 Delivery rail as a tier-colored dot rather than a
+//                 blade-width renderer. Not rendered inside either
+//                 stack — the Delivery rail reads its own storage math
+//                 directly.
+export type VisualizationLayerShape = 'pixel' | 'line-graph' | 'scalar';
+
 // ─── Layer Metadata ───
 
 export interface VisualizationLayer {
@@ -29,6 +52,12 @@ export interface VisualizationLayer {
   color: string;
   /** Default height in pixels for this layer */
   height: number;
+  /**
+   * Shape classification per OV5. Drives the split between blade-
+   * anchored renderers and AnalysisRail waveforms. See
+   * `VisualizationLayerShape` above for the three categories.
+   */
+  shape: VisualizationLayerShape;
 }
 
 // ─── Layer Registry ───
@@ -43,6 +72,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: true,
     color: '#e0f0ff',
     height: 160,
+    shape: 'pixel',
   },
   {
     id: 'pixel-strip',
@@ -52,6 +82,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: true,
     color: '#ffffff',
     height: 24,
+    shape: 'pixel',
   },
   {
     id: 'channel-r',
@@ -61,6 +92,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: true,
     color: '#ff4444',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'channel-g',
@@ -70,6 +102,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: true,
     color: '#44ff88',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'channel-b',
@@ -79,6 +112,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: true,
     color: '#4488ff',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'luminance',
@@ -88,6 +122,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#cccccc',
     height: 40,
+    shape: 'line-graph',
   },
 
   // ── Extended layers ──
@@ -99,6 +134,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#ffaa00',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'hue',
@@ -108,6 +144,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#cc88ff',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'saturation',
@@ -117,6 +154,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#ff88cc',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'effect-overlay',
@@ -126,6 +164,10 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#ffdd44',
     height: 32,
+    // effect-overlay is per-LED (highlights "hot" pixels along the
+    // blade). Stays with the blade preview so the highlight region
+    // aligns with the blade canvas's pixel positions.
+    shape: 'pixel',
   },
   {
     id: 'swing-response',
@@ -135,6 +177,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#44ffee',
     height: 40,
+    shape: 'line-graph',
   },
   {
     id: 'transition-progress',
@@ -144,6 +187,7 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#88aaff',
     height: 32,
+    shape: 'line-graph',
   },
   {
     id: 'storage-budget',
@@ -153,6 +197,9 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: false,
     color: '#aaffaa',
     height: 28,
+    // scalar — moves to the Delivery rail's STORAGE segment (OV4).
+    // Not rendered inside either stack.
+    shape: 'scalar',
   },
 ];
 
@@ -160,6 +207,47 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
 
 export const CORE_LAYERS = VISUALIZATION_LAYERS.filter((l) => l.category === 'core');
 export const EXTENDED_LAYERS = VISUALIZATION_LAYERS.filter((l) => l.category === 'extended');
+
+/**
+ * Layers that stay with the blade preview region (OV5). These have
+ * shape === 'pixel' — their x-axis must match the blade canvas width
+ * pixel-for-pixel (OV2 parity).
+ */
+export const PIXEL_SHAPED_LAYERS = VISUALIZATION_LAYERS.filter(
+  (l) => l.shape === 'pixel',
+);
+
+/**
+ * Layers that move to the left-side AnalysisRail (OV5). These have
+ * shape === 'line-graph' — they're narrow cross-blade waveforms.
+ */
+export const LINE_GRAPH_SHAPED_LAYERS = VISUALIZATION_LAYERS.filter(
+  (l) => l.shape === 'line-graph',
+);
+
+/**
+ * Scalar-shaped layers — currently only storage-budget, which moves
+ * to the Delivery rail (OV4). Exported for completeness so the three
+ * shapes collectively cover every layer id (asserted in tests).
+ */
+export const SCALAR_SHAPED_LAYERS = VISUALIZATION_LAYERS.filter(
+  (l) => l.shape === 'scalar',
+);
+
+/**
+ * Set of pixel-shaped layer ids — fast lookup for the
+ * VisualizationStack SKIP_LAYERS guard.
+ */
+export const PIXEL_SHAPED_LAYER_IDS = new Set<VisualizationLayerId>(
+  PIXEL_SHAPED_LAYERS.map((l) => l.id),
+);
+
+/**
+ * Set of line-graph-shaped layer ids — AnalysisRail iterates this set.
+ */
+export const LINE_GRAPH_SHAPED_LAYER_IDS = new Set<VisualizationLayerId>(
+  LINE_GRAPH_SHAPED_LAYERS.map((l) => l.id),
+);
 
 export const DEFAULT_VISIBLE_LAYER_IDS = new Set<VisualizationLayerId>(
   VISUALIZATION_LAYERS.filter((l) => l.defaultVisible).map((l) => l.id)

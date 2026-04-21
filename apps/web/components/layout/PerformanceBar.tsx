@@ -5,6 +5,7 @@ import type { BladeEngine } from '@kyberstation/engine';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
+import { useUIStore } from '@/stores/uiStore';
 import {
   usePerformanceStore,
   scaleMacroValue,
@@ -117,6 +118,14 @@ export function PerformanceBar({ engineRef }: PerformanceBarProps) {
   const macroAssignments = usePerformanceStore((s) => s.macroAssignments);
   const setPage = usePerformanceStore((s) => s.setPage);
   const setMacroValue = usePerformanceStore((s) => s.setMacroValue);
+  // OV5 (2026-04-21): gate the bar to the Design tab only. The macro
+  // strip is a tweaking surface for live design work — on Gallery /
+  // Audio / Output the 148px it occupies is better spent on the tab's
+  // own content. Proposal §13 (OV5 row): "PerformanceBar visibility:
+  // currently always-on across all tabs. Gate it to DESIGN tab only."
+  // The visible-toggle in Settings still wins — users who have turned
+  // the bar off globally will not see it on Design either.
+  const activeTab = useUIStore((s) => s.activeTab);
 
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const bladeName = useBladeStore((s) => s.config.name);
@@ -169,7 +178,9 @@ export function PerformanceBar({ engineRef }: PerformanceBarProps) {
     [currentPage, setPage],
   );
 
-  if (!visible) return null;
+  // Two independent gates — either hides the bar. The `visible` toggle
+  // is global (Settings), `activeTab` is contextual (OV5).
+  if (!visible || activeTab !== 'design') return null;
 
   const pageColor = PAGE_COLORS[currentPage];
   const currentValues = macroValues[currentPage];
