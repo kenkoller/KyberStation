@@ -49,6 +49,7 @@ import { PerformanceBar } from '@/components/layout/PerformanceBar';
 import { DeliveryRail } from '@/components/layout/DeliveryRail';
 import { AnalysisRail } from '@/components/layout/AnalysisRail';
 import { AnalysisExpandOverlay } from '@/components/layout/AnalysisExpandOverlay';
+import { Inspector } from '@/components/editor/Inspector';
 import type { VisualizationLayerId } from '@/lib/visualizationTypes';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
@@ -1021,6 +1022,12 @@ export function WorkbenchLayout() {
             )}
           </div>
         </CornerBrackets>
+
+        {/* RIGHT — Inspector (OV7). 400px on the Design tab only. Houses
+            the STATE / STYLE / COLOR / EFFECTS / ROUTING tabs. On other
+            tabs the Inspector is hidden so the blade canvas reclaims the
+            full width. Responsive adaptations arrive in OV10. */}
+        {activeTab === 'design' && <Inspector className="h-full" />}
       </section>
 
       {/* ════════════════════════════════════════════════════
