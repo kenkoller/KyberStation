@@ -4,6 +4,7 @@ import type { BladeEngine } from '@kyberstation/engine';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
+import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
 
 interface RGBGraphPanelProps {
   engineRef: React.MutableRefObject<BladeEngine | null>;
@@ -68,12 +69,18 @@ export function RGBGraphPanel({ engineRef }: RGBGraphPanelProps) {
     ctx.fillStyle = '#030305';
     ctx.fillRect(0, 0, cw, ch);
 
-    // Layout: X = LED position (hilt left, tip right), Y = channel value (0-255)
-    const padX = 8 * dpr;
+    // Layout: X = LED position anchored to the blade's rendered extent
+    // (OV2). `computeBladeRenderMetrics` mirrors BladeCanvas's auto-fit
+    // geometry so the per-LED graph aligns with the blade above it.
+    // Y = channel value (0-255).
     const padTop = 10 * dpr;
     const padBot = 6 * dpr;
-    const graphX = padX;
-    const graphW = cw - padX * 2;
+    const metrics = computeBladeRenderMetrics({
+      containerWidthPx: w,
+      ledCount: leds,
+    });
+    const graphX = metrics.bladeLeftPx * dpr;
+    const graphW = metrics.bladeWidthPx * dpr;
     const graphTopY = padTop;
     const graphBotY = ch - padBot;
     const graphH = graphBotY - graphTopY;

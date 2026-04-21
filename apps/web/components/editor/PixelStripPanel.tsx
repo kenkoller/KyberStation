@@ -5,6 +5,7 @@ import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
+import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
 
 interface PixelStripPanelProps {
   engineRef: React.MutableRefObject<BladeEngine | null>;
@@ -72,12 +73,20 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     ctx.fillStyle = '#030305';
     ctx.fillRect(0, 0, cw, ch);
 
-    // Layout: horizontal strip spanning full width
-    const padX = 4 * dpr;
+    // Layout: horizontal strip anchored to the blade's rendered extent in
+    // BladeCanvas (OV2). `computeBladeRenderMetrics` mirrors BladeCanvas's
+    // auto-fit geometry so the per-LED strip under a 24" blade renders at
+    // ~55% of container width, not 100%. Container width comes from the
+    // ResizeObserver in CSS pixels; the metrics helper is CSS-pixel-native,
+    // so we multiply by dpr once to convert to canvas space.
     const padY = 2 * dpr;
-    const stripLeft = padX;
-    const stripRight = cw - padX;
-    const stripW = stripRight - stripLeft;
+    const metrics = computeBladeRenderMetrics({
+      containerWidthPx: w,
+      ledCount: leds,
+    });
+    const stripLeft = metrics.bladeLeftPx * dpr;
+    const stripW = metrics.bladeWidthPx * dpr;
+    const stripRight = stripLeft + stripW;
     const stripTopY = padY;
     const stripH = ch - padY * 2;
     const cellW = stripW / leds;
