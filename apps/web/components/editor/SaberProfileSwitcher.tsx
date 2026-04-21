@@ -3,7 +3,30 @@
 import { useState } from 'react';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 
-export function SaberProfileSwitcher() {
+// ─── Props ────────────────────────────────────────────────────────────────────
+//
+// Added 2026-04-21 in Lane C (OV4 Delivery Rail). The Delivery rail wants
+// only the "active profile pill + dropdown" logic of this component; it
+// does NOT want the empty-state "+ Saber" button (which takes over when
+// no profiles exist — the rail keeps its layout rigid and delegates
+// profile creation to the dropdown's "+ New Saber Profile" affordance).
+//
+//   variant='default'  — unchanged pre-existing behavior. Header usage.
+//   variant='compact'  — Delivery rail. Always renders the pill+dropdown,
+//                        even when profiles is empty. Uses a preceding
+//                        glyph the Delivery rail styles consistently
+//                        with its other segments.
+
+export interface SaberProfileSwitcherProps {
+  variant?: 'default' | 'compact';
+  /** Optional glyph placed before the active profile name in compact mode. */
+  glyph?: string;
+}
+
+export function SaberProfileSwitcher({
+  variant = 'default',
+  glyph,
+}: SaberProfileSwitcherProps = {}) {
   const profiles = useSaberProfileStore((s) => s.profiles);
   const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
   const switchProfile = useSaberProfileStore((s) => s.switchProfile);
@@ -25,7 +48,9 @@ export function SaberProfileSwitcher() {
     setShowDropdown(false);
   };
 
-  if (profiles.length === 0 && !showCreate) {
+  // Default variant empty-state: "+ Saber" button. Compact variant skips
+  // this and always shows the pill so the Delivery rail grid stays stable.
+  if (variant === 'default' && profiles.length === 0 && !showCreate) {
     return (
       <button
         onClick={() => setShowCreate(true)}
@@ -37,23 +62,63 @@ export function SaberProfileSwitcher() {
     );
   }
 
+  // Compact variant uses a tighter button so it slots into the 50px
+  // Delivery rail without breaking the segment rhythm. The dropdown
+  // body is identical — same profile list, same "+ New Saber Profile"
+  // row, same create form — the only difference is the trigger shape.
+  const triggerClasses =
+    variant === 'compact'
+      ? 'flex items-center gap-1.5 px-2 py-1 rounded-chrome border border-border-subtle text-ui-xs text-text-secondary hover:text-text-primary hover:border-border-light transition-colors font-mono uppercase tracking-[0.08em]'
+      : 'flex items-center gap-1.5 px-2 py-1 rounded border border-border-subtle text-ui-xs text-text-secondary hover:text-text-primary hover:border-border-light transition-colors';
+
+  const activeDisplay = active?.name ?? 'No Profile';
+
   return (
     <div className="relative">
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-1.5 px-2 py-1 rounded border border-border-subtle text-ui-xs text-text-secondary hover:text-text-primary hover:border-border-light transition-colors"
+        className={triggerClasses}
         aria-label="Switch saber profile"
         aria-expanded={showDropdown}
         aria-haspopup="listbox"
       >
-        <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-        <span className="truncate max-w-[120px]">{active?.name ?? 'No Profile'}</span>
+        {glyph ? (
+          <span aria-hidden="true" className="text-accent">
+            {glyph}
+          </span>
+        ) : (
+          <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+        )}
+        <span
+          className={
+            variant === 'compact'
+              ? 'truncate max-w-[140px]'
+              : 'truncate max-w-[120px]'
+          }
+        >
+          {activeDisplay}
+        </span>
         <span className="text-text-muted">{showDropdown ? '\u25B2' : '\u25BC'}</span>
       </button>
 
       {showDropdown && (
-        <div className="absolute top-full left-0 mt-1 w-56 bg-bg-secondary border border-border-light rounded-lg shadow-xl z-50 overflow-hidden">
+        <div
+          // Compact (Delivery rail) opens upward (bottom-full + mb-1) so the
+          // dropdown body doesn't collide with the rail's own 50px height.
+          // Default variant keeps the existing downward-opening header
+          // behavior (top-full + mt-1).
+          className={
+            variant === 'compact'
+              ? 'absolute bottom-full left-0 mb-1 w-56 bg-bg-secondary border border-border-light rounded-lg shadow-xl z-50 overflow-hidden'
+              : 'absolute top-full left-0 mt-1 w-56 bg-bg-secondary border border-border-light rounded-lg shadow-xl z-50 overflow-hidden'
+          }
+        >
           <div className="max-h-48 overflow-y-auto">
+            {profiles.length === 0 && (
+              <div className="px-3 py-2 text-ui-xs text-text-muted italic">
+                No profiles yet.
+              </div>
+            )}
             {profiles.map((p) => (
               <button
                 key={p.id}
