@@ -415,7 +415,14 @@ export function OLEDEditor() {
           <button onClick={addFrame} aria-label="Add frame" className="px-1.5 py-0.5 rounded text-ui-xs bg-bg-surface border border-border-subtle text-text-muted hover:text-text-primary">+</button>
           <button onClick={duplicateFrame} aria-label="Duplicate frame" className="px-1.5 py-0.5 rounded text-ui-xs bg-bg-surface border border-border-subtle text-text-muted hover:text-text-primary">Dup</button>
           {frames.length > 1 && (
-            <button onClick={removeFrame} aria-label="Delete frame" className="px-1.5 py-0.5 rounded text-ui-xs bg-bg-surface border border-border-subtle text-red-400 hover:text-red-300">Del</button>
+            <button
+              onClick={removeFrame}
+              aria-label="Delete frame"
+              className="px-1.5 py-0.5 rounded text-ui-xs bg-bg-surface border border-border-subtle"
+              style={{ color: 'rgb(var(--status-error))' }}
+            >
+              Del
+            </button>
           )}
           <div className="flex-1" />
           {frames.length > 1 && (

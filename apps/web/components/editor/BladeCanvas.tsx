@@ -294,6 +294,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
+  // Scratch canvas reused by the diffusion-blur pass. Allocated lazily
+  // and resized in-place whenever the main canvas resizes (mirrors the
+  // offscreenRef resize path at line ~437). Previously we allocated a
+  // fresh <canvas> every frame, which caused GC churn (see the
+  // 2026-04-19 perf audit P0).
+  const diffusionTempRef = useRef<HTMLCanvasElement | null>(null);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
@@ -437,6 +443,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       if (offscreenRef.current) {
         offscreenRef.current.width = w * dpr;
         offscreenRef.current.height = h * dpr;
+      }
+      if (diffusionTempRef.current) {
+        diffusionTempRef.current.width = w * dpr;
+        diffusionTempRef.current.height = h * dpr;
       }
     };
 
@@ -959,10 +969,22 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     if (diffusion.blurKernel > 0) {
       offCtx.save();
       offCtx.filter = `blur(${diffusion.blurKernel * scale}px)`;
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = cw;
-      tempCanvas.height = ch;
+      // Reuse a single scratch canvas across frames — allocating a
+      // fresh <canvas> every frame was a GC-churn source per the
+      // 2026-04-19 perf audit P0. Size is kept in sync with the main
+      // canvas via the ResizeObserver callback above.
+      let tempCanvas = diffusionTempRef.current;
+      if (!tempCanvas) {
+        tempCanvas = document.createElement('canvas');
+        tempCanvas.width = cw;
+        tempCanvas.height = ch;
+        diffusionTempRef.current = tempCanvas;
+      } else if (tempCanvas.width !== cw || tempCanvas.height !== ch) {
+        tempCanvas.width = cw;
+        tempCanvas.height = ch;
+      }
       const tempCtx = tempCanvas.getContext('2d')!;
+      tempCtx.clearRect(0, 0, cw, ch);
       tempCtx.drawImage(offscreen, 0, 0);
       offCtx.clearRect(0, 0, cw, ch);
       offCtx.drawImage(tempCanvas, 0, 0);
@@ -982,30 +1004,38 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const br = glow.bloomRadius;
     const bi = glow.bloomIntensity;
 
-    // Continuous bloom: 14 passes with geometric radius progression.
-    // Each overlaps its neighbors significantly → no visible banding.
-    const passCount = 14;
-    for (let i = 0; i < passCount; i++) {
-      const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
-      // Radius: exponential from 2px to 100px
-      const radius = 2 + 98 * Math.pow(t, 1.4);
-      // Alpha: tighter passes are more opaque, wider are subtle
-      const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
+    // Skip the 14-pass bloom pipeline (+ bridge glow) when the blade is
+    // off or bloom intensity is zero — there's nothing to glow. Saves
+    // ~50% of frame budget during the retracted state. The blade-body
+    // pass below still runs; it self-skips unlit LEDs at the pixel
+    // level. See the 2026-04-19 perf audit quick-win #5.
+    const bloomActive = activeCount > 0 && bi > 0;
+    if (bloomActive) {
+      // Continuous bloom: 14 passes with geometric radius progression.
+      // Each overlaps its neighbors significantly → no visible banding.
+      const passCount = 14;
+      for (let i = 0; i < passCount; i++) {
+        const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
+        // Radius: exponential from 2px to 100px
+        const radius = 2 + 98 * Math.pow(t, 1.4);
+        // Alpha: tighter passes are more opaque, wider are subtle
+        const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
+        ctx.save();
+        ctx.filter = `blur(${radius * scale * br}px)`;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(offscreen, 0, 0);
+        ctx.restore();
+      }
+
+      // Bridge glow — soft additive fill between bloom and blade body
       ctx.save();
-      ctx.filter = `blur(${radius * scale * br}px)`;
+      ctx.filter = `blur(${2.5 * scale * br}px)`;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = 0.35 * bi * shimmer;
       ctx.drawImage(offscreen, 0, 0);
       ctx.restore();
     }
-
-    // Bridge glow — soft additive fill between bloom and blade body
-    ctx.save();
-    ctx.filter = `blur(${2.5 * scale * br}px)`;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.35 * bi * shimmer;
-    ctx.drawImage(offscreen, 0, 0);
-    ctx.restore();
 
     // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
     for (let i = 0; i < ledCount; i++) {
@@ -2081,7 +2111,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   }, [config.ledCount, theme]);
 
   // ─── Main render loop (throttled to 2fps when reduced motion is on) ───
-  useAnimationFrame((deltaMs) => {
+  useAnimationFrame((_deltaMs) => {
     const engine = engineRef.current;
     const canvas = canvasRef.current;
     if (!engine || !canvas) return;
@@ -2093,20 +2123,18 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cw = w * dpr;
     const ch = h * dpr;
 
-    // Skip engine updates when paused — keeps last frame frozen
-    const animPaused = useUIStore.getState().animationPaused;
-    if (!animPaused) {
-      engine.update(deltaMs, config);
-    }
+    // Engine update + bladeState sync are driven by useBladeEngine's
+    // global tick loop (saber-visibility fix 2026-04-18) — not here. That
+    // way engine advances correctly even when BladeCanvas isn't mounted
+    // (e.g. 3D mode, fullscreen reveal overlay).
 
-    // FPS tracking
+    // FPS tracking (draw-rate, kept here because it's paint-time specific)
     const now = performance.now();
     fpsFrames.current.push(now);
     while (fpsFrames.current.length > 0 && fpsFrames.current[0]! < now - 1000) {
       fpsFrames.current.shift();
     }
     useBladeStore.getState().setFps(fpsFrames.current.length);
-    useBladeStore.getState().setBladeState(engine.state);
 
     ctx.clearRect(0, 0, cw, ch);
 
@@ -2225,7 +2253,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         drawEditModeOverlay(ctx, bladeHitRef.current);
       }
 
-      drawViewLabel(ctx, viewMode);
+      if (!mobileFullscreen) drawViewLabel(ctx, viewMode);
 
     } else {
       // ══════════════════════════════════════════════════
@@ -2281,7 +2309,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         drawEditModeOverlay(ctx, bladeHitRef.current);
       }
 
-      drawViewLabel(ctx, viewMode);
+      if (!mobileFullscreen) drawViewLabel(ctx, viewMode);
     }
   }, { maxFps: reducedMotion ? 2 : undefined });
 
@@ -2504,8 +2532,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   return (
     <div className="flex flex-col h-full w-full gap-1.5">
-      {/* ── Blade Config Bar (mobile only — desktop uses CanvasToolbar + BladeHardwarePanel) ── */}
-      {!mobileFullscreen && <div className="desktop:hidden">{configBar}</div>}
+      {/* ── Blade Config Bar (tablet only — desktop uses CanvasToolbar + BladeHardwarePanel;
+             phone uses the Design tab's BladeHardwarePanel to reduce crunch) ── */}
+      {!mobileFullscreen && <div className="hidden tablet:block desktop:hidden">{configBar}</div>}
 
       {/* ── Canvas Container ── */}
       <div
@@ -2555,51 +2584,53 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             />
           </div>
         )}
-        {/* Zoom controls overlay */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
-          <button
-            onClick={() => setZoom((prevZoom) => {
-              const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
-              const bs = getBaseScale();
-              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-              setPanX(clampPanX(newPanX, newZoom));
-              return newZoom;
-            })}
-            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
-            {zoomDisplayValue}%
-          </span>
-          <button
-            onClick={() => setZoom((prevZoom) => {
-              const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
-              const bs = getBaseScale();
-              const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-              const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-              const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-              setPanX(clampPanX(newPanX, newZoom));
-              return newZoom;
-            })}
-            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-          <button
-            onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
-            className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
-            aria-label="Fit blade to panel"
-          >
-            Fit
-          </button>
-        </div>
-        {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles) */}
-        {!panelMode && (
+        {/* Zoom controls overlay — hidden in mobileFullscreen mode (`/m` preset browser) */}
+        {!mobileFullscreen && (
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
+            <button
+              onClick={() => setZoom((prevZoom) => {
+                const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
+                const bs = getBaseScale();
+                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+                setPanX(clampPanX(newPanX, newZoom));
+                return newZoom;
+              })}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
+              {zoomDisplayValue}%
+            </span>
+            <button
+              onClick={() => setZoom((prevZoom) => {
+                const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
+                const bs = getBaseScale();
+                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
+                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
+                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
+                setPanX(clampPanX(newPanX, newZoom));
+                return newZoom;
+              })}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
+              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
+              aria-label="Fit blade to panel"
+            >
+              Fit
+            </button>
+          </div>
+        )}
+        {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles; hidden in mobileFullscreen so `/m` stays a clean preset browser) */}
+        {!panelMode && !mobileFullscreen && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
             <button
               onClick={() => useUIStore.getState().toggleAnalyzeMode()}
@@ -2611,10 +2642,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             </button>
           </div>
         )}
-        {/* Blade length label */}
-        <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
-          {bladeLength}" blade
-        </div>
+        {/* Blade length label — hidden in mobileFullscreen to keep the `/m` preset browser clean */}
+        {!mobileFullscreen && (
+          <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
+            {bladeLength}" blade
+          </div>
+        )}
         {/* Panel resize handles (vertical analyze mode only — hidden in panelMode) */}
         {!panelMode && vertical && analyzeMode && viewMode === 'blade' && (
           <>

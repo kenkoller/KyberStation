@@ -231,13 +231,17 @@ function MobileShell({
           {/* Fullscreen — pinned in header so it's always reachable on mobile */}
           <FullscreenButton className="touch-target w-9 h-9" />
 
-          {/* Global pause */}
-          <PauseButton />
+          {/* Global pause — wrapper ensures the 44×44 min touch target even
+               though the shared button is styled compactly for desktop */}
+          <div className="min-h-[44px] flex items-center">
+            <PauseButton />
+          </div>
 
-          {/* Ignite / Retract */}
+          {/* Ignite / Retract — min 44x44 touch target per WCAG 2.5.5 */}
           <button
             onClick={toggleWithAudio}
-            className={`min-h-[44px] px-2 py-1 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border shrink-0 ${
+            aria-label={isOn ? 'Retract blade' : 'Ignite blade'}
+            className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border shrink-0 ${
               isOn
                 ? 'bg-red-900/30 border-red-700/50 text-red-400 ignite-btn-on'
                 : 'bg-accent-dim border-accent-border text-accent ignite-btn-off'
@@ -248,10 +252,14 @@ function MobileShell({
         </div>
       </header>
 
-      {/* ── Blade Canvas — horizontal by default, full screen width ─────── */}
+      {/* ── Blade Canvas — horizontal by default, full screen width ───────
+           Config bar (Type/Hilt/Strip/Blade dropdowns) lives inside
+           BladeCanvas with `desktop:hidden` and wraps onto multiple rows at
+           400px, so height must accommodate both the wrapped bar and the
+           200px min-height canvas. Using `min-h` instead of a fixed height
+           prevents the canvas from being clipped when the config bar grows. */}
       <div
-        className="w-full shrink-0 flex items-center justify-center bg-bg-primary"
-        style={{ height: '120px' }}
+        className="w-full shrink-0 flex items-center justify-center bg-bg-primary min-h-[260px]"
         role="region"
         aria-label="Blade preview"
       >

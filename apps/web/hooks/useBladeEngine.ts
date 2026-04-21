@@ -3,6 +3,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { BladeEngine } from '@kyberstation/engine';
 import type { EffectType } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useUIStore } from '@/stores/uiStore';
 
 export function useBladeEngine() {
   const engineRef = useRef<BladeEngine | null>(null);
@@ -20,6 +21,52 @@ export function useBladeEngine() {
     if (!engineRef.current) {
       engineRef.current = new BladeEngine();
     }
+  }, []);
+
+  // ── Always-on engine tick (state sync) ──
+  //
+  // The 2D BladeCanvas used to own the engine tick loop. That was fine when
+  // the 2D canvas was always mounted, but the workbench now conditionally
+  // renders 3D view / fullscreen / mobile views that don't mount BladeCanvas.
+  // When those views were active, the engine never ticked — ignition /
+  // retraction transitions froze mid-state, and `bladeState` in the store
+  // went stale (BladeCanvas3D would keep reading the last value written by
+  // a previous 2D session).
+  //
+  // Fix (saber-visibility 2026-04-18): move the engine tick + bladeState
+  // sync to `useBladeEngine`. BladeCanvas's render loop now only paints;
+  // the engine advances regardless of which view is mounted. Views that
+  // read `bladeState` from the store (BladeCanvas3D, CrystalRevealScene,
+  // OLEDPreview) now see the engine's real state.
+  useEffect(() => {
+    let rafId = 0;
+    let prevTime = performance.now();
+    const tick = (time: number) => {
+      const engine = engineRef.current;
+      if (engine) {
+        const delta = time - prevTime;
+        prevTime = time;
+        const paused = useUIStore.getState().animationPaused;
+        if (!paused) {
+          // Read the current config from the store (not from closure) so
+          // live updates (e.g. colour changes) are picked up immediately.
+          engine.update(delta, useBladeStore.getState().config);
+        }
+        // Mirror engine state into store. Zustand dedupes identical writes,
+        // but we compare explicitly to skip work when state hasn't transitioned.
+        const currentState = useBladeStore.getState().bladeState;
+        if (engine.state !== currentState) {
+          useBladeStore.getState().setBladeState(engine.state);
+        }
+      } else {
+        prevTime = time;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Sync engine topology when store topology changes (e.g. preset load with different ledCount)

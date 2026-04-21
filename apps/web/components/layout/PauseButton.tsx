@@ -32,6 +32,10 @@ export function PauseButton() {
       className={[
         // Base shape + typography — matches existing header button style
         'px-2 py-1 rounded text-ui-xs font-medium border transition-colors',
+        // WCAG 2.5.5 — 44×44 tappable area on touch viewports (mobile/tablet).
+        // Gated to max-width:1023px in globals.css so desktop density is
+        // preserved.
+        'touch-target',
         // Active (paused) state: accent highlight so it's clearly engaged
         isPaused
           ? 'border-accent-border/60 text-accent bg-accent-dim/40'

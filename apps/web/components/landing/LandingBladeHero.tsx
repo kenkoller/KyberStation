@@ -1,13 +1,32 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { BladeEngine } from '@kyberstation/engine';
-import type { BladeConfig, RGB } from '@kyberstation/engine';
+import { useEffect, useState } from 'react';
+import type { BladeConfig } from '@kyberstation/engine';
+import { MiniSaber } from '@/components/shared/MiniSaber';
 
-interface HeroPreset {
-  label: string;
-  config: BladeConfig;
-}
+/**
+ * Landing page hero saber — a single horizontal saber rendered per call.
+ * Parent (LandingHero) renders two instances as siblings around the
+ * title block so the title sits BETWEEN the two sabers in a flex column:
+ *
+ *   [top]     ═════════════════[HILT]
+ *             KYBERSTATION
+ *   [bottom]  [HILT]═════════════════
+ *
+ * Both sabers are ALWAYS ignited; their colors / styles / presets
+ * morph live in place while the blade stays lit — ignition + retraction
+ * live in the editor. This hero is pure "watch what the blade can do"
+ * theater.
+ *
+ * `which='top'` cycles canonical hero colors (Anakin → Luke → Vader →
+ * Mace → Rey → Ahsoka → Cal → Revan). `which='bottom'` cycles creative
+ * showpiece styles (Fire → Aurora → Plasma → DataStream →
+ * CrystalShatter → Helix → Nebula → Photon). Each pool advances every
+ * 3.5s; the bottom is offset by 1.75s so the two morph on alternating
+ * beats.
+ */
+
+const LANDING_HILT_ID = 'graflex';
 
 const baseConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
   ({
@@ -29,160 +48,83 @@ const baseConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
     ...overrides,
   }) as BladeConfig;
 
-const HERO_PRESETS: HeroPreset[] = [
-  {
-    label: 'Luke ROTJ',
-    config: baseConfig({
-      baseColor: { r: 60, g: 255, b: 40 },
-      style: 'rotoscope',
-      shimmer: 0.05,
-    }),
-  },
-  {
-    label: 'Anakin',
-    config: baseConfig({
-      baseColor: { r: 0, g: 135, b: 255 },
-      style: 'stable',
-    }),
-  },
-  {
-    label: 'Kylo Ren',
-    config: baseConfig({
-      baseColor: { r: 255, g: 40, b: 20 },
-      style: 'unstable',
-      ignition: 'crackle',
-    }),
-  },
-  {
-    label: 'Ahsoka',
-    config: baseConfig({
-      baseColor: { r: 250, g: 245, b: 225 },
-      style: 'stable',
-      shimmer: 0.04,
-    }),
-  },
+// ─── Top saber: canonical hero colors ──────────────────────────────────────
+const TOP_POOL: BladeConfig[] = [
+  baseConfig({ baseColor: { r: 15, g: 105, b: 245 }, style: 'stable' }),   // Anakin
+  baseConfig({ baseColor: { r: 6, g: 234, b: 25 }, style: 'rotoscope' }),   // Luke ROTJ
+  baseConfig({ baseColor: { r: 228, g: 12, b: 12 }, style: 'stable' }),    // Vader
+  baseConfig({ baseColor: { r: 132, g: 11, b: 218 }, style: 'stable' }),   // Mace
+  baseConfig({ baseColor: { r: 245, g: 206, b: 10 }, style: 'stable' }),   // Rey
+  baseConfig({ baseColor: { r: 248, g: 247, b: 247 }, style: 'stable' }),  // Ahsoka
+  baseConfig({ baseColor: { r: 20, g: 200, b: 245 }, style: 'stable' }),   // Cal cyan
+  baseConfig({ baseColor: { r: 68, g: 16, b: 198 }, style: 'stable' }),    // Revan indigo
 ];
 
-const DWELL_MS = 5400; // lit time before retracting
-const CANVAS_W = 48;
-const CANVAS_H = 720;
+// ─── Bottom saber: creative showpiece styles ───────────────────────────────
+const BOTTOM_POOL: BladeConfig[] = [
+  baseConfig({ baseColor: { r: 255, g: 106, b: 12 }, style: 'fire', shimmer: 0.1 }),
+  baseConfig({ baseColor: { r: 40, g: 240, b: 170 }, style: 'aurora', shimmer: 0.08 }),
+  baseConfig({ baseColor: { r: 196, g: 40, b: 245 }, style: 'plasma', shimmer: 0.08 }),
+  baseConfig({ baseColor: { r: 60, g: 255, b: 120 }, style: 'dataStream', shimmer: 0.05 }),
+  baseConfig({ baseColor: { r: 130, g: 200, b: 255 }, style: 'crystalShatter', shimmer: 0.09 }),
+  baseConfig({ baseColor: { r: 255, g: 200, b: 40 }, style: 'helix', shimmer: 0.06 }),
+  baseConfig({ baseColor: { r: 180, g: 70, b: 255 }, style: 'nebula', shimmer: 0.08 }),
+  baseConfig({ baseColor: { r: 255, g: 250, b: 200 }, style: 'photon', shimmer: 0.07 }),
+];
+
+const MORPH_INTERVAL_MS = 3500;
+const BOTTOM_OFFSET_MS = 1750;
 
 interface LandingBladeHeroProps {
+  which: 'top' | 'bottom';
   className?: string;
 }
 
-export function LandingBladeHero({ className }: LandingBladeHeroProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [presetIdx, setPresetIdx] = useState(0);
-  const presetIdxRef = useRef(0);
-  const [accentRgb, setAccentRgb] = useState<RGB>(HERO_PRESETS[0].config.baseColor);
+export function LandingBladeHero({ which, className }: LandingBladeHeroProps) {
+  const pool = which === 'top' ? TOP_POOL : BOTTOM_POOL;
+  const hiltPosition: 'start' | 'end' = which === 'top' ? 'start' : 'end';
+  const initialDelayMs = which === 'top' ? 0 : BOTTOM_OFFSET_MS;
 
-  // Stable engine + render loop — mounts once
+  const [idx, setIdx] = useState(0);
+
   useEffect(() => {
-    const engine = new BladeEngine();
-    engine.ignite();
-
-    // Warm up to steady-state ignition before first paint
-    const FRAME_DT = 16;
-    const initialConfig = HERO_PRESETS[0].config;
-    const warmupFrames = Math.ceil(initialConfig.ignitionMs / FRAME_DT) + 10;
-    for (let i = 0; i < warmupFrames; i++) {
-      engine.update(FRAME_DT, initialConfig);
-    }
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d') ?? null;
-    if (!canvas || !ctx) return;
-
-    let cancelled = false;
-    let lastTime = performance.now();
-    let retractScheduled = false;
-    let igniteScheduledAt = 0;
-    let cycleStart = performance.now();
-    let frameCount = 0;
-
-    const drawPixels = () => {
-      const c = canvasRef.current;
-      if (!c) return;
-      const cx = c.getContext('2d');
-      if (!cx) return;
-      const pixels = engine.getPixels();
-      const count = pixels.length / 3;
-      cx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-      const sliceH = CANVAS_H / count;
-      for (let i = 0; i < count; i++) {
-        const off = i * 3;
-        cx.fillStyle = `rgb(${pixels[off]},${pixels[off + 1]},${pixels[off + 2]})`;
-        cx.fillRect(0, CANVAS_H - (i + 1) * sliceH, CANVAS_W, sliceH + 0.5);
-      }
-    };
-
-    // Paint the warm-up state immediately
-    drawPixels();
-
-    const tick = (time: number) => {
-      if (cancelled) return;
-      frameCount++;
-      const dt = Math.min(48, time - lastTime);
-      lastTime = time;
-
-      const elapsed = time - cycleStart;
-      if (!retractScheduled && elapsed > DWELL_MS) {
-        engine.retract();
-        retractScheduled = true;
-        igniteScheduledAt = time + HERO_PRESETS[presetIdxRef.current].config.retractionMs + 60;
-      }
-      if (retractScheduled && time >= igniteScheduledAt) {
-        presetIdxRef.current = (presetIdxRef.current + 1) % HERO_PRESETS.length;
-        setPresetIdx(presetIdxRef.current);
-        setAccentRgb(HERO_PRESETS[presetIdxRef.current].config.baseColor);
-        engine.ignite();
-        retractScheduled = false;
-        cycleStart = time + HERO_PRESETS[presetIdxRef.current].config.ignitionMs;
-      }
-
-      const activeConfig = HERO_PRESETS[presetIdxRef.current].config;
-      engine.update(dt, activeConfig);
-      drawPixels();
-
-      requestAnimationFrame(tick);
-    };
-
-    requestAnimationFrame(tick);
-
+    // Offset the bottom saber's first morph by BOTTOM_OFFSET_MS so top
+    // and bottom swap on alternating beats.
+    const startTimer = setTimeout(() => {
+      setIdx((i) => (i + 1) % pool.length);
+    }, MORPH_INTERVAL_MS + initialDelayMs);
+    const intervalTimer = setInterval(() => {
+      setIdx((i) => (i + 1) % pool.length);
+    }, MORPH_INTERVAL_MS);
     return () => {
-      cancelled = true;
+      clearTimeout(startTimer);
+      clearInterval(intervalTimer);
     };
-  }, []);
+  }, [pool, initialDelayMs]);
 
-  const accentCss = `rgb(${accentRgb.r | 0},${accentRgb.g | 0},${accentRgb.b | 0})`;
+  const config = pool[idx];
 
   return (
     <div
-      className={`relative ${className ?? ''}`}
-      aria-hidden="true"
-      data-active-preset={HERO_PRESETS[presetIdx].label}
+      className={`relative pointer-events-none ${className ?? ''}`}
+      aria-label={`${which === 'top' ? 'Upper' : 'Lower'} kyber saber preview — ${
+        which === 'top'
+          ? 'canonical hero colors'
+          : 'creative blade styles'
+      } morphing while ignited`}
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(ellipse 40% 80% at center, ${accentCss} 0%, transparent 70%)`,
-          opacity: 0.35,
-          filter: 'blur(40px)',
-          transition: 'background 600ms ease',
-        }}
-      />
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_W}
-        height={CANVAS_H}
-        className="relative block mx-auto rounded-full"
-        style={{
-          width: '6px',
-          height: 'min(72vh, 600px)',
-          filter: `drop-shadow(0 0 8px ${accentCss}) drop-shadow(0 0 24px ${accentCss})`,
-          transition: 'filter 600ms ease',
-        }}
+      {/* 4:1 blade:hilt ratio matches real-world Graflex (~27 cm hilt,
+          ~100 cm blade). 10:1 looked thin — hilt got lost as the blade
+          visually stretched the composition. */}
+      <MiniSaber
+        config={config}
+        hiltId={LANDING_HILT_ID}
+        orientation="horizontal"
+        hiltPosition={hiltPosition}
+        bladeLength={720}
+        bladeThickness={10}
+        hiltLength={180}
+        controlledIgnited={true}
       />
     </div>
   );

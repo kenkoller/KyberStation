@@ -30,9 +30,6 @@
       ],
       "@kyberstation/sound": [
         "../../packages/sound/src"
-      ],
-      "@kyberstation/boards": [
-        "../../packages/boards/src"
       ]
     },
     "noEmit": true,

@@ -129,7 +129,7 @@ export function ThemePickerPanel({
             style={{
               padding: '4px 8px',
               fontSize: 'calc(8px * var(--font-scale))',
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
               letterSpacing: '0.08em',
               cursor: 'pointer',
               border:
@@ -163,7 +163,7 @@ export function ThemePickerPanel({
         style={{
           padding: '6px 10px',
           fontSize: 'calc(10px * var(--font-scale))',
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
           background: 'rgb(var(--bg-deep))',
           border: '1px solid var(--border-subtle)',
           color: 'rgb(var(--text-primary))',

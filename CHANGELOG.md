@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path.
 
+### WebUSB flash — hardware validation (2026-04-20)
+
+**Phases A + B + C all green on Proffieboard V3.9 (89sabers) + macOS 15 + Brave.** Connect → dry-run → real flash → post-write verify → recovery re-flash — full clean pass. Blade ignites blue on the first power press after replug; USB serial enumerates as `/dev/tty.usbmodem*`; audio DAC active (ProffieOS voice pack announces "SD card not found" / "font not found").
+
+**Three real DFU protocol bugs fixed** that 576 passing mock tests had missed. Real STM32 DfuSe bootloader correctly returned STALL where the mock was too permissive:
+
+- `DfuSeFlasher.verifyFlash`: `setAddressPointer` leaves the device in `dfuDNLOAD_IDLE`, but UPLOAD requires `dfuIDLE`. Added `abort()` between the two.
+- `DfuSeFlasher.flash` (manifest step): after UPLOAD verify the device sits in `dfuUPLOAD_IDLE`, but the manifest's zero-length DNLOAD requires `dfuIDLE`. Added `abort()` before the manifest download.
+- `DfuSeFlasher.waitForManifestComplete`: STM32 resets the USB bus as part of manifest (`bitManifestationTolerant=0`); the resulting `controlTransferIn` failure surfaces as a raw `DOMException`, not our `DfuError`. The old catch only swallowed `DfuError`, so successful flashes showed a red error banner. Now any error during the post-manifest poll is treated as success.
+
+**Plus two supporting fixes uncovered while building firmware to validate against:**
+
+- `firmware-configs/v3-standard.h`: legacy `InOutTrL<TrWipe<300>, TrWipeIn<500>, Blue>` no longer compiles against current ProffieOS master — bare `Blue` returns `RGBA_nod` which doesn't convert to `OverDriveColor`. Replaced with the modern `StyleNormalPtr<Blue, WHITE, 300, 500>` factory (same visual result).
+- `.github/workflows/firmware-build.yml`: Linux runners are case-sensitive, so checking out ProffieOS into `proffieos/` broke the `arduino-cli compile <sketch-dir>` contract (ProffieOS ships `ProffieOS.ino`). Renamed the checkout path to `ProffieOS/`.
+
+**Validated hardware scope: Proffieboard V3.9 on macOS + Chromium.** Brave is Chromium-based, and Chrome/Edge/Arc share Chromium's WebUSB implementation so they should behave identically. Windows, Linux, Proffieboard V2, and V3+OLED are untested; community hardware reports welcome via the [hardware_report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) issue template.
+
+**Followups:**
+
+- ~~Tighten `MockUsbDevice` to enforce the three DFU state-machine rules~~ — done (same session). `strictState` + `resetAfterManifest` options added; three regression tests added (one per bug), each verified to fail if the corresponding fix is reverted. 579 tests pass.
+- Cross-OS sweep: Windows + Linux hardware smoke-tests before promoting the feature to "validated on all supported configurations".
+- Cross-board sweep: Proffieboard V2.2 and V3+OLED hardware smoke-tests.
+
+Full details in [`docs/HARDWARE_VALIDATION_TODO.md`](docs/HARDWARE_VALIDATION_TODO.md) § Phase C.
+
+
 - **v0.11.1 — Design Review Polish Pass** (shipped): alert-color
   discipline, skeleton + error-state coverage, color-glyph pairing for
   accessibility, CHANGELOG + README assets, housekeeping

@@ -1,6 +1,6 @@
 {
   "name": "@kyberstation/web",
-  "version": "0.11.0",
+  "version": "0.11.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,22 +13,14 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@kyberstation/boards": "workspace:*",
     "@kyberstation/codegen": "workspace:*",
     "@kyberstation/engine": "workspace:*",
     "@kyberstation/presets": "workspace:*",
     "@kyberstation/sound": "workspace:*",
-    "@radix-ui/react-dialog": "^1.1.0",
-    "@radix-ui/react-select": "^2.1.0",
-    "@radix-ui/react-slider": "^1.2.0",
-    "@radix-ui/react-tabs": "^1.1.0",
-    "@radix-ui/react-toggle": "^1.1.0",
-    "@radix-ui/react-tooltip": "^1.1.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "bs58": "^6.0.0",
     "dexie": "^4.4.2",
-    "idb-keyval": "^6.2.1",
     "jszip": "^3.10.1",
     "msgpackr": "^1.11.9",
     "next": "^14.2.0",

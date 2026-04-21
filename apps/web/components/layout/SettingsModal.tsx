@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { playUISound } from '@/lib/uiSounds';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import {
   getPerformanceTier,
   setPerformanceTier,
@@ -11,6 +12,7 @@ import {
 import { useAurebesh } from '@/hooks/useAurebesh';
 import { type AurebeshMode } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useAccessibilityStore, type DensityMode } from '@/stores/accessibilityStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -111,12 +113,24 @@ export interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<Element | null>(null);
+  // Play the close SFX before propagating, then delegate focus restore
+  // to the shared hook.
+  const handleClose = useCallback(() => {
+    playUISound('modal-close');
+    onClose();
+  }, [onClose]);
+
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen,
+    onClose: handleClose,
+  });
 
   // ── Section collapse state ──
   const [sections, setSections] = useState({
     performance: true,
+    density: false,
+    effects: false,
     aurebesh: false,
     sounds: false,
     layout: false,
@@ -154,6 +168,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setPerfIsAuto(true);
     applyPerformanceTier(tier);
   }, []);
+
+  // ── Row density — §6 North Star. Flips data-density on <html> via
+  //    useAccessibilityApplier; no layout shift today (components opt in later). ──
+  const density = useAccessibilityStore((s) => s.density);
+  const setDensity = useAccessibilityStore((s) => s.setDensity);
+
+  // ── Effect auto-release (demo mode) — when enabled, sustained effects
+  //    (Lockup, Drag, Melt, Lightning, Force) automatically release after
+  //    N seconds instead of requiring an explicit second press. Default
+  //    off so advanced users keep the explicit-toggle default. ──
+  const effectAutoRelease = useAccessibilityStore((s) => s.effectAutoRelease);
+  const setEffectAutoRelease = useAccessibilityStore((s) => s.setEffectAutoRelease);
 
   // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
   const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
@@ -205,54 +231,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     });
   }, []);
 
-  // ── Focus trap ──
-  // ── Sound on open/close ──
+  // ── Sound on open ──
   useEffect(() => {
     if (isOpen) {
       playUISound('modal-open');
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    previousFocusRef.current = document.activeElement;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const focusables = dialog.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        playUISound('modal-close');
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    dialog.addEventListener('keydown', handleKeyDown);
-    return () => {
-      dialog.removeEventListener('keydown', handleKeyDown);
-      (previousFocusRef.current as HTMLElement)?.focus?.();
-    };
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -263,22 +247,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={(e) => {
-        if (e.target === e.currentTarget) { playUISound('modal-close'); onClose(); }
+        if (e.target === e.currentTarget) handleClose();
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="App settings"
+      aria-labelledby="settings-modal-title"
     >
       <div className="bg-bg-secondary border border-border-light rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle shrink-0">
           <div>
-            <h2 className="text-ui-lg font-semibold text-text-primary tracking-wide">Settings</h2>
+            <h2 id="settings-modal-title" className="text-ui-lg font-semibold text-text-primary tracking-wide">Settings</h2>
             <p className="text-ui-xs text-text-muted mt-0.5">KyberStation configuration</p>
           </div>
           <button
             type="button"
-            onClick={() => { playUISound('modal-close'); onClose(); }}
+            onClick={handleClose}
             className="w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors text-lg"
             aria-label="Close settings"
           >
@@ -357,6 +341,153 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 >
                   {perfIsAuto ? `Auto-detected: ${perfTier}` : 'Reset to auto-detect'}
                 </button>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Row Density ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Row density"
+              open={sections.density}
+              onToggle={() => toggleSection('density')}
+            />
+            {sections.density && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  Controls panel row height across the editor. Default matches
+                  the current layout exactly — no shift when toggled today, and
+                  components opt into the new rhythm gradually.
+                </p>
+
+                <div className="space-y-2">
+                  {(
+                    [
+                      {
+                        value: 'ssl',
+                        label: 'SSL (22px)',
+                        desc: 'Console-dense. Best for 27"+ displays and power users.',
+                      },
+                      {
+                        value: 'ableton',
+                        label: 'Ableton (26px, default)',
+                        desc: 'Matches the shipped row rhythm. Balanced.',
+                      },
+                      {
+                        value: 'mutable',
+                        label: 'Mutable (32px)',
+                        desc: 'Airy. Easier to hit on touch or over long sessions.',
+                      },
+                    ] as Array<{ value: DensityMode; label: string; desc: string }>
+                  ).map(({ value, label, desc }) => (
+                    <label
+                      key={value}
+                      className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                        density === value
+                          ? 'border-accent/50 bg-accent/5 text-text-primary'
+                          : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="row-density"
+                        value={value}
+                        checked={density === value}
+                        onChange={() => { playUISound('toggle-on'); setDensity(value); }}
+                        className="mt-0.5 accent-[rgb(var(--accent))]"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-ui-sm font-medium">{label}</div>
+                        <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Effect Auto-Release ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Effect auto-release"
+              open={sections.effects}
+              onToggle={() => toggleSection('effects')}
+            />
+            {sections.effects && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  When enabled, sustained effects (Lockup, Drag, Melt, Lightning,
+                  Force) automatically release after the configured duration —
+                  useful for demos / showcases where manual release is awkward.
+                  Default off; advanced users keep the explicit press-again-to-
+                  release behavior.
+                </p>
+
+                <label
+                  className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                    effectAutoRelease.enabled
+                      ? 'border-accent/50 bg-accent/5 text-text-primary'
+                      : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={effectAutoRelease.enabled}
+                    onChange={(e) => {
+                      playUISound('toggle-on');
+                      setEffectAutoRelease({ enabled: e.target.checked });
+                    }}
+                    className="mt-0.5 accent-[rgb(var(--accent))]"
+                  />
+                  <div className="min-w-0">
+                    <div className="text-ui-sm font-medium">
+                      Enable auto-release
+                    </div>
+                    <div className="text-ui-xs text-text-muted mt-0.5">
+                      Sustained effects release automatically after the timeout below.
+                    </div>
+                  </div>
+                </label>
+
+                <div
+                  className={`px-3 py-2.5 rounded border transition-colors ${
+                    effectAutoRelease.enabled
+                      ? 'border-border-light bg-bg-deep/50'
+                      : 'border-border-subtle/50 bg-bg-deep/30 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <label
+                      htmlFor="effect-auto-release-seconds"
+                      className="text-ui-sm text-text-primary font-medium"
+                    >
+                      Release after
+                    </label>
+                    <span className="text-ui-sm text-text-secondary font-mono tabular-nums">
+                      {effectAutoRelease.seconds.toFixed(0)}s
+                    </span>
+                  </div>
+                  <input
+                    id="effect-auto-release-seconds"
+                    type="range"
+                    min={1}
+                    max={15}
+                    step={1}
+                    value={effectAutoRelease.seconds}
+                    onChange={(e) =>
+                      setEffectAutoRelease({
+                        seconds: parseInt(e.target.value, 10),
+                      })
+                    }
+                    disabled={!effectAutoRelease.enabled}
+                    className="w-full mt-2 accent-[rgb(var(--accent))]"
+                    aria-valuetext={`${effectAutoRelease.seconds} seconds`}
+                  />
+                  <div className="text-ui-xs text-text-muted mt-1">
+                    Range: 1–15 seconds. Default: 4s.
+                  </div>
+                </div>
               </div>
             )}
           </section>
@@ -554,6 +685,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       { key: 'M', action: 'Melt (toggle)' },
                       { key: 'F', action: 'Force' },
                       { key: 'W', action: 'Shockwave' },
+                      { key: 'R', action: 'Fragment' },
+                      { key: 'V', action: 'Bifurcate' },
+                      { key: 'G', action: 'Ghost Echo' },
+                      { key: 'P', action: 'Splinter' },
+                      { key: 'E', action: 'Coronary' },
+                      { key: 'X', action: 'Glitch Matrix' },
+                      { key: 'H', action: 'Siphon' },
                     ] as const).map(({ key, action }) => (
                       <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
                         <span className="text-ui-sm text-text-secondary">{action}</span>
@@ -774,7 +912,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </p>
           <button
             type="button"
-            onClick={() => { playUISound('modal-close'); onClose(); }}
+            onClick={handleClose}
             className="px-4 py-1.5 rounded border border-border-subtle text-ui-sm font-medium text-text-muted hover:text-text-primary hover:border-border-light transition-colors"
           >
             Done

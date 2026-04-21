@@ -136,7 +136,7 @@ Parsed by
 
 | Browser         | OS          | WebUSB | Notes                          |
 |-----------------|-------------|--------|--------------------------------|
-| Chrome          | macOS       | ✅     | Reference target               |
+| Chrome          | macOS       | ✅     | Chromium WebUSB reference path |
 | Chrome          | Windows     | ✅     | No Zadig needed for DFU VID    |
 | Chrome          | Linux       | ✅     | Needs udev rule (below)        |
 | Edge            | Win / Mac   | ✅     | Same engine as Chrome          |
@@ -144,6 +144,25 @@ Parsed by
 | Arc             | macOS       | ✅     | Same engine as Chrome          |
 | Safari          | macOS / iOS | ❌     | Apple does not ship WebUSB     |
 | Firefox         | any         | ❌     | Mozilla declined to implement  |
+
+### Validated hardware configurations
+
+The flash flow relies on the STM32 DfuSe ROM bootloader, which is identical across all Proffieboard V3 / V3.9 / V3+OLED variants, and memory-layout-parameterised for V2. That means one validated configuration gives moderate confidence across the whole family — but only *real* hardware catches state-machine edge cases. (2026-04-20's validation session caught three real DFU-protocol bugs that 576 green mock tests had missed.)
+
+| Board | OS | Browser | Status | Last verified |
+|---|---|---|---|---|
+| Proffieboard V3.9 (89sabers) | macOS 15 (Sonoma) | Brave | ✅ full: connect → dry-run → flash → verify → re-flash | 2026-04-20 |
+| Proffieboard V3.9 | macOS | Chrome / Edge / Arc | 🟡 untested (same Chromium WebUSB impl as Brave) | — |
+| Proffieboard V3.9 | Windows 10/11 | any Chromium | 🟡 untested (WinUSB driver path) | — |
+| Proffieboard V3.9 | Linux | Chrome / Brave | 🟡 untested (udev rule required) | — |
+| Proffieboard V2.2 | any | any Chromium | 🟡 untested (STM32L433CC, 256 KiB flash) | — |
+| Proffieboard V3 + OLED | any | any Chromium | 🟡 untested (same STM32L4 as V3 standard) | — |
+
+**Community validation is how this table grows.** If you flash your saber from KyberStation on a combination we haven't verified yet, a short hardware report really helps — see the [hardware_report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) issue template. One clean Connect → Dry-run → Flash → Reboot pass is all we need.
+
+### macOS quirk — null `USBAlternateInterface.interfaceName`
+
+Every Chromium-based browser on macOS (Chrome, Brave, Edge, Arc) currently returns `null` for `USBAlternateInterface.interfaceName` on DFU alternates, even when the device advertises valid string descriptors. This was a release-blocker — `findInternalFlash()` couldn't find a writable region. Fixed in [`DfuDevice.loadAlternates()`](../apps/web/lib/webusb/DfuDevice.ts) with a fallback to a raw `GET_DESCRIPTOR(config + string)` control transfer whenever any alternate comes back nameless. Windows and Linux are not affected — they populate the field natively.
 
 If WebUSB is unavailable the FlashPanel surfaces a clear error message
 and leaves the rest of the editor functional — the user can still
@@ -189,11 +208,36 @@ the user-supplied `.bin` path or compile ProffieOS yourself locally.
 
 ### Manifest GET_STATUS may be stalled
 
-Some STM32 bootloaders reset the USB pipe as part of manifestation
-instead of returning `dfuMANIFEST_WAIT_RESET` cleanly. The final
-`GET_STATUS` poll can surface as a "device disconnected" error, but
-the flash itself has already succeeded. `DfuSeFlasher.waitForManifestComplete`
-catches that case and treats it as success.
+STM32 DfuSe bootloaders reset the USB pipe as part of manifestation
+(`bitManifestationTolerant = 0`) rather than returning
+`dfuMANIFEST_WAIT_RESET` cleanly. The final `GET_STATUS` poll can
+surface as a "device disconnected" error or a raw `DOMException`
+(Chrome's WebUSB API's way of saying the pipe went away), but the
+flash itself has already succeeded. `DfuSeFlasher.waitForManifestComplete`
+catches *any* error during the post-manifest poll and treats it as
+success. Confirmed on Proffieboard V3.9 hardware 2026-04-20.
+
+### DFU state-machine transitions around UPLOAD verify
+
+The STM32 DfuSe bootloader is stricter than the DFU spec's state
+diagram on two transitions that caused real-hardware STALLs on
+2026-04-20:
+
+1. **UPLOAD must start from `dfuIDLE`, not `dfuDNLOAD_IDLE`.** The
+   readback-verify flow sets the address pointer (which leaves the
+   device in `dfuDNLOAD_IDLE`), then issues UPLOAD. Without an
+   intervening `abort()` to return to `dfuIDLE`, the first UPLOAD
+   stalls. Fixed in `DfuSeFlasher.verifyFlash`.
+
+2. **Manifest's zero-length DNLOAD must come from `dfuIDLE`, not
+   `dfuUPLOAD_IDLE`.** After the UPLOAD verify loop the device is in
+   `dfuUPLOAD_IDLE`, but the manifest command requires `dfuIDLE`. An
+   `abort()` between verify and manifest is required. Fixed in
+   `DfuSeFlasher.flash`.
+
+Neither STALL was reproducible against the (too permissive) mock in
+`apps/web/tests/webusb/mockUsbDevice.ts`; tightening the mock to
+enforce these state rules is a known followup.
 
 ### Transfer size
 

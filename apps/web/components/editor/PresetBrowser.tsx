@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
@@ -20,6 +21,7 @@ import {
 import type { Preset, Era, Affiliation } from '@kyberstation/presets';
 import { PanelSkeleton } from '@/components/shared/Skeleton';
 import { ErrorState } from '@/components/shared/ErrorState';
+import { affiliationColor } from '@/lib/factionStyles';
 
 const ERA_OPTIONS: Array<{ id: Era | 'all'; label: string; count: number }> = [
   { id: 'all', label: 'All Eras', count: ALL_PRESETS.length },
@@ -81,16 +83,23 @@ function PresetCard({
   const isLegendsPreset = isLegends(preset);
   const { src: thumbnail, isAnimating, onMouseEnter, onMouseLeave } = usePresetAnimation(preset.config as BladeConfig);
 
+  // Card-select <button> + sibling "+ List" <button>, wrapped in a
+  // relative <div> so the actions are structurally unrelated (no
+  // nested-interactive) and independently keyboard-focusable. See the
+  // 2026-04-19 a11y audit P0.
   return (
-    <button
-      onClick={onSelect}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className={`card-hover text-left rounded-panel overflow-hidden transition-colors border ${
+    <div
+      className={`card-hover relative rounded-panel overflow-hidden transition-colors border ${
         isActive
           ? 'bg-accent-dim border-accent-border'
           : 'bg-bg-surface border-border-subtle hover:border-border-light'
       }`}
+    >
+    <button
+      onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className="w-full text-left"
       title={preset.description}
     >
       {/* Engine-rendered blade thumbnail */}
@@ -144,42 +153,42 @@ function PresetCard({
           {preset.config.ignitionMs}ms
         </div>
 
-        {/* Affiliation + Add to list */}
+        {/* Identity subtitle — character + tier */}
+        <div className="text-ui-xs text-text-muted/70 font-mono mt-0.5 truncate">
+          {preset.character} <span className="opacity-40">·</span>{' '}
+          <span className="uppercase tracking-wider">{preset.tier}</span>
+        </div>
+
+        {/* Affiliation */}
         <div className="flex items-center justify-between mt-1">
           <div
-            className={`text-ui-xs font-medium uppercase tracking-wider ${
-              preset.affiliation === 'jedi'
-                ? 'text-blue-400'
-                : preset.affiliation === 'sith'
-                  ? 'text-red-400'
-                  : preset.affiliation === 'neutral'
-                    ? 'text-purple-400'
-                    : 'text-text-muted'
-            }`}
+            className="text-ui-xs font-medium uppercase tracking-wider"
+            style={{ color: affiliationColor(preset.affiliation) }}
           >
             {preset.affiliation}
           </div>
-          <span
-            role="button"
-            tabIndex={-1}
-            onClick={(e) => {
-              e.stopPropagation();
-              usePresetListStore.getState().addEntry({
-                presetName: preset.name,
-                fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-                config: preset.config as BladeConfig,
-                sourcePresetId: preset.id,
-              });
-            }}
-            className="text-ui-xs px-1 py-0.5 rounded border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors touch-target"
-            title="Add to preset list"
-            aria-label={`Add ${preset.name} to preset list`}
-          >
-            + List
-          </span>
+          {/* "+ List" was a nested <span role="button"> here; now a
+              sibling <button> anchored absolutely at the same spot. */}
         </div>
       </div>
     </button>
+      <button
+        type="button"
+        onClick={() => {
+          usePresetListStore.getState().addEntry({
+            presetName: preset.name,
+            fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            config: preset.config as BladeConfig,
+            sourcePresetId: preset.id,
+          });
+        }}
+        className="absolute right-2 bottom-2 text-ui-xs px-1 py-0.5 rounded border border-border-subtle bg-bg-surface/90 text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors z-10 touch-target"
+        title="Add to preset list"
+        aria-label={`Add ${preset.name} to preset list`}
+      >
+        + List
+      </button>
+    </div>
   );
 }
 
@@ -202,6 +211,11 @@ function formatRelativeDate(ts: number): string {
 // ─── Save Preset Modal ───
 
 function SavePresetModal({ onClose }: { onClose: () => void }) {
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: true,
+    onClose,
+  });
   const config = useBladeStore((s) => s.config);
   const fontName = useAudioFontStore((s) => s.fontName);
   const savePreset = useUserPresetStore((s) => s.savePreset);
@@ -242,15 +256,16 @@ function SavePresetModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-label="Save preset"
+      aria-labelledby="preset-browser-save-modal-title"
     >
       <div className="bg-bg-secondary border border-border-light rounded-lg shadow-xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-          <h3 className="text-ui-base font-semibold text-text-primary">Save As Preset</h3>
+          <h3 id="preset-browser-save-modal-title" className="text-ui-base font-semibold text-text-primary">Save As Preset</h3>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors"
@@ -265,11 +280,11 @@ function SavePresetModal({ onClose }: { onClose: () => void }) {
             <label htmlFor="save-preset-name" className="text-ui-xs text-text-muted block mb-1">Name</label>
             <input
               id="save-preset-name"
+              data-autofocus
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-bg-deep border border-border-subtle rounded px-2.5 py-1.5 text-ui-sm text-text-primary focus:outline-none focus:border-accent"
-              autoFocus
             />
             {existingPreset && (
               <p className="text-ui-xs text-yellow-400 mt-0.5">A preset with this name exists.</p>

@@ -433,29 +433,45 @@ function FirmwareSelector({
             </div>
           </label>
         ))}
-        <label className="flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
-          <input
-            type="radio"
-            name="firmware-variant"
-            value="custom"
-            checked={selectedVariant === 'custom'}
-            onChange={() => onSelectVariant('custom')}
-            disabled={disabled}
-            className="mt-1 accent-accent shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="text-ui-xs text-text-primary">Custom .bin (power user)</div>
-            <div className="text-ui-xs text-text-muted mb-1">
-              Compile ProffieOS yourself, then upload the output .bin here.
+        {/* The "Custom .bin" option has two discrete actions — selecting
+            the radio variant and opening the file picker. They used to
+            share a click target via a nested <button> inside <label>,
+            which triggers both on any interior click. Now the radio
+            <label> and the picker <button> are SIBLINGS inside a flex
+            wrapper so each action has its own target. See the
+            2026-04-19 a11y audit P1. */}
+        <div className="flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 transition-colors">
+          <label className="flex items-start gap-2.5 min-w-0 cursor-pointer">
+            <input
+              type="radio"
+              name="firmware-variant"
+              value="custom"
+              checked={selectedVariant === 'custom'}
+              onChange={() => onSelectVariant('custom')}
+              disabled={disabled}
+              className="mt-1 accent-accent shrink-0"
+            />
+            <div className="min-w-0">
+              <div className="text-ui-xs text-text-primary">Custom .bin (power user)</div>
+              <div className="text-ui-xs text-text-muted mb-1">
+                Compile ProffieOS yourself, then upload the output .bin here.
+              </div>
             </div>
+          </label>
+          <div className="min-w-0 flex-1 flex flex-col items-start gap-1 pt-0.5">
             {customFirmwareName && (
-              <div className="text-ui-xs font-mono text-accent truncate">
+              <div className="text-ui-xs font-mono text-accent truncate max-w-full">
                 {customFirmwareName}
               </div>
             )}
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                // Opening the picker implies choosing the custom variant,
+                // so auto-switch the radio when the user opens the picker.
+                if (selectedVariant !== 'custom') onSelectVariant('custom');
+                fileInputRef.current?.click();
+              }}
               disabled={disabled}
               className="text-ui-xs underline text-text-secondary hover:text-accent transition-colors disabled:opacity-50"
             >
@@ -469,7 +485,7 @@ function FirmwareSelector({
               className="hidden"
             />
           </div>
-        </label>
+        </div>
       </div>
     </div>
   );

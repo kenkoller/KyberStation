@@ -120,3 +120,123 @@ Testing feedback and bugs. Items marked [x] are fixed; unmarked [ ] are open.
 - [ ] Blade color correct
 - [ ] Effects (clash, lockup, blast) work
 - [ ] Existing presets survive
+
+---
+
+# Launch-Readiness QA Sweep (2026-04-18 onward)
+
+Running per `docs/LAUNCH_QA_PLAN.md`. Bugs tiered as Blocker / Quick / Medium / Large; launch severity as SHIP-BLOCKER / SHIP-WITH-NOTE / POST-LAUNCH.
+
+## P0 — Automated baseline (2026-04-18)
+
+- [x] typecheck: clean (11 tasks, 0 errors)
+- [x] tests: 402 web tests + engine/codegen suites pass (21 web test files)
+- [x] lint: placeholder (eslint not configured — known-deferred per CLAUDE.md)
+
+**Finding (resolved in-session, not a bug):** First typecheck + test run failed with `Cannot find module 'msgpackr'` / `'pako'` / `'qrcode'` / `'bs58'`. Packages ARE declared in `apps/web/package.json` but node_modules was stale. `pnpm install` (added 39, removed 62) recovered. No code change needed. Noting here so future sessions know to run `pnpm install` after every branch-switch involving dependency changes.
+
+## P1 — Pre-flight smoke (2026-04-18)
+
+Five routes tested: `/`, `/editor`, `/gallery`, `/docs`, `/m`. Zero runtime console errors anywhere.
+
+- [x] **P1-001 + P1-002 (FIXED):** Landing release strip showed `V 0.11.0 · LONG-TAIL CLEANUP · 2026-04-17`; editor breadcrumb also stale. Root cause: `LandingReleaseStrip.tsx` read `apps/web/package.json#version` (stuck at 0.11.0). Fix: new `apps/web/lib/version.ts` as single source of truth exporting `LATEST_VERSION='0.11.3'`, `LATEST_CODENAME='Modular Hilt Library'`, `LATEST_DATE='2026-04-17'`. Landing strip + editor breadcrumb both consume it. `package.json` version bumped 0.11.0→0.11.3 for consistency.
+- [x] **P1-003 (FIXED):** `/gallery` returned 404. Landing "BROWSE GALLERY" CTA already pointed to `/editor?tab=gallery` (correct flow), but direct URL access broke and `CLAUDE.md` claimed `app/gallery/page.tsx` existed. Fix: added 7-line redirect stub at `apps/web/app/gallery/page.tsx` using `next/navigation`'s `redirect()`. `CLAUDE.md` structure comment updated to `# Redirect to /editor?tab=gallery`.
+- [x] **P1-004 (FIXED):** `/editor?tab=<name>` URL param was ignored. Landing → Gallery journey was quietly broken (landed on Design tab). Fix: `apps/web/app/editor/page.tsx` now reads `searchParams.get('tab')`, validates against `['design','dynamics','audio','gallery','output']`, calls `useUIStore.getState().setActiveTab(tab)` on mount, then strips the param from URL via `router.replace`. Coexists with existing `?preset=` and `?s=<glyph>` handlers. Edge cases handled: uppercase → normalized, invalid → ignored (default stays).
+- [x] **Methodology note (agent 3 finding):** Next.js dev server's Fast Refresh file watcher occasionally serves stale compiled chunks after edits to `apps/web/app/editor/page.tsx`. Symptom: source file newer than `.next/static/chunks/app/editor/page.js` by >5min. Remedy: `preview_stop` + `preview_start`. Worth preserving for later sessions.
+
+## P2 — First impressions, landing page (2026-04-18)
+
+Programmatic sweep. `document.hidden: true` in preview mode throttles requestAnimationFrame, so any animation verification needs a foreground-Chrome tab by a human.
+
+- [ ] **P2-001 (SHIP-WITH-NOTE):** Landing page has zero docs link. All 8 links enumerated — Open Editor / Launch Wizard / Browse Gallery in hero, Release Notes (GitHub) in release strip, GitHub + Issues + Editor in footer, skip-to-main a11y link. `/docs` exists with 28 topics but is unreachable from landing. Recommended fix: add a small "Read the docs" text link adjacent to the primary CTAs, or in the footer.
+- [ ] **P2-002 (minor):** `RELEASE NOTES →` link points to `https://github.com/kenkoller/KyberStation/releases` but repo hasn't tagged a release since v0.10.0 (per CHANGELOG) — users click and see stale info. Options: (a) start tagging releases, (b) point link to `CHANGELOG.md` on GitHub, (c) point to `/docs#changelog`. Recommendation: (a) + (b) belt-and-suspenders.
+- [ ] **P2-???-pending-Ken:** hero animation (T2.1), value-copy humble-vs-corporate tone (T2.2), overall generic-AI-app gut check (T2.7). Cannot evaluate from preview — human foreground-Chrome judgment needed.
+
+## P3 — Editor core rendering (2026-04-18)
+
+- [x] **T3.1 (PASS):** `/editor` loads. 7 canvases (1 main blade preview + pixel strip + RGB graph + OLED preview + Kyber Crystal + smaller). 5 tabs: Design / Dynamics / Audio / Gallery / Output. 421 interactive buttons total.
+- [x] **T3.3 (PASS):** Ignite button works. Blade renders (cyan default). Button text switches to "Retract".
+- [x] **T3.4 (PASS):** Retract button works. Blade clears. Button text switches back to "Ignite".
+- [x] **T3.5 (PASS-CLICKABLE):** Zoom-in + Zoom-out buttons exist (`aria-label="Zoom in"` / `"Zoom out"`) and respond to clicks. Visual effect unverifiable from preview since no blade is ignited.
+- [ ] **T3.2 (PENDING-KEN):** "Live-data breathes at rest" — RAF throttled in preview under `document.hidden:true`. Requires foreground-Chrome check.
+- **Note:** Fresh-state (IndexedDB cleared) triggers the 4-step WELCOME onboarding modal. Good UX discovery. Phase 32 will test this flow in detail. For all subsequent phases, I'm using "Skip setup" to reach the editor directly.
+- **THREE.Clock deprecation warning** (minor, upstream): console shows `THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` Investigated 2026-04-18 on `test/launch-readiness-2026-04-18` — KyberStation source has **zero** `new THREE.Clock()` instantiations in `apps/web/` or `packages/`. The warning originates upstream from `@react-three/fiber@8.18.0` (`events-776716bd.esm.js:1308` does `clock: new THREE.Clock()` in its store setup). No migration possible from our code. Resolution path: wait for R3F to migrate, or upgrade to a future R3F release that uses `THREE.Timer`. Not blocking for launch.
+
+## P4 — All 29 blade styles (2026-04-18)
+
+Programmatic click-cycle through `Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon Blade, Plasma Storm, Crystal Shatter, Aurora, Cinder, Prism, Data Stream, Gravity, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moiré, Cascade, Vortex, Nebula, Tidal, Mirage, Painted, Image Scroll`.
+
+- [x] 29/29 click cleanly; zero exceptions thrown, zero console errors, blade stays ignited through all 29 switches, canvas count stable.
+- [ ] Visual-distinctness check (T4 pass criterion) deferred to Ken's foreground-Chrome walk. Preview's RAF is throttled under `document.hidden:true`, so all 29 styles return identical pixel signatures in automated sampling — NOT evidence they look the same; evidence that only a single frame was rendered.
+
+## P5 — Effects (2026-04-18)
+
+Effect ribbon has 15 buttons (Retract + 14 effects). Enumerated buttons: `Clash, Blast, Stab, Lockup, Lightning, Drag, Melt, Force, Shockwave, Scatter, Ripple, Freeze, Overcharge, Invert` — shortcut letter doubled in button text (e.g. "ClashCC", "OverchargeOv").
+
+- [x] 14/14 UI effects click cleanly; zero console errors.
+- [ ] **P5-001 (SHIP-WITH-NOTE):** 7 effects defined in the engine per CLAUDE.md (Fragment, Bifurcate, GhostEcho, Splinter, Coronary, GlitchMatrix, Siphon) have no UI ribbon button. Users cannot trigger them via one-click from the editor. Either: (a) add them to the ribbon, (b) scope them to style-config-only access and document, (c) remove them from the engine if they're unshipped code. Root-cause this before launch — 7 defined but inaccessible is a release-smell.
+- [ ] T5.2 rapid-fire Clash overlap behavior — deferred to Ken's foreground check.
+
+## P6 — Ignitions + Retractions (2026-04-18)
+
+- [x] **19 ignitions** clicked: Standard, Scroll, Spark, Center Out, Wipe, Stutter, Glitch, Twist, Swing, Stab, Crackle, Fracture, Flash Fill, Pulse Wave, Drip Up, Hyperspace, Summon, Seismic, Custom Curve. All OK. Zero exceptions, zero console errors.
+- [x] **13 retractions** clicked: Standard, Scroll, Fade Out, Center In, Shatter, Dissolve, Flicker Out, Unravel, Drain, Implode, Evaporate, Spaghettify, Custom Curve. All OK. Zero exceptions.
+- [ ] Visual-distinctness check pending Ken.
+- Label overlap note: "Standard", "Scroll", "Custom Curve" appear in both ignition and retraction lists; my script correctly picks the right one by index.
+
+## P7 — Colors (2026-04-18)
+
+Current base color at load: `#008CFF` / "Dusk-Bo-Katan Azure" (tier-2 modifier + landmark).
+
+- [x] **Naming math alive** — verified across multiple preset clicks:
+  - Mace Purple (`#8000FF`) → "Mace Windu Violet" (tier-1 landmark ✓)
+  - Ahsoka White (`#FFFFFF`) → "Purified Kyber" (tier-1 landmark ✓)
+  - Pure blue (`#0000FF`) → "Dawn-Anakin Skywalker" (tier-2 modifier+landmark ✓)
+- [ ] **P7-001 (QUICK fix, SHIP-WITH-NOTE):** Canon preset buttons define hexes that don't match the naming-math landmark HSL coordinates. Specific example: `ColorPanel.tsx:30` "Obi-Wan Blue" = `rgb(0,140,255)` = HSL(207, 100%, 50%), but `namingMath.ts:226` "Obi-Wan Azure" = HSL(215, 90%, 52%). Deltas large enough (Δh=8, Δs=10) that preset clicks land in a nearby landmark's orbit ("Dusk-Bo-Katan Azure") instead of hitting the intended character landmark. **Recommended fix:** update ColorPanel preset RGBs to match `namingMath.ts` landmark HSL coords (or vice versa). Audit all 19 canon preset buttons for this drift. One canonical source of truth would be better long-term.
+- [ ] **T7.1 / T7.2 / T7.3 / T7.4** — live slider updates, hex-input→slider sync, clash/lockup/blast per-channel color changes — preview RAF throttled; need Ken's foreground eye.
+- Confirmed via introspection: 2 hex inputs for base color (likely popover + panel mirror), 36 sliders total across page, Clash/Lockup/Blast tab structure present.
+
+## P8 — Presets + Gallery (2026-04-18)
+
+- [x] Gallery renders: **186 presets** visible across 5 eras (Prequel 25, OT, Sequel, Animated, EU Creative, Legends).
+- [x] Filter chips present: Era, Affiliation (Jedi/Sith/Neutral), Origin (On-Screen/Creative), Sort (A-Z), Legends toggle.
+- [x] Search input + `Save Current` + `Gallery/My Presets/Community` tab switches all rendered.
+- [x] **Tile click loads preset** — verified by clicking "Obi-Wan Kenobi (ANH)" tile, switching to Design tab, observed base color changed from `#008CFF` (app default) to `#009BFF` (canonical Obi-Wan ANH color) ✓. Gallery handler `PresetGallery.tsx:767 handleSelect` fires `loadPreset(preset.config)` + `setDetailPreset(preset)` correctly.
+- [x] **"+ List" nested button works** — adds preset to Output queue. Verified "Output(1)" count appeared.
+- [ ] **P8-001 (SHIP-WITH-NOTE):** Workbench's `preset-detail` panel slot at `apps/web/components/layout/TabColumnContent.tsx:338-340` renders `<ComingSoon label="Preset Detail" />`. Users who have this panel docked in their workbench layout will see a "Coming soon" placeholder. Options: (a) ship a real PresetDetail panel here (the internal `PresetGallery.tsx:267 PresetDetail` component may be reusable), (b) remove the slot from the registry so it can't be docked, (c) leave as-is and accept the "Coming soon" visibility. Not strictly blocking launch but visible work-in-progress surface.
+- [ ] T8.5 (Obi-Wan ANH film accuracy), T8.6 (Kylo Ren), T8.7 (Vader) — Ken's foreground eye needed to confirm style/ignition/color combos feel film-accurate.
+- **Methodology note (my mistake worth recording):** clicking a gallery tile while on the Gallery tab doesn't visibly update the hex input — because the ColorPanel (which contains the hex input) is mounted only in the Design tab. My initial false-positive SHIP-BLOCKER reading came from reading stale state on an unmounted component. Future phase tests: when checking store-bound UI state, verify the component is mounted, or read the store directly.
+
+## P9 — Sound fonts + pairing (2026-04-18)
+
+- [x] Audio tab loads cleanly. Rich structure: FONT LIBRARY (Sound Fonts / Library / EQ + Effects sub-tabs), FONT PREVIEW panel (empty-state: "Select a font from the library to preview"), MIXER / EQ, EFFECT PRESETS, SMOOTHSWING CONFIG (V1/V2 toggle, swing threshold/sharpness/strength, hum & accent, live crossfade preview), SOUND EVENTS (Hum, Swing, Clash, Blast, Drag, Lockup).
+- [x] **FIXED inline: P9-001 (SHIP-WITH-NOTE, QUICK):** Dev-facing note was visible in production UI at bottom of SmoothSwing panel: `"NOTE These values are ready to wire into audioMixerStore or a dedicated smoothSwingStore for persistence and codegen integration."` — surfaced internal store names + a "not wired up yet" admission. Fix: removed lines 434–444 of `apps/web/components/editor/SmoothSwingPanel.tsx` (the `{/* ── Wiring note ── */}` block). Typecheck clean. Source verified (0 grep matches post-fix).
+- [ ] **T9.2–T9.5 (PENDING-KEN):** Font playback (T9.2), blade-style → font-pairing recommendation labels (T9.3/T9.4), font-folder name propagation (T9.5) — require a loaded font + preset switches; audio preview playback in preview-mode also hits user-gesture requirements for AudioContext.
+
+## P16 — Settings modal + Feedback section (2026-04-18)
+
+- [x] Full settings modal opens from the ⚙ "Open settings" gear button in the WorkbenchLayout header.
+- [x] 7 sections visible: Performance Tier / Aurebesh Mode / UI Sounds / Layout / Keyboard Shortcuts / **Feedback** / Display. All collapsible via `▾` toggle.
+- [x] **Feedback section is excellent** — expanded to find:
+  - Humble intro copy: *"KyberStation is a hobby project and your feedback shapes what comes next. Every report and suggestion goes to GitHub Issues — no account needed to read, a free GitHub account is required to post."*
+  - **4 paths** (richer than originally scoped):
+    1. 🐞 Report a bug → `template=bug_report.md&labels=bug`
+    2. 💡 Suggest a feature → `template=feature_request.md&labels=enhancement`
+    3. ⚔️ Request a blade style or preset
+    4. 💬 Ask a question / start a discussion
+  - All links: `target="_blank"` + `rel="noopener noreferrer"` (security-clean)
+- [ ] **P16-001 (SHIP-WITH-NOTE, worth investigation):** Hydration/layout-bootstrap bug — AppShell sometimes renders MobileShell (detected via `[id^="mobile-tab-"]` presence — 5 mobile-tab IDs) at 1440×900 viewport. `matchMedia('(min-width:1440px)')` reports true but the layout decision was already made earlier. Full-page reload corrects the layout. Possibly `useBreakpoint()` initial SSR state not matching client viewport, combined with AppShell taking the layout branch before the useEffect re-fires. Affected path observed: after `window.location.href = '/editor'` navigation and a `preview_stop → preview_start` cycle. Real users might hit this on first visit or after reload under certain timing. **Recommended next step:** read the SSR'd HTML at 1440 viewport, compare to post-hydration DOM, and either (a) switch AppShell to matchMedia-based decision inside a `useLayoutEffect`, or (b) add a hydration guard.
+
+## P32 — Onboarding / SaberWizard (2026-04-18)
+
+- [x] **First-run Welcome modal appears** after IndexedDB wipe + reload. 4-step flow:
+  1. **WELCOME** — "Let's configure your experience" + GET STARTED + Skip setup
+  2. **VISUAL QUALITY** — FULL / MEDIUM / LITE perf tier selection
+  3. **COCKPIT SOUNDS** — SILENT / SUBTLE / FULL IMMERSION UI-sound tier
+  4. **TYPOGRAPHY** — STANDARD / AUREBESH LABELS / FULL AUREBESH typeface tier
+  Then FINISH → drops into editor with full chrome rendered correctly.
+- [x] **UX quality note:** thematic copy ("COCKPIT SOUNDS", "FULL IMMERSION", "AUREBESH LABELS") is on-brand for the UX North Star hobbyist-instrument register. Not generic-AI / SaaS-default.
+- [x] `✦Wizard` button in header opens a SaberWizard modal.
+- [ ] **P32-001 (SHIP-WITH-NOTE, a11y):** Welcome/onboarding modal container lacks `role="dialog"` and `aria-modal="true"`. Screen reader users won't be informed it's a modal requiring action. Focus-trap behavior also unverified. Fix: add ARIA attributes + focus-trap. Likely the SaberWizard modal has the same issue — verify.
+- [ ] **T32.2 SaberWizard 3-step flow (PENDING-KEN):** my programmatic step-walk didn't cleanly traverse all steps — Ken should walk through manually and confirm archetype → color → vibe produces a complete working preset.
+- [ ] **T32.3 `firstIgnition()` ceremony (PENDING-KEN):** cinematic dim-chrome + ignite + audio + restore sequence — preview RAF throttling makes animation timing unverifiable from here.

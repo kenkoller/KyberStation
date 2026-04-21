@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- KyberStation apple-touch-icon — Kyber Crystal bipyramid, padded for iOS mask. -->
+  <rect width="180" height="180" rx="36" fill="#0a0a10"/>
+  <!-- Outer facets -->
+  <path d="M90 22 L140 78 L90 158 L40 78 Z" fill="#008CFF" fill-opacity="0.22"/>
+  <!-- Mid facets -->
+  <path d="M90 34 L128 82 L90 146 L52 82 Z" fill="#008CFF" fill-opacity="0.55"/>
+  <!-- Inner crystal body -->
+  <path d="M90 44 L118 84 L90 136 L62 84 Z" fill="#5EC3FF"/>
+  <!-- Centerline -->
+  <path d="M90 44 L90 136" stroke="#E6F6FF" stroke-width="5" stroke-linecap="round"/>
+  <!-- Core glow -->
+  <circle cx="90" cy="84" r="7" fill="#FFFFFF"/>
+  <circle cx="90" cy="84" r="13" fill="#FFFFFF" fill-opacity="0.28"/>
+</svg>

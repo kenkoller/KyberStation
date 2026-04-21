@@ -269,6 +269,14 @@ This is a feature, not a bug. Say it out loud in the Reddit post and in the READ
 
 Boards you don't own = implicit call for testers. Turn it into an onboarding moment instead of a liability.
 
+### WebUSB flashing — validated scope
+
+The "Flash to Saber" feature is distinct from "code generation for 16 boards" — flashing only works for STM32-based Proffieboards, and has been end-to-end hardware-validated only on **Proffieboard V3.9 + macOS 15 + Brave**, as of 2026-04-20. Include that nuance in the Reddit post so nobody plugs in a Xenopixel and expects the flash panel to work.
+
+Suggested messaging:
+
+> Flashing from the browser has been verified on my own Proffieboard V3.9 on macOS + Brave. It *should* work on Chrome/Edge/Arc (same WebUSB implementation), on Windows/Linux, and on other Proffieboard revisions — but I haven't tested those combinations yet. If you try it on something new and it works (or doesn't), please file a [hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md). Boards that aren't STM32-based (CFX, Xenopixel, Golden Harvest, etc.) can export their `config.h` from KyberStation but need their vendor's own flashing tool.
+
 ## Open Question: Accepting Contributions
 
 **Options:**

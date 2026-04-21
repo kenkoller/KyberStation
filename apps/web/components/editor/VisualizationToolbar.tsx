@@ -319,7 +319,12 @@ export function VisualizationToolbar({
         'flex items-center select-none',
         /* Background panel — gives the toggles a visible container */
         'rounded-lg bg-[rgba(10,10,16,0.85)] border border-border-light/40',
-        isHorizontal ? 'flex-row gap-0.5 px-1.5 py-1' : 'flex-col gap-0.5 px-1 py-1.5',
+        // Vertical mode: take full parent height and scroll internally when
+        // the 15+ toggles exceed the blade-section height (default ~280px).
+        // Without this the content spills down into the tabs/effect row.
+        isHorizontal
+          ? 'flex-row gap-0.5 px-1.5 py-1'
+          : 'flex-col gap-0.5 px-1 py-1.5 h-full overflow-y-auto overflow-x-hidden',
         className,
       ].join(' ')}
       aria-label="Visualization layer controls"

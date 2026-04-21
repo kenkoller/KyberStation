@@ -9,6 +9,8 @@ import { GradientMixer } from './GradientMixer';
 import { BladePainter } from './BladePainter';
 import { ImageScrollPanel } from './ImageScrollPanel';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { ScrubField } from '@/components/shared/ScrubField';
 
 const BLADE_STYLES = [
   { id: 'stable', label: 'Stable', desc: 'Classic solid blade' },
@@ -143,25 +145,20 @@ function StyleParamSlider({
   value: number;
   onChange: (value: number) => void;
 }) {
-  const inputId = `style-param-${param.key}`;
-
+  const decimals = param.step < 1 ? (param.step < 0.1 ? 2 : 1) : 0;
   return (
-    <div className="flex items-center gap-3">
-      <label htmlFor={inputId} className="text-ui-xs text-text-secondary w-24 shrink-0">{param.label}</label>
-      <input
-        id={inputId}
-        type="range"
-        min={param.min}
-        max={param.max}
-        step={param.step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1"
-      />
-      <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-        {value.toFixed(param.step < 1 ? (param.step < 0.1 ? 2 : 1) : 0)}
-      </span>
-    </div>
+    <ScrubField
+      id={`style-param-${param.key}`}
+      label={param.label}
+      min={param.min}
+      max={param.max}
+      step={param.step}
+      value={value}
+      onChange={onChange}
+      format={(v) => v.toFixed(decimals)}
+      labelClassName="w-24"
+      readoutClassName="w-10"
+    />
   );
 }
 
@@ -204,11 +201,14 @@ export function StylePanel() {
   return (
     <div className="space-y-2">
       {/* Style buttons */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Blade Style
+      <CollapsibleSection
+        title="Blade Style"
+        defaultOpen={true}
+        persistKey="StylePanel.blade-style"
+        headerAccessory={
           <HelpTooltip text="Choose the base animation style. Each style has a unique visual character and may expose its own tunable parameters below." proffie="StylePtr<...>" />
-        </h3>
+        }
+      >
         <div className="max-h-[360px] overflow-y-auto rounded border border-border-subtle">
           <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-1.5 p-1.5">
             {BLADE_STYLES.map((style) => {
@@ -218,7 +218,8 @@ export function StylePanel() {
                   key={style.id}
                   onClick={() => { playUISound('button-click'); setStyle(style.id); playUISound('success'); }}
                   title={style.desc}
-                  className={`text-left px-2 py-1 rounded text-ui-xs transition-colors border-l-[3px] border-r border-t border-b ${
+                  aria-pressed={isActive}
+                  className={`touch-target text-left px-2 py-1.5 rounded text-ui-sm transition-colors border-l-[3px] border-r border-t border-b ${
                     isActive
                       ? 'border-l-accent bg-accent-dim border-r-accent-border border-t-accent-border border-b-accent-border text-accent'
                       : 'border-l-transparent bg-bg-surface border-r-border-subtle border-t-border-subtle border-b-border-subtle text-text-secondary hover:text-text-primary hover:border-l-border-light'
@@ -230,22 +231,25 @@ export function StylePanel() {
                       baseColor={config.baseColor}
                       gradientEnd={config.gradientEnd}
                     />
-                    <span className="font-medium text-ui-base">{style.label}</span>
+                    <span className="font-medium truncate">{style.label}</span>
                   </div>
                 </button>
               );
             })}
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Style-Specific Parameters */}
       {STYLE_PARAMS[config.style] && (
-        <div>
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-            Style Parameters
+        <CollapsibleSection
+          title="Style Parameters"
+          defaultOpen={true}
+          persistKey="StylePanel.style-parameters"
+          headerAccessory={
             <HelpTooltip text="Fine-tune the selected style's behavior. These sliders are specific to the current style — switching styles may show different parameters." />
-          </h3>
+          }
+        >
           <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
             {STYLE_PARAMS[config.style].map((param) => (
               <StyleParamSlider
@@ -264,15 +268,18 @@ export function StylePanel() {
             {config.style === 'painted' && <BladePainter />}
             {config.style === 'imageScroll' && <ImageScrollPanel />}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Colors */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Colors
+      <CollapsibleSection
+        title="Colors"
+        defaultOpen={true}
+        persistKey="StylePanel.colors"
+        headerAccessory={
           <HelpTooltip text="Quick color pickers for base blade and effect trigger colors. For advanced color editing with HSL sliders, harmony wheels, and canon presets, use the full Color Panel." proffie="Rgb<r,g,b>" />
-        </h3>
+        }
+      >
         <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
           <ColorPickerRow label="Base" colorKey="baseColor" color={config.baseColor} />
           <ColorPickerRow label="Clash" colorKey="clashColor" color={config.clashColor} />
@@ -293,48 +300,39 @@ export function StylePanel() {
             />
           )}
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Core Parameters (brightness, LED count) */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Hardware
+      <CollapsibleSection
+        title="Hardware"
+        defaultOpen={false}
+        persistKey="StylePanel.hardware"
+        headerAccessory={
           <HelpTooltip text="LED brightness and count. These should match your physical blade setup for accurate simulation. See also: Blade Hardware panel for topology and strip config, Power Draw for battery estimates." proffie="MaxLedsPerStrip" />
-        </h3>
+        }
+      >
         <div className="space-y-2 bg-bg-surface rounded-panel p-2 border border-border-subtle">
-          <div className="flex items-center gap-3">
-            <label htmlFor="hw-brightness" className="text-ui-xs text-text-secondary w-20 shrink-0">Brightness</label>
-            <input
-              id="hw-brightness"
-              type="range"
-              min={10}
-              max={100}
-              value={brightness}
-              onChange={(e) => setBrightness(Number(e.target.value))}
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-              {brightness}%
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <label htmlFor="hw-led-count" className="text-ui-xs text-text-secondary w-20 shrink-0">LED Count</label>
-            <input
-              id="hw-led-count"
-              type="range"
-              min={36}
-              max={288}
-              step={12}
-              value={config.ledCount}
-              onChange={(e) => updateConfig({ ledCount: Number(e.target.value) })}
-              className="flex-1"
-            />
-            <span className="text-ui-sm text-text-muted font-mono w-10 text-right">
-              {config.ledCount}
-            </span>
-          </div>
+          <ScrubField
+            id="hw-brightness"
+            label="Brightness"
+            min={10} max={100}
+            value={brightness}
+            onChange={setBrightness}
+            unit="%"
+            labelClassName="w-20"
+            readoutClassName="w-10"
+          />
+          <ScrubField
+            id="hw-led-count"
+            label="LED Count"
+            min={36} max={288} step={12}
+            value={config.ledCount}
+            onChange={(v) => updateConfig({ ledCount: v })}
+            labelClassName="w-20"
+            readoutClassName="w-10"
+          />
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* Parameter Bank (quick-access + advanced accordion groups) */}
       <ParameterBank />

@@ -50,6 +50,12 @@ export type {
   BladeLengthConfig,
 } from './types.js';
 
+// ─── Style factory ───
+// Exposes the style registry for standalone style evaluation (e.g. the
+// LayerStack per-row thumbnails, which render each layer's output
+// without spinning up a full BladeEngine).
+export { createStyle } from './styles/index.js';
+
 // ─── Animation Templates ───
 export { ANIMATION_TEMPLATES, getTemplatesByCategory, getCategories } from './animations/templates.js';
 export type { AnimationTemplate, AnimationCategory, AnimationTemplateEvent } from './animations/templates.js';
@@ -69,9 +75,9 @@ export type { StorageBudget, StorageBreakdownItem } from './storage/StorageEstim
 export { encodeBMP, decodeBMP, getResolutionDims } from './oled/BMPCodec.js';
 export type { OLEDResolution, BMPDecodeResult } from './oled/BMPCodec.js';
 
-// ─── Parameter Groups ───
-export { PARAMETER_GROUPS } from './parameterGroups.js';
-export type { ParameterGroup, ParameterDef, ParameterOption } from './parameterGroups.js';
+// PARAMETER_GROUPS export removed along with parameterGroups.ts per the
+// 2026-04-19 dead-code audit — zero consumers inside or outside the
+// engine package.
 
 export {
   BladeState,

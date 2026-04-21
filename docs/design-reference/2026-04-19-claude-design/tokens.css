@@ -1,0 +1,103 @@
+/* KyberStation — Imperial (Andor) theme tokens
+ * House style: instrument-grade, flat, dark, chrome never glows, color is function.
+ * Six aviation status colors are constant across all themes.
+ */
+
+:root {
+  /* ============ IMPERIAL NEUTRAL SCALE (cold, industrial) ============
+     Slightly blue-cold so the amber accent reads warmer by contrast.
+     Andor palette: bureaucratic void, machined steel, no warmth in the chrome. */
+  --n-900: #07090c;   /* deepest void (app bg) */
+  --n-850: #0b0e13;   /* workbench bg */
+  --n-800: #10141a;   /* panel bg */
+  --n-750: #141922;   /* panel bg elevated */
+  --n-700: #1a2029;   /* row/plate bg */
+  --n-650: #222934;   /* row hover */
+  --n-600: #2a323e;   /* divider / hairline strong */
+  --n-550: #343d4a;   /* rule */
+  --n-500: #485364;   /* muted ink */
+  --n-400: #5c6878;   /* secondary ink */
+  --n-300: #7a8593;   /* tertiary ink */
+  --n-200: #9ba4b0;   /* primary ink muted */
+  --n-150: #b8bec8;   /* primary ink */
+  --n-100: #d4d8de;   /* primary ink strong */
+  --n-050: #e8eaee;   /* display ink */
+  --n-000: #f4f5f7;   /* brightest (rare) */
+
+  --hairline: rgba(255, 255, 255, 0.045);
+  --hairline-strong: rgba(255, 255, 255, 0.085);
+  --panel-border: rgba(255, 255, 255, 0.055);
+
+  /* ============ IMPERIAL ACCENT (singular) ============
+     Desaturated Andor amber. Not saturated gold; the Empire's amber is bureaucratic. */
+  --accent: #c08a3e;
+  --accent-dim: #8a6229;
+  --accent-ghost: rgba(192, 138, 62, 0.14);
+
+  /* ============ SIX GLOBAL AVIATION STATUS COLORS (fixed across all 30 themes) */
+  --status-green:   #4ea872;  /* nominal / ready */
+  --status-amber:   #d4a04a;  /* caution */
+  --status-red:     #c85a4f;  /* critical */
+  --status-cyan:    #5aa9c8;  /* informational / telemetry */
+  --status-magenta: #b46ac0;  /* modulation / routing */
+  --status-white:   #e2e6ec;  /* neutral / data */
+
+  /* Typography */
+  --f-sans: "Inter", "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, ui-monospace, monospace;
+
+  /* Radii — deliberate tokens, not blanket 8px */
+  --r-chrome: 2px;
+  --r-interactive: 4px;
+  --r-data: 0px;
+
+  /* Row rhythm */
+  --row-h: 26px;
+  --row-h-dense: 22px;
+  --row-h-airy: 32px;
+
+  /* Motion */
+  --m-fast: 120ms;
+  --m-base: 180ms;
+  --m-slow: 400ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Density modes */
+[data-density="ssl"]      { --row-h: 22px; }
+[data-density="ableton"]  { --row-h: 26px; }
+[data-density="mutable"]  { --row-h: 32px; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  background: var(--n-900);
+  color: var(--n-150);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  font-feature-settings: "cv11", "ss01", "cv02";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+.mono { font-family: var(--f-mono); font-feature-settings: "zero", "ss02"; }
+
+/* Selection */
+::selection { background: var(--accent-ghost); color: var(--n-050); }
+
+/* Scrollbars — thin, Mutable-restrained */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--n-600); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--n-500); }
+
+/* Focus ring — amber hairline, never glow */
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Utility: hairline rule */
+.hr { height: 1px; background: var(--hairline); width: 100%; }
+.vr { width: 1px; background: var(--hairline); height: 100%; }

@@ -1,9 +1,11 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
 import { useAudioFontStore } from '@/stores/audioFontStore';
+import { usePresetDetailStore } from '@/stores/presetDetailStore';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, downloadCollection, readCollectionFile } from '@/lib/bladeConfigIO';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
@@ -29,6 +31,7 @@ import {
 } from '@/lib/factionStyles';
 import { toast } from '@/lib/toastManager';
 import { FactionBadge, eraGlyph, factionGlyph } from '@/components/shared/StatusSignal';
+import { FilenameReveal } from '@/hooks/useFilenameReveal';
 
 // ─── Constants ───
 
@@ -108,26 +111,43 @@ function GalleryCard({
   preset,
   isActive,
   onSelect,
+  parentName,
 }: {
   preset: Preset;
   isActive: boolean;
   onSelect: () => void;
+  /** Human-readable name of the preset this one descends from, if any. */
+  parentName?: string;
 }) {
   const { r, g, b } = preset.config.baseColor;
   const hex = rgbToHex(r, g, b);
   const isLegendsPreset = isLegends(preset);
   const { src: thumbnail, isAnimating, onMouseEnter, onMouseLeave } = usePresetAnimation(preset.config as BladeConfig);
 
+  // Lineage tooltip — browser `title` has a built-in hover-delay and is
+  // the right primitive for a low-value, opt-in hint. HelpTooltip is
+  // reserved for '?' help icons.
+  const lineageHint = parentName ? `Variant of ${parentName}` : undefined;
+
+  // The card is wrapped in a <div> so the main `<button>` (preset-select)
+  // can live alongside a sibling `<button>` for the "+ List" action. They
+  // used to be nested, which violated the HTML interactive-content model
+  // and left the "+ List" affordance keyboard-unreachable (tabIndex={-1}).
+  // See the 2026-04-19 a11y audit P0.
   return (
-    <button
-      onClick={onSelect}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className={`gallery-card w-full shrink-0 text-left rounded-lg overflow-hidden border transition-all ${
+    <div
+      className={`gallery-card-wrapper w-full shrink-0 relative rounded-lg overflow-hidden border transition-all ${
         isActive
           ? 'border-accent ring-1 ring-accent/30'
           : 'border-border-subtle hover:border-border-light'
       } bg-bg-card`}
+    >
+    <button
+      onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      title={lineageHint}
+      className="gallery-card w-full text-left"
     >
       {/* Full-width horizontal blade strip */}
       <div className="relative w-full overflow-hidden bg-[#0a0c14]" style={{ height: '40px' }}>
@@ -153,7 +173,7 @@ function GalleryCard({
 
         {/* Era badge overlay — glyph + label for colorblind-safe signal */}
         <div className={`absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider ${getEraCssClass(preset.era)} bg-black/60 backdrop-blur-sm px-1 rounded inline-flex items-center gap-1`}>
-          <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+          <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
             {eraGlyph(preset.era)}
           </span>
           {getEraLabel(preset.era)}
@@ -168,7 +188,7 @@ function GalleryCard({
               background: badgeTint('screen-accurate', 0.45),
             }}
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2713;</span>
             On-Screen
           </div>
         ) : CREATIVE_COMMUNITY_PRESETS.some((p) => p.id === preset.id) ? (
@@ -179,7 +199,7 @@ function GalleryCard({
               background: badgeTint('creative', 0.45),
             }}
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25B2;</span>
             Creative
           </div>
         ) : null}
@@ -193,7 +213,7 @@ function GalleryCard({
               background: badgeTint('legends', 0.45),
             }}
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
               &#x2727;
             </span>
             Legends
@@ -213,7 +233,7 @@ function GalleryCard({
       </div>
 
       {/* Compact info row */}
-      <div className="flex items-center gap-2 px-2.5 py-1.5">
+      <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-0">
         {/* Color swatch */}
         <div
           className="w-3 h-3 rounded-full shrink-0 border border-white/10"
@@ -231,25 +251,11 @@ function GalleryCard({
         <span className="text-ui-xs text-text-muted ml-auto shrink-0">
           {STYLE_LABELS[preset.config.style] ?? preset.config.style}
         </span>
-        {/* Add to preset list */}
-        <span
-          role="button"
-          tabIndex={-1}
-          onClick={(e) => {
-            e.stopPropagation();
-            usePresetListStore.getState().addEntry({
-              presetName: preset.name,
-              fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
-              config: preset.config as BladeConfig,
-              sourcePresetId: preset.id,
-            });
-          }}
-          className="text-ui-xs px-1 py-0.5 rounded border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors shrink-0 touch-target"
-          title="Add to preset list"
-          aria-label={`Add ${preset.name} to preset list`}
-        >
-          + List
-        </span>
+        {/* "+ List" affordance used to live here as a <span role="button">
+            nested inside the card's outer <button>. That was a nested-
+            interactive violation and also left the action unreachable by
+            keyboard (tabIndex={-1}). It now renders as a sibling <button>
+            below — same visual position, keyboard-focusable, a11y-clean. */}
         {/* Affiliation glyph — monogram pairs with color for colorblind-safe ID */}
         <FactionBadge
           faction={preset.affiliation}
@@ -258,13 +264,52 @@ function GalleryCard({
           label={`${preset.affiliation} affiliation`}
         />
       </div>
+      {/* Identity subtitle — character + author for VCV-style browsable
+          attribution. Falls back to tier when author is unknown. Version
+          (when set) surfaces on the far right, mirroring the VCV Rack
+          library's author/version dual-column layout. */}
+      <div
+        className="flex items-center gap-1.5 px-2.5 pb-1.5 text-ui-xs text-text-muted font-mono truncate"
+        aria-hidden="true"
+      >
+        <span className="truncate">{preset.character}</span>
+        <span className="opacity-40 shrink-0">·</span>
+        <span className="uppercase tracking-wider shrink-0 opacity-70 truncate">
+          {preset.author ?? preset.tier}
+        </span>
+        {preset.version && (
+          <span className="ml-auto shrink-0 opacity-50 tabular-nums">
+            v{preset.version}
+          </span>
+        )}
+      </div>
     </button>
+      {/* Sibling + List button — absolutely positioned in the info-row
+          area where it used to live as a nested span. Keyboard-focusable,
+          independently tab-indexed. */}
+      <button
+        type="button"
+        onClick={() => {
+          usePresetListStore.getState().addEntry({
+            presetName: preset.name,
+            fontName: preset.character.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            config: preset.config as BladeConfig,
+            sourcePresetId: preset.id,
+          });
+        }}
+        className="absolute right-10 bottom-[26px] text-ui-xs px-1 py-0.5 rounded border border-border-subtle bg-bg-card/90 text-text-muted hover:text-accent hover:border-accent-border/40 transition-colors z-10 touch-target"
+        title="Add to preset list"
+        aria-label={`Add ${preset.name} to preset list`}
+      >
+        + List
+      </button>
+    </div>
   );
 }
 
 // ─── Detail Panel ───
 
-function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void }) {
+export function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void }) {
   const { r, g, b } = preset.config.baseColor;
   const hex = rgbToHex(r, g, b);
   const clashHex = rgbToHex(preset.config.clashColor.r, preset.config.clashColor.g, preset.config.clashColor.b);
@@ -275,11 +320,18 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
     <div className="bg-bg-surface rounded-lg border border-border-subtle p-4 mt-3">
       <div className="flex items-start justify-between mb-3">
         <div>
+          {/* filenameReveal() — preset-load reveal. Key by id so the motion
+              replays whenever the user selects a different preset. */}
           <h3 className="font-cinematic text-ui-sm font-bold tracking-wider text-text-primary">
-            {preset.name}
+            <FilenameReveal
+              key={preset.id}
+              text={preset.name}
+              className="inline-block"
+              aria-label={preset.name}
+            />
           </h3>
           <span className={`text-ui-sm font-bold uppercase tracking-wider inline-flex items-center gap-1 ${getEraCssClass(preset.era)}`}>
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
               {eraGlyph(preset.era)}
             </span>
             {getEraLabel(preset.era)}
@@ -289,7 +341,7 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
             style={{ color: affiliationColor(preset.affiliation) }}
           >
             {/* Decorative glyph — adjacent UPPERCASE text already conveys meaning to AT */}
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
               {factionGlyph(preset.affiliation)}
             </span>
             {preset.affiliation.toUpperCase()}
@@ -303,7 +355,7 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
                 borderColor: badgeTint('screen-accurate', 0.4),
               }}
             >
-              <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+              <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2713;</span>
               On-Screen
             </span>
           )}
@@ -316,7 +368,7 @@ function PresetDetail({ preset, onClose }: { preset: Preset; onClose: () => void
                 borderColor: badgeTint('creative', 0.4),
               }}
             >
-              <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+              <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25B2;</span>
               Creative
             </span>
           )}
@@ -432,6 +484,11 @@ function formatRelativeDate(ts: number): string {
 }
 
 function SavePresetModal({ onClose }: { onClose: () => void }) {
+  // Modal a11y: ESC-to-close, Tab focus trap, initial + restore focus.
+  const { dialogRef } = useModalDialog<HTMLDivElement>({
+    isOpen: true,
+    onClose,
+  });
   const config = useBladeStore((s) => s.config);
   const fontName = useAudioFontStore((s) => s.fontName);
   const savePreset = useUserPresetStore((s) => s.savePreset);
@@ -465,21 +522,22 @@ function SavePresetModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-label="Save preset"
+      aria-labelledby="preset-gallery-save-modal-title"
     >
       <div className="bg-bg-secondary border border-border-light rounded-lg shadow-xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-          <h3 className="text-ui-base font-semibold text-text-primary flex items-center gap-1">Save As Preset <HelpTooltip text="Save the current blade style, colors, and all parameters as a reusable preset in your personal collection." /></h3>
+          <h3 id="preset-gallery-save-modal-title" className="text-ui-base font-semibold text-text-primary flex items-center gap-1">Save As Preset <HelpTooltip text="Save the current blade style, colors, and all parameters as a reusable preset in your personal collection." /></h3>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-text-primary hover:bg-bg-surface transition-colors" aria-label="Close">&times;</button>
         </div>
         <div className="p-4 space-y-3">
           <div>
             <label htmlFor="save-preset-name" className="text-ui-xs text-text-muted block mb-1">Name</label>
-            <input id="save-preset-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-bg-deep border border-border-subtle rounded px-2.5 py-1.5 text-ui-sm text-text-primary focus:outline-none focus:border-accent" autoFocus />
+            <input id="save-preset-name" data-autofocus type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-bg-deep border border-border-subtle rounded px-2.5 py-1.5 text-ui-sm text-text-primary focus:outline-none focus:border-accent" />
             {existingPreset && <p className="text-ui-xs text-yellow-400 mt-0.5">A preset with this name exists.</p>}
           </div>
           <div>
@@ -549,7 +607,7 @@ function UserPresetCard({
             </div>
           )}
           <div className="absolute top-1 left-1.5 text-ui-xs font-bold uppercase tracking-wider text-accent/80 bg-black/40 px-1 rounded inline-flex items-center gap-1">
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25C9;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25C9;</span>
             Custom
           </div>
         </div>
@@ -608,7 +666,8 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
   const [showLegends, setShowLegends] = useState(false);
   const [selectedOrigin, setSelectedOrigin] = useState<'all' | 'on-screen' | 'creative'>('all');
   const [sortMode, setSortMode] = useState<SortMode>('name');
-  const [detailPreset, setDetailPreset] = useState<Preset | null>(null);
+  const detailPreset = usePresetDetailStore((s) => s.detailPreset);
+  const setDetailPreset = usePresetDetailStore((s) => s.setDetailPreset);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   // My Presets
@@ -932,7 +991,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
               <span
                 aria-hidden="true"
                 className={era.cssClass}
-                style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}
+                style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}
               >
                 {eraGlyph(era.id)}
               </span>
@@ -960,7 +1019,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
               <span
                 aria-hidden="true"
                 style={{
-                  fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+                  fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
                   color: affiliationColor(aff.id),
                 }}
               >
@@ -1007,12 +1066,12 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
                 'All'
               ) : origin === 'on-screen' ? (
                 <span className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2713;</span>
+                  <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2713;</span>
                   On-Screen
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1">
-                  <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x25B2;</span>
+                  <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x25B2;</span>
                   Creative
                 </span>
               )}
@@ -1049,7 +1108,7 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
                 : undefined
             }
           >
-            <span aria-hidden="true" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>&#x2727;</span>
+            <span aria-hidden="true" style={{ fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace" }}>&#x2727;</span>
             Legends
           </button>
         </div>
@@ -1063,6 +1122,11 @@ export function PresetGallery({ initialTab = 'gallery' }: PresetGalleryProps) {
             preset={preset}
             isActive={config.name === preset.config.name}
             onSelect={() => handleSelect(preset)}
+            parentName={
+              preset.parentId
+                ? ALL_PRESETS.find((p) => p.id === preset.parentId)?.name
+                : undefined
+            }
           />
         ))}
       </div>

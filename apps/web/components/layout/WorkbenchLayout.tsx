@@ -24,6 +24,7 @@ import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { FPSCounter } from '@/components/layout/FPSCounter';
 import { SettingsModal } from '@/components/layout/SettingsModal';
+import { KeyboardShortcutsModal } from '@/components/layout/KeyboardShortcutsModal';
 import { SaberWizard } from '@/components/onboarding/SaberWizard';
 import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
@@ -43,9 +44,25 @@ import { DataTicker } from '@/components/hud/DataTicker';
 import { ScanSweep } from '@/components/hud/ScanSweep';
 import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
+import { CommandPalette } from '@/components/shared/CommandPalette';
+import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
+import { useCommandStore, type Command } from '@/stores/commandStore';
+import { CANVAS_THEMES } from '@/lib/canvasThemes';
+import { EXTENDED_LOCATION_THEMES, EXTENDED_FACTION_THEMES } from '@/lib/extendedThemes';
+import { useMetaKey } from '@/lib/platform';
+import { toggleOrTriggerEffect } from '@/lib/effectToggle';
+import { SUSTAINED_EFFECT_IDS } from '@/lib/keyboardShortcuts';
+import { useActiveEffectsStore } from '@/stores/activeEffectsStore';
 import Link from 'next/link';
 
-// ─── HUD status messages for the header DataTicker ───
+// ─── HUD status messages for the data ticker strip ───
+// Expanded 2026-04-20 from the original 8-message set per Ken's
+// walkthrough feedback — he wanted more varied / more interesting
+// chrome text while still reading as saber / ProffieOS-adjacent.
+// Mix of: system-status readouts, hardware acknowledgements,
+// Proffie-specific technical shorthand, and a few ambient flavor
+// lines. Expanding the pool also makes the seamless loop less
+// repetitive to the eye (longer content → loop period stretches).
 const HUD_TICKER_MESSAGES = [
   'SYSTEMS NOMINAL',
   'BLADE CALIBRATED',
@@ -55,17 +72,51 @@ const HUD_TICKER_MESSAGES = [
   'STYLE ENGINE READY',
   'PROFFIE OS 7.x',
   'LED MATRIX SYNC',
+  'NEOPIXEL GAMMA LOCKED',
+  'SMOOTHSWING V2',
+  'FETT263 COMPAT',
+  'MOTION ARMED',
+  'FONT LIBRARY LOADED',
+  'WS2812B CHANNEL OK',
+  'STM32 DFU READY',
+  'CARRIER LOCKED',
+  'TX · 115200 BAUD',
+  'BOOSTER CAP CHARGED',
+  'HILT THERMAL OK',
+  'GYRO FUSED',
+  'ACCELEROMETER ZEROED',
+  'I²C BUS ACTIVE',
+  'SD PRESET MOUNT',
+  'FIRMWARE PINNED',
+  'SHIMMER HARMONIC',
+  'DIFFUSION KERNEL',
 ];
 
 // ─── Tab Definitions ───
 
 const TABS: Array<{ id: ActiveTab; label: string }> = [
-  { id: 'design', label: 'Design' },
-  { id: 'dynamics', label: 'Dynamics' },
-  { id: 'audio', label: 'Audio' },
-  { id: 'gallery', label: 'Gallery' },
-  { id: 'output', label: 'Output' },
+  { id: 'design', label: 'DESIGN' },
+  { id: 'dynamics', label: 'DYNAMICS' },
+  { id: 'audio', label: 'AUDIO' },
+  { id: 'gallery', label: 'GALLERY' },
+  { id: 'output', label: 'OUTPUT' },
 ];
+
+/**
+ * Canonical tab-switch kbd positions (by index in the shipped TABS
+ * array, not the user's reordered view). The actual display string is
+ * computed at render time via `useMetaKey()` so Mac shows `⌘1` and
+ * Windows / Linux shows `Ctrl+1`. The keyboard handler in
+ * `useKeyboardShortcuts` uses `(e.metaKey || e.ctrlKey)` so either
+ * modifier works regardless of platform — the display is purely cosmetic.
+ */
+const TAB_CANONICAL_DIGIT: Record<ActiveTab, string> = {
+  design: '1',
+  dynamics: '2',
+  audio: '3',
+  gallery: '4',
+  output: '5',
+};
 
 // ─── Tab Reorder Hook ───
 
@@ -112,6 +163,72 @@ function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   }
 }
 
+// ─── Effect Chip ──────────────────────────────────────────────────────────
+//
+// Action-bar chip for a single effect trigger. Subscribes to the
+// activeEffectsStore so sustained effects (Lockup et al.) show a
+// visible "held" state — accent glow + pulse animation — when the
+// effect is currently running. Clicking an active chip releases it
+// (parity with the keyboard toggle behavior). One-shot effects
+// (Clash / Blast / Stab) never show the held state — they fire once
+// and decay naturally in the engine, no tracking needed.
+
+interface EffectChipProps {
+  type: string;
+  label: string;
+  hotkey: string;
+  onToggle: (
+    effectType: string,
+    handlers: { triggerEffect: (type: string) => void; releaseEffect: (type: string) => void },
+  ) => void;
+  triggerHandler: (type: string) => void;
+  releaseHandler: (type: string) => void;
+}
+
+function EffectChip({
+  type,
+  label,
+  hotkey,
+  onToggle,
+  triggerHandler,
+  releaseHandler,
+}: EffectChipProps) {
+  const isSustained = SUSTAINED_EFFECT_IDS.has(type);
+  // Only subscribe for sustained effects — one-shots never have a
+  // "held" state, so there's no reason to churn their render on
+  // activeEffectsStore changes.
+  const isActive = useActiveEffectsStore((s) =>
+    isSustained && s.active.has(type),
+  );
+
+  const activeTitle = isSustained && isActive
+    ? `Release ${label} (press ${hotkey} or click)`
+    : `${label} effect (${hotkey})`;
+
+  return (
+    <button
+      onClick={() =>
+        onToggle(type, {
+          triggerEffect: triggerHandler,
+          releaseEffect: releaseHandler,
+        })
+      }
+      className={[
+        'px-2 py-1 rounded text-ui-xs font-medium border transition-colors',
+        isActive
+          ? 'border-accent-border text-accent bg-accent/15 shadow-[0_0_12px_0_rgb(var(--accent)/0.35)] ignite-btn-on'
+          : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light hover:bg-bg-secondary',
+      ].join(' ')}
+      title={activeTitle}
+      aria-pressed={isSustained ? isActive : undefined}
+    >
+      <span className="hidden desktop:inline">{label}</span>
+      <span className="desktop:hidden">{hotkey}</span>
+      <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{hotkey}</kbd>
+    </button>
+  );
+}
+
 // ─── Main Component ───
 
 /**
@@ -139,6 +256,12 @@ export function WorkbenchLayout() {
   usePresetListSync();
   useHistoryTracking();
 
+  // Platform-aware kbd display: Mac shows ⌘K, Windows / Linux shows Ctrl+K.
+  // The keyboard event handlers read (e.metaKey || e.ctrlKey) so either
+  // physical modifier works regardless of what we display.
+  const meta = useMetaKey();
+  const kbdFor = (key: string) => `${meta.symbol}${meta.sep}${key}`;
+
   // ── Store selectors ──
   const activeTab = useUIStore((s) => s.activeTab);
   const setActiveTab = useUIStore((s) => s.setActiveTab);
@@ -151,6 +274,42 @@ export function WorkbenchLayout() {
 
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
+  // Subscribed for the HUD ticker live entries below. The `setCanvasTheme`
+  // setter is separately memoed for the palette's theme commands.
+  const canvasTheme = useUIStore((s) => s.canvasTheme);
+
+  // Canvas theme setter — surfaced via the ⌘K command palette. Kept
+  // separate from the `canvasTheme` value subscription so the memoized
+  // command list doesn't churn every time a theme command runs.
+  const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
+
+  // Build the HUD ticker content by interleaving the static lore pool
+  // with live engine / UI readouts. The ticker is ambient decorative
+  // chrome, so re-computing on tab / theme change is fine — it just
+  // snaps to the new content at the next loop frame. Live entries:
+  //   · TAB · <activeTab uppercase>
+  //   · THEME · <canvasTheme uppercase>
+  //   · LEDS · <ledCount>
+  // Pattern: every 4th slot gets a live entry, then trailing live
+  // entries flush at the end. Result: live data is spread through the
+  // loop rather than clumped in one spot.
+  const tickerMessages = useMemo(() => {
+    const live = [
+      `TAB · ${activeTab.toUpperCase()}`,
+      `THEME · ${canvasTheme.toUpperCase()}`,
+      `LEDS · ${ledCount}`,
+    ];
+    const out: string[] = [];
+    let liveIdx = 0;
+    for (let i = 0; i < HUD_TICKER_MESSAGES.length; i++) {
+      out.push(HUD_TICKER_MESSAGES[i]);
+      if ((i + 1) % 4 === 0 && liveIdx < live.length) {
+        out.push(live[liveIdx++]);
+      }
+    }
+    while (liveIdx < live.length) out.push(live[liveIdx++]);
+    return out;
+  }, [activeTab, canvasTheme, ledCount]);
 
   // ── Pixel buffer for VisualizationStack ──
   // Capture the engine's live Uint8Array once after mount. getPixels() returns
@@ -190,6 +349,23 @@ export function WorkbenchLayout() {
     [triggerEffect, audio],
   );
 
+  // Shared effect-command dispatcher used by every palette AUDITION row
+  // and the action-bar chips. For sustained effects (Lockup, Drag,
+  // Melt, Lightning, Force) it toggles — re-triggering from any source
+  // while the effect is held releases it. For one-shots (Clash, Blast,
+  // Stab, etc.) it just triggers and the engine decays naturally.
+  // Runs the audio-aware trigger + the store-aware release through
+  // `toggleOrTriggerEffect` in `@/lib/effectToggle`.
+  const handleEffectCommand = useCallback(
+    (effectType: string) => {
+      toggleOrTriggerEffect(effectType, {
+        triggerEffect: triggerEffectWithAudio,
+        releaseEffect,
+      });
+    },
+    [triggerEffectWithAudio, releaseEffect],
+  );
+
   // ── Combined sound mute toggle — controls font audio + UI sounds ──
   const toggleSoundMute = useCallback(() => {
     audio.toggleMute();
@@ -205,13 +381,333 @@ export function WorkbenchLayout() {
     }
   }, [audio]);
 
+  // ── Modal visibility state ──
+  // Declared before `handlers` so that `openShortcutsHelp` is in scope
+  // when the keyboard-shortcut memo references it.
+  const [showSettings, setShowSettings] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const openShortcutsHelp = useCallback(() => setShowShortcutsHelp(true), []);
+
   // ── Keyboard shortcuts + timeline ──
   const handlers = useMemo(
-    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
-    [toggleWithAudio, triggerEffectWithAudio, releaseEffect],
+    () => ({
+      toggle: toggleWithAudio,
+      triggerEffect: triggerEffectWithAudio,
+      releaseEffect,
+      openHelp: openShortcutsHelp,
+    }),
+    [toggleWithAudio, triggerEffectWithAudio, releaseEffect, openShortcutsHelp],
   );
   useKeyboardShortcuts(handlers);
   useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
+
+  // ── ⌘K command palette ──
+  // Arm the global ⌘K listener. Registration below supplies the initial
+  // command set; owning panels may register more on mount in later waves.
+  useCommandPalette();
+
+  const commands = useMemo<Command[]>(() => {
+    const nav = (tab: ActiveTab) => () => {
+      playUISound('tab-switch');
+      setActiveTab(tab);
+    };
+    const out: Command[] = [
+      // ── NAVIGATE ───────────────────────────────────────────────────
+      {
+        id: 'nav:design',
+        group: 'NAVIGATE',
+        title: 'Go to Design',
+        kbd: kbdFor('1'),
+        icon: '⚒',
+        run: nav('design'),
+      },
+      {
+        id: 'nav:dynamics',
+        group: 'NAVIGATE',
+        title: 'Go to Dynamics',
+        kbd: kbdFor('2'),
+        icon: '⚒',
+        run: nav('dynamics'),
+      },
+      {
+        id: 'nav:audio',
+        group: 'NAVIGATE',
+        title: 'Go to Audio',
+        kbd: kbdFor('3'),
+        icon: '⚒',
+        run: nav('audio'),
+      },
+      {
+        id: 'nav:gallery',
+        group: 'NAVIGATE',
+        title: 'Go to Gallery',
+        kbd: kbdFor('4'),
+        icon: '⚒',
+        run: nav('gallery'),
+      },
+      {
+        id: 'nav:output',
+        group: 'NAVIGATE',
+        title: 'Go to Output',
+        kbd: kbdFor('5'),
+        icon: '⚒',
+        run: nav('output'),
+      },
+      // ── AUDITION ──────────────────────────────────────────────────
+      {
+        id: 'audition:ignite',
+        group: 'AUDITION',
+        title: 'Ignite / Retract blade',
+        subtitle: 'Toggle blade on/off',
+        kbd: 'Space',
+        icon: '▶',
+        run: toggleWithAudio,
+      },
+      {
+        id: 'audition:clash',
+        group: 'AUDITION',
+        title: 'Trigger Clash',
+        kbd: 'C',
+        icon: '▶',
+        run: () => handleEffectCommand('clash'),
+      },
+      {
+        id: 'audition:blast',
+        group: 'AUDITION',
+        title: 'Trigger Blast',
+        kbd: 'B',
+        icon: '▶',
+        run: () => handleEffectCommand('blast'),
+      },
+      {
+        id: 'audition:lockup',
+        group: 'AUDITION',
+        title: 'Hold Lockup',
+        kbd: 'L',
+        icon: '▶',
+        run: () => handleEffectCommand('lockup'),
+      },
+      {
+        id: 'audition:stab',
+        group: 'AUDITION',
+        title: 'Trigger Stab',
+        kbd: 'S',
+        icon: '▶',
+        run: () => handleEffectCommand('stab'),
+      },
+      // W4b — 17 effects pruned from the visible action bar and exposed
+      // here in the AUDITION palette group. The `kbd` strings mirror
+      // EFFECT_SHORTCUTS_BY_CODE in `lib/keyboardShortcuts.ts` exactly;
+      // effects without a single-letter hotkey (scatter/ripple/freeze/
+      // overcharge/invert) intentionally omit the `kbd` field.
+      {
+        id: 'audition:lightning',
+        group: 'AUDITION',
+        title: 'Hold Lightning',
+        kbd: 'N',
+        icon: '▶',
+        run: () => handleEffectCommand('lightning'),
+      },
+      {
+        id: 'audition:drag',
+        group: 'AUDITION',
+        title: 'Hold Drag',
+        kbd: 'D',
+        icon: '▶',
+        run: () => handleEffectCommand('drag'),
+      },
+      {
+        id: 'audition:melt',
+        group: 'AUDITION',
+        title: 'Hold Melt',
+        kbd: 'M',
+        icon: '▶',
+        run: () => handleEffectCommand('melt'),
+      },
+      {
+        id: 'audition:force',
+        group: 'AUDITION',
+        title: 'Trigger Force',
+        kbd: 'F',
+        icon: '▶',
+        run: () => handleEffectCommand('force'),
+      },
+      {
+        id: 'audition:shockwave',
+        group: 'AUDITION',
+        title: 'Trigger Shockwave',
+        kbd: 'W',
+        icon: '▶',
+        run: () => handleEffectCommand('shockwave'),
+      },
+      {
+        id: 'audition:scatter',
+        group: 'AUDITION',
+        title: 'Trigger Scatter',
+        icon: '▶',
+        run: () => handleEffectCommand('scatter'),
+      },
+      {
+        id: 'audition:fragment',
+        group: 'AUDITION',
+        title: 'Trigger Fragment',
+        kbd: 'R',
+        icon: '▶',
+        run: () => handleEffectCommand('fragment'),
+      },
+      {
+        id: 'audition:ripple',
+        group: 'AUDITION',
+        title: 'Trigger Ripple',
+        icon: '▶',
+        run: () => handleEffectCommand('ripple'),
+      },
+      {
+        id: 'audition:freeze',
+        group: 'AUDITION',
+        title: 'Trigger Freeze',
+        icon: '▶',
+        run: () => handleEffectCommand('freeze'),
+      },
+      {
+        id: 'audition:overcharge',
+        group: 'AUDITION',
+        title: 'Trigger Overcharge',
+        icon: '▶',
+        run: () => handleEffectCommand('overcharge'),
+      },
+      {
+        id: 'audition:bifurcate',
+        group: 'AUDITION',
+        title: 'Trigger Bifurcate',
+        kbd: 'V',
+        icon: '▶',
+        run: () => handleEffectCommand('bifurcate'),
+      },
+      {
+        id: 'audition:invert',
+        group: 'AUDITION',
+        title: 'Trigger Invert',
+        icon: '▶',
+        run: () => handleEffectCommand('invert'),
+      },
+      {
+        id: 'audition:ghostEcho',
+        group: 'AUDITION',
+        title: 'Trigger Ghost Echo',
+        kbd: 'G',
+        icon: '▶',
+        run: () => handleEffectCommand('ghostEcho'),
+      },
+      {
+        id: 'audition:splinter',
+        group: 'AUDITION',
+        title: 'Trigger Splinter',
+        kbd: 'P',
+        icon: '▶',
+        run: () => handleEffectCommand('splinter'),
+      },
+      {
+        id: 'audition:coronary',
+        group: 'AUDITION',
+        title: 'Trigger Coronary',
+        kbd: 'E',
+        icon: '▶',
+        run: () => handleEffectCommand('coronary'),
+      },
+      {
+        id: 'audition:glitchMatrix',
+        group: 'AUDITION',
+        title: 'Trigger Glitch Matrix',
+        kbd: 'X',
+        icon: '▶',
+        run: () => handleEffectCommand('glitchMatrix'),
+      },
+      {
+        id: 'audition:siphon',
+        group: 'AUDITION',
+        title: 'Trigger Siphon',
+        kbd: 'H',
+        icon: '▶',
+        run: () => handleEffectCommand('siphon'),
+      },
+      // ── VIEW ──────────────────────────────────────────────────────
+      {
+        id: 'view:toggle-fx-compare',
+        group: 'VIEW',
+        title: 'Toggle FX Comparison strips',
+        subtitle: 'Show or hide the reference comparison row',
+        icon: '·',
+        run: toggleEffectComparison,
+      },
+      {
+        id: 'view:mute-audio',
+        group: 'VIEW',
+        title: 'Toggle audio mute',
+        subtitle: 'Silence font audio + UI sounds',
+        icon: '·',
+        run: toggleSoundMute,
+      },
+      {
+        id: 'view:settings',
+        group: 'VIEW',
+        title: 'Open Settings',
+        icon: '·',
+        run: () => setShowSettings(true),
+      },
+      {
+        id: 'view:help',
+        group: 'VIEW',
+        title: 'Keyboard shortcuts help',
+        kbd: '?',
+        icon: '·',
+        run: openShortcutsHelp,
+      },
+      // ── WIZARD ────────────────────────────────────────────────────
+      {
+        id: 'wizard:open',
+        group: 'WIZARD',
+        title: 'Open Saber Wizard',
+        subtitle: '3-step guided preset — archetype / colour / vibe',
+        icon: '✦',
+        run: () => setShowWizard(true),
+      },
+    ];
+
+    // ── THEME ──────────────────────────────────────────────────────
+    // Emit commands for the base 9 + extended locations + factions.
+    // Capped at 8 entries for this wave — the palette is searchable, so
+    // users can type the theme name even if it's not in the top 8.
+    // TODO: remove the cap once theme rows land their own section.
+    const THEME_CAP = 8;
+    const themeEntries: Array<{ id: string; label: string }> = [
+      ...CANVAS_THEMES.map((t) => ({ id: t.id, label: t.label })),
+      ...EXTENDED_LOCATION_THEMES.map((t) => ({ id: t.id, label: t.label })),
+      ...EXTENDED_FACTION_THEMES.map((t) => ({ id: t.id, label: t.label })),
+    ].slice(0, THEME_CAP);
+    for (const t of themeEntries) {
+      out.push({
+        id: `theme:${t.id}`,
+        group: 'THEME',
+        title: `Theme: ${t.label}`,
+        icon: '◆',
+        run: () => setCanvasTheme(t.id),
+      });
+    }
+
+    return out;
+  }, [
+    setActiveTab,
+    toggleWithAudio,
+    handleEffectCommand,
+    toggleEffectComparison,
+    toggleSoundMute,
+    openShortcutsHelp,
+    setCanvasTheme,
+  ]);
+
+  useRegisterCommands(commands);
 
   // ── Engine ready guard — show CanvasSkeleton until the engine mounts ──
   const [engineReady, setEngineReady] = useState(false);
@@ -221,11 +717,6 @@ export function WorkbenchLayout() {
     const id = requestAnimationFrame(() => setEngineReady(true));
     return () => cancelAnimationFrame(id);
   }, [engineRef]);
-
-  // ── Settings modal state ──
-  const [showSettings, setShowSettings] = useState(false);
-  // ── Saber Wizard state ──
-  const [showWizard, setShowWizard] = useState(false);
 
   // ── Tab drag-to-reorder state ──
   const orderedTabs = useOrderedTabs();
@@ -299,28 +790,26 @@ export function WorkbenchLayout() {
        * 1. HEADER BAR
        * ════════════════════════════════════════════════════ */}
       <header className="relative flex items-center justify-between px-4 py-1.5 border-b border-border-subtle bg-bg-secondary shrink-0">
-        {/* HUD: decorative data ticker running behind header content */}
-        <DataTicker
-          data={HUD_TICKER_MESSAGES}
-          speed={30}
-          className="absolute inset-0 flex items-end pb-px pointer-events-none"
-        />
-        {/* Left cluster: logo + project name */}
+        {/* Left cluster: logo + project name.
+            Wave 4 trim: the "Universal Saber Style Engine" subtitle and the
+            version/profile breadcrumb were removed — StatusBar now owns PROFILE
+            + BUILD identity (see W3). */}
         <div className="flex items-center gap-3">
-          <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
-            <span className="text-white">KYBER</span>
-            <span className="text-accent">STATION</span>
-          </h1>
-          <span className="text-ui-xs text-text-muted font-sw-body hidden desktop:inline">
-            Universal Saber Style Engine
-          </span>
+          <div className="flex flex-col leading-none">
+            <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
+              <span className="text-white">KYBER</span>
+              <span className="text-accent">STATION</span>
+            </h1>
+          </div>
 
           <UndoRedoButtons />
 
           <SaberProfileSwitcher />
         </div>
 
-        {/* Right cluster: FPS, controls, ignite */}
+        {/* Right cluster: FPS, controls, ignite.
+            Wave 4 trim: the "FX Compare" toggle moved to the ⌘K palette
+            (its keybinding + toggle logic remain wired below). */}
         <div className="flex items-center gap-2">
           <ShareButton />
 
@@ -341,19 +830,6 @@ export function WorkbenchLayout() {
             {audio.muted ? 'Sound OFF' : 'Sound ON'}
           </button>
 
-          {/* Effect comparison toggle */}
-          <button
-            onClick={toggleEffectComparison}
-            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
-              showEffectComparison
-                ? 'border-accent-border/40 text-accent bg-accent-dim/30'
-                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
-            }`}
-            title="Toggle effect comparison strips"
-          >
-            FX Compare
-          </button>
-
           {/* Docs */}
           <Link
             href="/docs"
@@ -362,6 +838,26 @@ export function WorkbenchLayout() {
           >
             Docs
           </Link>
+
+          {/* ⌘K Command palette chip — reference `title-strip .cmd-hint`.
+              Hidden on tablet; the palette hotkey still works at every
+              width via useCommandPalette. */}
+          <button
+            onClick={() => useCommandStore.getState().open()}
+            className="hidden desktop:inline-flex items-center gap-1.5 font-mono text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
+            style={{
+              fontSize: 11,
+              padding: '2px 8px',
+              border: '1px solid rgb(var(--border-subtle) / 1)',
+              borderRadius: 'var(--r-chrome, 2px)',
+              background: 'rgb(var(--bg-deep) / 0.4)',
+              letterSpacing: '0.04em',
+            }}
+            title={`Open command palette (${kbdFor('K')})`}
+            aria-label="Open command palette"
+          >
+            Command <kbd className="font-mono text-text-muted/80">{kbdFor('K')}</kbd>
+          </button>
 
           <button
             onClick={() => setShowWizard(true)}
@@ -379,6 +875,15 @@ export function WorkbenchLayout() {
           </button>
 
           <button
+            onClick={openShortcutsHelp}
+            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+          >
+            ?
+          </button>
+
+          <button
             onClick={() => setShowSettings(true)}
             className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
             title="Settings"
@@ -390,11 +895,26 @@ export function WorkbenchLayout() {
       </header>
 
       {/* ════════════════════════════════════════════════════
+       * 1b. STATUS BAR — promoted to the top chrome
+       *
+       * Per Ken's 2026-04-20 walkthrough: StatusBar moved from the
+       * bottom of the app to directly under the header, replacing the
+       * decorative HUD ticker that used to live here. Rationale: the
+       * PFD-shape StatusBar is denser + more informative than the
+       * scrolling lore strip, and putting it up top makes the live
+       * telemetry (profile / conn / page / modified / storage / theme /
+       * preset / UTC / build) the first thing the user reads alongside
+       * the header. The ticker moves to the bottom as pure ambient
+       * chrome (see section 7 below).
+       * ════════════════════════════════════════════════════ */}
+      <StatusBar />
+
+      {/* ════════════════════════════════════════════════════
        * 2. BLADE + VISUALIZATION STACK — always visible
        * ════════════════════════════════════════════════════ */}
       <section
-        className="shrink-0 border-b border-border-subtle bg-bg-primary flex"
-        style={{ height: 280 }}
+        className="shrink-0 border-b border-border-subtle bg-bg-primary flex overflow-hidden"
+        style={{ height: 320 }}
         role="region"
         aria-label="Blade visualization"
       >
@@ -500,34 +1020,49 @@ export function WorkbenchLayout() {
 
         <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
 
-        {/* Effect trigger buttons */}
+        {/* Effect trigger buttons — W4b pruned to the 4 most-used effects.
+            The other 17 effects (lightning, drag, melt, force, shockwave,
+            scatter, fragment, ripple, freeze, overcharge, bifurcate, invert,
+            ghostEcho, splinter, coronary, glitchMatrix, siphon) are still
+            wired to their single-letter hotkeys in `useKeyboardShortcuts`
+            (via EFFECT_SHORTCUTS_BY_CODE) and are discoverable through the
+            ⌘K palette's AUDITION group.
+
+            Sustained effects (Lockup here — Drag / Melt / Lightning /
+            Force are in the palette only) show an "active" glow + pulse
+            when held, and clicking an active chip releases it. Click +
+            keyboard share the `toggleOrTriggerEffect` helper so the
+            shared activeEffectsStore + auto-release timer registry
+            stay consistent across both input sources. */}
         {([
-          { type: 'clash',     label: 'Clash',     key: 'C' },
-          { type: 'blast',     label: 'Blast',     key: 'B' },
-          { type: 'stab',      label: 'Stab',      key: 'S' },
-          { type: 'lockup',    label: 'Lockup',    key: 'L' },
-          { type: 'lightning',  label: 'Lightning', key: 'N' },
-          { type: 'drag',      label: 'Drag',      key: 'D' },
-          { type: 'melt',      label: 'Melt',      key: 'M' },
-          { type: 'force',     label: 'Force',     key: 'F' },
-          { type: 'shockwave', label: 'Shockwave', key: 'W' },
-          { type: 'scatter',   label: 'Scatter',   key: '' },
-          { type: 'ripple',    label: 'Ripple',    key: '' },
-          { type: 'freeze',    label: 'Freeze',    key: '' },
-          { type: 'overcharge', label: 'Overcharge', key: '' },
-          { type: 'invert',    label: 'Invert',    key: '' },
+          { type: 'clash',  label: 'Clash',  key: 'C' },
+          { type: 'blast',  label: 'Blast',  key: 'B' },
+          { type: 'lockup', label: 'Lockup', key: 'L' },
+          { type: 'stab',   label: 'Stab',   key: 'S' },
         ] as const).map(({ type, label, key }) => (
-          <button
+          <EffectChip
             key={type}
-            onClick={() => triggerEffectWithAudio(type)}
-            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light hover:bg-bg-secondary transition-colors"
-            title={key ? `${label} effect (${key})` : `${label} effect`}
-          >
-            <span className="hidden desktop:inline">{label}</span>
-            <span className="desktop:hidden">{key || label.slice(0, 2)}</span>
-            {key && <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{key}</kbd>}
-          </button>
+            type={type}
+            label={label}
+            hotkey={key}
+            onToggle={toggleOrTriggerEffect}
+            triggerHandler={triggerEffectWithAudio}
+            releaseHandler={releaseEffect}
+          />
         ))}
+
+        {/* LIVE indicator — reference `blade-controls` right-side readout.
+            Zoom readout is intentionally omitted in this wave: zoom state
+            is local to BladeCanvas (not a global store), and surfacing it
+            here would require lifting state beyond this file's W4b scope. */}
+        <div className="ml-auto flex items-center gap-2 text-ui-xs text-text-muted font-mono">
+          <span
+            aria-hidden="true"
+            className="inline-block w-1.5 h-1.5 rounded-full"
+            style={{ background: 'rgb(var(--status-ok) / 1)', boxShadow: '0 0 6px rgb(var(--status-ok) / 0.6)' }}
+          />
+          <span style={{ letterSpacing: '0.08em' }}>LIVE</span>
+        </div>
       </div>
 
       {/* ════════════════════════════════════════════════════
@@ -560,7 +1095,8 @@ export function WorkbenchLayout() {
             onClick={() => { playUISound('tab-switch'); setActiveTab(tab.id); }}
             className={[
               'px-3 py-2 text-ui-sm font-medium transition-colors relative whitespace-nowrap',
-              'cursor-grab active:cursor-grabbing',
+              'font-mono uppercase tracking-[0.08em]',
+              'cursor-grab active:cursor-grabbing inline-flex items-center gap-2',
               activeTab === tab.id
                 ? 'text-accent'
                 : 'text-text-muted hover:text-text-secondary',
@@ -569,9 +1105,20 @@ export function WorkbenchLayout() {
                 : 'border-l-2 border-l-transparent',
             ].join(' ')}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            {/* Canonical ⌘1–⌘5 (Mac) / Ctrl+1–Ctrl+5 (other) kbd hint.
+                Position is fixed by the shipped TABS order — user-
+                reordering the tab bar does NOT change which digit
+                switches which tab. */}
+            <kbd
+              aria-hidden="true"
+              className="font-mono text-text-muted/70 tabular-nums"
+              style={{ fontSize: 10, letterSpacing: '0.04em' }}
+            >
+              {kbdFor(TAB_CANONICAL_DIGIT[tab.id])}
+            </kbd>
             {tab.id === 'output' && presetListCount > 0 && (
-              <span className="ml-1 text-ui-xs text-accent">({presetListCount})</span>
+              <span className="text-ui-xs text-accent">({presetListCount})</span>
             )}
             {activeTab === tab.id && (
               <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-accent rounded-t" />
@@ -614,9 +1161,26 @@ export function WorkbenchLayout() {
       )}
 
       {/* ════════════════════════════════════════════════════
-       * 6. STATUS BAR — always visible
+       * 6. HUD DATA TICKER — ambient bottom chrome
+       *
+       * Relocated 2026-04-20 from the old top position to the very
+       * bottom of the app, swapping places with the StatusBar. Runs
+       * at half its previous speed (60s vs 30s) since the user spends
+       * most time looking at the blade + panels, not the footer —
+       * slower drift reads as "environmental" rather than "breaking
+       * news." Pure decorative chrome; no interactive content.
        * ════════════════════════════════════════════════════ */}
-      <StatusBar />
+      <div
+        className="shrink-0 border-t border-border-subtle bg-bg-deep/60 overflow-hidden"
+        style={{ height: 12 }}
+        aria-hidden="true"
+      >
+        <DataTicker
+          data={tickerMessages}
+          speed={60}
+          className="h-full flex items-center pointer-events-none"
+        />
+      </div>
 
       {/* ════════════════════════════════════════════════════
        * FULLSCREEN PREVIEW — portal-style fixed overlay
@@ -627,7 +1191,16 @@ export function WorkbenchLayout() {
        * SETTINGS MODAL
        * ════════════════════════════════════════════════════ */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
+      />
       <SaberWizard open={showWizard} onClose={() => setShowWizard(false)} />
+
+      {/* ════════════════════════════════════════════════════
+       * ⌘K COMMAND PALETTE — portal-rendered, opens globally
+       * ════════════════════════════════════════════════════ */}
+      <CommandPalette />
     </div>
   );
 }

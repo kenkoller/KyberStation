@@ -143,8 +143,15 @@ export function GradientMixer() {
                     className="flex-1 h-4 rounded border border-border-subtle cursor-pointer hover:border-accent/40 transition-colors"
                     style={{ background: `linear-gradient(to right, ${stopsToCSS(sg.stops)})` }}
                     onClick={() => handleLoad(i)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                        e.preventDefault();
+                        handleLoad(i);
+                      }
+                    }}
                     title={`Load "${sg.name}"`}
                     role="button"
+                    tabIndex={0}
                     aria-label={`Load gradient "${sg.name}"`}
                   />
                   <span className="text-ui-xs text-text-muted truncate w-16" title={sg.name}>{sg.name}</span>

@@ -4,12 +4,14 @@ import { Canvas, useFrame, type RootState } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { BladeState } from '@kyberstation/engine';
 import {
   HiltSelector,
   useHiltSelection,
   type HiltGeometry,
 } from '@/components/hilt/HiltSelector';
+import { HiltMesh } from '@/components/hilt/HiltMesh';
 
 // ─── Constants ───
 
@@ -17,124 +19,6 @@ const BLADE_FULL_LENGTH = 4.0;
 const BLADE_RADIUS = 0.06;
 const GLOW_RADIUS = 0.14;
 const BLADE_SEGMENTS = 32;
-
-// ─── Hilt Mesh ───
-
-interface HiltMeshProps {
-  geometry: HiltGeometry;
-}
-
-function HiltMesh({ geometry }: HiltMeshProps) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  const {
-    hiltLength,
-    gripDiameter,
-    emitterDiameter,
-    pommelDiameter,
-    guardThickness,
-    guardDiameter,
-    gripRidges,
-  } = geometry;
-
-  const gripRadius = gripDiameter / 2;
-  const emitterRadius = emitterDiameter / 2;
-  const pommelRadius = pommelDiameter / 2;
-
-  return (
-    <group ref={groupRef} position={[0, -hiltLength / 2, 0]}>
-      {/* Main grip body */}
-      <mesh position={[0, hiltLength / 2, 0]}>
-        <cylinderGeometry args={[emitterRadius, gripRadius, hiltLength * 0.6, 24]} />
-        <meshStandardMaterial
-          color="#2a2a32"
-          metalness={0.85}
-          roughness={0.25}
-        />
-      </mesh>
-
-      {/* Lower grip section */}
-      <mesh position={[0, hiltLength * 0.12, 0]}>
-        <cylinderGeometry args={[gripRadius, pommelRadius, hiltLength * 0.35, 24]} />
-        <meshStandardMaterial
-          color="#1e1e26"
-          metalness={0.8}
-          roughness={0.3}
-        />
-      </mesh>
-
-      {/* Grip ridges */}
-      {gripRidges > 0 &&
-        Array.from({ length: gripRidges }).map((_, i) => {
-          const y = hiltLength * 0.15 + (i / (gripRidges - 1 || 1)) * hiltLength * 0.55;
-          return (
-            <mesh key={`ridge-${i}`} position={[0, y, 0]}>
-              <torusGeometry args={[gripRadius + 0.005, 0.008, 8, 24]} />
-              <meshStandardMaterial
-                color="#1a1a22"
-                metalness={0.9}
-                roughness={0.15}
-              />
-            </mesh>
-          );
-        })}
-
-      {/* Emitter shroud */}
-      <mesh position={[0, hiltLength * 0.85, 0]}>
-        <cylinderGeometry args={[emitterRadius + 0.02, emitterRadius, hiltLength * 0.12, 24]} />
-        <meshStandardMaterial
-          color="#555560"
-          metalness={0.9}
-          roughness={0.15}
-        />
-      </mesh>
-
-      {/* Emitter ring */}
-      <mesh position={[0, hiltLength * 0.92, 0]}>
-        <torusGeometry args={[emitterRadius + 0.01, 0.015, 8, 24]} />
-        <meshStandardMaterial
-          color="#6a6a74"
-          metalness={0.95}
-          roughness={0.1}
-        />
-      </mesh>
-
-      {/* Guard ring (if present) */}
-      {guardThickness > 0 && (
-        <mesh position={[0, hiltLength * 0.78, 0]}>
-          <torusGeometry args={[guardDiameter / 2, guardThickness / 2, 8, 24]} />
-          <meshStandardMaterial
-            color="#555560"
-            metalness={0.9}
-            roughness={0.2}
-          />
-        </mesh>
-      )}
-
-      {/* Pommel cap */}
-      <mesh position={[0, -0.02, 0]}>
-        <cylinderGeometry args={[pommelRadius + 0.02, pommelRadius - 0.01, 0.08, 24]} />
-        <meshStandardMaterial
-          color="#3a3a42"
-          metalness={0.85}
-          roughness={0.2}
-        />
-      </mesh>
-
-      {/* Activation button */}
-      <mesh position={[gripRadius + 0.015, hiltLength * 0.55, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.015, 12]} />
-        <meshStandardMaterial
-          color="#cc0000"
-          emissive="#cc0000"
-          emissiveIntensity={0.3}
-          metalness={0.5}
-          roughness={0.4}
-        />
-      </mesh>
-    </group>
-  );
-}
 
 // ─── Blade Mesh ───
 
@@ -287,6 +171,14 @@ function Scene({ hiltGeometry }: SceneProps) {
   const ignitionMs = useBladeStore((s) => s.config.ignitionMs);
   const retractionMs = useBladeStore((s) => s.config.retractionMs);
 
+  // Auto-frame: center the camera on the midpoint of the fully-lit blade+hilt
+  // stack so both the hilt and the tip fit vertically with breathing room.
+  // Stack spans Y = 0 (hilt base) to Y = hiltLength*0.92 + BLADE_FULL_LENGTH (tip).
+  const stackTop = hiltGeometry.hiltLength * 0.92 + BLADE_FULL_LENGTH;
+  const stackBottom = 0;
+  const stackMidY = (stackTop + stackBottom) / 2;
+  const stackHeight = stackTop - stackBottom;
+
   return (
     <>
       {/* Lighting */}
@@ -306,13 +198,13 @@ function Scene({ hiltGeometry }: SceneProps) {
         hiltLength={hiltGeometry.hiltLength}
       />
 
-      {/* Camera controls */}
+      {/* Camera controls — target stack midpoint so full blade fits vertically */}
       <OrbitControls
         makeDefault
         enablePan={false}
-        minDistance={2}
-        maxDistance={12}
-        target={[0, 1.5, 0]}
+        minDistance={stackHeight * 0.6}
+        maxDistance={stackHeight * 3}
+        target={[0, stackMidY, 0]}
         enableDamping
         dampingFactor={0.1}
       />
@@ -340,6 +232,19 @@ interface BladeCanvas3DProps {
 
 export function BladeCanvas3DInner({ className }: BladeCanvas3DProps) {
   const { selectedHilt, selectHilt } = useHiltSelection();
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+
+  // Auto-frame: size camera so the full hilt+blade stack fits vertically.
+  // Stack spans Y=0 → Y=hiltLength*0.92+BLADE_FULL_LENGTH; target the midpoint
+  // and place the camera at a distance that gives ~20% vertical breathing room
+  // at the chosen FOV.
+  const CAMERA_FOV = 40;
+  const stackTop = selectedHilt.hiltLength * 0.92 + BLADE_FULL_LENGTH;
+  const stackMidY = stackTop / 2;
+  const stackHeight = stackTop;
+  const halfFovRad = (CAMERA_FOV / 2) * (Math.PI / 180);
+  // 1.2 factor = 20% breathing room beyond the tip + base.
+  const cameraDistance = (stackHeight * 1.2) / (2 * Math.tan(halfFovRad));
 
   return (
     <div className={`relative w-full h-full flex flex-col ${className ?? ''}`}>
@@ -353,7 +258,16 @@ export function BladeCanvas3DInner({ className }: BladeCanvas3DProps) {
       {/* 3D Canvas */}
       <div className="flex-1 min-h-0">
         <Canvas
-          camera={{ position: [0, 2, 5], fov: 40 }}
+          // key forces a remount when the hilt changes so the initial camera
+          // position is reapplied (Canvas bakes camera props on first mount).
+          key={selectedHilt.id}
+          camera={{ position: [0, stackMidY, cameraDistance], fov: CAMERA_FOV }}
+          // Honor reduced-motion: R3F renders only when invalidated instead
+          // of the default 60fps loop. The blade still draws when state
+          // changes (ignition / retraction / clash) because those call
+          // invalidate() via Scene's setState; it just doesn't spin
+          // continuously. See the 2026-04-19 a11y audit P1.
+          frameloop={reducedMotion ? 'demand' : 'always'}
           gl={{
             antialias: true,
             alpha: true,

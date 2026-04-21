@@ -1,21 +1,18 @@
-import pkg from '../../package.json';
+import { LATEST_VERSION, LATEST_CODENAME, LATEST_DATE } from '@/lib/version';
 
-const VERSION = pkg.version;
-const RELEASE_DATE = '2026-04-17';
-const RELEASE_TITLE = 'Long-tail cleanup';
 const REPO_RELEASES_URL =
-  'https://github.com/kenkoller/KyberStation/releases';
+  'https://github.com/kenkoller/KyberStation/blob/main/CHANGELOG.md';
 
 export function LandingReleaseStrip() {
   return (
     <section className="border-t border-border-subtle py-6">
-      <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="max-w-6xl mx-auto px-6 md:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="dot-matrix tabular-nums flex flex-wrap items-center gap-x-3 gap-y-1 justify-center md:justify-start">
-          <span>v{VERSION}</span>
+          <span>v{LATEST_VERSION}</span>
           <span className="text-text-muted">·</span>
-          <span>{RELEASE_TITLE}</span>
+          <span>{LATEST_CODENAME}</span>
           <span className="text-text-muted">·</span>
-          <span>{RELEASE_DATE}</span>
+          <span>{LATEST_DATE}</span>
         </div>
         <a
           href={REPO_RELEASES_URL}

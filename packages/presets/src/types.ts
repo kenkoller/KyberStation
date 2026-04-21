@@ -33,6 +33,52 @@ export interface PresetMetadata {
   description?: string;
   hiltNotes?: string;
   topologyNotes?: string;
+
+  // ─── Lineage / authorship (VCV Rack library + Outer Wilds lineage) ───
+  //
+  // These fields let the gallery surface *who* made a preset and *what it
+  // descended from*. They are intentionally gallery-only: the Kyber Glyph
+  // encoder (apps/web/lib/sharePack/kyberGlyph.ts) encodes BladeConfig
+  // values, not preset metadata, so lineage never travels through shared
+  // `?s=<glyph>` URLs.
+  //
+  // See: UX North Star §4, docs/NEXT_SESSIONS.md §14.
+
+  /**
+   * Attribution for who authored / curated this preset.
+   *
+   * Conventions:
+   * - `'on-screen'` — canonical character presets drawn from film/TV
+   *   reference (default for the built-in library).
+   * - `'KyberStation'` — creative/community presets shipped with the app.
+   * - A handle / name string — user-contributed presets (community gallery).
+   *
+   * `undefined` means "unknown" and the gallery falls back to the tier label
+   * in the subtitle line.
+   */
+  author?: string;
+
+  /**
+   * Semver-ish version string for tracking preset evolution over time
+   * (e.g. `'1.0'`, `'1.1'`, `'2.0'`). The shape is intentionally loose —
+   * this is a human-readable badge, not a parse target.
+   */
+  version?: string;
+
+  /**
+   * `id` of the preset this one was forked / evolved from. Used by the
+   * gallery to render a "Variant of {parent.name}" lineage tooltip on
+   * hover. Never encoded into shareable glyphs.
+   */
+  parentId?: string;
+
+  /**
+   * Epoch milliseconds when this preset was created. Optional — canonical
+   * character presets omit it; user-saved presets populate it for
+   * "Newest" sorting. Not to be confused with `UserPreset.createdAt`
+   * (IndexedDB-stored user presets), which is always set.
+   */
+  createdAt?: number;
 }
 
 export interface PresetConfig {

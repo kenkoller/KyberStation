@@ -17,6 +17,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'A New Hope — the Graflex inherited from Anakin. Bright ice-blue blade with a slightly warmer white core, as seen on the original Tatooine ignition.',
     hiltNotes: 'Graflex 3-cell flash handle with thin-neck emitter, clamp card, and D-ring.',
@@ -47,6 +48,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Empire Strikes Back — same Graflex saber, but color-graded slightly cooler and more saturated in Cloud City scenes.',
     hiltNotes: 'Graflex, same hilt as ANH. Lost on Cloud City along with hand.',
@@ -76,6 +78,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Return of the Jedi — Luke\'s self-constructed saber. Vivid green blade, the first green lightsaber shown on screen.',
     hiltNotes:
@@ -109,6 +112,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Deep crimson blade with a menacing, slightly pulsing core. Slightly darker red than typical Sith blades, emphasizing the oppressive weight of the Empire.',
     hiltNotes:
@@ -142,6 +146,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'A New Hope — an aged Jedi\'s blade reignited after years in exile. Slightly warmer blue than Luke\'s, with a gentle flicker suggesting the kyber crystal\'s long dormancy.',
     hiltNotes:
@@ -175,6 +180,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Emperor\'s rarely-seen blade — intensely saturated red. Depicted only in the ROTJ novelization and later expanded material for this era, but a canonical Sith weapon nonetheless.',
     hiltNotes:
@@ -208,6 +214,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Leia\'s saber as shown in the TROS flashback training scene set during the OT era. A rich royal blue blade, slightly deeper than Luke\'s.',
     hiltNotes:
@@ -238,6 +245,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Vader\'s blade as seen in the Carbon Freezing Chamber on Cloud City. The pink-red color grading of the ESB duel gives the blade a distinctive warmer hue.',
     hiltNotes: 'Same MPP hilt as ANH. The ESB prop has a slightly different clamp configuration.',

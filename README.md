@@ -33,6 +33,25 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - Xenopixel V2/V3, LGT, Asteria, Darkwolf, DamienSaber
 - Board capability matrices with compatibility scoring per preset
 
+### Flash your saber (WebUSB)
+- One-click firmware flash straight from the browser — no Arduino IDE, no driver dance.
+- Disclaimer-gated on first use; **Dry run** mode walks the protocol without writing a byte.
+- Post-write readback verification catches silent flash corruption.
+
+**Validated hardware / OS / browser combinations:**
+
+| Board | OS | Browser | Status | Notes |
+|---|---|---|---|---|
+| Proffieboard V3.9 (89sabers) | macOS 15 | Brave | ✅ 2026-04-20 | Connect, dry-run, real flash, recovery re-flash all green. |
+| Proffieboard V3.9 | macOS | Chrome / Edge / Arc | 🟡 likely | Same Chromium WebUSB implementation as Brave. Untested but expected to behave identically. |
+| Proffieboard V3.9 | Windows | Chrome / Edge / Brave | 🟡 unverified | Protocol is identical; different WebUSB driver path (WinUSB). |
+| Proffieboard V3.9 | Linux | Chrome / Brave | 🟡 unverified | Requires a one-off udev rule ([docs/WEBUSB_FLASH.md](docs/WEBUSB_FLASH.md#linux-udev-rule)). |
+| Proffieboard V2.2 | any | any Chromium | 🟡 unverified | Different STM32 (L433CC, 256 KiB). Memory-layout parser handles both sizes; not yet hardware-confirmed. |
+| Proffieboard V3 + OLED | any | any Chromium | 🟡 unverified | Same STM32 as V3 standard; firmware bundles differ. |
+| Safari / Firefox | any | — | ❌ unsupported | Neither browser ships WebUSB. Users on those browsers fall back to Arduino IDE + `config.h` export. |
+
+**Help us validate more combinations.** If you flash your saber from KyberStation on hardware / OS / browser we haven't confirmed yet, please file a [hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) — one pass through Connect → Dry-run → Flash is enough.
+
 ### Blade Topologies (8 configurations)
 - Single, Staff, Crossguard, Triple, Quad-Star, Inquisitor Ring, Split Blade, Accent LEDs
 - Per-segment effect scoping, ring rotation, configurable blade lengths (24"–40")

@@ -99,7 +99,7 @@ export function ThemePreviewCard({ theme, isActive, onClick, className }: ThemeP
               top: 4,
               right: 4,
               fontSize: 7,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               lineHeight: 1,

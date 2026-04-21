@@ -22,8 +22,15 @@ import { GestureControlPanel } from '@/components/editor/GestureControlPanel';
 import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { SoundFontPanel } from '@/components/editor/SoundFontPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
+// SmoothSwingPanel is kept as a fallback for persisted layouts that still
+// reference the legacy `smoothswing-config` panel slot. It now renders a
+// "SmoothSwing has moved" notice and a one-click action to add (or
+// select) the SmoothSwing layer in LayerStack — per item #15 of the
+// 2026-04-18 UX overhaul, SmoothSwing lives inside LayerStack as a
+// modulator plate rather than as a sibling panel.
 import { SmoothSwingPanel } from '@/components/editor/SmoothSwingPanel';
-import { PresetGallery } from '@/components/editor/PresetGallery';
+import { PresetGallery, PresetDetail } from '@/components/editor/PresetGallery';
+import { usePresetDetailStore } from '@/stores/presetDetailStore';
 import { CodeOutput } from '@/components/editor/CodeOutput';
 import { PowerDrawPanel } from '@/components/editor/PowerDrawPanel';
 import { StorageBudgetPanel } from '@/components/editor/StorageBudgetPanel';
@@ -35,6 +42,14 @@ import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
 import { ComparisonView } from '@/components/editor/ComparisonView';
 import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
+// CrystalPanel stays statically imported — the Three.js payload is
+// already dynamic inside the panel (apps/web/components/editor/CrystalPanel.tsx
+// wraps `KyberCrystal` via next/dynamic), which carries the real perf
+// cost. A second-level dynamic() wrapper here caused a ChunkLoadError
+// under Turbopack HMR (`_next/undefined` chunk URL), so we keep the
+// static import for stability and revisit the named-export dynamic
+// pattern in a follow-up. Originally flagged in the 2026-04-19 perf
+// audit §2.
 import { CrystalPanel } from '@/components/editor/CrystalPanel';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
@@ -60,6 +75,34 @@ function FontPreviewPlaceholder() {
       <span className="text-ui-xs text-text-muted/50">Select a font from the library to preview</span>
     </div>
   );
+}
+
+// ─── Preset Detail standalone panel ───────────────────────────────────────────
+
+/**
+ * Standalone workbench-slot panel for the preset-detail view. Reads the
+ * currently-selected preset from `presetDetailStore` — the same store the
+ * PresetGallery writes to when a user clicks a preset tile — so docking
+ * this panel anywhere in the layout keeps it in sync with gallery
+ * selection automatically. Shows a useful empty state when no preset is
+ * currently selected.
+ */
+function PresetDetailPanelConnected() {
+  const detailPreset = usePresetDetailStore((s) => s.detailPreset);
+  const clearDetailPreset = usePresetDetailStore((s) => s.clearDetailPreset);
+
+  if (!detailPreset) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
+        <span className="text-ui-sm text-text-muted font-mono">No preset selected</span>
+        <span className="text-ui-xs text-text-muted/60">
+          Open the Gallery and click a preset tile to view its details here.
+        </span>
+      </div>
+    );
+  }
+
+  return <PresetDetail preset={detailPreset} onClose={clearDetailPreset} />;
 }
 
 // ─── ThemePickerPanel wrapper (needs store-bound props) ───────────────────────
@@ -269,6 +312,16 @@ function EffectPresetsPanel() {
  * that panel.  This is passed to ColumnGrid as the renderPanel prop.
  */
 function renderPanel(panelId: string): React.ReactNode {
+  // Legacy alias: 'smoothswing-config' is a panel slot from before the
+  // 2026-04-18 UX overhaul. Persisted layouts on returning users' machines
+  // may still reference it, so we route it to SmoothSwingPanel (which now
+  // renders a "SmoothSwing has moved \u2014 add a plate in LayerStack" notice)
+  // rather than letting it fall through to ComingSoon. Users can drop the
+  // panel from their column at that point.
+  if (panelId === 'smoothswing-config') {
+    return <SmoothSwingPanel />;
+  }
+
   switch (panelId as PanelId) {
     // ── Design ──
     case 'style-select':
@@ -319,8 +372,6 @@ function renderPanel(panelId: string): React.ReactNode {
       return <AudioPanel />;
     case 'effect-presets':
       return <EffectPresetsPanel />;
-    case 'smoothswing-config':
-      return <SmoothSwingPanel />;
 
     // ── Gallery ──
     case 'gallery-browser':
@@ -336,8 +387,9 @@ function renderPanel(panelId: string): React.ReactNode {
       // Legacy slot — redirects to the unified gallery on the community tab
       return <PresetGallery initialTab="community" />;
     case 'preset-detail':
-      // Future: detail view for a selected preset with full metadata + variations
-      return <ComingSoon label="Preset Detail" />;
+      // Reads selected preset from presetDetailStore — stays in sync with
+      // any click-to-select action inside PresetGallery automatically.
+      return <PresetDetailPanelConnected />;
 
     // ── Output ──
     case 'output-workflow':

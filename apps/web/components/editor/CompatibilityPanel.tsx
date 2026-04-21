@@ -97,24 +97,33 @@ const FEATURES: FeatureRow[] = [
 ];
 
 const TIER_LABELS: Record<number, string> = { 1: 'Pro', 2: 'Mid', 3: 'Budget' };
-const TIER_COLORS: Record<number, string> = {
-  1: 'text-accent',
-  2: 'text-yellow-400',
-  3: 'text-text-muted',
+const TIER_TOKEN: Record<number, string> = {
+  1: '--accent',
+  2: '--status-warn',
+  3: '--text-muted',
+};
+
+const SUPPORT_TOKEN: Record<Support, string> = {
+  full: '--status-ok',
+  partial: '--status-warn',
+  none: '--status-error',
 };
 
 function SupportBadge({ support }: { support: Support }) {
-  const styles = {
-    full: 'bg-green-900/30 text-green-400 border-green-800/30',
-    partial: 'bg-yellow-900/30 text-yellow-400 border-yellow-800/30',
-    none: 'bg-red-900/20 text-red-400/60 border-red-800/20',
-  };
   const labels = { full: '●', partial: '◐', none: '○' };
   const ariaLabels = { full: 'Full support', partial: 'Partial support', none: 'No support' };
+  const token = SUPPORT_TOKEN[support];
+  const opacity = support === 'none' ? 0.6 : 1;
 
   return (
     <span
-      className={`inline-flex items-center justify-center w-5 h-5 rounded text-ui-sm border ${styles[support]}`}
+      className="inline-flex items-center justify-center w-5 h-5 rounded text-ui-sm border"
+      style={{
+        color: `rgb(var(${token}))`,
+        background: `rgb(var(${token}) / ${support === 'none' ? 0.08 : 0.2})`,
+        borderColor: `rgb(var(${token}) / ${support === 'none' ? 0.2 : 0.35})`,
+        opacity,
+      }}
       aria-label={ariaLabels[support]}
       role="img"
     >
@@ -187,7 +196,12 @@ export function CompatibilityPanel() {
               {filteredBoards.map((b) => (
                 <th key={b.id} scope="col" className="text-center px-1 py-1.5 text-text-muted font-normal whitespace-nowrap">
                   <div>{b.label}</div>
-                  <div className={`text-ui-xs ${TIER_COLORS[b.tier]}`}>{TIER_LABELS[b.tier]}</div>
+                  <div
+                    className="text-ui-xs"
+                    style={{ color: `rgb(var(${TIER_TOKEN[b.tier]}))` }}
+                  >
+                    {TIER_LABELS[b.tier]}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -209,15 +223,15 @@ export function CompatibilityPanel() {
 
       <div className="flex gap-4 text-ui-xs text-text-muted">
         <span className="flex items-center gap-1">
-          <span className="text-green-400" aria-hidden="true">●</span>
+          <span aria-hidden="true" style={{ color: 'rgb(var(--status-ok))' }}>●</span>
           <span>Full</span>
         </span>
         <span className="flex items-center gap-1">
-          <span className="text-yellow-400" aria-hidden="true">◐</span>
+          <span aria-hidden="true" style={{ color: 'rgb(var(--status-warn))' }}>◐</span>
           <span>Partial</span>
         </span>
         <span className="flex items-center gap-1">
-          <span className="text-red-400/60" aria-hidden="true">○</span>
+          <span aria-hidden="true" style={{ color: 'rgb(var(--status-error) / 0.6)' }}>○</span>
           <span>None</span>
         </span>
       </div>

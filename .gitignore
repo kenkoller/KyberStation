@@ -43,6 +43,14 @@ KyberStation.iconset/
 .icon-tmp/
 KyberStation-icon.svg
 
+# Global ~/.gitignore_global on macOS may carry an `Icon?` rule (Finder's
+# Icon\r metadata file). On case-insensitive filesystems it incidentally
+# matches both the `icons` directory and real PWA icon files like
+# icon-192.png. Explicit negations below keep the manifest-referenced
+# icons tracked regardless of the user's global ignore config.
+!apps/web/public/icons/
+!apps/web/public/icons/*.png
+
 # Personal data / external source
 89sabers sdcard OG/
 ProffieOS/

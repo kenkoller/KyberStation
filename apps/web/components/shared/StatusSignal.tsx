@@ -19,14 +19,16 @@
 import type { Affiliation, Era } from '@kyberstation/presets';
 
 /**
- * Six semantic status states with paired glyph + color token.
+ * Eight semantic status states with paired glyph + color token.
  *
- *   idle    — ● (filled circle)         — text-muted (neutral presence)
- *   active  — ◉ (bullseye)              — accent      (live / selected)
- *   success — ✓ (check)                 — status-ok   (all good)
- *   warning — ▲ (triangle)              — badge-creative (amber caution)
- *   alert   — ⚠ (warning sign)          — status-warn (loud caution)
- *   error   — ✕ (cross)                 — status-error (failure)
+ *   idle       — ● (filled circle)   — text-muted      (neutral presence)
+ *   active     — ◉ (bullseye)        — accent          (live / selected)
+ *   success    — ✓ (check)           — status-ok       (all good)
+ *   warning    — ▲ (triangle)        — badge-creative  (amber caution)
+ *   alert      — ⚠ (warning sign)    — status-warn     (loud caution)
+ *   error      — ✕ (cross)           — status-error    (failure)
+ *   modulation — ◆ (filled diamond)  — status-magenta  (modulation / routing identity)
+ *   data       — · (middle dot)      — status-white    (neutral data readout)
  */
 export type StatusVariant =
   | 'idle'
@@ -34,7 +36,9 @@ export type StatusVariant =
   | 'success'
   | 'warning'
   | 'alert'
-  | 'error';
+  | 'error'
+  | 'modulation'
+  | 'data';
 
 export type StatusSize = 'sm' | 'md';
 
@@ -46,12 +50,14 @@ interface GlyphSpec {
 }
 
 const STATUS_GLYPHS: Record<StatusVariant, GlyphSpec> = {
-  idle:    { glyph: '\u25CF', color: 'rgb(var(--text-muted))' },        // ●
-  active:  { glyph: '\u25C9', color: 'rgb(var(--accent))' },            // ◉
-  success: { glyph: '\u2713', color: 'rgb(var(--status-ok))' },         // ✓
-  warning: { glyph: '\u25B2', color: 'rgb(var(--badge-creative))' },    // ▲
-  alert:   { glyph: '\u26A0', color: 'rgb(var(--status-warn))' },       // ⚠
-  error:   { glyph: '\u2715', color: 'rgb(var(--status-error))' },      // ✕
+  idle:       { glyph: '\u25CF', color: 'rgb(var(--text-muted))' },      // ●
+  active:     { glyph: '\u25C9', color: 'rgb(var(--accent))' },          // ◉
+  success:    { glyph: '\u2713', color: 'rgb(var(--status-ok))' },       // ✓
+  warning:    { glyph: '\u25B2', color: 'rgb(var(--badge-creative))' },  // ▲
+  alert:      { glyph: '\u26A0', color: 'rgb(var(--status-warn))' },     // ⚠
+  error:      { glyph: '\u2715', color: 'rgb(var(--status-error))' },    // ✕
+  modulation: { glyph: '\u25C6', color: 'rgb(var(--status-magenta))' },  // ◆
+  data:       { glyph: '\u00B7', color: 'rgb(var(--status-white))' },    // ·
 };
 
 const SIZE_TO_FONT_SIZE: Record<StatusSize, string> = {
@@ -92,8 +98,8 @@ export interface StatusSignalProps {
  *   <StatusSignal variant="active" compact label="Connected" />
  *
  * Uses CSS custom-property color tokens only — never hardcoded hex.
- * Glyph font is IBM Plex Mono (already in the app stack) so the shapes
- * align visually with the rest of the telemetry numerics.
+ * Glyph font is JetBrains Mono (already in the app stack via next/font) so
+ * the shapes align visually with the rest of the telemetry numerics.
  */
 export function StatusSignal({
   variant,
@@ -124,7 +130,7 @@ export function StatusSignal({
         aria-label={!glyphIsDecorative && label && showText ? label : undefined}
         style={{
           color,
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
           // Slight optical adjustment — these unicode glyphs render a hair
           // lower than the baseline text they sit next to.
           lineHeight: 1,
@@ -198,7 +204,7 @@ export function EraBadge({
         aria-hidden={!ariaLabel ? true : undefined}
         style={{
           color,
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
           lineHeight: 1,
         }}
       >
@@ -244,7 +250,7 @@ export function FactionBadge({
         aria-hidden={!ariaLabel ? true : undefined}
         style={{
           color,
-          fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
+          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace",
           lineHeight: 1,
         }}
       >

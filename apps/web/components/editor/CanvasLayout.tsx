@@ -72,7 +72,13 @@ export function CanvasLayout({ engineRef }: CanvasLayoutProps) {
             </button>
           </PanelHeader>
           <div className="flex-1 min-h-0 overflow-hidden">
-            <BladeCanvas engineRef={engineRef} vertical={false} renderMode="photorealistic" panelMode />
+            {/* `compact` selects the 240-tall design-space layout (bladeY=60)
+                which is sized for small panel renders. Without it, the default
+                600-tall design space scales the blade core down to ~5px of
+                visible thickness in a ~115px tall panel — effectively invisible.
+                Compact pairs naturally with `panelMode` and was added 2026-04-20
+                during the editor walkthrough. */}
+            <BladeCanvas engineRef={engineRef} vertical={false} renderMode="photorealistic" panelMode compact />
           </div>
         </div>
       )}

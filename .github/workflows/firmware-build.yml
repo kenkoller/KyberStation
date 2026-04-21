@@ -53,7 +53,7 @@ jobs:
         with:
           repository: profezzorn/ProffieOS
           ref: ${{ inputs.proffieos_ref || 'master' }}
-          path: proffieos
+          path: ProffieOS
 
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v2
@@ -67,14 +67,14 @@ jobs:
 
       - name: Stage build config
         run: |
-          cp firmware-configs/${{ matrix.variant.config }} proffieos/config/config.h
+          cp firmware-configs/${{ matrix.variant.config }} ProffieOS/config/config.h
 
       - name: Compile
         run: |
           arduino-cli compile \
             --fqbn "${{ matrix.variant.fqbn }}" \
             --output-dir build/${{ matrix.variant.id }} \
-            proffieos
+            ProffieOS
 
       - name: Rename binary
         run: |

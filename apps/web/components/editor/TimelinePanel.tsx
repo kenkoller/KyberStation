@@ -91,6 +91,8 @@ function formatTime(seconds: number): string {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
+type TimelineView = 'timeline' | 'cuelist';
+
 export function TimelinePanel() {
   /* ----- store ----- */
   const events = useTimelineStore((s) => s.events);
@@ -105,6 +107,7 @@ export function TimelinePanel() {
   const updateEventDuration = useTimelineStore((s) => s.updateEventDuration);
   const updateEventEasing = useTimelineStore((s) => s.updateEventEasing);
   const updateEventIntensity = useTimelineStore((s) => s.updateEventIntensity);
+  const updateEventLabel = useTimelineStore((s) => s.updateEventLabel);
   const setDuration = useTimelineStore((s) => s.setDuration);
   const setPlaying = useTimelineStore((s) => s.setPlaying);
   const setCurrentTime = useTimelineStore((s) => s.setCurrentTime);
@@ -113,6 +116,7 @@ export function TimelinePanel() {
   const clearAll = useTimelineStore((s) => s.clearAll);
 
   /* ----- local UI state ----- */
+  const [view, setView] = useState<TimelineView>('timeline');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addMenuPos, setAddMenuPos] = useState<{ x: number; y: number; time: number } | null>(null);
   const [dragging, setDragging] = useState<{
@@ -298,13 +302,48 @@ export function TimelinePanel() {
   /* ----- render ----- */
   return (
     <div className="space-y-3">
-      {/* Header: title + duration */}
-      <div className="flex items-center justify-between">
+      {/* Header: title + view toggle + duration */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
           Effect Sequencer
           <HelpTooltip text="Choreograph a timed sequence of blade effects (clash, blast, lockup, etc.) for demo playback. Place events on the timeline, press Play, and watch them fire on the blade preview in real time. Great for rehearsing choreography or recording demo videos. Click the track to add events, drag to reposition, resize from the right edge." />
         </h3>
         <div className="flex items-center gap-2">
+          {/* View toggle: Timeline / Cue List (ETC Eos register per UX North Star §4) */}
+          <div
+            role="tablist"
+            aria-label="Timeline view mode"
+            className="inline-flex rounded border border-border-subtle bg-bg-deep overflow-hidden"
+          >
+            <button
+              role="tab"
+              type="button"
+              aria-selected={view === 'timeline'}
+              onClick={() => setView('timeline')}
+              className={`touch-target px-2 py-0.5 text-ui-sm transition-colors ${
+                view === 'timeline'
+                  ? 'bg-accent-dim text-accent'
+                  : 'text-text-muted hover:text-text-secondary'
+              }`}
+              title="Horizontal timeline view"
+            >
+              Timeline
+            </button>
+            <button
+              role="tab"
+              type="button"
+              aria-selected={view === 'cuelist'}
+              onClick={() => setView('cuelist')}
+              className={`touch-target px-2 py-0.5 text-ui-sm transition-colors border-l border-border-subtle ${
+                view === 'cuelist'
+                  ? 'bg-accent-dim text-accent'
+                  : 'text-text-muted hover:text-text-secondary'
+              }`}
+              title="Tabular cue list (ETC Eos style)"
+            >
+              Cue List
+            </button>
+          </div>
           <label htmlFor="timeline-duration" className="text-ui-sm text-text-muted">Duration</label>
           <input
             id="timeline-duration"
@@ -317,7 +356,7 @@ export function TimelinePanel() {
               const d = clamp(Number(e.target.value), 1, 60);
               setDuration(d);
             }}
-            className="touch-target w-14 px-1.5 py-0.5 rounded bg-bg-deep border border-border-subtle text-text-primary text-ui-base text-center outline-none focus:border-accent-border"
+            className="touch-target w-14 px-1.5 py-0.5 rounded bg-bg-deep border border-border-subtle text-text-primary text-ui-base text-center outline-none focus:border-accent-border font-mono"
           />
           <span className="text-ui-sm text-text-muted">s</span>
         </div>
@@ -410,11 +449,12 @@ export function TimelinePanel() {
         )}
       </div>
 
-      {/* Timeline track area — scrollable */}
+      {/* Timeline track area — scrollable. Hidden (not unmounted) when in cue-list view
+          so drag/resize handlers + playhead auto-scroll refs stay valid between toggles. */}
       <div
         ref={scrollContainerRef}
         className="overflow-x-auto overflow-y-hidden rounded border border-border-subtle bg-bg-deep"
-        style={{ maxHeight: '200px' }}
+        style={{ maxHeight: '200px', display: view === 'timeline' ? 'block' : 'none' }}
       >
         <div
           className="relative select-none"
@@ -601,6 +641,20 @@ export function TimelinePanel() {
           </div>
         </div>
       </div>
+
+      {/* Cue list view — ETC Eos register per UX North Star §4 */}
+      {view === 'cuelist' && (
+        <CueListView
+          selectedId={selectedId}
+          setSelectedId={setSelectedId}
+          updateEventDuration={updateEventDuration}
+          updateEventLabel={updateEventLabel}
+          moveEvent={moveEvent}
+          removeEvent={removeEvent}
+          setCurrentTime={setCurrentTime}
+          duration={duration}
+        />
+      )}
 
       {/* Add-effect dropdown */}
       {addMenuPos && (
@@ -868,3 +922,453 @@ function TemplatePalette() {
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Cue List View — ETC Eos tabular register                          */
+/*                                                                    */
+/*  Sorting: click a column header to sort by that column. Clicking   */
+/*  the same column twice flips asc/desc. Default is time ascending.  */
+/*  Inline editing: time, duration, notes are editable cells — click  */
+/*  (or press Enter while row is focused) to edit, Enter to commit,   */
+/*  Escape to cancel.                                                 */
+/*  Keyboard nav: Up/Down moves focus between rows; Enter on a row    */
+/*  edits the time cell; Escape clears selection.                     */
+/*                                                                    */
+/*  Reads from the SAME useTimelineStore — no data duplication.       */
+/* ------------------------------------------------------------------ */
+
+type CueListSortKey = 'cue' | 'time' | 'type' | 'duration';
+type CueListSortDir = 'asc' | 'desc';
+
+interface CueListViewProps {
+  selectedId: string | null;
+  setSelectedId: (id: string | null) => void;
+  updateEventDuration: (id: string, d: number) => void;
+  updateEventLabel: (id: string, label: string) => void;
+  moveEvent: (id: string, t: number) => void;
+  removeEvent: (id: string) => void;
+  setCurrentTime: (t: number) => void;
+  duration: number;
+}
+
+interface CueRow {
+  cueNum: number;   // 1-based index in time-sorted order (stable across sort key)
+  event: import('@/stores/timelineStore').TimelineEvent;
+}
+
+/** Parse "MM:SS.ms" or a plain seconds-number string into seconds. Returns null on parse fail. */
+function parseTimeString(raw: string): number | null {
+  const s = raw.trim();
+  if (s.length === 0) return null;
+  // MM:SS.ms or MM:SS form
+  const mmss = s.match(/^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (mmss) {
+    const m = Number(mmss[1]);
+    const sec = Number(mmss[2]);
+    if (!Number.isFinite(m) || !Number.isFinite(sec)) return null;
+    return m * 60 + sec;
+  }
+  // Plain seconds
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+function CueListView({
+  selectedId,
+  setSelectedId,
+  updateEventDuration,
+  updateEventLabel,
+  moveEvent,
+  removeEvent,
+  setCurrentTime,
+  duration,
+}: CueListViewProps) {
+  const events = useTimelineStore((s) => s.events);
+
+  const [sortKey, setSortKey] = useState<CueListSortKey>('time');
+  const [sortDir, setSortDir] = useState<CueListSortDir>('asc');
+
+  // Editing state: which cell is being edited? (eventId + column)
+  const [editing, setEditing] = useState<{
+    id: string;
+    col: 'time' | 'duration' | 'notes';
+    draft: string;
+  } | null>(null);
+
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+
+  /* ----- Derive rows: cue-number assigned in time-ASC order (stable),
+          then re-ordered per the active sort key. ----- */
+  const rows: CueRow[] = (() => {
+    const byTimeAsc = [...events].sort((a, b) => a.startTime - b.startTime);
+    const cueNums = new Map<string, number>();
+    byTimeAsc.forEach((e, i) => cueNums.set(e.id, i + 1));
+
+    const sorted = [...events].sort((a, b) => {
+      let delta = 0;
+      switch (sortKey) {
+        case 'cue':
+          delta = (cueNums.get(a.id) ?? 0) - (cueNums.get(b.id) ?? 0);
+          break;
+        case 'time':
+          delta = a.startTime - b.startTime;
+          break;
+        case 'type':
+          delta = a.type.localeCompare(b.type);
+          break;
+        case 'duration':
+          delta = a.eventDuration - b.eventDuration;
+          break;
+      }
+      return sortDir === 'asc' ? delta : -delta;
+    });
+
+    return sorted.map((e) => ({ cueNum: cueNums.get(e.id) ?? 0, event: e }));
+  })();
+
+  const onHeaderClick = (key: CueListSortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const beginEdit = useCallback(
+    (id: string, col: 'time' | 'duration' | 'notes', initial: string) => {
+      setEditing({ id, col, draft: initial });
+    },
+    [],
+  );
+
+  const commitEdit = useCallback(() => {
+    if (!editing) return;
+    const { id, col, draft } = editing;
+    if (col === 'time') {
+      const parsed = parseTimeString(draft);
+      if (parsed !== null) {
+        moveEvent(id, clamp(parsed, 0, duration));
+      }
+    } else if (col === 'duration') {
+      const n = Number(draft);
+      if (Number.isFinite(n)) {
+        updateEventDuration(id, Math.max(0, n));
+      }
+    } else if (col === 'notes') {
+      updateEventLabel(id, draft);
+    }
+    setEditing(null);
+  }, [editing, moveEvent, updateEventDuration, updateEventLabel, duration]);
+
+  const cancelEdit = useCallback(() => setEditing(null), []);
+
+  /* ----- Keyboard navigation across rows ----- */
+  const handleRowKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTableRowElement>, id: string) => {
+      if (editing) return; // edit input handles its own keys
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const idx = rows.findIndex((r) => r.event.id === id);
+        if (idx < 0) return;
+        const next =
+          e.key === 'ArrowDown'
+            ? Math.min(rows.length - 1, idx + 1)
+            : Math.max(0, idx - 1);
+        const nextId = rows[next]?.event.id;
+        if (nextId) {
+          setSelectedId(nextId);
+          rowRefs.current[nextId]?.focus();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const row = rows.find((r) => r.event.id === id);
+        if (!row) return;
+        beginEdit(id, 'time', row.event.startTime.toFixed(3));
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedId(null);
+        (e.currentTarget as HTMLElement).blur();
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        removeEvent(id);
+        if (selectedId === id) setSelectedId(null);
+      }
+    },
+    [editing, rows, setSelectedId, beginEdit, removeEvent, selectedId],
+  );
+
+  /* ----- Sort indicator glyph. Uses the same visual alphabet (▲/▼) as
+          the StatusSignal primitives. ----- */
+  const sortGlyph = (key: CueListSortKey) => {
+    if (sortKey !== key) return '';
+    return sortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+  };
+
+  const HEAD_CELL =
+    'px-2 py-1 text-left text-ui-xs text-text-muted uppercase tracking-wider font-semibold cursor-pointer hover:text-text-secondary select-none whitespace-nowrap';
+  const BODY_CELL = 'px-2 py-1 text-ui-sm text-text-primary';
+  const NUMERIC_CELL = `${BODY_CELL} font-mono tabular-nums whitespace-nowrap`;
+
+  if (events.length === 0) {
+    return (
+      <div className="rounded border border-border-subtle bg-bg-deep p-6 flex flex-col items-center justify-center gap-1.5">
+        <span className="text-ui-sm text-text-muted/60 font-medium">No cues yet</span>
+        <span className="text-ui-xs text-text-muted/40 text-center max-w-[360px] leading-relaxed">
+          Switch to Timeline view and click the track to place a cue, or expand
+          Animation Templates below to drop a preset combo.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded border border-border-subtle bg-bg-deep overflow-auto"
+      style={{ maxHeight: '320px' }}
+      role="region"
+      aria-label="Cue list"
+    >
+      <table className="w-full border-collapse">
+        <thead className="sticky top-0 bg-bg-deep border-b border-border-subtle z-10">
+          <tr>
+            <th
+              scope="col"
+              className={`${HEAD_CELL} w-10`}
+              onClick={() => onHeaderClick('cue')}
+              aria-sort={sortKey === 'cue' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              #{sortGlyph('cue')}
+            </th>
+            <th
+              scope="col"
+              className={`${HEAD_CELL} w-[110px]`}
+              onClick={() => onHeaderClick('time')}
+              aria-sort={sortKey === 'time' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              Time{sortGlyph('time')}
+            </th>
+            <th
+              scope="col"
+              className={HEAD_CELL}
+              onClick={() => onHeaderClick('type')}
+              aria-sort={sortKey === 'type' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              Event{sortGlyph('type')}
+            </th>
+            <th scope="col" className={`${HEAD_CELL} w-16 cursor-default hover:text-text-muted`}>
+              Color
+            </th>
+            <th
+              scope="col"
+              className={`${HEAD_CELL} w-[90px]`}
+              onClick={() => onHeaderClick('duration')}
+              aria-sort={sortKey === 'duration' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              Dur{sortGlyph('duration')}
+            </th>
+            <th scope="col" className={`${HEAD_CELL} cursor-default hover:text-text-muted`}>
+              Notes
+            </th>
+            <th scope="col" className={`${HEAD_CELL} w-8 cursor-default hover:text-text-muted`} aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ cueNum, event: evt }) => {
+            const color = EVENT_COLORS[evt.type];
+            const isSelected = selectedId === evt.id;
+            const isInstant = evt.type === 'ignite' || evt.type === 'retract';
+
+            const timeEditing = editing?.id === evt.id && editing.col === 'time';
+            const durationEditing = editing?.id === evt.id && editing.col === 'duration';
+            const notesEditing = editing?.id === evt.id && editing.col === 'notes';
+
+            return (
+              <tr
+                key={evt.id}
+                ref={(el) => {
+                  rowRefs.current[evt.id] = el;
+                }}
+                tabIndex={0}
+                role="row"
+                aria-selected={isSelected}
+                data-testid="cuelist-row"
+                data-cue-num={cueNum}
+                className={`border-b border-border-subtle/40 outline-none ${
+                  isSelected
+                    ? 'bg-accent-dim/40'
+                    : 'hover:bg-bg-surface/40 focus:bg-bg-surface/60'
+                }`}
+                onClick={() => {
+                  setSelectedId(evt.id);
+                  setCurrentTime(evt.startTime);
+                }}
+                onKeyDown={(e) => handleRowKeyDown(e, evt.id)}
+              >
+                {/* Cue # */}
+                <td className={NUMERIC_CELL}>
+                  <span className="text-text-muted">{String(cueNum).padStart(3, '0')}</span>
+                </td>
+
+                {/* Time — inline-editable */}
+                <td className={NUMERIC_CELL}>
+                  {timeEditing ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editing!.draft}
+                      onChange={(e) =>
+                        setEditing((s) => (s ? { ...s, draft: e.target.value } : s))
+                      }
+                      onBlur={commitEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+                        else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+                      }}
+                      className="w-full bg-bg-surface border border-accent-border rounded px-1 py-0.5 font-mono tabular-nums text-ui-sm outline-none"
+                      aria-label={`Edit time for cue ${cueNum}`}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="w-full text-left hover:text-accent transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedId(evt.id);
+                        beginEdit(evt.id, 'time', evt.startTime.toFixed(3));
+                      }}
+                      title="Click to edit — accepts MM:SS.ms or plain seconds"
+                    >
+                      {formatTime(evt.startTime)}
+                    </button>
+                  )}
+                </td>
+
+                {/* Event type */}
+                <td className={BODY_CELL}>
+                  <span style={{ color }} className="font-semibold">
+                    {EVENT_LABELS[evt.type]}
+                  </span>
+                </td>
+
+                {/* Color swatch + hex (JetBrains Mono hex per §6 data-typography) */}
+                <td className={BODY_CELL}>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-3 h-3 rounded-sm border border-border-subtle shrink-0"
+                      style={{ backgroundColor: color }}
+                      aria-hidden="true"
+                    />
+                    <span className="font-mono text-ui-xs text-text-muted">{color.toUpperCase()}</span>
+                  </div>
+                </td>
+
+                {/* Duration — inline-editable */}
+                <td className={NUMERIC_CELL}>
+                  {durationEditing ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editing!.draft}
+                      onChange={(e) =>
+                        setEditing((s) => (s ? { ...s, draft: e.target.value } : s))
+                      }
+                      onBlur={commitEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+                        else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+                      }}
+                      className="w-full bg-bg-surface border border-accent-border rounded px-1 py-0.5 font-mono tabular-nums text-ui-sm outline-none disabled:opacity-40"
+                      aria-label={`Edit duration for cue ${cueNum}`}
+                      disabled={isInstant}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={isInstant}
+                      className="w-full text-left hover:text-accent transition-colors disabled:opacity-40 disabled:hover:text-text-primary disabled:cursor-default"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isInstant) return;
+                        setSelectedId(evt.id);
+                        beginEdit(evt.id, 'duration', evt.eventDuration.toFixed(2));
+                      }}
+                      title={isInstant ? 'Instant trigger' : 'Click to edit duration in seconds'}
+                    >
+                      {isInstant ? '—' : `${evt.eventDuration.toFixed(2)}s`}
+                    </button>
+                  )}
+                </td>
+
+                {/* Notes — inline-editable text */}
+                <td className={BODY_CELL}>
+                  {notesEditing ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editing!.draft}
+                      onChange={(e) =>
+                        setEditing((s) => (s ? { ...s, draft: e.target.value } : s))
+                      }
+                      onBlur={commitEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+                        else if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
+                      }}
+                      className="w-full bg-bg-surface border border-accent-border rounded px-1 py-0.5 text-ui-sm outline-none"
+                      aria-label={`Edit notes for cue ${cueNum}`}
+                      placeholder="Add a note"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="w-full text-left hover:text-accent transition-colors text-text-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedId(evt.id);
+                        beginEdit(evt.id, 'notes', evt.label ?? '');
+                      }}
+                      title="Click to add a note"
+                    >
+                      {evt.label ? evt.label : <span className="text-text-muted/50 italic">add note</span>}
+                    </button>
+                  )}
+                </td>
+
+                {/* Row actions */}
+                <td className={`${BODY_CELL} text-right`}>
+                  <button
+                    type="button"
+                    className="touch-target inline-flex items-center justify-center w-5 h-5 rounded text-text-muted hover:text-red-400 hover:border-red-500 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeEvent(evt.id);
+                      if (selectedId === evt.id) setSelectedId(null);
+                    }}
+                    title="Remove cue"
+                    aria-label={`Remove cue ${cueNum}`}
+                  >
+                    <svg width="8" height="8" viewBox="0 0 6 6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M1 1l4 4M5 1l-4 4" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div className="px-2 py-1 text-ui-xs text-text-muted border-t border-border-subtle/40 bg-bg-deep/50">
+        {rows.length} cue{rows.length !== 1 ? 's' : ''} &middot; arrow keys navigate, Enter edits, Esc cancels
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Exported helpers (for tests)                                       */
+/* ------------------------------------------------------------------ */
+
+export { formatTime as __formatTimeForTest, parseTimeString as __parseTimeStringForTest };

@@ -6,17 +6,20 @@ interface ValueCellProps {
 
 function ValueCell({ index, title, detail }: ValueCellProps) {
   return (
-    <div className="relative pl-6 md:pl-0">
+    <div
+      className="relative pl-4 lg:pl-0 lg:border-l-0 border-l"
+      style={{ borderLeftColor: 'rgb(var(--accent) / 0.25)' }}
+    >
       <div
-        className="font-mono text-xs tracking-widest mb-3 tabular-nums"
+        className="font-mono text-xs tracking-widest mb-4 tabular-nums"
         style={{ color: 'rgb(var(--accent) / 0.7)' }}
       >
         {index}
       </div>
-      <h2 className="font-cinematic text-lg tracking-[0.2em] text-text-primary mb-3 uppercase">
+      <h2 className="font-sans text-base tracking-[0.12em] font-semibold text-text-primary mb-3 uppercase">
         {title}
       </h2>
-      <p className="text-sm md:text-[15px] text-text-secondary leading-relaxed">
+      <p className="font-sans text-[15px] text-text-secondary leading-relaxed">
         {detail}
       </p>
     </div>
@@ -26,7 +29,7 @@ function ValueCell({ index, title, detail }: ValueCellProps) {
 export function LandingValueStrip() {
   return (
     <section className="relative border-t border-border-subtle py-16 md:py-24">
-      <div className="max-w-6xl mx-auto px-6 md:px-8 grid md:grid-cols-3 gap-10 md:gap-16">
+      <div className="max-w-6xl mx-auto px-6 md:px-8 grid lg:grid-cols-3 gap-10 lg:gap-16">
         <ValueCell
           index="01 / DESIGN"
           title="WYSIWYG, not config editing"

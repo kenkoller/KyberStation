@@ -9,7 +9,6 @@ const nextConfig = {
     '@kyberstation/codegen',
     '@kyberstation/presets',
     '@kyberstation/sound',
-    '@kyberstation/boards',
   ],
   images: {
     unoptimized: true,

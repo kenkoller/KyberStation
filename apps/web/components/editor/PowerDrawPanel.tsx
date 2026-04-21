@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { RadialGauge } from '@/components/shared/RadialGauge';
 
 // ─── Power Constants ───
 
@@ -98,10 +99,13 @@ export function PowerDrawPanel() {
     };
   }, [ledCount, stripType, stripCount, baseColor, briScale, batteryIdx]);
 
-  // Visual intensity — how full is the power gauge
-  const gaugePercent = Math.min(100, (stats.colorMA / BOARD_MAX_MA) * 100);
-  const gaugeColor = gaugePercent > 80 ? 'bg-red-500' : gaugePercent > 50 ? 'bg-yellow-500' : 'bg-green-500';
-  const gaugeTextColor = gaugePercent > 80 ? 'text-red-400' : gaugePercent > 50 ? 'text-yellow-400' : 'text-green-400';
+  // Convert mA → A for the radial gauge. The existing warn/critical
+  // boundaries (50% / 80% of the 5A board max) translate to 2.5A / 4A
+  // thresholds on the amp scale, so behaviour matches the old bar gauge.
+  const drawAmps = stats.colorMA / 1000;
+  const budgetAmps = BOARD_MAX_MA / 1000;
+  const warnAmps = budgetAmps * 0.50;
+  const criticalAmps = budgetAmps * 0.80;
 
   return (
     <div className="space-y-3">
@@ -110,30 +114,27 @@ export function PowerDrawPanel() {
         <HelpTooltip text="Estimated LED power consumption based on your blade configuration, current color, and brightness. WS2812B LEDs draw up to 60mA per LED at full white. Proffieboard V3.9 supports up to 5A continuous. See also: Blade Hardware panel for LED count and strip config." proffie="maxLedsPerStrip / PowerPINS<>" />
       </h3>
 
-      {/* Main power gauge */}
-      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-2">
-        <div className="flex items-baseline justify-between">
-          <span className="text-ui-sm text-text-secondary">Current Draw</span>
-          <span className={`text-lg font-bold font-mono ${gaugeTextColor}`}>
+      {/* Radial integrity gauge — same treatment as the Storage Budget
+          panel so the two status-critical panels read as a pair. */}
+      <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle flex items-center gap-4">
+        <RadialGauge
+          value={drawAmps}
+          max={budgetAmps}
+          unit="A"
+          label="POWER"
+          tiers={{ warn: warnAmps, critical: criticalAmps }}
+          glyphPairing
+          size={120}
+          pulseOnThresholdCrossing
+        />
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="text-ui-sm text-text-secondary">Current Draw</div>
+          <div className="text-lg font-bold font-mono tabular-nums text-text-primary">
             {stats.colorMA.toLocaleString()} mA
-          </span>
-        </div>
-        <div
-          className="h-3 bg-bg-deep rounded-full overflow-hidden"
-          role="progressbar"
-          aria-valuenow={Math.round(gaugePercent)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Power draw gauge"
-        >
-          <div
-            className={`h-full rounded-full transition-all ${gaugeColor}`}
-            style={{ width: `${gaugePercent}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-ui-xs text-text-muted">
-          <span>0 mA</span>
-          <span>{BOARD_MAX_MA.toLocaleString()} mA max</span>
+          </div>
+          <div className="text-ui-xs text-text-muted">
+            of {BOARD_MAX_MA.toLocaleString()} mA max ({budgetAmps.toFixed(0)}A)
+          </div>
         </div>
       </div>
 
@@ -162,25 +163,26 @@ export function PowerDrawPanel() {
         </div>
       </div>
 
-      {/* Per-channel breakdown */}
+      {/* Per-channel breakdown — R/G/B stay as literal R/G/B channel colors
+          by design (those are color-channel identities, not chrome). */}
       <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-1.5">
         <div className="text-ui-xs text-text-muted mb-1">Channel Breakdown</div>
         {[
-          { label: 'R', value: stats.rMA, color: 'bg-red-500', textColor: 'text-red-400' },
-          { label: 'G', value: stats.gMA, color: 'bg-green-500', textColor: 'text-green-400' },
-          { label: 'B', value: stats.bMA, color: 'bg-blue-500', textColor: 'text-blue-400' },
+          { label: 'R', value: stats.rMA, color: '#ef4444' },
+          { label: 'G', value: stats.gMA, color: '#22c55e' },
+          { label: 'B', value: stats.bMA, color: '#3b82f6' },
         ].map((ch) => {
           const chPercent = stats.colorMA > BOARD_IDLE_MA ? (ch.value / (stats.colorMA - BOARD_IDLE_MA)) * 100 : 0;
           return (
             <div key={ch.label} className="flex items-center gap-2">
-              <span className={`text-ui-xs font-mono w-4 ${ch.textColor}`}>{ch.label}</span>
+              <span className="text-ui-xs font-mono w-4" style={{ color: ch.color }}>{ch.label}</span>
               <div className="flex-1 h-2 bg-bg-deep rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${ch.color}`}
-                  style={{ width: `${Math.min(100, chPercent)}%`, opacity: 0.7 }}
+                  className="h-full rounded-full"
+                  style={{ width: `${Math.min(100, chPercent)}%`, opacity: 0.7, background: ch.color }}
                 />
               </div>
-              <span className="text-ui-xs font-mono text-text-muted w-14 text-right">{ch.value} mA</span>
+              <span className="text-ui-xs font-mono text-text-muted w-14 text-right tabular-nums">{ch.value} mA</span>
             </div>
           );
         })}
@@ -203,14 +205,34 @@ export function PowerDrawPanel() {
 
       {/* Warnings */}
       {stats.overLimit && (
-        <div className="text-ui-xs p-2 rounded border bg-red-900/20 border-red-800/30 text-red-400">
-          Peak draw ({stats.peakMA.toLocaleString()} mA) exceeds Proffieboard 5A limit.
-          Reduce LED count, brightness, or use a lighter color.
+        <div
+          className="text-ui-xs p-2 rounded border flex items-start gap-2"
+          style={{
+            background: 'rgb(var(--status-error) / 0.1)',
+            borderColor: 'rgb(var(--status-error) / 0.3)',
+            color: 'rgb(var(--status-error))',
+          }}
+        >
+          <span aria-hidden="true">✕</span>
+          <span>
+            Peak draw ({stats.peakMA.toLocaleString()} mA) exceeds Proffieboard 5A limit.
+            Reduce LED count, brightness, or use a lighter color.
+          </span>
         </div>
       )}
       {stats.runtimeMinutes < 30 && !stats.overLimit && (
-        <div className="text-ui-xs p-2 rounded border bg-yellow-900/20 border-yellow-800/30 text-yellow-400">
-          Estimated runtime under 30 minutes. Consider a higher capacity battery or lower brightness.
+        <div
+          className="text-ui-xs p-2 rounded border flex items-start gap-2"
+          style={{
+            background: 'rgb(var(--status-warn) / 0.1)',
+            borderColor: 'rgb(var(--status-warn) / 0.3)',
+            color: 'rgb(var(--status-warn))',
+          }}
+        >
+          <span aria-hidden="true">⚠</span>
+          <span>
+            Estimated runtime under 30 minutes. Consider a higher capacity battery or lower brightness.
+          </span>
         </div>
       )}
     </div>

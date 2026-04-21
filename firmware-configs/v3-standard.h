@@ -37,7 +37,7 @@ const unsigned int maxLedsPerStrip = 144;
 #ifdef CONFIG_PRESETS
 Preset presets[] = {
   { "font1", "",
-    StylePtr<InOutTrL<TrWipe<300>, TrWipeIn<500>, Blue>>(),
+    StyleNormalPtr<Blue, WHITE, 300, 500>(),
     "KyberStation" }
 };
 

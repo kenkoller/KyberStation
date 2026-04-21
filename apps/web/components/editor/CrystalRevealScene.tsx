@@ -23,6 +23,7 @@ import {
   type ChoreographerState,
 } from '@/lib/crystal/cameraChoreographer';
 import { HILT_PRESETS, type HiltGeometry } from '@/components/hilt/HiltSelector';
+import { HiltMesh } from '@/components/hilt/HiltMesh';
 
 // ─── Scene constants — mirror BladeCanvas3D conventions ───
 
@@ -40,54 +41,6 @@ const WIDE_CAMERA_FOV = 40;
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-// ─── Hilt mesh — minimal, mirrors BladeCanvas3D.HiltMesh ───
-
-function HiltMesh({ geometry }: { geometry: HiltGeometry }) {
-  const {
-    hiltLength,
-    gripDiameter,
-    emitterDiameter,
-    pommelDiameter,
-    guardThickness,
-    guardDiameter,
-  } = geometry;
-
-  const gripRadius = gripDiameter / 2;
-  const emitterRadius = emitterDiameter / 2;
-  const pommelRadius = pommelDiameter / 2;
-
-  return (
-    <group position={[0, 0, 0]}>
-      <mesh position={[0, hiltLength / 2, 0]}>
-        <cylinderGeometry args={[emitterRadius, gripRadius, hiltLength * 0.6, 24]} />
-        <meshStandardMaterial color="#2a2a32" metalness={0.85} roughness={0.25} />
-      </mesh>
-      <mesh position={[0, hiltLength * 0.12, 0]}>
-        <cylinderGeometry args={[gripRadius, pommelRadius, hiltLength * 0.35, 24]} />
-        <meshStandardMaterial color="#1e1e26" metalness={0.8} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, hiltLength * 0.85, 0]}>
-        <cylinderGeometry args={[emitterRadius + 0.02, emitterRadius, hiltLength * 0.12, 24]} />
-        <meshStandardMaterial color="#555560" metalness={0.9} roughness={0.15} />
-      </mesh>
-      <mesh position={[0, hiltLength * 0.92, 0]}>
-        <torusGeometry args={[emitterRadius + 0.01, 0.015, 8, 24]} />
-        <meshStandardMaterial color="#6a6a74" metalness={0.95} roughness={0.1} />
-      </mesh>
-      {guardThickness > 0 && (
-        <mesh position={[0, hiltLength * 0.78, 0]}>
-          <torusGeometry args={[guardDiameter / 2, guardThickness / 2, 8, 24]} />
-          <meshStandardMaterial color="#555560" metalness={0.9} roughness={0.2} />
-        </mesh>
-      )}
-      <mesh position={[0, -0.02, 0]}>
-        <cylinderGeometry args={[pommelRadius + 0.02, pommelRadius - 0.01, 0.08, 24]} />
-        <meshStandardMaterial color="#3a3a42" metalness={0.85} roughness={0.2} />
-      </mesh>
-    </group>
-  );
 }
 
 // ─── Blade mesh — static, fades during dolly ───
@@ -363,7 +316,12 @@ export function CrystalRevealScene({
       <directionalLight position={[3, 5, 2]} intensity={0.4} color="#b0b0c0" />
       <directionalLight position={[-2, -3, -1]} intensity={0.15} color="#4040a0" />
 
-      <HiltMesh geometry={hiltGeometry} />
+      <HiltMesh
+        geometry={hiltGeometry}
+        position={[0, 0, 0]}
+        showRidges={false}
+        showActivationButton={false}
+      />
       <BladeMesh
         baseColor={baseColor}
         hiltLength={hiltGeometry.hiltLength}

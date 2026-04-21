@@ -62,6 +62,19 @@ export interface UIStore {
    */
   editTarget: 'lockup' | 'blast';
 
+  /**
+   * Hot-mod hover identity — the id of the modulator row the user is
+   * currently hovering or has focused in the LayerStack. Downstream
+   * parameter renderers may read this to faintly tint themselves in the
+   * modulator's identity color, giving a "show me what this mod drives"
+   * affordance (§7 North Star modulatorHoverHighlight).
+   *
+   * `null` when nothing is hovered. A proper routing lookup (param ↔ mod)
+   * lands with the v1.1 modulation-routing scaffold; for W6b the store
+   * slice is the seam consumers bind against today.
+   */
+  hoveredModulatorId: string | null;
+
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
   setCanvasMode: (mode: CanvasMode) => void;
@@ -90,6 +103,7 @@ export interface UIStore {
   setEditMode: (on: boolean) => void;
   toggleEditMode: () => void;
   setEditTarget: (target: 'lockup' | 'blast') => void;
+  setHoveredModulator: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -121,6 +135,7 @@ export const useUIStore = create<UIStore>((set) => ({
   fullscreenOrientation: 'horizontal',
   editMode: false,
   editTarget: 'lockup',
+  hoveredModulatorId: null,
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -152,4 +167,5 @@ export const useUIStore = create<UIStore>((set) => ({
   setEditMode: (editMode) => set({ editMode }),
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
   setEditTarget: (editTarget) => set({ editTarget }),
+  setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
 }));

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { LandingHero } from '@/components/landing/LandingHero';
+import { LandingSaberArray } from '@/components/landing/LandingSaberArray';
 import { LandingValueStrip } from '@/components/landing/LandingValueStrip';
-import { LandingCTAs } from '@/components/landing/LandingCTAs';
 import { LandingReleaseStrip } from '@/components/landing/LandingReleaseStrip';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
@@ -21,7 +21,7 @@ export default function LandingPage() {
   return (
     <main id="main-content" className="min-h-screen">
       <LandingHero />
-      <LandingCTAs />
+      <LandingSaberArray />
       <LandingValueStrip />
       <LandingReleaseStrip />
       <LandingFooter />
