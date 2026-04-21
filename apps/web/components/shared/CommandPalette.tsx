@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalDialog } from '@/hooks/useModalDialog';
+import { useMetaKey } from '@/lib/platform';
 import {
   useCommandStore,
   selectGroupedFilteredCommands,
@@ -77,6 +78,10 @@ export function CommandPalette() {
   const setQuery = useCommandStore((s) => s.setQuery);
   const close = useCommandStore((s) => s.close);
   const runCommand = useCommandStore((s) => s.runCommand);
+
+  // Platform-aware modifier display for the `Command · ⌘K` / `Ctrl+K` crumb.
+  const meta = useMetaKey();
+  const metaKbd = `${meta.symbol}${meta.sep}K`;
 
   // Subscribe to the raw command map so our selector recomputes whenever
   // a command is (un)registered. Zustand returns a fresh Map reference
@@ -202,7 +207,7 @@ export function CommandPalette() {
               whiteSpace: 'nowrap',
             }}
           >
-            Command · ⌘K
+            Command · {metaKbd}
           </span>
           <input
             autoFocus
@@ -298,7 +303,7 @@ export function CommandPalette() {
           <FooterChord glyph="↵" label="run" />
           <FooterChord glyph="ESC" label="close" />
           <div style={{ flex: 1 }} />
-          <span>KyberStation · ⌘K</span>
+          <span>KyberStation · {metaKbd}</span>
         </div>
       </div>
     </div>

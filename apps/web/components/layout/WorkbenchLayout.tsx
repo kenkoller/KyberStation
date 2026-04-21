@@ -49,6 +49,7 @@ import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalett
 import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
 import { EXTENDED_LOCATION_THEMES, EXTENDED_FACTION_THEMES } from '@/lib/extendedThemes';
+import { useMetaKey } from '@/lib/platform';
 import Link from 'next/link';
 
 // ─── HUD status messages for the header DataTicker ───
@@ -74,17 +75,19 @@ const TABS: Array<{ id: ActiveTab; label: string }> = [
 ];
 
 /**
- * Canonical `⌘1` … `⌘5` hint for each tab, by position in the shipped
- * TABS array (not the user's reordered view). This is the source of
- * truth for both the inline kbd hints beside each tab label and the
- * modifier-key handler in `useKeyboardShortcuts`.
+ * Canonical tab-switch kbd positions (by index in the shipped TABS
+ * array, not the user's reordered view). The actual display string is
+ * computed at render time via `useMetaKey()` so Mac shows `⌘1` and
+ * Windows / Linux shows `Ctrl+1`. The keyboard handler in
+ * `useKeyboardShortcuts` uses `(e.metaKey || e.ctrlKey)` so either
+ * modifier works regardless of platform — the display is purely cosmetic.
  */
-const TAB_CANONICAL_KBD: Record<ActiveTab, string> = {
-  design: '⌘1',
-  dynamics: '⌘2',
-  audio: '⌘3',
-  gallery: '⌘4',
-  output: '⌘5',
+const TAB_CANONICAL_DIGIT: Record<ActiveTab, string> = {
+  design: '1',
+  dynamics: '2',
+  audio: '3',
+  gallery: '4',
+  output: '5',
 };
 
 // ─── Tab Reorder Hook ───
@@ -158,6 +161,12 @@ export function WorkbenchLayout() {
   usePauseSystem();
   usePresetListSync();
   useHistoryTracking();
+
+  // Platform-aware kbd display: Mac shows ⌘K, Windows / Linux shows Ctrl+K.
+  // The keyboard event handlers read (e.metaKey || e.ctrlKey) so either
+  // physical modifier works regardless of what we display.
+  const meta = useMetaKey();
+  const kbdFor = (key: string) => `${meta.symbol}${meta.sep}${key}`;
 
   // ── Store selectors ──
   const activeTab = useUIStore((s) => s.activeTab);
@@ -267,7 +276,7 @@ export function WorkbenchLayout() {
         id: 'nav:design',
         group: 'NAVIGATE',
         title: 'Go to Design',
-        kbd: '⌘1',
+        kbd: kbdFor('1'),
         icon: '⚒',
         run: nav('design'),
       },
@@ -275,7 +284,7 @@ export function WorkbenchLayout() {
         id: 'nav:dynamics',
         group: 'NAVIGATE',
         title: 'Go to Dynamics',
-        kbd: '⌘2',
+        kbd: kbdFor('2'),
         icon: '⚒',
         run: nav('dynamics'),
       },
@@ -283,7 +292,7 @@ export function WorkbenchLayout() {
         id: 'nav:audio',
         group: 'NAVIGATE',
         title: 'Go to Audio',
-        kbd: '⌘3',
+        kbd: kbdFor('3'),
         icon: '⚒',
         run: nav('audio'),
       },
@@ -291,7 +300,7 @@ export function WorkbenchLayout() {
         id: 'nav:gallery',
         group: 'NAVIGATE',
         title: 'Go to Gallery',
-        kbd: '⌘4',
+        kbd: kbdFor('4'),
         icon: '⚒',
         run: nav('gallery'),
       },
@@ -299,7 +308,7 @@ export function WorkbenchLayout() {
         id: 'nav:output',
         group: 'NAVIGATE',
         title: 'Go to Output',
-        kbd: '⌘5',
+        kbd: kbdFor('5'),
         icon: '⚒',
         run: nav('output'),
       },
@@ -503,16 +512,6 @@ export function WorkbenchLayout() {
        * 1. HEADER BAR
        * ════════════════════════════════════════════════════ */}
       <header className="relative flex items-center justify-between px-4 py-1.5 border-b border-border-subtle bg-bg-secondary shrink-0">
-        {/* HUD: decorative data ticker clipped to a thin strip along the
-            bottom edge of the header. Previously `inset-0` filled the entire
-            header, which pushed ticker text up against the undo/redo buttons
-            on thin-padded layouts. The dedicated strip keeps the ambient
-            data readout clearly separate from the foreground controls. */}
-        <DataTicker
-          data={HUD_TICKER_MESSAGES}
-          speed={30}
-          className="absolute left-0 right-0 bottom-0 h-3 flex items-end pb-px pointer-events-none"
-        />
         {/* Left cluster: logo + project name.
             Wave 4 trim: the "Universal Saber Style Engine" subtitle and the
             version/profile breadcrumb were removed — StatusBar now owns PROFILE
@@ -576,10 +575,10 @@ export function WorkbenchLayout() {
               background: 'rgb(var(--bg-deep) / 0.4)',
               letterSpacing: '0.04em',
             }}
-            title="Open command palette (⌘K)"
+            title={`Open command palette (${kbdFor('K')})`}
             aria-label="Open command palette"
           >
-            Command <kbd className="font-mono text-text-muted/80">⌘K</kbd>
+            Command <kbd className="font-mono text-text-muted/80">{kbdFor('K')}</kbd>
           </button>
 
           <button
@@ -616,6 +615,27 @@ export function WorkbenchLayout() {
           </button>
         </div>
       </header>
+
+      {/* ════════════════════════════════════════════════════
+       * 1b. HUD DATA TICKER — dedicated decorative strip
+       *
+       * Lives as its own 12px row between the header and the blade
+       * section so the ambient scrolling text can't visually overlap
+       * the undo/redo buttons or the right-cluster controls. Previously
+       * this was `absolute inset-0` inside the header, which competed
+       * with foreground chrome on tight-padded layouts.
+       * ════════════════════════════════════════════════════ */}
+      <div
+        className="shrink-0 border-b border-border-subtle bg-bg-deep/60 overflow-hidden"
+        style={{ height: 12 }}
+        aria-hidden="true"
+      >
+        <DataTicker
+          data={HUD_TICKER_MESSAGES}
+          speed={30}
+          className="h-full flex items-center pointer-events-none"
+        />
+      </div>
 
       {/* ════════════════════════════════════════════════════
        * 2. BLADE + VISUALIZATION STACK — always visible
@@ -806,15 +826,16 @@ export function WorkbenchLayout() {
             ].join(' ')}
           >
             <span>{tab.label}</span>
-            {/* Canonical ⌘1–⌘5 kbd hint. Position is fixed by the
-                shipped TABS order — user-reordering the tab bar does
-                NOT change which digit switches which tab. */}
+            {/* Canonical ⌘1–⌘5 (Mac) / Ctrl+1–Ctrl+5 (other) kbd hint.
+                Position is fixed by the shipped TABS order — user-
+                reordering the tab bar does NOT change which digit
+                switches which tab. */}
             <kbd
               aria-hidden="true"
               className="font-mono text-text-muted/70 tabular-nums"
               style={{ fontSize: 10, letterSpacing: '0.04em' }}
             >
-              {TAB_CANONICAL_KBD[tab.id]}
+              {kbdFor(TAB_CANONICAL_DIGIT[tab.id])}
             </kbd>
             {tab.id === 'output' && presetListCount > 0 && (
               <span className="text-ui-xs text-accent">({presetListCount})</span>
