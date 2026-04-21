@@ -6,7 +6,12 @@ import { useUIStore } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
-import { VISUALIZATION_LAYERS, getLayerById, type VisualizationLayerId } from '@/lib/visualizationTypes';
+import {
+  VISUALIZATION_LAYERS,
+  getLayerById,
+  LINE_GRAPH_SHAPED_LAYER_IDS,
+  type VisualizationLayerId,
+} from '@/lib/visualizationTypes';
 
 // ─── Constants ───
 
@@ -522,7 +527,7 @@ function renderStorageBudgetLayer(
 
 // ─── Single layer canvas component ───
 
-interface LayerCanvasProps {
+export interface LayerCanvasProps {
   layerId: VisualizationLayerId;
   pixels: ArrayLike<number> | null;
   pixelCount: number;
@@ -531,7 +536,13 @@ interface LayerCanvasProps {
   reducedMotion: boolean;
 }
 
-function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, reducedMotion }: LayerCanvasProps) {
+/**
+ * Exported 2026-04-21 (OV5) so AnalysisRail can reuse the same
+ * canvas renderer + RAF wiring for the 9 line-graph layers it owns.
+ * The original signature is unchanged — VisualizationStack continues
+ * to consume it exactly as before.
+ */
+export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, reducedMotion }: LayerCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
@@ -664,11 +675,30 @@ export function VisualizationStack({ pixelData, pixelCount, className }: Visuali
   const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
-  // Layers rendered externally — skip them here
-  const SKIP_LAYERS = new Set<VisualizationLayerId>(['blade', 'pixel-strip']);
+  // Layers rendered externally — skip them here.
+  //
+  //   - 'blade' + 'pixel-strip'       — rendered full-width above the stack.
+  //   - 'storage-budget'               — scalar; moved to the DeliveryRail
+  //                                      STORAGE segment (OV4).
+  //   - All 'line-graph' shaped       — moved to the left-side
+  //                                      AnalysisRail (OV5).
+  //
+  // That leaves the pixel-shaped layers that align with the blade canvas
+  // (effect-overlay today; future pixel-shaped layers add here without
+  // code changes). VisualizationStack will be empty on a fresh default
+  // config since effect-overlay is hidden by default — VisualizationStack
+  // returns null in that case so section 2b has no footprint.
+  const SKIP_LAYERS = new Set<VisualizationLayerId>([
+    'blade',
+    'pixel-strip',
+    'storage-budget',
+  ]);
 
   const orderedVisible = layerOrder.filter(
-    (id) => visibleLayers.has(id) && !SKIP_LAYERS.has(id),
+    (id) =>
+      visibleLayers.has(id) &&
+      !SKIP_LAYERS.has(id) &&
+      !LINE_GRAPH_SHAPED_LAYER_IDS.has(id),
   );
 
   if (orderedVisible.length === 0) return null;
