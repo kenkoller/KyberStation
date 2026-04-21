@@ -778,25 +778,19 @@ export function WorkbenchLayout() {
       </header>
 
       {/* ════════════════════════════════════════════════════
-       * 1b. HUD DATA TICKER — dedicated decorative strip
+       * 1b. STATUS BAR — promoted to the top chrome
        *
-       * Lives as its own 12px row between the header and the blade
-       * section so the ambient scrolling text can't visually overlap
-       * the undo/redo buttons or the right-cluster controls. Previously
-       * this was `absolute inset-0` inside the header, which competed
-       * with foreground chrome on tight-padded layouts.
+       * Per Ken's 2026-04-20 walkthrough: StatusBar moved from the
+       * bottom of the app to directly under the header, replacing the
+       * decorative HUD ticker that used to live here. Rationale: the
+       * PFD-shape StatusBar is denser + more informative than the
+       * scrolling lore strip, and putting it up top makes the live
+       * telemetry (profile / conn / page / modified / storage / theme /
+       * preset / UTC / build) the first thing the user reads alongside
+       * the header. The ticker moves to the bottom as pure ambient
+       * chrome (see section 7 below).
        * ════════════════════════════════════════════════════ */}
-      <div
-        className="shrink-0 border-b border-border-subtle bg-bg-deep/60 overflow-hidden"
-        style={{ height: 12 }}
-        aria-hidden="true"
-      >
-        <DataTicker
-          data={HUD_TICKER_MESSAGES}
-          speed={30}
-          className="h-full flex items-center pointer-events-none"
-        />
-      </div>
+      <StatusBar />
 
       {/* ════════════════════════════════════════════════════
        * 2. BLADE + VISUALIZATION STACK — always visible
@@ -1044,9 +1038,26 @@ export function WorkbenchLayout() {
       )}
 
       {/* ════════════════════════════════════════════════════
-       * 6. STATUS BAR — always visible
+       * 6. HUD DATA TICKER — ambient bottom chrome
+       *
+       * Relocated 2026-04-20 from the old top position to the very
+       * bottom of the app, swapping places with the StatusBar. Runs
+       * at half its previous speed (60s vs 30s) since the user spends
+       * most time looking at the blade + panels, not the footer —
+       * slower drift reads as "environmental" rather than "breaking
+       * news." Pure decorative chrome; no interactive content.
        * ════════════════════════════════════════════════════ */}
-      <StatusBar />
+      <div
+        className="shrink-0 border-t border-border-subtle bg-bg-deep/60 overflow-hidden"
+        style={{ height: 12 }}
+        aria-hidden="true"
+      >
+        <DataTicker
+          data={HUD_TICKER_MESSAGES}
+          speed={60}
+          className="h-full flex items-center pointer-events-none"
+        />
+      </div>
 
       {/* ════════════════════════════════════════════════════
        * FULLSCREEN PREVIEW — portal-style fixed overlay

@@ -287,20 +287,27 @@ export function StatusBar() {
   const themeDisplay = canvasTheme.toUpperCase();
 
   return (
-    <footer
+    <div
       role="status"
       aria-live="polite"
       aria-label="Status bar"
       // Overall chrome:
       //   shrink-0          — don't let flex parents compress the bar
       //   px-3 py-1         — tight horizontal padding, 4px vertical
-      //   border-t          — hairline top rule separating from canvas
+      //   border-b          — hairline bottom rule separating from blade section
+      //                      (relocated from bottom-of-app to just-under-header
+      //                      on 2026-04-20 per Ken's walkthrough — StatusBar
+      //                      now replaces the decorative data ticker strip that
+      //                      used to sit here). The `<footer>` tag also flipped
+      //                      to `<div>` since the bar is no longer at the page
+      //                      footer semantically; role="status" + aria-live
+      //                      keep screen-reader announcements intact.
       //   bg-bg-secondary   — slightly elevated from the canvas background
       //   flex gap-2        — horizontal strip with breathing room
       //   overflow-hidden   — never let content push the bar vertically
       //   whitespace-nowrap — keep segments on one line
       //   font-mono         — JetBrains Mono throughout per §4 StatusBar
-      className="shrink-0 px-3 py-1 border-t border-border-subtle bg-bg-secondary text-text-muted flex items-center gap-2 overflow-hidden whitespace-nowrap font-mono select-none"
+      className="shrink-0 px-3 py-1 border-b border-border-subtle bg-bg-secondary text-text-muted flex items-center gap-2 overflow-hidden whitespace-nowrap font-mono select-none"
       style={{ height: '1.5rem' /* 24px — matches reference grid-template-rows 22–24px */ }}
     >
       {/* 1 — Power Draw ─────────────────────────────────────────────────────
@@ -441,6 +448,6 @@ export function StatusBar() {
       <Segment label="Build" valueClassName="tabular-nums text-text-secondary">
         v{LATEST_VERSION}
       </Segment>
-    </footer>
+    </div>
   );
 }

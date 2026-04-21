@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLayerStore } from '@/stores/layerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
@@ -50,6 +50,9 @@ export function LayerStack() {
   const layers = useLayerStore((s) => s.layers);
   const selectedLayerId = useLayerStore((s) => s.selectedLayerId);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  // Anchor ref for the portal-rendered AddLayerDropdown — lets the
+  // menu escape the LayerStack subpanel's rounded-panel overflow clip.
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   // Render layers bottom-to-top: reverse for display (top layer at top of list)
   const displayLayers = [...layers].reverse();
@@ -91,15 +94,22 @@ export function LayerStack() {
         ))}
       </div>
 
-      {/* Add layer button */}
-      <div className="relative">
+      {/* Add layer button — dropdown is portal-rendered to escape the
+          LayerStack subpanel's overflow clip. See AddLayerDropdown. */}
+      <div>
         <button
+          ref={addButtonRef}
           onClick={() => setShowAddMenu(!showAddMenu)}
           className="w-full px-3 py-1.5 rounded text-ui-sm font-medium border border-dashed border-border-subtle text-text-muted hover:border-accent hover:text-accent transition-colors"
         >
           + Add Layer
         </button>
-        {showAddMenu && <AddLayerDropdown onClose={() => setShowAddMenu(false)} />}
+        {showAddMenu && (
+          <AddLayerDropdown
+            anchorRef={addButtonRef}
+            onClose={() => setShowAddMenu(false)}
+          />
+        )}
       </div>
 
       {/* Selected layer config */}

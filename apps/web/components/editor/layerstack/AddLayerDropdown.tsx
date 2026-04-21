@@ -1,11 +1,93 @@
 'use client';
-import { useCallback } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { useLayerStore, SMOOTHSWING_DEFAULTS } from '@/stores/layerStore';
 import type { LayerType } from '@/stores/layerStore';
 import { TYPE_BADGES } from './constants';
 
-export function AddLayerDropdown({ onClose }: { onClose: () => void }) {
+interface AddLayerDropdownProps {
+  /** Ref to the "+ Add Layer" button — drives the dropdown's screen
+   *  position so the portal-rendered menu aligns to the button edges. */
+  anchorRef: React.RefObject<HTMLElement | null>;
+  onClose: () => void;
+}
+
+/**
+ * AddLayerDropdown — portal-rendered popover with the five layer-type
+ * options (Base / Effect / Accent / Mix / SmoothSwing).
+ *
+ * Rendered via `createPortal(document.body)` so it escapes the
+ * LayerStack subpanel's `overflow: hidden` ancestor (the `rounded-panel`
+ * container that gives the panel its rounded border clips any child that
+ * extends past its footprint). The previous `absolute` version was
+ * clipped either at the top (when opening above) or at the bottom (when
+ * opening below) — Ken's 2026-04-20 walkthrough caught both.
+ *
+ * Closes on: option click, click-outside (anywhere except the anchor or
+ * the dropdown itself), or Escape.
+ */
+export function AddLayerDropdown({ anchorRef, onClose }: AddLayerDropdownProps) {
   const addLayer = useLayerStore((s) => s.addLayer);
+  const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
+  // Defer portal mount to client to keep SSR output identical.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Measure the anchor button on mount + when the page reflows. useLayoutEffect
+  // so the first paint lands with the correct position (no visible jump from
+  // top=0/left=0 to the computed values).
+  useLayoutEffect(() => {
+    const place = () => {
+      const el = anchorRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+    place();
+    // Reposition on resize / scroll so the dropdown tracks the anchor if
+    // the user scrolls the underlying panel while the menu is open.
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [anchorRef]);
+
+  // Close on click-outside (mousedown to catch it before the Add Layer
+  // button's own onClick would re-toggle) or Escape.
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (ref.current?.contains(target)) return;
+      if (anchorRef.current?.contains(target)) return;
+      onClose();
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [anchorRef, onClose]);
 
   const handleAdd = useCallback(
     (type: LayerType) => {
@@ -43,7 +125,7 @@ export function AddLayerDropdown({ onClose }: { onClose: () => void }) {
       });
       onClose();
     },
-    [addLayer, onClose]
+    [addLayer, onClose],
   );
 
   const options: Array<{ type: LayerType; label: string; desc: string }> = [
@@ -54,20 +136,26 @@ export function AddLayerDropdown({ onClose }: { onClose: () => void }) {
     { type: 'smoothswing', label: 'Add SmoothSwing Plate', desc: 'Audio swing-pair crossfade (modulator)' },
   ];
 
-  // Opens BELOW the Add Layer button (top-full) rather than above —
-  // the LayerStack column is typically scrollable with room below the
-  // Add Layer button (Layer Config section when nothing is selected,
-  // empty space otherwise). Opening above clipped the top ~60% of the
-  // 5 options whenever an ancestor had overflow:hidden, which is
-  // exactly what Ken's 2026-04-20 walkthrough caught. `max-h` +
-  // `overflow-y-auto` are belt-and-suspenders for tight viewports.
-  return (
-    <div className="absolute top-full left-0 right-0 mt-1 bg-bg-deep border border-border-subtle rounded-lg shadow-lg overflow-hidden z-20 max-h-[280px] overflow-y-auto">
+  const dropdown = (
+    <div
+      ref={ref}
+      role="menu"
+      aria-label="Add layer"
+      style={{
+        position: 'fixed',
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 100,
+      }}
+      className="bg-bg-deep border border-border-subtle rounded-lg shadow-lg overflow-hidden max-h-[320px] overflow-y-auto"
+    >
       {options.map((opt) => {
         const badge = TYPE_BADGES[opt.type];
         return (
           <button
             key={opt.type}
+            role="menuitem"
             onClick={() => handleAdd(opt.type)}
             className="w-full flex items-center gap-2 px-3 py-2 text-left text-ui-xs hover:bg-bg-surface transition-colors"
           >
@@ -84,4 +172,7 @@ export function AddLayerDropdown({ onClose }: { onClose: () => void }) {
       })}
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(dropdown, document.body);
 }
