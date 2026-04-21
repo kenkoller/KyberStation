@@ -47,6 +47,9 @@ import { CanvasSkeleton } from '@/components/shared/Skeleton';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { PerformanceBar } from '@/components/layout/PerformanceBar';
 import { DeliveryRail } from '@/components/layout/DeliveryRail';
+import { AnalysisRail } from '@/components/layout/AnalysisRail';
+import { AnalysisExpandOverlay } from '@/components/layout/AnalysisExpandOverlay';
+import type { VisualizationLayerId } from '@/lib/visualizationTypes';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
@@ -390,6 +393,12 @@ export function WorkbenchLayout() {
   const [showWizard, setShowWizard] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const openShortcutsHelp = useCallback(() => setShowShortcutsHelp(true), []);
+  // ── AnalysisRail expand overlay (OV5) ──
+  // `null` = overlay closed. Any non-null VisualizationLayerId opens
+  // the AnalysisExpandOverlay rendering that single layer at the full
+  // workbench width. Closing returns null (ESC + backdrop + close
+  // button all route through `setExpandedLayerId(null)`).
+  const [expandedLayerId, setExpandedLayerId] = useState<VisualizationLayerId | null>(null);
 
   // ── Keyboard shortcuts + timeline ──
   const handlers = useMemo(
@@ -912,7 +921,29 @@ export function WorkbenchLayout() {
       <StatusBar />
 
       {/* ════════════════════════════════════════════════════
-       * 2. BLADE + VISUALIZATION STACK — always visible
+       * 2. BLADE + ANALYSIS STACK — always visible
+       *
+       * OV5 (2026-04-21): section 2 was restructured from the
+       * pre-existing vertical arrangement (section 2 blade + section
+       * 2b analysis stack below) to a horizontal flex row:
+       *
+       *   [AnalysisRail]  [VisualizationToolbar]  [Blade canvas]
+       *     ^ line-graph                           ^ pixel-shaped
+       *       layers                                 layers + pixel strip +
+       *                                              RGB graphs stay with
+       *                                              the canvas via
+       *                                              CanvasLayout (OV2)
+       *
+       * Section 2b was eliminated entirely — the 9 line-graph layers
+       * (luminance, power-draw, hue, saturation, channel-r/g/b,
+       * swing-response, transition-progress) now render in the
+       * AnalysisRail on the left, while the pixel-shaped layers
+       * (blade, pixel-strip, effect-overlay) stay with the blade
+       * preview. storage-budget (scalar) moved to the Delivery
+       * rail's STORAGE segment (see section 5c / OV4).
+       *
+       * Total vertical footprint reclaimed: ~max-h-400px of section
+       * 2b is freed for the multi-column panel region (section 4).
        * ════════════════════════════════════════════════════ */}
       <section
         className="shrink-0 border-b border-border-subtle bg-bg-primary flex overflow-hidden"
@@ -920,6 +951,16 @@ export function WorkbenchLayout() {
         role="region"
         aria-label="Blade visualization"
       >
+        {/* LEFT — AnalysisRail. 200px at desktop, 40px at tablet. Shares
+            the same pixel buffer the blade canvas consumes so waveforms
+            stay in lockstep with the rendered blade. */}
+        <AnalysisRail
+          pixels={pixelBufRef.current}
+          pixelCount={ledCount}
+          onExpand={setExpandedLayerId}
+          className="h-full"
+        />
+
         <VisualizationToolbar className="shrink-0 w-10" orientation="vertical" />
 
         {/* Blade canvas area — horizontal, fills remaining width */}
@@ -986,12 +1027,23 @@ export function WorkbenchLayout() {
       </section>
 
       {/* ════════════════════════════════════════════════════
-       * 2b. VISUALIZATION STACK — analysis layers below blade
+       * 2b. PIXEL-SHAPED VISUALIZATION STACK
+       *
+       * OV5 (2026-04-21): this block was previously the home of all
+       * 12 non-blade layers. The 9 line-graph-shaped layers moved to
+       * AnalysisRail (above, inside section 2), storage-budget moved
+       * to the Delivery rail (section 5c), leaving only pixel-shaped
+       * layers (effect-overlay today) that need to align with the
+       * blade canvas width. When no pixel-shaped layer is visible —
+       * the default — `VisualizationStack` returns null and this
+       * container collapses to zero height. Kept as a named region so
+       * future pixel-shaped layers register without reintroducing the
+       * old heavyweight stack.
        * ════════════════════════════════════════════════════ */}
       <div
-        className="shrink-0 overflow-y-auto max-h-[400px] border-b border-border-subtle bg-bg-primary"
+        className="shrink-0 overflow-y-auto max-h-[200px] border-b border-border-subtle bg-bg-primary"
         role="region"
-        aria-label="Visualization analysis layers"
+        aria-label="Pixel-aligned visualization layers"
       >
         <VisualizationStack
           pixelData={pixelBufRef.current}
@@ -1235,6 +1287,21 @@ export function WorkbenchLayout() {
        * ⌘K COMMAND PALETTE — portal-rendered, opens globally
        * ════════════════════════════════════════════════════ */}
       <CommandPalette />
+
+      {/* ════════════════════════════════════════════════════
+       * ANALYSIS EXPAND OVERLAY — portal-rendered, per-layer
+       * forensic inspection at full workbench width (OV5).
+       *
+       * State lives above (`expandedLayerId`). Rail rows' ↗ buttons
+       * call `setExpandedLayerId(<id>)`; overlay's close handler
+       * resets to null.
+       * ════════════════════════════════════════════════════ */}
+      <AnalysisExpandOverlay
+        layerId={expandedLayerId}
+        pixels={pixelBufRef.current}
+        pixelCount={ledCount}
+        onClose={() => setExpandedLayerId(null)}
+      />
     </div>
   );
 }
