@@ -12,6 +12,7 @@ import {
 import { useAurebesh } from '@/hooks/useAurebesh';
 import { type AurebeshMode } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useAccessibilityStore, type DensityMode } from '@/stores/accessibilityStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   // ── Section collapse state ──
   const [sections, setSections] = useState({
     performance: true,
+    density: false,
     aurebesh: false,
     sounds: false,
     layout: false,
@@ -165,6 +167,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setPerfIsAuto(true);
     applyPerformanceTier(tier);
   }, []);
+
+  // ── Row density — §6 North Star. Flips data-density on <html> via
+  //    useAccessibilityApplier; no layout shift today (components opt in later). ──
+  const density = useAccessibilityStore((s) => s.density);
+  const setDensity = useAccessibilityStore((s) => s.setDensity);
 
   // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
   const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
@@ -326,6 +333,68 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 >
                   {perfIsAuto ? `Auto-detected: ${perfTier}` : 'Reset to auto-detect'}
                 </button>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Row Density ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Row density"
+              open={sections.density}
+              onToggle={() => toggleSection('density')}
+            />
+            {sections.density && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  Controls panel row height across the editor. Default matches
+                  the current layout exactly — no shift when toggled today, and
+                  components opt into the new rhythm gradually.
+                </p>
+
+                <div className="space-y-2">
+                  {(
+                    [
+                      {
+                        value: 'ssl',
+                        label: 'SSL (22px)',
+                        desc: 'Console-dense. Best for 27"+ displays and power users.',
+                      },
+                      {
+                        value: 'ableton',
+                        label: 'Ableton (26px, default)',
+                        desc: 'Matches the shipped row rhythm. Balanced.',
+                      },
+                      {
+                        value: 'mutable',
+                        label: 'Mutable (32px)',
+                        desc: 'Airy. Easier to hit on touch or over long sessions.',
+                      },
+                    ] as Array<{ value: DensityMode; label: string; desc: string }>
+                  ).map(({ value, label, desc }) => (
+                    <label
+                      key={value}
+                      className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                        density === value
+                          ? 'border-accent/50 bg-accent/5 text-text-primary'
+                          : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="row-density"
+                        value={value}
+                        checked={density === value}
+                        onChange={() => { playUISound('toggle-on'); setDensity(value); }}
+                        className="mt-0.5 accent-[rgb(var(--accent))]"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-ui-sm font-medium">{label}</div>
+                        <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
           </section>

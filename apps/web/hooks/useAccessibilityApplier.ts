@@ -12,6 +12,7 @@ export function useAccessibilityApplier() {
   const colorblindMode = useAccessibilityStore((s) => s.colorblindMode);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
   const fontScale = useAccessibilityStore((s) => s.fontScale);
+  const density = useAccessibilityStore((s) => s.density);
   const syncReducedMotionFromOS = useAccessibilityStore((s) => s.syncReducedMotionFromOS);
   const hasExplicitMotionPref = useAccessibilityStore((s) => s.hasExplicitMotionPref);
 
@@ -43,5 +44,10 @@ export function useAccessibilityApplier() {
 
     // Font scale
     el.style.setProperty('--font-scale', String(fontScale));
-  }, [highContrast, colorblindMode, reducedMotion, fontScale]);
+
+    // Row density — flips --row-h via globals.css `[data-density="…"]`
+    // selectors. No layout shift today because no component reads
+    // var(--row-h) yet; wave-2+ migrations opt in gradually.
+    el.dataset.density = density;
+  }, [highContrast, colorblindMode, reducedMotion, fontScale, density]);
 }

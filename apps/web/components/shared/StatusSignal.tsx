@@ -19,14 +19,16 @@
 import type { Affiliation, Era } from '@kyberstation/presets';
 
 /**
- * Six semantic status states with paired glyph + color token.
+ * Eight semantic status states with paired glyph + color token.
  *
- *   idle    — ● (filled circle)         — text-muted (neutral presence)
- *   active  — ◉ (bullseye)              — accent      (live / selected)
- *   success — ✓ (check)                 — status-ok   (all good)
- *   warning — ▲ (triangle)              — badge-creative (amber caution)
- *   alert   — ⚠ (warning sign)          — status-warn (loud caution)
- *   error   — ✕ (cross)                 — status-error (failure)
+ *   idle       — ● (filled circle)   — text-muted      (neutral presence)
+ *   active     — ◉ (bullseye)        — accent          (live / selected)
+ *   success    — ✓ (check)           — status-ok       (all good)
+ *   warning    — ▲ (triangle)        — badge-creative  (amber caution)
+ *   alert      — ⚠ (warning sign)    — status-warn     (loud caution)
+ *   error      — ✕ (cross)           — status-error    (failure)
+ *   modulation — ◆ (filled diamond)  — status-magenta  (modulation / routing identity)
+ *   data       — · (middle dot)      — status-white    (neutral data readout)
  */
 export type StatusVariant =
   | 'idle'
@@ -34,7 +36,9 @@ export type StatusVariant =
   | 'success'
   | 'warning'
   | 'alert'
-  | 'error';
+  | 'error'
+  | 'modulation'
+  | 'data';
 
 export type StatusSize = 'sm' | 'md';
 
@@ -46,12 +50,14 @@ interface GlyphSpec {
 }
 
 const STATUS_GLYPHS: Record<StatusVariant, GlyphSpec> = {
-  idle:    { glyph: '\u25CF', color: 'rgb(var(--text-muted))' },        // ●
-  active:  { glyph: '\u25C9', color: 'rgb(var(--accent))' },            // ◉
-  success: { glyph: '\u2713', color: 'rgb(var(--status-ok))' },         // ✓
-  warning: { glyph: '\u25B2', color: 'rgb(var(--badge-creative))' },    // ▲
-  alert:   { glyph: '\u26A0', color: 'rgb(var(--status-warn))' },       // ⚠
-  error:   { glyph: '\u2715', color: 'rgb(var(--status-error))' },      // ✕
+  idle:       { glyph: '\u25CF', color: 'rgb(var(--text-muted))' },      // ●
+  active:     { glyph: '\u25C9', color: 'rgb(var(--accent))' },          // ◉
+  success:    { glyph: '\u2713', color: 'rgb(var(--status-ok))' },       // ✓
+  warning:    { glyph: '\u25B2', color: 'rgb(var(--badge-creative))' },  // ▲
+  alert:      { glyph: '\u26A0', color: 'rgb(var(--status-warn))' },     // ⚠
+  error:      { glyph: '\u2715', color: 'rgb(var(--status-error))' },    // ✕
+  modulation: { glyph: '\u25C6', color: 'rgb(var(--status-magenta))' },  // ◆
+  data:       { glyph: '\u00B7', color: 'rgb(var(--status-white))' },    // ·
 };
 
 const SIZE_TO_FONT_SIZE: Record<StatusSize, string> = {

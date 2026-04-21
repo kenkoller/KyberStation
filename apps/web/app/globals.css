@@ -41,6 +41,24 @@
   --status-warn: 234 179 8;
   --status-error: 239 68 68;
   --status-info: 59 130 246;
+  /* Aviation status colors — §6 North Star. ok/warn/error/info already exist.
+     magenta = modulation/routing identity; white = neutral data readouts. */
+  --status-magenta: 180 106 192;
+  --status-white:   226 230 236;
+  /* ─── Radius discipline — §6 North Star
+     "2px chrome / 4–6px interactive / 0px data cells" ─── */
+  --r-chrome:      2px;
+  --r-interactive: 4px;
+  --r-data:        0px;
+  /* ─── Row rhythm — §6 "24–28px" default; density presets via data attribute ─── */
+  --row-h:       26px;
+  --row-h-dense: 22px;
+  --row-h-airy:  32px;
+  /* ─── Motion tokens — align with reference + docs/MOTION primitives ─── */
+  --m-fast: 120ms;
+  --m-base: 180ms;
+  --m-slow: 400ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* ─── Faction / era / badge tokens (PresetGallery + badges) ───
      Space-separated RGB triples so they compose via Tailwind's
      `rgb(var(--x) / <alpha>)` style. */
@@ -120,6 +138,17 @@
   --status-error: 239 68 68;
   --status-info: 168 85 247;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROW DENSITY — §6 North Star. Three named presets flip --row-h via the
+   data-density attribute applied to <html> by useAccessibilityApplier.
+   Default (no attribute) matches the Ableton preset, so existing panel
+   rhythm is preserved until components opt into var(--row-h).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-density="ssl"]      { --row-h: 22px; }
+[data-density="ableton"]  { --row-h: 26px; }
+[data-density="mutable"]  { --row-h: 32px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ACCESSIBILITY: Reduced Motion (user toggle override)
