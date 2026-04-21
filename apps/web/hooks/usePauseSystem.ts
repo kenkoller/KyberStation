@@ -33,28 +33,13 @@ export function usePauseSystem() {
     }
   }, [isPaused]);
 
-  // Keyboard shortcut: Space bar when no input is focused
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== 'Space') return;
-      const target = e.target as HTMLElement;
-      const tag = target.tagName;
-      // Don't hijack space in inputs, textareas, selects, or contenteditable
-      if (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-      e.preventDefault();
-      togglePause();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePause]);
+  // NOTE: the former `Space` → togglePause keyboard binding was removed
+  // on 2026-04-20 because it collided with the primary ignite/retract
+  // shortcut in `useKeyboardShortcuts.ts`. usePauseSystem is registered
+  // earlier in WorkbenchLayout's hook order than useKeyboardShortcuts,
+  // so its Space listener fired first + preventDefault'd, and ignite
+  // never ran. Users pause via the header PauseButton; a dedicated
+  // non-Space hotkey can be re-added later if demand surfaces.
 
   return { isPaused, togglePause, setPaused };
 }

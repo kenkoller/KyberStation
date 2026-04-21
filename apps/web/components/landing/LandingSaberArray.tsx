@@ -390,14 +390,19 @@ function MarqueeCard({ cardKey, preset }: MarqueeCardProps) {
       className="relative shrink-0 flex flex-col gap-3 rounded-lg border bg-bg-card/60 backdrop-blur-sm overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       style={{
         width: '200px',
-        borderColor: isHovered ? `rgba(${r},${g},${b},0.55)` : 'rgb(var(--border-subtle))',
-        // Ease in/out so hover state changes feel intentional. 800ms
-        // matches the human perception window for "deliberate" vs
-        // "twitchy" transitions.
+        // Hover: brighten the border color + stack an inset 1px box-shadow
+        // on top of the static 1px CSS border. Combined effect reads as a
+        // 2px colored edge without toggling border width (which would
+        // shift layout by a pixel and cause a twitch).
+        borderColor: isHovered ? `rgba(${r},${g},${b},0.85)` : 'rgb(var(--border-subtle))',
         transition:
           'border-color 800ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 800ms cubic-bezier(0.4, 0, 0.2, 1)',
+        // Double-layer shadow on hover: inset 1px inner stroke (simulates
+        // border thickness) + outer bloom (the halo Ken wanted brighter).
+        // Bumped halo opacity 0.22 → 0.42 and blur radius 30 → 48 to read
+        // more clearly against the dark landing background.
         boxShadow: isHovered
-          ? `0 0 30px 0 rgba(${r},${g},${b},0.22)`
+          ? `inset 0 0 0 1px rgba(${r},${g},${b},0.6), 0 0 48px 2px rgba(${r},${g},${b},0.42)`
           : 'none',
       }}
       onMouseEnter={() => setIsHovered(true)}

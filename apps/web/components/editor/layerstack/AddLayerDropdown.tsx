@@ -54,8 +54,15 @@ export function AddLayerDropdown({ onClose }: { onClose: () => void }) {
     { type: 'smoothswing', label: 'Add SmoothSwing Plate', desc: 'Audio swing-pair crossfade (modulator)' },
   ];
 
+  // Opens BELOW the Add Layer button (top-full) rather than above —
+  // the LayerStack column is typically scrollable with room below the
+  // Add Layer button (Layer Config section when nothing is selected,
+  // empty space otherwise). Opening above clipped the top ~60% of the
+  // 5 options whenever an ancestor had overflow:hidden, which is
+  // exactly what Ken's 2026-04-20 walkthrough caught. `max-h` +
+  // `overflow-y-auto` are belt-and-suspenders for tight viewports.
   return (
-    <div className="absolute bottom-full left-0 right-0 mb-1 bg-bg-deep border border-border-subtle rounded-lg shadow-lg overflow-hidden z-10">
+    <div className="absolute top-full left-0 right-0 mt-1 bg-bg-deep border border-border-subtle rounded-lg shadow-lg overflow-hidden z-20 max-h-[280px] overflow-y-auto">
       {options.map((opt) => {
         const badge = TYPE_BADGES[opt.type];
         return (

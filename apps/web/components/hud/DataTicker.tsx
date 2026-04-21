@@ -30,9 +30,16 @@ export function DataTicker({
   className = '',
 }: DataTickerProps) {
   const items = useMemo(() => data ?? generateDefaultData(), [data]);
-  const joined = items.join(' \u2502 ');
-  // Double the content for seamless loop
-  const doubled = `${joined} \u2502 ${joined}`;
+  // Seamless loop requires the animated content to be exactly TWO
+  // identical passes of the pool so a `translateX(-50%)` lands on a
+  // frame that looks identical to `translateX(0)`. The previous
+  // implementation joined the pool once then concatenated with an
+  // extra separator in the middle — that introduced asymmetry and
+  // the content snapped back at each loop. `items.concat(items).join`
+  // produces a single string where every item-gap (including the
+  // boundary between the two passes) uses the same separator, so
+  // 0% and 100% of the animation are visually indistinguishable.
+  const looped = items.concat(items).join(' \u2502 ');
 
   return (
     <div
@@ -52,7 +59,7 @@ export function DataTicker({
           animation: `hud-ticker-scroll ${speed}s linear infinite`,
         }}
       >
-        {doubled}
+        {looped}
       </div>
     </div>
   );

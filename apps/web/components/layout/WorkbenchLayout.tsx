@@ -52,7 +52,14 @@ import { EXTENDED_LOCATION_THEMES, EXTENDED_FACTION_THEMES } from '@/lib/extende
 import { useMetaKey } from '@/lib/platform';
 import Link from 'next/link';
 
-// ─── HUD status messages for the header DataTicker ───
+// ─── HUD status messages for the data ticker strip ───
+// Expanded 2026-04-20 from the original 8-message set per Ken's
+// walkthrough feedback — he wanted more varied / more interesting
+// chrome text while still reading as saber / ProffieOS-adjacent.
+// Mix of: system-status readouts, hardware acknowledgements,
+// Proffie-specific technical shorthand, and a few ambient flavor
+// lines. Expanding the pool also makes the seamless loop less
+// repetitive to the eye (longer content → loop period stretches).
 const HUD_TICKER_MESSAGES = [
   'SYSTEMS NOMINAL',
   'BLADE CALIBRATED',
@@ -62,6 +69,24 @@ const HUD_TICKER_MESSAGES = [
   'STYLE ENGINE READY',
   'PROFFIE OS 7.x',
   'LED MATRIX SYNC',
+  'NEOPIXEL GAMMA LOCKED',
+  'SMOOTHSWING V2',
+  'FETT263 COMPAT',
+  'MOTION ARMED',
+  'FONT LIBRARY LOADED',
+  'WS2812B CHANNEL OK',
+  'STM32 DFU READY',
+  'CARRIER LOCKED',
+  'TX · 115200 BAUD',
+  'BOOSTER CAP CHARGED',
+  'HILT THERMAL OK',
+  'GYRO FUSED',
+  'ACCELEROMETER ZEROED',
+  'I²C BUS ACTIVE',
+  'SD PRESET MOUNT',
+  'FIRMWARE PINNED',
+  'SHIMMER HARMONIC',
+  'DIFFUSION KERNEL',
 ];
 
 // ─── Tab Definitions ───
