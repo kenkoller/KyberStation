@@ -487,6 +487,143 @@ Last git tag: **v0.10.0**. No tag cut since; PR #31 is the staging area for ever
 - **DFU entry method clarified**: for a live-powered board (battery connected, or even just USB-powered + already running ProffieOS), the correct sequence is **hold BOOT → tap RESET → release BOOT**. The "unplug, hold BOOT, replug" method doesn't reset the chip when a battery is attached, so BOOT0 is never resampled. Both paths are now documented in [`docs/HARDWARE_VALIDATION_TODO.md`](docs/HARDWARE_VALIDATION_TODO.md).
 - **Hardware validation Phases B + C ✅** (89sabers V3.9, macOS + Brave) — including recovery re-flash. Brave is Chromium-based; Chrome / Edge / Arc should behave identically but have not been independently verified. Blade ignites blue, USB serial enumerates as `/dev/tty.usbmodem*`, audio DAC announces "font not found"/"SD card not found". **Three real DFU protocol bugs caught + fixed** that 576 mock tests missed: (1) `verifyFlash` needs `abort()` after `setAddressPointer` to leave `dfuDNLOAD_IDLE` before `UPLOAD`; (2) manifest needs `abort()` before zero-length `DNLOAD` to leave `dfuUPLOAD_IDLE`; (3) post-manifest `controlTransferIn` raises a raw `DOMException` (not our `DfuError`) when STM32 resets the bus, and the catch block only swallowed `DfuError` — surfaced a successful flash as a red error banner. All three in [`apps/web/lib/webusb/DfuSeFlasher.ts`](apps/web/lib/webusb/DfuSeFlasher.ts). `MockUsbDevice` tightened with `strictState` + `resetAfterManifest` options (3 regression tests added, each independently verified to fail against a reverted fix). Also fixed [`firmware-configs/v3-standard.h`](firmware-configs/v3-standard.h) compile regression against current ProffieOS master (legacy `InOutTrL<TrWipe<300>, TrWipeIn<500>, Blue>` no longer compiles — bare `Blue` returns `RGBA_nod` which doesn't convert to `OverDriveColor`; replaced with `StyleNormalPtr<Blue, WHITE, 300, 500>`). Workflow at [`.github/workflows/firmware-build.yml`](.github/workflows/firmware-build.yml) had a Linux-only sketch-dir casing bug (`proffieos/` vs `ProffieOS.ino`) — fixed in commit `abe039d`. Cross-OS (Windows/Linux) and cross-board (V2, V3-OLED) sweeps still pending.
 
+### 2026-04-20 late session — workbench UX realignment
+
+Delivered waves W1 / W2a / W3 / W4 / W4b / W6a / W6b from the new
+[`docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md`](docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md)
+plan (commit `d30aae5`), plus two walkthrough-fix passes and one polish
+wave. The plan synthesizes the UX North Star + the Claude Design
+reference at `docs/design-reference/2026-04-19-claude-design/` into 8
+waves; this session shipped everything except W5 (PerformanceBar),
+W7 (4-tab consolidation), and W8 (Inspector extraction) — those are
+post-launch per the plan's launch-readiness gating.
+
+Structural shape changes (visible to users):
+
+- **StatusBar promoted from bottom to top** (commit `0ce7d82`). The
+  11-segment PFD strip (⚡ PWR · PROFILE · CONN · PAGE · LEDs · MOD ·
+  STOR · THEME · PRESET · UTC · BUILD) now sits directly under the
+  header. Replaces the decorative HUD ticker that used to live there.
+  Tag flipped from `<footer>` to `<div role="status">`; `border-t` →
+  `border-b` to match the new placement.
+- **DataTicker relocated to the bottom** (same commit) as ambient
+  chrome. Half-speed (60s vs 30s) since it's out of the primary eye
+  zone. Fixed a seamless-loop asymmetry bug so the content no longer
+  snaps back each loop (`items.concat(items).join` symmetry — commit
+  `7347ebf`). 26-message pool (up from 8). **Now interleaves live
+  readouts** (`TAB · DESIGN`, `THEME · JEDI`, `LEDS · 144`) every 4th
+  slot via `tickerMessages` memo (commit `c09af58`).
+- **Header trim** (commit `20bde4e`): dropped "Universal Saber Style
+  Engine" subtitle + inline version/profile breadcrumb (StatusBar
+  owns both now). Removed "FX Compare" button — moved to palette.
+  Tighter padding (`py-2 → py-1.5`), height ~32-36px. Added
+  `[Command ⌘K]` chip + tab kbd hints `⌘1–⌘5` (OS-aware — Ctrl+1
+  on non-Mac via new [`apps/web/lib/platform.ts`](apps/web/lib/platform.ts)
+  hooks `useIsMac` / `useMetaKey` / `useKbd`, commit `6207b8a`).
+- **Action-bar pruned 21 chips → 5** (commit `b02ee81`, W4b). Kept
+  `[IGNITE | CLASH | BLAST | LOCKUP | STAB]` plus the right-side
+  `● LIVE` indicator. The 17 removed effects stay keyboard-bound
+  (`EFFECT_SHORTCUTS_BY_CODE`) and discoverable through the palette's
+  22-command AUDITION group. Sustained effects (Lockup et al.) now
+  render an "active held" glow — commit `c09af58` / polish wave.
+
+New primitives + stores shipped:
+
+- `<CommandPalette>` — 640px Raycast-shape portal dialog (commit
+  `a791150`, W2a). Mounted in W4. Uses `useModalDialog` for focus
+  trap, keyboard nav ↑↓↵ESC, two crumb chips OS-aware.
+- `commandStore` — registry + `registerCommand` / `runCommand` /
+  open/close/query. Idempotent.
+- `useCommandPalette` + `useRegisterCommands` — global `⌘K` /
+  `Ctrl+K` listener with input-focus guard.
+- 23 initial palette commands (NAVIGATE 5 / AUDITION 22 / VIEW 4 /
+  WIZARD 1 / THEME 8-capped) registered from WorkbenchLayout.
+- `--status-magenta` + `--status-white` tokens (fills the §6 six-
+  aviation-color set). Radius trio `--r-chrome 2px / --r-interactive
+  4px / --r-data 0px`. `--row-h` density token (SSL 22 / Ableton 26
+  default / Mutable 32) with `[data-density="…"]` selectors wired
+  through `useAccessibilityApplier`. Settings modal Row-density
+  radio (W1, commit `d744ff5`). No components consume `--row-h`
+  yet; density is scaffolding.
+- `<StatusSignal variant="modulation" | "data">` glyphs added (◆ / ·).
+- `<EffectChip>` action-bar subcomponent — subscribes to
+  `activeEffectsStore`, shows accent glow on held state.
+- `<ModulatorRow>` + `<ModulatorViz>` (W6b, commit `5e7281a`) —
+  distinct row shape for SmoothSwing layers. Magenta left-edge
+  stripe, animated SVG viz (lfo / env / sim / state kinds), target
+  label + B/M/S, uses `--row-h` + `--mod-color`. Hot-mod hover-
+  highlight: hovering the row tints other LayerRows (temporary 1:1
+  mapping via `uiStore.hoveredModulatorId` until v1.1 modulation-
+  routing plumbs real per-parameter highlighting). Docs:
+  [`docs/MODULATION_ROUTING_V1.1.md`](docs/MODULATION_ROUTING_V1.1.md).
+- `activeEffectsStore` (runtime Set of held sustained effects) +
+  `stores/accessibilityStore.effectAutoRelease: { enabled, seconds }`
+  (persisted demo-mode setting, default off / 4s).
+- [`apps/web/lib/effectToggle.ts`](apps/web/lib/effectToggle.ts) —
+  single `toggleOrTriggerEffect` helper called by keyboard
+  (`useKeyboardShortcuts`), chip clicks (`EffectChip`), and all 21
+  palette AUDITION commands. Module-level timer registry so rapid
+  re-triggers from mixed sources share cancellation — never leaves
+  a stale auto-release scheduled.
+
+LayerStack W6a decomposition (behavior-preserving, commit `18cd9bf`):
+
+- `components/editor/LayerStack.tsx` reduced 1086 → 4 lines
+  (public re-export only).
+- New `components/editor/layerstack/` subfolder with 6 focused files
+  (`LayerStack` panel shell, `LayerRow`, `LayerConfigPanel`,
+  `AddLayerDropdown`, `scrubFields`, `constants`).
+- `AddLayerDropdown` portal-refactored (commit `0ce7d82`) via
+  `createPortal(document.body)` so it escapes the LayerStack panel's
+  `overflow: hidden` ancestor — previously clipped to 2-of-5 options.
+  Click-outside + Escape close.
+
+Bug fixes caught in walkthroughs:
+
+- **Space key ignition regression** (finding #4, commit `7347ebf`) —
+  `usePauseSystem` had a lingering Space → togglePause binding
+  registered earlier than `useKeyboardShortcuts`, swallowing the
+  ignite handler via `preventDefault`. Pause now lives only on the
+  header PauseButton; inline comment blocks future reintroduction.
+- **DataTicker snap-back** (finding #3, commit `7347ebf`) —
+  asymmetric middle separator → `items.concat(items).join` fix.
+- **Add Layer dropdown clipped** (finding #8, commit `0ce7d82`) —
+  portal refactor above.
+- **Landing page:** visibility-gated blade animation (commit
+  `c47a640`): all 50 unique presets animate at 30fps via new
+  `fps` prop on `<MiniSaber>`; rows no longer pause on hover;
+  IntersectionObserver keeps `inView` state live so off-screen cards
+  freeze (zero CPU). Row drift halved (280s/340s). Hover polish:
+  2px-feel border via inset box-shadow + brighter halo (blur 48,
+  opacity 0.42). `LANDING_PRESET_CAP = 50` slice applied after
+  zipHueSpread.
+
+Landing architecture:
+- `MiniSaber` now has an `fps?: number` prop; RAF still fires at
+  native rate but `engine.update` + `drawPixels` only run when
+  `time - lastAppliedTime >= 1000/fps`. Undefined = native. Landing
+  passes 30. Gate on visibility means concurrent tick count stays
+  proportional to viewport (~12-20 cards) regardless of total pool.
+
+Test count: **579 web tests** (547 pre-session + 28 new from W2a's
+`commandPalette.test.ts`). +workspace packages unchanged. Typecheck
+clean through every commit.
+
+Known deferred (don't treat as bugs next session):
+
+- **Layer edits don't reach the blade engine** — `layerStore` is not
+  consumed by `BladeCanvas` / `useBladeEngine` / `packages/engine`.
+  Pre-existing architectural state; part of the v1.1 modulation-
+  routing sprint per `docs/MODULATION_ROUTING_V1.1.md`.
+- **StatusBar `CONN · IDLE`** is a placeholder. No global WebUSB
+  store exists yet (FlashPanel holds its state locally). Drop-in
+  swap documented in the StatusBar source via `getConnectionDisplay()`.
+- **Below 1024px layout breaks** — pre-existing; the desktop
+  workbench is gated on `desktop:` breakpoint via AppShell.
+- **Density toggle is scaffolding** — `--row-h` defined + flipped on
+  `<html data-density>`, but no component reads it yet. Threading
+  through LayerStack rows is a natural first consumer.
+
 ### Current session accomplishments (2026-04-18)
 
 - **Phase 1 QA sweep** — 28 of 37 launch-readiness phases. 11 findings fixed inline. `docs/LAUNCH_QA_PLAN.md` is the authoritative plan.
@@ -497,22 +634,28 @@ Last git tag: **v0.10.0**. No tag cut since; PR #31 is the staging area for ever
 
 ### What's waiting
 
-- **Ken's app walkthrough.** Everything is on the test branch ready for a real-Chrome visual QA pass. Findings from his walk become the next round.
-- **Hardware validation** (P24–P28): Phase A ✅ done 2026-04-20 (macOS + V3.9, surfaced + fixed the null-interfaceName macOS compat bug). Phase B (dry-run) + Phase C (real flash) + SD-card config round-trip still pending — `docs/NEXT_HARDWARE_SESSION.md` has the self-contained prompt + firmware-build paths to pick up.
-- **Deep a11y audit** (P29): VoiceOver walk, WCAG contrast sweep, keyboard-only nav
-- **Perf deep-dive** (P30): LCP / FPS / memory
-- **Cross-browser matrix** (P31): Safari / Firefox / Edge + mobile Safari / mobile Chrome
-- **Launch-triage** (P37): go/no-go after above
-- **1 remaining UX item** (#16 Figma color model) — prompt in `docs/NEXT_SESSIONS.md`
-- **CHANGELOG + version tag** — deliberately deferred; Ken controls this call
+- **Ken's walkthrough of the late 2026-04-20 workbench realignment** (W1 / W2a / W3 / W4 / W4b / W6a / W6b + polish wave). The smell-test checklist lives in the conversation record for that session; findings get queued against the docs below.
+- **W5 — PerformanceBar** (plan §W5). Post-launch per plan. Dedicated session. Starter prompt was drafted end-of-session (pasted into fresh Claude Code).
+- **W7 — 4-tab consolidation** (plan §W7). Post-launch + requires Ken's explicit product decisions on which current panels redistribute into Design / Audition / Code / Deliver. Migration-heavy (persisted user layouts).
+- **W8 — Inspector extraction** (plan §W8). v0.14+ sprint; XL effort on StylePanel (344 lines) + EffectPanel (768 lines).
+- **Hardware validation cross-OS + cross-board** — Phase A/B/C ✅ on macOS + V3.9. Windows / Linux + V2 / V3-OLED sweeps still pending.
+- **Deep a11y audit** (P29): VoiceOver walk, WCAG contrast sweep, keyboard-only nav.
+- **Perf deep-dive** (P30): LCP / FPS / memory.
+- **Cross-browser matrix** (P31): Safari / Firefox / Edge + mobile Safari / mobile Chrome.
+- **Launch-triage** (P37): go/no-go after above.
+- **1 remaining UX item** (#16 Figma color model) — prompt in `docs/NEXT_SESSIONS.md`.
+- **CHANGELOG + version tag** — plan recommends `v0.13.0 — Launch Readiness` for this PR's body of work (shifting Kyber Forge → v0.14.0 etc.). Still Ken's call when to tag.
+- **Beyond-the-plan polish sweeps** queued: density consumption (thread `--row-h` through panels so the SSL/Ableton/Mutable toggle has visible effect), radius token migration (rounded-lg → `--r-interactive`), Imperial amber as additive theme, typography hierarchy sweep, effect-chip preview animations.
 
 ### Key session docs for future-Claude (or Ken)
 
-- [`docs/UX_NORTH_STAR.md`](docs/UX_NORTH_STAR.md) — updated this session; Orbitron now the sanctioned third ceremonial face per §5/§6/§8
+- [`docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md`](docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md) — 8-wave realignment plan. W1–W4b + W6a+b shipped late 2026-04-20; W5 / W7 / W8 are post-launch.
+- [`docs/UX_NORTH_STAR.md`](docs/UX_NORTH_STAR.md) — updated 2026-04-18; Orbitron sanctioned as the third ceremonial face per §5/§6/§8
 - [`docs/UX_OVERHAUL_SUMMARY_2026-04-18.md`](docs/UX_OVERHAUL_SUMMARY_2026-04-18.md) — full session synthesis, all 25 items + their docs references
 - [`docs/NEXT_SESSIONS.md`](docs/NEXT_SESSIONS.md) — ready-to-paste prompts for the 2 remaining items
 - [`docs/LAUNCH_QA_PLAN.md`](docs/LAUNCH_QA_PLAN.md) — 37-phase QA plan with per-phase status
 - [`docs/TESTING_NOTES.md`](docs/TESTING_NOTES.md) — session finding log
+- [`docs/MODULATION_ROUTING_V1.1.md`](docs/MODULATION_ROUTING_V1.1.md) — v1.1 architecture doc for the layer-to-engine wiring (referenced by W6b's temporary 1:1 hover-highlight)
 - [`docs/MODULATION_ROUTING_V1.1.md`](docs/MODULATION_ROUTING_V1.1.md) — new this session; v1.1 architecture scoping for math expressions + modulation
 - Per-area audit docs: `UX_OVERHAUL_{LANDING,EDITOR_CORE,COLOR_PRESET_AUDIO,OUTPUT_EXPORT,MOBILE,SABER_VISIBILITY}_2026-04-18.md`
 
