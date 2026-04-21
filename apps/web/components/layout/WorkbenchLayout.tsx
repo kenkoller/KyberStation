@@ -354,6 +354,142 @@ export function WorkbenchLayout() {
         icon: '▶',
         run: () => triggerEffectWithAudio('stab'),
       },
+      // W4b — 17 effects pruned from the visible action bar and exposed
+      // here in the AUDITION palette group. The `kbd` strings mirror
+      // EFFECT_SHORTCUTS_BY_CODE in `lib/keyboardShortcuts.ts` exactly;
+      // effects without a single-letter hotkey (scatter/ripple/freeze/
+      // overcharge/invert) intentionally omit the `kbd` field.
+      {
+        id: 'audition:lightning',
+        group: 'AUDITION',
+        title: 'Hold Lightning',
+        kbd: 'N',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('lightning'),
+      },
+      {
+        id: 'audition:drag',
+        group: 'AUDITION',
+        title: 'Hold Drag',
+        kbd: 'D',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('drag'),
+      },
+      {
+        id: 'audition:melt',
+        group: 'AUDITION',
+        title: 'Hold Melt',
+        kbd: 'M',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('melt'),
+      },
+      {
+        id: 'audition:force',
+        group: 'AUDITION',
+        title: 'Trigger Force',
+        kbd: 'F',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('force'),
+      },
+      {
+        id: 'audition:shockwave',
+        group: 'AUDITION',
+        title: 'Trigger Shockwave',
+        kbd: 'W',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('shockwave'),
+      },
+      {
+        id: 'audition:scatter',
+        group: 'AUDITION',
+        title: 'Trigger Scatter',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('scatter'),
+      },
+      {
+        id: 'audition:fragment',
+        group: 'AUDITION',
+        title: 'Trigger Fragment',
+        kbd: 'R',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('fragment'),
+      },
+      {
+        id: 'audition:ripple',
+        group: 'AUDITION',
+        title: 'Trigger Ripple',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('ripple'),
+      },
+      {
+        id: 'audition:freeze',
+        group: 'AUDITION',
+        title: 'Trigger Freeze',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('freeze'),
+      },
+      {
+        id: 'audition:overcharge',
+        group: 'AUDITION',
+        title: 'Trigger Overcharge',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('overcharge'),
+      },
+      {
+        id: 'audition:bifurcate',
+        group: 'AUDITION',
+        title: 'Trigger Bifurcate',
+        kbd: 'V',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('bifurcate'),
+      },
+      {
+        id: 'audition:invert',
+        group: 'AUDITION',
+        title: 'Trigger Invert',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('invert'),
+      },
+      {
+        id: 'audition:ghostEcho',
+        group: 'AUDITION',
+        title: 'Trigger Ghost Echo',
+        kbd: 'G',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('ghostEcho'),
+      },
+      {
+        id: 'audition:splinter',
+        group: 'AUDITION',
+        title: 'Trigger Splinter',
+        kbd: 'P',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('splinter'),
+      },
+      {
+        id: 'audition:coronary',
+        group: 'AUDITION',
+        title: 'Trigger Coronary',
+        kbd: 'E',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('coronary'),
+      },
+      {
+        id: 'audition:glitchMatrix',
+        group: 'AUDITION',
+        title: 'Trigger Glitch Matrix',
+        kbd: 'X',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('glitchMatrix'),
+      },
+      {
+        id: 'audition:siphon',
+        group: 'AUDITION',
+        title: 'Trigger Siphon',
+        kbd: 'H',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('siphon'),
+      },
       // ── VIEW ──────────────────────────────────────────────────────
       {
         id: 'view:toggle-fx-compare',
@@ -748,41 +884,43 @@ export function WorkbenchLayout() {
 
         <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
 
-        {/* Effect trigger buttons */}
+        {/* Effect trigger buttons — W4b pruned to the 4 most-used effects.
+            The other 17 effects (lightning, drag, melt, force, shockwave,
+            scatter, fragment, ripple, freeze, overcharge, bifurcate, invert,
+            ghostEcho, splinter, coronary, glitchMatrix, siphon) are still
+            wired to their single-letter hotkeys in `useKeyboardShortcuts`
+            (via EFFECT_SHORTCUTS_BY_CODE) and are discoverable through the
+            ⌘K palette's AUDITION group. */}
         {([
-          { type: 'clash',     label: 'Clash',     key: 'C' },
-          { type: 'blast',     label: 'Blast',     key: 'B' },
-          { type: 'stab',      label: 'Stab',      key: 'S' },
-          { type: 'lockup',    label: 'Lockup',    key: 'L' },
-          { type: 'lightning',  label: 'Lightning', key: 'N' },
-          { type: 'drag',      label: 'Drag',      key: 'D' },
-          { type: 'melt',      label: 'Melt',      key: 'M' },
-          { type: 'force',     label: 'Force',     key: 'F' },
-          { type: 'shockwave', label: 'Shockwave', key: 'W' },
-          { type: 'scatter',   label: 'Scatter',   key: '' },
-          { type: 'fragment',  label: 'Fragment',  key: 'R' },
-          { type: 'ripple',    label: 'Ripple',    key: '' },
-          { type: 'freeze',    label: 'Freeze',    key: '' },
-          { type: 'overcharge', label: 'Overcharge', key: '' },
-          { type: 'bifurcate', label: 'Bifurcate', key: 'V' },
-          { type: 'invert',    label: 'Invert',    key: '' },
-          { type: 'ghostEcho', label: 'Ghost Echo', key: 'G' },
-          { type: 'splinter',  label: 'Splinter',  key: 'P' },
-          { type: 'coronary',  label: 'Coronary',  key: 'E' },
-          { type: 'glitchMatrix', label: 'Glitch Matrix', key: 'X' },
-          { type: 'siphon',    label: 'Siphon',    key: 'H' },
+          { type: 'clash',  label: 'Clash',  key: 'C' },
+          { type: 'blast',  label: 'Blast',  key: 'B' },
+          { type: 'lockup', label: 'Lockup', key: 'L' },
+          { type: 'stab',   label: 'Stab',   key: 'S' },
         ] as const).map(({ type, label, key }) => (
           <button
             key={type}
             onClick={() => triggerEffectWithAudio(type)}
             className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light hover:bg-bg-secondary transition-colors"
-            title={key ? `${label} effect (${key})` : `${label} effect`}
+            title={`${label} effect (${key})`}
           >
             <span className="hidden desktop:inline">{label}</span>
-            <span className="desktop:hidden">{key || label.slice(0, 2)}</span>
-            {key && <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{key}</kbd>}
+            <span className="desktop:hidden">{key}</span>
+            <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{key}</kbd>
           </button>
         ))}
+
+        {/* LIVE indicator — reference `blade-controls` right-side readout.
+            Zoom readout is intentionally omitted in this wave: zoom state
+            is local to BladeCanvas (not a global store), and surfacing it
+            here would require lifting state beyond this file's W4b scope. */}
+        <div className="ml-auto flex items-center gap-2 text-ui-xs text-text-muted font-mono">
+          <span
+            aria-hidden="true"
+            className="inline-block w-1.5 h-1.5 rounded-full"
+            style={{ background: 'rgb(var(--status-ok) / 1)', boxShadow: '0 0 6px rgb(var(--status-ok) / 0.6)' }}
+          />
+          <span style={{ letterSpacing: '0.08em' }}>LIVE</span>
+        </div>
       </div>
 
       {/* ════════════════════════════════════════════════════
