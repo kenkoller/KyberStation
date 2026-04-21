@@ -1,10 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
-import { ConsoleIndicator } from '@/components/hud/ConsoleIndicator';
+import { useSaberProfileStore } from '@/stores/saberProfileStore';
+import { usePresetListStore } from '@/stores/presetListStore';
+import { useHistoryStore } from '@/stores/historyStore';
 import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSignal';
+import { LATEST_VERSION } from '@/lib/version';
 
 // ─── Power constants (mirrors PowerDrawPanel) ─────────────────────────────────
 const MA_PER_CHANNEL = 20;      // mA per WS2812B channel at full brightness
@@ -19,18 +22,126 @@ const MB_PER_FONT = 120;
 /** Minimum config overhead in MB */
 const CONFIG_OVERHEAD_MB = 2;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Returns a Tailwind color class for a 0-1 usage fraction. */
-function usageFgClass(fraction: number): string {
-  if (fraction >= 0.85) return 'text-red-400';
-  if (fraction >= 0.60) return 'text-yellow-400';
-  return 'text-green-400';
-}
-
 /** Formats milliamps as "X.XA" */
 function formatAmps(ma: number): string {
   return (ma / 1000).toFixed(1) + 'A';
+}
+
+/** Pads a non-negative integer with a leading zero when it's < 10. */
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+/** Returns current UTC time as "HH:MM:SS" (no trailing "UTC" — label handles it). */
+function formatUtcNow(): string {
+  const d = new Date();
+  return `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`;
+}
+
+// ─── Segment primitives ─────────────────────────────────────────────────────
+//
+// Each PFD segment is a k/v pair: uppercase-mono label + separator + value.
+// Segments are separated by a hairline vertical rule to match the reference
+// `.status-bar` density. Values default to text-secondary so color accents
+// read clearly against the default muted field.
+
+interface SegmentProps {
+  label: string;
+  children: React.ReactNode;
+  /** Optional class applied to the value span — e.g. color token overrides. */
+  valueClassName?: string;
+  /** Optional leading glyph/signal rendered before the label. */
+  leading?: React.ReactNode;
+  /** Hide on narrower viewports (<1440px). */
+  wideOnly?: boolean;
+  /** Extra classes for the wrapper (e.g. to align a `StatusSignal`). */
+  className?: string;
+}
+
+function Segment({
+  label,
+  children,
+  valueClassName = 'text-text-secondary',
+  leading,
+  wideOnly = false,
+  className = '',
+}: SegmentProps) {
+  return (
+    <span
+      className={[
+        'inline-flex items-center gap-1.5 text-ui-xs leading-none',
+        wideOnly ? 'hidden wide:inline-flex' : '',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {leading}
+      <span className="uppercase tracking-[0.08em] text-text-muted">{label}</span>
+      <span aria-hidden="true" className="text-text-muted/50">
+        ·
+      </span>
+      <span className={`tabular-nums ${valueClassName}`}>{children}</span>
+    </span>
+  );
+}
+
+function SegmentDivider({ wideOnly = false }: { wideOnly?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={[
+        'w-px h-3 bg-border-subtle shrink-0',
+        wideOnly ? 'hidden wide:inline-block' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    />
+  );
+}
+
+// ─── Connection-display helper ──────────────────────────────────────────────
+//
+// Tiny pure function keeping the WebUSB-status rendering branchy but
+// outside the component body so TypeScript doesn't narrow the single
+// hardcoded `'idle'` argument into an impossibly-tight union at the call
+// site. Once a real WebUSB store lands, this becomes the mapping from
+// `{ kind: 'connected' | 'idle' | 'error' | … }` to display props.
+
+type ConnStatus = 'connected' | 'idle' | 'error';
+
+interface ConnDisplay {
+  status: ConnStatus;
+  variant: StatusVariant;
+  text: string;
+  colorClass: string;
+}
+
+function getConnectionDisplay(status: ConnStatus): ConnDisplay {
+  switch (status) {
+    case 'connected':
+      return {
+        status,
+        variant: 'success',
+        text: 'USB · READY',
+        colorClass: 'text-[rgb(var(--status-ok))]',
+      };
+    case 'error':
+      return {
+        status,
+        variant: 'error',
+        text: 'ERROR',
+        colorClass: 'text-[rgb(var(--status-error))]',
+      };
+    case 'idle':
+    default:
+      return {
+        status,
+        variant: 'alert',
+        text: 'IDLE',
+        colorClass: 'text-[rgb(var(--status-warn))]',
+      };
+  }
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -38,20 +149,41 @@ function formatAmps(ma: number): string {
 /**
  * StatusBar
  *
- * Slim full-width bar rendered at the bottom of the editor workbench.
- * Provides always-visible at-a-glance readouts without requiring a panel
- * to be open:
+ * Horizontal PFD segment strip rendered at the bottom of the editor
+ * workbench. Aligned with the §4 StatusBar spec in
+ * `docs/UX_NORTH_STAR.md` and the reference shape at
+ * `docs/design-reference/2026-04-19-claude-design/src/status-bar.jsx`.
  *
- *  Left        — estimated power draw (⚡ X.XA / 5A), color-coded
- *  Left-center — SD storage budget (💾 XX%), color-coded
- *  Right       — active LED count
+ * Segments (left → right):
+ *   Power Draw · Profile · Conn · Page · Layers · Modified · Storage
+ *   · Theme · Preset · UTC (wide-only) · Build
  *
- * All values are derived live from bladeStore / uiStore — no additional
- * store selectors are needed.
+ * Values are derived live from:
+ *   - bladeStore (led count, color → power draw)
+ *   - uiStore    (activeTab, canvasTheme, brightness)
+ *   - saberProfileStore (active profile name)
+ *   - presetListStore   (active preset index + name)
+ *   - historyStore      (dirty flag synthesized from past.length)
+ *
+ * WebUSB connection is currently a TODO placeholder — the live state
+ * is held inside FlashPanel's local state machine; global wiring is
+ * a follow-up wave.
  */
 export function StatusBar() {
   const config = useBladeStore((s) => s.config);
   const brightness = useUIStore((s) => s.brightness);
+  const activeTab = useUIStore((s) => s.activeTab);
+  const canvasTheme = useUIStore((s) => s.canvasTheme);
+
+  const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
+  const profiles = useSaberProfileStore((s) => s.profiles);
+
+  const presetEntries = usePresetListStore((s) => s.entries);
+  const activeEntryId = usePresetListStore((s) => s.activeEntryId);
+
+  // Subscribe to past.length rather than the full array so unrelated
+  // internal history churn doesn't re-render the bar.
+  const pastLength = useHistoryStore((s) => s.past.length);
 
   const ledCount = config.ledCount ?? 132;
   const baseColor = config.baseColor ?? { r: 0, g: 0, b: 255 };
@@ -71,91 +203,244 @@ export function StatusBar() {
   }, [ledCount, baseColor, briScale]);
 
   // ── Storage budget estimate ──────────────────────────────────────────────
-  // Uses ledCount as a rough proxy for style complexity (more LEDs → larger
-  // config). A realistic count comes from PresetList, but StatusBar is
-  // intentionally lightweight and avoids additional store subscriptions.
+  // Baseline: one font + config overhead. Identical math to the previous
+  // three-cluster StatusBar implementation; the PFD rewrite does not change
+  // the power/storage semantics.
   const storagePct = useMemo(() => {
-    // One font + config overhead as a baseline estimate
     const usedMB = MB_PER_FONT + CONFIG_OVERHEAD_MB;
     return Math.round((usedMB / CARD_USABLE_MB) * 100);
   }, []);
-
   const storageFraction = storagePct / 100;
 
-  const powerFgClass = usageFgClass(powerFraction);
-  const storageFgClass = usageFgClass(storageFraction);
+  // ── Profile / Preset derivations ─────────────────────────────────────────
+  const profileName = useMemo(() => {
+    const p = profiles.find((x) => x.id === activeProfileId);
+    return p?.name?.trim() || 'KYBER';
+  }, [profiles, activeProfileId]);
 
-  // Paired glyph variant for each indicator — redundant channel for
-  // colorblind users + a subtle craft cue. Thresholds mirror the color
-  // classes above so glyph + color always agree.
-  const powerStatus: StatusVariant =
+  const activePresetInfo = useMemo(() => {
+    if (!activeEntryId) return null;
+    const idx = presetEntries.findIndex((e) => e.id === activeEntryId);
+    if (idx < 0) return null;
+    return { idx, name: presetEntries[idx].presetName };
+  }, [presetEntries, activeEntryId]);
+
+  // ── Dirty flag ───────────────────────────────────────────────────────────
+  // No explicit dirty field exists today; synthesize from the history stack.
+  // The first entry is the initial snapshot, so anything above 1 means the
+  // user has made at least one change in the current session. A proper
+  // savepoint-aware dirty flag is a future follow-up.
+  const isDirty = pastLength > 1;
+
+  // ── WebUSB connection (placeholder) ──────────────────────────────────────
+  // TODO(W3 follow-up): wire this to a global WebUSB connection store.
+  // The live state currently lives inside FlashPanel's local `useState`
+  // machine (`apps/web/components/editor/FlashPanel.tsx`), so StatusBar has
+  // no cross-component source of truth to read from yet. Render a neutral
+  // "IDLE" placeholder until that store exists. Typed helper so the
+  // ternary scaffolding survives once a real signal is wired in.
+  const {
+    variant: connVariant,
+    text: connText,
+    colorClass: connColorClass,
+    status: connStatus,
+  } = getConnectionDisplay('idle');
+
+  // ── Power / Storage color escalation ─────────────────────────────────────
+  const powerVariant: StatusVariant =
     powerFraction >= 0.85 ? 'error' : powerFraction >= 0.6 ? 'alert' : 'success';
-  const storageStatus: StatusVariant =
-    storageFraction >= 0.85 ? 'error' : storageFraction >= 0.6 ? 'alert' : 'success';
+  const powerColorClass =
+    powerFraction >= 0.85
+      ? 'text-[rgb(var(--status-error))]'
+      : powerFraction >= 0.6
+        ? 'text-[rgb(var(--status-warn))]'
+        : 'text-[rgb(var(--status-ok))]';
+
+  // Storage escalation per scope:
+  //   <60%  → magenta (nominal / data readout)
+  //   60–85% → amber
+  //   >85%  → red
+  const storageVariant: StatusVariant =
+    storageFraction >= 0.85
+      ? 'error'
+      : storageFraction >= 0.6
+        ? 'alert'
+        : 'modulation';
+  const storageColorStyle =
+    storageFraction >= 0.85
+      ? { color: 'rgb(var(--status-error))' }
+      : storageFraction >= 0.6
+        ? { color: 'rgb(var(--status-warn))' }
+        : { color: 'rgb(var(--status-magenta, 180 106 192))' };
+
+  // ── UTC clock (1 Hz) ─────────────────────────────────────────────────────
+  // A dedicated 1 Hz timer is cheaper than the global animation frame for
+  // a second-resolution field. Interval is cleared on unmount.
+  const [utcTime, setUtcTime] = useState<string>(() => formatUtcNow());
+  useEffect(() => {
+    const id = window.setInterval(() => setUtcTime(formatUtcNow()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // ── Display helpers ──────────────────────────────────────────────────────
+  const activeTabDisplay = activeTab.toUpperCase();
+  const themeDisplay = canvasTheme.toUpperCase();
 
   return (
     <footer
-      // overflow-hidden prevents tablet/narrow layouts from pushing the
-      // status bar vertically. The middle storage cluster gets hidden on
-      // tablet via desktop:inline-flex on its parent when needed.
-      className="flex items-center justify-between px-3 border-t border-border-subtle bg-bg-deep text-text-muted font-mono select-none shrink-0 overflow-hidden whitespace-nowrap"
-      style={{ height: '1.625rem' /* h-[26px] — slimmer than h-7 */ }}
+      role="status"
+      aria-live="polite"
       aria-label="Status bar"
+      // Overall chrome:
+      //   shrink-0          — don't let flex parents compress the bar
+      //   px-3 py-1         — tight horizontal padding, 4px vertical
+      //   border-t          — hairline top rule separating from canvas
+      //   bg-bg-secondary   — slightly elevated from the canvas background
+      //   flex gap-2        — horizontal strip with breathing room
+      //   overflow-hidden   — never let content push the bar vertically
+      //   whitespace-nowrap — keep segments on one line
+      //   font-mono         — JetBrains Mono throughout per §4 StatusBar
+      className="shrink-0 px-3 py-1 border-t border-border-subtle bg-bg-secondary text-text-muted flex items-center gap-2 overflow-hidden whitespace-nowrap font-mono select-none"
+      style={{ height: '1.5rem' /* 24px — matches reference grid-template-rows 22–24px */ }}
     >
-      {/* ── Left: Power draw ─────────────────────────────── */}
-      <div className="flex items-center gap-1.5">
-        <ConsoleIndicator
-          variant={powerFraction >= 0.85 ? 'alert' : powerFraction >= 0.60 ? 'blink' : 'breathe'}
-          color={
-            powerFraction >= 0.85
-              ? 'rgb(var(--status-warn))'
-              : powerFraction >= 0.60
-                ? 'rgb(var(--status-warn))'
-                : 'rgb(var(--status-ok))'
-          }
-          size={4}
-        />
-        <StatusSignal variant={powerStatus} size="sm" label={`Power status: ${powerStatus}`} />
-        <span className="text-text-muted/60 text-ui-xs" aria-hidden="true">⚡</span>
-        <span className={`text-ui-xs tabular-nums ${powerFgClass}`} aria-label={`Power draw: ${formatAmps(colorMA)}`}>
-          {formatAmps(colorMA)}
-        </span>
-        <span className="text-text-muted/40 text-ui-xs">/</span>
-        <span className="text-ui-xs text-text-muted tabular-nums">
-          {formatAmps(BOARD_MAX_MA)}
-        </span>
-      </div>
-
-      {/* ── Center: Storage budget ───────────────────────── */}
-      <div className="flex items-center gap-1.5">
-        <ConsoleIndicator
-          variant={storageFraction >= 0.85 ? 'alert' : storageFraction >= 0.60 ? 'blink' : 'steady'}
-          color={
-            storageFraction >= 0.85
-              ? 'rgb(var(--status-warn))'
-              : storageFraction >= 0.60
-                ? 'rgb(var(--status-warn))'
-                : 'rgb(var(--status-info))'
-          }
-          size={4}
-        />
-        <StatusSignal variant={storageStatus} size="sm" label={`Storage status: ${storageStatus}`} />
-        <span className="text-text-muted/60 text-ui-xs" aria-hidden="true">💾</span>
-        <span className={`text-ui-xs tabular-nums ${storageFgClass}`} aria-label={`Storage used: ${storagePct} percent`}>
-          {storagePct}%
-        </span>
-        <span className="text-text-muted/40 text-ui-xs">used</span>
-      </div>
-
-      {/* ── Right: LED count ─────────────────────────────── */}
-      <div
-        className="flex items-center gap-1.5 text-ui-xs tabular-nums text-text-muted"
-        aria-label={`${ledCount} LEDs`}
+      {/* 1 — Power Draw ─────────────────────────────────────────────────────
+          KEEP: unique-to-our-app telemetry. PFD-styled as k/v pair. */}
+      <Segment
+        label="PWR"
+        valueClassName={`${powerColorClass} tabular-nums`}
+        leading={
+          <StatusSignal
+            variant={powerVariant}
+            size="sm"
+            compact
+            label={`Power status: ${powerVariant}`}
+          />
+        }
       >
-        <ConsoleIndicator variant="breathe" color="rgb(var(--accent))" size={4} />
-        <StatusSignal variant="active" size="sm" label="Active LED count" />
-        {ledCount}&thinsp;LEDs
-      </div>
+        <span aria-hidden="true" className="text-text-muted/60 mr-0.5">
+          ⚡
+        </span>
+        <span aria-label={`Power draw: ${formatAmps(colorMA)} of ${formatAmps(BOARD_MAX_MA)}`}>
+          {formatAmps(colorMA)}
+          <span className="text-text-muted/40"> / </span>
+          <span className="text-text-muted">{formatAmps(BOARD_MAX_MA)}</span>
+        </span>
+      </Segment>
+      <SegmentDivider />
+
+      {/* 2 — Profile ────────────────────────────────────────────────────── */}
+      <Segment label="Profile">{profileName}</Segment>
+      <SegmentDivider />
+
+      {/* 3 — Conn (WebUSB) — TODO placeholder until global store exists */}
+      <Segment
+        label="Conn"
+        valueClassName={`${connColorClass} tabular-nums`}
+        leading={
+          <StatusSignal
+            variant={connVariant}
+            size="sm"
+            compact
+            label={`Connection status: ${connStatus}`}
+          />
+        }
+      >
+        {connText}
+      </Segment>
+      <SegmentDivider />
+
+      {/* 4 — Page (active tab) — amber accent per reference */}
+      <Segment label="Page" valueClassName="tabular-nums">
+        <span style={{ color: 'rgb(var(--status-warn))' }}>{activeTabDisplay}</span>
+      </Segment>
+      <SegmentDivider />
+
+      {/* 5 — Layers (LED count) */}
+      <Segment label="LEDs" valueClassName="tabular-nums text-text-secondary">
+        {ledCount}
+      </Segment>
+      <SegmentDivider />
+
+      {/* 6 — Modified (dirty flag) */}
+      <Segment
+        label="Mod"
+        valueClassName={
+          isDirty
+            ? 'tabular-nums text-[rgb(var(--status-warn))]'
+            : 'tabular-nums text-text-muted'
+        }
+        leading={
+          <StatusSignal
+            variant={isDirty ? 'alert' : 'success'}
+            size="sm"
+            compact
+            label={isDirty ? 'Modified: unsaved' : 'Saved'}
+          />
+        }
+      >
+        {isDirty ? '● UNSAVED' : '✓ SAVED'}
+      </Segment>
+      <SegmentDivider />
+
+      {/* 7 — Storage (magenta / amber / red escalation) */}
+      <Segment
+        label="Stor"
+        valueClassName="tabular-nums"
+        leading={
+          <StatusSignal
+            variant={storageVariant}
+            size="sm"
+            compact
+            label={`Storage: ${storagePct} percent used`}
+          />
+        }
+      >
+        <span style={storageColorStyle}>{storagePct}%</span>
+      </Segment>
+      <SegmentDivider />
+
+      {/* 8 — Theme */}
+      <Segment label="Theme" valueClassName="tabular-nums text-text-secondary">
+        {themeDisplay}
+      </Segment>
+      <SegmentDivider />
+
+      {/* 9 — Preset (index + name) — cyan-ish info tint when present */}
+      <Segment
+        label="Preset"
+        valueClassName={
+          activePresetInfo
+            ? 'tabular-nums text-[rgb(var(--status-info))]'
+            : 'tabular-nums text-text-muted'
+        }
+      >
+        {activePresetInfo
+          ? `${pad2(activePresetInfo.idx + 1)} ${activePresetInfo.name.toUpperCase()}`
+          : '—'}
+      </Segment>
+
+      {/* ── Right-side spacer pushing UTC + Build to the right edge ────── */}
+      <span className="flex-1" />
+
+      {/* 10 — UTC clock (wide-only; hidden on tablet/narrow desktop) */}
+      <SegmentDivider wideOnly />
+      <Segment
+        label="UTC"
+        valueClassName="tabular-nums text-text-secondary"
+        wideOnly
+      >
+        {utcTime}
+      </Segment>
+
+      {/* 11 — Build version (always visible; lives here per W3 scope.
+              The pre-existing version breadcrumb in WorkbenchLayout's
+              header is deliberately left untouched — that removal is
+              W4 (header trim). Duplicate display is intentional until
+              then.) */}
+      <SegmentDivider />
+      <Segment label="Build" valueClassName="tabular-nums text-text-secondary">
+        v{LATEST_VERSION}
+      </Segment>
     </footer>
   );
 }
