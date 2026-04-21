@@ -2,47 +2,11 @@
 import { useState } from 'react';
 import { useLayerStore } from '@/stores/layerStore';
 import type { BlendMode, LayerRenderState } from '@/stores/layerStore';
+import { useUIStore } from '@/stores/uiStore';
 import { ScrubField } from '@/components/shared/ScrubField';
 import { HIGH_DENSITY_THRESHOLD, LayerThumbnail } from '../LayerThumbnail';
 import { BLEND_MODES, TYPE_BADGES } from './constants';
-
-// ─── Plate thumbnail ───
-//
-// Modulator plates (SmoothSwing, future audio routing plates) don't
-// render pixel output, so the animated LayerThumbnail is inappropriate.
-// This static badge matches LayerThumbnail's footprint so row heights
-// stay uniform, and communicates "this is a plate, not a visual layer"
-// via a \u25CE (circled bullet) glyph and a theme-token background.
-//
-// Render-state visuals mirror LayerThumbnail: bypass -> low-contrast
-// hatch tone, mute -> honest black, active -> accent surface.
-function PlateThumbnail({ renderState }: { renderState: LayerRenderState }) {
-  const tone =
-    renderState === 'skipped'
-      ? { bg: 'rgb(var(--bg-surface))', fg: 'rgb(var(--text-muted) / 0.35)' }
-      : renderState === 'muted'
-        ? { bg: 'rgb(8, 10, 14)', fg: 'rgb(var(--text-muted) / 0.4)' }
-        : { bg: 'rgb(var(--bg-elevated))', fg: 'rgb(var(--accent))' };
-  return (
-    <span
-      className="shrink-0 rounded-sm border border-border-subtle/50 flex items-center justify-center text-ui-xs font-mono select-none"
-      style={{
-        width: 40,
-        height: 8,
-        background: tone.bg,
-        color: tone.fg,
-        // Pixel-aligned glyph; the canvas equivalent is THUMBNAIL_WIDTH x
-        // THUMBNAIL_HEIGHT so we match it exactly to avoid row-height jitter.
-        lineHeight: '8px',
-        fontSize: '8px',
-      }}
-      aria-hidden="true"
-      title="SmoothSwing plate \u2014 audio modulator (no pixel output)"
-    >
-      {'\u25CE'}
-    </span>
-  );
-}
+import { ModulatorRow } from './ModulatorRow';
 
 /**
  * Map a render state to the triple of buttons' visual tokens.
@@ -161,7 +125,35 @@ export function LayerRow({
 
   const [showOpacity, setShowOpacity] = useState(false);
 
+  // Subscribe to the globally-hovered modulator id so we can faintly
+  // tint our own row when a mod is being hovered and this layer is one
+  // of the parameters that mod would drive.
+  //
+  // W6b lands only the 1:1 temporary mapping: any mod being hovered
+  // tints the `base` layer below it. Full param-level tinting awaits
+  // the v1.1 modulation-routing scaffold (see MODULATION_ROUTING_V1.1.md).
+  const hoveredModulatorId = useUIStore((s) => s.hoveredModulatorId);
+
   if (!layer) return null;
+
+  // ──────────────────────────────────────────────────────────────
+  // SmoothSwing delegates to the new ModulatorRow presentation.
+  // This is the only structural hand-off for W6b — keeps the
+  // LayerStack's mod rows visually distinct from visual layers
+  // (magenta edge, live waveform, target label) while still reusing
+  // layerStore for B/M/S / reorder / select / duplicate / delete.
+  // ──────────────────────────────────────────────────────────────
+  if (layer.type === 'smoothswing') {
+    return (
+      <ModulatorRow
+        layerId={layer.id}
+        name={layer.name || 'SmoothSwing'}
+        kind="sim"
+        targetLabel="BLADE_HUM"
+        isSelected={isSelected}
+      />
+    );
+  }
 
   const badge = TYPE_BADGES[layer.type];
   const canMoveUp = layerIndex < layerCount - 1;
@@ -174,11 +166,16 @@ export function LayerRow({
   const staggerTurn = shouldStagger ? rowIndex % Math.max(1, totalRows) : undefined;
   const staggerTotal = shouldStagger ? totalRows : undefined;
 
-  // SmoothSwing is an audio-modulation plate — it produces no pixel
-  // output, so the pixel-per-column LayerThumbnail is wrong for it.
-  // We swap in a static plate badge instead so users immediately
-  // recognise "this row is a modulator, not a visual layer".
-  const isPlate = layer.type === 'smoothswing';
+  // Consumer-side of the hot-mod hover primitive.
+  //
+  // TEMPORARY 1:1 mapping: any modulator row being hovered highlights
+  // every non-modulator layer as a "parameter this mod may drive".
+  // The real mapping — per-param routing — ships with v1.1
+  // modulation-routing. Rip this block and read `driveTable` from
+  // the routing store once that scaffold lands.
+  //
+  // See `docs/MODULATION_ROUTING_V1.1.md` for the follow-up.
+  const isHotModTarget = hoveredModulatorId !== null;
 
   return (
     <div
@@ -187,6 +184,17 @@ export function LayerRow({
           ? 'border-accent bg-accent-dim/30'
           : 'border-border-subtle bg-bg-surface hover:border-border-light'
       }`}
+      style={
+        isHotModTarget
+          ? {
+              // Faint magenta shadow that tints the row without
+              // shifting its layout. Low alpha keeps it tasteful when
+              // multiple rows participate.
+              boxShadow:
+                '0 0 0 1px rgba(var(--status-magenta, 180 106 192), 0.25), inset 2px 0 0 rgba(var(--status-magenta, 180 106 192), 0.4)',
+            }
+          : undefined
+      }
     >
       {/* Main row — compact at ~36px. role="button" + tabIndex makes the
           whole row keyboard-selectable (Enter/Space toggle). The inner
@@ -267,18 +275,15 @@ export function LayerRow({
           aria-label={`${layer.type} layer`}
         />
 
-        {/* Live thumbnail — 40x8 px. Plates (SmoothSwing etc.) render a
-            static glyph badge instead, since they don't emit pixels. */}
-        {isPlate ? (
-          <PlateThumbnail renderState={renderState} />
-        ) : (
-          <LayerThumbnail
-            layer={layer}
-            renderState={renderState}
-            staggerTurn={staggerTurn}
-            staggerTotal={staggerTotal}
-          />
-        )}
+        {/* Live thumbnail — 40x8 px. SmoothSwing (the only plate shape
+            today) delegates to ModulatorRow above and never reaches
+            this branch. */}
+        <LayerThumbnail
+          layer={layer}
+          renderState={renderState}
+          staggerTurn={staggerTurn}
+          staggerTotal={staggerTotal}
+        />
 
         {/* Layer name */}
         <span
@@ -317,48 +322,37 @@ export function LayerRow({
           />
         </div>
 
-        {/* Opacity + blend-mode only apply to visual (pixel-output) layers.
-            Plates (SmoothSwing) route audio, so we render a subtle
-            "PLATE" label in the same footprint for visual consistency. */}
-        {isPlate ? (
-          <span
-            className="text-ui-xs text-text-muted font-mono shrink-0 uppercase tracking-wider w-20 text-right select-none"
-            title="Modulator plate \u2014 no pixel compositing"
-          >
-            plate
-          </span>
-        ) : (
-          <>
-            {/* Opacity indicator (click to expand slider) */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowOpacity(!showOpacity);
-              }}
-              className="text-ui-xs text-text-muted font-mono shrink-0 hover:text-accent transition-colors w-8 text-right"
-              title="Opacity"
-              aria-label="Toggle opacity slider"
-            >
-              {Math.round(layer.opacity * 100)}%
-            </button>
+        {/* Opacity + blend-mode only apply to visual (pixel-output)
+            layers. Plates (SmoothSwing) route audio and use the
+            ModulatorRow presentation above. */}
+        {/* Opacity indicator (click to expand slider) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowOpacity(!showOpacity);
+          }}
+          className="text-ui-xs text-text-muted font-mono shrink-0 hover:text-accent transition-colors w-8 text-right"
+          title="Opacity"
+          aria-label="Toggle opacity slider"
+        >
+          {Math.round(layer.opacity * 100)}%
+        </button>
 
-            {/* Blend mode dropdown */}
-            <select
-              value={layer.blendMode}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => setBlendMode(layer.id, e.target.value as BlendMode)}
-              className="text-ui-xs bg-transparent border-none text-text-muted cursor-pointer shrink-0 w-12 p-0"
-              title="Blend mode"
-              aria-label="Blend mode"
-            >
-              {BLEND_MODES.map((bm) => (
-                <option key={bm.id} value={bm.id}>
-                  {bm.label}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
+        {/* Blend mode dropdown */}
+        <select
+          value={layer.blendMode}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => setBlendMode(layer.id, e.target.value as BlendMode)}
+          className="text-ui-xs bg-transparent border-none text-text-muted cursor-pointer shrink-0 w-12 p-0"
+          title="Blend mode"
+          aria-label="Blend mode"
+        >
+          {BLEND_MODES.map((bm) => (
+            <option key={bm.id} value={bm.id}>
+              {bm.label}
+            </option>
+          ))}
+        </select>
 
         {/* Duplicate */}
         <button
@@ -388,7 +382,7 @@ export function LayerRow({
       </div>
 
       {/* Opacity slider (expanded) — visual layers only. */}
-      {showOpacity && !isPlate && (
+      {showOpacity && (
         <ScrubField
           label="Opacity"
           min={0} max={100}
