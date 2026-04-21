@@ -1,16 +1,34 @@
 # Hardware validation TODO — v0.11.0 WebUSB flash
 
-**Status**: all protocol logic merged, **not yet validated against real hardware.**
+**Status**: Phase A ✅ complete on 2026-04-20 (macOS, Proffieboard V3.9). Phases B + C still pending.
 
-Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugged in. The WebUSB flasher has 43 passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
+Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugged in. The WebUSB flasher has passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
 
-## Phase A — connect-only test (zero flash risk)
+## Phase A findings — macOS fallback (2026-04-20)
+
+Phase A surfaced a real macOS-specific release-blocker that was never exercised by the mock tests:
+
+- **Symptom**: connect succeeded at the USB layer but `connect.ts` threw `"Connected device has no writable internal-flash region. Refusing to flash."`
+- **Root cause**: Chrome on macOS returns `null` for `USBAlternateInterface.interfaceName` on DFU alternate interfaces, even when the device advertises valid string descriptors. Windows and Linux populate the field natively; macOS does not. Our parser had nothing to parse.
+- **Confirmation**: a raw `GET_DESCRIPTOR(string, index N)` control transfer against the already-authorized device returned the expected DfuSe strings (`@Internal Flash  /0x08000000/0256*0002Kg`, etc.) — so the strings are on the board, just not surfaced through WebUSB's JS API on macOS.
+- **Fix** (on `test/launch-readiness-2026-04-18`, uncommitted at time of writing): `DfuDevice.loadAlternates()` now falls back to reading the raw configuration descriptor + string descriptors directly when any alternate comes back nameless. Regression test covers the null-`interfaceName` path with a `macosNullInterfaceNames` mock option.
+- **Outcome**: hard-refresh → reconnect produced the expected `STMicroelectronics STM32 BOOTLOADER — 512 KiB flash ready` banner and `findInternalFlash()` returned the correct 256×2KiB region. Phase A green.
+
+### What was not captured in this pass
+
+- Exact `wTransferSize` from the DFU functional descriptor — the ad-hoc console readback stalled after repeated reconnects. The connect flow's internal `readFunctionalDescriptor()` ran successfully (implied by the healthy banner), but the numeric value wasn't logged. Assumed `2048`. Grab it in Phase B via `DfuDevice.functionalDescriptor.transferSize` once a connection is stable.
+- Disconnect → ready-state round-trip wasn't explicitly exercised. Implicit via repeated reconnects during troubleshooting, but worth an explicit check in Phase B.
+- macOS is the only platform validated. Windows and Linux behave differently (`interfaceName` populated natively), so the fallback path is dormant there. Both are worth a smoke test before the v0.11.x tag.
+
+## Phase A — connect-only test (zero flash risk) ✅ 2026-04-20
 
 Goal: prove the browser can enumerate the board in DFU mode and read the descriptors we expect.
 
 1. Open **Chrome / Edge / Brave** (not the embedded Claude preview — native Chromium handles the WebUSB permission flow differently).
 2. `pnpm dev` and navigate to `http://localhost:<port>/editor`.
-3. Put the Proffieboard in DFU mode: unplug → hold **BOOT** → plug USB → release BOOT.
+3. Put the Proffieboard in DFU mode. Two valid entry paths:
+   - **Power-off entry** (no battery / USB unplugged): hold **BOOT**, plug USB in while still holding BOOT, keep held ~2s, release.
+   - **Live-reset entry** (battery connected, or board already powered): hold **BOOT**, briefly press and release **RESET** while still holding BOOT, then release BOOT. This is the canonical method when the chip is already running ProffieOS — unplugging USB with a battery attached doesn't actually reset the chip, so BOOT0 is never resampled. Phase A 2026-04-20 confirmed this is the method that works on the 89sabers V3.9.
 4. Output tab → **Flash to Saber** panel → accept disclaimer → **Connect Proffieboard (DFU mode)**.
 5. Pick the STM32 BOOTLOADER entry in the Chrome picker.
 
@@ -25,9 +43,13 @@ Goal: prove the browser can enumerate the board in DFU mode and read the descrip
 - The exact `interfaceName` string the board reports — paste it into the bug / PR note. If it doesn't match `@Internal Flash  /0x08000000/256*0002Kg` the memory layout parser may need to accommodate the real variant.
 - The `wTransferSize` from the DFU functional descriptor. The flasher reads it via `DfuDevice.readFunctionalDescriptor()` and logs via `dfu.functionalDescriptor` — if it's not 2048 the fallback path is exercising.
 
-## Phase B — dry-run test (zero flash risk)
+## Phase B — dry-run test (zero flash risk) — PENDING
 
 Goal: walk through the full protocol sequence without writing any bytes.
+
+**Prerequisite**: a ProffieOS `.bin` for the board variant. Two paths:
+- **Remote build (recommended)**: trigger `.github/workflows/firmware-build.yml` via `gh workflow run firmware-build.yml` and download the `proffieos-7x-v3-standard.bin` artifact from the completed run.
+- **Local build**: `arduino-cli` is already installed. Run `arduino-cli core install proffieboard:stm32l4` once, stage `firmware-configs/v3-standard.h` into `ProffieOS/config/config.h`, then `arduino-cli compile --fqbn 'proffieboard:stm32l4:ProffieboardV3-L452RE:dosfs=sdmmc1,usb=cdc_msc' --output-dir /tmp/proffie-bin ProffieOS`. ~2–5 min.
 
 1. Complete Phase A.
 2. In the connected state, tick the **Dry run** toggle.
@@ -45,7 +67,7 @@ Goal: walk through the full protocol sequence without writing any bytes.
 
 - The block count and byte-exact byte counts shown. If they look off vs. `ceil(binary_size / 2048)`, the wTransferSize or memory layout is wrong.
 
-## Phase C — real flash (actual flash risk)
+## Phase C — real flash (actual flash risk) — PENDING
 
 Only proceed after Phase A and B are both clean.
 

@@ -69,6 +69,42 @@ describe('DfuDevice.loadAlternates', () => {
     expect(dfu.alternates[0].memoryLayout).toBeDefined();
     expect(dfu.alternates[0].memoryLayout![0].startAddress).toBe(0x08000000);
   });
+
+  it('falls back to GET_DESCRIPTOR(string) when Chrome returns null interfaceName (macOS)', async () => {
+    // On macOS, Chrome doesn't populate `alt.interfaceName` for DFU
+    // alternates even when the device advertises valid string descriptors.
+    // The fallback path reads the configuration descriptor to recover
+    // `iInterface` indices, then fetches each string manually. Confirmed on
+    // a real Proffieboard V3.9 (STM32L452RE) where all four alternates came
+    // back with `interfaceName: null` but the underlying strings resolved
+    // correctly via raw GET_DESCRIPTOR control transfers.
+    const { dfu, device } = await makeDfu({
+      macosNullInterfaceNames: true,
+      memoryLayoutString: '@Internal Flash  /0x08000000/0256*0002Kg',
+    });
+    expect(dfu.alternates).toHaveLength(1);
+    expect(dfu.alternates[0].name).toBe('@Internal Flash  /0x08000000/0256*0002Kg');
+    expect(dfu.alternates[0].memoryLayout).toBeDefined();
+    expect(dfu.alternates[0].memoryLayout![0].startAddress).toBe(0x08000000);
+    expect(dfu.alternates[0].memoryLayout![0].writable).toBe(true);
+    expect(dfu.alternates[0].memoryLayout![0].erasable).toBe(true);
+
+    // Verify the fallback actually issued GET_DESCRIPTOR control transfers
+    // for the configuration (type 0x02) and the string at iInterface = 4
+    // (wValue = (0x03 << 8) | 4 = 0x0304). Without these, the parser has
+    // nothing to work with on macOS.
+    const descriptorFetches = device.log.filter(
+      (l) => l.direction === 'in' && l.request === 0x06,
+    );
+    const fetchedConfig = descriptorFetches.some(
+      (l) => ((l.blockNum >>> 8) & 0xff) === 0x02,
+    );
+    const fetchedString4 = descriptorFetches.some(
+      (l) => l.blockNum === ((0x03 << 8) | 4),
+    );
+    expect(fetchedConfig).toBe(true);
+    expect(fetchedString4).toBe(true);
+  });
 });
 
 describe('DfuDevice.readFunctionalDescriptor', () => {

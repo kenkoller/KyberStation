@@ -79,6 +79,14 @@ export class DfuDevice {
   /**
    * Populate `this.alternates` by reading string descriptors off every
    * alternate of the claimed interface.
+   *
+   * Chrome on macOS returns `null` for `alt.interfaceName` even when the
+   * device advertises valid string descriptors for its DFU alternates (the
+   * STM32 DfuSe memory-layout strings we rely on to identify the flash region).
+   * When any alternate comes back nameless we fall back to reading the raw
+   * configuration descriptor to recover each alternate's `iInterface` index,
+   * then fetch the corresponding string descriptor directly — so Mac users
+   * can flash on hardware that Windows/Linux handle automatically.
    */
   async loadAlternates(): Promise<void> {
     const config = this.device.configuration;
@@ -87,13 +95,122 @@ export class DfuDevice {
     const iface = config.interfaces.find((i) => i.interfaceNumber === this.interfaceNumber);
     if (!iface) throw new DfuError(`Interface ${this.interfaceNumber} not found`);
 
-    this.alternates = iface.alternates.map((alt: USBAlternateInterface) => ({
-      alternateSetting: alt.alternateSetting,
-      name: alt.interfaceName ?? '',
-      memoryLayout: alt.interfaceName
-        ? parseDfuMemoryLayout(alt.interfaceName)
-        : undefined,
-    }));
+    const needsFallback = iface.alternates.some((a) => !a.interfaceName);
+    const iInterfaceByAltSetting = needsFallback
+      ? await this.readIInterfaceIndices()
+      : undefined;
+
+    const results: DfuInterfaceAlternate[] = [];
+    for (const alt of iface.alternates as USBAlternateInterface[]) {
+      let name = alt.interfaceName ?? '';
+      if (!name && iInterfaceByAltSetting) {
+        const idx = iInterfaceByAltSetting.get(alt.alternateSetting);
+        if (idx !== undefined && idx !== 0) {
+          const fetched = await this.readStringDescriptor(idx);
+          if (fetched) name = fetched;
+        }
+      }
+      results.push({
+        alternateSetting: alt.alternateSetting,
+        name,
+        memoryLayout: name ? parseDfuMemoryLayout(name) : undefined,
+      });
+    }
+    this.alternates = results;
+  }
+
+  /**
+   * Read the device's configuration descriptor and extract each alternate's
+   * `iInterface` index for the claimed interface. Returns a map of
+   * `alternateSetting → iInterface`. macOS-Chrome-null workaround — see
+   * `loadAlternates()`.
+   */
+  private async readIInterfaceIndices(): Promise<Map<number, number>> {
+    const map = new Map<number, number>();
+    // Step 1: read the 9-byte configuration descriptor header to learn wTotalLength.
+    const head = await this.device.controlTransferIn(
+      {
+        requestType: 'standard',
+        recipient: 'device',
+        request: 0x06, // GET_DESCRIPTOR
+        value: (0x02 << 8) | 0, // configuration descriptor, index 0
+        index: 0,
+      },
+      9,
+    );
+    if (head.status !== 'ok' || !head.data || head.data.byteLength < 9) return map;
+    const totalLength = head.data.getUint16(2, true);
+
+    // Step 2: read the full configuration descriptor block.
+    const full = await this.device.controlTransferIn(
+      {
+        requestType: 'standard',
+        recipient: 'device',
+        request: 0x06,
+        value: (0x02 << 8) | 0,
+        index: 0,
+      },
+      totalLength,
+    );
+    if (full.status !== 'ok' || !full.data) return map;
+
+    // Step 3: walk the descriptor block and record iInterface per alternate.
+    // Interface descriptor: bLength=9, bDescriptorType=0x04, layout is
+    //   [bLength, bDescriptorType, bInterfaceNumber, bAlternateSetting,
+    //    bNumEndpoints, bInterfaceClass, bInterfaceSubClass,
+    //    bInterfaceProtocol, iInterface]
+    const bytes = new Uint8Array(full.data.buffer, full.data.byteOffset, full.data.byteLength);
+    let offset = 0;
+    while (offset + 2 <= bytes.byteLength) {
+      const bLength = bytes[offset];
+      const bDescriptorType = bytes[offset + 1];
+      if (bLength === 0) break;
+      if (
+        bDescriptorType === 0x04 &&
+        bLength >= 9 &&
+        offset + 9 <= bytes.byteLength
+      ) {
+        const bInterfaceNumber = bytes[offset + 2];
+        const bAlternateSetting = bytes[offset + 3];
+        const iInterface = bytes[offset + 8];
+        if (bInterfaceNumber === this.interfaceNumber && iInterface !== 0) {
+          map.set(bAlternateSetting, iInterface);
+        }
+      }
+      offset += bLength;
+    }
+    return map;
+  }
+
+  /**
+   * Fetch a USB string descriptor by index via GET_DESCRIPTOR. Returns the
+   * decoded string, or `undefined` if the device doesn't serve it or returns
+   * a malformed descriptor. Used as the macOS fallback when WebUSB's
+   * `alt.interfaceName` is null.
+   */
+  private async readStringDescriptor(
+    index: number,
+    langId = 0x0409,
+  ): Promise<string | undefined> {
+    const result = await this.device.controlTransferIn(
+      {
+        requestType: 'standard',
+        recipient: 'device',
+        request: 0x06, // GET_DESCRIPTOR
+        value: (0x03 << 8) | index, // string descriptor, specific index
+        index: langId,
+      },
+      255,
+    );
+    if (result.status !== 'ok' || !result.data || result.data.byteLength <= 2) {
+      return undefined;
+    }
+    const bytes = new Uint8Array(
+      result.data.buffer,
+      result.data.byteOffset + 2,
+      result.data.byteLength - 2,
+    );
+    return new TextDecoder('utf-16le').decode(bytes);
   }
 
   /** Switch to a specific alternate setting (e.g. Internal Flash vs Option Bytes). */

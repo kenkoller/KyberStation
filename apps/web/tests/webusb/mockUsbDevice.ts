@@ -57,6 +57,15 @@ export interface MockUsbDeviceOptions {
    * overrides this.
    */
   pollTimeoutMs?: number;
+  /**
+   * Simulate Chrome-on-macOS's behaviour where `alt.interfaceName` comes
+   * back null even when the device advertises valid string descriptors.
+   * When true, the alternate is built with `interfaceName: undefined`, and
+   * the mock serves the configured `memoryLayoutString` via a raw
+   * GET_DESCRIPTOR(string) control transfer (iInterface = 4) — matching what
+   * a real STM32 DfuSe bootloader does on Proffieboard V3 / V3.9.
+   */
+  macosNullInterfaceNames?: boolean;
 }
 
 export class MockUsbDevice implements USBDevice {
@@ -126,9 +135,56 @@ export class MockUsbDevice implements USBDevice {
     setup: USBControlTransferParameters,
     length: number,
   ): Promise<USBInTransferResult> {
-    // USB standard request: GET_DESCRIPTOR (bRequest=0x06). DFU functional
-    // descriptor lives at (value = (0x21 << 8) | 0x00). We serve a 9-byte
-    // descriptor advertising the configured wTransferSize.
+    // USB standard request: GET_DESCRIPTOR (bRequest=0x06).
+    // The macOS-null fallback in DfuDevice.loadAlternates() fetches the
+    // configuration descriptor + string descriptors directly. Serve both
+    // when that simulation is enabled.
+    if (
+      this.options.macosNullInterfaceNames &&
+      setup.requestType === 'standard' &&
+      setup.request === 0x06 &&
+      ((setup.value >>> 8) & 0xff) === 0x02
+    ) {
+      const buf = this.buildConfigurationDescriptorBytes();
+      const out = new Uint8Array(Math.min(length, buf.byteLength));
+      out.set(buf.subarray(0, out.byteLength));
+      this.log.push({
+        direction: 'in',
+        request: setup.request,
+        blockNum: setup.value,
+        dataLength: length,
+      });
+      return { data: new DataView(out.buffer), status: 'ok' };
+    }
+
+    if (
+      this.options.macosNullInterfaceNames &&
+      setup.requestType === 'standard' &&
+      setup.request === 0x06 &&
+      ((setup.value >>> 8) & 0xff) === 0x03
+    ) {
+      const stringIndex = setup.value & 0xff;
+      const str = this.getMacosStringDescriptor(stringIndex);
+      if (str === undefined) {
+        return { data: new DataView(new ArrayBuffer(0)), status: 'stall' };
+      }
+      const utf16 = new Uint16Array(str.length);
+      for (let i = 0; i < str.length; i++) utf16[i] = str.charCodeAt(i);
+      const payload = new Uint8Array(2 + utf16.byteLength);
+      payload[0] = payload.byteLength;
+      payload[1] = 0x03;
+      new Uint8Array(utf16.buffer).forEach((b, i) => (payload[2 + i] = b));
+      this.log.push({
+        direction: 'in',
+        request: setup.request,
+        blockNum: setup.value,
+        dataLength: length,
+      });
+      return { data: new DataView(payload.buffer), status: 'ok' };
+    }
+
+    // DFU functional descriptor lives at (value = (0x21 << 8) | 0x00). We
+    // serve a 9-byte descriptor advertising the configured wTransferSize.
     if (setup.requestType === 'standard' && setup.request === 0x06 && setup.value === (0x21 << 8)) {
       const transferSize = this.options.transferSize ?? 2048;
       const buf = new ArrayBuffer(9);
@@ -324,6 +380,11 @@ export class MockUsbDevice implements USBDevice {
       : (this.options.memoryLayoutString
           ?? '@Internal Flash  /0x08000000/256*0002Kg');
 
+    // On macOS, Chrome returns null for the interface name — simulate that by
+    // handing WebUSB-land an undefined `interfaceName` even though the device
+    // still advertises the string via GET_DESCRIPTOR (served separately).
+    const exposedName = this.options.macosNullInterfaceNames ? undefined : memoryName;
+
     const alt: USBInterfaceDescriptor = {
       interfaceNumber: 0,
       claimed: false,
@@ -333,7 +394,7 @@ export class MockUsbDevice implements USBDevice {
           interfaceClass: 0xfe,
           interfaceSubclass: 0x01,
           interfaceProtocol: 0x02,
-          interfaceName: memoryName,
+          interfaceName: exposedName,
           endpoints: [],
         },
       ],
@@ -342,7 +403,7 @@ export class MockUsbDevice implements USBDevice {
         interfaceClass: 0xfe,
         interfaceSubclass: 0x01,
         interfaceProtocol: 0x02,
-        interfaceName: memoryName,
+        interfaceName: exposedName,
         endpoints: [],
       },
     };
@@ -352,6 +413,54 @@ export class MockUsbDevice implements USBDevice {
     };
     this.configuration = cfg;
     return cfg;
+  }
+
+  /**
+   * Assemble a minimal but valid configuration descriptor byte stream for
+   * the macOS-null fallback path. 9-byte config header + one 9-byte
+   * interface descriptor with `iInterface = 4` (matching the real STM32
+   * DfuSe layout, where the Internal Flash alternate's string lives at
+   * index 4). Returned as Uint8Array so controlTransferIn can slice it.
+   */
+  private buildConfigurationDescriptorBytes(): Uint8Array {
+    const totalLength = 9 + 9; // config header + 1 interface descriptor
+    const buf = new Uint8Array(totalLength);
+    // Configuration descriptor (USB 2.0 §9.6.3)
+    buf[0] = 9;                           // bLength
+    buf[1] = 0x02;                        // bDescriptorType (CONFIGURATION)
+    buf[2] = totalLength & 0xff;          // wTotalLength (LE)
+    buf[3] = (totalLength >> 8) & 0xff;
+    buf[4] = 1;                           // bNumInterfaces
+    buf[5] = 1;                           // bConfigurationValue
+    buf[6] = 0;                           // iConfiguration
+    buf[7] = 0x80;                        // bmAttributes (bus-powered)
+    buf[8] = 50;                          // bMaxPower (100 mA)
+    // Interface descriptor (USB 2.0 §9.6.5)
+    buf[9] = 9;                           // bLength
+    buf[10] = 0x04;                       // bDescriptorType (INTERFACE)
+    buf[11] = 0;                          // bInterfaceNumber
+    buf[12] = 0;                          // bAlternateSetting
+    buf[13] = 0;                          // bNumEndpoints
+    buf[14] = 0xfe;                       // bInterfaceClass (application-specific)
+    buf[15] = 0x01;                       // bInterfaceSubClass (DFU)
+    buf[16] = 0x02;                       // bInterfaceProtocol (DFU mode)
+    buf[17] = 4;                          // iInterface (matches real DfuSe)
+    return buf;
+  }
+
+  /**
+   * Serve the string descriptor the macOS fallback will ask for.
+   * String index 4 matches the `iInterface` value advertised by
+   * `buildConfigurationDescriptorBytes()`.
+   */
+  private getMacosStringDescriptor(index: number): string | undefined {
+    if (index === 4) {
+      return this.options.omitMemoryLayout
+        ? ''
+        : (this.options.memoryLayoutString
+            ?? '@Internal Flash  /0x08000000/256*0002Kg');
+    }
+    return undefined;
   }
 }
 
