@@ -30,7 +30,7 @@ Tracking work on the v1.0 path.
 
 **Followups:**
 
-- Tighten `MockUsbDevice` to enforce the three DFU state-machine rules above (reject UPLOAD from `dfuDNLOAD_IDLE`, DNLOAD from `dfuUPLOAD_IDLE`, + a `resetAfterManifest` simulation for bug #3). One regression test per bug so these can't sneak back in.
+- ~~Tighten `MockUsbDevice` to enforce the three DFU state-machine rules~~ — done (same session). `strictState` + `resetAfterManifest` options added; three regression tests added (one per bug), each verified to fail if the corresponding fix is reverted. 579 tests pass.
 - Cross-OS sweep: Windows + Linux hardware smoke-tests before promoting the feature to "validated on all supported configurations".
 - Cross-board sweep: Proffieboard V2.2 and V3+OLED hardware smoke-tests.
 

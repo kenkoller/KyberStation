@@ -85,7 +85,7 @@ Ran with the fixed v3-standard.h firmware (209,864 bytes, 103 blocks at 2048 tra
 
 ### Followup
 
-- **Tighten `MockUsbDevice`** to enforce DFU state rules (reject `UPLOAD` from `dfuDNLOAD_IDLE`, `DNLOAD` zero from `dfuUPLOAD_IDLE`). The three bugs above all slipped past 576 green tests because the mock was too permissive. One regression test per bug.
+- ~~**Tighten `MockUsbDevice`** to enforce DFU state rules~~ — ✅ done 2026-04-20. `strictState` option rejects `UPLOAD` from non-idle states and `DNLOAD` from non-idle states; `resetAfterManifest` option throws a raw DOMException on the post-manifest GET_STATUS to simulate STM32's bus reset. Three regression tests (one per bug) added in `apps/web/tests/webusb/DfuSeFlasher.test.ts` under `describe('... regression: 2026-04-20 ...')`. Each test was independently verified to fail if its corresponding fix is reverted.
 
 ## Phase C — real flash (original plan) — for reference only
 

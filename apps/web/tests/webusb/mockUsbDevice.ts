@@ -66,6 +66,31 @@ export interface MockUsbDeviceOptions {
    * a real STM32 DfuSe bootloader does on Proffieboard V3 / V3.9.
    */
   macosNullInterfaceNames?: boolean;
+  /**
+   * Enforce DFU spec state-machine rules on UPLOAD and DNLOAD:
+   *   • UPLOAD is only valid from `dfuIDLE` (first block) or `dfuUPLOAD_IDLE`
+   *     (continuing a sequence). From any other state, return `status: 'stall'`.
+   *   • DNLOAD is only valid from `dfuIDLE` (first block / command) or
+   *     `dfuDNLOAD_IDLE` (continuing a sequence). Otherwise stall.
+   *   • Successful UPLOAD transitions to `dfuUPLOAD_IDLE`.
+   *
+   * Matches the real STM32 DfuSe bootloader, which STALLs exactly these
+   * violations on hardware (see 2026-04-20 validation session). Opt-in so
+   * existing tests keep their legacy leniency; regression tests for the
+   * three state-machine bugs fixed that day turn it on.
+   */
+  strictState?: boolean;
+  /**
+   * Simulate the STM32 DfuSe bootloader's `bitManifestationTolerant = 0`
+   * behaviour: as the device transitions into `dfuMANIFEST_WAIT_RESET`
+   * after manifestation, it resets the USB bus and the host's next
+   * `controlTransferIn` fails. Chrome surfaces this as a raw
+   * `DOMException`, not a DFU-level error. With this option set, the
+   * first GET_STATUS that would report `dfuMANIFEST_WAIT_RESET` throws
+   * a DOMException-shaped error instead of returning — matching what
+   * Chrome's WebUSB API does on real hardware.
+   */
+  resetAfterManifest?: boolean;
 }
 
 export class MockUsbDevice implements USBDevice {
@@ -223,6 +248,17 @@ export class MockUsbDevice implements USBDevice {
         this.state = this.busyRemaining > 0 ? DfuState.dfuDNBUSY : DfuState.dfuDNLOAD_IDLE;
       } else if (this.state === DfuState.dfuMANIFEST_SYNC) {
         this.state = DfuState.dfuMANIFEST_WAIT_RESET;
+        // resetAfterManifest: STM32 DfuSe bootloader issues a USB bus
+        // reset as it enters dfuMANIFEST_WAIT_RESET. Chrome surfaces that
+        // as a raw DOMException from controlTransferIn, not a DFU-level
+        // error. Throw here to match the hardware behaviour observed on
+        // 2026-04-20.
+        if (this.options.resetAfterManifest) {
+          throw new DOMException(
+            "Failed to execute 'controlTransferIn' on 'USBDevice': A transfer error has occurred.",
+            'NetworkError',
+          );
+        }
       }
 
       view.setUint8(4, this.state);
@@ -250,6 +286,25 @@ export class MockUsbDevice implements USBDevice {
     }
 
     if (setup.request === DFU_REQUEST.UPLOAD) {
+      // strictState: real STM32 DfuSe bootloader STALLs UPLOAD from any
+      // state other than dfuIDLE (first block) or dfuUPLOAD_IDLE (continuing).
+      // Caught the 2026-04-20 verify-after-setAddressPointer bug on hardware.
+      if (
+        this.options.strictState &&
+        this.state !== DfuState.dfuIDLE &&
+        this.state !== DfuState.dfuUPLOAD_IDLE
+      ) {
+        this.state = DfuState.dfuERROR;
+        this.status = DfuStatus.errSTALLEDPKT;
+        this.log.push({
+          direction: 'in',
+          request: setup.request,
+          blockNum: setup.value,
+          dataLength: length,
+        });
+        return { data: new DataView(new ArrayBuffer(0)), status: 'stall' };
+      }
+
       // Return the contents of simulated flash for the requested block.
       // DfuSe's address stride is the fixed wTransferSize, not the `length`
       // the host asked to read (the last partial block is shorter). Match
@@ -263,6 +318,10 @@ export class MockUsbDevice implements USBDevice {
           out[i] = this.writtenBytes.get(base + i) ?? 0xff;
         }
       }
+      // Successful UPLOAD transitions the device to dfuUPLOAD_IDLE per the
+      // DFU spec state diagram. Unconditional — the transition is the same
+      // regardless of strictState mode; strict mode only gates entry.
+      this.state = DfuState.dfuUPLOAD_IDLE;
       this.log.push({
         direction: 'in',
         request: setup.request,
@@ -290,6 +349,21 @@ export class MockUsbDevice implements USBDevice {
     });
 
     if (setup.request === DFU_REQUEST.DNLOAD) {
+      // strictState: STM32 DfuSe bootloader STALLs DNLOAD from any state
+      // other than dfuIDLE (first block / command) or dfuDNLOAD_IDLE
+      // (continuing). Caught the 2026-04-20 manifest-after-UPLOAD bug on
+      // hardware — manifest's zero-length DNLOAD was being issued from
+      // dfuUPLOAD_IDLE.
+      if (
+        this.options.strictState &&
+        this.state !== DfuState.dfuIDLE &&
+        this.state !== DfuState.dfuDNLOAD_IDLE
+      ) {
+        this.state = DfuState.dfuERROR;
+        this.status = DfuStatus.errSTALLEDPKT;
+        return { bytesWritten: 0, status: 'stall' };
+      }
+
       this.dnloadCallCount++;
       if (this.options.failOnDnload === this.dnloadCallCount) {
         this.state = DfuState.dfuERROR;

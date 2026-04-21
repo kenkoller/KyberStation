@@ -301,3 +301,65 @@ describe('DfuSeFlasher.flash — progress reporting', () => {
     expect(last.bytesWritten).toBe(4096);
   });
 });
+
+// ─── Regression: 2026-04-20 hardware-validation DFU bugs ────────────────────
+//
+// These three tests fire strict-state + bus-reset simulation in the mock to
+// reproduce the exact hardware failures observed on 89sabers Proffieboard
+// V3.9 on 2026-04-20. Each test fails if the corresponding fix in
+// DfuSeFlasher is reverted. The mock's default-lenient mode doesn't catch
+// any of them — the whole point of this block.
+//
+// Full write-up in docs/HARDWARE_VALIDATION_TODO.md § Phase C.
+
+describe('DfuSeFlasher.flash — regression: 2026-04-20 DFU state-machine bugs', () => {
+  it('verifyFlash completes under strictState (UPLOAD requires dfuIDLE after setAddressPointer)', async () => {
+    // Without the `abort()` between setAddressPointer and the UPLOAD loop
+    // in verifyFlash, the device sits in dfuDNLOAD_IDLE when the first
+    // UPLOAD fires. Real STM32 bootloader STALLs; strictState mock STALLs;
+    // this test fails with a "UPLOAD block 2 returned status \"stall\"" error.
+    const { flasher } = await makeFlasher({ strictState: true });
+    const firmware = new Uint8Array(4096); // 2 × 2048-byte blocks
+    for (let i = 0; i < firmware.length; i++) firmware[i] = (i * 7 + 13) & 0xff;
+
+    await expect(
+      flasher.flash({ firmware, verifyAfterWrite: true }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('manifest completes under strictState (DNLOAD requires dfuIDLE after UPLOAD verify)', async () => {
+    // Without the `abort()` before the manifest's zero-length DNLOAD, the
+    // device sits in dfuUPLOAD_IDLE (from the last UPLOAD verify block).
+    // Real STM32 bootloader STALLs; strictState mock STALLs; this test
+    // fails with a "DNLOAD block 0 returned status \"stall\"" error.
+    const { device, flasher } = await makeFlasher({ strictState: true });
+    const firmware = new Uint8Array(4096);
+    for (let i = 0; i < firmware.length; i++) firmware[i] = (i * 11 + 5) & 0xff;
+
+    await expect(
+      flasher.flash({ firmware, verifyAfterWrite: true }),
+    ).resolves.toBeUndefined();
+
+    // Manifest must actually have reached the bootloader — not just skipped.
+    expect(device.receivedManifestRequest).toBe(true);
+  });
+
+  it('resetAfterManifest: bus-reset DOMException from controlTransferIn is treated as success', async () => {
+    // STM32 DfuSe has bitManifestationTolerant=0, so it resets the USB bus
+    // as it enters dfuMANIFEST_WAIT_RESET. Chrome's WebUSB surfaces that as
+    // a raw DOMException, not our DfuError. Without the catch-all in
+    // waitForManifestComplete, the DOMException propagates and a
+    // successfully-flashed board shows a red error banner to the user.
+    const { device, flasher } = await makeFlasher({ resetAfterManifest: true });
+    const firmware = new Uint8Array(4096);
+    for (let i = 0; i < firmware.length; i++) firmware[i] = (i * 3 + 1) & 0xff;
+
+    await expect(
+      flasher.flash({ firmware, verifyAfterWrite: true }),
+    ).resolves.toBeUndefined();
+
+    // The manifest DNLOAD did land before the simulated bus reset, so
+    // the host-side state machine is consistent with a successful flash.
+    expect(device.receivedManifestRequest).toBe(true);
+  });
+});
