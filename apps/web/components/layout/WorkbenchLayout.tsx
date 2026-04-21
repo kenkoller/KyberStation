@@ -46,6 +46,7 @@ import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { PerformanceBar } from '@/components/layout/PerformanceBar';
+import { DeliveryRail } from '@/components/layout/DeliveryRail';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
@@ -1173,6 +1174,25 @@ export function WorkbenchLayout() {
        * BladeCanvas paints from (no second RAF loop in the engine).
        * ════════════════════════════════════════════════════ */}
       <PerformanceBar engineRef={engineRef} />
+
+      {/* ════════════════════════════════════════════════════
+       * 5c. DELIVERY RAIL — persistent 50px bottom bar
+       *
+       * Added 2026-04-21 in Lane C (OV4). Surfaces PROFILE · STORAGE ·
+       * EXPORT · FLASH · CONN on every tab so "ship this" is always one
+       * click away regardless of context. EXPORT + FLASH open modal
+       * wrappers around the existing CardWriter / FlashPanel panels
+       * (see `CardWriterModal.tsx`, `FlashPanelModal.tsx`). STORAGE +
+       * CONN are passive readouts; PROFILE is a dropdown sharing
+       * `SaberProfileSwitcher` with the header (variant='compact').
+       *
+       * Gated by neither activeTab nor the `performanceStore.visible`
+       * toggle — the rail's ship-now message is universal. It sits
+       * between PerformanceBar (5b, tab-gated in OV5) and DataTicker
+       * (6) so the header/canvas/panels always see the same footer
+       * shape regardless of which tabs or chrome toggles are active.
+       * ════════════════════════════════════════════════════ */}
+      <DeliveryRail />
 
       {/* ════════════════════════════════════════════════════
        * 6. HUD DATA TICKER — ambient bottom chrome
