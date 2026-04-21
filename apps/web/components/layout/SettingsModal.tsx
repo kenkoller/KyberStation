@@ -13,6 +13,7 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { type AurebeshMode } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useAccessibilityStore, type DensityMode } from '@/stores/accessibilityStore';
+import { usePerformanceStore } from '@/stores/performanceStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -130,6 +131,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [sections, setSections] = useState({
     performance: true,
     density: false,
+    perfBar: false,
     effects: false,
     aurebesh: false,
     sounds: false,
@@ -173,6 +175,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   //    useAccessibilityApplier; no layout shift today (components opt in later). ──
   const density = useAccessibilityStore((s) => s.density);
   const setDensity = useAccessibilityStore((s) => s.setDensity);
+
+  // ── Performance Bar visibility — Wave 5. Flipping this hides the
+  //    158px macro strip + shift-light rail between the main panel area
+  //    and the bottom ticker. Persists through the store. ──
+  const perfBarVisible = usePerformanceStore((s) => s.visible);
+  const setPerfBarVisible = usePerformanceStore((s) => s.setVisible);
+  const resetPerfBar = usePerformanceStore((s) => s.resetDefaults);
 
   // ── Effect auto-release (demo mode) — when enabled, sustained effects
   //    (Lockup, Drag, Melt, Lightning, Force) automatically release after
@@ -403,6 +412,51 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </label>
                   ))}
                 </div>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Performance Bar ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Performance Bar"
+              open={sections.perfBar}
+              onToggle={() => toggleSection('perfBar')}
+            />
+            {sections.perfBar && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  The persistent macro strip + shift-light rail at the bottom
+                  of the editor. Four pages (Ignition / Motion / Color / FX)
+                  each expose 8 macro knobs bound to live blade parameters.
+                  Takes ~158px of vertical space — disable if you want the
+                  main panel area to reclaim it.
+                </p>
+
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50">
+                  <div>
+                    <p className="text-ui-sm text-text-primary font-medium">
+                      Show Performance Bar
+                    </p>
+                    <p className="text-ui-xs text-text-muted mt-0.5">
+                      Default on. Toggle off to reclaim the bottom strip.
+                    </p>
+                  </div>
+                  <ToggleSwitch
+                    id="perf-bar-visible"
+                    checked={perfBarVisible}
+                    onChange={setPerfBarVisible}
+                    label="Performance Bar visibility"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={resetPerfBar}
+                  className="text-ui-xs px-3 py-1.5 rounded border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
+                >
+                  Reset macro values + page to defaults
+                </button>
               </div>
             )}
           </section>

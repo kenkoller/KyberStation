@@ -45,6 +45,7 @@ import { ScanSweep } from '@/components/hud/ScanSweep';
 import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
 import { CommandPalette } from '@/components/shared/CommandPalette';
+import { PerformanceBar } from '@/components/layout/PerformanceBar';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
@@ -1159,6 +1160,19 @@ export function WorkbenchLayout() {
           <EffectComparisonPanel />
         </section>
       )}
+
+      {/* ════════════════════════════════════════════════════
+       * 5b. PERFORMANCE BAR — Wave 5 persistent macro strip
+       *
+       * 158px tall (10px shift-light rail + 148px perf body). Sits
+       * between the multi-column panel area and the ambient ticker at
+       * the foot. Gated by performanceStore.visible — Settings Modal's
+       * "Performance Bar" toggle flips it off for users who want the
+       * vertical space back. Engine ref is passed so the shift-light
+       * rail can compute live RMS from the same pixel buffer the
+       * BladeCanvas paints from (no second RAF loop in the engine).
+       * ════════════════════════════════════════════════════ */}
+      <PerformanceBar engineRef={engineRef} />
 
       {/* ════════════════════════════════════════════════════
        * 6. HUD DATA TICKER — ambient bottom chrome
