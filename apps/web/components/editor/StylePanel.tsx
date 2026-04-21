@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { playUISound } from '@/lib/uiSounds';
@@ -11,6 +12,8 @@ import { ImageScrollPanel } from './ImageScrollPanel';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { ScrubField } from '@/components/shared/ScrubField';
+import { MiniGalleryPicker } from '@/components/shared/MiniGalleryPicker';
+import { getStyleThumbnail } from '@/lib/styleThumbnails';
 
 const BLADE_STYLES = [
   { id: 'stable', label: 'Stable', desc: 'Classic solid blade' },
@@ -162,31 +165,8 @@ function StyleParamSlider({
   );
 }
 
-/** Renders a small colored dot representing the style preview. */
-function StyleDot({
-  styleId,
-  baseColor,
-  gradientEnd,
-}: {
-  styleId: string;
-  baseColor: { r: number; g: number; b: number };
-  gradientEnd?: { r: number; g: number; b: number };
-}) {
-  const hex = rgbToHex(baseColor.r, baseColor.g, baseColor.b);
-  const isGradient = styleId === 'gradient' && gradientEnd;
-  const endHex = gradientEnd ? rgbToHex(gradientEnd.r, gradientEnd.g, gradientEnd.b) : hex;
-
-  return (
-    <span
-      className="inline-block w-2 h-2 rounded-full shrink-0"
-      style={{
-        background: isGradient
-          ? `linear-gradient(135deg, ${hex}, ${endHex})`
-          : hex,
-      }}
-    />
-  );
-}
+// Legacy `StyleDot` removed 2026-04-21 as part of OV9 — the hue preview
+// is now folded into the SVG thumbnails rendered by MiniGalleryPicker.
 
 export function StylePanel() {
   const config = useBladeStore((s) => s.config);
@@ -197,6 +177,23 @@ export function StylePanel() {
 
   const showGradientEnd = config.style === 'gradient';
   const showEdgeColor = config.style === 'plasma';
+
+  // Build MiniGalleryPicker items from BLADE_STYLES + static thumbnails.
+  // Memoized on the shipped catalog (stable identity), so the grid's
+  // active-id + click path is the only churn when the user flips styles.
+  const styleItems = useMemo(
+    () =>
+      BLADE_STYLES.map((style) => {
+        const entry = getStyleThumbnail(style.id);
+        return {
+          id: style.id,
+          label: style.label,
+          thumbnail: entry.thumbnail,
+          description: style.desc,
+        };
+      }),
+    [],
+  );
 
   return (
     <div className="space-y-2">
@@ -209,34 +206,25 @@ export function StylePanel() {
           <HelpTooltip text="Choose the base animation style. Each style has a unique visual character and may expose its own tunable parameters below." proffie="StylePtr<...>" />
         }
       >
-        <div className="max-h-[360px] overflow-y-auto rounded border border-border-subtle">
-          <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-1.5 p-1.5">
-            {BLADE_STYLES.map((style) => {
-              const isActive = config.style === style.id;
-              return (
-                <button
-                  key={style.id}
-                  onClick={() => { playUISound('button-click'); setStyle(style.id); playUISound('success'); }}
-                  title={style.desc}
-                  aria-pressed={isActive}
-                  className={`touch-target text-left px-2 py-1.5 rounded text-ui-sm transition-colors border-l-[3px] border-r border-t border-b ${
-                    isActive
-                      ? 'border-l-accent bg-accent-dim border-r-accent-border border-t-accent-border border-b-accent-border text-accent'
-                      : 'border-l-transparent bg-bg-surface border-r-border-subtle border-t-border-subtle border-b-border-subtle text-text-secondary hover:text-text-primary hover:border-l-border-light'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <StyleDot
-                      styleId={style.id}
-                      baseColor={config.baseColor}
-                      gradientEnd={config.gradientEnd}
-                    />
-                    <span className="font-medium truncate">{style.label}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        <div className="max-h-[420px] overflow-y-auto rounded border border-border-subtle p-1.5">
+          {/* OV9: thumbnail-grid picker replaces the prior button list.
+              Each style gets a signature SVG thumbnail (static) keyed by
+              styleId in lib/styleThumbnails.tsx. Click applies immediately
+              (preserving the existing setStyle + SFX behavior). Arrow
+              keys + Enter/Space work via the MiniGalleryPicker primitive's
+              keyboard-grid nav. StyleDot hue preview is folded into the
+              SVG thumbnails' accent-token tint. */}
+          <MiniGalleryPicker
+            items={styleItems}
+            activeId={config.style}
+            onSelect={(id) => {
+              playUISound('button-click');
+              setStyle(id);
+              playUISound('success');
+            }}
+            columns={3}
+            ariaLabel="Blade style picker"
+          />
         </div>
       </CollapsibleSection>
 
