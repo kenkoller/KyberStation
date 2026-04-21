@@ -11,10 +11,13 @@ function uid(): string {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type TabId = 'design' | 'dynamics' | 'audio' | 'gallery' | 'output';
+// OV6 (2026-04-21): 5 → 4 tabs. Dynamics was absorbed into Design per
+// UI_OVERHAUL_v2_PROPOSAL §1. Persisted user state that still lists
+// 'dynamics' is remapped to 'design' by `migrateTabId` at load time.
+export type TabId = 'gallery' | 'design' | 'audio' | 'output';
 
 export type PanelId =
-  // Design tab
+  // Design tab (now includes former Dynamics panels — see OV6 migration)
   | 'style-select'
   | 'color-picker'
   | 'parameters'
@@ -23,7 +26,7 @@ export type PanelId =
   | 'theme-picker'
   | 'gradient-builder'
   | 'my-crystal'
-  // Dynamics tab
+  // Dynamics panels absorbed into Design tab (OV6)
   | 'effect-triggers'
   | 'effect-config'
   | 'motion-simulation'
@@ -78,25 +81,23 @@ export interface LayoutPreset {
 // ─── Panel Definitions ───────────────────────────────────────────────────────
 
 export const PANEL_DEFINITIONS: PanelDef[] = [
-  // ── Design ──
-  // Primary — expanded by default
+  // ── Design ── (absorbs former Dynamics panels — OV6 merged the tabs)
+  // Column 0 — primary visual identity
   { id: 'style-select',        label: 'Style Select',       description: 'Choose and customize your blade\'s visual style',         tab: 'design',   defaultColumn: 0, defaultOrder: 0, collapsible: false },
   { id: 'color-picker',        label: 'Color Picker',       description: 'Set colors for your blade, effects, and accents',         tab: 'design',   defaultColumn: 0, defaultOrder: 1, collapsible: true  },
+  // Column 1 — ignition + parameters + effects (now on Design)
   { id: 'ignition-retraction', label: 'Ignition/Retraction',description: 'How your blade powers on and off',                        tab: 'design',   defaultColumn: 1, defaultOrder: 0, collapsible: true  },
-  // Secondary — collapsed by default (see DEFAULT_COLLAPSED_PANELS)
   { id: 'parameters',          label: 'Parameters',         description: 'Fine-tune shimmer, noise, motion response, and patterns', tab: 'design',   defaultColumn: 1, defaultOrder: 1, collapsible: true  },
-  { id: 'layer-stack',         label: 'Layer Stack',        description: 'Composite multiple styles with blend modes',               tab: 'design',   defaultColumn: 2, defaultOrder: 0, collapsible: true  },
-  { id: 'gradient-builder',    label: 'Gradient Builder',   description: 'Design multi-stop color gradients for your blade',         tab: 'design',   defaultColumn: 2, defaultOrder: 1, collapsible: true  },
-  { id: 'my-crystal',          label: 'My Crystal',         description: 'Live 3D kyber crystal reflecting this saber\'s config',    tab: 'design',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
-  { id: 'oled-preview',        label: 'OLED Preview',       description: 'Preview the hilt OLED display for this style',             tab: 'design',   defaultColumn: 3, defaultOrder: 2, collapsible: true  },
-  { id: 'theme-picker',        label: 'Theme Picker',       description: 'Change the canvas background and UI theme',                tab: 'design',   defaultColumn: 3, defaultOrder: 3, collapsible: true  },
-
-  // ── Dynamics ──
-  // Primary — expanded by default
-  { id: 'effect-triggers',     label: 'Effect Triggers',    description: 'Trigger clash, blast, lockup, and other blade effects',    tab: 'dynamics', defaultColumn: 0, defaultOrder: 0, collapsible: false },
-  { id: 'motion-simulation',   label: 'Motion Simulation',  description: 'Control swing, angle, and twist sensitivity',              tab: 'dynamics', defaultColumn: 1, defaultOrder: 0, collapsible: true  },
-  // Secondary — collapsed by default
-  { id: 'effect-config',       label: 'Effect Config',      description: 'Adjust per-effect colors, durations, and behavior',        tab: 'dynamics', defaultColumn: 1, defaultOrder: 1, collapsible: true  },
+  { id: 'effect-triggers',     label: 'Effect Triggers',    description: 'Trigger clash, blast, lockup, and other blade effects',   tab: 'design',   defaultColumn: 1, defaultOrder: 2, collapsible: true  },
+  { id: 'effect-config',       label: 'Effect Config',      description: 'Adjust per-effect colors, durations, and behavior',       tab: 'design',   defaultColumn: 1, defaultOrder: 3, collapsible: true  },
+  // Column 2 — layers + motion (behavior-shaping surfaces)
+  { id: 'layer-stack',         label: 'Layer Stack',        description: 'Composite multiple styles with blend modes',              tab: 'design',   defaultColumn: 2, defaultOrder: 0, collapsible: true  },
+  { id: 'motion-simulation',   label: 'Motion Simulation',  description: 'Control swing, angle, and twist sensitivity',             tab: 'design',   defaultColumn: 2, defaultOrder: 1, collapsible: true  },
+  { id: 'gradient-builder',    label: 'Gradient Builder',   description: 'Design multi-stop color gradients for your blade',        tab: 'design',   defaultColumn: 2, defaultOrder: 2, collapsible: true  },
+  // Column 3 — ambient / preview
+  { id: 'my-crystal',          label: 'My Crystal',         description: 'Live 3D kyber crystal reflecting this saber\'s config',   tab: 'design',   defaultColumn: 3, defaultOrder: 1, collapsible: true  },
+  { id: 'oled-preview',        label: 'OLED Preview',       description: 'Preview the hilt OLED display for this style',            tab: 'design',   defaultColumn: 3, defaultOrder: 2, collapsible: true  },
+  { id: 'theme-picker',        label: 'Theme Picker',       description: 'Change the canvas background and UI theme',               tab: 'design',   defaultColumn: 3, defaultOrder: 3, collapsible: true  },
 
   // ── Audio ──
   // Primary — expanded by default
@@ -137,14 +138,14 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
 // and their preference is persisted to localStorage.
 
 export const DEFAULT_COLLAPSED_PANELS: ReadonlySet<PanelId> = new Set<PanelId>([
-  // Design — advanced / secondary
+  // Design — advanced / secondary (includes former Dynamics panels after OV6)
   'parameters',
   'layer-stack',
   'gradient-builder',
   'oled-preview',
   'theme-picker',
-  // Dynamics — secondary
   'effect-config',
+  'motion-simulation',
   // Audio — secondary
   'mixer-eq',
   'effect-presets',
@@ -159,7 +160,7 @@ export const DEFAULT_COLLAPSED_PANELS: ReadonlySet<PanelId> = new Set<PanelId>([
 // ─── Default Column Assignment ───────────────────────────────────────────────
 
 function buildDefaultAssignment(): ColumnAssignment {
-  const tabs: TabId[] = ['design', 'dynamics', 'audio', 'gallery', 'output'];
+  const tabs: TabId[] = ['gallery', 'design', 'audio', 'output'];
 
   // Initialise 4 empty columns per tab
   const assignment = Object.fromEntries(
@@ -232,18 +233,45 @@ function isValidPersistedColumns(
   value: Record<string, PanelId[][]> | undefined,
 ): value is Record<TabId, PanelId[][]> {
   if (!value) return false;
-  const requiredTabs: TabId[] = ['design', 'dynamics', 'audio', 'gallery', 'output'];
+  const requiredTabs: TabId[] = ['gallery', 'design', 'audio', 'output'];
   return requiredTabs.every(
     (tab) => Array.isArray(value[tab]) && value[tab].length >= 1,
   );
 }
 
+/**
+ * OV6 migration: persisted layouts from before the 5→4 tab merge may
+ * still reference a `dynamics` tab. Fold its columns into `design`
+ * (append each Dynamics column's panels to the corresponding Design
+ * column, up to 4 columns), then drop the `dynamics` key so the
+ * validator above accepts the result.
+ */
+function migrateDynamicsIntoDesign(
+  value: Record<string, PanelId[][]> | undefined,
+): Record<string, PanelId[][]> | undefined {
+  if (!value || !value.dynamics) return value;
+  const next: Record<string, PanelId[][]> = { ...value };
+  const designCols = next.design ?? [[], [], [], []];
+  const dynamicsCols = next.dynamics;
+  const merged: PanelId[][] = [[], [], [], []];
+  for (let c = 0; c < 4; c++) {
+    merged[c] = [
+      ...(designCols[c] ?? []),
+      ...(dynamicsCols[c] ?? []),
+    ];
+  }
+  next.design = merged;
+  delete next.dynamics;
+  return next;
+}
+
 // ─── Hydrate initial state from storage ──────────────────────────────────────
 
 const stored = loadFromStorage();
+const migratedStoredColumns = migrateDynamicsIntoDesign(stored.columns);
 
-const initialColumns: ColumnAssignment = isValidPersistedColumns(stored.columns)
-  ? (stored.columns as ColumnAssignment)
+const initialColumns: ColumnAssignment = isValidPersistedColumns(migratedStoredColumns)
+  ? (migratedStoredColumns as ColumnAssignment)
   : cloneColumns(DEFAULT_COLUMN_ASSIGNMENT);
 
 const initialColumnCount: number =

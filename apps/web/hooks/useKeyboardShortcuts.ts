@@ -5,17 +5,17 @@ import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { useUIStore, type ActiveTab } from '@/stores/uiStore';
 
 /**
- * `⌘1` … `⌘5` / `Ctrl+1` … `Ctrl+5` — switch tabs in canonical order.
- * This mapping must mirror the `TAB_CANONICAL_KBD` hints rendered in
- * `WorkbenchLayout.tsx` so the visible kbd chip matches what the key
- * actually does. Changing one side without the other is a UX regression.
+ * `⌘1` … `⌘4` / `Ctrl+1` … `Ctrl+4` — switch tabs in canonical order.
+ * OV6 (2026-04-21) collapsed Dynamics → Design, so ⌘5 is now free.
+ * Reserved for OV8's STATE-mode takeover toggle (see proposal §12b.4).
+ * This mapping must mirror `TAB_CANONICAL_DIGIT` in WorkbenchLayout.tsx
+ * so the visible kbd chip matches what the key actually does.
  */
 const TAB_BY_DIGIT: Record<string, ActiveTab> = {
-  '1': 'design',
-  '2': 'dynamics',
+  '1': 'gallery',
+  '2': 'design',
   '3': 'audio',
-  '4': 'gallery',
-  '5': 'output',
+  '4': 'output',
 };
 
 export interface KeyboardShortcutHandlers {

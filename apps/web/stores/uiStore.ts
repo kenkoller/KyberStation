@@ -3,7 +3,10 @@ import { create } from 'zustand';
 export type ViewMode = 'blade' | 'angle' | 'strip' | 'cross' | 'uv-unwrap';
 export type RenderMode = 'photorealistic' | 'pixel';
 export type CanvasMode = '2d' | '3d';
-export type ActiveTab = 'design' | 'dynamics' | 'audio' | 'gallery' | 'output';
+// OV6 (2026-04-21): 5 → 4 tabs. Dynamics was absorbed into Design per
+// UI_OVERHAUL_v2_PROPOSAL §1. Persisted state referencing 'dynamics' is
+// remapped to 'design' at load time by the layoutStore migration.
+export type ActiveTab = 'gallery' | 'design' | 'audio' | 'output';
 export type LayoutMode = 'sidebar' | 'horizontal';
 export type FullscreenOrientation = 'horizontal' | 'vertical';
 

@@ -99,28 +99,27 @@ const HUD_TICKER_MESSAGES = [
 
 // ─── Tab Definitions ───
 
+// OV6 (2026-04-21): 5 → 4 tabs. Gallery → Design → Audio → Output.
+// Dynamics was absorbed into Design. See UI_OVERHAUL_v2_PROPOSAL §1.
 const TABS: Array<{ id: ActiveTab; label: string }> = [
-  { id: 'design', label: 'DESIGN' },
-  { id: 'dynamics', label: 'DYNAMICS' },
-  { id: 'audio', label: 'AUDIO' },
   { id: 'gallery', label: 'GALLERY' },
+  { id: 'design', label: 'DESIGN' },
+  { id: 'audio', label: 'AUDIO' },
   { id: 'output', label: 'OUTPUT' },
 ];
 
 /**
- * Canonical tab-switch kbd positions (by index in the shipped TABS
- * array, not the user's reordered view). The actual display string is
+ * Canonical tab-switch kbd positions. The actual display string is
  * computed at render time via `useMetaKey()` so Mac shows `⌘1` and
- * Windows / Linux shows `Ctrl+1`. The keyboard handler in
- * `useKeyboardShortcuts` uses `(e.metaKey || e.ctrlKey)` so either
- * modifier works regardless of platform — the display is purely cosmetic.
+ * Windows / Linux shows `Ctrl+1`. OV6 reassignment: Gallery=1,
+ * Design=2, Audio=3, Output=4. ⌘5 freed; reserved for OV8's STATE-
+ * mode takeover toggle (per proposal §12b.4).
  */
 const TAB_CANONICAL_DIGIT: Record<ActiveTab, string> = {
-  design: '1',
-  dynamics: '2',
+  gallery: '1',
+  design: '2',
   audio: '3',
-  gallery: '4',
-  output: '5',
+  output: '4',
 };
 
 // ─── Tab Reorder Hook ───
@@ -156,9 +155,15 @@ function useOrderedTabs() {
 function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   switch (activeTab) {
     case 'design':
-      return <DesignPanel />;
-    case 'dynamics':
-      return <DynamicsPanel />;
+      // OV6 merged Dynamics into Design: stack the two panel bodies.
+      // Desktop users get the column-grid TabColumnContent instead; this
+      // path is only the mobile/tablet fallback inside WorkbenchLayout.
+      return (
+        <div className="space-y-6">
+          <DesignPanel />
+          <DynamicsPanel />
+        </div>
+      );
     case 'audio':
       return <AudioPanel />;
     case 'gallery':
@@ -424,22 +429,22 @@ export function WorkbenchLayout() {
       setActiveTab(tab);
     };
     const out: Command[] = [
-      // ── NAVIGATE ───────────────────────────────────────────────────
+      // ── NAVIGATE (OV6: 4-tab model) ────────────────────────────────
+      {
+        id: 'nav:gallery',
+        group: 'NAVIGATE',
+        title: 'Go to Gallery',
+        kbd: kbdFor('1'),
+        icon: '⚒',
+        run: nav('gallery'),
+      },
       {
         id: 'nav:design',
         group: 'NAVIGATE',
         title: 'Go to Design',
-        kbd: kbdFor('1'),
-        icon: '⚒',
-        run: nav('design'),
-      },
-      {
-        id: 'nav:dynamics',
-        group: 'NAVIGATE',
-        title: 'Go to Dynamics',
         kbd: kbdFor('2'),
         icon: '⚒',
-        run: nav('dynamics'),
+        run: nav('design'),
       },
       {
         id: 'nav:audio',
@@ -450,18 +455,10 @@ export function WorkbenchLayout() {
         run: nav('audio'),
       },
       {
-        id: 'nav:gallery',
-        group: 'NAVIGATE',
-        title: 'Go to Gallery',
-        kbd: kbdFor('4'),
-        icon: '⚒',
-        run: nav('gallery'),
-      },
-      {
         id: 'nav:output',
         group: 'NAVIGATE',
         title: 'Go to Output',
-        kbd: kbdFor('5'),
+        kbd: kbdFor('4'),
         icon: '⚒',
         run: nav('output'),
       },
