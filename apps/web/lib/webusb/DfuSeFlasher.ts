@@ -177,6 +177,10 @@ export class DfuSeFlasher {
       message: 'Finalising firmware — do not disconnect',
     });
 
+    // After UPLOAD verify the device is in dfuUPLOAD_IDLE. Manifest's
+    // zero-length DNLOAD at block 0 requires dfuIDLE. Abort first so
+    // the bootloader accepts the manifest command.
+    await this.dfu.abort();
     await this.dfu.download(0, undefined);
     await this.waitForManifestComplete();
 
@@ -206,6 +210,14 @@ export class DfuSeFlasher {
 
     // Re-set the address pointer so UPLOAD starts at the same base address.
     await this.setAddressPointer(startAddress);
+    this.checkAbort(signal);
+
+    // setAddressPointer leaves the device in dfuDNLOAD_IDLE (it's a DNLOAD
+    // block 0 command under the hood). UPLOAD is only valid from dfuIDLE,
+    // so abort back to dfuIDLE before reading. The STM32 bootloader
+    // preserves the address pointer through ABORT — same pattern dfu-util
+    // uses for dfuse_upload_bin.
+    await this.dfu.abort();
     this.checkAbort(signal);
 
     onProgress?.({
@@ -320,11 +332,13 @@ export class DfuSeFlasher {
         [DfuState.dfuMANIFEST_WAIT_RESET, DfuState.dfuIDLE],
         this.sleep,
       );
-    } catch (err) {
-      // Some STM32 bootloaders detach the USB pipe as part of manifest —
-      // the GET_STATUS call will fail and we treat that as success.
-      if (err instanceof DfuError) return;
-      throw err;
+    } catch {
+      // Any error here means success: the STM32 DfuSe bootloader resets
+      // the USB bus as part of manifest (bitManifestationTolerant = 0),
+      // which makes the next GET_STATUS fail with either a DfuError (our
+      // wrapped status != 'ok') or a raw WebUSB DOMException (pipe
+      // invalidated mid-transfer). Both are expected completion signals.
+      return;
     }
   }
 

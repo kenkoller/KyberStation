@@ -1,6 +1,6 @@
 # Hardware validation TODO — v0.11.0 WebUSB flash
 
-**Status**: Phase A ✅ complete on 2026-04-20 (macOS, Proffieboard V3.9). Phases B + C still pending.
+**Status**: Phases A + B + C ✅ **all complete on 2026-04-20 (macOS, Proffieboard V3.9, 89sabers)**, including recovery re-flash. Three real DFU protocol bugs caught + fixed. Cross-platform (Windows/Linux) and cross-board (V2, V3-OLED) still pending.
 
 Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugged in. The WebUSB flasher has passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
 
@@ -43,7 +43,11 @@ Goal: prove the browser can enumerate the board in DFU mode and read the descrip
 - The exact `interfaceName` string the board reports — paste it into the bug / PR note. If it doesn't match `@Internal Flash  /0x08000000/256*0002Kg` the memory layout parser may need to accommodate the real variant.
 - The `wTransferSize` from the DFU functional descriptor. The flasher reads it via `DfuDevice.readFunctionalDescriptor()` and logs via `dfu.functionalDescriptor` — if it's not 2048 the fallback path is exercising.
 
-## Phase B — dry-run test (zero flash risk) — PENDING
+## Phase B — dry-run test (zero flash risk) ✅ 2026-04-20
+
+Ran with a 242,376-byte ProffieOS V3 .bin (stock `default_proffieboard_config.h`, later replaced by our fixed v3-standard.h). The flasher walked erase → writing → verifying → done with the final banner `Dry run complete. No bytes were written.` No protocol errors. No DNLOAD transfers issued (confirmed by clean completion — any real write attempt against the uninitialised erase state would have stalled).
+
+## Phase B — dry-run test (original plan) — for reference only
 
 Goal: walk through the full protocol sequence without writing any bytes.
 
@@ -67,7 +71,23 @@ Goal: walk through the full protocol sequence without writing any bytes.
 
 - The block count and byte-exact byte counts shown. If they look off vs. `ceil(binary_size / 2048)`, the wTransferSize or memory layout is wrong.
 
-## Phase C — real flash (actual flash risk) — PENDING
+## Phase C — real flash ✅ 2026-04-20
+
+Ran with the fixed v3-standard.h firmware (209,864 bytes, 103 blocks at 2048 transferSize). **Blade ignited blue on first power press after replug.** USB serial enumerated as `/dev/tty.usbmodem2081399A4B301` (CDC), audio DAC confirmed working via ProffieOS voice-pack "font not found" / "SD card not found" announcements. Recovery re-flash of the same binary landed cleanly end-to-end with no errors in the FlashPanel — confirming the reflash loop users hit every time they tweak a config.
+
+### Three DFU protocol bugs caught + fixed this session
+
+1. **`verifyFlash` state bug** — `setAddressPointer` leaves the device in `dfuDNLOAD_IDLE`, but `UPLOAD` requires `dfuIDLE`. Real hardware correctly returned `STALL` on `UPLOAD block 2`; the mock accepted it. Fix: `abort()` between `setAddressPointer` and the upload loop. ([`DfuSeFlasher.ts:verifyFlash`](../apps/web/lib/webusb/DfuSeFlasher.ts))
+
+2. **Manifest state bug** — after `UPLOAD` verify the device sits in `dfuUPLOAD_IDLE`, but manifest's zero-length `DNLOAD` at block 0 requires `dfuIDLE`. Hardware returned `STALL` on `DNLOAD block 0`. Fix: `abort()` before the manifest `download(0, undefined)`. ([`DfuSeFlasher.ts`](../apps/web/lib/webusb/DfuSeFlasher.ts) around the manifest call site)
+
+3. **Manifest-completion error handling** — STM32 DfuSe bootloader resets the USB bus as part of manifest (`bitManifestationTolerant=0`). The resulting `controlTransferIn` failure comes back as a raw `DOMException`, not our `DfuError`. The old catch block only swallowed `DfuError` and mis-reported a successful flash as a red "transfer error" banner. Fix: any error during post-manifest polling is treated as success. ([`DfuSeFlasher.ts:waitForManifestComplete`](../apps/web/lib/webusb/DfuSeFlasher.ts))
+
+### Followup
+
+- **Tighten `MockUsbDevice`** to enforce DFU state rules (reject `UPLOAD` from `dfuDNLOAD_IDLE`, `DNLOAD` zero from `dfuUPLOAD_IDLE`). The three bugs above all slipped past 576 green tests because the mock was too permissive. One regression test per bug.
+
+## Phase C — real flash (original plan) — for reference only
 
 Only proceed after Phase A and B are both clean.
 
@@ -88,12 +108,20 @@ Recovery plan is documented in `docs/WEBUSB_FLASH.md` under "Recovery procedure"
 - Wall-clock duration of each phase (erase / write / verify / manifest). If any phase is dramatically longer than the mock's expectation, the poll-timeout handling may need tuning.
 - Any error messages from the FlashPanel. The mock error paths are exhaustive but hardware can surface things we haven't simulated.
 
-## After hardware validation
+## What's still pending (post-2026-04-20)
 
-Once all three phases pass:
+Validated **only** on macOS (Sonoma) + Chrome + Proffieboard V3.9 (89sabers, STM32L452RE). Before promoting WebUSB flash to "validated for launch on all supported configurations":
 
-1. Update `CLAUDE.md` — move the WebUSB flash entry from "tested against mock" to "tested on hardware".
-2. Remove or archive this file.
+- **Windows + Chrome/Edge** — different WebUSB driver path (WinUSB), historically the most fragile in the WebUSB ecosystem.
+- **Linux + Chrome** — udev rules required, often a sharp edge for new users; worth a smoke test.
+- **Proffieboard V2** (STM32L433CC) — different memory layout (256 KiB vs 512 KiB); the layout parser handles both but we haven't proven it on hardware.
+- **Proffieboard V3 + OLED** — same chip as V3 standard, but the OLED build adds ENABLE_SSD1306; presumably no DFU-protocol implications, but worth confirming the OLED firmware actually flashes + boots.
+- **Phone-camera QR scan** of the Kyber Glyph in `/editor` — not WebUSB but adjacent; a complete launch story includes "scan a friend's design and import it".
+
+### Doc cleanup after the cross-platform sweeps
+
+1. Update `CLAUDE.md`'s WebUSB row to "validated on all supported configurations" once the cross-board / cross-OS sweeps are done.
+2. Archive this file or fold its current state into a one-line "validated" note in `WEBUSB_FLASH.md`.
 3. Open a confidence-building blog post / README section noting the validated hardware (board revision + ProffieOS version).
 
 ## If validation fails
