@@ -69,6 +69,16 @@ export interface MiniSaberProps {
    * life. Default `true`.
    */
   animated?: boolean;
+  /**
+   * Target frame rate for the animated tick loop. Useful when rendering
+   * many sabers at once (e.g. the landing-page array) where 60 fps per
+   * card is overkill. Lower values skip frames — the RAF callback still
+   * fires at the browser's native rate, but `engine.update()` +
+   * `drawPixels()` only run when enough time has elapsed since the last
+   * applied frame. Undefined = native rate. Minimum effective rate is
+   * clamped to 1 fps.
+   */
+  fps?: number;
   /** Extra container class. */
   className?: string;
   /** Optional aria-label; defaults to the hilt's assembly display name. */
@@ -105,6 +115,7 @@ export function MiniSaber({
   controlledIgnited,
   hiltAccent,
   animated = true,
+  fps,
   className,
   ariaLabel,
 }: MiniSaberProps) {
@@ -239,6 +250,7 @@ export function MiniSaber({
     let cancelled = false;
     let raf = 0;
     let lastTime = performance.now();
+    let lastAppliedTime = lastTime;
     let cycleStart = performance.now() + initialDelayMs;
     let retractScheduled = false;
     let igniteScheduledAt = 0;
@@ -247,10 +259,23 @@ export function MiniSaber({
       ? controlledRef.current
       : undefined;
 
+    // When `fps` is set, skip RAF frames until enough time has elapsed
+    // to hit the target cadence. The callback still fires at the
+    // browser's native rate; engine.update + drawPixels only run on
+    // passes that cross the threshold. Undefined fps = native rate.
+    const targetFrameMs = fps && fps > 0 ? 1000 / Math.max(1, fps) : 0;
+
     const tick = (time: number) => {
       if (cancelled) return;
+
+      if (targetFrameMs > 0 && time - lastAppliedTime < targetFrameMs) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
       const dt = Math.min(48, time - lastTime);
       lastTime = time;
+      lastAppliedTime = time;
 
       if (isControlled) {
         const want = controlledRef.current;
@@ -311,7 +336,7 @@ export function MiniSaber({
       cancelAnimationFrame(raf);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animated]);
+  }, [animated, fps]);
 
   const accentCss = `rgb(${accent.r | 0},${accent.g | 0},${accent.b | 0})`;
   // Hilt accent: neutral chrome by default so the blade stays the hero.

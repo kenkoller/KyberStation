@@ -221,13 +221,23 @@ function zipHueSpread(
   return out;
 }
 
+// Cap the total unique-preset pool across both scroll rows. The source
+// arrays contribute 40 canonical + 40 creative = 80 potential items; we
+// slice the zipped output down to keep the landing array lean. Lower =
+// smaller landing bundle + faster module-load (every preset calls
+// encodeGlyphFromConfig at import time) and less scroll-loop repetition.
+// Higher = more variety per loop. 50 is Ken's 2026-04-20 target.
+const LANDING_PRESET_CAP = 50;
+
 const INTERMINGLED: ResolvedPreset[] = zipHueSpread(
   CANONICAL_SOURCE,
   CREATIVE_SOURCE,
-).map((p) => ({
-  ...p,
-  href: `/editor?s=${encodeGlyphFromConfig(p.config)}`,
-}));
+)
+  .slice(0, LANDING_PRESET_CAP)
+  .map((p) => ({
+    ...p,
+    href: `/editor?s=${encodeGlyphFromConfig(p.config)}`,
+  }));
 
 // Split into halves — NOT parity. zipHueSpread strictly alternates
 // canonical / creative, so parity-split would separate them back into
@@ -237,8 +247,11 @@ const TOP_ROW = INTERMINGLED.slice(0, HALF);
 const BOTTOM_ROW = INTERMINGLED.slice(HALF);
 
 // ─── Marquee timing (per-row, slightly de-synced) ──────────────────────────
-const TOP_ROW_DURATION_S = 140;
-const BOTTOM_ROW_DURATION_S = 170;
+// Doubled from 140s/170s per Ken's 2026-04-20 feedback — slower drift
+// reads as "premium showcase" rather than a ticker, and gives each
+// blade long enough in view to appreciate its style.
+const TOP_ROW_DURATION_S = 280;
+const BOTTOM_ROW_DURATION_S = 340;
 
 interface LandingSaberArrayProps {
   className?: string;
@@ -272,9 +285,13 @@ export function LandingSaberArray({ className }: LandingSaberArrayProps) {
 // ─── Marquee row ──────────────────────────────────────────────────────────
 //
 // Duplicates its content once so `translateX(-50%)` scrolls one pool
-// worth of cards and loops seamlessly. Hover on any card pauses the
-// whole row instantly (no transition easing on the pause itself —
-// that's what Ken wanted, immediate response to the cursor).
+// worth of cards and loops seamlessly. Previously this row paused on
+// hover so the user could click — Ken's 2026-04-20 feedback was that
+// the pause felt disruptive and all blades should always be animating.
+// The row now scrolls continuously; hover still drives the card's
+// accent / border / halo for visual feedback, and the marquee keeps
+// moving under the cursor. Clicking still works (the Link absorbs the
+// mouse-down normally).
 
 interface MarqueeRowProps {
   presets: ResolvedPreset[];
@@ -283,7 +300,6 @@ interface MarqueeRowProps {
 }
 
 function MarqueeRow({ presets, direction, durationS }: MarqueeRowProps) {
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const doubled = [...presets, ...presets];
   const animationName =
     direction === 'left' ? 'kyber-marquee-left' : 'kyber-marquee-right';
@@ -294,25 +310,12 @@ function MarqueeRow({ presets, direction, durationS }: MarqueeRowProps) {
         className="flex gap-4 will-change-transform"
         style={{
           animation: `${animationName} ${durationS}s linear infinite`,
-          animationPlayState: hoveredKey ? 'paused' : 'running',
           width: 'max-content',
         }}
       >
         {doubled.map((preset, i) => {
           const key = `${preset.label}-${i}`;
-          return (
-            <MarqueeCard
-              key={key}
-              cardKey={key}
-              preset={preset}
-              isHovered={hoveredKey === key}
-              onHoverChange={(hovered) =>
-                setHoveredKey((current) =>
-                  hovered ? key : current === key ? null : current,
-                )
-              }
-            />
-          );
+          return <MarqueeCard key={key} cardKey={key} preset={preset} />;
         })}
       </div>
     </div>
@@ -322,34 +325,52 @@ function MarqueeRow({ presets, direction, durationS }: MarqueeRowProps) {
 // ─── Card ────────────────────────────────────────────────────────────────
 //
 // Wraps a MiniSaber + label in a Next.js <Link>. Lazy-mounts the
-// saber via IntersectionObserver so ~160 card-level DOM articles
-// only pay engine-warmup cost when they scroll into view. Hover
-// transitions are 800ms ease-in-out so pointer-in / pointer-out
-// reads as intentional rather than twitchy.
+// saber via IntersectionObserver so ~160 card-level DOM articles only
+// pay engine-warmup cost when they scroll into view. Once visible, the
+// MiniSaber runs its own engine tick loop at LANDING_CARD_FPS so the
+// blade style animates (fire crackles, plasma swirls, etc.) without
+// burning 60 fps × N cards of CPU — enough cadence to read as "alive"
+// while keeping the landing scroll smooth. Hover transitions stay at
+// 800ms ease-in-out for deliberate pointer feedback; the marquee no
+// longer pauses on hover (see MarqueeRow note).
+
+// Target frame rate for every on-screen blade in the array. ~30 fps is
+// the sweet spot for 20+ concurrent cards: styles like fire / plasma
+// still read as lively, and the frame budget stays well under what a
+// single editor-grade BladeCanvas consumes. Lower = smoother landing
+// scroll at the cost of style liveness; higher = more per-card CPU.
+const LANDING_CARD_FPS = 30;
 
 interface MarqueeCardProps {
   cardKey: string;
   preset: ResolvedPreset;
-  isHovered: boolean;
-  onHoverChange: (hovered: boolean) => void;
 }
 
-function MarqueeCard({ cardKey, preset, isHovered, onHoverChange }: MarqueeCardProps) {
+function MarqueeCard({ cardKey, preset }: MarqueeCardProps) {
   const ref = useRef<HTMLAnchorElement>(null);
-  const [visible, setVisible] = useState(false);
+  // mounted: once true, stays true for the lifetime of the card — we
+  // never unmount the MiniSaber's engine, so the first mount amortises
+  // the BladeEngine warmup cost across subsequent visibility cycles.
+  const [mounted, setMounted] = useState(false);
+  // inView: flips true/false as the card crosses the observer threshold.
+  // Drives MiniSaber's `animated` prop so off-screen cards freeze on
+  // their last frame (zero per-tick CPU) and on-screen cards resume
+  // animating. With this gate, the concurrent tick count scales with
+  // the viewport (~12-20 visible cards), not the total pool size.
+  const [inView, setInView] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (!ref.current) return;
-    // Pre-mount 200px before scroll-into-view so fast-drifting cards
-    // are already live by the time they enter the visible region.
+    // 200px rootMargin pre-mounts cards slightly before they scroll into
+    // view and keeps them animated slightly after they leave, so fast-
+    // drifting cards never flash "frozen" at the visible edges.
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer.disconnect();
-            return;
-          }
+          const intersecting = entry.isIntersecting;
+          setInView(intersecting);
+          if (intersecting) setMounted(true);
         }
       },
       { rootMargin: '200px 200px 200px 200px' },
@@ -379,10 +400,10 @@ function MarqueeCard({ cardKey, preset, isHovered, onHoverChange }: MarqueeCardP
           ? `0 0 30px 0 rgba(${r},${g},${b},0.22)`
           : 'none',
       }}
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
-      onFocus={() => onHoverChange(true)}
-      onBlur={() => onHoverChange(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={() => setIsHovered(false)}
       data-card-key={cardKey}
     >
       <div
@@ -401,7 +422,7 @@ function MarqueeCard({ cardKey, preset, isHovered, onHoverChange }: MarqueeCardP
         className="relative flex items-end justify-center w-full pt-5"
         style={{ minHeight: '360px' }}
       >
-        {visible ? (
+        {mounted ? (
           <MiniSaber
             config={preset.config}
             hiltId={LANDING_HILT_ID}
@@ -410,7 +431,8 @@ function MarqueeCard({ cardKey, preset, isHovered, onHoverChange }: MarqueeCardP
             bladeThickness={5}
             hiltLength={72}
             controlledIgnited={true}
-            animated={isHovered}
+            animated={inView}
+            fps={LANDING_CARD_FPS}
           />
         ) : (
           <CardPlaceholder accentCss={accentCss} />
