@@ -29,11 +29,8 @@ export type PanelId =
   | 'effect-config'
   | 'motion-simulation'
   | 'ignition-retraction'
-  | 'gesture-config'
-  | 'comparison-view'
   // Audio tab
   | 'font-library'
-  | 'font-preview'
   | 'mixer-eq'
   | 'effect-presets'
   // NOTE: 'smoothswing-config' used to live here as a sibling panel. As of
@@ -42,9 +39,6 @@ export type PanelId =
   // renderPanel() so persisted layouts still find a friendly landing.
   // Gallery tab
   | 'gallery-browser'
-  | 'builtin-presets'
-  | 'my-presets'
-  | 'community-gallery'
   | 'preset-detail'
   // Output tab
   | 'output-workflow'
@@ -103,15 +97,12 @@ export const PANEL_DEFINITIONS: PanelDef[] = [
   // Primary — expanded by default
   { id: 'effect-triggers',     label: 'Effect Triggers',    description: 'Trigger clash, blast, lockup, and other blade effects',    tab: 'dynamics', defaultColumn: 0, defaultOrder: 0, collapsible: false },
   { id: 'motion-simulation',   label: 'Motion Simulation',  description: 'Control swing, angle, and twist sensitivity',              tab: 'dynamics', defaultColumn: 1, defaultOrder: 0, collapsible: true  },
-  { id: 'gesture-config',      label: 'Gesture Config',     description: 'Map physical gestures to blade actions',                   tab: 'dynamics', defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   // Secondary — collapsed by default
   { id: 'effect-config',       label: 'Effect Config',      description: 'Adjust per-effect colors, durations, and behavior',        tab: 'dynamics', defaultColumn: 1, defaultOrder: 1, collapsible: true  },
-  { id: 'comparison-view',     label: 'Comparison View',    description: 'Compare two styles or effects side by side',               tab: 'dynamics', defaultColumn: 3, defaultOrder: 0, collapsible: true  },
 
   // ── Audio ──
   // Primary — expanded by default
   { id: 'font-library',        label: 'Font Library',       description: 'Browse and load your sound font collection',               tab: 'audio',    defaultColumn: 0, defaultOrder: 0, collapsible: false },
-  { id: 'font-preview',        label: 'Font Preview',       description: 'Preview and audition sound font effects',                  tab: 'audio',    defaultColumn: 1, defaultOrder: 0, collapsible: true  },
   // Secondary — collapsed by default
   { id: 'mixer-eq',            label: 'Mixer / EQ',         description: 'Shape your saber\'s audio with EQ and effects',            tab: 'audio',    defaultColumn: 2, defaultOrder: 0, collapsible: true  },
   { id: 'effect-presets',      label: 'Effect Presets',     description: 'One-click audio effect chains for common sounds',          tab: 'audio',    defaultColumn: 2, defaultOrder: 1, collapsible: true  },
@@ -157,7 +148,6 @@ export const DEFAULT_COLLAPSED_PANELS: ReadonlySet<PanelId> = new Set<PanelId>([
   'theme-picker',
   // Dynamics — secondary
   'effect-config',
-  'comparison-view',
   // Audio — secondary
   'mixer-eq',
   'effect-presets',

@@ -40,7 +40,6 @@ import { FlashPanel } from '@/components/editor/FlashPanel';
 import { CompatibilityPanel } from '@/components/editor/CompatibilityPanel';
 import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
-import { ComparisonView } from '@/components/editor/ComparisonView';
 import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
 // CrystalPanel stays statically imported — the Three.js payload is
 // already dynamic inside the panel (apps/web/components/editor/CrystalPanel.tsx
@@ -62,17 +61,6 @@ function ComingSoon({ label }: { label: string }) {
     <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
       <span className="text-ui-sm text-text-muted font-mono">{label}</span>
       <span className="text-ui-xs text-text-muted/50">Coming soon</span>
-    </div>
-  );
-}
-
-// ─── Font preview placeholder ─────────────────────────────────────────────────
-
-function FontPreviewPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
-      <span className="text-ui-sm text-text-muted font-mono">Font Preview</span>
-      <span className="text-ui-xs text-text-muted/50">Select a font from the library to preview</span>
     </div>
   );
 }
@@ -356,18 +344,11 @@ function renderPanel(panelId: string): React.ReactNode {
       return <GestureControlPanel />;
     case 'motion-simulation':
       return <MotionSimPanel />;
-    case 'gesture-config':
-      return <GestureControlPanel />;
-    case 'comparison-view':
-      return <ComparisonView />;
 
     // ── Audio ──
     case 'font-library':
       // Full font browser: library scanner, font list, load-to-active
       return <SoundFontPanel />;
-    case 'font-preview':
-      // Placeholder until SoundFontPanel gains a dedicated preview-only mode
-      return <FontPreviewPlaceholder />;
     case 'mixer-eq':
       return <AudioPanel />;
     case 'effect-presets':
@@ -377,15 +358,6 @@ function renderPanel(panelId: string): React.ReactNode {
     case 'gallery-browser':
       // Unified gallery with Built-in / My Presets / Community sub-tabs
       return <PresetGallery />;
-    case 'builtin-presets':
-      // Legacy slot — redirects to the unified gallery on the built-in tab
-      return <PresetGallery initialTab="gallery" />;
-    case 'my-presets':
-      // Legacy slot — redirects to the unified gallery on the my-presets tab
-      return <PresetGallery initialTab="my-presets" />;
-    case 'community-gallery':
-      // Legacy slot — redirects to the unified gallery on the community tab
-      return <PresetGallery initialTab="community" />;
     case 'preset-detail':
       // Reads selected preset from presetDetailStore — stays in sync with
       // any click-to-select action inside PresetGallery automatically.
