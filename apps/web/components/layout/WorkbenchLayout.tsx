@@ -8,7 +8,6 @@ import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useUIStore } from '@/stores/uiStore';
 import type { ActiveTab } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
-import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { playUISound, getUISoundEngine } from '@/lib/uiSounds';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
@@ -45,7 +44,11 @@ import { DataTicker } from '@/components/hud/DataTicker';
 import { ScanSweep } from '@/components/hud/ScanSweep';
 import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
-import { LATEST_VERSION } from '@/lib/version';
+import { CommandPalette } from '@/components/shared/CommandPalette';
+import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
+import { useCommandStore, type Command } from '@/stores/commandStore';
+import { CANVAS_THEMES } from '@/lib/canvasThemes';
+import { EXTENDED_LOCATION_THEMES, EXTENDED_FACTION_THEMES } from '@/lib/extendedThemes';
 import Link from 'next/link';
 
 // ─── HUD status messages for the header DataTicker ───
@@ -63,12 +66,26 @@ const HUD_TICKER_MESSAGES = [
 // ─── Tab Definitions ───
 
 const TABS: Array<{ id: ActiveTab; label: string }> = [
-  { id: 'design', label: 'Design' },
-  { id: 'dynamics', label: 'Dynamics' },
-  { id: 'audio', label: 'Audio' },
-  { id: 'gallery', label: 'Gallery' },
-  { id: 'output', label: 'Output' },
+  { id: 'design', label: 'DESIGN' },
+  { id: 'dynamics', label: 'DYNAMICS' },
+  { id: 'audio', label: 'AUDIO' },
+  { id: 'gallery', label: 'GALLERY' },
+  { id: 'output', label: 'OUTPUT' },
 ];
+
+/**
+ * Canonical `⌘1` … `⌘5` hint for each tab, by position in the shipped
+ * TABS array (not the user's reordered view). This is the source of
+ * truth for both the inline kbd hints beside each tab label and the
+ * modifier-key handler in `useKeyboardShortcuts`.
+ */
+const TAB_CANONICAL_KBD: Record<ActiveTab, string> = {
+  design: '⌘1',
+  dynamics: '⌘2',
+  audio: '⌘3',
+  gallery: '⌘4',
+  output: '⌘5',
+};
 
 // ─── Tab Reorder Hook ───
 
@@ -155,12 +172,10 @@ export function WorkbenchLayout() {
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
 
-  // Active saber profile name — used in the header breadcrumb alongside
-  // the version string. Falls back to undefined when no profile exists.
-  const activeSaberName = useSaberProfileStore((s) => {
-    const active = s.profiles.find((p) => p.id === s.activeProfileId);
-    return active?.name;
-  });
+  // Canvas theme — surfaced via the ⌘K command palette. We only need the
+  // setter; subscribing to the current theme would churn the memoized
+  // command list every time a theme command runs.
+  const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
 
   // ── Pixel buffer for VisualizationStack ──
   // Capture the engine's live Uint8Array once after mount. getPixels() returns
@@ -235,6 +250,177 @@ export function WorkbenchLayout() {
   );
   useKeyboardShortcuts(handlers);
   useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
+
+  // ── ⌘K command palette ──
+  // Arm the global ⌘K listener. Registration below supplies the initial
+  // command set; owning panels may register more on mount in later waves.
+  useCommandPalette();
+
+  const commands = useMemo<Command[]>(() => {
+    const nav = (tab: ActiveTab) => () => {
+      playUISound('tab-switch');
+      setActiveTab(tab);
+    };
+    const out: Command[] = [
+      // ── NAVIGATE ───────────────────────────────────────────────────
+      {
+        id: 'nav:design',
+        group: 'NAVIGATE',
+        title: 'Go to Design',
+        kbd: '⌘1',
+        icon: '⚒',
+        run: nav('design'),
+      },
+      {
+        id: 'nav:dynamics',
+        group: 'NAVIGATE',
+        title: 'Go to Dynamics',
+        kbd: '⌘2',
+        icon: '⚒',
+        run: nav('dynamics'),
+      },
+      {
+        id: 'nav:audio',
+        group: 'NAVIGATE',
+        title: 'Go to Audio',
+        kbd: '⌘3',
+        icon: '⚒',
+        run: nav('audio'),
+      },
+      {
+        id: 'nav:gallery',
+        group: 'NAVIGATE',
+        title: 'Go to Gallery',
+        kbd: '⌘4',
+        icon: '⚒',
+        run: nav('gallery'),
+      },
+      {
+        id: 'nav:output',
+        group: 'NAVIGATE',
+        title: 'Go to Output',
+        kbd: '⌘5',
+        icon: '⚒',
+        run: nav('output'),
+      },
+      // ── AUDITION ──────────────────────────────────────────────────
+      {
+        id: 'audition:ignite',
+        group: 'AUDITION',
+        title: 'Ignite / Retract blade',
+        subtitle: 'Toggle blade on/off',
+        kbd: 'Space',
+        icon: '▶',
+        run: toggleWithAudio,
+      },
+      {
+        id: 'audition:clash',
+        group: 'AUDITION',
+        title: 'Trigger Clash',
+        kbd: 'C',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('clash'),
+      },
+      {
+        id: 'audition:blast',
+        group: 'AUDITION',
+        title: 'Trigger Blast',
+        kbd: 'B',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('blast'),
+      },
+      {
+        id: 'audition:lockup',
+        group: 'AUDITION',
+        title: 'Hold Lockup',
+        kbd: 'L',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('lockup'),
+      },
+      {
+        id: 'audition:stab',
+        group: 'AUDITION',
+        title: 'Trigger Stab',
+        kbd: 'S',
+        icon: '▶',
+        run: () => triggerEffectWithAudio('stab'),
+      },
+      // ── VIEW ──────────────────────────────────────────────────────
+      {
+        id: 'view:toggle-fx-compare',
+        group: 'VIEW',
+        title: 'Toggle FX Comparison strips',
+        subtitle: 'Show or hide the reference comparison row',
+        icon: '·',
+        run: toggleEffectComparison,
+      },
+      {
+        id: 'view:mute-audio',
+        group: 'VIEW',
+        title: 'Toggle audio mute',
+        subtitle: 'Silence font audio + UI sounds',
+        icon: '·',
+        run: toggleSoundMute,
+      },
+      {
+        id: 'view:settings',
+        group: 'VIEW',
+        title: 'Open Settings',
+        icon: '·',
+        run: () => setShowSettings(true),
+      },
+      {
+        id: 'view:help',
+        group: 'VIEW',
+        title: 'Keyboard shortcuts help',
+        kbd: '?',
+        icon: '·',
+        run: openShortcutsHelp,
+      },
+      // ── WIZARD ────────────────────────────────────────────────────
+      {
+        id: 'wizard:open',
+        group: 'WIZARD',
+        title: 'Open Saber Wizard',
+        subtitle: '3-step guided preset — archetype / colour / vibe',
+        icon: '✦',
+        run: () => setShowWizard(true),
+      },
+    ];
+
+    // ── THEME ──────────────────────────────────────────────────────
+    // Emit commands for the base 9 + extended locations + factions.
+    // Capped at 8 entries for this wave — the palette is searchable, so
+    // users can type the theme name even if it's not in the top 8.
+    // TODO: remove the cap once theme rows land their own section.
+    const THEME_CAP = 8;
+    const themeEntries: Array<{ id: string; label: string }> = [
+      ...CANVAS_THEMES.map((t) => ({ id: t.id, label: t.label })),
+      ...EXTENDED_LOCATION_THEMES.map((t) => ({ id: t.id, label: t.label })),
+      ...EXTENDED_FACTION_THEMES.map((t) => ({ id: t.id, label: t.label })),
+    ].slice(0, THEME_CAP);
+    for (const t of themeEntries) {
+      out.push({
+        id: `theme:${t.id}`,
+        group: 'THEME',
+        title: `Theme: ${t.label}`,
+        icon: '◆',
+        run: () => setCanvasTheme(t.id),
+      });
+    }
+
+    return out;
+  }, [
+    setActiveTab,
+    toggleWithAudio,
+    triggerEffectWithAudio,
+    toggleEffectComparison,
+    toggleSoundMute,
+    openShortcutsHelp,
+    setCanvasTheme,
+  ]);
+
+  useRegisterCommands(commands);
 
   // ── Engine ready guard — show CanvasSkeleton until the engine mounts ──
   const [engineReady, setEngineReady] = useState(false);
@@ -316,7 +502,7 @@ export function WorkbenchLayout() {
       {/* ════════════════════════════════════════════════════
        * 1. HEADER BAR
        * ════════════════════════════════════════════════════ */}
-      <header className="relative flex items-center justify-between px-4 py-2 border-b border-border-subtle bg-bg-secondary shrink-0">
+      <header className="relative flex items-center justify-between px-4 py-1.5 border-b border-border-subtle bg-bg-secondary shrink-0">
         {/* HUD: decorative data ticker clipped to a thin strip along the
             bottom edge of the header. Previously `inset-0` filled the entire
             header, which pushed ticker text up against the undo/redo buttons
@@ -327,40 +513,26 @@ export function WorkbenchLayout() {
           speed={30}
           className="absolute left-0 right-0 bottom-0 h-3 flex items-end pb-px pointer-events-none"
         />
-        {/* Left cluster: logo + project name */}
+        {/* Left cluster: logo + project name.
+            Wave 4 trim: the "Universal Saber Style Engine" subtitle and the
+            version/profile breadcrumb were removed — StatusBar now owns PROFILE
+            + BUILD identity (see W3). */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col leading-none">
             <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
               <span className="text-white">KYBER</span>
               <span className="text-accent">STATION</span>
             </h1>
-            {/* Version + active saber breadcrumb — single source of truth
-                via `@/lib/version`. JetBrains Mono / tabular-nums per UX
-                North Star (monospace for version + telemetry data). */}
-            <span
-              className="font-mono text-text-muted tabular-nums select-none tracking-wide"
-              style={{ fontSize: 9, marginTop: 1 }}
-              aria-label={`KyberStation version ${LATEST_VERSION}${activeSaberName ? `, active saber ${activeSaberName}` : ''}`}
-            >
-              v{LATEST_VERSION}
-              {activeSaberName && (
-                <>
-                  <span className="text-text-muted/60 mx-1" aria-hidden="true">·</span>
-                  <span>{activeSaberName}</span>
-                </>
-              )}
-            </span>
           </div>
-          <span className="text-ui-xs text-text-muted font-sw-body hidden desktop:inline">
-            Universal Saber Style Engine
-          </span>
 
           <UndoRedoButtons />
 
           <SaberProfileSwitcher />
         </div>
 
-        {/* Right cluster: FPS, controls, ignite */}
+        {/* Right cluster: FPS, controls, ignite.
+            Wave 4 trim: the "FX Compare" toggle moved to the ⌘K palette
+            (its keybinding + toggle logic remain wired below). */}
         <div className="flex items-center gap-2">
           <ShareButton />
 
@@ -381,19 +553,6 @@ export function WorkbenchLayout() {
             {audio.muted ? 'Sound OFF' : 'Sound ON'}
           </button>
 
-          {/* Effect comparison toggle */}
-          <button
-            onClick={toggleEffectComparison}
-            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
-              showEffectComparison
-                ? 'border-accent-border/40 text-accent bg-accent-dim/30'
-                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
-            }`}
-            title="Toggle effect comparison strips"
-          >
-            FX Compare
-          </button>
-
           {/* Docs */}
           <Link
             href="/docs"
@@ -402,6 +561,26 @@ export function WorkbenchLayout() {
           >
             Docs
           </Link>
+
+          {/* ⌘K Command palette chip — reference `title-strip .cmd-hint`.
+              Hidden on tablet; the palette hotkey still works at every
+              width via useCommandPalette. */}
+          <button
+            onClick={() => useCommandStore.getState().open()}
+            className="hidden desktop:inline-flex items-center gap-1.5 font-mono text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
+            style={{
+              fontSize: 11,
+              padding: '2px 8px',
+              border: '1px solid rgb(var(--border-subtle) / 1)',
+              borderRadius: 'var(--r-chrome, 2px)',
+              background: 'rgb(var(--bg-deep) / 0.4)',
+              letterSpacing: '0.04em',
+            }}
+            title="Open command palette (⌘K)"
+            aria-label="Open command palette"
+          >
+            Command <kbd className="font-mono text-text-muted/80">⌘K</kbd>
+          </button>
 
           <button
             onClick={() => setShowWizard(true)}
@@ -616,7 +795,8 @@ export function WorkbenchLayout() {
             onClick={() => { playUISound('tab-switch'); setActiveTab(tab.id); }}
             className={[
               'px-3 py-2 text-ui-sm font-medium transition-colors relative whitespace-nowrap',
-              'cursor-grab active:cursor-grabbing',
+              'font-mono uppercase tracking-[0.08em]',
+              'cursor-grab active:cursor-grabbing inline-flex items-center gap-2',
               activeTab === tab.id
                 ? 'text-accent'
                 : 'text-text-muted hover:text-text-secondary',
@@ -625,9 +805,19 @@ export function WorkbenchLayout() {
                 : 'border-l-2 border-l-transparent',
             ].join(' ')}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            {/* Canonical ⌘1–⌘5 kbd hint. Position is fixed by the
+                shipped TABS order — user-reordering the tab bar does
+                NOT change which digit switches which tab. */}
+            <kbd
+              aria-hidden="true"
+              className="font-mono text-text-muted/70 tabular-nums"
+              style={{ fontSize: 10, letterSpacing: '0.04em' }}
+            >
+              {TAB_CANONICAL_KBD[tab.id]}
+            </kbd>
             {tab.id === 'output' && presetListCount > 0 && (
-              <span className="ml-1 text-ui-xs text-accent">({presetListCount})</span>
+              <span className="text-ui-xs text-accent">({presetListCount})</span>
             )}
             {activeTab === tab.id && (
               <span className="absolute bottom-0 left-1 right-1 h-[2px] bg-accent rounded-t" />
@@ -688,6 +878,11 @@ export function WorkbenchLayout() {
         onClose={() => setShowShortcutsHelp(false)}
       />
       <SaberWizard open={showWizard} onClose={() => setShowWizard(false)} />
+
+      {/* ════════════════════════════════════════════════════
+       * ⌘K COMMAND PALETTE — portal-rendered, opens globally
+       * ════════════════════════════════════════════════════ */}
+      <CommandPalette />
     </div>
   );
 }
