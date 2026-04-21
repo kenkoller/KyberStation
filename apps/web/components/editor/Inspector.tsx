@@ -16,7 +16,9 @@
 // MiniGalleryPicker, so the content inside each tab is the same surface
 // users are already familiar with.
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import type { BladeEngine, EffectType } from '@kyberstation/engine';
+import { BladeState } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
 import { StylePanel } from './StylePanel';
 import { ColorPanel } from './ColorPanel';
@@ -35,23 +37,35 @@ const TABS: Array<{ id: InspectorTab; label: string }> = [
   { id: 'routing', label: 'ROUTING' },
 ];
 
-const STATE_ROWS = [
-  { id: 'off',           label: 'OFF',           hint: 'All dark' },
-  { id: 'preon',         label: 'PREON',         hint: 'Flash tint at 50%' },
-  { id: 'igniting',      label: 'IGNITING 50%',  hint: 'Half-extended frame' },
-  { id: 'on',            label: 'IDLE ON',       hint: 'Steady full blade' },
-  { id: 'clash',         label: 'CLASH',         hint: 'White flash held' },
-  { id: 'blast',         label: 'BLAST',         hint: 'Blast mark held' },
-  { id: 'lockup',        label: 'LOCKUP',        hint: 'Flicker bump held' },
-  { id: 'drag',          label: 'DRAG',          hint: 'Tip bleed held' },
-  { id: 'retracting',    label: 'RETRACTING 50%', hint: 'Half-retracted frame' },
+interface StateRowDef {
+  id: string;
+  label: string;
+  hint: string;
+  state: BladeState;
+  effect?: EffectType;
+  progress?: number;
+}
+
+const STATE_ROWS: readonly StateRowDef[] = [
+  { id: 'off',        label: 'OFF',            hint: 'All dark',              state: BladeState.OFF },
+  { id: 'preon',      label: 'PREON',          hint: 'Flash tint at 50%',     state: BladeState.PREON,      progress: 0.5 },
+  { id: 'igniting',   label: 'IGNITING 50%',   hint: 'Half-extended frame',   state: BladeState.IGNITING,   progress: 0.5 },
+  { id: 'on',         label: 'IDLE ON',        hint: 'Steady full blade',     state: BladeState.ON },
+  { id: 'clash',      label: 'CLASH',          hint: 'White flash held',      state: BladeState.ON,         effect: 'clash' },
+  { id: 'blast',      label: 'BLAST',          hint: 'Blast mark held',       state: BladeState.ON,         effect: 'blast' },
+  { id: 'lockup',     label: 'LOCKUP',         hint: 'Flicker bump held',     state: BladeState.ON,         effect: 'lockup' },
+  { id: 'drag',       label: 'DRAG',           hint: 'Tip bleed held',        state: BladeState.ON,         effect: 'drag' },
+  { id: 'retracting', label: 'RETRACTING 50%', hint: 'Half-retracted frame',  state: BladeState.RETRACTING, progress: 0.5 },
 ] as const;
 
 interface InspectorProps {
   className?: string;
+  /** Main blade engine ref (from useBladeEngine). Used by the STATE tab
+   *  to call captureStateFrame for per-row snapshots. */
+  engineRef?: RefObject<BladeEngine | null>;
 }
 
-export function Inspector({ className }: InspectorProps) {
+export function Inspector({ className, engineRef }: InspectorProps) {
   const [activeTab, setActiveTab] = useState<InspectorTab>('state');
   const ledCount = useBladeStore((s) => s.config.ledCount);
 
@@ -92,7 +106,7 @@ export function Inspector({ className }: InspectorProps) {
 
       {/* Tab body */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {activeTab === 'state' && <InspectorStateTab ledCount={ledCount} />}
+        {activeTab === 'state' && <InspectorStateTab ledCount={ledCount} engineRef={engineRef} />}
         {activeTab === 'style' && (
           <div className="p-3">
             <StylePanel />
@@ -117,41 +131,100 @@ export function Inspector({ className }: InspectorProps) {
   );
 }
 
-// ─── STATE tab — placeholder grid ────────────────────────────────────────────
+// ─── STATE tab — live snapshots via engine.captureStateFrame (OV8) ──────────
 //
-// OV8 lands the engine.captureStateFrame API that drives the live
-// snapshot + motion-on-hover behavior described in UI_OVERHAUL_v2_PROPOSAL §6.
-// For OV7 we ship the structural scaffold — same-width rows, same
-// heights, state labels — with a static accent bar standing in for each
-// state's captured frame. The row click handler is already wired up to
-// log to the effect log as a hint that this is the audition surface.
+// Each row renders a real RGB snapshot for its state via the engine's
+// `captureStateFrame(state, config, effectHeld?, { progress })` API.
+// Snapshots refresh via useMemo when the blade config changes; the
+// main engine tick isn't disturbed (captureStateFrame uses a scratch
+// engine per call). Rows are vertically stacked at the same width so
+// changing a color / param reads uniformly across all 9 states.
 
 interface InspectorStateTabProps {
   ledCount: number;
+  engineRef?: RefObject<BladeEngine | null>;
 }
 
-function InspectorStateTab({ ledCount }: InspectorStateTabProps) {
+function InspectorStateTab({ ledCount, engineRef }: InspectorStateTabProps) {
+  const config = useBladeStore((s) => s.config);
+
+  // Compute 9 snapshots on config change. Each frame is ~132 × 3 bytes
+  // (plus a scratch engine's update cost). Cheap enough per-edit, not
+  // per-frame — no rAF loop here.
+  const frames = useMemo(() => {
+    const engine = engineRef?.current;
+    if (!engine) return null;
+    return STATE_ROWS.map((row) => {
+      try {
+        return engine.captureStateFrame(row.state, config, row.effect, {
+          progress: row.progress ?? 1,
+        });
+      } catch {
+        // Defensive: if a state/effect combination throws, fall back to
+        // an all-zero buffer so the row still renders.
+        return new Uint8Array(ledCount * 3);
+      }
+    });
+  }, [config, engineRef, ledCount]);
+
   return (
     <div className="p-3 space-y-2">
       <div
         className="font-mono uppercase text-text-muted"
         style={{ fontSize: 10, letterSpacing: '0.1em', lineHeight: '14px' }}
       >
-        Preview across blade states — click to audition
+        Preview across blade states — refresh on edit
       </div>
       <div className="space-y-1">
-        {STATE_ROWS.map((row) => (
-          <InspectorStateRow key={row.id} label={row.label} hint={row.hint} />
+        {STATE_ROWS.map((row, i) => (
+          <InspectorStateRow
+            key={row.id}
+            label={row.label}
+            hint={row.hint}
+            frame={frames?.[i] ?? null}
+            ledCount={ledCount}
+          />
         ))}
       </div>
       <p className="text-ui-xs text-text-muted/60 pt-2">
-        {ledCount} LEDs · Live snapshots arrive in OV8 (engine captureStateFrame API).
+        {ledCount} LEDs · Snapshots refresh on config change (no live tick).
       </p>
     </div>
   );
 }
 
-function InspectorStateRow({ label, hint }: { label: string; hint: string }) {
+interface InspectorStateRowProps {
+  label: string;
+  hint: string;
+  frame: Uint8Array | null;
+  ledCount: number;
+}
+
+function InspectorStateRow({ label, hint, frame, ledCount }: InspectorStateRowProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    // Clear to near-black
+    ctx.fillStyle = '#03030a';
+    ctx.fillRect(0, 0, w, h);
+    if (!frame || ledCount <= 0) return;
+    const leds = Math.min(ledCount, Math.floor(frame.length / 3));
+    const cellW = w / leds;
+    for (let i = 0; i < leds; i++) {
+      const r = frame[i * 3] ?? 0;
+      const g = frame[i * 3 + 1] ?? 0;
+      const b = frame[i * 3 + 2] ?? 0;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(i * cellW, 0, Math.max(cellW + 0.5, 1), h);
+    }
+  }, [frame, ledCount]);
+
   return (
     <button
       className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-border-subtle bg-bg-deep/40 hover:border-border-light hover:bg-bg-deep transition-colors group text-left"
@@ -163,14 +236,13 @@ function InspectorStateRow({ label, hint }: { label: string; hint: string }) {
       >
         {label}
       </span>
-      {/* Accent bar stands in for the state's captured frame. OV8 replaces
-          this with a real pixel-row rendering at the shared bladeRenderWidth
-          so every row lines up visually. */}
-      <span
+      <canvas
+        ref={canvasRef}
+        width={256}
+        height={12}
         className="flex-1 h-3 rounded-sm"
-        style={{
-          background: `linear-gradient(to right, rgb(var(--accent) / 0.25), rgb(var(--accent) / 0.6), rgb(var(--accent) / 0.25))`,
-        }}
+        style={{ imageRendering: 'pixelated', minWidth: 0 }}
+        aria-hidden="true"
       />
     </button>
   );

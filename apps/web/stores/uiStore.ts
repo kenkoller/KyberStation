@@ -78,6 +78,14 @@ export interface UIStore {
    */
   hoveredModulatorId: string | null;
 
+  /**
+   * OV8 — STATE-mode takeover. When true AND activeTab === 'design',
+   * the center blade preview is replaced by a full-width 9-state
+   * vertical stack of captureStateFrame snapshots. Desktop only.
+   * Toggled via `[ SINGLE BLADE ] · [ ALL STATES ]` chip + ⌘5.
+   */
+  showStateGrid: boolean;
+
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
   setCanvasMode: (mode: CanvasMode) => void;
@@ -107,6 +115,8 @@ export interface UIStore {
   toggleEditMode: () => void;
   setEditTarget: (target: 'lockup' | 'blast') => void;
   setHoveredModulator: (id: string | null) => void;
+  toggleStateGrid: () => void;
+  setShowStateGrid: (on: boolean) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -139,6 +149,7 @@ export const useUIStore = create<UIStore>((set) => ({
   editMode: false,
   editTarget: 'lockup',
   hoveredModulatorId: null,
+  showStateGrid: false,
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -171,4 +182,6 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
   setEditTarget: (editTarget) => set({ editTarget }),
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
+  toggleStateGrid: () => set((state) => ({ showStateGrid: !state.showStateGrid })),
+  setShowStateGrid: (showStateGrid) => set({ showStateGrid }),
 }));

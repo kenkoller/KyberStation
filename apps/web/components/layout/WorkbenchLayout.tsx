@@ -50,6 +50,7 @@ import { DeliveryRail } from '@/components/layout/DeliveryRail';
 import { AnalysisRail } from '@/components/layout/AnalysisRail';
 import { AnalysisExpandOverlay } from '@/components/layout/AnalysisExpandOverlay';
 import { Inspector } from '@/components/editor/Inspector';
+import { StateGrid } from '@/components/editor/StateGrid';
 import type { VisualizationLayerId } from '@/lib/visualizationTypes';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
@@ -282,6 +283,11 @@ export function WorkbenchLayout() {
   const presetListCount = usePresetListStore((s) => s.entries.length);
   const canvasMode = useUIStore((s) => s.canvasMode);
   const setCanvasMode = useUIStore((s) => s.setCanvasMode);
+  // OV8: STATE-mode takeover toggle. When true and activeTab === 'design',
+  // the center blade preview is replaced by a full-workbench-width
+  // 9-state stack. Toggled by the header chip or ⌘5 / Ctrl+5.
+  const showStateGrid = useUIStore((s) => s.showStateGrid);
+  const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
 
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
@@ -961,11 +967,17 @@ export function WorkbenchLayout() {
 
         <VisualizationToolbar className="shrink-0 w-10" orientation="vertical" />
 
-        {/* Blade canvas area — horizontal, fills remaining width */}
+        {/* Blade canvas area — horizontal, fills remaining width.
+            OV8: when showStateGrid is on and we're on Design, the
+            single blade preview is replaced by the 9-state grid. Other
+            tabs always show the single canvas regardless of the toggle
+            (STATE mode is a Design-tab concern). */}
         <CornerBrackets className="flex-1 min-w-0" size={16} thickness={1} pulse={true}>
           <div className="h-full p-1 relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
+            ) : showStateGrid && activeTab === 'design' ? (
+              <StateGrid engineRef={engineRef} className="h-full" />
             ) : canvasMode === '3d' ? (
               <BladeCanvas3D />
             ) : (
@@ -973,6 +985,37 @@ export function WorkbenchLayout() {
             )}
             {/* Controls — top-right corner of canvas area */}
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+              {/* OV8: STATE-mode takeover toggle. Two-position segmented
+                  control. Desktop only (this block sits inside the
+                  desktop workbench); hidden on tabs other than Design. */}
+              {activeTab === 'design' && (
+                <div className="flex rounded overflow-hidden border border-border-subtle">
+                  <button
+                    onClick={() => showStateGrid && toggleStateGrid()}
+                    className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+                      !showStateGrid
+                        ? 'bg-accent-dim text-accent border-r border-accent-border/40'
+                        : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
+                    }`}
+                    title="Single blade preview"
+                    aria-pressed={!showStateGrid}
+                  >
+                    Single
+                  </button>
+                  <button
+                    onClick={() => !showStateGrid && toggleStateGrid()}
+                    className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+                      showStateGrid
+                        ? 'bg-accent-dim text-accent'
+                        : 'bg-transparent text-text-muted hover:text-text-secondary'
+                    }`}
+                    title={`All 9 blade states · ${kbdFor('5')}`}
+                    aria-pressed={showStateGrid}
+                  >
+                    All States
+                  </button>
+                </div>
+              )}
               {/* 2D / 3D view toggle */}
               <div className="flex rounded overflow-hidden border border-border-subtle">
                 <button
@@ -1023,11 +1066,13 @@ export function WorkbenchLayout() {
           </div>
         </CornerBrackets>
 
-        {/* RIGHT — Inspector (OV7). 400px on the Design tab only. Houses
-            the STATE / STYLE / COLOR / EFFECTS / ROUTING tabs. On other
-            tabs the Inspector is hidden so the blade canvas reclaims the
-            full width. Responsive adaptations arrive in OV10. */}
-        {activeTab === 'design' && <Inspector className="h-full" />}
+        {/* RIGHT — Inspector (OV7 + OV8). 400px on the Design tab only.
+            Houses the STATE / STYLE / COLOR / EFFECTS / ROUTING tabs.
+            STATE tab consumes `engineRef.current.captureStateFrame` for
+            per-row snapshots that refresh on config changes. Hidden on
+            other tabs so the blade canvas reclaims full width.
+            Responsive adaptations arrive in OV10. */}
+        {activeTab === 'design' && <Inspector className="h-full" engineRef={engineRef} />}
       </section>
 
       {/* ════════════════════════════════════════════════════

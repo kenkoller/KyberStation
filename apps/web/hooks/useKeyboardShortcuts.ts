@@ -52,15 +52,25 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       // Don't trigger if user is typing in an input / textarea / contenteditable
       if (isTypingTarget(e.target)) return;
 
-      // ── ⌘1–⌘5 / Ctrl+1–Ctrl+5 — switch tabs in canonical order ──
+      // ── ⌘1–⌘4 / Ctrl+1–Ctrl+4 — switch tabs in canonical order ──
       // Handled BEFORE the effect-shortcut branch's unmodified-key guard
       // so the modifier is consumed here and never reaches the plain-key
       // dispatch below. `⌘K` is owned by `useCommandPalette` separately.
+      //
+      // ⌘5 / Ctrl+5 — OV8 STATE-mode takeover toggle. Only meaningful
+      // on the Design tab (the Inspector STATE tab is what it drives),
+      // so route it through uiStore and let the render path gate the
+      // visible effect.
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
         const tab = TAB_BY_DIGIT[e.key];
         if (tab) {
           e.preventDefault();
           useUIStore.getState().setActiveTab(tab);
+          return;
+        }
+        if (e.key === '5') {
+          e.preventDefault();
+          useUIStore.getState().toggleStateGrid();
           return;
         }
       }

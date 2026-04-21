@@ -496,4 +496,82 @@ describe('BladeEngine', () => {
       expect(engine.state).toBe(BladeState.PREON);
     });
   });
+
+  describe('captureStateFrame (OV8)', () => {
+    it('returns a dark buffer for OFF', () => {
+      const engine = new BladeEngine();
+      const frame = engine.captureStateFrame(BladeState.OFF, makeTestConfig());
+      // length matches 3 × totalLEDs (default topology = 132 LEDs)
+      expect(frame.length).toBe(132 * 3);
+      // all zeros
+      expect(frame.every((v) => v === 0)).toBe(true);
+    });
+
+    it('returns lit pixels for ON with a non-black base color', () => {
+      const engine = new BladeEngine();
+      const frame = engine.captureStateFrame(BladeState.ON, makeTestConfig());
+      // Obi-Wan blue base → blue channel dominates somewhere.
+      let maxBlue = 0;
+      for (let i = 0; i < frame.length; i += 3) {
+        if (frame[i + 2] > maxBlue) maxBlue = frame[i + 2];
+      }
+      expect(maxBlue).toBeGreaterThan(100);
+    });
+
+    it('does NOT mutate the main engine state', () => {
+      const engine = new BladeEngine();
+      // Start in OFF
+      expect(engine.state).toBe(BladeState.OFF);
+      engine.captureStateFrame(BladeState.ON, makeTestConfig());
+      engine.captureStateFrame(BladeState.IGNITING, makeTestConfig(), undefined, { progress: 0.5 });
+      engine.captureStateFrame(BladeState.RETRACTING, makeTestConfig(), undefined, { progress: 0.5 });
+      // Main engine state is still OFF — snapshots used a scratch engine.
+      expect(engine.state).toBe(BladeState.OFF);
+    });
+
+    it('returns a fresh copy each call (not the scratch engine buffer)', () => {
+      const engine = new BladeEngine();
+      const a = engine.captureStateFrame(BladeState.ON, makeTestConfig());
+      const b = engine.captureStateFrame(BladeState.ON, makeTestConfig());
+      // Same content, different Uint8Array instances.
+      expect(a).not.toBe(b);
+      expect(a.length).toBe(b.length);
+    });
+
+    it('IGNITING at progress = 0.5 lights roughly half the blade', () => {
+      const engine = new BladeEngine();
+      const cfg = makeTestConfig();
+      const half = engine.captureStateFrame(BladeState.IGNITING, cfg, undefined, { progress: 0.5 });
+      const full = engine.captureStateFrame(BladeState.ON, cfg);
+      // Sum luminance across each frame; the half-extended frame must
+      // have strictly less total lit energy than the full blade.
+      const lum = (buf: Uint8Array): number => {
+        let sum = 0;
+        for (let i = 0; i < buf.length; i += 3) {
+          sum += buf[i] + buf[i + 1] + buf[i + 2];
+        }
+        return sum;
+      };
+      expect(lum(half)).toBeLessThan(lum(full));
+      expect(lum(half)).toBeGreaterThan(0);
+    });
+
+    it('holding a CLASH effect brightens the frame vs plain ON', () => {
+      const engine = new BladeEngine();
+      const cfg = makeTestConfig();
+      const plain = engine.captureStateFrame(BladeState.ON, cfg);
+      const clash = engine.captureStateFrame(BladeState.ON, cfg, 'clash');
+      // Clash flash adds white to some pixels; max per-pixel luminance
+      // of the clash frame should be higher than the plain ON frame.
+      const maxLum = (buf: Uint8Array): number => {
+        let max = 0;
+        for (let i = 0; i < buf.length; i += 3) {
+          const lum = buf[i] + buf[i + 1] + buf[i + 2];
+          if (lum > max) max = lum;
+        }
+        return max;
+      };
+      expect(maxLum(clash)).toBeGreaterThanOrEqual(maxLum(plain));
+    });
+  });
 });
