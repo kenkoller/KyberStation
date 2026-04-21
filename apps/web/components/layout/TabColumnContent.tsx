@@ -13,7 +13,6 @@ import { TabContentSkeleton } from '@/components/shared/Skeleton';
 import { StylePanel } from '@/components/editor/StylePanel';
 import { ColorPanel } from '@/components/editor/ColorPanel';
 import { ParameterBank } from '@/components/editor/ParameterBank';
-import { Randomizer } from '@/components/editor/Randomizer';
 import { LayerStack } from '@/components/editor/LayerStack';
 import { OLEDPreview } from '@/components/editor/OLEDPreview';
 import { ThemePickerPanel } from '@/components/editor/ThemePickerPanel';
@@ -318,8 +317,12 @@ function renderPanel(panelId: string): React.ReactNode {
       return <ColorPanel />;
     case 'parameters':
       return <ParameterBank />;
-    case 'randomizer':
-      return <Randomizer />;
+    // Legacy: `randomizer` was a dockable Design-tab panel until OV3
+    // (2026-04-21). The randomizer is now surfaced as the SURPRISE ME
+    // card in the Gallery tab marquee. Any persisted user layout that
+    // still lists 'randomizer' in its column arrangement will fall
+    // through to ComingSoon (harmless placeholder); users can drop
+    // that entry at will.
     case 'my-crystal':
       return <CrystalPanel />;
     case 'layer-stack':
