@@ -51,6 +51,8 @@ import { AnalysisRail } from '@/components/layout/AnalysisRail';
 import { AnalysisExpandOverlay } from '@/components/layout/AnalysisExpandOverlay';
 import { Inspector } from '@/components/editor/Inspector';
 import { StateGrid } from '@/components/editor/StateGrid';
+import { ResizeHandle } from '@/components/shared/ResizeHandle';
+import { REGION_LIMITS } from '@/stores/uiStore';
 import type { VisualizationLayerId } from '@/lib/visualizationTypes';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
@@ -288,6 +290,17 @@ export function WorkbenchLayout() {
   // 9-state stack. Toggled by the header chip or ⌘5 / Ctrl+5.
   const showStateGrid = useUIStore((s) => s.showStateGrid);
   const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
+
+  // OV11: drag-to-resize slices. Each region has min/max/default in
+  // REGION_LIMITS and a dedicated setter that persists to localStorage.
+  const analysisRailWidth = useUIStore((s) => s.analysisRailWidth);
+  const inspectorWidth = useUIStore((s) => s.inspectorWidth);
+  const section2Height = useUIStore((s) => s.section2Height);
+  const performanceBarHeight = useUIStore((s) => s.performanceBarHeight);
+  const setAnalysisRailWidth = useUIStore((s) => s.setAnalysisRailWidth);
+  const setInspectorWidth = useUIStore((s) => s.setInspectorWidth);
+  const setSection2Height = useUIStore((s) => s.setSection2Height);
+  const setPerformanceBarHeight = useUIStore((s) => s.setPerformanceBarHeight);
 
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
@@ -950,19 +963,32 @@ export function WorkbenchLayout() {
        * 2b is freed for the multi-column panel region (section 4).
        * ════════════════════════════════════════════════════ */}
       <section
-        className="shrink-0 border-b border-border-subtle bg-bg-primary flex overflow-hidden"
-        style={{ height: 320 }}
+        className="shrink-0 bg-bg-primary flex overflow-hidden"
+        style={{ height: section2Height }}
         role="region"
         aria-label="Blade visualization"
       >
-        {/* LEFT — AnalysisRail. 200px at desktop, 40px at tablet. Shares
-            the same pixel buffer the blade canvas consumes so waveforms
-            stay in lockstep with the rendered blade. */}
+        {/* LEFT — AnalysisRail. Width is now user-draggable via the
+            handle to its right (OV11). REGION_LIMITS clamp at 140–320.
+            Shares the same pixel buffer the blade canvas consumes so
+            waveforms stay in lockstep with the rendered blade. */}
         <AnalysisRail
           pixels={pixelBufRef.current}
           pixelCount={ledCount}
           onExpand={setExpandedLayerId}
           className="h-full"
+          style={{ width: analysisRailWidth }}
+        />
+
+        {/* OV11 — AnalysisRail ↔ blade resize handle. */}
+        <ResizeHandle
+          orientation="horizontal"
+          value={analysisRailWidth}
+          min={REGION_LIMITS.analysisRailWidth.min}
+          max={REGION_LIMITS.analysisRailWidth.max}
+          defaultValue={REGION_LIMITS.analysisRailWidth.default}
+          onChange={setAnalysisRailWidth}
+          ariaLabel="Resize analysis rail"
         />
 
         <VisualizationToolbar className="shrink-0 w-10" orientation="vertical" />
@@ -1066,14 +1092,51 @@ export function WorkbenchLayout() {
           </div>
         </CornerBrackets>
 
-        {/* RIGHT — Inspector (OV7 + OV8). 400px on the Design tab only.
-            Houses the STATE / STYLE / COLOR / EFFECTS / ROUTING tabs.
-            STATE tab consumes `engineRef.current.captureStateFrame` for
-            per-row snapshots that refresh on config changes. Hidden on
-            other tabs so the blade canvas reclaims full width.
-            Responsive adaptations arrive in OV10. */}
-        {activeTab === 'design' && <Inspector className="h-full" engineRef={engineRef} />}
+        {/* OV11 — blade ↔ Inspector resize handle. Only rendered when
+            the Inspector is mounted (Design tab). `invert` because the
+            Inspector sits to the right of the handle, so dragging right
+            shrinks the Inspector (= grows the blade area). */}
+        {activeTab === 'design' && (
+          <ResizeHandle
+            orientation="horizontal"
+            value={inspectorWidth}
+            min={REGION_LIMITS.inspectorWidth.min}
+            max={REGION_LIMITS.inspectorWidth.max}
+            defaultValue={REGION_LIMITS.inspectorWidth.default}
+            onChange={setInspectorWidth}
+            invert
+            ariaLabel="Resize inspector"
+          />
+        )}
+
+        {/* RIGHT — Inspector (OV7 + OV8). Width is now user-draggable
+            (OV11), clamped to REGION_LIMITS.inspectorWidth. Houses the
+            STATE / STYLE / COLOR / EFFECTS / ROUTING tabs. STATE tab
+            consumes `engineRef.current.captureStateFrame` for per-row
+            snapshots that refresh on config changes. Hidden on non-
+            Design tabs so the blade canvas reclaims full width. */}
+        {activeTab === 'design' && (
+          <Inspector
+            className="h-full"
+            engineRef={engineRef}
+            style={{ width: inspectorWidth }}
+          />
+        )}
       </section>
+
+      {/* OV11 — section 2 ↔ panel-area vertical resize handle.
+          Dragging down grows the blade preview; dragging up gives
+          the panel area more room. Replaces the previous section-2
+          `border-b` (the handle carries the seam). */}
+      <ResizeHandle
+        orientation="vertical"
+        value={section2Height}
+        min={REGION_LIMITS.section2Height.min}
+        max={REGION_LIMITS.section2Height.max}
+        defaultValue={REGION_LIMITS.section2Height.default}
+        onChange={setSection2Height}
+        ariaLabel="Resize blade preview height"
+      />
 
       {/* ════════════════════════════════════════════════════
        * 2b. PIXEL-SHAPED VISUALIZATION STACK
@@ -1239,12 +1302,16 @@ export function WorkbenchLayout() {
         id={`panel-${activeTab}`}
         aria-labelledby={`tab-${activeTab}`}
       >
-        {/* Desktop: multi-column draggable grid driven by layoutStore */}
-        <div className="hidden desktop:block max-w-[1920px] mx-auto p-4">
+        {/* Desktop: multi-column draggable grid driven by layoutStore.
+            OV11: padding reduced from p-4 (16px) to p-2 (8px) to shrink
+            the gap between section 2 and the first row of panel cards. */}
+        <div className="hidden desktop:block max-w-[1920px] mx-auto p-2">
           <TabColumnContent />
         </div>
 
-        {/* Mobile / tablet fallback: single-column tab content */}
+        {/* Mobile / tablet fallback: single-column tab content. Padding
+            stays at p-4 here because this fallback is its own layout
+            story and doesn't share the workbench's region seams. */}
         <div className="desktop:hidden max-w-6xl mx-auto p-4">
           <TabContent activeTab={activeTab} />
         </div>
@@ -1274,7 +1341,26 @@ export function WorkbenchLayout() {
        * rail can compute live RMS from the same pixel buffer the
        * BladeCanvas paints from (no second RAF loop in the engine).
        * ════════════════════════════════════════════════════ */}
-      <PerformanceBar engineRef={engineRef} />
+
+      {/* OV11 — panels ↔ PerformanceBar vertical resize handle. Only
+          visible when the PerformanceBar is rendered (Design tab).
+          Drag up to grow the macro region, drag down to reclaim the
+          space for the panel area. `invert` because the PerformanceBar
+          sits below the handle. */}
+      {activeTab === 'design' && (
+        <ResizeHandle
+          orientation="vertical"
+          value={performanceBarHeight}
+          min={REGION_LIMITS.performanceBarHeight.min}
+          max={REGION_LIMITS.performanceBarHeight.max}
+          defaultValue={REGION_LIMITS.performanceBarHeight.default}
+          onChange={setPerformanceBarHeight}
+          invert
+          ariaLabel="Resize performance bar height"
+        />
+      )}
+
+      <PerformanceBar engineRef={engineRef} height={performanceBarHeight} />
 
       {/* ════════════════════════════════════════════════════
        * 5c. DELIVERY RAIL — persistent 50px bottom bar

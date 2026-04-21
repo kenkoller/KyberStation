@@ -63,23 +63,30 @@ interface InspectorProps {
   /** Main blade engine ref (from useBladeEngine). Used by the STATE tab
    *  to call captureStateFrame for per-row snapshots. */
   engineRef?: RefObject<BladeEngine | null>;
+  /** Inline style overrides. OV11 uses this to thread the user-
+   *  draggable width from uiStore.inspectorWidth. */
+  style?: React.CSSProperties;
 }
 
-export function Inspector({ className, engineRef }: InspectorProps) {
+export function Inspector({ className, engineRef, style }: InspectorProps) {
   const [activeTab, setActiveTab] = useState<InspectorTab>('state');
   const ledCount = useBladeStore((s) => s.config.ledCount);
 
   return (
     <aside
       className={[
-        'flex flex-col bg-bg-secondary/60 border-l border-border-subtle shrink-0',
-        // OV10: narrower on tablet-adjacent desktop widths so the blade
-        // canvas gets a larger share; expands to 400px once there's room.
-        'w-[320px] xl:w-[400px]',
+        'flex flex-col bg-bg-secondary/60 shrink-0',
+        // OV11: left border removed — the ResizeHandle to our left
+        // carries the seam. Width now comes from uiStore.inspectorWidth
+        // via the `style` prop; OV10's Tailwind width classes are the
+        // fallback when no style is provided (e.g. if the Inspector is
+        // ever mounted outside WorkbenchLayout).
+        style?.width ? '' : 'w-[320px] xl:w-[400px]',
         className ?? '',
       ].join(' ')}
       role="region"
       aria-label="Inspector"
+      style={style}
     >
       {/* Tab bar */}
       <div

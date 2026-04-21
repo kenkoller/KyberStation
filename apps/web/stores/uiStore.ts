@@ -86,6 +86,19 @@ export interface UIStore {
    */
   showStateGrid: boolean;
 
+  // ── OV11: drag-to-resize seams ──
+  // Each is clamped to [min, max] with a default that the handle
+  // resets to on double-click. Persist across reloads via
+  // localStorage (kyberstation-ui-layout).
+  /** AnalysisRail column width in CSS pixels. Default 200. */
+  analysisRailWidth: number;
+  /** Inspector column width in CSS pixels. Default 400. */
+  inspectorWidth: number;
+  /** Section 2 (blade + viz row) height in CSS pixels. Default 320. */
+  section2Height: number;
+  /** PerformanceBar total height in CSS pixels. Default 158. */
+  performanceBarHeight: number;
+
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
   setCanvasMode: (mode: CanvasMode) => void;
@@ -117,7 +130,67 @@ export interface UIStore {
   setHoveredModulator: (id: string | null) => void;
   toggleStateGrid: () => void;
   setShowStateGrid: (on: boolean) => void;
+
+  // ── OV11 setters ──
+  setAnalysisRailWidth: (w: number) => void;
+  setInspectorWidth: (w: number) => void;
+  setSection2Height: (h: number) => void;
+  setPerformanceBarHeight: (h: number) => void;
 }
+
+// ─── OV11: resizable-region persistence ──────────────────────────────────────
+//
+// Constraints exported so the handles + layout can share one source
+// of truth for min/max/default. These are intentionally wide ranges —
+// the idea is to let power users tune the cockpit, with sensible
+// fallbacks only if someone drags extreme.
+
+export const REGION_LIMITS = {
+  analysisRailWidth: { min: 140, max: 320, default: 200 },
+  inspectorWidth:    { min: 280, max: 520, default: 400 },
+  section2Height:    { min: 220, max: 520, default: 320 },
+  performanceBarHeight: { min: 60, max: 240, default: 158 },
+} as const;
+
+const OV11_STORAGE_KEY = 'kyberstation-ui-layout';
+
+interface PersistedLayout {
+  analysisRailWidth: number;
+  inspectorWidth: number;
+  section2Height: number;
+  performanceBarHeight: number;
+}
+
+function clampRegion(
+  key: keyof typeof REGION_LIMITS,
+  value: number,
+): number {
+  const { min, max, default: def } = REGION_LIMITS[key];
+  if (typeof value !== 'number' || !Number.isFinite(value)) return def;
+  return Math.min(max, Math.max(min, value));
+}
+
+function loadPersistedLayout(): Partial<PersistedLayout> {
+  try {
+    if (typeof localStorage === 'undefined') return {};
+    const raw = localStorage.getItem(OV11_STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Partial<PersistedLayout>;
+  } catch {
+    return {};
+  }
+}
+
+function savePersistedLayout(snap: PersistedLayout): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(OV11_STORAGE_KEY, JSON.stringify(snap));
+  } catch {
+    /* ignore quota / SSR errors */
+  }
+}
+
+const storedLayout = loadPersistedLayout();
 
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
@@ -150,6 +223,22 @@ export const useUIStore = create<UIStore>((set) => ({
   editTarget: 'lockup',
   hoveredModulatorId: null,
   showStateGrid: false,
+  analysisRailWidth: clampRegion(
+    'analysisRailWidth',
+    storedLayout.analysisRailWidth ?? REGION_LIMITS.analysisRailWidth.default,
+  ),
+  inspectorWidth: clampRegion(
+    'inspectorWidth',
+    storedLayout.inspectorWidth ?? REGION_LIMITS.inspectorWidth.default,
+  ),
+  section2Height: clampRegion(
+    'section2Height',
+    storedLayout.section2Height ?? REGION_LIMITS.section2Height.default,
+  ),
+  performanceBarHeight: clampRegion(
+    'performanceBarHeight',
+    storedLayout.performanceBarHeight ?? REGION_LIMITS.performanceBarHeight.default,
+  ),
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -184,4 +273,49 @@ export const useUIStore = create<UIStore>((set) => ({
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
   toggleStateGrid: () => set((state) => ({ showStateGrid: !state.showStateGrid })),
   setShowStateGrid: (showStateGrid) => set({ showStateGrid }),
+
+  setAnalysisRailWidth: (w) =>
+    set((s) => {
+      const analysisRailWidth = clampRegion('analysisRailWidth', w);
+      savePersistedLayout({
+        analysisRailWidth,
+        inspectorWidth: s.inspectorWidth,
+        section2Height: s.section2Height,
+        performanceBarHeight: s.performanceBarHeight,
+      });
+      return { analysisRailWidth };
+    }),
+  setInspectorWidth: (w) =>
+    set((s) => {
+      const inspectorWidth = clampRegion('inspectorWidth', w);
+      savePersistedLayout({
+        analysisRailWidth: s.analysisRailWidth,
+        inspectorWidth,
+        section2Height: s.section2Height,
+        performanceBarHeight: s.performanceBarHeight,
+      });
+      return { inspectorWidth };
+    }),
+  setSection2Height: (h) =>
+    set((s) => {
+      const section2Height = clampRegion('section2Height', h);
+      savePersistedLayout({
+        analysisRailWidth: s.analysisRailWidth,
+        inspectorWidth: s.inspectorWidth,
+        section2Height,
+        performanceBarHeight: s.performanceBarHeight,
+      });
+      return { section2Height };
+    }),
+  setPerformanceBarHeight: (h) =>
+    set((s) => {
+      const performanceBarHeight = clampRegion('performanceBarHeight', h);
+      savePersistedLayout({
+        analysisRailWidth: s.analysisRailWidth,
+        inspectorWidth: s.inspectorWidth,
+        section2Height: s.section2Height,
+        performanceBarHeight,
+      });
+      return { performanceBarHeight };
+    }),
 }));

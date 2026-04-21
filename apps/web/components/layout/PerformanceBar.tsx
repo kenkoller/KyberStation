@@ -95,6 +95,14 @@ const PAGE_COLORS: Record<PageId, string> = {
 export interface PerformanceBarProps {
   /** Engine ref from useBladeEngine. Used to read the live pixel buffer for RMS. */
   engineRef: RefObject<BladeEngine | null>;
+  /**
+   * Total height of the bar in CSS pixels. OV11 threads this from
+   * uiStore.performanceBarHeight so the user-draggable handle above
+   * the bar can grow / shrink it within REGION_LIMITS. The 10px
+   * shift-light rail stays fixed; the remainder goes to the perf
+   * body. When omitted, defaults to 158 (the shipped W5 value).
+   */
+  height?: number;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -104,14 +112,14 @@ export interface PerformanceBarProps {
  * area and the bottom DataTicker. Three rows:
  *
  *   1. Shift-light rail (10px) — 32 LEDs pulsing with live blade RMS.
- *   2. Perf body (148px) — page pills (left) + 8-macro grid (center) +
- *      preset / LED / RMS readouts (right).
+ *   2. Perf body (148px default; user-resizable via OV11) — page pills
+ *      (left) + 8-macro grid (center) + preset / LED / RMS readouts (right).
  *
  * Gated by performanceStore.visible — Settings exposes a toggle. Mounted
  * once at WorkbenchLayout level; never teardown / remount across tab
  * switches so the RAF loop can maintain a stable EMA.
  */
-export function PerformanceBar({ engineRef }: PerformanceBarProps) {
+export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
   const visible = usePerformanceStore((s) => s.visible);
   const currentPage = usePerformanceStore((s) => s.currentPage);
   const macroValues = usePerformanceStore((s) => s.macroValues);
@@ -186,12 +194,20 @@ export function PerformanceBar({ engineRef }: PerformanceBarProps) {
   const currentValues = macroValues[currentPage];
   const currentBindings = macroAssignments[currentPage];
 
+  // OV11: 10px shift-light rail stays fixed; the perf body absorbs
+  // any extra room from the user-draggable height. Minimum perf-body
+  // height is 50 so the knobs never compress below legibility.
+  const totalHeight = height ?? 158;
+  const bodyHeight = Math.max(50, totalHeight - 10);
+
   return (
     <div
-      className="shrink-0 border-t border-border-subtle bg-bg-secondary/60"
+      // OV11: border-t removed — the ResizeHandle above the bar carries
+      // the seam now.
+      className="shrink-0 bg-bg-secondary/60"
       role="region"
       aria-label="Performance macro bar"
-      style={{ height: 158 }}
+      style={{ height: totalHeight }}
     >
       {/* ── Row 1: Shift-light rail (10px) ── */}
       <div
@@ -230,7 +246,7 @@ export function PerformanceBar({ engineRef }: PerformanceBarProps) {
       <div
         className="grid items-stretch"
         style={{
-          height: 148,
+          height: bodyHeight,
           gridTemplateColumns: '180px 1fr 200px',
         }}
       >

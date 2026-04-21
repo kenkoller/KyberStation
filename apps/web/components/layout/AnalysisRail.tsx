@@ -68,6 +68,12 @@ export interface AnalysisRailProps {
   /** Called when the user clicks a layer's ↗ icon. */
   onExpand: (layerId: VisualizationLayerId) => void;
   className?: string;
+  /**
+   * Inline style override. OV11 threads the user-draggable width from
+   * uiStore.analysisRailWidth. When present, it takes precedence over
+   * the breakpoint-derived default width below.
+   */
+  style?: React.CSSProperties;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -77,6 +83,7 @@ export function AnalysisRail({
   pixelCount,
   onExpand,
   className = '',
+  style,
 }: AnalysisRailProps) {
   const visibleLayers = useVisualizationStore((s) => s.visibleLayers);
   const layerOrder = useVisualizationStore((s) => s.layerOrder);
@@ -87,8 +94,13 @@ export function AnalysisRail({
 
   // Icon-only collapse below desktop. Matches the proposal §10
   // responsive table: desktop 200px / tablet 40px / mobile drawer.
+  // OV11: the caller can override the desktop width by passing a
+  // `style.width` (drives the user-draggable value from uiStore).
+  // The compact (tablet / mobile) width stays fixed at 40px — the
+  // rail is icon-only there and resizing doesn't apply.
   const compact = breakpoint === 'phone' || breakpoint === 'tablet';
-  const width = compact ? 40 : 200;
+  const resolvedWidth =
+    compact ? 40 : (typeof style?.width === 'number' ? style.width : 200);
 
   const activeIds = selectAnalysisRailLayerIds(layerOrder, visibleLayers);
 
@@ -102,8 +114,11 @@ export function AnalysisRail({
     <aside
       role="complementary"
       aria-label="Analysis layers"
-      className={`shrink-0 border-r border-border-subtle bg-bg-secondary/40 overflow-y-auto overflow-x-hidden ${className}`}
-      style={{ width }}
+      // OV11: right border removed — the ResizeHandle to our right
+      // carries the seam, and doubling it with a border adds visual
+      // weight without new information.
+      className={`shrink-0 bg-bg-secondary/40 overflow-y-auto overflow-x-hidden ${className}`}
+      style={{ ...style, width: resolvedWidth }}
     >
       {activeIds.length > 0 ? (
         <div className="flex flex-col gap-1 p-1">
