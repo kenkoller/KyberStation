@@ -1,9 +1,7 @@
 'use client';
-import { useEffect, useRef } from 'react';
-import {
-  EFFECT_SHORTCUTS_BY_CODE,
-  SUSTAINED_EFFECT_IDS,
-} from '@/lib/keyboardShortcuts';
+import { useEffect } from 'react';
+import { EFFECT_SHORTCUTS_BY_CODE } from '@/lib/keyboardShortcuts';
+import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { useUIStore, type ActiveTab } from '@/stores/uiStore';
 
 /**
@@ -44,8 +42,10 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
-  // Track which sustained effects are currently active via keyboard
-  const activeRef = useRef<Set<string>>(new Set());
+  // Effect toggle + auto-release timer management is centralized in
+  // `lib/effectToggle.ts` so keyboard + chip click share one code path
+  // (and share the timer registry, so rapid re-triggers from either
+  // source don't leave a stale auto-release timer scheduled).
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -89,21 +89,10 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       // Ignore modified keystrokes so Cmd+R (reload) etc. still work.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      const effectType = shortcut.effect;
-
-      if (SUSTAINED_EFFECT_IDS.has(effectType)) {
-        // Toggle: if active → release, if inactive → trigger
-        if (activeRef.current.has(effectType)) {
-          activeRef.current.delete(effectType);
-          handlers.releaseEffect?.(effectType);
-        } else {
-          activeRef.current.add(effectType);
-          handlers.triggerEffect(effectType);
-        }
-      } else {
-        // One-shot: just trigger
-        handlers.triggerEffect(effectType);
-      }
+      toggleOrTriggerEffect(shortcut.effect, {
+        triggerEffect: handlers.triggerEffect,
+        releaseEffect: handlers.releaseEffect ?? (() => {}),
+      });
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

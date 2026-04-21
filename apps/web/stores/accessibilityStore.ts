@@ -19,6 +19,19 @@ export type ColorblindMode = 'none' | 'deuteranopia' | 'protanopia' | 'tritanopi
  */
 export type DensityMode = 'ssl' | 'ableton' | 'mutable';
 
+/**
+ * Auto-release config for sustained effects (Lockup, Drag, Melt,
+ * Lightning, Force). When `enabled`, triggering a sustained effect
+ * schedules a release after `seconds` — useful for demo / showcase
+ * mode where the user doesn't want to manually release every hold.
+ * Default off so advanced users keep explicit toggle behavior.
+ */
+export interface EffectAutoRelease {
+  enabled: boolean;
+  /** Seconds after trigger to auto-release. Clamped to [1, 30]. */
+  seconds: number;
+}
+
 interface AccessibilityState {
   highContrast: boolean;
   colorblindMode: ColorblindMode;
@@ -26,12 +39,14 @@ interface AccessibilityState {
   hasExplicitMotionPref: boolean;
   fontScale: number; // 1.0 = default, range 0.8–1.5
   density: DensityMode;
+  effectAutoRelease: EffectAutoRelease;
 
   setHighContrast: (on: boolean) => void;
   setColorblindMode: (mode: ColorblindMode) => void;
   setReducedMotion: (on: boolean) => void;
   setFontScale: (scale: number) => void;
   setDensity: (density: DensityMode) => void;
+  setEffectAutoRelease: (config: Partial<EffectAutoRelease>) => void;
   syncReducedMotionFromOS: () => void;
   reset: () => void;
 }
@@ -46,7 +61,7 @@ function loadFromStorage(): Partial<AccessibilityState> {
   return {};
 }
 
-function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density'>) {
+function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease'>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
@@ -59,6 +74,7 @@ const defaults = {
   hasExplicitMotionPref: false,
   fontScale: 1,
   density: 'ableton' as DensityMode,
+  effectAutoRelease: { enabled: false, seconds: 4 } as EffectAutoRelease,
 };
 
 const stored = loadFromStorage();
@@ -70,36 +86,53 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   hasExplicitMotionPref: stored.hasExplicitMotionPref ?? defaults.hasExplicitMotionPref,
   fontScale: stored.fontScale ?? defaults.fontScale,
   density: stored.density ?? defaults.density,
+  effectAutoRelease: stored.effectAutoRelease ?? defaults.effectAutoRelease,
 
   setHighContrast: (highContrast) => {
     set({ highContrast });
     const s = get();
-    saveToStorage({ highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density });
+    saveToStorage({ highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density, effectAutoRelease: s.effectAutoRelease });
   },
 
   setColorblindMode: (colorblindMode) => {
     set({ colorblindMode });
     const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density });
+    saveToStorage({ highContrast: s.highContrast, colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density, effectAutoRelease: s.effectAutoRelease });
   },
 
   setReducedMotion: (reducedMotion) => {
     set({ reducedMotion, hasExplicitMotionPref: true });
     const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion, hasExplicitMotionPref: true, fontScale: s.fontScale, density: s.density });
+    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion, hasExplicitMotionPref: true, fontScale: s.fontScale, density: s.density, effectAutoRelease: s.effectAutoRelease });
   },
 
   setFontScale: (fontScale) => {
     const clamped = Math.max(0.8, Math.min(1.5, fontScale));
     set({ fontScale: clamped });
     const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: clamped, density: s.density });
+    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: clamped, density: s.density, effectAutoRelease: s.effectAutoRelease });
   },
 
   setDensity: (density) => {
     set({ density });
     const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density });
+    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density, effectAutoRelease: s.effectAutoRelease });
+  },
+
+  setEffectAutoRelease: (config) => {
+    const current = get().effectAutoRelease;
+    const next: EffectAutoRelease = {
+      enabled: config.enabled ?? current.enabled,
+      // Clamp to [1, 30] so auto-release can't be instantaneous or
+      // indefinitely long. 30s is past reasonable demo cadence; 1s is
+      // the minimum that still allows a listener to register the effect.
+      seconds: config.seconds !== undefined
+        ? Math.max(1, Math.min(30, config.seconds))
+        : current.seconds,
+    };
+    set({ effectAutoRelease: next });
+    const s = get();
+    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density, effectAutoRelease: next });
   },
 
   syncReducedMotionFromOS: () => {

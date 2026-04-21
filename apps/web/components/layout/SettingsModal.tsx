@@ -130,6 +130,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [sections, setSections] = useState({
     performance: true,
     density: false,
+    effects: false,
     aurebesh: false,
     sounds: false,
     layout: false,
@@ -172,6 +173,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   //    useAccessibilityApplier; no layout shift today (components opt in later). ──
   const density = useAccessibilityStore((s) => s.density);
   const setDensity = useAccessibilityStore((s) => s.setDensity);
+
+  // ── Effect auto-release (demo mode) — when enabled, sustained effects
+  //    (Lockup, Drag, Melt, Lightning, Force) automatically release after
+  //    N seconds instead of requiring an explicit second press. Default
+  //    off so advanced users keep the explicit-toggle default. ──
+  const effectAutoRelease = useAccessibilityStore((s) => s.effectAutoRelease);
+  const setEffectAutoRelease = useAccessibilityStore((s) => s.setEffectAutoRelease);
 
   // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
   const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
@@ -394,6 +402,91 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       </div>
                     </label>
                   ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ══ Effect Auto-Release ══ */}
+          <section className="py-4">
+            <SectionToggle
+              label="Effect auto-release"
+              open={sections.effects}
+              onToggle={() => toggleSection('effects')}
+            />
+            {sections.effects && (
+              <div className="mt-3 space-y-3">
+                <p className="text-ui-xs text-text-muted">
+                  When enabled, sustained effects (Lockup, Drag, Melt, Lightning,
+                  Force) automatically release after the configured duration —
+                  useful for demos / showcases where manual release is awkward.
+                  Default off; advanced users keep the explicit press-again-to-
+                  release behavior.
+                </p>
+
+                <label
+                  className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                    effectAutoRelease.enabled
+                      ? 'border-accent/50 bg-accent/5 text-text-primary'
+                      : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={effectAutoRelease.enabled}
+                    onChange={(e) => {
+                      playUISound('toggle-on');
+                      setEffectAutoRelease({ enabled: e.target.checked });
+                    }}
+                    className="mt-0.5 accent-[rgb(var(--accent))]"
+                  />
+                  <div className="min-w-0">
+                    <div className="text-ui-sm font-medium">
+                      Enable auto-release
+                    </div>
+                    <div className="text-ui-xs text-text-muted mt-0.5">
+                      Sustained effects release automatically after the timeout below.
+                    </div>
+                  </div>
+                </label>
+
+                <div
+                  className={`px-3 py-2.5 rounded border transition-colors ${
+                    effectAutoRelease.enabled
+                      ? 'border-border-light bg-bg-deep/50'
+                      : 'border-border-subtle/50 bg-bg-deep/30 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <label
+                      htmlFor="effect-auto-release-seconds"
+                      className="text-ui-sm text-text-primary font-medium"
+                    >
+                      Release after
+                    </label>
+                    <span className="text-ui-sm text-text-secondary font-mono tabular-nums">
+                      {effectAutoRelease.seconds.toFixed(0)}s
+                    </span>
+                  </div>
+                  <input
+                    id="effect-auto-release-seconds"
+                    type="range"
+                    min={1}
+                    max={15}
+                    step={1}
+                    value={effectAutoRelease.seconds}
+                    onChange={(e) =>
+                      setEffectAutoRelease({
+                        seconds: parseInt(e.target.value, 10),
+                      })
+                    }
+                    disabled={!effectAutoRelease.enabled}
+                    className="w-full mt-2 accent-[rgb(var(--accent))]"
+                    aria-valuetext={`${effectAutoRelease.seconds} seconds`}
+                  />
+                  <div className="text-ui-xs text-text-muted mt-1">
+                    Range: 1–15 seconds. Default: 4s.
+                  </div>
                 </div>
               </div>
             )}

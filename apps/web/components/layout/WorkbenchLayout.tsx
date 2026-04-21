@@ -50,6 +50,9 @@ import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
 import { EXTENDED_LOCATION_THEMES, EXTENDED_FACTION_THEMES } from '@/lib/extendedThemes';
 import { useMetaKey } from '@/lib/platform';
+import { toggleOrTriggerEffect } from '@/lib/effectToggle';
+import { SUSTAINED_EFFECT_IDS } from '@/lib/keyboardShortcuts';
+import { useActiveEffectsStore } from '@/stores/activeEffectsStore';
 import Link from 'next/link';
 
 // ─── HUD status messages for the data ticker strip ───
@@ -160,6 +163,72 @@ function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   }
 }
 
+// ─── Effect Chip ──────────────────────────────────────────────────────────
+//
+// Action-bar chip for a single effect trigger. Subscribes to the
+// activeEffectsStore so sustained effects (Lockup et al.) show a
+// visible "held" state — accent glow + pulse animation — when the
+// effect is currently running. Clicking an active chip releases it
+// (parity with the keyboard toggle behavior). One-shot effects
+// (Clash / Blast / Stab) never show the held state — they fire once
+// and decay naturally in the engine, no tracking needed.
+
+interface EffectChipProps {
+  type: string;
+  label: string;
+  hotkey: string;
+  onToggle: (
+    effectType: string,
+    handlers: { triggerEffect: (type: string) => void; releaseEffect: (type: string) => void },
+  ) => void;
+  triggerHandler: (type: string) => void;
+  releaseHandler: (type: string) => void;
+}
+
+function EffectChip({
+  type,
+  label,
+  hotkey,
+  onToggle,
+  triggerHandler,
+  releaseHandler,
+}: EffectChipProps) {
+  const isSustained = SUSTAINED_EFFECT_IDS.has(type);
+  // Only subscribe for sustained effects — one-shots never have a
+  // "held" state, so there's no reason to churn their render on
+  // activeEffectsStore changes.
+  const isActive = useActiveEffectsStore((s) =>
+    isSustained && s.active.has(type),
+  );
+
+  const activeTitle = isSustained && isActive
+    ? `Release ${label} (press ${hotkey} or click)`
+    : `${label} effect (${hotkey})`;
+
+  return (
+    <button
+      onClick={() =>
+        onToggle(type, {
+          triggerEffect: triggerHandler,
+          releaseEffect: releaseHandler,
+        })
+      }
+      className={[
+        'px-2 py-1 rounded text-ui-xs font-medium border transition-colors',
+        isActive
+          ? 'border-accent-border text-accent bg-accent/15 shadow-[0_0_12px_0_rgb(var(--accent)/0.35)] ignite-btn-on'
+          : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light hover:bg-bg-secondary',
+      ].join(' ')}
+      title={activeTitle}
+      aria-pressed={isSustained ? isActive : undefined}
+    >
+      <span className="hidden desktop:inline">{label}</span>
+      <span className="desktop:hidden">{hotkey}</span>
+      <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{hotkey}</kbd>
+    </button>
+  );
+}
+
 // ─── Main Component ───
 
 /**
@@ -205,11 +274,42 @@ export function WorkbenchLayout() {
 
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
+  // Subscribed for the HUD ticker live entries below. The `setCanvasTheme`
+  // setter is separately memoed for the palette's theme commands.
+  const canvasTheme = useUIStore((s) => s.canvasTheme);
 
-  // Canvas theme — surfaced via the ⌘K command palette. We only need the
-  // setter; subscribing to the current theme would churn the memoized
-  // command list every time a theme command runs.
+  // Canvas theme setter — surfaced via the ⌘K command palette. Kept
+  // separate from the `canvasTheme` value subscription so the memoized
+  // command list doesn't churn every time a theme command runs.
   const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
+
+  // Build the HUD ticker content by interleaving the static lore pool
+  // with live engine / UI readouts. The ticker is ambient decorative
+  // chrome, so re-computing on tab / theme change is fine — it just
+  // snaps to the new content at the next loop frame. Live entries:
+  //   · TAB · <activeTab uppercase>
+  //   · THEME · <canvasTheme uppercase>
+  //   · LEDS · <ledCount>
+  // Pattern: every 4th slot gets a live entry, then trailing live
+  // entries flush at the end. Result: live data is spread through the
+  // loop rather than clumped in one spot.
+  const tickerMessages = useMemo(() => {
+    const live = [
+      `TAB · ${activeTab.toUpperCase()}`,
+      `THEME · ${canvasTheme.toUpperCase()}`,
+      `LEDS · ${ledCount}`,
+    ];
+    const out: string[] = [];
+    let liveIdx = 0;
+    for (let i = 0; i < HUD_TICKER_MESSAGES.length; i++) {
+      out.push(HUD_TICKER_MESSAGES[i]);
+      if ((i + 1) % 4 === 0 && liveIdx < live.length) {
+        out.push(live[liveIdx++]);
+      }
+    }
+    while (liveIdx < live.length) out.push(live[liveIdx++]);
+    return out;
+  }, [activeTab, canvasTheme, ledCount]);
 
   // ── Pixel buffer for VisualizationStack ──
   // Capture the engine's live Uint8Array once after mount. getPixels() returns
@@ -247,6 +347,23 @@ export function WorkbenchLayout() {
       audioMap[type]?.();
     },
     [triggerEffect, audio],
+  );
+
+  // Shared effect-command dispatcher used by every palette AUDITION row
+  // and the action-bar chips. For sustained effects (Lockup, Drag,
+  // Melt, Lightning, Force) it toggles — re-triggering from any source
+  // while the effect is held releases it. For one-shots (Clash, Blast,
+  // Stab, etc.) it just triggers and the engine decays naturally.
+  // Runs the audio-aware trigger + the store-aware release through
+  // `toggleOrTriggerEffect` in `@/lib/effectToggle`.
+  const handleEffectCommand = useCallback(
+    (effectType: string) => {
+      toggleOrTriggerEffect(effectType, {
+        triggerEffect: triggerEffectWithAudio,
+        releaseEffect,
+      });
+    },
+    [triggerEffectWithAudio, releaseEffect],
   );
 
   // ── Combined sound mute toggle — controls font audio + UI sounds ──
@@ -353,7 +470,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Clash',
         kbd: 'C',
         icon: '▶',
-        run: () => triggerEffectWithAudio('clash'),
+        run: () => handleEffectCommand('clash'),
       },
       {
         id: 'audition:blast',
@@ -361,7 +478,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Blast',
         kbd: 'B',
         icon: '▶',
-        run: () => triggerEffectWithAudio('blast'),
+        run: () => handleEffectCommand('blast'),
       },
       {
         id: 'audition:lockup',
@@ -369,7 +486,7 @@ export function WorkbenchLayout() {
         title: 'Hold Lockup',
         kbd: 'L',
         icon: '▶',
-        run: () => triggerEffectWithAudio('lockup'),
+        run: () => handleEffectCommand('lockup'),
       },
       {
         id: 'audition:stab',
@@ -377,7 +494,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Stab',
         kbd: 'S',
         icon: '▶',
-        run: () => triggerEffectWithAudio('stab'),
+        run: () => handleEffectCommand('stab'),
       },
       // W4b — 17 effects pruned from the visible action bar and exposed
       // here in the AUDITION palette group. The `kbd` strings mirror
@@ -390,7 +507,7 @@ export function WorkbenchLayout() {
         title: 'Hold Lightning',
         kbd: 'N',
         icon: '▶',
-        run: () => triggerEffectWithAudio('lightning'),
+        run: () => handleEffectCommand('lightning'),
       },
       {
         id: 'audition:drag',
@@ -398,7 +515,7 @@ export function WorkbenchLayout() {
         title: 'Hold Drag',
         kbd: 'D',
         icon: '▶',
-        run: () => triggerEffectWithAudio('drag'),
+        run: () => handleEffectCommand('drag'),
       },
       {
         id: 'audition:melt',
@@ -406,7 +523,7 @@ export function WorkbenchLayout() {
         title: 'Hold Melt',
         kbd: 'M',
         icon: '▶',
-        run: () => triggerEffectWithAudio('melt'),
+        run: () => handleEffectCommand('melt'),
       },
       {
         id: 'audition:force',
@@ -414,7 +531,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Force',
         kbd: 'F',
         icon: '▶',
-        run: () => triggerEffectWithAudio('force'),
+        run: () => handleEffectCommand('force'),
       },
       {
         id: 'audition:shockwave',
@@ -422,14 +539,14 @@ export function WorkbenchLayout() {
         title: 'Trigger Shockwave',
         kbd: 'W',
         icon: '▶',
-        run: () => triggerEffectWithAudio('shockwave'),
+        run: () => handleEffectCommand('shockwave'),
       },
       {
         id: 'audition:scatter',
         group: 'AUDITION',
         title: 'Trigger Scatter',
         icon: '▶',
-        run: () => triggerEffectWithAudio('scatter'),
+        run: () => handleEffectCommand('scatter'),
       },
       {
         id: 'audition:fragment',
@@ -437,28 +554,28 @@ export function WorkbenchLayout() {
         title: 'Trigger Fragment',
         kbd: 'R',
         icon: '▶',
-        run: () => triggerEffectWithAudio('fragment'),
+        run: () => handleEffectCommand('fragment'),
       },
       {
         id: 'audition:ripple',
         group: 'AUDITION',
         title: 'Trigger Ripple',
         icon: '▶',
-        run: () => triggerEffectWithAudio('ripple'),
+        run: () => handleEffectCommand('ripple'),
       },
       {
         id: 'audition:freeze',
         group: 'AUDITION',
         title: 'Trigger Freeze',
         icon: '▶',
-        run: () => triggerEffectWithAudio('freeze'),
+        run: () => handleEffectCommand('freeze'),
       },
       {
         id: 'audition:overcharge',
         group: 'AUDITION',
         title: 'Trigger Overcharge',
         icon: '▶',
-        run: () => triggerEffectWithAudio('overcharge'),
+        run: () => handleEffectCommand('overcharge'),
       },
       {
         id: 'audition:bifurcate',
@@ -466,14 +583,14 @@ export function WorkbenchLayout() {
         title: 'Trigger Bifurcate',
         kbd: 'V',
         icon: '▶',
-        run: () => triggerEffectWithAudio('bifurcate'),
+        run: () => handleEffectCommand('bifurcate'),
       },
       {
         id: 'audition:invert',
         group: 'AUDITION',
         title: 'Trigger Invert',
         icon: '▶',
-        run: () => triggerEffectWithAudio('invert'),
+        run: () => handleEffectCommand('invert'),
       },
       {
         id: 'audition:ghostEcho',
@@ -481,7 +598,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Ghost Echo',
         kbd: 'G',
         icon: '▶',
-        run: () => triggerEffectWithAudio('ghostEcho'),
+        run: () => handleEffectCommand('ghostEcho'),
       },
       {
         id: 'audition:splinter',
@@ -489,7 +606,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Splinter',
         kbd: 'P',
         icon: '▶',
-        run: () => triggerEffectWithAudio('splinter'),
+        run: () => handleEffectCommand('splinter'),
       },
       {
         id: 'audition:coronary',
@@ -497,7 +614,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Coronary',
         kbd: 'E',
         icon: '▶',
-        run: () => triggerEffectWithAudio('coronary'),
+        run: () => handleEffectCommand('coronary'),
       },
       {
         id: 'audition:glitchMatrix',
@@ -505,7 +622,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Glitch Matrix',
         kbd: 'X',
         icon: '▶',
-        run: () => triggerEffectWithAudio('glitchMatrix'),
+        run: () => handleEffectCommand('glitchMatrix'),
       },
       {
         id: 'audition:siphon',
@@ -513,7 +630,7 @@ export function WorkbenchLayout() {
         title: 'Trigger Siphon',
         kbd: 'H',
         icon: '▶',
-        run: () => triggerEffectWithAudio('siphon'),
+        run: () => handleEffectCommand('siphon'),
       },
       // ── VIEW ──────────────────────────────────────────────────────
       {
@@ -583,7 +700,7 @@ export function WorkbenchLayout() {
   }, [
     setActiveTab,
     toggleWithAudio,
-    triggerEffectWithAudio,
+    handleEffectCommand,
     toggleEffectComparison,
     toggleSoundMute,
     openShortcutsHelp,
@@ -909,23 +1026,29 @@ export function WorkbenchLayout() {
             ghostEcho, splinter, coronary, glitchMatrix, siphon) are still
             wired to their single-letter hotkeys in `useKeyboardShortcuts`
             (via EFFECT_SHORTCUTS_BY_CODE) and are discoverable through the
-            ⌘K palette's AUDITION group. */}
+            ⌘K palette's AUDITION group.
+
+            Sustained effects (Lockup here — Drag / Melt / Lightning /
+            Force are in the palette only) show an "active" glow + pulse
+            when held, and clicking an active chip releases it. Click +
+            keyboard share the `toggleOrTriggerEffect` helper so the
+            shared activeEffectsStore + auto-release timer registry
+            stay consistent across both input sources. */}
         {([
           { type: 'clash',  label: 'Clash',  key: 'C' },
           { type: 'blast',  label: 'Blast',  key: 'B' },
           { type: 'lockup', label: 'Lockup', key: 'L' },
           { type: 'stab',   label: 'Stab',   key: 'S' },
         ] as const).map(({ type, label, key }) => (
-          <button
+          <EffectChip
             key={type}
-            onClick={() => triggerEffectWithAudio(type)}
-            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light hover:bg-bg-secondary transition-colors"
-            title={`${label} effect (${key})`}
-          >
-            <span className="hidden desktop:inline">{label}</span>
-            <span className="desktop:hidden">{key}</span>
-            <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{key}</kbd>
-          </button>
+            type={type}
+            label={label}
+            hotkey={key}
+            onToggle={toggleOrTriggerEffect}
+            triggerHandler={triggerEffectWithAudio}
+            releaseHandler={releaseEffect}
+          />
         ))}
 
         {/* LIVE indicator — reference `blade-controls` right-side readout.
@@ -1053,7 +1176,7 @@ export function WorkbenchLayout() {
         aria-hidden="true"
       >
         <DataTicker
-          data={HUD_TICKER_MESSAGES}
+          data={tickerMessages}
           speed={60}
           className="h-full flex items-center pointer-events-none"
         />
