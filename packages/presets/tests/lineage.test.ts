@@ -4,6 +4,7 @@ import {
   ALL_PRESETS,
   PREQUEL_ERA_PRESETS,
   ORIGINAL_TRILOGY_PRESETS,
+  CREATIVE_COMMUNITY_PRESETS,
 } from '../src/index.js';
 
 /**
@@ -122,15 +123,26 @@ describe('Author backfill — original-trilogy.ts', () => {
   });
 
   it('leaves non-screen-accurate presets without a forced author', () => {
-    // 'ot-obiwan-ghost' is a speculative Force Ghost interpretation —
-    // intentionally NOT tagged screenAccurate, so it should NOT be
-    // force-tagged author="on-screen".
-    const ghost = ORIGINAL_TRILOGY_PRESETS.find(
-      (p) => p.id === 'ot-obiwan-ghost',
+    // 'creative-obiwan-force-ghost' is a speculative Force Ghost interpretation —
+    // relocated from original-trilogy.ts to creative-community.ts in the Phase 3b
+    // preset-accuracy sweep (2026-04-23) since it was never on-screen. It should
+    // NOT carry author="on-screen".
+    const ghost = CREATIVE_COMMUNITY_PRESETS.find(
+      (p) => p.id === 'creative-obiwan-force-ghost',
     );
     expect(ghost).toBeDefined();
     expect(ghost?.screenAccurate).not.toBe(true);
     expect(ghost?.author).toBeUndefined();
+  });
+
+  it('has no non-screen-accurate presets remaining in ORIGINAL_TRILOGY_PRESETS', () => {
+    // After the 2026-04-23 Phase 3b relocation sweep, every preset remaining in
+    // original-trilogy.ts is canon on-screen. Speculative entries live in
+    // creative-community.ts with screenAccurate: false.
+    const nonScreen = ORIGINAL_TRILOGY_PRESETS.filter(
+      (p) => p.screenAccurate !== true,
+    );
+    expect(nonScreen).toHaveLength(0);
   });
 });
 

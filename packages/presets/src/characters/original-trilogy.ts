@@ -59,14 +59,15 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
       lockupColor: { r: 180, g: 200, b: 255 },
       blastColor: { r: 255, g: 255, b: 255 },
       dragColor: { r: 255, g: 160, b: 0 },
-      style: 'stable',
+      style: 'rotoscope',
       ignition: 'standard',
       retraction: 'standard',
       ignitionMs: 300,
       retractionMs: 400,
       shimmer: 0.04,
       ledCount: 144,
-      swingFxIntensity: 0.3,
+      swingFxIntensity: 0.35,
+      noiseLevel: 0.02,
     },
   },
 
@@ -89,8 +90,8 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
       clashColor: { r: 180, g: 255, b: 180 },
       lockupColor: { r: 200, g: 255, b: 200 },
       blastColor: { r: 255, g: 255, b: 255 },
-      dragColor: { r: 255, g: 200, b: 0 },
-      style: 'stable',
+      dragColor: { r: 255, g: 220, b: 80 },
+      style: 'rotoscope',
       ignition: 'standard',
       retraction: 'standard',
       ignitionMs: 250,
@@ -119,16 +120,16 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
       'MPP (Micro Precision Products) flash unit. Thick black body, shroud clamp, red activation switch.',
     config: {
       name: 'Vader',
-      baseColor: { r: 200, g: 0, b: 0 },
+      baseColor: { r: 230, g: 10, b: 10 },
       clashColor: { r: 255, g: 180, b: 80 },
       lockupColor: { r: 255, g: 100, b: 0 },
       blastColor: { r: 255, g: 200, b: 200 },
       dragColor: { r: 255, g: 80, b: 0 },
-      style: 'stable',
+      style: 'rotoscope',
       ignition: 'standard',
-      retraction: 'drain',
+      retraction: 'standard',
       ignitionMs: 400,
-      retractionMs: 500,
+      retractionMs: 400,
       shimmer: 0.06,
       ledCount: 144,
       swingFxIntensity: 0.2,
@@ -170,40 +171,6 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     },
   },
 
-  // ── Emperor Palpatine ───────────────────────────────────────────
-
-  {
-    id: 'ot-palpatine',
-    name: 'Emperor Palpatine',
-    character: 'Palpatine',
-    era: 'original-trilogy',
-    affiliation: 'sith',
-    tier: 'detailed',
-    screenAccurate: true,
-    author: 'on-screen',
-    description:
-      'The Emperor\'s rarely-seen blade — intensely saturated red. Depicted only in the ROTJ novelization and later expanded material for this era, but a canonical Sith weapon nonetheless.',
-    hiltNotes:
-      'Electrum-plated Phrik hilt with ornate carvings. One of two identical sabers carried in his sleeves.',
-    config: {
-      name: 'PalpatineOT',
-      baseColor: { r: 255, g: 0, b: 0 },
-      clashColor: { r: 255, g: 150, b: 50 },
-      lockupColor: { r: 255, g: 80, b: 0 },
-      blastColor: { r: 255, g: 180, b: 180 },
-      dragColor: { r: 200, g: 0, b: 200 },
-      style: 'cinder',
-      ignition: 'crackle',
-      retraction: 'drain',
-      ignitionMs: 200,
-      retractionMs: 300,
-      shimmer: 0.18,
-      ledCount: 144,
-      noiseLevel: 0.06,
-      swingFxIntensity: 0.3,
-    },
-  },
-
   // ── Leia Organa ─────────────────────────────────────────────────
 
   {
@@ -212,7 +179,7 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     character: 'Leia Organa',
     era: 'original-trilogy',
     affiliation: 'jedi',
-    tier: 'base',
+    tier: 'detailed',
     screenAccurate: true,
     author: 'on-screen',
     description:
@@ -225,7 +192,8 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
       clashColor: { r: 170, g: 200, b: 255 },
       lockupColor: { r: 160, g: 190, b: 255 },
       blastColor: { r: 220, g: 230, b: 255 },
-      style: 'stable',
+      dragColor: { r: 255, g: 180, b: 40 },
+      style: 'rotoscope',
       ignition: 'standard',
       retraction: 'standard',
       ignitionMs: 280,
@@ -268,32 +236,4 @@ export const ORIGINAL_TRILOGY_PRESETS: Preset[] = [
     },
   },
 
-  // ── Obi-Wan Force Ghost ────────────────────────────────────────
-
-  {
-    id: 'ot-obiwan-ghost',
-    name: 'Obi-Wan (Force Ghost)',
-    character: 'Obi-Wan Kenobi',
-    era: 'original-trilogy',
-    affiliation: 'jedi',
-    tier: 'detailed',
-    description:
-      'A spectral interpretation of Obi-Wan\'s blade as it might appear if manifested by his Force Ghost. Ethereal pale blue with a ghostly luminescence.',
-    config: {
-      name: 'ObiWanGhost',
-      baseColor: { r: 120, g: 180, b: 255 },
-      clashColor: { r: 220, g: 240, b: 255 },
-      lockupColor: { r: 160, g: 200, b: 255 },
-      blastColor: { r: 200, g: 225, b: 255 },
-      style: 'photon',
-      ignition: 'center',
-      retraction: 'fadeout',
-      ignitionMs: 500,
-      retractionMs: 800,
-      shimmer: 0.15,
-      ledCount: 144,
-      swingFxIntensity: 0.1,
-      noiseLevel: 0.06,
-    },
-  },
 ];

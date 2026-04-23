@@ -171,6 +171,7 @@ describe('buildAST', () => {
       'aurora',
       'cinder',
       'prism',
+      'darksaber',
     ];
 
     for (const style of styles) {
@@ -227,6 +228,57 @@ describe('buildAST', () => {
       const ast = buildAST(makeConfig({ style: 'gradient' }));
       const baseStyle = ast.args[0].args[0];
       expect(baseStyle.name).toBe('Gradient');
+    });
+
+    it('darksaber produces Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>', () => {
+      const ast = buildAST(makeConfig({ style: 'darksaber' }));
+      const baseStyle = ast.args[0].args[0];
+      expect(baseStyle.name).toBe('Gradient');
+      expect(baseStyle.args).toHaveLength(4);
+
+      // Arg 0: raw White
+      expect(baseStyle.args[0].type).toBe('raw');
+      expect(baseStyle.args[0].name).toBe('White');
+
+      // Arg 1: Rgb<5,5,5>
+      expect(baseStyle.args[1].name).toBe('Rgb');
+      expect(baseStyle.args[1].args.map((a) => a.name)).toEqual(['5', '5', '5']);
+
+      // Arg 2: Rgb<5,5,5>
+      expect(baseStyle.args[2].name).toBe('Rgb');
+      expect(baseStyle.args[2].args.map((a) => a.name)).toEqual(['5', '5', '5']);
+
+      // Arg 3: raw White
+      expect(baseStyle.args[3].type).toBe('raw');
+      expect(baseStyle.args[3].name).toBe('White');
+    });
+
+    it('darksaber body colors are independent of config.baseColor', () => {
+      // User may set any baseColor (e.g. for the emitter/tip flare white);
+      // the Gradient body colors must still be the canonical near-black
+      // {5,5,5} for the Darksaber look on real Neopixel hardware.
+      const ast = buildAST(
+        makeConfig({ style: 'darksaber', baseColor: { r: 200, g: 50, b: 100 } }),
+      );
+      const baseStyle = ast.args[0].args[0];
+      expect(baseStyle.args[1].args.map((a) => a.name)).toEqual(['5', '5', '5']);
+      expect(baseStyle.args[2].args.map((a) => a.name)).toEqual(['5', '5', '5']);
+    });
+
+    it('darksaber full emitted code matches canonical ProffieOS shape', async () => {
+      const { emitCode } = await import('../src/index.js');
+      const ast = buildAST(
+        makeConfig({ style: 'darksaber', ignitionMs: 300, retractionMs: 400 }),
+      );
+      const code = emitCode(ast, { minified: true });
+      // The base-style body should contain the canonical Darksaber gradient.
+      expect(code).toContain('Gradient<White,Rgb<5,5,5>,Rgb<5,5,5>,White>');
+      // Ignition + retraction are wrapped by InOutTrL (standard pipeline).
+      expect(code).toContain('InOutTrL<');
+      // TrWipeIn<300> for ignition (default 'standard'); retraction default
+      // 'standard' also maps to TrWipeIn<400>. Both must be present.
+      expect(code).toContain('TrWipeIn<300>');
+      expect(code).toContain('TrWipeIn<400>');
     });
 
     it('photon produces Stripes', () => {

@@ -21,6 +21,19 @@ export interface PresetMetadata {
   character: string;
   era: Era;
   affiliation: Affiliation;
+  /**
+   * Which source universe this preset represents. Drives gallery filtering.
+   * - `canon` — current Disney canon (films, Disney+ series, current novels/comics).
+   *   Default when undefined.
+   * - `legends` — pre-2014 Expanded Universe content (KOTOR, SWTOR, old novels,
+   *   Dark Horse comics, Force Unleashed, etc.).
+   * - `pop-culture` — fan tribute to non-Star-Wars IP (Marvel, LOTR, DC, etc.).
+   * - `mythology` — real-world mythology (Excalibur, Kusanagi, etc. — public
+   *   domain).
+   *
+   * Consumers should read as `preset.continuity ?? 'canon'`.
+   */
+  continuity?: 'canon' | 'legends' | 'pop-culture' | 'mythology';
   /** 'base' = simple starting point, 'detailed' = fully tuned config */
   tier: PresetTier;
   /**
