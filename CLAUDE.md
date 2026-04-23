@@ -543,11 +543,84 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-04-23, post-UI-overhaul merge)
+## Current State (2026-04-23, post-modulation v0.14.0)
+
+**Active branch: `main`. `feat/modulation-routing-v1.1` merged into main on 2026-04-23 via PR #35 (commit `43b73aa`), shipping the v1.0 BETA Preview of the headline Modulation Routing feature — turns KyberStation from a static blade picker into a "blade instrument." Tagged as `v0.14.0`.**
+
+**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Prior tag was `v0.13.0` (launch readiness). `v0.14.0` displaces the previously-planned Kyber Forge ultra-wide slot (sunset per 2026-04-22 planning decision — OV11 drag-to-resize handles cover ultra-wide use cases).
+
+### What shipped in v0.14.0
+
+End-to-end browser-verified on `localhost:3000/editor` at 120 FPS:
+
+- **ROUTING BETA pill** in DesignPanel — hidden on non-Proffie boards; shows 5 modulator plates (`swing` / `sound` / `angle` / `time` / `clash`) with live CSS-driven identity-color viz
+- **Three paths to create a binding:**
+  - **RecipePicker** — 5 one-click starter recipes (Reactive Shimmer / Sound-Reactive Music / Angle-Reactive Tip / Clash-Flash White / Twist-Drives-Hue)
+  - **AddBindingForm** — dropdown source/target/combinator + amount slider
+  - **Click-to-route** — arm a plate, every ParameterBank label tints in the armed modulator's identity color with "Click to wire {source} → {label}" hover title; click to bind
+- **BindingList** — rows show source → target with combinator dropdown, amount scrub, bypass toggle, remove button
+- **Inline BoardPicker** in StatusBar between Profile and Conn — `BOARD · PROFFIE V3.9 · FULL`; click opens modal picker with all 6 boards + status chips
+- **Engine**: `BladeEngine.update()` samples modulators + applies bindings per frame before style rendering; persistent sampler state for one-pole smoothing + clash latching; `setParameterClampRanges()` pushes 77 parameter range constraints from `parameterGroups.ts`
+- **Codegen ProffieOS emitter** (Option B+): maps bindings to `Scale<SwingSpeed<>>`, `Sin<Int<>>`, etc. templates where possible; snapshot-value fallback per binding for anything inexpressible in ProffieOS
+
+### Scope deferred (labeled in ROUTING tab banner)
+
+- Math formula expressions in UI — peggy parser + evaluator are **live** in the engine with 63 accept / 61 reject fixtures; inline `Cmd-click` expression editor UI lands in v1.1 Core
+- 6 additional modulators (`twist` / `battery` / `lockup` / `preon` / `ignition` / `retraction`) — scaffolded in the registry, not shown as plates until v1.1
+- True drag-to-route (vs. click-to-route arm)
+- Hover wire highlighting (replaces the 2026-04-20 1:1 `hoveredModulatorId` stub)
+- Kyber Glyph v2 modulation round-trip — handoff doc at [`docs/NEXT_GLYPH_V2_SESSION.md`](docs/NEXT_GLYPH_V2_SESSION.md), parallel session owns it
+- V2.2 modulation flash — conservative profile ships with modulation disabled; v1.1 after hardware validation
+- Button routing sub-tab (aux / gesture events as modulators)
+
+### Test + verification deltas
+
+| Package | Before v0.14.0 | After v0.14.0 | Delta |
+|---|---|---|---|
+| engine | 513 | 714 | +201 (parser/evaluator/sampler/applyBindings + 124 grammar fixtures) |
+| codegen | 1,323 | 1,347 | +24 (ProffieOS binding emitter) |
+| web | 749 | 890 | +141 (board profiles / BoardPicker / useClickToRoute) |
+| presets | 9 | 29 | +20 (starter recipes) |
+| boards / sound | unchanged | unchanged | 0 |
+| **Total** | 2,594 | 2,980 | **+386 tests across 4 packages** |
+
+Full workspace typecheck clean. CI green on all 4 intermediate pushes + the final merged commit.
+
+### Sprint artifacts
+
+- Design spec: [`docs/MODULATION_ROUTING_V1.1.md`](docs/MODULATION_ROUTING_V1.1.md)
+- Implementation plan + 18 locked decisions: [`docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md)
+- Public roadmap (v1.0 → v2.0+): [`docs/MODULATION_ROUTING_ROADMAP.md`](docs/MODULATION_ROUTING_ROADMAP.md)
+- User guide outline + 10 recipes: [`docs/MODULATION_USER_GUIDE_OUTLINE.md`](docs/MODULATION_USER_GUIDE_OUTLINE.md)
+- Quick-start (60-second tutorial with 3 GIF placeholders): [`docs/user-guide/modulation/your-first-wire.md`](docs/user-guide/modulation/your-first-wire.md)
+- Glyph v2 handoff: [`docs/NEXT_GLYPH_V2_SESSION.md`](docs/NEXT_GLYPH_V2_SESSION.md)
+
+### Sibling / follow-on branches
+
+- **`feat/saber-card-vertical`** (local + `origin/feat/saber-card-vertical` at `53303dd`): glyph-v2 session's in-flight work on the vertical Saber Card layout + rounded blade tip + flush emitter. Independent of modulation; the session owner controls its PR timing.
+- **`feat/marketing-site-expansion`** (worktree at `../KyberStation-mkt`): marketing components / showcase / sitemap / changelog-parser. Still disjoint.
+- **`feat/w5-performance-bar`**: already subsumed into main via `feat/ui-overhaul-v2` earlier today; local branch pointer kept for traceability, safe to prune.
+
+### Remaining launch-blockers (carried over from v0.13.0 readiness)
+
+Code-wise nothing new — the modulation landing is self-contained BETA and doesn't add launch blockers. The four ⏳ QA phases from the v0.13.0 launch-readiness plan still apply: **P29 a11y audit**, **P30 perf deep-dive**, **P31 cross-browser matrix**, **P37 launch triage**. Plus hardware cross-OS + cross-board sweeps remain pending.
+
+### What's next on the modulation roadmap
+
+Per [`docs/MODULATION_ROUTING_ROADMAP.md`](docs/MODULATION_ROUTING_ROADMAP.md):
+
+- **v1.1 Core** (~2026-05-16, launch +3 weeks): math formula editor UI + all 11 modulators + drag-to-route + hover highlighting + Kyber Glyph v2 sharing + V2.2 flash + button routing + full 10-recipe gallery + complete user guide
+- **v1.2 Creative** (~2026-06-13): modulator chains + macros + LFO shape library + conditionals + `config.*` vars + snapshots/scenes + sidechain + probability/random + blade-level UDFs + response curves
+- **v1.3 Advanced** (~2026-07-18): envelope followers (meyda + AudioWorklet) + step sequencers + `ModulationGraphPanel` + community UDF library + gesture recording
+- **v1.4 Multi-Blade Workbench** (~2026-08-08): dual-blade / saberstaff / crossguard channel-strip UI (unchanged from prior plan)
+
+---
+
+### 2026-04-23 earlier — UI-overhaul v2 merge (PR #33)
 
 **Active branch: `main`. `feat/ui-overhaul-v2` merged into main on 2026-04-23, landing the full four-session sprint: Saber Wizard hardware step + Hilt library v2 content expansion + post-walkthrough W-series UX iteration + Kyber Crystal polish & Share Card v2 — on top of the 2026-04-21 OV1–OV11 UI overhaul waves (Inspector, PerformanceBar, GalleryMarquee, DeliveryRail, AnalysisRail, MiniGalleryPicker, drag-to-resize). Detailed session write-ups below.**
 
-Last git tag: **v0.13.0** (launch readiness, merged via PR #31). Remaining launch-blockers: the four ⏳ QA phases (P29 a11y / P30 perf / P31 cross-browser / P37 triage) plus hardware cross-OS + cross-board sweeps, not new code.
+Remaining launch-blockers: the four ⏳ QA phases (P29 a11y / P30 perf / P31 cross-browser / P37 triage) plus hardware cross-OS + cross-board sweeps, not new code.
 
 **Sibling branch: `feat/w5-performance-bar`** — 1 commit (W5 PerformanceBar). `feat/ui-overhaul-v2` was cut from this so merging it first would be redundant; the W5 commit is already included on the overhaul branch.
 

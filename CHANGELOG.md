@@ -115,6 +115,98 @@ See `~/.claude/plans/declarative-strolling-dragonfly.md` for the
 orchestration plan that scopes the current sprints, and
 `docs/SESSION_2026-04-17.md` Part 2 for the full session summary.
 
+## [0.14.0] — 2026-04-23
+
+### Added — Modulation Routing v1.0 Preview (BETA)
+
+First release of the headline **Modulation Routing** feature. Turns KyberStation from a static blade picker into a "blade instrument" — users wire live signals (swing / sound / angle / time / clash) to any numeric blade parameter with a combinator + amount; bindings drive the blade render in real time at 60 FPS.
+
+Merged via [PR #35](https://github.com/kenkoller/KyberStation/pull/35). Marked BETA in the new `ROUTING` pill; full v1.1 Core (math formula UI + remaining 6 modulators + drag-to-route + Kyber Glyph v2 sharing + V2.2 flash + button routing) lands ~3 weeks post-launch per [`docs/MODULATION_ROUTING_ROADMAP.md`](docs/MODULATION_ROUTING_ROADMAP.md).
+
+**UI additions:**
+
+- New `ROUTING` pill in the DesignPanel (hidden on non-Proffie boards via the Board Capability System).
+- `ModulatorPlateBar` — 5 plates (`swing` / `sound` / `angle` / `time` / `clash`) with live CSS-driven identity-color viz (`--mod-swing` through `--mod-retraction`). Click to arm, Escape to disarm.
+- `AddBindingForm` — dropdown source/target/combinator picker + amount scrub. Fast form-based binding creation alternative to click-to-route.
+- `RecipePicker` — 5 one-click starter recipes: **Reactive Shimmer** (swing → shimmer), **Sound-Reactive Music Saber** (sound → baseColor.b), **Angle-Reactive Tip** (angle → emitterFlare), **Clash-Flash White** (3-binding clash → baseColor.{r,g,b}), **Twist-Drives-Hue** (twist → colorHueShiftSpeed).
+- `BindingList` — rows with source → target arrow, combinator dropdown, amount scrub (0–100%), bypass toggle (▶/⏸), remove button. Empty state nudges toward the plate workflow.
+- Click-to-route wiring in every `ParameterBank.SliderControl` — armed plate tints all slider labels in the modulator's identity color; clicking wires `source → targetPath` as a new binding with the v1.0 defaults (add combinator, 60% amount).
+- Inline `BoardPicker` chip in `StatusBar` between Profile and Conn — `BOARD · PROFFIE V3.9 · FULL`; click opens modal picker with all 6 boards + color-coded status chips.
+- `BoardPicker` modal + inline variants ([`apps/web/components/shared/BoardPicker.tsx`](apps/web/components/shared/BoardPicker.tsx)) — 6 boards (Proffieboard V3.9 full, V2.2 partial, Golden Harvest V3 mirrors V3.9, CFX / Xenopixel / Verso preview-only), status chips, hardware-validated ✓ badge on V3.9.
+
+**Engine additions** (`packages/engine/src/modulation/`):
+
+- `registry.ts` — 11 built-in `ModulatorDescriptor`s with identity colors, ranges, units, one-pole smoothing coefficients, clash latch metadata.
+- `sampler.ts` — per-frame value extraction + one-pole smoothing + clash latching with decay. Returns a frozen `SamplerState` consumed by `applyBindings`.
+- `applyBindings.ts` — pure binding composer. Walks bindings in authoring order, composes with the 5 combinators (`replace` / `add` / `multiply` / `min` / `max`), sanitizes NaN / ±∞ / out-of-range values against per-parameter clamp data.
+- `parser.ts` + `grammar.peggy` — peggy 4.2 expression parser for the math-formula mini-language (arithmetic + 10 built-in functions `min` / `max` / `clamp` / `lerp` / `sin` / `cos` / `abs` / `floor` / `ceil` / `round`). Runtime-compiled; module-level parser singleton. Drift-sentinel fixtures: 63 accept / 61 reject.
+- `evaluator.ts` — tree-walk interpreter over `ExpressionNode`. Missing modulator IDs fall through to `0`; NaN / Infinity propagate (sanitizer upstream of the engine cleans up).
+- `BladeEngine.update()` now samples modulators + applies bindings before style rendering; persistent `_samplerState` for smoothing continuity; `setParameterClampRanges(map)` API for the web layer to push per-parameter range constraints; `getSamplerState()` accessor for future UI viz.
+- `packages/engine/src/index.ts` top-level barrel re-exports the full modulation subsystem so consumers (codegen, web, presets) can import from `@kyberstation/engine` directly.
+
+**Codegen additions** (`packages/codegen/src/proffieOSEmitter/`):
+
+- `mapBindings.ts` — Option B+ export semantics. Maps each binding to equivalent ProffieOS templates where possible (`Scale<SwingSpeed<>>`, `Sin<Int<>>`, `SoundLevel<>`, etc.); returns a `snapshotValue` fallback for unmappable bindings (expressions in v1.0, modulator chains, enum-targeted bindings). `MAP_BINDINGS_REASONS` constant exports the exact user-facing reason strings for the Flash dialog's per-binding review. Mirrors engine types inline with a drift-sentinel test per the CLAUDE.md decision #1 pattern.
+
+**Web library additions** (`apps/web/lib/`):
+
+- `parameterGroups.ts` — 77 modulatable `BladeConfig` fields enumerated with `path` / `displayName` / `group` / `range` / `default` / `unit` / `isModulatable`. 5 groups (color / motion / timing / style / other). Drives drop-target validation, parameter clamping, and the AddBindingForm's target picker.
+- `boardProfiles.ts` — 6 board profiles: **Proffieboard V3.9** (full, hardware-validated) / **V2.2** (partial; modulation disabled in v1.0 until V2 hardware validation) / **Golden Harvest V3** (mirrors V3.9) / **CFX** / **Xenopixel** / **Verso** (last three: preview-only, modulation hidden). Each profile declares hardware (flash size, max LEDs, buttons, OLED), firmware, feature support (styles / effects / ignitions / retractions / SmoothSwing / prop files), modulation capability flags (supported modulators + functions + max bindings + soft/hard warnings + chains / step-seq / envelope-follower), and template emission ceilings. Helpers: `getBoardProfile` / `canBoardModulate` / `isParameterModulatableOnBoard` / `DEFAULT_BOARD_ID`.
+- `propFileProfiles.ts` — 4 prop file profiles (Fett263 most-flexible, SA22C, BC Button Controls, Default Fett) with button event + gesture event vocabularies.
+
+**Store additions:**
+
+- `bladeStore.config.modulation?: ModulationPayload` (optional, backward-compatible) + `addBinding` / `removeBinding` / `updateBinding` / `toggleBindingBypass` / `clearAllBindings` actions.
+- `uiStore.armedModulatorId: string | null` + `setArmedModulatorId` — click-to-route arm state, separate from `selectedLayerId` (which drives the layer-config panel).
+
+**Hooks:**
+
+- `useBoardProfile()` — reactive board selection backed by `localStorage.kyberstation.board.selected` with cross-tab sync via a `board-profile-changed` CustomEvent dispatched on the window.
+- `useClickToRoute(options?)` — click-to-route state machine. Arm / disarm / onParameterClick returning `{ kind: 'created' | 'ignored', reason? }`. Escape-key disarm listener. Board-capability gating via `isParameterModulatableOnBoard`.
+- `useBladeEngine()` — now pushes the `parameterGroups.ts` clamp ranges to the engine on init via `setParameterClampRanges()`.
+
+**Starter recipe fixtures** (`packages/presets/src/recipes/modulation/`):
+
+- 5 shipped for v1.0 (bare-source bindings, no expressions): Reactive Shimmer, Sound-Reactive Music Saber, Angle-Reactive Tip, Clash-Flash White (3 bindings), Twist-Drives-Hue. Top-level exports from `@kyberstation/presets` so the web layer imports directly.
+
+**CSS tokens** ([`apps/web/app/globals.css`](apps/web/app/globals.css)):
+
+- 11 `--mod-*` identity colors (one per built-in modulator) as full-color CSS variables, with paired `--mod-*-rgb` triples for alpha compositing. Swing = electric blue, Angle = teal, Twist = violet, Sound = magenta, Battery = green, Time = gold, Clash = near-white, Lockup = amber, Preon = ice-blue, Ignition = cyan, Retraction = warm-red.
+
+**Docs:**
+
+- Design spec: [`docs/MODULATION_ROUTING_V1.1.md`](docs/MODULATION_ROUTING_V1.1.md) (pre-existing; authoritative source for evaluation order, wire format, etc.).
+- Implementation plan + 18 locked decisions: [`docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md).
+- Public roadmap (v1.0 → v2.0+): [`docs/MODULATION_ROUTING_ROADMAP.md`](docs/MODULATION_ROUTING_ROADMAP.md).
+- User guide outline: [`docs/MODULATION_USER_GUIDE_OUTLINE.md`](docs/MODULATION_USER_GUIDE_OUTLINE.md) — 8 sections + 10 recipes + in-app supplements.
+- 60-second quick-start (shipped): [`docs/user-guide/modulation/your-first-wire.md`](docs/user-guide/modulation/your-first-wire.md). Three GIF placeholders marked for Ken to record pre-launch.
+- Glyph v2 session handoff: [`docs/NEXT_GLYPH_V2_SESSION.md`](docs/NEXT_GLYPH_V2_SESSION.md) — self-contained prompt for the parallel Kyber Glyph v2 encoder work.
+
+### Changed
+
+- `apps/web/components/editor/DesignPanel.tsx` — added the 4th pill group (`Routing`) with a BETA chip. The pill is hidden entirely when the current board doesn't support modulation (filtered via `canBoardModulate(boardId)`); state-rescue logic uses `useEffect` rather than setState-in-render.
+- `apps/web/components/editor/layerstack/LayerStack.tsx` — no changes on main but the modulation work consumes the existing ModulatorRow viz kind convention (the SmoothSwing plate prototype from 2026-04-20).
+- `packages/engine/package.json` — added `peggy@^4.2.0` runtime dependency (~25KB gzipped).
+- `apps/web/lib/boardProfiles.ts` — cleanup pass by Agent P5 replaced 28 lines of inline-mirrored `BuiltInModulatorId` / `BuiltInFnId` unions with direct imports from `@kyberstation/engine` now that the top-level engine barrel re-exports the modulation subsystem. 21 drift-sentinel `.toContain` string checks in the tests replaced with compile-time assignment assertions.
+- `packages/presets/src/index.ts` — top-level barrel now re-exports `MODULATION_RECIPES` + friends.
+
+### Fixed
+
+- **Infinite render loop in ROUTING panel.** `useBladeStore((s) => s.config.modulation?.bindings ?? [])` returned a new empty-array reference every render, triggering Zustand's store-rerender loop. Fixed with a module-level `EMPTY_BINDINGS: readonly SerializedBinding[] = []` constant as the fallback.
+- **`setState` called during render** in DesignPanel's board-gating rescue. Moved the `setActiveGroup('appearance')` call into a `useEffect` hook.
+- **Card-preview dev page `config.name` coercion** — `string | undefined` → `string` via `?? 'Untitled'` fallback (surfaced during modulation CI run; pre-existing issue from the parallel Kyber Glyph v2 session's dev page).
+
+### Tests (+386)
+
+| Package | Before v0.14.0 | After v0.14.0 |
+|---|---|---|
+| engine | 513 | **714** |
+| codegen | 1,323 | **1,347** |
+| web | 749 | **890** |
+| presets | 9 | **29** |
+
+Full workspace typecheck clean. CI green on every push.
+
 ## [0.11.2] — 2026-04-17
 
 ### Changed
