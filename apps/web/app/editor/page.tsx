@@ -18,15 +18,26 @@ const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
 // `ActiveTab` in `uiStore.ts`; a runtime guard is used so unknown values are
 // ignored instead of corrupting the store.
 const VALID_TABS: readonly ActiveTab[] = [
-  'design',
-  'dynamics',
-  'audio',
   'gallery',
+  'design',
+  'audio',
   'output',
 ] as const;
 
+// OV6 (2026-04-21): Dynamics was absorbed into Design. Any legacy
+// `?tab=dynamics` deep-link should land on Design so old bookmarks /
+// marketing links keep working.
+const TAB_ALIASES: Readonly<Record<string, ActiveTab>> = {
+  dynamics: 'design',
+};
+
 function isValidTab(v: string): v is ActiveTab {
   return (VALID_TABS as readonly string[]).includes(v);
+}
+
+function resolveTab(v: string): ActiveTab | null {
+  if (isValidTab(v)) return v;
+  return TAB_ALIASES[v] ?? null;
 }
 
 /**
@@ -75,8 +86,17 @@ function EditorPageContent() {
     const rawTab = searchParams.get('tab');
     if (!rawTab) return;
     const normalized = rawTab.toLowerCase();
-    if (isValidTab(normalized)) {
-      useUIStore.getState().setActiveTab(normalized);
+    // W7 (2026-04-22): `?tab=gallery` used to flip the editor's inner
+    // tab bar. Gallery is now a top-level route (/gallery), so legacy
+    // deep-links redirect there instead of nudging the editor into a
+    // tab that no longer exists.
+    if (normalized === 'gallery') {
+      router.replace('/gallery', { scroll: false });
+      return;
+    }
+    const resolved = resolveTab(normalized);
+    if (resolved) {
+      useUIStore.getState().setActiveTab(resolved);
     }
     // Strip the param whether valid or not — prevents stale values from
     // re-firing on refresh. Read from `window.location.search` rather than

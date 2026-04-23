@@ -147,18 +147,11 @@ against the design brief.
 
 ## Follow-up tasks (spawn-ready)
 
-When one of the adoption items above is ready to land, it's scoped
-enough for an independent session. Use these as prompts:
+**All three items below shipped in the 2026-04-20 workbench realignment pass** (W1 + W2a + W4 in `docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md`; commits `d744ff5`, `a791150`, `6207b8a`, `b02ee81`). Left here for reference but no longer actionable.
 
-- "Add `--status-magenta` + `--status-white` tokens + thread through
-  StatusSignal. Reference: `docs/design-reference/2026-04-19-claude-design/tokens.css`
-  lines 37-43 (`--status-*` palette)."
-- "Build `<CommandPalette>` primitive with Cmd+K shortcut. Start with
-  ~20 editor-action commands. Reference:
-  `docs/design-reference/2026-04-19-claude-design/src/palette.jsx` for
-  the visual shape and `workbench.css:923-1050` for the tokens."
-- "Add density toggle (compact / default / airy) to accessibility
-  settings. Reference: `tokens.css:56-59` + `tokens.css:67-69`."
+- ✅ **Shipped** — `--status-magenta` + `--status-white` tokens + StatusSignal threading (W1).
+- ✅ **Shipped** — `<CommandPalette>` primitive with Cmd+K + 23 editor-action commands across 5 groups (W2a + W4).
+- ✅ **Shipped** — Density toggle (SSL / Ableton / Mutable) in SettingsModal accessibility section (W1). `ModulatorRow` consumes `var(--row-h)`; `LayerRow` + `StylePanel` row consumption still pending per `WORKBENCH_UX_REALIGNMENT §6b`.
 
 ## Decision record
 

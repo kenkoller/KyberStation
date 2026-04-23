@@ -248,9 +248,13 @@ export class CrystalAnimationController {
           // flat baseline
           return;
         }
-        // 0.6 Hz sine pulse, 0.9..1.1 amplitude — audible in glow
-        const phase = (this.idleTimeMs / 1000) * 2 * Math.PI * 0.6;
-        state.glowIntensity *= 1.0 + 0.08 * Math.sin(phase);
+        // Two superposed sines so the idle pulse reads as "alive" rather
+        // than metronomic: 0.6 Hz primary + 0.17 Hz slow drift. Peak-to-
+        // peak stays under ±0.11 of the base so it doesn't clip bloom.
+        const t = this.idleTimeMs / 1000;
+        const primary = Math.sin(t * 2 * Math.PI * 0.6) * 0.08;
+        const drift = Math.sin(t * 2 * Math.PI * 0.17 + 1.3) * 0.03;
+        state.glowIntensity *= 1.0 + primary + drift;
         break;
       }
 
@@ -265,12 +269,14 @@ export class CrystalAnimationController {
       }
 
       case 'clash': {
-        // Intensity spike: 1 → 3.5 → 1 via easeOut on first half, easeIn on second
+        // Intensity spike: 1 → ~4 → 1 via easeOut on first half, easeIn on
+        // second. Multiplier tuned against the lower post-Phase-2 internal
+        // light base (0.38) so the peak still reads as a hard flash.
         const half = prog < 0.5 ? prog * 2 : (1 - prog) * 2;
         const eased = easeOutCubic(half);
-        state.glowIntensity *= 1.0 + 2.5 * eased;
-        // slight scale kick
-        state.scale *= 1.0 + 0.04 * eased;
+        state.glowIntensity *= 1.0 + 3.0 * eased;
+        state.scale *= 1.0 + 0.05 * eased;
+        state.fleckOpacity = Math.max(state.fleckOpacity, 0.45 + 0.35 * eased);
         break;
       }
 
@@ -377,8 +383,17 @@ export class CrystalAnimationController {
       }
 
       case 'lockup': {
-        // Held bright, pinned at 2.2x
-        state.glowIntensity = Math.max(state.glowIntensity, 2.2);
+        // Held bright with a fast micro-flicker so the "hold" reads as
+        // energy rather than a static override. Pinned at 2.8x with
+        // ±0.15 chatter at 12 Hz.
+        if (this.respectReducedMotion && this.prefersReducedMotion) {
+          state.glowIntensity = Math.max(state.glowIntensity, 2.8);
+          return;
+        }
+        const phase = (t.elapsed / 1000) * 2 * Math.PI * 12;
+        const chatter = 0.15 * Math.sin(phase);
+        state.glowIntensity = Math.max(state.glowIntensity, 2.8 + chatter);
+        state.veinOpacity = Math.max(state.veinOpacity, 0.3 + 0.2 * (0.5 + 0.5 * Math.sin(phase)));
         break;
       }
     }

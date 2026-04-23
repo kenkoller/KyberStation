@@ -1,152 +1,117 @@
-// ─── Share Pack — Card Snapshot ───
+// ─── Share Pack — Card Snapshot Orchestrator ───
 //
-// Renders the Kyber Crystal to a PNG blob positioned as the
-// bottom-right accent of a 1200×675 Saber Card. This ships the crystal
-// portion of Share Pack; the full card renderer (hilt + blade hero)
-// lands in its own sprint.
+// Renders the shareable Saber Card as a PNG blob. The actual drawing
+// is delegated to modular per-region drawers in `./card/` — this file
+// only composes them in z-order against a layout + theme.
 //
-// The snapshot takes the config + crystal name and returns a Blob the
-// caller can download or send through a share-sheet API.
+// Module split:
+//   card/cardTypes.ts      — CardContext, CardLayout, CardTheme, Chip, Ctx
+//   card/cardLayout.ts     — DEFAULT_LAYOUT (+ agent D: OG/Instagram/Story)
+//   card/cardTheme.ts      — DEFAULT_THEME (+ agent E: Light/Imperial/Jedi/Space)
+//   card/drawBackdrop.ts   — background + HUD chrome (agent C)
+//   card/drawHeader.ts     — top brand band
+//   card/drawBlade.ts      — horizontal blade with bloom + tip cone
+//   card/drawHilt.ts       — hilt (agent A: real SVG via HiltRenderer)
+//   card/drawMetadata.ts   — title + spec + glyph + chips (agent B)
+//   card/chips.ts          — chip drawing helpers (agent B)
+//   card/drawQr.ts         — QR corner panel
+//   card/drawFooter.ts     — bottom band with repo link + date
+//   card/canvasUtils.ts    — shared drawing helpers
 
-import type { BladeConfig } from '@kyberstation/engine';
-import { CrystalRenderer } from '@/lib/crystal';
+import { createQrSurface } from '@/lib/crystal/qrSurface';
+import { DEFAULT_LAYOUT } from './card/cardLayout';
+import { DEFAULT_THEME } from './card/cardTheme';
+import { drawBackdrop } from './card/drawBackdrop';
+import { drawHeader } from './card/drawHeader';
+import { drawBlade } from './card/drawBlade';
+import { drawHilt } from './card/drawHilt';
+import { drawMetadata } from './card/drawMetadata';
+import { drawQr } from './card/drawQr';
+import { drawFooter } from './card/drawFooter';
+import type { CardContext, CardSnapshotOptions, Ctx } from './card/cardTypes';
 
-// ─── Card constants ───
+// ─── Public re-exports ───
 
-export const CARD_WIDTH = 1200;
-export const CARD_HEIGHT = 675;
+export type {
+  CardSnapshotOptions,
+  CardLayout,
+  CardTheme,
+  Chip,
+} from './card/cardTypes';
+export {
+  DEFAULT_LAYOUT,
+  OG_LAYOUT,
+  INSTAGRAM_LAYOUT,
+  STORY_LAYOUT,
+  LAYOUT_CATALOG,
+  getLayout,
+} from './card/cardLayout';
+export {
+  DEFAULT_THEME,
+  LIGHT_THEME,
+  IMPERIAL_THEME,
+  JEDI_THEME,
+  SPACE_THEME,
+  THEME_CATALOG,
+  getTheme,
+} from './card/cardTheme';
 
-/** Crystal accent occupies the bottom-right ~8% of the card. */
-const CRYSTAL_SIZE = 180;
-const CRYSTAL_MARGIN = 32;
-
-// ─── Snapshot options ───
-
-export interface CardSnapshotOptions {
-  config: BladeConfig;
-  /** Glyph string for the QR embedded inside the crystal. */
-  glyph: string;
-  /** Optional public crystal name printed above the crystal accent. */
-  crystalName?: string;
-  /** Optional preset name printed in the label strip. */
-  presetName?: string;
-  /** Override the canvas size (for smaller previews). */
-  width?: number;
-  height?: number;
-}
+/** Canonical card dimensions. Exposed for callers that need to size
+ *  containers before invoking the render (e.g. modal previews). */
+export const CARD_WIDTH = DEFAULT_LAYOUT.width;
+export const CARD_HEIGHT = DEFAULT_LAYOUT.height;
 
 // ─── Main ───
 
-/**
- * Render a Saber Card-sized PNG with the crystal in the bottom-right.
- * The hilt + blade hero area is intentionally left as a placeholder
- * rectangle labelled "Blade render — see Share Pack" until the Share
- * Pack card renderer lands. The crystal portion IS shipped.
- *
- * Returns a PNG Blob.
- */
 export async function renderCardSnapshot(options: CardSnapshotOptions): Promise<Blob> {
-  const width = options.width ?? CARD_WIDTH;
-  const height = options.height ?? CARD_HEIGHT;
+  const layout = options.layout ?? DEFAULT_LAYOUT;
+  const theme = options.theme ?? DEFAULT_THEME;
+  const outputWidth = options.width ?? layout.width;
+  const outputHeight = options.height ?? layout.height;
+  const scale = outputWidth / layout.width;
 
-  // 1. Render the crystal to an off-screen canvas via CrystalRenderer
-  const renderer = new CrystalRenderer({
-    config: options.config,
-    glyph: options.glyph,
-    qrEnabled: true,
+  // QR surface — flat canvas stamped onto the card
+  const qr = await createQrSurface(options.glyph, {
+    canvasSize: 512,
+    errorCorrectionLevel: 'Q',
   });
-  // Let the renderer initialise (QR is async)
-  await new Promise<void>((r) => setTimeout(r, 100));
-  const crystalBlob = await renderer.snapshot(CRYSTAL_SIZE * 2); // 2x for retina
-  renderer.dispose();
 
-  // 2. Composite onto the Saber Card canvas
   const canvas =
     typeof OffscreenCanvas !== 'undefined'
-      ? (new OffscreenCanvas(width, height) as unknown as HTMLCanvasElement)
+      ? (new OffscreenCanvas(outputWidth, outputHeight) as unknown as HTMLCanvasElement)
       : document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
 
-  const ctx = canvas.getContext('2d') as
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D
-    | null;
+  const ctx = canvas.getContext('2d') as Ctx | null;
   if (!ctx) throw new Error('canvas context unavailable');
 
-  // Backdrop
-  const grad = ctx.createRadialGradient(
-    width * 0.5,
-    height * 0.45,
-    50,
-    width * 0.5,
-    height * 0.45,
-    width * 0.7,
-  );
-  grad.addColorStop(0, '#1a1f2e');
-  grad.addColorStop(0.7, '#0a0f1a');
-  grad.addColorStop(1, '#05060a');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, width, height);
+  ctx.scale(scale, scale);
 
-  // Header band
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-  ctx.fillRect(0, 0, width, 48);
-  ctx.fillStyle = '#a8c6ff';
-  ctx.font = "600 16px ui-monospace, 'SF Mono', Menlo, monospace";
-  ctx.textBaseline = 'middle';
-  ctx.fillText('◈ KYBERSTATION   ARCHIVE DATA CARD', 32, 24);
+  const card: CardContext = {
+    ctx,
+    options,
+    layout,
+    theme,
+    qrCanvas: qr.canvas,
+  };
 
-  // Hero placeholder — full card renderer will replace this in Share
-  // Pack proper. Until then, we draw a subtle placeholder so the card
-  // is self-describing about what's still to come.
-  ctx.strokeStyle = 'rgba(168, 198, 255, 0.2)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(48, 72, width - 96, height - 200);
-  ctx.fillStyle = 'rgba(168, 198, 255, 0.35)';
-  ctx.font = "500 14px ui-monospace, monospace";
-  ctx.textAlign = 'center';
-  ctx.fillText(
-    'Hilt + blade render — rendered via Share Pack',
-    width / 2,
-    height / 2 - 80,
-  );
-  ctx.textAlign = 'left';
+  // Z-order matters: backdrop → header → blade → hilt (covers emitter
+  // end of blade) → metadata → QR → footer.
+  drawBackdrop(card);
+  drawHeader(card);
+  drawBlade(card);
+  await drawHilt(card);
+  drawMetadata(card);
+  drawQr(card);
+  drawFooter(card);
 
-  // Label strip
-  const labelY = height - 110;
-  ctx.fillStyle = '#e8efff';
-  ctx.font = "600 18px ui-monospace, monospace";
-  const label = options.presetName && options.crystalName
-    ? `"${options.presetName}" — "${options.crystalName}"`
-    : options.crystalName
-      ? `"${options.crystalName}"`
-      : options.presetName
-        ? `"${options.presetName}"`
-        : options.config.name ?? 'Untitled blade';
-  ctx.fillText(label, 48, labelY);
+  qr.texture.dispose();
 
-  const spec = `${capitalise(options.config.style)} · ${colourName(options.config.baseColor)} · ${options.config.ignition} ignition ${options.config.ignitionMs}ms`;
-  ctx.fillStyle = 'rgba(168, 198, 255, 0.75)';
-  ctx.font = "400 13px ui-monospace, monospace";
-  ctx.fillText(spec, 48, labelY + 26);
-
-  ctx.fillStyle = 'rgba(168, 198, 255, 0.5)';
-  ctx.fillText(options.glyph, 48, labelY + 50);
-
-  // Footer
-  ctx.fillStyle = 'rgba(168, 198, 255, 0.4)';
-  ctx.font = "400 11px ui-monospace, monospace";
-  ctx.fillText('github.com/kenkoller/KyberStation', 48, height - 24);
-
-  // Crystal accent (bottom-right)
-  const crystalImg = await blobToImage(crystalBlob);
-  const crystalX = width - CRYSTAL_SIZE - CRYSTAL_MARGIN;
-  const crystalY = height - CRYSTAL_SIZE - CRYSTAL_MARGIN;
-  ctx.drawImage(crystalImg, crystalX, crystalY, CRYSTAL_SIZE, CRYSTAL_SIZE);
-
-  // 3. Return as Blob
-  const maybeOffscreen = canvas as unknown as { convertToBlob?: (opts: { type: string }) => Promise<Blob> };
+  // Return as PNG blob (OffscreenCanvas uses convertToBlob, HTMLCanvasElement uses toBlob).
+  const maybeOffscreen = canvas as unknown as {
+    convertToBlob?: (opts: { type: string }) => Promise<Blob>;
+  };
   if (typeof maybeOffscreen.convertToBlob === 'function') {
     return await maybeOffscreen.convertToBlob({ type: 'image/png' });
   }
@@ -156,34 +121,5 @@ export async function renderCardSnapshot(options: CardSnapshotOptions): Promise<
       'image/png',
       1.0,
     );
-  });
-}
-
-// ─── Helpers ───
-
-function capitalise(s: string): string {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-}
-
-function colourName(c: { r: number; g: number; b: number }): string {
-  // Cheap label — the real one comes from `apps/web/lib/saberColorNames.ts`
-  // (or Session B's namingMath replacement). We avoid the import here to
-  // keep this module self-contained.
-  const { r, g, b } = c;
-  if (r > 200 && g < 80 && b < 80) return 'Crimson';
-  if (r < 80 && g > 180 && b < 100) return 'Jade';
-  if (r < 80 && g < 180 && b > 200) return 'Azure';
-  if (r > 200 && g > 180 && b < 100) return 'Saffron';
-  if (r > 180 && g < 80 && b > 180) return 'Amethyst';
-  if (r > 200 && g > 200 && b > 200) return 'Pure';
-  return `RGB(${r},${g},${b})`;
-}
-
-function blobToImage(blob: Blob): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(err);
-    img.src = URL.createObjectURL(blob);
   });
 }

@@ -5,6 +5,7 @@ import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
+import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
 
 interface PixelStripPanelProps {
   engineRef: React.MutableRefObject<BladeEngine | null>;
@@ -22,6 +23,7 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
   const ledCount = useBladeStore((s) => s.config.ledCount);
   const brightness = useUIStore((s) => s.brightness);
+  const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
   // Resize observer to match canvas to container
@@ -72,12 +74,20 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     ctx.fillStyle = '#030305';
     ctx.fillRect(0, 0, cw, ch);
 
-    // Layout: horizontal strip spanning full width
-    const padX = 4 * dpr;
+    // Layout: horizontal strip anchored to the blade's rendered extent in
+    // BladeCanvas (OV2). `computeBladeRenderMetrics` mirrors BladeCanvas's
+    // auto-fit geometry so the per-LED strip under a 24" blade renders at
+    // ~55% of container width, not 100%. Container width comes from the
+    // ResizeObserver in CSS pixels; the metrics helper is CSS-pixel-native,
+    // so we multiply by dpr once to convert to canvas space.
     const padY = 2 * dpr;
-    const stripLeft = padX;
-    const stripRight = cw - padX;
-    const stripW = stripRight - stripLeft;
+    const metrics = computeBladeRenderMetrics({
+      containerWidthPx: w,
+      ledCount: leds,
+    });
+    const stripLeft = metrics.bladeLeftPx * dpr;
+    const stripW = metrics.bladeWidthPx * dpr;
+    const stripRight = stripLeft + stripW;
     const stripTopY = padY;
     const stripH = ch - padY * 2;
     const cellW = stripW / leds;
@@ -123,7 +133,14 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${totalA}A  bri:${avgBri}%`, stripRight - 3 * dpr, ch / 2);
-  }, { maxFps: reducedMotion ? 2 : undefined });
+  }, {
+    // W5 pause model: freeze on any pause scope (full AND partial).
+    // Partial-pause keeps the realistic blade canvas alive, but the
+    // LED pixel strip is part of the analysis chrome and should
+    // freeze so the user can read off specific pixel values.
+    enabled: !isPaused,
+    maxFps: reducedMotion ? 2 : undefined,
+  });
 
   return (
     <div ref={containerRef} className="w-full h-full">

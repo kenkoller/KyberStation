@@ -13,7 +13,6 @@ import { TabContentSkeleton } from '@/components/shared/Skeleton';
 import { StylePanel } from '@/components/editor/StylePanel';
 import { ColorPanel } from '@/components/editor/ColorPanel';
 import { ParameterBank } from '@/components/editor/ParameterBank';
-import { Randomizer } from '@/components/editor/Randomizer';
 import { LayerStack } from '@/components/editor/LayerStack';
 import { OLEDPreview } from '@/components/editor/OLEDPreview';
 import { ThemePickerPanel } from '@/components/editor/ThemePickerPanel';
@@ -40,8 +39,8 @@ import { FlashPanel } from '@/components/editor/FlashPanel';
 import { CompatibilityPanel } from '@/components/editor/CompatibilityPanel';
 import { OLEDEditor } from '@/components/editor/OLEDEditor';
 import { GradientBuilder } from '@/components/editor/GradientBuilder';
-import { ComparisonView } from '@/components/editor/ComparisonView';
 import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
+import { IgnitionRetractionPanel } from '@/components/editor/IgnitionRetractionPanel';
 // CrystalPanel stays statically imported — the Three.js payload is
 // already dynamic inside the panel (apps/web/components/editor/CrystalPanel.tsx
 // wraps `KyberCrystal` via next/dynamic), which carries the real perf
@@ -51,7 +50,6 @@ import { OutputWorkflowGuide } from '@/components/editor/OutputWorkflowGuide';
 // pattern in a follow-up. Originally flagged in the 2026-04-19 perf
 // audit §2.
 import { CrystalPanel } from '@/components/editor/CrystalPanel';
-import { useBladeStore } from '@/stores/bladeStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 
@@ -62,17 +60,6 @@ function ComingSoon({ label }: { label: string }) {
     <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
       <span className="text-ui-sm text-text-muted font-mono">{label}</span>
       <span className="text-ui-xs text-text-muted/50">Coming soon</span>
-    </div>
-  );
-}
-
-// ─── Font preview placeholder ─────────────────────────────────────────────────
-
-function FontPreviewPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 text-center">
-      <span className="text-ui-sm text-text-muted font-mono">Font Preview</span>
-      <span className="text-ui-xs text-text-muted/50">Select a font from the library to preview</span>
     </div>
   );
 }
@@ -119,143 +106,6 @@ function ThemePickerPanelConnected() {
       activeThemeId={canvasTheme}
       onSelectTheme={setCanvasTheme}
     />
-  );
-}
-
-// ─── Ignition / Retraction focused panel ─────────────────────────────────────
-//
-// Renders only the ignition + retraction sections so the ignition-retraction
-// panel slot has a distinct view instead of duplicating the full EffectPanel.
-
-const IGNITION_STYLES_IR = [
-  { id: 'standard',     label: 'Standard',    desc: 'Classic linear ignition' },
-  { id: 'scroll',       label: 'Scroll',       desc: 'Scrolling pixel fill' },
-  { id: 'spark',        label: 'Spark',        desc: 'Crackling spark ignition' },
-  { id: 'center',       label: 'Center Out',   desc: 'Ignites from center' },
-  { id: 'wipe',         label: 'Wipe',         desc: 'Soft wipe reveal' },
-  { id: 'stutter',      label: 'Stutter',      desc: 'Flickering unstable ignition' },
-  { id: 'glitch',       label: 'Glitch',       desc: 'Digital glitch effect' },
-  { id: 'twist',        label: 'Twist',        desc: 'Spiral ignition driven by twist' },
-  { id: 'swing',        label: 'Swing',        desc: 'Speed-reactive swing ignition' },
-  { id: 'stab',         label: 'Stab',         desc: 'Rapid center-out burst' },
-  { id: 'crackle',      label: 'Crackle',      desc: 'Random segment flicker fill' },
-  { id: 'fracture',     label: 'Fracture',     desc: 'Radiating crack points' },
-  { id: 'flash-fill',   label: 'Flash Fill',   desc: 'White flash then color wipe' },
-  { id: 'pulse-wave',   label: 'Pulse Wave',   desc: 'Sequential building waves' },
-  { id: 'drip-up',      label: 'Drip Up',      desc: 'Fluid upward flow' },
-  { id: 'hyperspace',   label: 'Hyperspace',   desc: 'Streaking star-line ignition' },
-  { id: 'summon',       label: 'Summon',       desc: 'Force-pull ignition' },
-  { id: 'seismic',      label: 'Seismic',      desc: 'Ground-shake ripple ignition' },
-  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
-];
-
-const RETRACTION_STYLES_IR = [
-  { id: 'standard',     label: 'Standard',    desc: 'Linear retraction' },
-  { id: 'scroll',       label: 'Scroll',       desc: 'Scrolling retract' },
-  { id: 'fadeout',      label: 'Fade Out',     desc: 'Fading retraction' },
-  { id: 'center',       label: 'Center In',    desc: 'Retracts to center' },
-  { id: 'shatter',      label: 'Shatter',      desc: 'Shattering retraction' },
-  { id: 'dissolve',     label: 'Dissolve',     desc: 'Random shuffle turn-off' },
-  { id: 'flickerOut',   label: 'Flicker Out',  desc: 'Tip-to-base flicker band' },
-  { id: 'unravel',      label: 'Unravel',      desc: 'Sinusoidal thread unwind' },
-  { id: 'drain',        label: 'Drain',        desc: 'Gravity drain with meniscus' },
-  { id: 'implode',      label: 'Implode',      desc: 'Collapsing inward retraction' },
-  { id: 'evaporate',    label: 'Evaporate',    desc: 'Fading particle evaporation' },
-  { id: 'spaghettify',  label: 'Spaghettify',  desc: 'Stretching gravitational pull' },
-  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
-];
-
-function IgnitionRetractionPanel() {
-  const config = useBladeStore((s) => s.config);
-  const setIgnition = useBladeStore((s) => s.setIgnition);
-  const setRetraction = useBladeStore((s) => s.setRetraction);
-  const updateConfig = useBladeStore((s) => s.updateConfig);
-
-  return (
-    <div className="space-y-4">
-      {/* Ignition */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
-          Ignition Style
-          <HelpTooltip
-            text="How the blade extends when activated. Controls the visual transition from off to on."
-            proffie="InOutTrL<TrWipe<300>>"
-          />
-        </h3>
-        <div className="grid grid-cols-2 gap-1.5">
-          {IGNITION_STYLES_IR.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setIgnition(style.id)}
-              title={style.desc}
-              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
-                config.ignition === style.id
-                  ? 'bg-accent-dim border-accent-border text-accent'
-                  : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
-              }`}
-            >
-              {style.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-ui-xs text-text-muted w-24 shrink-0">Ignition Speed</span>
-          <input
-            type="range"
-            min={100}
-            max={2000}
-            step={50}
-            value={(config.ignitionMs as number | undefined) ?? 300}
-            onChange={(e) => updateConfig({ ignitionMs: Number(e.target.value) })}
-            aria-label="Ignition speed in milliseconds"
-            className="flex-1"
-          />
-          <span className="text-ui-xs text-text-muted font-mono w-12 text-right">
-            {(config.ignitionMs as number | undefined) ?? 300}ms
-          </span>
-        </div>
-      </div>
-
-      {/* Retraction */}
-      <div>
-        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
-          Retraction Style
-          <HelpTooltip text="How the blade retracts when deactivated." proffie="InOutTrL<TrWipe<500>>" />
-        </h3>
-        <div className="grid grid-cols-2 gap-1.5">
-          {RETRACTION_STYLES_IR.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setRetraction(style.id)}
-              title={style.desc}
-              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
-                config.retraction === style.id
-                  ? 'bg-accent-dim border-accent-border text-accent'
-                  : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
-              }`}
-            >
-              {style.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-ui-xs text-text-muted w-24 shrink-0">Retraction Speed</span>
-          <input
-            type="range"
-            min={100}
-            max={3000}
-            step={50}
-            value={(config.retractionMs as number | undefined) ?? 500}
-            onChange={(e) => updateConfig({ retractionMs: Number(e.target.value) })}
-            aria-label="Retraction speed in milliseconds"
-            className="flex-1"
-          />
-          <span className="text-ui-xs text-text-muted font-mono w-12 text-right">
-            {(config.retractionMs as number | undefined) ?? 500}ms
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -330,8 +180,12 @@ function renderPanel(panelId: string): React.ReactNode {
       return <ColorPanel />;
     case 'parameters':
       return <ParameterBank />;
-    case 'randomizer':
-      return <Randomizer />;
+    // Legacy: `randomizer` was a dockable Design-tab panel until OV3
+    // (2026-04-21). The randomizer is now surfaced as the SURPRISE ME
+    // card in the Gallery tab marquee. Any persisted user layout that
+    // still lists 'randomizer' in its column arrangement will fall
+    // through to ComingSoon (harmless placeholder); users can drop
+    // that entry at will.
     case 'my-crystal':
       return <CrystalPanel />;
     case 'layer-stack':
@@ -356,18 +210,11 @@ function renderPanel(panelId: string): React.ReactNode {
       return <GestureControlPanel />;
     case 'motion-simulation':
       return <MotionSimPanel />;
-    case 'gesture-config':
-      return <GestureControlPanel />;
-    case 'comparison-view':
-      return <ComparisonView />;
 
     // ── Audio ──
     case 'font-library':
       // Full font browser: library scanner, font list, load-to-active
       return <SoundFontPanel />;
-    case 'font-preview':
-      // Placeholder until SoundFontPanel gains a dedicated preview-only mode
-      return <FontPreviewPlaceholder />;
     case 'mixer-eq':
       return <AudioPanel />;
     case 'effect-presets':
@@ -377,15 +224,6 @@ function renderPanel(panelId: string): React.ReactNode {
     case 'gallery-browser':
       // Unified gallery with Built-in / My Presets / Community sub-tabs
       return <PresetGallery />;
-    case 'builtin-presets':
-      // Legacy slot — redirects to the unified gallery on the built-in tab
-      return <PresetGallery initialTab="gallery" />;
-    case 'my-presets':
-      // Legacy slot — redirects to the unified gallery on the my-presets tab
-      return <PresetGallery initialTab="my-presets" />;
-    case 'community-gallery':
-      // Legacy slot — redirects to the unified gallery on the community tab
-      return <PresetGallery initialTab="community" />;
     case 'preset-detail':
       // Reads selected preset from presetDetailStore — stays in sync with
       // any click-to-select action inside PresetGallery automatically.

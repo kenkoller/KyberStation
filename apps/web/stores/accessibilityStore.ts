@@ -20,6 +20,27 @@ export type ColorblindMode = 'none' | 'deuteranopia' | 'protanopia' | 'tritanopi
 export type DensityMode = 'ssl' | 'ableton' | 'mutable';
 
 /**
+ * Graphics quality preset (W3 2026-04-22). Drives the global FPS cap
+ * threaded through useAnimationFrame and future quality flags
+ * (bloom on/off, Crystal renderer on/off, diffusion sample count).
+ *
+ *   high   — no cap (subject to reducedMotion a11y throttle); all
+ *            effects on. Default on desktop.
+ *   medium — 45fps cap; effects on. Honors the AppPerfStrip "Drop
+ *            to Medium" hover action.
+ *   low    — 30fps cap; heavy canvases (Three.js Crystal, bloom
+ *            layers) suppressed downstream. Honors "Drop to Low GFX".
+ */
+export type GraphicsQuality = 'high' | 'medium' | 'low';
+
+/** Per-tier animation-frame cap. `undefined` = uncapped. */
+export const GRAPHICS_FPS_CAP: Record<GraphicsQuality, number | undefined> = {
+  high: undefined,
+  medium: 45,
+  low: 30,
+};
+
+/**
  * Auto-release config for sustained effects (Lockup, Drag, Melt,
  * Lightning, Force). When `enabled`, triggering a sustained effect
  * schedules a release after `seconds` — useful for demo / showcase
@@ -40,6 +61,7 @@ interface AccessibilityState {
   fontScale: number; // 1.0 = default, range 0.8–1.5
   density: DensityMode;
   effectAutoRelease: EffectAutoRelease;
+  graphicsQuality: GraphicsQuality;
 
   setHighContrast: (on: boolean) => void;
   setColorblindMode: (mode: ColorblindMode) => void;
@@ -47,6 +69,7 @@ interface AccessibilityState {
   setFontScale: (scale: number) => void;
   setDensity: (density: DensityMode) => void;
   setEffectAutoRelease: (config: Partial<EffectAutoRelease>) => void;
+  setGraphicsQuality: (quality: GraphicsQuality) => void;
   syncReducedMotionFromOS: () => void;
   reset: () => void;
 }
@@ -61,7 +84,7 @@ function loadFromStorage(): Partial<AccessibilityState> {
   return {};
 }
 
-function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease'>) {
+function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality'>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
@@ -75,9 +98,23 @@ const defaults = {
   fontScale: 1,
   density: 'ableton' as DensityMode,
   effectAutoRelease: { enabled: false, seconds: 4 } as EffectAutoRelease,
+  graphicsQuality: 'high' as GraphicsQuality,
 };
 
 const stored = loadFromStorage();
+
+function persist(s: AccessibilityState) {
+  saveToStorage({
+    highContrast: s.highContrast,
+    colorblindMode: s.colorblindMode,
+    reducedMotion: s.reducedMotion,
+    hasExplicitMotionPref: s.hasExplicitMotionPref,
+    fontScale: s.fontScale,
+    density: s.density,
+    effectAutoRelease: s.effectAutoRelease,
+    graphicsQuality: s.graphicsQuality,
+  });
+}
 
 export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   highContrast: stored.highContrast ?? defaults.highContrast,
@@ -87,52 +124,49 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   fontScale: stored.fontScale ?? defaults.fontScale,
   density: stored.density ?? defaults.density,
   effectAutoRelease: stored.effectAutoRelease ?? defaults.effectAutoRelease,
+  graphicsQuality: stored.graphicsQuality ?? defaults.graphicsQuality,
 
   setHighContrast: (highContrast) => {
     set({ highContrast });
-    const s = get();
-    saveToStorage({ highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density, effectAutoRelease: s.effectAutoRelease });
+    persist(get());
   },
 
   setColorblindMode: (colorblindMode) => {
     set({ colorblindMode });
-    const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density, effectAutoRelease: s.effectAutoRelease });
+    persist(get());
   },
 
   setReducedMotion: (reducedMotion) => {
     set({ reducedMotion, hasExplicitMotionPref: true });
-    const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion, hasExplicitMotionPref: true, fontScale: s.fontScale, density: s.density, effectAutoRelease: s.effectAutoRelease });
+    persist(get());
   },
 
   setFontScale: (fontScale) => {
     const clamped = Math.max(0.8, Math.min(1.5, fontScale));
     set({ fontScale: clamped });
-    const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: clamped, density: s.density, effectAutoRelease: s.effectAutoRelease });
+    persist(get());
   },
 
   setDensity: (density) => {
     set({ density });
-    const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density, effectAutoRelease: s.effectAutoRelease });
+    persist(get());
   },
 
   setEffectAutoRelease: (config) => {
     const current = get().effectAutoRelease;
     const next: EffectAutoRelease = {
       enabled: config.enabled ?? current.enabled,
-      // Clamp to [1, 30] so auto-release can't be instantaneous or
-      // indefinitely long. 30s is past reasonable demo cadence; 1s is
-      // the minimum that still allows a listener to register the effect.
       seconds: config.seconds !== undefined
         ? Math.max(1, Math.min(30, config.seconds))
         : current.seconds,
     };
     set({ effectAutoRelease: next });
-    const s = get();
-    saveToStorage({ highContrast: s.highContrast, colorblindMode: s.colorblindMode, reducedMotion: s.reducedMotion, hasExplicitMotionPref: s.hasExplicitMotionPref, fontScale: s.fontScale, density: s.density, effectAutoRelease: next });
+    persist(get());
+  },
+
+  setGraphicsQuality: (graphicsQuality) => {
+    set({ graphicsQuality });
+    persist(get());
   },
 
   syncReducedMotionFromOS: () => {

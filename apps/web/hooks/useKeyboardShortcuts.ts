@@ -5,17 +5,23 @@ import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { useUIStore, type ActiveTab } from '@/stores/uiStore';
 
 /**
- * `⌘1` … `⌘5` / `Ctrl+1` … `Ctrl+5` — switch tabs in canonical order.
- * This mapping must mirror the `TAB_CANONICAL_KBD` hints rendered in
- * `WorkbenchLayout.tsx` so the visible kbd chip matches what the key
- * actually does. Changing one side without the other is a UX regression.
+ * `⌘1` … `⌘4` / `Ctrl+1` … `Ctrl+4` — switch tabs in header-nav order.
+ * OV6 (2026-04-21) collapsed Dynamics → Design; 2026-04-22 (post-W7)
+ * promoted Design / Audio / Output out of the retired editor tab bar
+ * up to the header nav alongside Gallery. ⌘1 (Gallery) now route-
+ * pushes to `/gallery` rather than flipping `activeTab`. ⌘5 stays
+ * free and is reserved for OV8's STATE-mode takeover toggle (proposal
+ * §12b.4). The digits here mirror the header-link order in
+ * WorkbenchLayout.tsx.
  */
+// W10 (2026-04-22) header reorder: Design → Audio → Output → Gallery.
+// Digit shortcuts mirror the visible header-link order so muscle memory
+// follows the layout.
 const TAB_BY_DIGIT: Record<string, ActiveTab> = {
   '1': 'design',
-  '2': 'dynamics',
-  '3': 'audio',
+  '2': 'audio',
+  '3': 'output',
   '4': 'gallery',
-  '5': 'output',
 };
 
 export interface KeyboardShortcutHandlers {
@@ -52,15 +58,46 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       // Don't trigger if user is typing in an input / textarea / contenteditable
       if (isTypingTarget(e.target)) return;
 
-      // ── ⌘1–⌘5 / Ctrl+1–Ctrl+5 — switch tabs in canonical order ──
+      // ── ⌘1–⌘4 / Ctrl+1–Ctrl+4 — 4-link header nav ──
       // Handled BEFORE the effect-shortcut branch's unmodified-key guard
       // so the modifier is consumed here and never reaches the plain-key
       // dispatch below. `⌘K` is owned by `useCommandPalette` separately.
+      //
+      // 2026-04-22 (post-W7): ⌘1 navigates to the /gallery route rather
+      // than flipping an in-editor tab — Gallery is a top-level route
+      // now. ⌘2–⌘4 flip `activeTab` as before; if the user is on the
+      // /gallery route when they hit one of those, we also push them
+      // back to /editor so the tab change is visible.
+      //
+      // ⌘5 / Ctrl+5 — OV8 STATE-mode takeover toggle. Only meaningful
+      // on the Design tab (the Inspector STATE tab is what it drives),
+      // so route it through uiStore and let the render path gate the
+      // visible effect.
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
         const tab = TAB_BY_DIGIT[e.key];
         if (tab) {
           e.preventDefault();
+          if (tab === 'gallery') {
+            if (typeof window !== 'undefined' && window.location.pathname !== '/gallery') {
+              window.location.href = '/gallery';
+            }
+            return;
+          }
+          // For Design / Audio / Output: flip activeTab and, if the
+          // user is not on /editor, route them there so the change
+          // actually takes effect.
           useUIStore.getState().setActiveTab(tab);
+          if (
+            typeof window !== 'undefined' &&
+            window.location.pathname !== '/editor'
+          ) {
+            window.location.href = '/editor';
+          }
+          return;
+        }
+        if (e.key === '5') {
+          e.preventDefault();
+          useUIStore.getState().toggleStateGrid();
           return;
         }
       }

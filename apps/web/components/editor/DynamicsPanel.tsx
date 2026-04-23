@@ -52,5 +52,8 @@ export function DynamicsPanel() {
     },
   ], []);
 
-  return <ReorderableSections tab="dynamics" sections={sections} />;
+  // OV6: `dynamics` tab was merged into `design`. ReorderableSections
+  // indexes persisted section order per-tab; route this under `design`
+  // now that DynamicsPanel is stacked inside MergedDesignPanel.
+  return <ReorderableSections tab="design" sections={sections} />;
 }
