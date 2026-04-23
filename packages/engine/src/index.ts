@@ -79,6 +79,46 @@ export type { OLEDResolution, BMPDecodeResult } from './oled/BMPCodec.js';
 // 2026-04-19 dead-code audit — zero consumers inside or outside the
 // engine package.
 
+// ─── Modulation Routing (v1.1 / Friday v1.0 Preview) ───
+//
+// The modulation subsystem is exposed at the top-level barrel so
+// consumers (apps/web, packages/codegen) can import `BuiltInModulatorId`,
+// `ModulationBinding`, etc. directly from `@kyberstation/engine` rather
+// than mirroring the unions inline. See `docs/MODULATION_ROUTING_V1.1.md`.
+export type {
+  BuiltInModulatorId,
+  ModulatorId,
+  ModulatorDescriptor,
+  ParameterPath,
+  BindingCombinator,
+  ModulationBinding,
+  NumericLiteralNode,
+  VariableRefNode,
+  BinaryOp,
+  BinaryOpNode,
+  UnaryOp,
+  UnaryOpNode,
+  BuiltInFnId,
+  CallNode,
+  ExpressionNode,
+  EvalContext,
+  SerializedExpression,
+  SerializedBinding,
+  ModulationPayload,
+  BladeConfigWithModulation,
+  SamplerState,
+  ParameterClampRange,
+  ParameterClampRanges,
+} from './modulation/index.js';
+export {
+  BUILT_IN_MODULATORS,
+  lookupModulator,
+  isBuiltInModulatorId,
+  sampleModulators,
+  emptySamplerState,
+  applyBindings,
+} from './modulation/index.js';
+
 export {
   BladeState,
   DEFAULT_TOPOLOGY,
