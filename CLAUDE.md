@@ -543,11 +543,62 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-04-23, post-modulation v0.14.0)
+## Current State (2026-04-23 evening, preset audit + modulation v0.14.0)
 
-**Active branch: `main`. `feat/modulation-routing-v1.1` merged into main on 2026-04-23 via PR #35 (commit `43b73aa`), shipping the v1.0 BETA Preview of the headline Modulation Routing feature — turns KyberStation from a static blade picker into a "blade instrument." Tagged as `v0.14.0`.**
+**Active branch: `main`. Two landings on 2026-04-23:**
 
-**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Prior tag was `v0.13.0` (launch readiness). `v0.14.0` displaces the previously-planned Kyber Forge ultra-wide slot (sunset per 2026-04-22 planning decision — OV11 drag-to-resize handles cover ultra-wide use cases).
+- **`feat/preset-accuracy-audit-2026-04-22` merged via PR #39** (merge commit `cbeb7d5`) — full-library preset accuracy sweep + 89-preset pop-culture expansion + end-to-end Darksaber hardware parity + Hardware Fidelity Principle architectural doc. Details immediately below.
+- **`feat/modulation-routing-v1.1` merged via PR #35** (commit `43b73aa`, tagged `v0.14.0`) — Modulation Routing v1.0 Preview BETA. Details in the section after.
+
+**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Prior tag was `v0.13.0` (launch readiness). The preset-audit landing is not tagged — candidate for a `v0.13.1` content/correctness tag or fold into v0.14.1 with modulation polish.
+
+### What shipped in the preset accuracy audit landing (PR #39, commit `cbeb7d5`)
+
+Full-library preset correctness pass + 89-preset pop-culture expansion + Darksaber hardware parity + new architectural principle. Session ran as 4 phases with parallel agents per file.
+
+- **Phase 1 audit** — 7 per-file audit docs at [`docs/PRESET_AUDIT_2026-04-22/`](docs/PRESET_AUDIT_2026-04-22/) covering all 216 pre-session presets. One agent per era file in parallel, each producing evidence-shape markdown tables with current/recommended/reasoning per preset.
+- **Phase 3a canonical fixes** — ~76 presets corrected. Headline finds:
+  - **Mace Windu**: `style: 'pulse'` → `'stable'`, ignition `'seismic'` → `'standard'`, retraction `'implode'` → `'standard'`, baseColor to canonical amethyst `{r:170,g:60,b:240}`
+  - **Darth Maul**: ignition `'center'` → `'standard'`, style `'fire'` → `'stable'` (Ken specifically flagged these as wrong on canonical film sabers at session start)
+  - **Kylo Ren**: shimmer 0.4 → 0.6 (mid-range of recommended band) + `BifurcateEffect` bound to clash
+  - **Rey TROS yellow**: `'photon'` → `'aurora'` (the ceremonial halo on the construction saber)
+  - **Loden Greatstorm**: blue → canonical High Republic yellow
+  - **Marchion Ro**: invented red → canonical Loden's looted yellow (he carries no personal lightsaber in canon)
+  - **Burryaga**: green → canonical blue crossguard
+  - **Inquisitors** unified on `style: 'unstable'` across the five presets (cracked-kyber lore)
+  - Dead-config purge: `voidEffect`, `telekinetic`, `rainbow`, `dualPhase`, `sparkSize`, `fireSize`, `sparkRate`, `heatSpread`, `fadeout` animations not in engine registry
+  - Detailed-tier "engine-showcase" animation drift (`summon`, `implode`, `seismic`, `evaporate`, `fadeout`, `crackle`, `fracture`) reverted on 35+ presets across prequel-era / legends / extended-universe — canonical film sabers should be `standard`+250-400ms
+- **Phase 3b relocations** — 3 non-canonical presets moved from canonical files to creative-community with `screenAccurate: false` + reframed descriptions + new `creative-*` IDs:
+  - `ot-palpatine` (Palpatine never wielded a saber on-screen in the OT) → `creative-palpatine-speculative`
+  - `ot-obiwan-ghost` (speculative Force Ghost) → `creative-obiwan-force-ghost`
+  - `animated-morgan-elsbeth-red` (wields the Beskar Sword in canon, not a lightsaber) → `creative-morgan-elsbeth-nightsister`
+- **DarkSaberStyle (hardware-parity, load-bearing)** — new [`packages/engine/src/styles/DarkSaberStyle.ts`](packages/engine/src/styles/DarkSaberStyle.ts) class + codegen extension in [`packages/codegen/src/ASTBuilder.ts`](packages/codegen/src/ASTBuilder.ts) that emits canonical `Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>` ProffieOS template — the Fett263 community standard. Runs correctly on real Proffieboard hardware, not visualizer-only fake. 3 Darksaber presets migrated to `style: 'darksaber'` (Pre Vizsla / Sabine Wren / Din Djarin). Engine style: piecewise per-LED color (white 0.0-0.03 → smoothstep → near-black 0.08-0.92 → smoothstep → white 0.97-1.0). 8 engine tests + 4 codegen tests.
+- **Continuity field** — new optional `continuity?: 'canon' | 'legends' | 'pop-culture' | 'mythology'` on `PresetMetadata`. Defaults to `'canon'` via `preset.continuity ?? 'canon'` convention. `LEGENDS_PRESETS` bulk-migrated to `continuity: 'legends'` (34 presets). 8 new test cases (type-level + runtime).
+- **89 pop-culture presets, 11 files** — new [`packages/presets/src/characters/pop-culture/`](packages/presets/src/characters/pop-culture/) subdirectory with per-franchise files + aggregator `index.ts`. Breakdown:
+  - **LOTR** (10): Glamdring · Sting · Andúril · Narsil (broken) · Orcrist · Gurthang (black+red via `darksaber`) · Morgul-blade · Herugrim · Narya (Ring of Fire) · One Ring
+  - **Mythology** (8): Excalibur · Kusanagi · Gáe Bolg · Gram · Joyeuse · Caladbolg (rainbow gradient) · Perseus' Harpē · Trident of Poseidon
+  - **Marvel MCU** (12): Mjolnir · Stormbreaker · Jarnbjorn · Gungnir · 6 Infinity Stones (Space/Mind/Reality/Power/Time/Soul) · Ebony Blade · Skurge's Axe
+  - **DC** (10): Green Lantern emotional spectrum (Will/Fear/Rage/Avarice/Hope/Compassion/Love = 7) · Wonder Woman's Godkiller · Dr. Fate's Ankh · Swamp Thing
+  - **Zelda** (7): Master Sword (awakened + dormant) · Fierce Deity Sword · Goddess Sword · Biggoron's Sacred Flame · Trident of Power · Wind Waker
+  - **Final Fantasy/KH** (8): Buster Sword (materia glow) · Masamune · Gunblade · Brotherhood · Ultima Weapon · Omega Weapon · Kingdom Key · Oblivion
+  - **Anime** (6): Demon Slayer Nichirin set (Tanjiro black+red via `darksaber` · Rengoku fire · Zenitsu thunder · Inosuke) · Ichigo Bankai · Hyorinmaru
+  - **Kids cartoons** (8): Powerpuff Girls trio (Blossom/Bubbles/Buttercup) · Hello Kitty · Steven Universe Garnet · Adventure Time Finn's Grass Sword · Ben 10 Omnitrix · Chemical X
+  - **Power Rangers** (7): MMPR Red/Blue/Yellow/Pink/Black + Green Ranger (Dragon Dagger) + White Ranger (Saba)
+  - **Adult animation** (5): Rick's Portal Gun · Samurai Jack Katana of Righteousness · Master Shake · Meatwad · Brock Samson
+  - **Mascots** (8): Tony the Tiger · Toucan Sam (rainbow gradient) · Kool-Aid Man · Mr. Peanut · Cap'n Crunch · Chester Cheetah · Mr. Clean · Lucky the Leprechaun
+  - All entries use `continuity: 'pop-culture'` (or `'mythology'`). `era: 'expanded-universe'` as fallback — the Era union doesn't yet have a `'pop-culture'` value, so the `continuity` field is the authoritative filter source of truth.
+- **Hardware Fidelity Principle (load-bearing architectural doc)** — new [`docs/HARDWARE_FIDELITY_PRINCIPLE.md`](docs/HARDWARE_FIDELITY_PRINCIPLE.md). Codifies: the visualizer simulates what real 1D WS2812B Neopixel LED strips can physically do, not visualizer-only fakes. No 2D outline effects — every style must be expressible as a function of LED position + time AND emittable as a ProffieOS template that produces the same visual on real hardware. Darksaber is the worked example (bright emitter + dark body + bright tip is the honest 1D approximation; a "bright outline around dark body" render-pipeline fake was REJECTED during this session because it would show users something their real saber can't produce). **This doc is the north star for all future engine style additions.** Includes an audit queue of existing styles whose codegen parity hasn't been verified (`automata`, `helix`, `aurora`, `prism`, `gravity`, `crystalShatter`, `dataStream`, `nebula`, `neutron`, `candle`).
+
+**Test count delta this PR:** +20 (8 DarkSaberStyle engine + 8 continuity + 4 codegen Darksaber template). Final workspace total across both 2026-04-23 merges: **3,164 tests passing across 10 packages**. Typecheck clean.
+
+**Preset library scope after merge:** ~305 presets total (216 canonical pre-session + 89 pop-culture; the 3 relocations stay in the library, just in a different file).
+
+**Process learnings worth carrying forward:**
+
+- **Hardware fidelity is architectural, not cosmetic.** Mid-session, Ken corrected a proposed render-pipeline "bright outline around dark body" Darksaber effect because the real 1D LED strip can't produce 2D outlines. Instead of inventing a visualizer-only fake, the session shipped the honest approximation (bright endpoints + dark body) via `DarkSaberStyle` + canonical ProffieOS `Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>` emission. **Future sessions must not propose visualizer-only effects** — always ask "can the codegen emit a valid ProffieOS template that produces the same visual on real hardware?" before adding a new engine style. The principle is codified in `docs/HARDWARE_FIDELITY_PRINCIPLE.md`.
+- **Audit-first + parallel-agent fix pass scales.** 7 parallel agents per file for Phase 1 (audit), then again for Phase 3a (fix). Evidence-shape output (markdown tables with current/recommended/reasoning per preset) made the fix pass mechanical — each agent applied its own audit. Also gave strong per-file accountability when skim-reviewing.
+- **Mid-session usage limits are recoverable.** Phase 4 launched 5 pop-culture agents in background; 2 hit Claude usage limits mid-work. Resumption on a fresh turn: `ls` the output directory to verify which agents completed, then re-run the specific agents that didn't. Completed agents' work persists on disk — resumption doesn't re-do their work. Don't assume the worst on usage-limit task notifications; actually check state.
+- **Delegate-to-me on review, confirm-with-me on principles.** Ken delegated review-depth decisions (Phase 2 review: "delegate to me") but asserted architectural principles strongly (Hardware Fidelity). The pattern: Claude proposes, Ken ratifies principles, Claude executes autonomously within those. Works well.
 
 ### What shipped in v0.14.0
 
