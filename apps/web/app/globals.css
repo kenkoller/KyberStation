@@ -22,7 +22,12 @@
   /* text-muted raised from `74 78 88` (#4a4e58, ≈1.6:1) to clear WCAG AA
      body-text contrast (≈4.7:1 on --bg-primary). Used in ~654 places —
      one-line change per the 2026-04-19 a11y audit. */
-  --text-muted: 110 115 130;
+  /* WCAG AA requires 4.5:1 for normal body text. With --bg-primary at
+     10 10 16 (#0a0a10), the prior value 110 115 130 (#6e7382) hit 3.76:1
+     — off by ~0.74. Bumping to 148 152 166 lands 5.2:1 on the primary
+     background and stays readable on the slightly-lighter card surfaces.
+     Paired contrast-fix landed 2026-04-23 with modulation v1.0 work. */
+  --text-muted: 148 152 166;
   /* Full-value: rgba with baked-in alpha */
   --accent-dim: rgba(74, 158, 255, 0.08);
   --accent-border: rgba(74, 158, 255, 0.20);

@@ -106,8 +106,16 @@ function BindingRow({ binding }: BindingRowProps) {
   const modulatorDesc = BUILT_IN_MODULATORS.find(
     (m) => (m.id as string) === binding.source,
   );
-  const color = modulatorDesc?.colorVar ?? 'rgb(var(--text-muted))';
-  const sourceName = modulatorDesc?.displayName ?? String(binding.source ?? 'expr');
+  const isExpression = binding.source === null && binding.expression !== null;
+  const color = isExpression
+    ? 'rgb(var(--status-magenta))'
+    : (modulatorDesc?.colorVar ?? 'rgb(var(--text-muted))');
+  const sourceName = isExpression
+    ? 'fx'
+    : (modulatorDesc?.displayName ?? String(binding.source ?? '—'));
+  const sourceTitle = isExpression
+    ? `Expression: ${binding.expression?.source ?? '(opaque AST)'}`
+    : `Source: ${sourceName}`;
 
   const paramDesc = getParameter(binding.target);
   const paramLabel = paramDesc?.displayName ?? binding.target;
@@ -132,7 +140,7 @@ function BindingRow({ binding }: BindingRowProps) {
       <span
         className="font-mono uppercase tracking-wider truncate"
         style={{ color }}
-        title={`Source: ${sourceName}`}
+        title={sourceTitle}
       >
         {sourceName}
       </span>

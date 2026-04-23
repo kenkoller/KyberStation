@@ -132,11 +132,16 @@ function ModulatorPlate({ descriptor, armed, onClick }: ModulatorPlateProps) {
   const color = descriptor.colorVar;
   const name = descriptor.displayName;
   const id = descriptor.id as string;
+  const setHoveredModulator = useUIStore((s) => s.setHoveredModulator);
 
   return (
     <button
       type="button"
       onClick={onClick}
+      onPointerEnter={() => setHoveredModulator(id)}
+      onPointerLeave={() => setHoveredModulator(null)}
+      onFocus={() => setHoveredModulator(id)}
+      onBlur={() => setHoveredModulator(null)}
       className={[
         'relative group flex flex-col gap-1 px-2 py-2 rounded border transition-all text-left',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',

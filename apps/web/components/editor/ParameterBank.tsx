@@ -3,7 +3,15 @@ import { useState, useCallback, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useClickToRoute } from '@/hooks/useClickToRoute';
 import { useUIStore } from '@/stores/uiStore';
-import { BUILT_IN_MODULATORS } from '@kyberstation/engine';
+import { useBoardProfile } from '@/hooks/useBoardProfile';
+import { canBoardModulate } from '@/lib/boardProfiles';
+import { BUILT_IN_MODULATORS, type SerializedBinding } from '@kyberstation/engine';
+import { ExpressionEditor } from './routing/ExpressionEditor';
+
+// Stable empty-array reference for the modulation bindings selector.
+// Without this, `?? []` returns a new reference every render and
+// triggers Zustand's "store rerender detected" loop. See dcd4dd4 note.
+const EMPTY_BINDINGS: readonly SerializedBinding[] = [];
 
 // ─── Parameter Definition Types ───
 
@@ -205,42 +213,85 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   const isShimmer = param.key === 'shimmer';
   const displayValue = isShimmer ? Math.round(value * 100) : value;
   const inputId = `param-slider-${param.key}`;
+  const boardId = useBoardProfile().boardId;
+  const [showFx, setShowFx] = useState(false);
 
-  // ── Click-to-route integration (v1.0 Modulation Preview) ────────────
-  // When a modulator plate is armed, clicking the label wires a binding
-  // from that modulator to this parameter. Visual affordance: label glows
-  // in the armed modulator's identity color while armed.
+  // ── Click-to-route + hover-wire integration (v1.0 Modulation Preview) ──
+  // Three overlapping visual states for the slider label:
+  //   1. ARMED — a plate is armed; ALL labels tint in its identity color
+  //      with "Click to wire" hover hint.
+  //   2. HOVERED — a plate is hovered; labels whose param is already a
+  //      binding target of THAT modulator tint in its color (the
+  //      "show me what this modulator drives" affordance).
+  //   3. BOUND — at least one binding targets this param; left-edge
+  //      accent stripe in the binding's source color so users see at
+  //      a glance which sliders are wired.
+  // Priority: ARMED > HOVERED > BOUND.
   const armedModulatorId = useUIStore((s) => s.armedModulatorId);
+  const hoveredModulatorId = useUIStore((s) => s.hoveredModulatorId);
+  const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? EMPTY_BINDINGS);
   const { onParameterClick } = useClickToRoute();
+
   const armedColor = useMemo(() => {
     if (!armedModulatorId) return null;
     const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === armedModulatorId);
     return desc?.colorVar ?? null;
   }, [armedModulatorId]);
+
+  const hoverDrivenColor = useMemo(() => {
+    if (armedModulatorId) return null;
+    if (!hoveredModulatorId) return null;
+    const drives = bindings.some(
+      (b) => b.source === hoveredModulatorId && b.target === param.key && !b.bypassed,
+    );
+    if (!drives) return null;
+    const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === hoveredModulatorId);
+    return desc?.colorVar ?? null;
+  }, [armedModulatorId, hoveredModulatorId, bindings, param.key]);
+
+  const boundColor = useMemo(() => {
+    if (armedColor || hoverDrivenColor) return null;
+    const first = bindings.find((b) => b.target === param.key && !b.bypassed);
+    if (!first || !first.source) return null;
+    const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === first.source);
+    return desc?.colorVar ?? null;
+  }, [armedColor, hoverDrivenColor, bindings, param.key]);
+
   const handleLabelClick = useCallback(() => {
     if (armedModulatorId) {
       onParameterClick(param.key);
     }
   }, [armedModulatorId, onParameterClick, param.key]);
 
+  const effectiveLabelColor = armedColor ?? hoverDrivenColor;
+
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="relative flex items-center gap-2"
+      style={
+        boundColor
+          ? { boxShadow: `inset 2px 0 0 ${boundColor}`, paddingLeft: 4 }
+          : undefined
+      }
+    >
       <label
         htmlFor={inputId}
         className="text-ui-base w-24 shrink-0 truncate transition-colors cursor-pointer"
         title={
           armedModulatorId
             ? `Click to wire ${armedModulatorId} → ${param.label}`
-            : param.description
+            : hoverDrivenColor
+              ? `${hoveredModulatorId} drives ${param.label}`
+              : param.description
         }
         onClick={armedModulatorId ? handleLabelClick : undefined}
         style={
-          armedColor
-            ? { color: armedColor, textShadow: `0 0 4px ${armedColor}` }
+          effectiveLabelColor
+            ? { color: effectiveLabelColor, textShadow: `0 0 4px ${effectiveLabelColor}` }
             : undefined
         }
       >
-        <span className={armedColor ? '' : 'text-text-secondary'}>
+        <span className={effectiveLabelColor ? '' : 'text-text-secondary'}>
           {param.label}
         </span>
       </label>
@@ -263,6 +314,42 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
       <span className="text-ui-sm text-text-muted font-mono w-10 text-right shrink-0">
         {displayValue}{param.unit || ''}
       </span>
+
+      {/* fx button — opens the expression editor for this param. Hidden
+          when the board doesn't support modulation (the label tint +
+          stripe feedback covers "you can't modulate here" already). */}
+      {canBoardModulate(boardId) && (
+        <button
+          type="button"
+          onClick={() => setShowFx((v) => !v)}
+          className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors"
+          style={
+            showFx
+              ? {
+                  color: 'rgb(var(--status-magenta))',
+                  background: 'rgba(var(--status-magenta), 0.15)',
+                  borderColor: 'rgb(var(--status-magenta))',
+                }
+              : {
+                  color: 'rgb(var(--text-muted))',
+                  borderColor: 'rgb(var(--border-subtle))',
+                }
+          }
+          title="Author a math-expression binding (v1.1)"
+          aria-pressed={showFx}
+          aria-label={`Open expression editor for ${param.label}`}
+        >
+          fx
+        </button>
+      )}
+
+      {showFx && (
+        <ExpressionEditor
+          targetPath={param.key}
+          targetLabel={param.label}
+          onClose={() => setShowFx(false)}
+        />
+      )}
     </div>
   );
 }
