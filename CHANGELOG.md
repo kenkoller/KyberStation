@@ -70,14 +70,17 @@ Full details in [`docs/HARDWARE_VALIDATION_TODO.md`](docs/HARDWARE_VALIDATION_TO
   crystal component with PBR materials, 5 procedural Forms, bleed +
   heal + first-discovery animations, scannable QR embedded, card
   snapshot pipeline
-- **v0.13.0 — Kyber Forge ultra-wide mode** (planned): dedicated
-  layout for 21:9 / 32:9 / 32:10 displays
-- **v0.14.0 — Preset Cartography** (planned): multi-agent preset
+- **v0.15.0 — Preset Cartography** (planned): multi-agent preset
   expansion across deep-cut lanes (Prequel/OT/Sequel, Legends/KOTOR,
   Clone Wars, Mando/Ahsoka, cross-franchise)
-- **v0.15.0 — Multi-Blade Workbench** (planned): channel-strip UI for
+- **v0.16.0 — Multi-Blade Workbench** (planned): channel-strip UI for
   editing dual-blade / saberstaff / crossguard sabers (glyph format
   already supports multi-blade from v1)
+
+*(v0.13.0 — Launch Readiness — shipped via PR #31; v0.14.0 slot open for
+reassignment after deprecating the former "Kyber Forge" ultra-wide
+layout concept, which is redundant now that OV11's drag-to-resize
+handles cover the ultra-wide use case.)*
 
 ### Branch protection — server-side active
 

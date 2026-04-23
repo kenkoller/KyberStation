@@ -449,6 +449,100 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
+## Collaboration defaults (2026-04-23)
+
+Standing authorizations for Claude Code sessions working in this repo.
+These override the default "confirm before acting" posture for the
+scope listed. If a memory note or explicit user instruction in the
+current conversation conflicts with these, the more restrictive rule
+wins.
+
+### Pre-authorized actions (no confirmation needed)
+
+- **Local commits on feature branches.** Any commit onto the current
+  feature branch with a descriptive conventional-commits message +
+  `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`
+  trailer. Stage specific files, not `git add -A` / `git add .`.
+- **Push feature branches.** Any branch that is NOT `main`. The
+  client-side `.githooks/pre-push` hook + server-side branch
+  protection both guard `main` independently.
+- **Open PRs via `gh pr create`.** With a descriptive title (short,
+  ≤70 chars) and a body that summarizes scope + includes test/typecheck
+  results + a test plan. Follow `.github/PULL_REQUEST_TEMPLATE.md` if present.
+- **Merge PRs via `gh pr merge --merge --delete-branch`.** Merge-commit
+  strategy preserves history (preferred for multi-commit feature
+  branches). Use `--squash` only when the PR body explicitly says to.
+- **Enable auto-merge via `gh pr merge --auto --merge`** if the repo
+  supports it (currently disabled on kenkoller/KyberStation — fall
+  back to polling `gh pr checks` until green, then merge).
+- **Prune verified-merged branches.** Local + origin. Verify safety
+  with `git branch --merged main` (for fully-merged) or
+  `git cherry origin/main <branch>` (no `+` lines = content on main).
+  Branches with worktrees are never deletable even if they show as
+  merged.
+
+### Never, under any circumstances
+
+- **Never force-push** to any branch. No `--force`, no `--force-with-lease`
+  without a direct user request spelling out why.
+- **Never disable branch protection rules**, even temporarily.
+- **Never skip git hooks** — no `--no-verify` on commit or push,
+  no `-c commit.gpgsign=false`.
+- **Never modify git config** or global settings.
+- **Never delete a branch that has a worktree**, even if it shows as
+  merged. `git worktree list` is the authoritative check.
+- **Never delete a branch with an open PR** on origin.
+- **Never commit files that likely contain secrets** (`.env`,
+  credential files, etc.) — warn the user explicitly if they appear
+  in the candidate stage set.
+
+### Always confirm first
+
+- Opening a PR whose diff **removes a feature, bumps a major dep, or
+  touches `package.json` / `pnpm-lock.yaml`** in a way that could break
+  installs.
+- Deleting any **stash** — they often hold WIP the user hasn't moved
+  elsewhere. Check `git stash list` before any branch op that could
+  affect stashed state.
+- Deleting a branch with **unique-hash commits** that appear to be
+  cherry-picked into main (`git cherry origin/main <branch>` shows
+  `-` lines only). Content is on main; hashes are not.
+- Any PR merge that **targets `main` outside CI hours** or that
+  involves a release tag.
+
+### Test gates before any `git push`
+
+- `pnpm typecheck` — must be clean across all workspace packages.
+- `pnpm test` — must pass across all workspace packages.
+- If either fails: report the failure with file:line references and
+  do NOT push. Never push a red tree to unblock a workflow.
+
+### Branch-naming expectations
+
+- Features: `feat/<short-description>`
+- Fixes: `fix/<short-description>`
+- Refactors: `refactor/<short-description>`
+- Docs-only: `docs/<short-description>`
+- Merge-transport (landing a long-running branch on main when direct
+  push is blocked): `feat/merge-<source-branch-name>`
+
+### Cross-session coordination
+
+When multiple Claude sessions are running in parallel against this
+repo (modulation + UI + preset work in separate worktrees, etc.):
+
+1. **Before any git operation**, run `git fetch origin --prune` and
+   `git worktree list` to see current state.
+2. **If another worktree is on the branch you'd edit**, pause and
+   surface the collision to the user rather than racing.
+3. **When merging into main**, announce in the PR body which sibling
+   branches/worktrees are active so they can rebase cleanly after.
+4. **When parking WIP** for another session, push the branch to
+   origin so work is recoverable even if the local worktree is
+   clobbered.
+
+---
+
 ## Current State (2026-04-23, post-UI-overhaul merge)
 
 **Active branch: `main`. `feat/ui-overhaul-v2` merged into main on 2026-04-23, landing the full four-session sprint: Saber Wizard hardware step + Hilt library v2 content expansion + post-walkthrough W-series UX iteration + Kyber Crystal polish & Share Card v2 — on top of the 2026-04-21 OV1–OV11 UI overhaul waves (Inspector, PerformanceBar, GalleryMarquee, DeliveryRail, AnalysisRail, MiniGalleryPicker, drag-to-resize). Detailed session write-ups below.**
@@ -1061,7 +1155,7 @@ Output of the 2026-04-17 12-question design review. Plan lives at
 | v0.12.0 | **Kyber Crystal — Three.js renderer** | ✅ shipped (PR #20) | Four commits: foundation (ddc5ee7) + camera-zoom reveal (1276edd) + real glyph encoder (783c3c6) + visual polish (59ed6f3). 294/294 tests. Deferred follow-ups: Crystal Vault panel, Re-attunement UI, favicon replacement, phone-camera scan validation, `CANONICAL_DEFAULT_CONFIG` drift-sentinel, `<HiltMesh>` extraction. Spec/arch in `docs/KYBER_CRYSTAL_3D.md`. |
 | v0.12.x | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session — originally planned for v0.12.0, reassigned to let the crystal renderer take that slot. |
 | v0.13.0 | **Launch Readiness** | ✅ shipped (PR #31, commit `1b5da69`) | 37-phase QA sweep (28/37 complete pre-merge), UX overhaul (26/27 items), workbench realignment (W1/W2a/W3/W4/W4b/W6a/W6b + polish), landing page rework, hardware validation phases A/B/C on V3.9 + macOS. Remaining launch-blockers are P29/P30/P31/P37 + cross-OS hardware sweeps. |
-| v0.14.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Blade+hilt hero full-width; flanking setup (left) + quick-options (right) sidebars; pixel-level LED debug row synced 1:1 beneath the hero; analysis panels stacked in a bottom row; status-ticker at the base. Cosplay + fan-film + livestream-optimised. |
+| v0.14.0 | *open for next sprint* | 📋 available | Slot cleared 2026-04-23 after deprecating the former "Kyber Forge" ultra-wide layout concept — OV11's drag-to-resize handles already cover the ultra-wide use case, making a dedicated layout mode redundant. Strong candidate: modulation routing v1.1 (currently parked on `feat/modulation-routing-v1.1`). |
 | v0.15.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. Deep-cut lanes: Prequel/OT/Sequel Jedi & Sith, Legends/KOTOR/SWTOR (incl. Dark Forces / Jedi Knight / Outcast / Academy), Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Space-combat (Rogue Squadron / X-Wing / TIE Fighter / Squadrons / Rebel Assault), Cross-franchise "inspired by". Could 4-5× the preset library in one session. |
 | v0.16.0 | **Multi-Blade Workbench** | 📋 planned | Channel-strip UI for editing dual-blade sabers / saberstaffs / crossguards. Blade-switching in the workbench. Sync / Unsync toggle for symmetry vs independence. Glyph format already supports multi-blade from v1, so this is purely the editing UI side. |
 

@@ -82,9 +82,8 @@ Fill `<SPRINT NAME>` and `<ONE-LINE DESCRIPTION>` with one of these. Re-read `CL
 - **Share Pack implementation** — full Saber Card hilt+blade hero renderer, hum-GIF + state-cycle-GIF variants, Aurebesh card typography, Discord OG meta tags, `?config=<base64>` fallback toast when glyph exceeds QR capacity (spec in `docs/SHARE_PACK.md`)
 - **Visualization polish pass (v0.12.x)** — gamma fidelity, LED bleed, polycarbonate diffusion accuracy, rim glow, bloom curves, motion blur on swing; reference-stills library from films/shows
 - **Hardware validation** — smoke-test WebUSB flash on real Proffieboard V3.9 through the 3-phase checklist in `docs/HARDWARE_VALIDATION_TODO.md`
-- **Kyber Forge ultra-wide mode (v0.13.0)** — dedicated layout for 21:9 / 32:9 / 32:10 displays
-- **Preset Cartography (v0.14.0)** — parallel-agent preset expansion across deep-cut lanes (Prequel/OT/Sequel, Legends/KOTOR, Clone Wars, Mando/Ahsoka, cross-franchise)
-- **Multi-Blade Workbench (v0.15.0)** — channel-strip UI for dual-blade / saberstaff / crossguard sabers
+- **Preset Cartography (v0.15.0)** — parallel-agent preset expansion across deep-cut lanes (Prequel/OT/Sequel, Legends/KOTOR, Clone Wars, Mando/Ahsoka, cross-franchise)
+- **Multi-Blade Workbench (v0.16.0)** — channel-strip UI for dual-blade / saberstaff / crossguard sabers
 - **Editor + gallery README screenshots** — 30-min micro-sprint; generate screenshots from headless Chrome with the onboarding modal pre-dismissed via `localStorage.setItem('kyberstation-onboarding-complete', 'true')`
 - **Strict glyph pairing for identity colors** — extend v0.11.1 `<StatusSignal>` pattern to `TimelinePanel` event-type markers + `StorageBudgetPanel` segment colors (optional polish, not a release blocker)
 

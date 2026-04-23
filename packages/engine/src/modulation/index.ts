@@ -1,12 +1,14 @@
-// ─── Modulation Routing — v1.1 scaffold ───
+// ─── Modulation Routing — v1.1 / Friday v1.0 Preview ───
 //
-// Type-only re-exports for now. The parser, evaluator, and
-// binding resolver arrive in the v1.1 implementation sprint — see
-// `docs/MODULATION_ROUTING_V1.1.md` for the design and
-// `./NOTES.md` for what is / isn't in this scaffold.
+// Public barrel for the modulation subsystem. Types live in
+// `./types.ts` (contract locked). Runtime helpers for the Friday v1.0
+// Preview — registry, sampler, applyBindings — are exported here.
 //
-// Status: DESIGN-SCOPED · NOT IMPLEMENTED
+// Status (2026-04-22): Friday v1.0 Preview — engine-side binding
+// application is wired, math-expression parser + evaluator arrive in
+// v1.1. See `docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md` §4 Agent A.
 
+// ── Types (contract-locked) ─────────────────────────────────────────
 export type {
   BuiltInModulatorId,
   ModulatorId,
@@ -30,17 +32,26 @@ export type {
   BladeConfigWithModulation,
 } from './types.js';
 
+// ── Registry ────────────────────────────────────────────────────────
+export {
+  BUILT_IN_MODULATORS,
+  lookupModulator,
+  isBuiltInModulatorId,
+} from './registry.js';
+
+// ── Sampler ─────────────────────────────────────────────────────────
+export type { SamplerState } from './sampler.js';
+export { sampleModulators, emptySamplerState } from './sampler.js';
+
+// ── Binding application ─────────────────────────────────────────────
+export type {
+  ParameterClampRange,
+  ParameterClampRanges,
+} from './applyBindings.js';
+export { applyBindings } from './applyBindings.js';
+
 // TODO(v1.1): export the parser
 // export { parseExpression } from './parser.js';
 //
 // TODO(v1.1): export the evaluator
 // export { evaluate, evaluateBinding } from './evaluator.js';
-//
-// TODO(v1.1): export the built-in modulator registry
-// export { BUILT_IN_MODULATORS, lookupModulator } from './registry.js';
-//
-// TODO(v1.1): export the per-frame sampler that feeds EvalContext.modulators
-// export { sampleModulators } from './sampler.js';
-//
-// TODO(v1.1): export the binding-apply step used by BladeEngine
-// export { applyBindings } from './applyBindings.js';
