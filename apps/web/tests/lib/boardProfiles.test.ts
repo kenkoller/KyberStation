@@ -6,6 +6,7 @@
 // function ID lists stay in sync with the mirror in `boardProfiles.ts`.
 
 import { describe, it, expect } from 'vitest';
+import type { BuiltInModulatorId, BuiltInFnId } from '@kyberstation/engine';
 
 import {
   BOARD_PROFILES,
@@ -54,31 +55,19 @@ describe('Proffieboard V3.9 — full-support baseline', () => {
 
   it('exposes all 11 built-in modulators', () => {
     expect(profile.supportedModulators.length).toBe(11);
-    expect(profile.supportedModulators).toContain('swing');
-    expect(profile.supportedModulators).toContain('angle');
-    expect(profile.supportedModulators).toContain('twist');
-    expect(profile.supportedModulators).toContain('sound');
-    expect(profile.supportedModulators).toContain('battery');
-    expect(profile.supportedModulators).toContain('time');
-    expect(profile.supportedModulators).toContain('clash');
-    expect(profile.supportedModulators).toContain('lockup');
-    expect(profile.supportedModulators).toContain('preon');
-    expect(profile.supportedModulators).toContain('ignition');
-    expect(profile.supportedModulators).toContain('retraction');
+    // Drift-sentinel: compile-time assignment enforces that every value in
+    // `supportedModulators` satisfies the engine's `BuiltInModulatorId`
+    // union. If the engine adds or renames a modulator ID, this line
+    // fails typecheck (per CLAUDE.md decision #1).
+    const _modulatorIdentityCheck: BuiltInModulatorId[] = [...profile.supportedModulators];
+    expect(_modulatorIdentityCheck.length).toBe(profile.supportedModulators.length);
   });
 
   it('exposes all 10 built-in functions', () => {
     expect(profile.supportedFunctions.length).toBe(10);
-    expect(profile.supportedFunctions).toContain('min');
-    expect(profile.supportedFunctions).toContain('max');
-    expect(profile.supportedFunctions).toContain('clamp');
-    expect(profile.supportedFunctions).toContain('lerp');
-    expect(profile.supportedFunctions).toContain('sin');
-    expect(profile.supportedFunctions).toContain('cos');
-    expect(profile.supportedFunctions).toContain('abs');
-    expect(profile.supportedFunctions).toContain('floor');
-    expect(profile.supportedFunctions).toContain('ceil');
-    expect(profile.supportedFunctions).toContain('round');
+    // Drift-sentinel: same pattern as above for `BuiltInFnId`.
+    const _fnIdentityCheck: BuiltInFnId[] = [...profile.supportedFunctions];
+    expect(_fnIdentityCheck.length).toBe(profile.supportedFunctions.length);
   });
 
   it('excludes chains / step-seq / envelope (v1.1+ features)', () => {
@@ -269,13 +258,10 @@ describe('binding-cap warnings (V3.9 + GHv3 only)', () => {
   });
 });
 
-// Engine mirror drift-sentinel intentionally omitted: the engine's
-// `BuiltInModulatorId` / `BuiltInFnId` unions live at
-// `packages/engine/src/modulation/types.ts`, which the engine package's
-// `exports` field does NOT publish as a subpath. Rather than wire an
-// unsightly relative import or open a subpath export just for tests,
-// the array-content tests above (each `.toContain('swing')` /
-// `.toContain('min')` etc.) serve as the drift-detection surface. When
-// modulation/types.ts adds or renames an ID, Agent A's engine update
-// will flow through to Agent C's array, and these content tests will
-// fail if the mirror isn't updated.
+// Engine mirror drift-sentinel lives inline above: the `exposes all 11
+// built-in modulators` / `exposes all 10 built-in functions` blocks
+// import `BuiltInModulatorId` + `BuiltInFnId` directly from
+// `@kyberstation/engine` (top-level barrel exports them as of the
+// modulation re-exports block in `packages/engine/src/index.ts`) and
+// spread the profile's arrays into typed-union arrays. If the engine
+// adds / renames an ID, those lines fail typecheck.

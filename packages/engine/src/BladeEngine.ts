@@ -23,6 +23,15 @@ import { createEasingFunction } from './easing.js';
 import { createStyle } from './styles/index.js';
 import { createEffect } from './effects/index.js';
 import { createIgnition, createRetraction } from './ignition/index.js';
+import {
+  sampleModulators,
+  emptySamplerState,
+  applyBindings,
+  type SamplerState,
+  type ModulationBinding,
+  type ModulationPayload,
+  type ParameterClampRanges,
+} from './modulation/index.js';
 
 // ─── Direction transform helpers ───
 
@@ -98,6 +107,15 @@ export class BladeEngine {
   private _elapsedTime: number = 0;
   /** Preon elapsed ms — counts up while in PREON state, resets on leave. */
   private _preonElapsed: number = 0;
+
+  // ─── Modulation routing (v1.0 Preview) ───
+  /** Persistent sampler state for one-pole smoothing + clash latching. */
+  private _samplerState: SamplerState = emptySamplerState();
+  /** Parameter clamp ranges — populated by the web layer via setParameterClampRanges().
+   *  When empty (default), applyBindings falls back to permissive sanitization. */
+  private _parameterClampRanges: ParameterClampRanges = new Map();
+  /** Set of effect types currently active (for clash/lockup modulator latching). */
+  private _activeEffectTypes: Set<EffectType> = new Set();
 
   // ─── Caches ───
   private styleCache: Map<string, BladeStyle> = new Map();
@@ -248,6 +266,89 @@ export class BladeEngine {
     }
   }
 
+  // ─── Modulation routing (v1.0 Preview) ───
+
+  /**
+   * Push per-parameter clamp metadata from the web layer's `parameterGroups`
+   * registry. Called once at editor init; referenced inside `applyModulation`
+   * so the engine can clamp binding-driven values into each parameter's
+   * declared range. Passing an empty map reverts to permissive sanitization
+   * (NaN → 0, ±Infinity → ±Number.MAX_VALUE).
+   */
+  setParameterClampRanges(ranges: ParameterClampRanges): void {
+    this._parameterClampRanges = ranges;
+  }
+
+  /** Returns current persistent sampler state — useful for UI visualizations. */
+  getSamplerState(): SamplerState {
+    return this._samplerState;
+  }
+
+  /**
+   * Sample modulators and apply bindings for the current frame. Returns
+   * either the modulated BladeConfig or the original config unchanged if
+   * no bindings exist. Pure in the sense that `config` is not mutated;
+   * the sampler state IS updated per frame (by design).
+   *
+   * Handles SerializedBinding → ModulationBinding shape conversion inline
+   * since v1.0 Preview bindings are all bare-source (expression: null)
+   * and therefore structurally identical after the rename.
+   */
+  private applyModulation(config: BladeConfig): BladeConfig {
+    const configWithMod = config as BladeConfig & {
+      modulation?: ModulationPayload;
+    };
+    const payload = configWithMod.modulation;
+    if (!payload || payload.bindings.length === 0) {
+      return config;
+    }
+
+    // Build an eval context once. Sampler first; it returns a frozen
+    // values map that applyBindings consumes.
+    const styleContext: StyleContext = {
+      time: this._elapsedTime,
+      swingSpeed: this.motion.swingSpeed,
+      bladeAngle: this.motion.bladeAngle,
+      twistAngle: this.motion.twistAngle,
+      soundLevel: this.motion.soundLevel,
+      batteryLevel: 1.0,
+      config,
+    };
+
+    this._samplerState = sampleModulators(
+      styleContext,
+      this._samplerState,
+      this._activeEffectTypes,
+    );
+
+    // Convert SerializedBinding (wire form) → ModulationBinding (runtime).
+    // For v1.0 Preview every binding has expression: null, so the
+    // structural shapes are identical and conversion is a pass-through
+    // rename. v1.1 will extract the `.ast` from SerializedExpression.
+    const bindings = payload.bindings.map<ModulationBinding>((sb) => ({
+      id: sb.id,
+      source: sb.source,
+      expression: sb.expression ? sb.expression.ast : null,
+      target: sb.target,
+      combinator: sb.combinator,
+      amount: sb.amount,
+      label: sb.label,
+      colorVar: sb.colorVar,
+      bypassed: sb.bypassed,
+    }));
+
+    return applyBindings(
+      config,
+      bindings,
+      {
+        modulators: this._samplerState.values,
+        styleContext,
+        frame: Math.floor(this._elapsedTime),
+      },
+      this._parameterClampRanges,
+    );
+  }
+
   // ─── Topology ───
 
   /**
@@ -326,6 +427,16 @@ export class BladeEngine {
       return;
     }
 
+    // (d.5) Modulation routing — v1.0 Preview
+    //
+    // If the config carries a modulation payload, sample the modulators
+    // and apply bindings to produce a per-frame "modulated" config. All
+    // subsequent style/effect evaluations see the modulated values, not
+    // the static authoring values. See MODULATION_ROUTING_V1.1.md §6.1.
+    //
+    // No-op if the config has no bindings (the common case).
+    const modulatedConfig = this.applyModulation(config);
+
     // (e) Build the StyleContext shared by all style/effect evaluations
     const styleContext: StyleContext = {
       time: this._elapsedTime,
@@ -334,14 +445,15 @@ export class BladeEngine {
       twistAngle: this.motion.twistAngle,
       soundLevel: this.motion.soundLevel,
       batteryLevel: 1.0, // simulated — always full
-      config,
+      config: modulatedConfig,
     };
 
     // (f) Render each segment (guarded so a single style crash
-    //     doesn't blank the entire blade)
+    //     doesn't blank the entire blade). Segments see the modulated
+    //     config so in-segment spatial positions / colors modulate too.
     for (const segment of this._topology.segments) {
       try {
-        this.renderSegment(segment, styleContext, config);
+        this.renderSegment(segment, styleContext, modulatedConfig);
       } catch (err) {
         console.warn(`Render failed for segment ${segment.startLED}-${segment.endLED}:`, err);
       }

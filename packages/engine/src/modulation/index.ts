@@ -50,8 +50,9 @@ export type {
 } from './applyBindings.js';
 export { applyBindings } from './applyBindings.js';
 
-// TODO(v1.1): export the parser
-// export { parseExpression } from './parser.js';
+// ── Math-expression parser + evaluator (v1.1) ───────────────────────
 //
-// TODO(v1.1): export the evaluator
-// export { evaluate, evaluateBinding } from './evaluator.js';
+// Peggy-based parser + pure tree-walk evaluator for the math-expression
+// mini-language specced in `docs/MODULATION_ROUTING_V1.1.md` §4.
+export { parseExpression, ExpressionParseError } from './parser.js';
+export { evaluate } from './evaluator.js';
