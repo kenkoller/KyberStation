@@ -4,6 +4,7 @@ import { BladeEngine } from '@kyberstation/engine';
 import type { EffectType } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
+import { PARAMETER_DESCRIPTORS } from '@/lib/parameterGroups';
 
 export function useBladeEngine() {
   const engineRef = useRef<BladeEngine | null>(null);
@@ -16,10 +17,20 @@ export function useBladeEngine() {
   const prevRetractionRef = useRef(config.retraction);
   const prevStyleRef = useRef(config.style);
 
-  // Lazy init engine
+  // Lazy init engine + push parameter clamp ranges for modulation routing.
+  // Without these, `applyBindings` falls back to permissive sanitization —
+  // which works, but NaN/∞ go to 0 or MAX_VALUE instead of the parameter's
+  // declared default/max. Done once at mount; ranges are static for v1.0.
   useEffect(() => {
     if (!engineRef.current) {
       engineRef.current = new BladeEngine();
+      const clampRanges = new Map<string, { min: number; max: number; default: number }>(
+        PARAMETER_DESCRIPTORS.map((p) => [
+          p.path,
+          { min: p.range.min, max: p.range.max, default: p.default },
+        ]),
+      );
+      engineRef.current.setParameterClampRanges(clampRanges);
     }
   }, []);
 
