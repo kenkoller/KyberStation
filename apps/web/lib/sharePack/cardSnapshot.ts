@@ -70,10 +70,15 @@ export async function renderCardSnapshot(options: CardSnapshotOptions): Promise<
   const outputHeight = options.height ?? layout.height;
   const scale = outputWidth / layout.width;
 
-  // QR surface — flat canvas stamped onto the card
+  // QR surface — flat canvas stamped onto the card. Use a tighter 2-module
+  // quiet zone than the 3D crystal surface (default 4) because the card
+  // draws a white-card border around the QR itself — we don't need the
+  // library's margin too. Tighter margin → denser modules at the same
+  // display size → more legible at small on-screen renders.
   const qr = await createQrSurface(options.glyph, {
     canvasSize: 512,
     errorCorrectionLevel: 'Q',
+    margin: 2,
   });
 
   const canvas =
@@ -96,12 +101,13 @@ export async function renderCardSnapshot(options: CardSnapshotOptions): Promise<
     qrCanvas: qr.canvas,
   };
 
-  // Z-order matters: backdrop → header → blade → hilt (covers emitter
-  // end of blade) → metadata → QR → footer.
+  // Z-order matters: backdrop → header → hilt → blade (halo spills over
+  // the hilt's emitter end, so the saber reads as a light source with
+  // the hilt tucked behind) → metadata → QR → footer.
   drawBackdrop(card);
   drawHeader(card);
-  drawBlade(card);
   await drawHilt(card);
+  drawBlade(card);
   drawMetadata(card);
   drawQr(card);
   drawFooter(card);

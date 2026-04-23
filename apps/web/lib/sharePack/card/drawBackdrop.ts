@@ -11,7 +11,7 @@
 // from inside this file.
 
 import { fillRoundRect, strokeRoundRect } from './canvasUtils';
-import type { CardContext, Ctx } from './cardTypes';
+import type { CardContext, CardLayout, Ctx } from './cardTypes';
 
 export function drawBackdrop(card: CardContext): void {
   const { ctx, options, layout, theme } = card;
@@ -42,8 +42,11 @@ export function drawBackdrop(card: CardContext): void {
   // 2. Background grid — 1px dots every 40px on a square lattice.
   drawGridDots(ctx, width, height, theme.gridColor, theme.gridAlpha);
 
-  // 3. Large watermark glyph — low-alpha faction seal.
-  drawWatermarkGlyph(ctx, width, height, theme.watermarkColor);
+  // 3. Blueprint / engineering-drawing details — replaces the former
+  //    large watermark glyph with measurement grammar (dimension line
+  //    spanning the blade length, edge tick rails, angle marker).
+  //    All low-alpha so the saber hero still wins.
+  drawBlueprintDetails(ctx, layout, options.config.ledCount ?? 144, theme.hudBracketColor);
 
   // 4. Scanline texture — subtle archive feel.
   ctx.save();
@@ -88,13 +91,102 @@ function drawGridDots(
   ctx.restore();
 }
 
-function drawWatermarkGlyph(ctx: Ctx, width: number, height: number, color: string): void {
+// ─── Blueprint / engineering-drawing backdrop detail ───
+//
+// Replaces the large ◈ watermark glyph with a quieter engineering
+// grammar: a blade-length dimension line, tick rails along the long
+// edges, and a small angle marker in one corner. Low-alpha so the
+// saber hero reads first; the grammar only emerges on close read.
+function drawBlueprintDetails(
+  ctx: Ctx,
+  layout: CardLayout,
+  ledCount: number,
+  color: string,
+): void {
   ctx.save();
+  ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.font = "900 320px 'Orbitron', ui-sans-serif, serif";
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('◈', width * 0.72, height * 0.55);
+  ctx.lineWidth = 1;
+
+  // — Blade-length dimension line —
+  // Silent engineering grammar below the hero. No text label to fight
+  // the metadata title typography; shaft + end-ticks + triangle arrows
+  // read as a dimension annotation without needing a number printed.
+  // (inches computed but unused — intentional, keeps the signal clean;
+  // can add a corner legend later if we want the number surfaced.)
+  const dimY = layout.heroY + layout.heroH + 10;
+  const dimX1 = layout.bladeStartX;
+  const dimX2 = layout.bladeEndX;
+  ctx.globalAlpha = 0.22;
+  // Horizontal shaft
+  ctx.beginPath();
+  ctx.moveTo(dimX1, dimY);
+  ctx.lineTo(dimX2, dimY);
+  ctx.stroke();
+  // End ticks
+  ctx.beginPath();
+  ctx.moveTo(dimX1, dimY - 4);
+  ctx.lineTo(dimX1, dimY + 4);
+  ctx.moveTo(dimX2, dimY - 4);
+  ctx.lineTo(dimX2, dimY + 4);
+  ctx.stroke();
+  // Arrow triangles
+  ctx.globalAlpha = 0.28;
+  ctx.beginPath();
+  ctx.moveTo(dimX1 + 6, dimY - 3);
+  ctx.lineTo(dimX1, dimY);
+  ctx.lineTo(dimX1 + 6, dimY + 3);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(dimX2 - 6, dimY - 3);
+  ctx.lineTo(dimX2, dimY);
+  ctx.lineTo(dimX2 - 6, dimY + 3);
+  ctx.fill();
+  // Used-only local (keeps TS happy — inches is consumed by the note
+  // format string inside the if branch if we ever re-enable it).
+  void Math.round(ledCount / 3.66);
+
+  // — Vertical tick rail along the left edge —
+  // Engineering-ruler look; 10px step, every 5th tick longer.
+  ctx.globalAlpha = 0.2;
+  const railX = 14;
+  const railTop = layout.headerH + 30;
+  const railBottom = layout.height - layout.footerH - 30;
+  ctx.beginPath();
+  for (let y = railTop, i = 0; y <= railBottom; y += 10, i++) {
+    const long = i % 5 === 0;
+    ctx.moveTo(railX, y);
+    ctx.lineTo(railX + (long ? 8 : 4), y);
+  }
+  ctx.stroke();
+
+  // — Small angle marker in the bottom-right corner —
+  // Quadrant arc + degree marks. Pure chrome; no text.
+  const cx = layout.width - 70;
+  const cy = layout.height - layout.footerH - 70;
+  const rad = 40;
+  ctx.globalAlpha = 0.22;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rad, -Math.PI / 2, 0, false);
+  ctx.stroke();
+  // Degree ticks every 15°
+  ctx.beginPath();
+  for (let deg = 0; deg <= 90; deg += 15) {
+    const a = -Math.PI / 2 + (deg * Math.PI) / 180;
+    const long = deg % 45 === 0;
+    const ri = rad - (long ? 7 : 3);
+    ctx.moveTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad);
+    ctx.lineTo(cx + Math.cos(a) * ri, cy + Math.sin(a) * ri);
+  }
+  ctx.stroke();
+  // Axis lines
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + rad, cy);
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx, cy - rad);
+  ctx.stroke();
+
   ctx.restore();
 }
 

@@ -19,7 +19,10 @@ export const DEFAULT_LAYOUT: CardLayout = {
   heroH: 220,
   hiltX: 80,
   hiltW: 260,
-  hiltH: 56,
+  // Hilt-to-blade cross-section ratio 40/26 = 1.54 — matches real Graflex
+  // proportions (~1.5–1.8× blade diameter). Previous 56/26 = 2.15 read
+  // as a fat hilt.
+  hiltH: 40,
   bladeStartX: 346, // hiltX + hiltW + 6
   bladeEndX: 1120,
   bladeThickness: 26,
@@ -47,7 +50,8 @@ export const OG_LAYOUT: CardLayout = {
   heroH: 200,
   hiltX: 80,
   hiltW: 240,
-  hiltH: 52,
+  // 36/24 = 1.5 — real Graflex cross-section ratio.
+  hiltH: 36,
   bladeStartX: 326,
   bladeEndX: 1120,
   bladeThickness: 24,
@@ -76,7 +80,8 @@ export const INSTAGRAM_LAYOUT: CardLayout = {
   heroH: 240,
   hiltX: 80,
   hiltW: 220,
-  hiltH: 56,
+  // 40/26 = 1.54 — real Graflex cross-section ratio.
+  hiltH: 40,
   bladeStartX: 306,
   bladeEndX: 1000,
   bladeThickness: 26,
@@ -104,7 +109,8 @@ export const STORY_LAYOUT: CardLayout = {
   heroH: 260,
   hiltX: 80,
   hiltW: 220,
-  hiltH: 58,
+  // 44/28 = 1.57 — real Graflex cross-section ratio.
+  hiltH: 44,
   bladeStartX: 306,
   bladeEndX: 1000,
   bladeThickness: 28,

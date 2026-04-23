@@ -26,7 +26,10 @@ const LAYOUT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'og', label: 'Twitter / OG' },
   { id: 'instagram', label: 'Instagram 1:1' },
   { id: 'story', label: 'Story 9:16' },
-  { id: 'vertical', label: 'Vertical Saber' },
+  // Vertical Saber layout temporarily hidden — horizontal is the
+  // initial-release focus. `VERTICAL_LAYOUT` + drawer vertical branches
+  // stay in `card/cardLayout.ts` / `drawBlade.ts` / `drawHilt.ts` for a
+  // future re-enable.
 ];
 
 const THEME_OPTIONS: Array<{ id: string; label: string }> = [
