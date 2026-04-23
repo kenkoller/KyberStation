@@ -1,9 +1,20 @@
 import { create } from 'zustand';
-import type { BladeConfig, BladeTopology, BladeState } from '@kyberstation/engine';
+import type {
+  BladeConfig,
+  BladeTopology,
+  BladeState,
+  SerializedBinding,
+  ModulationPayload,
+} from '@kyberstation/engine';
 import { DEFAULT_TOPOLOGY } from '@kyberstation/engine';
 
+// BladeConfig with modulation — optional field, additive per v1.1 spec.
+// Stored as the engine's `BladeConfigWithModulation` shape. Friday v1.0
+// Preview uses bare-source bindings only (no expressions until v1.1).
+type BladeConfigPlusModulation = BladeConfig & { modulation?: ModulationPayload };
+
 // Default config matching the prototype's Obi-Wan ANH preset
-const DEFAULT_CONFIG: BladeConfig = {
+const DEFAULT_CONFIG: BladeConfigPlusModulation = {
   name: 'Obi-Wan ANH',
   baseColor: { r: 0, g: 140, b: 255 },
   clashColor: { r: 255, g: 255, b: 255 },
@@ -16,11 +27,12 @@ const DEFAULT_CONFIG: BladeConfig = {
   retractionMs: 800,
   shimmer: 0.1,
   ledCount: 144,
+  // modulation: intentionally undefined by default — most blades have no bindings.
 };
 
 export interface BladeStore {
   // Configuration
-  config: BladeConfig;
+  config: BladeConfigPlusModulation;
   topology: BladeTopology;
   activeSegmentId: string;
 
@@ -42,12 +54,12 @@ export interface BladeStore {
   effectLog: string[];
 
   // A/B comparison
-  candidateConfig: BladeConfig | null;
+  candidateConfig: BladeConfigPlusModulation | null;
 
   // Actions
-  updateConfig: (partial: Partial<BladeConfig>) => void;
-  setConfig: (config: BladeConfig) => void;
-  setCandidateConfig: (config: BladeConfig | null) => void;
+  updateConfig: (partial: Partial<BladeConfigPlusModulation>) => void;
+  setConfig: (config: BladeConfigPlusModulation) => void;
+  setCandidateConfig: (config: BladeConfigPlusModulation | null) => void;
   applyCandidateConfig: () => void;
   setStyle: (styleId: string) => void;
   setColor: (key: string, color: { r: number; g: number; b: number }) => void;
@@ -60,7 +72,18 @@ export interface BladeStore {
   addEffectLog: (entry: string) => void;
   setTopology: (topology: BladeTopology) => void;
   setActiveSegment: (segmentId: string) => void;
-  loadPreset: (config: BladeConfig) => void;
+  loadPreset: (config: BladeConfigPlusModulation) => void;
+
+  // ── Modulation routing (v1.0 Preview / v1.1 Core) ──
+  /**
+   * Append a new binding to `config.modulation.bindings`. If the config
+   * has no `modulation` payload yet, one is seeded with `version: 1`.
+   */
+  addBinding: (binding: SerializedBinding) => void;
+  removeBinding: (bindingId: string) => void;
+  updateBinding: (bindingId: string, partial: Partial<SerializedBinding>) => void;
+  toggleBindingBypass: (bindingId: string) => void;
+  clearAllBindings: () => void;
 }
 
 export const useBladeStore = create<BladeStore>((set) => ({
@@ -143,5 +166,57 @@ export const useBladeStore = create<BladeStore>((set) => ({
         return { config, topology: updatedTopology };
       }
       return { config };
+    }),
+
+  // ── Modulation routing actions ──
+
+  addBinding: (binding) =>
+    set((state) => {
+      const existing = state.config.modulation;
+      const modulation: ModulationPayload = existing
+        ? { ...existing, bindings: [...existing.bindings, binding] }
+        : { version: 1, bindings: [binding] };
+      return { config: { ...state.config, modulation } };
+    }),
+
+  removeBinding: (bindingId) =>
+    set((state) => {
+      const existing = state.config.modulation;
+      if (!existing) return state;
+      const bindings = existing.bindings.filter((b) => b.id !== bindingId);
+      // If the last binding was removed, leave the modulation payload in
+      // place (empty) rather than deleting it — simpler invariant for
+      // consumers that check `config.modulation !== undefined`.
+      const modulation: ModulationPayload = { ...existing, bindings };
+      return { config: { ...state.config, modulation } };
+    }),
+
+  updateBinding: (bindingId, partial) =>
+    set((state) => {
+      const existing = state.config.modulation;
+      if (!existing) return state;
+      const bindings = existing.bindings.map((b) =>
+        b.id === bindingId ? { ...b, ...partial } : b,
+      );
+      const modulation: ModulationPayload = { ...existing, bindings };
+      return { config: { ...state.config, modulation } };
+    }),
+
+  toggleBindingBypass: (bindingId) =>
+    set((state) => {
+      const existing = state.config.modulation;
+      if (!existing) return state;
+      const bindings = existing.bindings.map((b) =>
+        b.id === bindingId ? { ...b, bypassed: !b.bypassed } : b,
+      );
+      const modulation: ModulationPayload = { ...existing, bindings };
+      return { config: { ...state.config, modulation } };
+    }),
+
+  clearAllBindings: () =>
+    set((state) => {
+      if (!state.config.modulation) return state;
+      const modulation: ModulationPayload = { ...state.config.modulation, bindings: [] };
+      return { config: { ...state.config, modulation } };
     }),
 }));

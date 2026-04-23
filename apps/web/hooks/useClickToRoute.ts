@@ -1,0 +1,275 @@
+'use client';
+
+// ─── useClickToRoute — Friday v1.0 "click a plate, click a param" binder ──
+//
+// The Friday v1.0 "Routing Preview" ships a single routing UX gesture:
+//
+//   1. User clicks a modulator plate in the LayerStack → the plate arms.
+//   2. The next click on any modulatable numeric scrub field creates a
+//      SerializedBinding wiring that plate's modulator to that parameter.
+//   3. Escape (or clicking the armed plate again) disarms without
+//      creating a binding.
+//
+// True drag-to-route lands in v1.1 (see impl plan §10). This hook is the
+// state machine for the click-to-route flow.
+//
+// ── Store wiring ────────────────────────────────────────────────────────
+//
+// The hook reads two store fields:
+//
+//   • `uiStore.armedModulatorId: string | null` + `setArmedModulatorId`
+//   • `bladeStore.addBinding(binding: SerializedBinding)` — appends onto
+//     `config.modulation.bindings`.
+//
+// Agent P4 (this file) does NOT edit those stores. Parallel sprint
+// agents landed the fields on `feat/modulation-routing` before this
+// hook was written; the patch spec is archived in
+// `./useClickToRoute.patches.md`. `// TODO(bladeStore-modulation-patch)`
+// markers remain at the two selector sites for a future cleanup pass
+// described in the patches doc §3.
+
+import { useCallback, useEffect, useMemo } from 'react';
+import { useBladeStore } from '@/stores/bladeStore';
+import { useUIStore } from '@/stores/uiStore';
+import {
+  getParameter,
+  isParameterModulatable,
+} from '@/lib/parameterGroups';
+import {
+  isParameterModulatableOnBoard,
+  DEFAULT_BOARD_ID,
+} from '@/lib/boardProfiles';
+import type { SerializedBinding } from '@kyberstation/engine';
+
+// ─── Public API ─────────────────────────────────────────────────────────
+
+export type BindingCreateResult =
+  | { kind: 'created'; bindingId: string }
+  | { kind: 'ignored'; reason: 'not-armed' | 'not-modulatable' | 'board-rejects' };
+
+export interface UseClickToRouteReturn {
+  /**
+   * The id of the modulator plate that is currently armed, or null if
+   * the hook is idle. Consumers read this to render the "armed" ring
+   * around the corresponding plate.
+   */
+  armedModulatorId: string | null;
+  /** Convenience flag — `armedModulatorId !== null`. */
+  isArmed: boolean;
+  /**
+   * Arm a plate. Stores the given `modulatorId` on `uiStore`. If another
+   * plate was already armed, this replaces it — UX is "only one plate
+   * armed at a time".
+   */
+  arm: (modulatorId: string) => void;
+  /** Clear the armed plate. Safe to call when nothing is armed. */
+  disarm: () => void;
+  /**
+   * Attempt to create a binding at `targetPath`. Only does so when a
+   * plate is armed, the parameter is modulatable, and the currently
+   * selected board permits modulation on that path. Always disarms
+   * after a successful call.
+   */
+  onParameterClick: (targetPath: string) => BindingCreateResult;
+}
+
+// ─── Optional hook options ──────────────────────────────────────────────
+//
+// Exposed primarily for tests so the hook can dependency-inject a
+// synthetic board id + binding-id generator without pulling in the app's
+// real stores. Production call sites pass no options and get the
+// defaults.
+
+export interface UseClickToRouteOptions {
+  /**
+   * Override the board id the hook consults for capability gating.
+   * Defaults to the v1.0 target board (Proffieboard V3.9). v1.1 wires
+   * this to the real "current board" selector from uiStore + BCS.
+   */
+  boardId?: string;
+  /**
+   * Generate a stable id for newly created bindings. Defaults to
+   * `crypto.randomUUID` when available, falling back to a time-seeded
+   * pseudo-random id so the hook works in node-only vitest suites.
+   */
+  generateBindingId?: () => string;
+}
+
+const DEFAULT_BINDING_AMOUNT = 0.6;
+
+function defaultBindingIdGenerator(): string {
+  // Prefer Web Crypto when it's around — browsers, newer Node.
+  if (
+    typeof globalThis !== 'undefined' &&
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+  // Node-only fallback for test runs. The id only needs to be unique
+  // within a single session — crypto-quality randomness isn't required.
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `binding-${Date.now().toString(36)}-${rand}`;
+}
+
+// ─── Pure helpers (exported for tests) ──────────────────────────────────
+
+/**
+ * Decide whether a click on `targetPath` should create a binding, given
+ * the hook's current context. Returning `'created'` tells the caller it
+ * is safe to build a SerializedBinding; any other variant explains why
+ * the click is a no-op.
+ *
+ * Exported separately from the hook so the decision logic is trivially
+ * testable in the node-only vitest environment without mounting React.
+ */
+export function decideBindingOutcome(input: {
+  armedModulatorId: string | null;
+  targetPath: string;
+  boardId: string;
+}): BindingCreateResult | { kind: 'allowed' } {
+  const { armedModulatorId, targetPath, boardId } = input;
+
+  if (armedModulatorId === null) {
+    return { kind: 'ignored', reason: 'not-armed' };
+  }
+  if (!isParameterModulatable(targetPath)) {
+    return { kind: 'ignored', reason: 'not-modulatable' };
+  }
+  if (!isParameterModulatableOnBoard(boardId, targetPath)) {
+    return { kind: 'ignored', reason: 'board-rejects' };
+  }
+  return { kind: 'allowed' };
+}
+
+/**
+ * Build the `SerializedBinding` the hook writes to `bladeStore`. Pulled
+ * out of the hook so tests can assert the shape without hitting the
+ * store. Amount / combinator / bypassed mirror the Friday v1.0 defaults
+ * per impl plan §3.1.
+ */
+export function buildBinding(input: {
+  id: string;
+  source: string;
+  target: string;
+}): SerializedBinding {
+  const { id, source, target } = input;
+  const p = getParameter(target);
+  return {
+    id,
+    source,
+    expression: null,
+    target,
+    combinator: 'add',
+    amount: DEFAULT_BINDING_AMOUNT,
+    bypassed: false,
+    ...(p !== undefined ? { label: `${source} → ${p.displayName}` } : {}),
+  };
+}
+
+// ─── Hook ───────────────────────────────────────────────────────────────
+
+export function useClickToRoute(
+  options: UseClickToRouteOptions = {},
+): UseClickToRouteReturn {
+  const boardId = options.boardId ?? DEFAULT_BOARD_ID;
+  const generateBindingId = options.generateBindingId ?? defaultBindingIdGenerator;
+
+  // ── uiStore — armed plate state ──────────────────────────────────────
+  //
+  // Parallel sprint agents landed the `armedModulatorId` + setter fields
+  // on uiStore ahead of this hook (see `./useClickToRoute.patches.md`
+  // §1 — the patch has shipped). Read them directly; the TODO marker
+  // below flags the fallback-friendly selector pattern that was
+  // originally defensive and can now be simplified further during
+  // cleanup.
+  // TODO(bladeStore-modulation-patch): simplify to
+  // `useUIStore((s) => s.armedModulatorId)` once no store adapter shims
+  // remain elsewhere in the UI integration layer.
+  const armedModulatorId = useUIStore((s) => s.armedModulatorId);
+  const setArmedModulatorId = useUIStore((s) => s.setArmedModulatorId);
+
+  // ── bladeStore — addBinding action ───────────────────────────────────
+  //
+  // Parallel sprint agents also landed `addBinding` on bladeStore.
+  // TODO(bladeStore-modulation-patch): drop this comment block once the
+  // Inspector ROUTING tab + FlashPanel mapping report converge on the
+  // same selector pattern (prevents drift in how the store slice is
+  // read across the new modulation surfaces).
+  const addBinding = useBladeStore((s) => s.addBinding);
+
+  // ── Actions ──────────────────────────────────────────────────────────
+
+  const arm = useCallback(
+    (modulatorId: string) => {
+      setArmedModulatorId(modulatorId);
+    },
+    [setArmedModulatorId],
+  );
+
+  const disarm = useCallback(() => {
+    setArmedModulatorId(null);
+  }, [setArmedModulatorId]);
+
+  const onParameterClick = useCallback(
+    (targetPath: string): BindingCreateResult => {
+      const outcome = decideBindingOutcome({
+        armedModulatorId,
+        targetPath,
+        boardId,
+      });
+      if (outcome.kind !== 'allowed') {
+        return outcome;
+      }
+
+      // armedModulatorId is guaranteed non-null when outcome is 'allowed'.
+      const source = armedModulatorId as string;
+      const id = generateBindingId();
+      const binding = buildBinding({ id, source, target: targetPath });
+
+      addBinding(binding);
+      setArmedModulatorId(null);
+
+      return { kind: 'created', bindingId: id };
+    },
+    [
+      addBinding,
+      armedModulatorId,
+      boardId,
+      generateBindingId,
+      setArmedModulatorId,
+    ],
+  );
+
+  // ── Global Escape-key listener ───────────────────────────────────────
+  //
+  // Disarm on Escape. Only attach the listener while something is armed
+  // so we don't contend with other global Esc handlers (modals, command
+  // palette) when idle.
+  useEffect(() => {
+    if (armedModulatorId === null) return;
+    if (typeof window === 'undefined') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setArmedModulatorId(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [armedModulatorId, setArmedModulatorId]);
+
+  // ── Return shape ─────────────────────────────────────────────────────
+
+  return useMemo<UseClickToRouteReturn>(
+    () => ({
+      armedModulatorId,
+      isArmed: armedModulatorId !== null,
+      arm,
+      disarm,
+      onParameterClick,
+    }),
+    [armedModulatorId, arm, disarm, onParameterClick],
+  );
+}

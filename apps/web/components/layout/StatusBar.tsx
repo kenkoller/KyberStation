@@ -7,6 +7,8 @@ import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useHistoryStore } from '@/stores/historyStore';
 import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSignal';
+import { BoardPicker } from '@/components/shared/BoardPicker';
+import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { LATEST_VERSION } from '@/lib/version';
 
 // ─── Power constants (mirrors PowerDrawPanel) ─────────────────────────────────
@@ -339,6 +341,13 @@ export function StatusBar() {
       <Segment label="Profile">{profileName}</Segment>
       <SegmentDivider />
 
+      {/* 2.5 — Board (Modulation Routing v1.0 Preview) ──────────────────── */}
+      {/* Inline BoardPicker — shows the active board + opens the modal    */}
+      {/* selector. Gates every capability-sensitive feature downstream    */}
+      {/* (ROUTING pill visibility, Flash button enablement, etc.).         */}
+      <BoardSegment />
+      <SegmentDivider />
+
       {/* 3 — Conn (WebUSB) — TODO placeholder until global store exists */}
       <Segment
         label="Conn"
@@ -448,6 +457,34 @@ export function StatusBar() {
       <Segment label="Build" valueClassName="tabular-nums text-text-secondary">
         v{LATEST_VERSION}
       </Segment>
+    </div>
+  );
+}
+
+// ─── BoardSegment — Modulation Routing v1.0 Preview ────────────────────────
+//
+// Renders the inline BoardPicker as a StatusBar segment. The picker itself
+// reads + writes through `useBoardProfile` (localStorage-backed with
+// cross-tab sync via CustomEvent), so every capability-sensitive
+// consumer reacts in lockstep. Falls into the same Segment skeleton as
+// the rest of the bar (label + value wrapper) but replaces the value
+// with the compact picker button.
+
+function BoardSegment() {
+  const { boardId, setBoardId } = useBoardProfile();
+  return (
+    <div
+      className="flex items-baseline gap-1.5 px-2 shrink-0"
+      data-statusbar-board
+    >
+      <span className="text-[9px] font-mono uppercase tracking-[0.12em] text-text-muted">
+        Board
+      </span>
+      <BoardPicker
+        variant="inline"
+        selectedBoardId={boardId}
+        onSelect={setBoardId}
+      />
     </div>
   );
 }

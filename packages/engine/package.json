@@ -20,6 +20,9 @@
     "lint": "echo 'lint: placeholder — eslint not yet configured'",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "peggy": "^4.2.0"
+  },
   "devDependencies": {
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

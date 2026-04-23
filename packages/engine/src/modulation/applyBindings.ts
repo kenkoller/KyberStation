@@ -11,6 +11,7 @@
 // Zero DOM / React dependencies per CLAUDE.md Architecture Principle #2.
 
 import type { BladeConfig } from '../types.js';
+import { evaluate } from './evaluator.js';
 import type {
   BindingCombinator,
   EvalContext,
@@ -156,38 +157,24 @@ function sanitize(
 /**
  * Resolve a binding's driver value.
  *
- * For v1.0 scope, expression evaluation is stubbed: if `expression` is
- * non-null, we fall back to `source` as if the binding were a simple
- * route. The math-expression parser + evaluator land in the v1.1
- * sprint.
- *
- * TODO(Agent-A-v1.1-parser): thread a real `evaluate(expression, ctx)`
- * call here. See design doc §4 and §6.1.
+ * Simple-route bindings read the modulator value directly from the
+ * context's pre-sampled map. Expression bindings delegate to the
+ * tree-walk evaluator (`./evaluator.ts`). Ill-formed bindings (both
+ * `source` and `expression` null) resolve to 0 — a visible no-op
+ * rather than a crash.
  */
 function resolveDriver(binding: ModulationBinding, ctx: EvalContext): number {
-  // Prefer `source` when present; expression is stubbed in v1.0 to
-  // treat the source fallback as the driver. If both are null, the
-  // binding is ill-formed — return 0 so it's a visible no-op rather
-  // than a crash.
   if (binding.source !== null) {
     const raw = ctx.modulators.get(binding.source);
     return raw ?? 0;
   }
 
   if (binding.expression !== null) {
-    // v1.0 scope stub — expression evaluation deferred. Log nothing;
-    // the UI surfaces an "expression eval coming in v1.1" chip.
-    // TODO(Agent-A-v1.1-parser): replace with `evaluate(binding.expression, ctx)`.
-    //
-    // To reduce the chance of a fully-zero binding feeling "dead" when
-    // the user authors an expression, we attempt a best-effort source
-    // extraction: if the top-level AST is a `var` node, use that
-    // variable. Otherwise, 0.
-    if (binding.expression.kind === 'var') {
-      const raw = ctx.modulators.get(binding.expression.id);
-      return raw ?? 0;
-    }
-    return 0;
+    // Math expression — tree-walk evaluate. Missing modulator IDs
+    // inside the expression evaluate to 0 (design doc §4.4).
+    // NaN / Infinity propagate; `sanitize` below cleans up against
+    // the parameter's declared range.
+    return evaluate(binding.expression, ctx);
   }
 
   // Neither set — ill-formed binding.

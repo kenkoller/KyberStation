@@ -75,6 +75,34 @@
   --badge-legends: 234 179 8;
   --badge-creative: 251 146 60;
   --badge-screen-accurate: 45 212 191;
+  /* ─── Modulator identity colors (v1.0 Modulation Preview) ───
+     Per docs/MODULATION_ROUTING_V1.1.md §3.1, each modulator has a
+     stable identity color that propagates through the UI: plate
+     stripes, wire colors, scrub-label tints. Stored as full rgb()
+     strings so registry entries can use `var(--mod-xxx)` directly.
+     Tuples exposed as `--mod-xxx-rgb` for alpha compositing. */
+  --mod-swing-rgb: 64 156 255;      /* electric blue — kinetic */
+  --mod-swing: rgb(64 156 255);
+  --mod-angle-rgb: 45 212 191;       /* teal — orientation */
+  --mod-angle: rgb(45 212 191);
+  --mod-twist-rgb: 167 139 250;      /* violet — rotation about long axis */
+  --mod-twist: rgb(167 139 250);
+  --mod-sound-rgb: 232 121 249;      /* magenta — RMS envelope */
+  --mod-sound: rgb(232 121 249);
+  --mod-battery-rgb: 134 239 172;    /* green — power/charge */
+  --mod-battery: rgb(134 239 172);
+  --mod-time-rgb: 251 191 36;        /* gold — temporal */
+  --mod-time: rgb(251 191 36);
+  --mod-clash-rgb: 248 250 252;      /* near-white — impact flash */
+  --mod-clash: rgb(248 250 252);
+  --mod-lockup-rgb: 251 146 60;      /* amber — sustained contact */
+  --mod-lockup: rgb(251 146 60);
+  --mod-preon-rgb: 125 211 252;      /* ice-blue — priming */
+  --mod-preon: rgb(125 211 252);
+  --mod-ignition-rgb: 34 211 238;    /* cyan — extending */
+  --mod-ignition: rgb(34 211 238);
+  --mod-retraction-rgb: 251 113 133; /* warm-red — retracting */
+  --mod-retraction: rgb(251 113 133);
   /* ─── Font Scale ─── */
   --font-scale: 1;
 }

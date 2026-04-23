@@ -117,6 +117,9 @@ export {
   sampleModulators,
   emptySamplerState,
   applyBindings,
+  parseExpression,
+  evaluate,
+  ExpressionParseError,
 } from './modulation/index.js';
 
 export {

@@ -30,7 +30,7 @@
 // narrow viewports. Each section lives in a bordered card with a
 // header + body; no internal collapse since the pill does the hiding.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StylePanel } from './StylePanel';
 import { ColorPanel } from './ColorPanel';
 import { GradientBuilder } from './GradientBuilder';
@@ -42,10 +42,14 @@ import { MotionSimPanel } from './MotionSimPanel';
 import { BladeHardwarePanel } from './BladeHardwarePanel';
 import { PowerDrawPanel } from './PowerDrawPanel';
 import { CrystalPanel } from './CrystalPanel';
+import { ModulatorPlateBar } from './routing/ModulatorPlateBar';
+import { BindingList } from './routing/BindingList';
 import { useSurpriseMe } from './Randomizer';
+import { useBoardProfile } from '@/hooks/useBoardProfile';
+import { canBoardModulate } from '@/lib/boardProfiles';
 import type { ReactNode } from 'react';
 
-type DesignGroup = 'appearance' | 'behavior' | 'advanced';
+type DesignGroup = 'appearance' | 'behavior' | 'advanced' | 'routing';
 
 interface GroupDef {
   id: DesignGroup;
@@ -87,13 +91,38 @@ const GROUPS: GroupDef[] = [
       { id: 'my-crystal',       title: 'My Crystal',         content: <CrystalPanel /> },
     ],
   },
+  // ROUTING — v1.0 Modulation Preview (gated by board capability below)
+  {
+    id: 'routing',
+    label: 'Routing',
+    hint: 'Live-signal modulation wiring · BETA',
+    sections: [
+      { id: 'modulator-plates', title: 'Modulators',       content: <ModulatorPlateBar /> },
+      { id: 'binding-list',     title: 'Active Bindings',  content: <BindingList /> },
+    ],
+  },
 ];
 
 export function DesignPanel() {
   const [activeGroup, setActiveGroup] = useState<DesignGroup>('appearance');
   const { surprise, undo, canUndo } = useSurpriseMe();
+  const boardId = useBoardProfile().boardId;
+  const boardSupportsModulation = canBoardModulate(boardId);
 
-  const group = GROUPS.find((g) => g.id === activeGroup) ?? GROUPS[0];
+  // Board gating: on boards that don't support modulation (CFX /
+  // Xenopixel / Verso / Proffie V2.2 for v1.0), the ROUTING pill is
+  // hidden entirely. If the user was previously on routing, bounce
+  // back to Appearance via effect (setState-in-render would loop).
+  const visibleGroups = GROUPS.filter(
+    (g) => g.id !== 'routing' || boardSupportsModulation,
+  );
+  useEffect(() => {
+    if (!boardSupportsModulation && activeGroup === 'routing') {
+      setActiveGroup('appearance');
+    }
+  }, [boardSupportsModulation, activeGroup]);
+
+  const group = visibleGroups.find((g) => g.id === activeGroup) ?? visibleGroups[0];
 
   return (
     <div className="flex flex-col gap-3">
@@ -126,8 +155,9 @@ export function DesignPanel() {
           aria-label="Design section groups"
           className="flex items-center gap-1 ml-auto"
         >
-          {GROUPS.map((g) => {
+          {visibleGroups.map((g) => {
             const active = g.id === activeGroup;
+            const isRouting = g.id === 'routing';
             return (
               <button
                 key={g.id}
@@ -137,13 +167,22 @@ export function DesignPanel() {
                 onClick={() => setActiveGroup(g.id)}
                 title={g.hint}
                 className={[
-                  'px-4 py-2 rounded-lg font-mono uppercase text-ui-xs tracking-[0.12em] border transition-colors',
+                  'px-4 py-2 rounded-lg font-mono uppercase text-ui-xs tracking-[0.12em] border transition-colors relative',
                   active
                     ? 'text-accent bg-accent-dim/30 border-accent-border/60'
                     : 'text-text-muted hover:text-text-secondary border-border-subtle/60 hover:border-border-light',
                 ].join(' ')}
               >
                 {g.label}
+                {isRouting && (
+                  <span
+                    className="ml-1.5 text-[8px] font-mono uppercase tracking-wider opacity-70"
+                    style={{ color: 'rgb(var(--status-magenta))' }}
+                    aria-label="Beta feature"
+                  >
+                    BETA
+                  </span>
+                )}
               </button>
             );
           })}

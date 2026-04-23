@@ -94,6 +94,19 @@ export interface UIStore {
   hoveredModulatorId: string | null;
 
   /**
+   * Click-to-route "armed" modulator — v1.0 modulation Preview.
+   *
+   * When a user clicks a modulator plate, it gets "armed": the next
+   * click on a numeric parameter scrub field creates a binding from
+   * that modulator to that parameter. Only one modulator can be armed
+   * at a time. Escape key globally disarms.
+   *
+   * Separate from `hoveredModulatorId` (transient hover glow) and from
+   * `layerStore.selectedLayerId` (the layer-config panel's selection).
+   */
+  armedModulatorId: string | null;
+
+  /**
    * OV8 — STATE-mode takeover. When true AND activeTab === 'design',
    * the center blade preview is replaced by a full-width 9-state
    * vertical stack of captureStateFrame snapshots. Desktop only.
@@ -164,6 +177,7 @@ export interface UIStore {
   toggleEditMode: () => void;
   setEditTarget: (target: 'lockup' | 'blast') => void;
   setHoveredModulator: (id: string | null) => void;
+  setArmedModulatorId: (id: string | null) => void;
   toggleStateGrid: () => void;
   setShowStateGrid: (on: boolean) => void;
   setExpandedAnalysisLayerId: (id: VisualizationLayerId | null) => void;
@@ -291,6 +305,7 @@ export const useUIStore = create<UIStore>((set) => ({
   editMode: false,
   editTarget: 'lockup',
   hoveredModulatorId: null,
+  armedModulatorId: null,
   showStateGrid: false,
   expandedAnalysisLayerId: 'rgb-luma',
   analysisRailWidth: clampRegion(
@@ -364,6 +379,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
   setEditTarget: (editTarget) => set({ editTarget }),
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
+  setArmedModulatorId: (armedModulatorId) => set({ armedModulatorId }),
   toggleStateGrid: () => set((state) => ({ showStateGrid: !state.showStateGrid })),
   setShowStateGrid: (showStateGrid) => set({ showStateGrid }),
   setExpandedAnalysisLayerId: (expandedAnalysisLayerId) => set({ expandedAnalysisLayerId }),

@@ -395,9 +395,15 @@ describe('applyBindings — nested paths', () => {
   });
 });
 
-// ─── Expression stub (v1.0 TODO) ────────────────────────────────────
+// ─── Expression resolution (v1.1) ───────────────────────────────────
+//
+// The v1.0 stub resolved non-`var` expressions to 0 because the
+// evaluator hadn't landed yet. In v1.1 the evaluator is wired in, so
+// literal, binary, unary, and call expressions all compute their real
+// values. Deep coverage of evaluator semantics lives in
+// `evaluator.test.ts`; these tests only confirm the wiring.
 
-describe('applyBindings — expression stub (v1.0)', () => {
+describe('applyBindings — expression resolution (v1.1)', () => {
   it('when binding.expression is a `var` node, reads that modulator', () => {
     const config = { ...makeConfig(), shimmer: 0 };
     const ctx = makeEvalContext({ sound: 0.6 }, config);
@@ -411,7 +417,7 @@ describe('applyBindings — expression stub (v1.0)', () => {
     expect(result.shimmer).toBeCloseTo(0.6, 6);
   });
 
-  it('for non-`var` expressions, driver resolves to 0 until v1.1 parser lands', () => {
+  it('when binding.expression is a literal, drives that constant', () => {
     const config = { ...makeConfig(), shimmer: 0.5 };
     const ctx = makeEvalContext({ swing: 1 }, config);
     const literalExpr: ExpressionNode = { kind: 'literal', value: 0.7 };
@@ -421,8 +427,54 @@ describe('applyBindings — expression stub (v1.0)', () => {
       ctx,
       clampRanges([['shimmer', SHIMMER_CLAMP]]),
     );
-    // v1.0 stub — expression eval is stubbed, so driver=0.
-    expect(result.shimmer).toBe(0);
+    // Literal expression evaluates to its value; shimmer clamped to [0,1].
+    expect(result.shimmer).toBeCloseTo(0.7, 6);
+  });
+
+  it('when binding.expression is a binary op, evaluates it', () => {
+    const config = { ...makeConfig(), shimmer: 0 };
+    const ctx = makeEvalContext({ swing: 0.3 }, config);
+    // swing * 2 = 0.6
+    const expr: ExpressionNode = {
+      kind: 'binary',
+      op: '*',
+      lhs: { kind: 'var', id: 'swing' },
+      rhs: { kind: 'literal', value: 2 },
+    };
+    const result = applyBindings(
+      config,
+      [binding({ target: 'shimmer', source: null, expression: expr, combinator: 'replace', amount: 1 })],
+      ctx,
+      clampRanges([['shimmer', SHIMMER_CLAMP]]),
+    );
+    expect(result.shimmer).toBeCloseTo(0.6, 6);
+  });
+
+  it('when binding.expression is a call, evaluates through the built-in', () => {
+    const config = { ...makeConfig(), shimmer: 0 };
+    const ctx = makeEvalContext({ swing: 0.9 }, config);
+    // clamp(swing * 2, 0, 1) with swing=0.9 → clamp(1.8, 0, 1) = 1
+    const expr: ExpressionNode = {
+      kind: 'call',
+      fn: 'clamp',
+      args: [
+        {
+          kind: 'binary',
+          op: '*',
+          lhs: { kind: 'var', id: 'swing' },
+          rhs: { kind: 'literal', value: 2 },
+        },
+        { kind: 'literal', value: 0 },
+        { kind: 'literal', value: 1 },
+      ],
+    };
+    const result = applyBindings(
+      config,
+      [binding({ target: 'shimmer', source: null, expression: expr, combinator: 'replace', amount: 1 })],
+      ctx,
+      clampRanges([['shimmer', SHIMMER_CLAMP]]),
+    );
+    expect(result.shimmer).toBeCloseTo(1, 6);
   });
 });
 

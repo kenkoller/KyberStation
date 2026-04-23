@@ -33,40 +33,8 @@
 // features that can be loosened post-feedback. Prefer under-declaring.
 
 import { isParameterModulatable } from './parameterGroups';
-
-// ── Engine type mirror ────────────────────────────────────────────────
-//
-// The engine's `BuiltInModulatorId` and `BuiltInFnId` live under
-// `packages/engine/src/modulation/types.ts`, which the engine's package
-// export does NOT re-export at the barrel (`./dist/index.js`). Rather
-// than deep-import and risk breaking the `exports` contract, we mirror
-// the string-literal unions here. A drift-sentinel test in
-// `apps/web/tests/lib/boardProfiles.test.ts` keeps this in sync with
-// the engine's source of truth.
-export type BoardBuiltInModulatorId =
-  | 'swing'
-  | 'angle'
-  | 'twist'
-  | 'sound'
-  | 'battery'
-  | 'time'
-  | 'clash'
-  | 'lockup'
-  | 'preon'
-  | 'ignition'
-  | 'retraction';
-
-export type BoardBuiltInFnId =
-  | 'min'
-  | 'max'
-  | 'clamp'
-  | 'lerp'
-  | 'sin'
-  | 'cos'
-  | 'abs'
-  | 'floor'
-  | 'ceil'
-  | 'round';
+// Canonical modulator / function ID unions: `packages/engine/src/modulation/types.ts`.
+import type { BuiltInModulatorId, BuiltInFnId } from '@kyberstation/engine';
 
 export type BoardStatus = 'full-support' | 'partial-support' | 'preview-only';
 
@@ -112,8 +80,8 @@ export interface BoardProfile {
   softBindingWarningAt?: number;
   /** Binding count that triggers a hard warning. */
   hardBindingWarningAt?: number;
-  supportedModulators: readonly BoardBuiltInModulatorId[];
-  supportedFunctions: readonly BoardBuiltInFnId[];
+  supportedModulators: readonly BuiltInModulatorId[];
+  supportedFunctions: readonly BuiltInFnId[];
   supportsModulatorChains: boolean;
   supportsStepSequencer: boolean;
   supportsEnvelopeFollower: boolean;
@@ -212,7 +180,7 @@ const PROFFIE_RETRACTIONS: readonly string[] = [
 ];
 
 /** All ProffieOS built-in modulators the sampler exposes. */
-const PROFFIE_MODULATORS: readonly BoardBuiltInModulatorId[] = [
+const PROFFIE_MODULATORS: readonly BuiltInModulatorId[] = [
   'swing',
   'angle',
   'twist',
@@ -227,7 +195,7 @@ const PROFFIE_MODULATORS: readonly BoardBuiltInModulatorId[] = [
 ];
 
 /** All built-in functions for expression routing. */
-const PROFFIE_FUNCTIONS: readonly BoardBuiltInFnId[] = [
+const PROFFIE_FUNCTIONS: readonly BuiltInFnId[] = [
   'min',
   'max',
   'clamp',
