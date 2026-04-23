@@ -68,9 +68,9 @@ export function createCrystalPostProcessing(
   );
   const bloomPass = new UnrealBloomPass(
     bloomResolution,
-    /* strength  */ 0.8,
-    /* radius    */ 0.6,
-    /* threshold */ 0.5,
+    /* strength  */ 0.32,
+    /* radius    */ 0.5,
+    /* threshold */ 0.88,
   );
   composer.addPass(bloomPass);
 

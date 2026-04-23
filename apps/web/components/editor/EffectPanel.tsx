@@ -1,8 +1,12 @@
 'use client';
+import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { ScrubField } from '@/components/shared/ScrubField';
+import { MiniGalleryPicker } from '@/components/shared/MiniGalleryPicker';
+import { getIgnitionThumbnail } from '@/lib/ignitionThumbnails';
+import { getRetractionThumbnail } from '@/lib/retractionThumbnails';
 
 const EASING_PRESETS = [
   { id: 'linear', label: 'Linear' },
@@ -67,6 +71,38 @@ export function EffectPanel() {
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const effectLog = useBladeStore((s) => s.effectLog);
 
+  // OV9: MiniGalleryPicker items for ignition + retraction pickers.
+  // Stable — computed once from shipped catalogs. Thumbnails resolve
+  // via getIgnitionThumbnail / getRetractionThumbnail, falling back
+  // to a default arrow for any id not in the thumbnail registry.
+  const ignitionItems = useMemo(
+    () =>
+      IGNITION_STYLES.map((style) => {
+        const entry = getIgnitionThumbnail(style.id);
+        return {
+          id: style.id,
+          label: style.label,
+          thumbnail: entry.thumbnail,
+          description: style.desc,
+        };
+      }),
+    [],
+  );
+
+  const retractionItems = useMemo(
+    () =>
+      RETRACTION_STYLES.map((style) => {
+        const entry = getRetractionThumbnail(style.id);
+        return {
+          id: style.id,
+          label: style.label,
+          thumbnail: entry.thumbnail,
+          description: style.desc,
+        };
+      }),
+    [],
+  );
+
   return (
     <div className="space-y-2">
       {/* Ignition */}
@@ -78,22 +114,16 @@ export function EffectPanel() {
           <HelpTooltip text="How the blade extends when activated. Controls the visual transition from off to on." proffie="InOutTrL<TrWipe<300>>" />
         }
       >
-        <div className="grid grid-cols-2 gap-1.5">
-          {IGNITION_STYLES.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setIgnition(style.id)}
-              title={style.desc}
-              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
-                config.ignition === style.id
-                  ? 'bg-accent-dim border-accent-border text-accent'
-                  : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
-              }`}
-            >
-              {style.label}
-            </button>
-          ))}
-        </div>
+        {/* OV9: MiniGalleryPicker replaces the button grid. Each
+            ignition gets a signature SVG (directional fill, spark,
+            gradient, etc.). */}
+        <MiniGalleryPicker
+          items={ignitionItems}
+          activeId={config.ignition}
+          onSelect={setIgnition}
+          columns={3}
+          ariaLabel="Ignition style picker"
+        />
         {/* Stutter parameters */}
         {config.ignition === 'stutter' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
@@ -203,22 +233,16 @@ export function EffectPanel() {
           <HelpTooltip text="How the blade retracts when deactivated. Controls the visual transition from on to off." proffie="InOutTrL<..., TrWipeIn<300>>" />
         }
       >
-        <div className="grid grid-cols-2 gap-1.5">
-          {RETRACTION_STYLES.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setRetraction(style.id)}
-              title={style.desc}
-              className={`touch-target text-left px-2 py-1.5 rounded text-ui-base font-medium transition-colors border ${
-                config.retraction === style.id
-                  ? 'bg-accent-dim border-accent-border text-accent'
-                  : 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
-              }`}
-            >
-              {style.label}
-            </button>
-          ))}
-        </div>
+        {/* OV9: MiniGalleryPicker replaces the button grid. Each
+            retraction gets a signature SVG keyed to its direction /
+            decay character. */}
+        <MiniGalleryPicker
+          items={retractionItems}
+          activeId={config.retraction}
+          onSelect={setRetraction}
+          columns={3}
+          ariaLabel="Retraction style picker"
+        />
         {/* Shatter retraction parameters */}
         {config.retraction === 'shatter' && (
           <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">

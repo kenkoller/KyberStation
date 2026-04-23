@@ -87,3 +87,67 @@ describe('interface diameter units', () => {
     expect(INTERFACE_DIAMETER_UNITS.wide).toBe(36);
   });
 });
+
+describe('v0.13.1 content batch — new parts', () => {
+  const newPartIds = [
+    'flat-top',
+    'tapered',
+    'maul-emitter',
+    'ringed-emitter',
+    'windu-switch',
+    'inquisitor-switch',
+    'windu-grip',
+    'luke-rotj-grip',
+    'covertec-grip',
+    'windu-pommel',
+    'inquisitor-mount',
+    'leather-wrap',
+    'activation-box',
+    'gold-band',
+  ];
+
+  it('catalog contains all 14 new parts', () => {
+    for (const id of newPartIds) {
+      expect(getPart(id), `part "${id}" missing from catalog`).toBeDefined();
+    }
+  });
+
+  it('new parts carry era + faction metadata', () => {
+    for (const id of newPartIds) {
+      const part = getPart(id)!;
+      expect(part.era, `part "${id}" missing era`).toBeDefined();
+      expect(part.faction, `part "${id}" missing faction`).toBeDefined();
+    }
+  });
+});
+
+describe('v0.13.1 content batch — new assemblies', () => {
+  const newAssemblyIds = [
+    'windu',
+    'luke-rotj',
+    'qui-gon',
+    'savage',
+    'inquisitor',
+    'cal-kestis',
+    'starkiller',
+    'palpatine',
+  ];
+
+  it('all 8 new assemblies are in the catalog', () => {
+    for (const id of newAssemblyIds) {
+      expect(getAssembly(id), `assembly "${id}" missing`).toBeDefined();
+    }
+  });
+
+  it('all 8 new assemblies compose cleanly in strict mode', () => {
+    for (const id of newAssemblyIds) {
+      const assembly = getAssembly(id)!;
+      const { hilt, errors } = resolveAssembly(assembly, PART_CATALOG, 'strict');
+      expect(
+        errors,
+        `${id}: ${errors.map((e) => e.message).join('; ')}`,
+      ).toHaveLength(0);
+      expect(hilt, `${id} produced null hilt`).not.toBeNull();
+    }
+  });
+});

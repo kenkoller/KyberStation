@@ -41,10 +41,13 @@ describe('deriveQrLayout', () => {
     expect(l.width).toBeLessThanOrEqual(meta.radius * 1.5);
   });
 
-  it('z-offsets the QR outward', () => {
+  it('z-offsets the QR forward of the body surface for scannability', () => {
     const l = deriveQrLayout(meta);
-    expect(l.zOffset).toBeGreaterThan(0);
-    expect(l.zOffset).toBeLessThan(meta.radius * 1.05); // not past the body
+    // Must sit forward of the body surface so refraction/transmission
+    // doesn't distort the scan target, but close enough to read as
+    // integrated with the crystal (not floating in space).
+    expect(l.zOffset).toBeGreaterThan(meta.radius);
+    expect(l.zOffset).toBeLessThan(meta.radius * 1.3);
   });
 
   it('QR is square (width === height)', () => {

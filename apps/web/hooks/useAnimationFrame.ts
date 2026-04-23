@@ -1,6 +1,9 @@
 'use client';
 import { useRef, useEffect, useCallback } from 'react';
-import { useAccessibilityStore } from '@/stores/accessibilityStore';
+import {
+  useAccessibilityStore,
+  GRAPHICS_FPS_CAP,
+} from '@/stores/accessibilityStore';
 
 interface AnimationFrameOptions {
   /** When false, cancels the RAF loop entirely. Default: true */
@@ -31,6 +34,13 @@ export function useAnimationFrame(
   // ship a 60fps canvas animation to someone who asked for less motion.
   // See the 2026-04-19 a11y audit P2.
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  // W3 (2026-04-22): graphics-quality cap. When the user drops to
+  // Medium / Low via the AppPerfStrip, every RAF in the app tightens
+  // to the corresponding fps ceiling. An explicit `maxFps` from the
+  // caller still wins (e.g. PixelDebugOverlay can keep 60 for
+  // precision) but everyone else follows the global preference.
+  const graphicsQuality = useAccessibilityStore((s) => s.graphicsQuality);
+  const graphicsCap = GRAPHICS_FPS_CAP[graphicsQuality];
 
   const enabled = options?.enabled ?? true;
   const explicitMaxFps = options?.maxFps;
@@ -39,7 +49,7 @@ export function useAnimationFrame(
       ? explicitMaxFps
       : reducedMotion
         ? REDUCED_MOTION_FPS
-        : undefined;
+        : graphicsCap;
   const minInterval = effectiveMaxFps ? 1000 / effectiveMaxFps : 0;
 
   const animate = useCallback(

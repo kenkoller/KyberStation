@@ -16,6 +16,19 @@ import { DesignPanel } from '@/components/editor/DesignPanel';
 import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
+
+// OV6 merged Dynamics into Design. The mobile / tablet shells still
+// render a single Design tab body — we stack Design + Dynamics content
+// vertically inside one panel so motion / effect-config controls remain
+// reachable on small screens without a dedicated tab.
+function MergedDesignPanel() {
+  return (
+    <div className="space-y-6">
+      <DesignPanel />
+      <DynamicsPanel />
+    </div>
+  );
+}
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAudioSync } from '@/hooks/useAudioSync';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
@@ -38,10 +51,9 @@ import { TabColumnContent } from '@/components/layout/TabColumnContent';
 import { playUISound } from '@/lib/uiSounds';
 
 const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
-  { id: 'design', label: 'Design', shortLabel: 'Design' },
-  { id: 'dynamics', label: 'Dynamics', shortLabel: 'Dyn' },
-  { id: 'audio', label: 'Audio', shortLabel: 'Audio' },
   { id: 'gallery', label: 'Gallery', shortLabel: 'Gallery' },
+  { id: 'design', label: 'Design', shortLabel: 'Design' },
+  { id: 'audio', label: 'Audio', shortLabel: 'Audio' },
   { id: 'output', label: 'Output', shortLabel: 'Out' },
 ];
 
@@ -50,9 +62,7 @@ type BladeOrientation = 'vertical' | 'horizontal';
 function TabContent({ activeTab }: { activeTab: ActiveTab }) {
   switch (activeTab) {
     case 'design':
-      return <DesignPanel />;
-    case 'dynamics':
-      return <DynamicsPanel />;
+      return <MergedDesignPanel />;
     case 'audio':
       return <AudioPanel />;
     case 'gallery':

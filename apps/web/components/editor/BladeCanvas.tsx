@@ -34,6 +34,13 @@ const BLADE_LEN = 830;
 const BLADE_Y = DESIGN_H / 2;
 const BLADE_CORE_H = 26;
 
+// W6 (2026-04-22): default auto-fit pan pulls the whole composition
+// left so the hilt's left half slips off the left edge. Matches
+// `AUTO_FIT_LEFT_PULL_DS` in `apps/web/lib/bladeRenderMetrics.ts`. Any
+// divergence between the two values re-introduces the old alignment
+// drift between the blade canvas and sibling panels — keep in sync.
+const AUTO_FIT_LEFT_PULL_DS = 182;
+
 // Data readout positions (design-space Y)
 const STRIP_Y = 400;       // pixel strip top
 const GRAPH_TOP_Y = 455;   // RGB graph top (increased gap from strip)
@@ -343,6 +350,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const verticalPanelWidths = useUIStore((s) => s.verticalPanelWidths);
   const showHilt = useUIStore((s) => s.showHilt);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const isPaused = useUIStore((s) => s.isPaused);
+  const pauseScope = useUIStore((s) => s.pauseScope);
   const editMode = useUIStore((s) => s.editMode);
   const theme = useMemo(() => getThemeById(canvasTheme), [canvasTheme]);
 
@@ -373,12 +382,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     if (vertical) {
       // Vertical: blade length runs along canvas height, base scale = ch / DESIGN_W
       const baseScale = ch / DESIGN_W;
-      const fitZoom = (ch * 0.90) / (bladeExtentDS * baseScale);
+      const fitZoom = (ch * 0.98) / (bladeExtentDS * baseScale);
       return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
     } else {
       // Horizontal: base scale is ch / designH (height-only), blade runs along width
       const baseScale = ch / layoutRef.current.designH;
-      const fitZoom = (cw * 0.90) / (bladeExtentDS * baseScale);
+      const fitZoom = (cw * 0.98) / (bladeExtentDS * baseScale);
       return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
     }
   }, [bladeLength, vertical]);
@@ -396,7 +405,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     if (w > 1 && h > 1 && !hasAutoFitRef.current) {
       hasAutoFitRef.current = true;
       setZoom(computeFitZoom());
-      setPanX(0);
+      setPanX(-AUTO_FIT_LEFT_PULL_DS);
     }
   });
 
@@ -404,7 +413,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   useEffect(() => {
     if (hasAutoFitRef.current) {
       setZoom(computeFitZoom());
-      setPanX(0);
+      setPanX(-AUTO_FIT_LEFT_PULL_DS);
     }
   }, [bladeLength, computeFitZoom]);
 
@@ -455,7 +464,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // Re-fit zoom to new panel size
       if (hasAutoFitRef.current) {
         setZoom(computeFitZoomRef.current());
-        setPanX(0);
+        setPanX(-AUTO_FIT_LEFT_PULL_DS);
       }
     });
     observer.observe(container);
@@ -2110,7 +2119,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.fillText('RGB', startX + 2 * dpr, topY + 12 * dpr);
   }, [config.ledCount, theme]);
 
-  // ─── Main render loop (throttled to 2fps when reduced motion is on) ───
+  // ─── Main render loop ───
+  //
+  // W5 (2026-04-22) pause integration:
+  //   - Full pause  (isPaused=true, pauseScope='full')    → engine is
+  //     frozen; we stop redrawing (last frame stays on canvas).
+  //   - Partial pause (isPaused=true, pauseScope='partial') → engine
+  //     keeps ticking; we keep drawing so the realistic blade stays
+  //     alive while everything else freezes.
+  //   - Not paused → run as usual.
   useAnimationFrame((_deltaMs) => {
     const engine = engineRef.current;
     const canvas = canvasRef.current;
@@ -2311,7 +2328,13 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
       if (!mobileFullscreen) drawViewLabel(ctx, viewMode);
     }
-  }, { maxFps: reducedMotion ? 2 : undefined });
+  }, {
+    maxFps: reducedMotion ? 2 : undefined,
+    // W5: when `isPaused` is full-scope, every RAF that honors
+    // `{enabled:!isPaused}` stops — but BladeCanvas stays always-on in
+    // partial-scope pause so the realistic saber keeps rendering.
+    enabled: !isPaused || pauseScope === 'partial',
+  });
 
   // ─── Edit Mode click / hover handlers ───
   /**
