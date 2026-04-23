@@ -27,8 +27,8 @@ function useCardPreview(glyph: string, presetName: string, layout: CardLayout) {
 export default function DevCardPreview() {
   const config = useBladeStore((s) => s.config);
   const glyph = useMemo(() => { try { return encodeGlyphFromConfig(config); } catch { return 'SPC.ERR'; } }, [config]);
-  const h = useCardPreview(glyph, config.name, LAYOUT_CATALOG.default);
-  const v = useCardPreview(glyph, config.name, LAYOUT_CATALOG.vertical);
+  const h = useCardPreview(glyph, config.name ?? 'Untitled', LAYOUT_CATALOG.default);
+  const v = useCardPreview(glyph, config.name ?? 'Untitled', LAYOUT_CATALOG.vertical);
   return (
     <main className="min-h-screen p-6 flex flex-col gap-6" style={{ background: 'rgb(var(--bg-deep))', color: 'rgb(var(--text-primary))' }}>
       <h1 className="text-ui-xl uppercase tracking-wider">Saber Card — Polish Verification</h1>
