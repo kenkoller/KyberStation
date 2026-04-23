@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { VisualizationLayerId } from '@/lib/visualizationTypes';
 
 export type ViewMode = 'blade' | 'angle' | 'strip' | 'cross' | 'uv-unwrap';
 export type RenderMode = 'photorealistic' | 'pixel';
@@ -34,11 +35,25 @@ export interface UIStore {
   /** Individual panel visibility toggles */
   showBladePanel: boolean;
   showPixelPanel: boolean;
-  showGraphPanel: boolean;
-  /** Global animation pause — freezes engine updates while keeping the last frame visible */
+  /** Engine tick pause — freezes blade state simulation. Set together
+   *  with `isPaused` by PauseButton; partial-pause mode sets this to
+   *  false so the realistic blade keeps rendering. */
   animationPaused: boolean;
-  /** Global CSS pause — freezes ALL CSS animations and transitions app-wide */
+  /** Global pause switch — freezes every RAF in the app that honors
+   *  `{ enabled: !isPaused }` plus CSS motion (via usePauseSystem). */
   isPaused: boolean;
+  /**
+   * W5 (2026-04-22): pause scope.
+   *   'full'    — everything frozen (analysis + pixel strip + blade
+   *               canvas + CSS + engine ticks). Default.
+   *   'partial' — everything frozen EXCEPT the realistic blade canvas
+   *               and its engine ticks. Pixel strip + LED readouts +
+   *               analysis rail + expanded slot all freeze; the blade
+   *               preview keeps rendering so the user can stage a
+   *               moment and still see the saber alive.
+   * The field is only meaningful when `isPaused` is true.
+   */
+  pauseScope: 'full' | 'partial';
   /** Battery preset index for power draw estimation */
   batteryPresetIdx: number;
   /** Per-tab section ordering — maps tab → ordered array of section IDs */
@@ -86,6 +101,16 @@ export interface UIStore {
    */
   showStateGrid: boolean;
 
+  /**
+   * Which AnalysisRail layer is "expanded" below the pixel strip.
+   * Defaults to `rgb-luma` on first load so the vertically-stacked
+   * blade preview / pixel strip / detail graph reads like the prior
+   * layout. `null` collapses the slot entirely, giving that vertical
+   * space back to the blade. Post-OV11 (2026-04-21): replaces the
+   * former AnalysisExpandOverlay full-screen portal.
+   */
+  expandedAnalysisLayerId: VisualizationLayerId | null;
+
   // ── OV11: drag-to-resize seams ──
   // Each is clamped to [min, max] with a default that the handle
   // resets to on double-click. Persist across reloads via
@@ -98,6 +123,18 @@ export interface UIStore {
   section2Height: number;
   /** PerformanceBar total height in CSS pixels. Default 158. */
   performanceBarHeight: number;
+  /** W2: Pixel strip panel height in CSS pixels. Draggable 24-120. Default 36. */
+  pixelStripHeight: number;
+  /** W2: ExpandedAnalysisSlot height in CSS pixels. Draggable 40-200. Default 110. */
+  expandedSlotHeight: number;
+  /**
+   * W4 (2026-04-22): which effects appear as chips in the action bar,
+   * in render order. The dropdown next to the chips lets users toggle
+   * individual effects in/out + offers a "Show all" that pins every
+   * known effect. Empty array = no effects visible (IGNITE alone).
+   * Default matches the pre-W4 shipped set: clash, blast, lockup, stab.
+   */
+  pinnedEffects: string[];
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -114,10 +151,9 @@ export interface UIStore {
   toggleShowHilt: () => void;
   toggleBladePanel: () => void;
   togglePixelPanel: () => void;
-  toggleGraphPanel: () => void;
   toggleAnimationPaused: () => void;
-  togglePause: () => void;
-  setPaused: (paused: boolean) => void;
+  togglePause: (scope?: 'full' | 'partial') => void;
+  setPaused: (paused: boolean, scope?: 'full' | 'partial') => void;
   setBatteryPresetIdx: (idx: number) => void;
   setSectionOrder: (tab: ActiveTab, order: string[]) => void;
   setLayoutMode: (mode: LayoutMode) => void;
@@ -130,12 +166,17 @@ export interface UIStore {
   setHoveredModulator: (id: string | null) => void;
   toggleStateGrid: () => void;
   setShowStateGrid: (on: boolean) => void;
+  setExpandedAnalysisLayerId: (id: VisualizationLayerId | null) => void;
 
   // ── OV11 setters ──
   setAnalysisRailWidth: (w: number) => void;
   setInspectorWidth: (w: number) => void;
   setSection2Height: (h: number) => void;
   setPerformanceBarHeight: (h: number) => void;
+  setPixelStripHeight: (h: number) => void;
+  setExpandedSlotHeight: (h: number) => void;
+  setPinnedEffects: (effects: string[]) => void;
+  togglePinnedEffect: (effect: string) => void;
 }
 
 // ─── OV11: resizable-region persistence ──────────────────────────────────────
@@ -149,7 +190,9 @@ export const REGION_LIMITS = {
   analysisRailWidth: { min: 140, max: 320, default: 200 },
   inspectorWidth:    { min: 280, max: 520, default: 400 },
   section2Height:    { min: 220, max: 520, default: 320 },
-  performanceBarHeight: { min: 60, max: 240, default: 158 },
+  performanceBarHeight: { min: 48, max: 200, default: 64 },
+  pixelStripHeight:  { min: 24, max: 120, default: 36 },
+  expandedSlotHeight:{ min: 40, max: 240, default: 110 },
 } as const;
 
 const OV11_STORAGE_KEY = 'kyberstation-ui-layout';
@@ -159,6 +202,8 @@ interface PersistedLayout {
   inspectorWidth: number;
   section2Height: number;
   performanceBarHeight: number;
+  pixelStripHeight: number;
+  expandedSlotHeight: number;
 }
 
 function clampRegion(
@@ -192,6 +237,30 @@ function savePersistedLayout(snap: PersistedLayout): void {
 
 const storedLayout = loadPersistedLayout();
 
+const PINNED_EFFECTS_STORAGE_KEY = 'kyberstation-pinned-effects';
+
+function loadPinnedEffects(): string[] | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(PINNED_EFFECTS_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter((x): x is string => typeof x === 'string');
+  } catch {
+    return null;
+  }
+}
+
+function savePinnedEffects(effects: string[]): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(PINNED_EFFECTS_STORAGE_KEY, JSON.stringify(effects));
+  } catch {
+    /* ignore */
+  }
+}
+
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
   renderMode: 'photorealistic',
@@ -210,9 +279,9 @@ export const useUIStore = create<UIStore>((set) => ({
   showHilt: true,
   showBladePanel: true,
   showPixelPanel: true,
-  showGraphPanel: true,
   animationPaused: false,
   isPaused: false,
+  pauseScope: 'full' as const,
   batteryPresetIdx: 0,
   sectionOrder: {},
   layoutMode: 'sidebar',
@@ -223,6 +292,7 @@ export const useUIStore = create<UIStore>((set) => ({
   editTarget: 'lockup',
   hoveredModulatorId: null,
   showStateGrid: false,
+  expandedAnalysisLayerId: 'rgb-luma',
   analysisRailWidth: clampRegion(
     'analysisRailWidth',
     storedLayout.analysisRailWidth ?? REGION_LIMITS.analysisRailWidth.default,
@@ -239,6 +309,15 @@ export const useUIStore = create<UIStore>((set) => ({
     'performanceBarHeight',
     storedLayout.performanceBarHeight ?? REGION_LIMITS.performanceBarHeight.default,
   ),
+  pixelStripHeight: clampRegion(
+    'pixelStripHeight',
+    storedLayout.pixelStripHeight ?? REGION_LIMITS.pixelStripHeight.default,
+  ),
+  expandedSlotHeight: clampRegion(
+    'expandedSlotHeight',
+    storedLayout.expandedSlotHeight ?? REGION_LIMITS.expandedSlotHeight.default,
+  ),
+  pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -255,10 +334,24 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleShowHilt: () => set((state) => ({ showHilt: !state.showHilt })),
   toggleBladePanel: () => set((state) => ({ showBladePanel: !state.showBladePanel })),
   togglePixelPanel: () => set((state) => ({ showPixelPanel: !state.showPixelPanel })),
-  toggleGraphPanel: () => set((state) => ({ showGraphPanel: !state.showGraphPanel })),
   toggleAnimationPaused: () => set((state) => ({ animationPaused: !state.animationPaused })),
-  togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
-  setPaused: (isPaused) => set({ isPaused }),
+  togglePause: (scope = 'full') =>
+    set((state) => {
+      const next = !state.isPaused;
+      // When pausing, set the engine flag to match the scope.
+      // When un-pausing, always re-enable the engine.
+      return {
+        isPaused: next,
+        pauseScope: scope,
+        animationPaused: next ? scope === 'full' : false,
+      };
+    }),
+  setPaused: (isPaused, scope = 'full') =>
+    set({
+      isPaused,
+      pauseScope: scope,
+      animationPaused: isPaused ? scope === 'full' : false,
+    }),
   setBatteryPresetIdx: (batteryPresetIdx) => set({ batteryPresetIdx }),
   setSectionOrder: (tab, order) => set((state) => ({
     sectionOrder: { ...state.sectionOrder, [tab]: order },
@@ -273,49 +366,66 @@ export const useUIStore = create<UIStore>((set) => ({
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
   toggleStateGrid: () => set((state) => ({ showStateGrid: !state.showStateGrid })),
   setShowStateGrid: (showStateGrid) => set({ showStateGrid }),
+  setExpandedAnalysisLayerId: (expandedAnalysisLayerId) => set({ expandedAnalysisLayerId }),
 
   setAnalysisRailWidth: (w) =>
     set((s) => {
       const analysisRailWidth = clampRegion('analysisRailWidth', w);
-      savePersistedLayout({
-        analysisRailWidth,
-        inspectorWidth: s.inspectorWidth,
-        section2Height: s.section2Height,
-        performanceBarHeight: s.performanceBarHeight,
-      });
+      savePersistedLayout({ ...snapshotLayout(s), analysisRailWidth });
       return { analysisRailWidth };
     }),
   setInspectorWidth: (w) =>
     set((s) => {
       const inspectorWidth = clampRegion('inspectorWidth', w);
-      savePersistedLayout({
-        analysisRailWidth: s.analysisRailWidth,
-        inspectorWidth,
-        section2Height: s.section2Height,
-        performanceBarHeight: s.performanceBarHeight,
-      });
+      savePersistedLayout({ ...snapshotLayout(s), inspectorWidth });
       return { inspectorWidth };
     }),
   setSection2Height: (h) =>
     set((s) => {
       const section2Height = clampRegion('section2Height', h);
-      savePersistedLayout({
-        analysisRailWidth: s.analysisRailWidth,
-        inspectorWidth: s.inspectorWidth,
-        section2Height,
-        performanceBarHeight: s.performanceBarHeight,
-      });
+      savePersistedLayout({ ...snapshotLayout(s), section2Height });
       return { section2Height };
     }),
   setPerformanceBarHeight: (h) =>
     set((s) => {
       const performanceBarHeight = clampRegion('performanceBarHeight', h);
-      savePersistedLayout({
-        analysisRailWidth: s.analysisRailWidth,
-        inspectorWidth: s.inspectorWidth,
-        section2Height: s.section2Height,
-        performanceBarHeight,
-      });
+      savePersistedLayout({ ...snapshotLayout(s), performanceBarHeight });
       return { performanceBarHeight };
     }),
+  setPixelStripHeight: (h) =>
+    set((s) => {
+      const pixelStripHeight = clampRegion('pixelStripHeight', h);
+      savePersistedLayout({ ...snapshotLayout(s), pixelStripHeight });
+      return { pixelStripHeight };
+    }),
+  setExpandedSlotHeight: (h) =>
+    set((s) => {
+      const expandedSlotHeight = clampRegion('expandedSlotHeight', h);
+      savePersistedLayout({ ...snapshotLayout(s), expandedSlotHeight });
+      return { expandedSlotHeight };
+    }),
+  setPinnedEffects: (effects) => {
+    savePinnedEffects(effects);
+    set({ pinnedEffects: effects });
+  },
+  togglePinnedEffect: (effect) => {
+    set((s) => {
+      const next = s.pinnedEffects.includes(effect)
+        ? s.pinnedEffects.filter((e) => e !== effect)
+        : [...s.pinnedEffects, effect];
+      savePinnedEffects(next);
+      return { pinnedEffects: next };
+    });
+  },
 }));
+
+function snapshotLayout(s: UIStore): PersistedLayout {
+  return {
+    analysisRailWidth: s.analysisRailWidth,
+    inspectorWidth: s.inspectorWidth,
+    section2Height: s.section2Height,
+    performanceBarHeight: s.performanceBarHeight,
+    pixelStripHeight: s.pixelStripHeight,
+    expandedSlotHeight: s.expandedSlotHeight,
+  };
+}

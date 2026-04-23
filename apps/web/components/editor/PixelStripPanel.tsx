@@ -23,6 +23,7 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
   const ledCount = useBladeStore((s) => s.config.ledCount);
   const brightness = useUIStore((s) => s.brightness);
+  const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
   // Resize observer to match canvas to container
@@ -132,7 +133,14 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${totalA}A  bri:${avgBri}%`, stripRight - 3 * dpr, ch / 2);
-  }, { maxFps: reducedMotion ? 2 : undefined });
+  }, {
+    // W5 pause model: freeze on any pause scope (full AND partial).
+    // Partial-pause keeps the realistic blade canvas alive, but the
+    // LED pixel strip is part of the analysis chrome and should
+    // freeze so the user can read off specific pixel values.
+    enabled: !isPaused,
+    maxFps: reducedMotion ? 2 : undefined,
+  });
 
   return (
     <div ref={containerRef} className="w-full h-full">

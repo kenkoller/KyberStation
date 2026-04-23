@@ -252,6 +252,53 @@ Delivered as `apps/web/lib/severanceDragCurve.ts` (pure curve) + `apps/web/hooks
 
 ---
 
+## Item #20 — Hilt composer + saber-profile integration
+
+**Why it matters:** The 2026-04-22 content-expansion session grew the modular hilt library to 47 parts / 16 assemblies, but none of it is surfaced in a user-facing picker yet. Users still can't build their own hilt from pieces, and the hilt choice isn't scoped to a saber profile — today it's a locally-held UI state in `BladeCanvas.tsx`. Ken's product intent (per the 2026-04-22 planning chat): users should pick from existing character hilts OR compose their own, and the choice should be a per-`SaberProfile` option so each saved profile carries its own hilt.
+
+**Gating:** Parts A + B + C of the prompt below touch files the `feat/marketing-site-expansion` worktree is also editing (`BladeCanvas.tsx`, `SaberProfileManager.tsx`). Wait until `feat/marketing-site-expansion` lands on main, OR do A only (conflict-safe) as a standalone dockable panel and defer B + C to a follow-up post-mkt-merge.
+
+**Prompt (paste into a new session):**
+
+> Build a hilt composer feature so users can (1) pick a shipped assembly from the v0.13.1 expanded catalog, OR (2) compose their own hilt by swapping individual parts per slot, AND (3) have the choice persist per-`SaberProfile` so switching profiles restores each profile's chosen hilt.
+>
+> **Start by reading:**
+> - [`apps/web/lib/hilts/types.ts`](apps/web/lib/hilts/types.ts) — `HiltPart` / `HiltAssembly` / `AssemblyPart` shapes, connector-diameter rules
+> - [`apps/web/lib/hilts/catalog.ts`](apps/web/lib/hilts/catalog.ts) — 47 parts registered
+> - [`apps/web/lib/hilts/assemblies.ts`](apps/web/lib/hilts/assemblies.ts) — 16 canonical assemblies
+> - [`apps/web/lib/hilts/composer.ts`](apps/web/lib/hilts/composer.ts) — `resolveAssembly(..., 'strict' | 'permissive')`
+> - [`apps/web/components/hilt/HiltRenderer.tsx`](apps/web/components/hilt/HiltRenderer.tsx) — SVG renderer (accepts `assemblyId` or `assembly` prop)
+> - [`apps/web/stores/saberProfileStore.ts`](apps/web/stores/saberProfileStore.ts) — `SaberProfile` shape + CRUD actions
+> - [`apps/web/components/editor/BladeCanvas.tsx`](apps/web/components/editor/BladeCanvas.tsx) §`SVG_HILT_STYLE_TO_ASSEMBLY` / `HILT_STYLES` (line ~125–155) — current hilt-style dispatch
+>
+> **Deliverable — 3 parts, shippable together or in order A → B → C:**
+>
+> **A — Schema + composer panel (conflict-safe, ship first if mkt is still in flight):**
+> 1. Add `hiltAssembly: string | null` field to `SaberProfile` in [`saberProfileStore.ts`](apps/web/stores/saberProfileStore.ts). Default `null` = "use preset-derived hilt" (today's behavior); non-null = an assembly id (either a shipped one from `ASSEMBLY_CATALOG`, or a user-composed assembly that the user serialized via some mechanism — start with ids-only, defer user-composed-assembly serialization to a follow-up if scope creeps).
+> 2. Create [`apps/web/components/editor/HiltComposer.tsx`](apps/web/components/editor/HiltComposer.tsx) — a self-contained panel:
+>    - **Mode toggle**: "Preset" (pick from `allAssemblies()`) vs "Custom" (5 dropdowns, one per slot: emitter / switch / grip / pommel / accent-ring).
+>    - Preset mode uses the new `<MiniGalleryPicker>` primitive (shipped in OV9) with thumbnail renders via `<HiltRenderer>` at small scale.
+>    - Custom mode renders 5 `<select>`s populated by `getPartsByType('emitter')` etc., plus a live `<HiltRenderer>` preview that updates on every change. Validate with `resolveAssembly(..., 'strict')`; fall back to `'permissive'` and show a warning chip if diameters don't mate.
+>    - Writes to active profile via `updateProfile(activeProfileId, { hiltAssembly: <id> })`.
+> 3. Register the panel id (e.g. `'hilt-composer'`) in [`apps/web/components/layout/TabColumnContent.tsx`](apps/web/components/layout/TabColumnContent.tsx) so it's dockable via the workbench column grid. Add it to whichever tab's column preset feels natural — Design tab, right column, makes the most sense given the Inspector pattern.
+>
+> **B — Wire into the blade preview:**
+> 4. In [`BladeCanvas.tsx`](apps/web/components/editor/BladeCanvas.tsx), after the existing `hiltStyle` dispatch, check `useSaberProfileStore.getActive()?.hiltAssembly`. If non-null, use it as the override for `SVG_HILT_STYLE_TO_ASSEMBLY`'s output — i.e. `<HiltRenderer assemblyId={profileHilt ?? SVG_HILT_STYLE_TO_ASSEMBLY[hiltStyle]}>`. Keep the legacy primitive-canvas path as a fallback when neither resolves. Same for [`MiniSaber.tsx`](apps/web/components/shared/MiniSaber.tsx) if the gallery marquee should also reflect the profile's hilt.
+>
+> **C — Nest inside Profile Manager:**
+> 5. In [`SaberProfileManager.tsx`](apps/web/components/editor/SaberProfileManager.tsx)'s profile-edit modal, add a "Hilt" section (or tab, matching whatever edit pattern ships post-mkt). Render a compact `<HiltComposer>` inline (pass a `compact` prop if needed for modal dimensions). Save-on-change writes directly to the profile.
+>
+> **Tests:**
+> - `saberProfileStore.test.ts` — assert the schema migration handles legacy profiles without `hiltAssembly` (returns `null`), `updateProfile` accepts the new field.
+> - `hiltComposer.test.tsx` (new) — mode toggle, preset pick flow, custom composition flow, diameter-mismatch warning path.
+> - Update any profile-import test fixtures to round-trip the new field.
+>
+> **Verify** `pnpm -w typecheck` + `pnpm -w test` clean. Browser-verify end-to-end: pick a shipped assembly → see it render in the blade canvas; switch to custom mode → swap emitters → render updates live; switch profile → hilt switches with it; create a new profile → defaults to null (no override).
+>
+> **Pre-launch posture:** zero real users — the schema addition doesn't need a migration fallback beyond `?? null`. Ship the simplest change that works.
+
+---
+
 ## Document update checklist for any session closing one of these
 
 When a session ships one of these items:

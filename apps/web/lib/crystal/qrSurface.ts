@@ -48,10 +48,10 @@ export async function createQrSurface(
   glyph: string,
   options: QrSurfaceOptions = {},
 ): Promise<QrSurfaceResult> {
-  const canvasSize = options.canvasSize ?? 512;
+  const canvasSize = options.canvasSize ?? 768;
   const dark = options.invertPolarity ? '#ffffff' : (options.darkColor ?? '#0a0a10');
   const light = options.invertPolarity ? '#0a0a10' : (options.lightColor ?? '#ffffff');
-  const errorLevel = options.errorCorrectionLevel ?? 'M';
+  const errorLevel = options.errorCorrectionLevel ?? 'Q';
 
   if (typeof document === 'undefined') {
     throw new Error('createQrSurface requires a browser environment (document)');
@@ -61,25 +61,24 @@ export async function createQrSurface(
   canvas.width = canvasSize;
   canvas.height = canvasSize;
 
-  // qrcode.toCanvas writes a proper error-corrected QR matrix.
-  // Margin 2 = 2-module quiet zone (we add a little more padding via
-  // CSS-in-scene later).
+  // Margin 4 = 4-module quiet zone. Phone QR scanners routinely fail on
+  // the 2-module spec minimum when the code is embedded against visual
+  // clutter (the crystal body's reflections and fleck layer both count
+  // as clutter from a scanner's perspective).
   await QRCode.toCanvas(canvas, glyph, {
     width: canvasSize,
-    margin: 2,
+    margin: 4,
     errorCorrectionLevel: errorLevel,
     color: { dark, light },
   });
 
-  // Compute module count from the generated QR — the library writes
-  // matrix data we can read via `create()`.
   const qr = QRCode.create(glyph, { errorCorrectionLevel: errorLevel });
   const moduleCount = qr.modules.size;
   const version = qr.version;
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
+  texture.anisotropy = 8;
   texture.generateMipmaps = true;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
@@ -106,7 +105,9 @@ export interface QrDecalLayout {
 
 /**
  * Derive the QR decal layout from crystal metadata. The decal occupies
- * ~75% of body width and ~60% of body height, centred.
+ * ~75% of body width and ~60% of body height, centred, and sits just
+ * forward of the body surface so the transmissive/refractive body
+ * doesn't visually distort the scan target.
  */
 export function deriveQrLayout(meta: {
   topY: number;
@@ -115,13 +116,12 @@ export function deriveQrLayout(meta: {
 }): QrDecalLayout {
   const bodyHeight = meta.topY - meta.bottomY;
   const centreY = (meta.topY + meta.bottomY) / 2;
-  // QR is square — size it to the limiting dimension
   const size = Math.min(bodyHeight * 0.6, meta.radius * 1.5);
   return {
     width: size,
     height: size,
     centreY,
-    zOffset: meta.radius * 0.95,
+    zOffset: meta.radius * 1.08,
   };
 }
 

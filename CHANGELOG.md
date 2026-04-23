@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path.
 
+### Saber Wizard — hardware step (2026-04-22)
+
+Added a new first step to the Saber Wizard so newcomers tell the app about the saber they actually own (blade length + board) before picking aesthetic. The 3-step archetype/colour/vibe flow shifts to steps 2/3/4 and is otherwise unchanged.
+
+- **Blade length picker** — 6 tiles (20"/24"/28"/32"/36"/40"). LED counts mirror `BLADE_LENGTH_PRESETS` in the engine package; selection writes `BladeConfig.ledCount` so every per-LED surface in the editor (BladeCanvas + PixelStripPanel + RGBGraphPanel + state-grid takeover) renders the chosen length 1:1.
+- **Board picker** — 5 tiles (Proffie V3 / V2 / CFX / GH V4 / GH V3) with **3-tier compatibility chips** built on the existing `<StatusSignal>` primitive (paired colored glyph + label, colorblind-safe):
+  - **VERIFIED** (green ✓) — Proffie V3, the only board hardware-validated end-to-end (per the 2026-04-20 Phase A/B/C entry above).
+  - **UNTESTED** (amber ▲) — Proffie V2. Code path identical to V3, hardware testing pending. Community hardware reports welcome.
+  - **REFERENCE** (red ✕) — CFX / GH V4 / GH V3. Different firmware ecosystems entirely; the editor + visualizer work but the generated config.h won't run on these boards.
+  - A mini legend strip next to the "Board" heading shows what each color means.
+  - Selection writes `boardType` to the active `SaberProfile` (or auto-creates a "My Saber" profile if none exists).
+- **"Skip for now"** advances to the archetype step without writing anything to the blade config or profile — for users who want to dive straight into design and configure hardware later via the Profile + Code panels.
+- **Initial focus** lands on the currently-selected length tile (matches selection rather than always-first), so keyboard users start where the visual selection is.
+
+10 new contract tests in `apps/web/tests/saberWizardOptions.test.ts` guard the LED-count ↔ `inferBladeInches` mapping, the V3-only-verified tier assignment (will fail loudly when V2 gets hardware-validated, prompting a tier bump), and the storeValue strings that `CodeOutput.tsx` maps back to `proffieboard_v{2,3}`. 637 web tests pass.
+
 ### WebUSB flash — hardware validation (2026-04-20)
 
 **Phases A + B + C all green on Proffieboard V3.9 (89sabers) + macOS 15 + Brave.** Connect → dry-run → real flash → post-write verify → recovery re-flash — full clean pass. Blade ignites blue on the first power press after replug; USB serial enumerates as `/dev/tty.usbmodem*`; audio DAC active (ProffieOS voice pack announces "SD card not found" / "font not found").

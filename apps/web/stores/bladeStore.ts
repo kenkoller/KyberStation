@@ -67,8 +67,12 @@ export const useBladeStore = create<BladeStore>((set) => ({
   config: DEFAULT_CONFIG,
   topology: DEFAULT_TOPOLOGY,
   activeSegmentId: 'main',
-  bladeState: 'off' as BladeState,
-  isOn: false,
+  // W1 (2026-04-22): saber default-on so the analysis rail panels
+  // have a lit blade to visualise on first load — empty waveforms
+  // read as "nothing working" to new users. Users can still retract
+  // via the action bar any time.
+  bladeState: 'on' as BladeState,
+  isOn: true,
   fps: 0,
   motionSim: {
     swing: 0,

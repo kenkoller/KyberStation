@@ -1,24 +1,18 @@
-// ─── AnalysisRail — classification + visibility-round-trip regression ─────
+// ─── AnalysisRail — classification + visibility regression ─────
 //
 // Node-only vitest, matching the apps/web suite. Component cannot be
 // rendered here without jsdom + the canvas 2D stub, so we verify the
 // pure + store-driven pieces:
 //
-//   1. Shape classification: each of the 13 layers lands in exactly
-//      one shape bucket (pixel / line-graph / scalar). The three
-//      buckets cover every layer id.
+//   1. Shape classification: each layer lands in exactly one shape
+//      bucket (pixel / line-graph / scalar). The three buckets cover
+//      every layer id.
 //   2. `selectAnalysisRailLayerIds` — the pure selector used by
 //      AnalysisRail — returns only line-graph ids, respects the
 //      `visibleLayers` filter, and preserves the `layerOrder` order.
-//   3. visibility toggle round-trip: toggle in the store → selector
-//      output updates → toggle back → selector output restored. This
-//      is the store wiring AnalysisRail rows depend on when a user
-//      clicks the × (hide) button on a layer.
-//   4. Agent-prompt acceptance: AnalysisExpandOverlay is importable
-//      and renders a function component, and the overlay's open/close
-//      contract is the same `layerId|null` shape the rail passes
-//      (structural check, covered by higher-level smoke tests in
-//      live preview).
+//   3. Default-visible contract: every line-graph layer is visible by
+//      default (post-W1 2026-04-22 — "always on" product contract).
+//   4. AnalysisRail module exports its component + selector.
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
@@ -39,6 +33,7 @@ function resetStore() {
   useVisualizationStore.setState({
     visibleLayers: new Set<VisualizationLayerId>(DEFAULT_VISIBLE_LAYER_IDS),
     layerOrder: [...DEFAULT_LAYER_ORDER],
+    rgbLumaChannels: { r: true, g: true, b: true, l: true },
     isDebugMode: false,
     pinnedPixels: [],
     hoveredPixel: null,
@@ -49,6 +44,13 @@ describe('visualizationTypes — shape classification', () => {
   it('every layer has exactly one shape', () => {
     for (const l of VISUALIZATION_LAYERS) {
       expect(['pixel', 'line-graph', 'scalar']).toContain(l.shape);
+    }
+  });
+
+  it('every layer has both a descriptive label and a short fallback', () => {
+    for (const l of VISUALIZATION_LAYERS) {
+      expect(l.label.length).toBeGreaterThan(0);
+      expect(l.shortLabel.length).toBeGreaterThan(0);
     }
   });
 
@@ -69,17 +71,12 @@ describe('visualizationTypes — shape classification', () => {
     expect(PIXEL_SHAPED_LAYER_IDS.has('effect-overlay')).toBe(true);
   });
 
-  it('line-graph-shaped layers include the 9 analytical waveforms (per prompt)', () => {
-    // Agent-prompt default list — the 9 layers that move into
-    // AnalysisRail.
+  it('line-graph-shaped layers include the post-merge analytical waveforms', () => {
     const expected: VisualizationLayerId[] = [
-      'luminance',
+      'rgb-luma',
       'power-draw',
       'hue',
       'saturation',
-      'channel-r',
-      'channel-g',
-      'channel-b',
       'swing-response',
       'transition-progress',
     ];
@@ -100,6 +97,14 @@ describe('visualizationTypes — shape classification', () => {
   });
 });
 
+describe('visualizationTypes — always-on analysis rail contract', () => {
+  it('every line-graph layer is default-visible', () => {
+    for (const id of LINE_GRAPH_SHAPED_LAYER_IDS) {
+      expect(DEFAULT_VISIBLE_LAYER_IDS.has(id)).toBe(true);
+    }
+  });
+});
+
 describe('AnalysisRail — selectAnalysisRailLayerIds selector', () => {
   beforeEach(resetStore);
 
@@ -113,13 +118,9 @@ describe('AnalysisRail — selectAnalysisRailLayerIds selector', () => {
   });
 
   it('preserves the layerOrder ordering', () => {
-    // Reverse the default order and ensure the selector keeps the
-    // reversed sequence.
     const reversed = [...DEFAULT_LAYER_ORDER].reverse();
     const visible = new Set<VisualizationLayerId>(reversed);
     const out = selectAnalysisRailLayerIds(reversed, visible);
-    // Filter-preserving: each adjacent pair in `out` must appear in
-    // the same direction in the `reversed` input.
     for (let i = 1; i < out.length; i++) {
       const aIdx = reversed.indexOf(out[i - 1]);
       const bIdx = reversed.indexOf(out[i]);
@@ -127,7 +128,7 @@ describe('AnalysisRail — selectAnalysisRailLayerIds selector', () => {
     }
   });
 
-  it('excludes hidden layers', () => {
+  it('excludes hidden layers (API-level hiding still works for programmatic callers)', () => {
     const all = [...DEFAULT_LAYER_ORDER];
     const visible = new Set<VisualizationLayerId>([]);
     const out = selectAnalysisRailLayerIds(all, visible);
@@ -146,12 +147,10 @@ describe('AnalysisRail — selectAnalysisRailLayerIds selector', () => {
     expect(out).toEqual([]);
   });
 
-  it('returns the default line-graph set from a default store', () => {
+  it('returns all six line-graph layers from a default store', () => {
     const state = useVisualizationStore.getState();
     const out = selectAnalysisRailLayerIds(state.layerOrder, state.visibleLayers);
-    // Default visible line-graphs are R/G/B. Luminance, hue, power etc.
-    // are hidden by default until the user opts in.
-    expect(out.length).toBeGreaterThan(0);
+    expect(out).toHaveLength(LINE_GRAPH_SHAPED_LAYER_IDS.size);
     for (const id of out) {
       expect(LINE_GRAPH_SHAPED_LAYER_IDS.has(id)).toBe(true);
       expect(state.visibleLayers.has(id)).toBe(true);
@@ -159,53 +158,7 @@ describe('AnalysisRail — selectAnalysisRailLayerIds selector', () => {
   });
 });
 
-describe('AnalysisRail — visibility toggle round-trip', () => {
-  beforeEach(resetStore);
-
-  it('toggling a line-graph layer adds/removes it from the selector output', () => {
-    const initial = selectAnalysisRailLayerIds(
-      useVisualizationStore.getState().layerOrder,
-      useVisualizationStore.getState().visibleLayers,
-    );
-
-    // `luminance` is hidden by default — toggling it on should make
-    // the selector include it.
-    useVisualizationStore.getState().toggleLayer('luminance');
-    let next = selectAnalysisRailLayerIds(
-      useVisualizationStore.getState().layerOrder,
-      useVisualizationStore.getState().visibleLayers,
-    );
-    expect(next).toContain('luminance');
-    expect(next.length).toBe(initial.length + 1);
-
-    // Toggle off — back to baseline.
-    useVisualizationStore.getState().toggleLayer('luminance');
-    next = selectAnalysisRailLayerIds(
-      useVisualizationStore.getState().layerOrder,
-      useVisualizationStore.getState().visibleLayers,
-    );
-    expect(next).not.toContain('luminance');
-    expect(next).toEqual(initial);
-  });
-
-  it('hiding all RGB channels yields an empty selector output', () => {
-    useVisualizationStore.getState().setLayerVisible('channel-r', false);
-    useVisualizationStore.getState().setLayerVisible('channel-g', false);
-    useVisualizationStore.getState().setLayerVisible('channel-b', false);
-    const out = selectAnalysisRailLayerIds(
-      useVisualizationStore.getState().layerOrder,
-      useVisualizationStore.getState().visibleLayers,
-    );
-    expect(out).toEqual([]);
-  });
-});
-
-describe('AnalysisRail — expand overlay contract', () => {
-  it('AnalysisExpandOverlay module exports the component', async () => {
-    const mod = await import('../components/layout/AnalysisExpandOverlay');
-    expect(typeof mod.AnalysisExpandOverlay).toBe('function');
-  });
-
+describe('AnalysisRail — module exports', () => {
   it('AnalysisRail module exports its component + selector', async () => {
     const mod = await import('../components/layout/AnalysisRail');
     expect(typeof mod.AnalysisRail).toBe('function');

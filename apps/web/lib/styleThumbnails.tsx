@@ -33,13 +33,19 @@ const ACCENT_DIM = 'rgb(var(--accent) / 0.4)';
 const BLADE_Y = 30;
 
 function Svg({ children }: { children: ReactNode }) {
+  // W2 (2026-04-22): dropped the intrinsic width/height attrs so the SVG
+  // fills its container via CSS. The thumbnails are blade-shaped (mostly
+  // horizontal strokes) and benefit from a much wider aspect ratio when
+  // MiniGalleryPicker's `variant="row"` mode hands them a ~100% × 40px
+  // slot. `preserveAspectRatio="none"` lets each style's signature
+  // stretch across the full card without letterboxing.
   return (
     <svg
       viewBox="0 0 100 60"
-      width="100"
-      height="60"
+      preserveAspectRatio="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      style={{ width: '100%', height: '100%', display: 'block' }}
     >
       {children}
     </svg>

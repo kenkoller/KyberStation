@@ -53,12 +53,33 @@ export interface MiniGalleryItem {
   description?: string;
 }
 
+/**
+ * Visual shape of the picker.
+ *
+ *   - 'card' (default): thumbnail-on-top, label-below cards arranged in
+ *     a 2/3/4-column grid. Good when thumbnails are signature icons.
+ *   - 'row': single-column list of long blade-shaped rectangles. Each
+ *     item spans the picker's full width; the thumbnail stretches across
+ *     the whole card (preserveAspectRatio=none on the Svg wrappers) with
+ *     the label pinned to the right. Designed for blade-style pickers
+ *     where the thumbnail IS the blade.
+ *   - 'list' (W5 2026-04-22): thinnest variant — name-only rows, no
+ *     thumbnails, no border, no background except hover. Active row
+ *     gets an accent left-stripe + accent text. Designed for cases
+ *     where there are many options and the label carries all the
+ *     identity (e.g. the 29 blade styles). Tooltip on hover surfaces
+ *     the description.
+ */
+export type MiniGalleryVariant = 'card' | 'row' | 'list';
+
 export interface MiniGalleryPickerProps {
   items: MiniGalleryItem[];
   activeId: string;
   onSelect: (id: string) => void;
-  /** Max column count at `desktop:` breakpoint. Defaults to 3. */
+  /** Max column count at `desktop:` breakpoint. Defaults to 3. Ignored when `variant='row'`. */
   columns?: 2 | 3 | 4;
+  /** Card vs blade-row shape. Defaults to 'card'. */
+  variant?: MiniGalleryVariant;
   /** ARIA label for the listbox container. */
   ariaLabel?: string;
 }
@@ -149,18 +170,22 @@ export function MiniGalleryPicker({
   activeId,
   onSelect,
   columns = 3,
+  variant = 'card',
   ariaLabel,
 }: MiniGalleryPickerProps) {
   // Track columns at runtime for keyboard nav. At render time we don't
   // know which breakpoint is active, so we sniff via matchMedia on mount
   // + resize. Falls back to `columns` (desktop max) on the server.
-  const [runtimeCols, setRuntimeCols] = useState<number>(columns);
+  const effectiveColumns = variant === 'row' || variant === 'list' ? 1 : columns;
+  const [runtimeCols, setRuntimeCols] = useState<number>(effectiveColumns);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const recalc = () => {
+      if (variant === 'row' || variant === 'list') {
+        setRuntimeCols(1);
+        return;
+      }
       const w = window.innerWidth;
-      // Tailwind breakpoints used in this project: mobile < 768 tablet < 1024 desktop.
-      // Keep in sync with tailwind.config.ts.
       if (w >= 1024) setRuntimeCols(columns);
       else if (w >= 768) setRuntimeCols(Math.min(columns, 2));
       else setRuntimeCols(1);
@@ -168,7 +193,7 @@ export function MiniGalleryPicker({
     recalc();
     window.addEventListener('resize', recalc);
     return () => window.removeEventListener('resize', recalc);
-  }, [columns]);
+  }, [columns, variant]);
 
   const [focusIdx, setFocusIdx] = useState<number>(() => {
     const i = items.findIndex((x) => x.id === activeId);
@@ -221,18 +246,105 @@ export function MiniGalleryPicker({
     );
   }
 
-  const gridCols = resolveGridCols(columns);
+  const gridCols = variant === 'row' || variant === 'list' ? 'grid-cols-1' : resolveGridCols(columns);
+  const gap = variant === 'list' ? 'gap-0' : variant === 'row' ? 'gap-1' : 'gap-1.5';
+  const padding = variant === 'list' ? 'p-0' : 'p-1.5';
 
   return (
     <div
       role="listbox"
       aria-label={ariaLabel ?? 'Gallery picker'}
-      className={`grid ${gridCols} gap-1.5 p-1.5`}
+      className={`grid ${gridCols} ${gap} ${padding}`}
       data-testid="mini-gallery-picker"
     >
       {items.map((item, idx) => {
         const isActive = item.id === activeId;
-        return (
+        if (variant === 'list') {
+          // W5 (2026-04-22): thin name-only row — no thumbnail, no
+          // border, no background except hover. Active row gets an
+          // accent 2px left-stripe + accent text. Tooltip carries the
+          // description so the row body can stay minimal.
+          return (
+            <div
+              key={item.id}
+              ref={(el) => {
+                buttonRefs.current[idx] = el;
+              }}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isActive}
+              aria-label={item.label}
+              title={item.description ?? item.label}
+              onClick={() => onSelect(item.id)}
+              onKeyDown={(e) => handleKeyDown(e, idx)}
+              className={`group relative cursor-pointer outline-none focus-visible:bg-bg-surface/80 flex items-center px-3 transition-colors ${
+                isActive
+                  ? 'text-accent'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface/50'
+              }`}
+              style={{ height: 22 }}
+            >
+              {/* 2px active stripe — always present, transparent when
+                  inactive so neighboring rows don't shift on selection. */}
+              <span
+                aria-hidden="true"
+                className="absolute left-0 top-0 bottom-0 w-[2px] transition-colors"
+                style={{
+                  backgroundColor: isActive
+                    ? 'rgb(var(--accent))'
+                    : 'transparent',
+                }}
+              />
+              <span
+                className={`text-ui-xs font-mono uppercase tracking-[0.08em] truncate ${
+                  isActive ? 'font-medium' : ''
+                }`}
+              >
+                {item.label}
+              </span>
+            </div>
+          );
+        }
+        return variant === 'row' ? (
+          <div
+            key={item.id}
+            ref={(el) => {
+              buttonRefs.current[idx] = el;
+            }}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isActive}
+            aria-label={item.label}
+            title={item.description ?? item.label}
+            onClick={() => onSelect(item.id)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
+            className={`group cursor-pointer rounded overflow-hidden relative transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              isActive
+                ? 'border-2 border-accent bg-accent-dim shadow-[0_0_0_1px_var(--accent-border-color,rgb(var(--accent)/0.35)),0_0_12px_rgb(var(--accent)/0.35)]'
+                : 'border border-border-subtle bg-bg-surface hover:border-accent-border'
+            }`}
+            // Long-blade aspect. Fixed height keeps the row legible even
+            // when the panel is narrow; the thumbnail fills the full
+            // width via the preserveAspectRatio=none setting in the Svg
+            // wrapper (lib/styleThumbnails.tsx).
+            style={{ height: 44 }}
+          >
+            <div className="absolute inset-0 bg-bg-deep overflow-hidden pointer-events-none">
+              {item.thumbnail}
+            </div>
+            {/* Label sits on top of the stretched thumbnail — tight
+                left-aligned pill so the blade visual still reads behind it. */}
+            <div
+              className={`absolute top-1/2 left-2 -translate-y-1/2 px-2 py-0.5 rounded-chrome text-ui-xs font-mono uppercase tracking-[0.08em] pointer-events-none ${
+                isActive
+                  ? 'text-accent bg-bg-deep/60'
+                  : 'text-text-primary bg-bg-deep/55 group-hover:text-accent'
+              }`}
+            >
+              {item.label}
+            </div>
+          </div>
+        ) : (
           <div
             key={item.id}
             ref={(el) => {

@@ -1,7 +1,8 @@
 // ─── OV2 — bladeRenderMetrics regression tests ──
 //
-// Pins the pure geometry helper that PixelStripPanel + RGBGraphPanel use
-// to anchor their per-LED content to the blade's rendered extent in
+// Pins the pure geometry helper that PixelStripPanel + the
+// ExpandedAnalysisSlot's LayerCanvas use to anchor their per-LED
+// content to the blade's rendered extent in
 // BladeCanvas. These assertions capture the invariants that matter for
 // visual alignment:
 //
@@ -21,6 +22,7 @@ import {
   BLADE_LEN,
   MAX_BLADE_INCHES,
   AUTO_FIT_FILL,
+  AUTO_FIT_LEFT_PULL_DS,
   BLADE_TAIL_MARGIN_DS,
 } from '../lib/bladeRenderMetrics';
 
@@ -141,21 +143,21 @@ describe('computeBladeRenderMetrics', () => {
     expect(m1000.bladeLeftPx / m500.bladeLeftPx).toBeCloseTo(2, 10);
   });
 
-  it('leaves symmetric empty margin around the (hilt + blade + tail) extent', () => {
-    // Because leftMarginPx = (containerWidthPx - usableWidthPx) / 2 and the
-    // blade extent fills `usableWidthPx`, the right margin (from bladeRight
-    // through the tail-margin-DS buffer to the container edge) equals the
-    // left margin. Verify by reconstructing that identity.
+  it('bladeLeftPx matches BladeCanvas origin minus the W6 left-pull', () => {
+    // W2 aligned both surfaces on `BLADE_START * scale`. W6 adds
+    // `AUTO_FIT_LEFT_PULL_DS` which shifts the whole composition left
+    // so the hilt half-slips off the container's left edge. Both
+    // BladeCanvas and computeBladeRenderMetrics apply the pull, so
+    // the alignment invariant still holds between surfaces — just
+    // against the pulled origin.
     const cw = 1000;
     const ledCount = 144;
     const m = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount });
     const scaledBladeLenDS = BLADE_LEN * (m.bladeInches / MAX_BLADE_INCHES);
     const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
     const scale = (cw * AUTO_FIT_FILL) / bladeExtentDS;
-    const tailTipPx = m.bladeRightPx + BLADE_TAIL_MARGIN_DS * scale;
-    const rightMargin = cw - tailTipPx;
-    const leftMargin = cw * (1 - AUTO_FIT_FILL) / 2;
-    expect(rightMargin).toBeCloseTo(leftMargin, 5);
+    const expectedLeft = (BLADE_START - AUTO_FIT_LEFT_PULL_DS) * scale;
+    expect(m.bladeLeftPx).toBeCloseTo(expectedLeft, 10);
   });
 
   it('panX shifts bladeLeftPx without changing width', () => {

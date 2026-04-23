@@ -12,7 +12,29 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { selectForm, CRYSTAL_FORMS } from '@/lib/crystal';
 import type { CrystalHandle, AnimationTrigger } from '@/lib/crystal';
 import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
+import {
+  renderCardSnapshot,
+  LAYOUT_CATALOG,
+  THEME_CATALOG,
+  getLayout,
+  getTheme,
+} from '@/lib/sharePack/cardSnapshot';
 import { toast } from '@/lib/toastManager';
+
+const LAYOUT_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: 'default', label: '16:9 Card' },
+  { id: 'og', label: 'Twitter / OG' },
+  { id: 'instagram', label: 'Instagram 1:1' },
+  { id: 'story', label: 'Story 9:16' },
+];
+
+const THEME_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: 'default', label: 'Deep Space' },
+  { id: 'light', label: 'Light' },
+  { id: 'imperial', label: 'Imperial' },
+  { id: 'jedi', label: 'Jedi' },
+  { id: 'space', label: 'Pure Black' },
+];
 
 // Dynamic import keeps Three.js out of the SSR bundle
 const KyberCrystal = dynamic(
@@ -32,6 +54,8 @@ export function CrystalPanel() {
   const config = useBladeStore((s) => s.config);
   const handleRef = useRef<CrystalHandle | null>(null);
   const [lastAction, setLastAction] = useState<string | null>(null);
+  const [layoutId, setLayoutId] = useState<string>('default');
+  const [themeId, setThemeId] = useState<string>('default');
 
   const form = selectForm(config);
   const formInfo = CRYSTAL_FORMS[form];
@@ -68,6 +92,29 @@ export function CrystalPanel() {
     setLastAction('Snapshot saved');
   }, [form]);
 
+  const saveShareCard = useCallback(async () => {
+    try {
+      setLastAction('Rendering card…');
+      const blob = await renderCardSnapshot({
+        config,
+        glyph,
+        presetName: config.name,
+        layout: getLayout(layoutId),
+        theme: getTheme(themeId),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kyberstation-card-${layoutId}-${themeId}-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setLastAction('Share card saved');
+    } catch (err) {
+      console.warn('[crystal] card render failed:', err);
+      toast.error("Couldn't render share card");
+    }
+  }, [config, glyph, layoutId, themeId]);
+
   const copyGlyph = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(glyph);
@@ -93,12 +140,16 @@ export function CrystalPanel() {
     <div className="flex flex-col gap-3 p-3">
       {/* Crystal live render — square aspect for consistent framing */}
       <div className="w-full aspect-square relative rounded-md overflow-hidden bg-gradient-to-b from-bg-deep via-bg-panel to-bg-deep">
+        {/* The QR code no longer lives on the crystal surface — it sits
+            in a corner of the share card instead (see cardSnapshot.ts).
+            This keeps the crystal readable as a pure gem and gives
+            phone cameras a flat, unrefracted scan target. */}
         <KyberCrystal
           onReady={(h) => {
             handleRef.current = h;
           }}
           glyph={glyph}
-          qrEnabled
+          qrEnabled={false}
           interactive
         />
       </div>
@@ -124,14 +175,59 @@ export function CrystalPanel() {
         <ActionButton onClick={() => trigger('attune', 'Attune')} label="Attune" />
       </div>
 
+      {/* Share card layout + theme selectors */}
+      <div className="grid grid-cols-2 gap-1.5">
+        <label className="flex flex-col gap-1">
+          <span className="text-ui-xs font-mono text-text-muted uppercase tracking-wider">
+            Layout
+          </span>
+          <select
+            value={layoutId}
+            onChange={(e) => setLayoutId(e.target.value)}
+            className="py-1.5 px-2 text-ui-xs font-mono bg-bg-panel border border-border-subtle rounded hover:border-border-light focus:outline-none focus:border-accent"
+          >
+            {LAYOUT_OPTIONS.filter((o) => o.id in LAYOUT_CATALOG).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-ui-xs font-mono text-text-muted uppercase tracking-wider">
+            Theme
+          </span>
+          <select
+            value={themeId}
+            onChange={(e) => setThemeId(e.target.value)}
+            className="py-1.5 px-2 text-ui-xs font-mono bg-bg-panel border border-border-subtle rounded hover:border-border-light focus:outline-none focus:border-accent"
+          >
+            {THEME_OPTIONS.filter((o) => o.id in THEME_CATALOG).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {/* Export row */}
-      <button
-        type="button"
-        onClick={saveSnapshot}
-        className="w-full py-1.5 text-ui-xs font-mono border border-border-subtle rounded bg-bg-panel hover:bg-bg-hover transition-colors"
-      >
-        Save crystal snapshot
-      </button>
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={saveSnapshot}
+          className="py-1.5 text-ui-xs font-mono border border-border-subtle rounded bg-bg-panel hover:bg-bg-hover transition-colors"
+        >
+          Save crystal PNG
+        </button>
+        <button
+          type="button"
+          onClick={saveShareCard}
+          className="py-1.5 text-ui-xs font-mono border border-accent/40 rounded bg-accent/10 hover:bg-accent/20 transition-colors text-accent"
+        >
+          Save share card
+        </button>
+      </div>
 
       {/* Glyph sharing */}
       <div className="grid grid-cols-2 gap-1.5">

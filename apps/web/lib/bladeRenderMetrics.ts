@@ -28,10 +28,33 @@ export const MAX_BLADE_INCHES = 40;
 /**
  * BladeCanvas's auto-fit zoom targets `cw * AUTO_FIT_FILL` as the visible
  * extent of the hilt+blade run. Matches `computeFitZoom` in BladeCanvas.
+ *
+ * W2 bump (2026-04-22): 0.90 → 0.98. The extra 8% of container width
+ * makes the saber fill its frame and pushes the blade tip close to the
+ * right edge — the prior margin felt cramped, especially when the panel
+ * was narrow.
  */
-export const AUTO_FIT_FILL = 0.9;
+export const AUTO_FIT_FILL = 0.98;
 /** Tail margin (past blade tip) BladeCanvas reserves in design-space. */
 export const BLADE_TAIL_MARGIN_DS = 40;
+/**
+ * W6 (2026-04-22): how far (in design-space units) to translate the
+ * whole hilt+blade composition leftward during auto-fit. Chosen so
+ * that a typical hilt (~184 DS wide) ends up with its midpoint at
+ * x=0 of the container — i.e. the left half of the hilt slips off
+ * screen, the right half is visible, and the blade extends across
+ * the rest of the preview. Matches the W6 "half-covered hilt" spec.
+ *
+ * Derivation: hilt sits at design-space [BLADE_START - totalHiltW,
+ * BLADE_START]. With totalHiltW ≈ 184 (graflex), midpoint ≈ 182
+ * DS from BLADE_START. Shifting the whole composition left by 182
+ * DS units puts that midpoint at screen x=0.
+ *
+ * Shared with BladeCanvas's computeFitZoom so both the preview canvas
+ * and every sibling panel (pixel strip, expanded analysis slot, state
+ * grid when it chooses to honor the shift) line up 1:1.
+ */
+export const AUTO_FIT_LEFT_PULL_DS = 182;
 
 /**
  * Map an LED count to the blade length in inches that BladeCanvas would
@@ -100,11 +123,19 @@ export function computeBladeRenderMetrics(
   const scaledBladeLenDS = BLADE_LEN * (bladeInches / MAX_BLADE_INCHES);
   const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
 
+  // W2 + W6 (2026-04-22): bladeLeftPx uses the same origin BladeCanvas
+  // does internally so every sibling surface (pixel strip, expanded
+  // analysis slot, state grid) lines up 1:1 with the preview. W6 adds
+  // AUTO_FIT_LEFT_PULL_DS to the pan so the whole composition drifts
+  // leftward — the hilt half-slides off the left edge, the blade has
+  // room to extend further right. Callers that want to bypass the
+  // pull (e.g. StateGrid when the user wants full-container LEDs)
+  // can override by computing their own geometry.
   const usableWidthPx = containerWidthPx * AUTO_FIT_FILL;
-  const leftMarginPx = (containerWidthPx - usableWidthPx) / 2;
   const scale = usableWidthPx / bladeExtentDS;
 
-  const bladeLeftPx = leftMarginPx + (BLADE_START + panX) * scale;
+  const effectivePanX = panX - AUTO_FIT_LEFT_PULL_DS;
+  const bladeLeftPx = (BLADE_START + effectivePanX) * scale;
   const bladeWidthPx = scaledBladeLenDS * scale;
   const pixelsPerLed = ledCount > 0 ? bladeWidthPx / ledCount : 0;
 

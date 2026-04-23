@@ -1,7 +1,12 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-export const metadata = { title: 'KyberStation — Gallery' };
+import { Suspense } from 'react';
+import { GalleryPage } from '@/components/gallery/GalleryPage';
 
-export default function GalleryPage() {
-  redirect('/editor?tab=gallery');
+export default function GalleryRoute() {
+  return (
+    <Suspense fallback={null}>
+      <GalleryPage />
+    </Suspense>
+  );
 }

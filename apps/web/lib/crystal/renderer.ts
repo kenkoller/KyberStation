@@ -39,6 +39,7 @@ import {
   setInternalGlowColor,
   lerpInternalGlowColor,
   BLEED_COLOR,
+  INTERNAL_LIGHT_BASE_INTENSITY,
   type CrystalLights,
 } from './lighting';
 import {
@@ -226,7 +227,7 @@ export class CrystalRenderer implements CrystalHandle {
       renderer.setPixelRatio(2);
       renderer.setSize(size, size);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.15;
+      renderer.toneMappingExposure = 0.95;
 
       const scene = new THREE.Scene();
       scene.background = null;
@@ -495,14 +496,16 @@ export class CrystalRenderer implements CrystalHandle {
     if (!this.meshes) return;
     const m = this.meshes;
 
-    // Internal glow intensity + bleed colour crossfade
+    // Internal glow intensity + bleed colour crossfade. Intensity always
+    // follows the shared INTERNAL_LIGHT_BASE_INTENSITY so `lighting.ts`
+    // and the per-frame animation scaling never drift apart.
     const base = this.config.baseColor;
     if (state.bleedProgress > 0 && this.bleedFromColor) {
       lerpInternalGlowColor(this.lights.internal, this.bleedFromColor, BLEED_COLOR, state.bleedProgress);
     } else {
       setInternalGlowColor(this.lights.internal, base, state.glowIntensity);
     }
-    this.lights.internal.intensity = 1.2 * state.glowIntensity;
+    this.lights.internal.intensity = INTERNAL_LIGHT_BASE_INTENSITY * state.glowIntensity;
 
     // Vein opacity
     if (m.materials.vein) {

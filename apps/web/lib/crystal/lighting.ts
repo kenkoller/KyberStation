@@ -18,6 +18,11 @@ export interface CrystalLights {
   group: THREE.Group;
 }
 
+/** Base intensity of the internal point light at glowIntensity = 1.0.
+ *  Exported so renderer's per-frame animation scaling uses the same
+ *  constant as `setInternalGlowColor` instead of a divergent literal. */
+export const INTERNAL_LIGHT_BASE_INTENSITY = 0.38;
+
 /**
  * Build the fixed studio lighting rig for a crystal scene. The caller
  * is responsible for adding the group to the scene and disposing
@@ -27,24 +32,26 @@ export function createCrystalLighting(): CrystalLights {
   const group = new THREE.Group();
   group.name = 'crystal-lighting';
 
-  const ambient = new THREE.AmbientLight(0x222834, 0.15);
+  const ambient = new THREE.AmbientLight(0x2a3040, 0.22);
   group.add(ambient);
 
-  const key = new THREE.DirectionalLight(0xf4f8ff, 1.1);
+  const key = new THREE.DirectionalLight(0xf4f8ff, 0.75);
   key.position.set(2.0, 3.0, 2.0);
   group.add(key);
 
-  const keyRim = new THREE.DirectionalLight(0xb8d0ff, 0.8);
+  const keyRim = new THREE.DirectionalLight(0xb8d0ff, 0.5);
   keyRim.position.set(-1.5, 2.5, -1.5);
   group.add(keyRim);
 
-  const fillRim = new THREE.DirectionalLight(0xffcfa0, 0.3);
+  const fillRim = new THREE.DirectionalLight(0xffcfa0, 0.22);
   fillRim.position.set(1.2, -1.0, -2.0);
   group.add(fillRim);
 
   // Internal point light — the crystal's colour.
-  // Starts at white; renderer updates the colour each frame from config.
-  const internal = new THREE.PointLight(0xffffff, 1.2, 8, 2.0);
+  // Intensity tuned so the body reads as "lit from within" without
+  // blowing out the bloom pass. Renderer updates the colour each frame
+  // from config.
+  const internal = new THREE.PointLight(0xffffff, 0.38, 8, 2.0);
   internal.position.set(0, 0, 0);
   // NOTE: internal light is added to the crystal group, not the lighting
   // group, so it inherits the crystal's transforms.
@@ -59,7 +66,7 @@ export function setInternalGlowColor(
   brightnessMultiplier = 1.0,
 ): void {
   light.color.setRGB(color.r / 255, color.g / 255, color.b / 255);
-  light.intensity = 1.2 * brightnessMultiplier;
+  light.intensity = INTERNAL_LIGHT_BASE_INTENSITY * brightnessMultiplier;
 }
 
 /** Crossfade the internal light colour toward red (bleed) or back (heal). */

@@ -206,8 +206,12 @@ export function MacroKnob({
         style={{
           fontSize: 10,
           letterSpacing: '0.05em',
-          lineHeight: '12px',
-          marginBottom: 2,
+          lineHeight: '11px',
+          // W10e (2026-04-22): tightened marginBottom 2 → 0 so the
+          // knob column doesn't eat an extra 2px per row. Combined
+          // with the wrapping row's py-0 this removes the whole
+          // "extra vertical padding" band Ken flagged.
+          marginBottom: 0,
         }}
         aria-hidden="true"
       >
@@ -276,8 +280,10 @@ export function MacroKnob({
         style={{
           fontSize: 10,
           letterSpacing: '0.02em',
-          lineHeight: '12px',
-          marginTop: 2,
+          lineHeight: '11px',
+          // W10e: marginTop 2 → 0 (see matching comment on the label
+          // above). The readout docks right under the knob.
+          marginTop: 0,
         }}
       >
         {readoutText}

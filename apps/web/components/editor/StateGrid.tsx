@@ -17,7 +17,6 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { BladeEngine, EffectType } from '@kyberstation/engine';
 import { BladeState } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
-import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
 
 interface StateGridRow {
   id: string;
@@ -125,23 +124,22 @@ function StateGridRowView({ label, frame, ledCount }: StateGridRowViewProps) {
       ctx.fillStyle = '#03030a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (!frame || ledCount <= 0) return;
-      // Use the shared blade-render-metrics helper so the per-LED
-      // content lines up with the same width-scaling the rest of the
-      // app uses — consistent visual language across all surfaces.
-      const metrics = computeBladeRenderMetrics({
-        containerWidthPx: w,
-        ledCount,
-      });
+      // W6 (2026-04-22): StateGrid rows span the full row width so
+      // each state gets maximum canvas area for comparison. Dropping
+      // `computeBladeRenderMetrics` here is intentional — in this
+      // view the "compare across states" read matters more than
+      // physical-blade proportionality with the main preview. When
+      // the preview canvas is visible on the Design tab, alignment
+      // is handled by the pixel strip + expanded slot (which still
+      // honor the metrics). Here we stretch the LEDs corner-to-corner.
       const leds = Math.min(ledCount, Math.floor(frame.length / 3));
-      const leftPx = metrics.bladeLeftPx * dpr;
-      const widthPx = metrics.bladeWidthPx * dpr;
-      const cellW = widthPx / leds;
+      const cellW = canvas.width / leds;
       for (let i = 0; i < leds; i++) {
         const r = frame[i * 3] ?? 0;
         const g = frame[i * 3 + 1] ?? 0;
         const b = frame[i * 3 + 2] ?? 0;
         ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(leftPx + i * cellW, 0, Math.max(cellW + 0.5, 1), canvas.height);
+        ctx.fillRect(i * cellW, 0, Math.max(cellW + 0.5, 1), canvas.height);
       }
     };
 

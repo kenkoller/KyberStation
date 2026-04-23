@@ -12,6 +12,7 @@ function resetStore() {
   useVisualizationStore.setState({
     visibleLayers: new Set<VisualizationLayerId>(DEFAULT_VISIBLE_LAYER_IDS),
     layerOrder: [...DEFAULT_LAYER_ORDER],
+    rgbLumaChannels: { r: true, g: true, b: true, l: true },
     isDebugMode: false,
     pinnedPixels: [],
     hoveredPixel: null,
@@ -30,32 +31,39 @@ describe('visualizationStore — default visible layers', () => {
     }
   });
 
-  it('blade, pixel-strip, channel-r, channel-g, channel-b are visible by default', () => {
+  it('blade, pixel-strip, rgb-luma are visible by default', () => {
     const { visibleLayers } = useVisualizationStore.getState();
     const coreIds: VisualizationLayerId[] = [
       'blade',
       'pixel-strip',
-      'channel-r',
-      'channel-g',
-      'channel-b',
+      'rgb-luma',
     ];
     for (const id of coreIds) {
       expect(visibleLayers.has(id)).toBe(true);
     }
   });
 
-  it('extended layers are hidden by default', () => {
+  it('extended line-graph layers are visible by default (W1 always-on contract)', () => {
     const { visibleLayers } = useVisualizationStore.getState();
-    const extendedIds: VisualizationLayerId[] = [
+    const lineGraphIds: VisualizationLayerId[] = [
       'power-draw',
       'hue',
       'saturation',
-      'effect-overlay',
       'swing-response',
       'transition-progress',
+    ];
+    for (const id of lineGraphIds) {
+      expect(visibleLayers.has(id)).toBe(true);
+    }
+  });
+
+  it('non-line-graph extended layers remain hidden by default', () => {
+    const { visibleLayers } = useVisualizationStore.getState();
+    const hiddenIds: VisualizationLayerId[] = [
+      'effect-overlay',
       'storage-budget',
     ];
-    for (const id of extendedIds) {
+    for (const id of hiddenIds) {
       expect(visibleLayers.has(id)).toBe(false);
     }
   });
@@ -75,23 +83,23 @@ describe('visualizationStore — toggleLayer', () => {
   });
 
   it('shows a hidden layer', () => {
-    // 'power-draw' is hidden by default
-    useVisualizationStore.getState().toggleLayer('power-draw');
-    expect(useVisualizationStore.getState().visibleLayers.has('power-draw')).toBe(true);
+    // 'effect-overlay' is hidden by default
+    useVisualizationStore.getState().toggleLayer('effect-overlay');
+    expect(useVisualizationStore.getState().visibleLayers.has('effect-overlay')).toBe(true);
   });
 
   it('toggling twice restores original visibility', () => {
-    useVisualizationStore.getState().toggleLayer('channel-r');
-    useVisualizationStore.getState().toggleLayer('channel-r');
-    expect(useVisualizationStore.getState().visibleLayers.has('channel-r')).toBe(true);
+    useVisualizationStore.getState().toggleLayer('rgb-luma');
+    useVisualizationStore.getState().toggleLayer('rgb-luma');
+    expect(useVisualizationStore.getState().visibleLayers.has('rgb-luma')).toBe(true);
   });
 
   it('toggling one layer does not affect other layers', () => {
     useVisualizationStore.getState().toggleLayer('blade');
     const { visibleLayers } = useVisualizationStore.getState();
-    // pixel-strip, channel-r, etc. should be unchanged
+    // pixel-strip, rgb-luma, etc. should be unchanged
     expect(visibleLayers.has('pixel-strip')).toBe(true);
-    expect(visibleLayers.has('channel-r')).toBe(true);
+    expect(visibleLayers.has('rgb-luma')).toBe(true);
   });
 });
 
@@ -115,9 +123,49 @@ describe('visualizationStore — setLayerVisible', () => {
   });
 
   it('setting visible=false on already-hidden layer is a no-op', () => {
+    // effect-overlay is hidden by default (the "always-on" contract
+    // only applies to line-graph-shaped layers).
     const before = useVisualizationStore.getState().visibleLayers.size;
-    useVisualizationStore.getState().setLayerVisible('hue', false);
+    useVisualizationStore.getState().setLayerVisible('effect-overlay', false);
     expect(useVisualizationStore.getState().visibleLayers.size).toBe(before);
+  });
+});
+
+describe('visualizationStore — rgbLumaChannels', () => {
+  beforeEach(resetStore);
+
+  it('defaults to all four channels enabled', () => {
+    const { rgbLumaChannels } = useVisualizationStore.getState();
+    expect(rgbLumaChannels).toEqual({ r: true, g: true, b: true, l: true });
+  });
+
+  it('toggleRgbLumaChannel flips the named channel', () => {
+    useVisualizationStore.getState().toggleRgbLumaChannel('r');
+    expect(useVisualizationStore.getState().rgbLumaChannels.r).toBe(false);
+    useVisualizationStore.getState().toggleRgbLumaChannel('r');
+    expect(useVisualizationStore.getState().rgbLumaChannels.r).toBe(true);
+  });
+
+  it('toggling one channel does not affect the others', () => {
+    useVisualizationStore.getState().toggleRgbLumaChannel('g');
+    const { rgbLumaChannels } = useVisualizationStore.getState();
+    expect(rgbLumaChannels).toEqual({ r: true, g: false, b: true, l: true });
+  });
+
+  it('setRgbLumaChannel writes the exact value', () => {
+    useVisualizationStore.getState().setRgbLumaChannel('l', false);
+    expect(useVisualizationStore.getState().rgbLumaChannels.l).toBe(false);
+    useVisualizationStore.getState().setRgbLumaChannel('l', true);
+    expect(useVisualizationStore.getState().rgbLumaChannels.l).toBe(true);
+  });
+
+  it('setRgbLumaChannel is a no-op when the value already matches', () => {
+    const before = useVisualizationStore.getState().rgbLumaChannels;
+    useVisualizationStore.getState().setRgbLumaChannel('r', true);
+    // Reference equality would be ideal, but zustand may still produce a
+    // new top-level state object even when a slice is unchanged. The
+    // observable contract is value equality.
+    expect(useVisualizationStore.getState().rgbLumaChannels).toEqual(before);
   });
 });
 
@@ -126,12 +174,21 @@ describe('visualizationStore — resetToDefaults', () => {
 
   it('restores default visible layers after changes', () => {
     useVisualizationStore.getState().toggleLayer('blade');
-    useVisualizationStore.getState().toggleLayer('power-draw');
+    useVisualizationStore.getState().toggleLayer('effect-overlay');
     useVisualizationStore.getState().resetToDefaults();
 
     const { visibleLayers } = useVisualizationStore.getState();
     expect(visibleLayers.has('blade')).toBe(true);
-    expect(visibleLayers.has('power-draw')).toBe(false);
+    expect(visibleLayers.has('effect-overlay')).toBe(false);
+  });
+
+  it('restores default rgbLumaChannels after channel toggles', () => {
+    useVisualizationStore.getState().toggleRgbLumaChannel('r');
+    useVisualizationStore.getState().toggleRgbLumaChannel('l');
+    useVisualizationStore.getState().resetToDefaults();
+    expect(useVisualizationStore.getState().rgbLumaChannels).toEqual({
+      r: true, g: true, b: true, l: true,
+    });
   });
 
   it('resets debug mode to false', () => {

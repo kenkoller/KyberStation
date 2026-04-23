@@ -86,6 +86,14 @@ function EditorPageContent() {
     const rawTab = searchParams.get('tab');
     if (!rawTab) return;
     const normalized = rawTab.toLowerCase();
+    // W7 (2026-04-22): `?tab=gallery` used to flip the editor's inner
+    // tab bar. Gallery is now a top-level route (/gallery), so legacy
+    // deep-links redirect there instead of nudging the editor into a
+    // tab that no longer exists.
+    if (normalized === 'gallery') {
+      router.replace('/gallery', { scroll: false });
+      return;
+    }
     const resolved = resolveTab(normalized);
     if (resolved) {
       useUIStore.getState().setActiveTab(resolved);

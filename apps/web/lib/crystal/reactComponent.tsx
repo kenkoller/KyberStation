@@ -272,7 +272,7 @@ export const KyberCrystal = forwardRef<CrystalHandle, KyberCrystalProps>(
             antialias: true,
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.15,
+            toneMappingExposure: 0.95,
             preserveDrawingBuffer: true,
           }}
           style={{ background: 'transparent' }}

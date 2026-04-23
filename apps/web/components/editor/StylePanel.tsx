@@ -222,7 +222,7 @@ export function StylePanel() {
               setStyle(id);
               playUISound('success');
             }}
-            columns={3}
+            variant="list"
             ariaLabel="Blade style picker"
           />
         </div>

@@ -1,10 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
-import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { useBladeStore } from '@/stores/bladeStore';
-import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { useUIStore } from '@/stores/uiStore';
 import {
   usePerformanceStore,
@@ -15,50 +13,21 @@ import {
   type ParamBinding,
 } from '@/stores/performanceStore';
 import { MacroKnob } from '@/components/shared/MacroKnob';
+import { useRmsLevel } from '@/hooks/useRmsLevel';
 import { playUISound } from '@/lib/uiSounds';
 
 // ─── Pure helpers (exported for tests) ───────────────────────────────────────
+//
+// W3 (2026-04-22): the shift-light rail moved to `ShiftLightRail.tsx`
+// and the RMS compute moved to `useRmsLevel`. Re-exports below keep
+// backwards compatibility for existing tests while the helpers live in
+// their new home.
 
-/**
- * Compute the mean normalized luminance across a packed RGB pixel buffer.
- *
- * BladeEngine.getPixels() returns a Uint8Array of R/G/B triplets (no alpha),
- * exactly `ledCount * 3` bytes. Mean luminance = Σ((R+G+B) / 765) / ledCount,
- * i.e. the average of each LED's mean-channel brightness, normalized to
- * [0, 1]. Good-enough proxy for the shift-light: when the blade is ignited
- * most LEDs are near-max, clashes spike toward 1.0, and retractions fade
- * toward 0.
- */
-export function meanLuminance(
-  buffer: Uint8Array | null,
-  ledCount: number,
-): number {
-  if (!buffer || ledCount <= 0) return 0;
-  const sampleCount = Math.min(ledCount, Math.floor(buffer.length / 3));
-  if (sampleCount <= 0) return 0;
-  let sum = 0;
-  for (let i = 0; i < sampleCount; i++) {
-    const base = i * 3;
-    sum += buffer[base] + buffer[base + 1] + buffer[base + 2];
-  }
-  return sum / (sampleCount * 765); // 255 * 3 = 765
-}
-
-/**
- * Exponential-moving-average smoothing for the RMS signal. The shift-light
- * should pulse with the blade but not strobe at 60fps — a short EMA (τ ≈
- * 80ms) keeps clashes visible while smoothing the per-frame noise. Alpha
- * is the new-sample weight; `rms_next = prev*(1-α) + current*α`.
- */
-export function smoothRms(prev: number, current: number, alpha: number): number {
-  const a = Math.max(0, Math.min(1, alpha));
-  return prev * (1 - a) + current * a;
-}
+export { meanLuminance, smoothRms } from '@/hooks/useRmsLevel';
 
 /**
  * Map a shift-rail LED index ∈ [0, LED_COUNT) to its color bucket given a
- * current RMS ∈ [0, 1]. Returns one of 'ok' (green), 'warn' (amber), or
- * 'error' (red) when the LED is lit, or 'off' otherwise.
+ * current RMS ∈ [0, 1].
  *
  *   pos < 0.5  → green  (nominal headroom)
  *   pos < 0.75 → amber  (approaching peak)
@@ -79,8 +48,14 @@ export function shiftLedColor(
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SHIFT_LED_COUNT = 32;
-const SHIFT_RMS_ALPHA = 0.25; // ≈ 80ms τ at 60fps
+/**
+ * Width thresholds for the responsive knob label system (W3). Below
+ * each threshold, knob labels collapse another step:
+ *   - narrow: label → first 4 chars (e.g. "SHIMMER" → "SHIM")
+ *   - very narrow: label hidden entirely, knob stands on its color dot
+ */
+const KNOB_SHORT_LABEL_THRESHOLD = 720;
+const KNOB_HIDE_LABEL_THRESHOLD = 480;
 
 /** Accent color per macro page. Pulled from the six-status-color family. */
 const PAGE_COLORS: Record<PageId, string> = {
@@ -108,16 +83,16 @@ export interface PerformanceBarProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
- * Wave 5 — PerformanceBar. Persistent chrome strip between the main panel
- * area and the bottom DataTicker. Three rows:
+ * BladeDynamicsBar (filename: PerformanceBar.tsx for history) — W3
+ * reworked (2026-04-22):
  *
- *   1. Shift-light rail (10px) — 32 LEDs pulsing with live blade RMS.
- *   2. Perf body (148px default; user-resizable via OV11) — page pills
- *      (left) + 8-macro grid (center) + preset / LED / RMS readouts (right).
- *
- * Gated by performanceStore.visible — Settings exposes a toggle. Mounted
- * once at WorkbenchLayout level; never teardown / remount across tab
- * switches so the RAF loop can maintain a stable EMA.
+ *   - The 10px shift-light rail was moved out to `ShiftLightRail.tsx`
+ *     and relocated below the DeliveryRail at half height (5px).
+ *   - The 2×4 macro knob grid became 1×8 single-row. Knob labels are
+ *     responsive (descriptive → abbreviated → dot-only) based on the
+ *     macro area's measured width.
+ *   - Section eyebrow renamed "Performance Bar" → "Blade Dynamics" to
+ *     disambiguate from the new app-perf strip.
  */
 export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
   const visible = usePerformanceStore((s) => s.visible);
@@ -136,32 +111,11 @@ export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
   const activeTab = useUIStore((s) => s.activeTab);
 
   const updateConfig = useBladeStore((s) => s.updateConfig);
-  const bladeName = useBladeStore((s) => s.config.name);
-  const ledCount = useBladeStore((s) => s.config.ledCount);
-  const isOn = useBladeStore((s) => s.isOn);
-  const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
-  const profiles = useSaberProfileStore((s) => s.profiles);
-  const activeProfileName = useMemo(
-    () => profiles.find((p) => p.id === activeProfileId)?.name ?? null,
-    [profiles, activeProfileId],
-  );
-
-  // ── Shift-light RMS loop ──
-  // Computed per-frame with an EMA so clashes read as a flash without
-  // strobing the eye. useState so React re-renders the LED row; the
-  // write-back goes through a ref + rAF callback, not inside render.
-  const [rms, setRms] = useState(0);
-  const rmsRef = useRef(0);
-
-  useAnimationFrame(() => {
-    if (!visible) return;
-    const engine = engineRef.current;
-    const buffer = engine?.getPixels() ?? null;
-    const raw = meanLuminance(buffer, ledCount);
-    const next = smoothRms(rmsRef.current, raw, SHIFT_RMS_ALPHA);
-    rmsRef.current = next;
-    setRms(next);
-  });
+  // W11: preset / LEDs / profile / state / RMS readouts moved to the
+  // bottom AppPerfStrip. Keeping the `useRmsLevel` call so the engine
+  // tick loop is still driven from one place (the hook is idempotent
+  // across multiple consumers).
+  useRmsLevel(engineRef, visible);
 
   // ── Macro commit path ──
   // Store update + bladeConfig write share this helper so the keyboard
@@ -194,91 +148,35 @@ export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
   const currentValues = macroValues[currentPage];
   const currentBindings = macroAssignments[currentPage];
 
-  // OV11: 10px shift-light rail stays fixed; the perf body absorbs
-  // any extra room from the user-draggable height. Minimum perf-body
-  // height is 50 so the knobs never compress below legibility.
-  const totalHeight = height ?? 158;
-  const bodyHeight = Math.max(50, totalHeight - 10);
+  // W3: with the shift-light rail moved out, the entire height is now
+  // the perf body. W5e + W8b compaction chain: default 148 → 80 → 64.
+  // Minimum 48px so the knobs never compress below legibility.
+  const totalHeight = Math.max(48, height ?? 64);
 
   return (
     <div
-      // OV11: border-t removed — the ResizeHandle above the bar carries
-      // the seam now.
       className="shrink-0 bg-bg-secondary/60"
       role="region"
-      aria-label="Performance macro bar"
+      aria-label="Blade dynamics macro bar"
       style={{ height: totalHeight }}
     >
-      {/* ── Row 1: Shift-light rail (10px) ── */}
+      {/* Perf body — left pills / center macros / right readouts */}
       <div
-        className="flex items-stretch gap-[2px] px-3 bg-bg-deep/60 border-b border-border-subtle"
-        style={{ height: 10 }}
-        aria-hidden="true"
-        title={`Shift-light rail · RMS ${(rms * 100).toFixed(0)}%`}
-      >
-        {Array.from({ length: SHIFT_LED_COUNT }, (_, i) => {
-          const bucket = shiftLedColor(i, SHIFT_LED_COUNT, rms);
-          const lit = bucket !== 'off';
-          const bgVar = lit
-            ? bucket === 'ok'
-              ? 'var(--status-ok)'
-              : bucket === 'warn'
-                ? 'var(--status-warn)'
-                : 'var(--status-error)'
-            : 'var(--border-subtle)';
-          return (
-            <div
-              key={i}
-              className="flex-1 min-w-0"
-              style={{
-                background: `rgb(${bgVar} / ${lit ? 1 : 0.5})`,
-                boxShadow: lit
-                  ? `0 0 4px rgb(${bgVar} / 0.6)`
-                  : 'none',
-                borderRadius: 'var(--r-chrome, 2px)',
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* ── Row 2: Perf body — left pills / center macros / right readouts ── */}
-      <div
-        className="grid items-stretch"
+        className="grid items-stretch h-full"
         style={{
-          height: bodyHeight,
-          gridTemplateColumns: '180px 1fr 200px',
+          // W11: right readout column dropped — macros now fill the
+          // remaining space. Old template was '180px 1fr 200px'.
+          gridTemplateColumns: '180px 1fr',
         }}
       >
-        {/* LEFT — Page pills + eyebrow */}
-        <div className="flex flex-col justify-between px-3 py-2 border-r border-border-subtle">
-          <div>
-            <div
-              className="font-mono uppercase text-text-muted"
-              style={{
-                fontSize: 9,
-                letterSpacing: '0.14em',
-                lineHeight: '12px',
-              }}
-            >
-              Performance Bar
-            </div>
-            <div
-              className="font-cinematic uppercase text-text-primary"
-              style={{
-                fontSize: 14,
-                letterSpacing: '0.1em',
-                lineHeight: '18px',
-                marginTop: 2,
-                color: pageColor,
-              }}
-            >
-              {PAGE_LABELS[currentPage]}
-            </div>
-          </div>
-
-          {/* 4 page pills */}
-          <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Macro page">
+        {/* LEFT — vertical page title list. W8b (2026-04-22): the
+            "Blade Dynamics" eyebrow was dropped to fit the 64px row
+            height — the page labels (A · IGNITION, etc.) are self-
+            descriptive on their own. Line-height tightened from 16 →
+            13 so 4 rows fit in ~52px with padding. Active title in
+            its page color; others muted. */}
+        <div className="flex flex-col justify-center px-3 py-1 border-r border-border-subtle">
+          <div role="tablist" aria-label="Macro page" className="flex flex-col">
             {PAGE_IDS.map((page) => {
               const active = page === currentPage;
               return (
@@ -287,80 +185,42 @@ export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
                   role="tab"
                   aria-selected={active}
                   onClick={() => handlePageClick(page)}
-                  className="font-mono uppercase transition-colors"
+                  className="text-left font-cinematic uppercase transition-colors"
                   style={{
-                    fontSize: 10,
-                    letterSpacing: '0.08em',
-                    padding: '4px 0',
-                    border: `1px solid ${active ? PAGE_COLORS[page] : 'rgb(var(--border-subtle) / 1)'}`,
-                    background: active
-                      ? `rgb(var(--bg-deep) / 0.6)`
-                      : 'transparent',
+                    fontSize: 11,
+                    letterSpacing: '0.1em',
+                    lineHeight: '13px',
                     color: active
                       ? PAGE_COLORS[page]
-                      : 'rgb(var(--text-muted) / 1)',
-                    borderRadius: 'var(--r-chrome, 2px)',
+                      : 'rgb(var(--text-muted) / 0.65)',
                     cursor: 'pointer',
                   }}
                   title={PAGE_LABELS[page]}
                 >
-                  {page}
+                  {PAGE_LABELS[page]}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* CENTER — 8-macro grid (2 rows × 4 cols by default). OV10
-            (2026-04-21): at narrower desktop widths the 4-column layout
-            can get cramped; fall back to a horizontally-scrollable
-            single-row layout at tablet breakpoints so knob centers stay
-            at their natural 54px size and labels remain legible. */}
-        <div
-          className="grid grid-rows-2 grid-cols-4 gap-x-2 gap-y-1 items-center justify-items-center px-3 py-2 overflow-x-auto"
-          role="group"
-          aria-label="Macro knobs"
-        >
-          {currentBindings.map((binding, slot) => (
-            <MacroCell
-              key={`${currentPage}-${slot}`}
-              slot={slot}
-              binding={binding}
-              value={currentValues[slot] ?? 0.5}
-              color={pageColor}
-              onChange={(next) => commitMacro(slot, next)}
-            />
-          ))}
-        </div>
+        {/* CENTER — single-row 8-macro grid (W3 2026-04-22: 2×4 → 1×8).
+            Labels collapse responsively: 4-char abbreviation below
+            KNOB_SHORT_LABEL_THRESHOLD, hidden entirely below
+            KNOB_HIDE_LABEL_THRESHOLD so the knobs stay legible at narrow
+            desktop widths. */}
+        <MacroKnobRow
+          bindings={currentBindings}
+          values={currentValues}
+          color={pageColor}
+          pageId={currentPage}
+          onChange={commitMacro}
+        />
 
-        {/* RIGHT — readouts */}
-        <div className="flex flex-col justify-center gap-1.5 px-3 py-2 border-l border-border-subtle">
-          <ReadoutRow
-            label="Preset"
-            value={bladeName ?? 'Untitled'}
-          />
-          <ReadoutRow
-            label="Profile"
-            value={activeProfileName ?? '—'}
-          />
-          <ReadoutRow
-            label="LEDs"
-            value={String(ledCount)}
-            mono
-          />
-          <ReadoutRow
-            label="RMS"
-            value={`${(rms * 100).toFixed(0)}%`}
-            mono
-            accent={rms > 0.75 ? 'rgb(var(--status-error) / 1)' : rms > 0.5 ? 'rgb(var(--status-warn) / 1)' : 'rgb(var(--status-ok) / 1)'}
-          />
-          <ReadoutRow
-            label="State"
-            value={isOn ? 'LIVE' : 'IDLE'}
-            mono
-            accent={isOn ? 'rgb(var(--status-ok) / 1)' : 'rgb(var(--text-muted) / 1)'}
-          />
-        </div>
+        {/* W11 (2026-04-22): right-column readouts (PRESET / STATE /
+            PROFILE / LEDS / RMS) migrated to the consolidated
+            AppPerfStrip at the bottom of the app. The 200px column
+            they occupied is reclaimed for extra knob breathing room. */}
       </div>
     </div>
   );
@@ -368,15 +228,81 @@ export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
 
 // ─── Subcomponents ───────────────────────────────────────────────────────────
 
+/**
+ * Compute a short-form label from a descriptive one. "SHIMMER" → "SHIM".
+ * Exported so co-located tests can pin the rule.
+ */
+export function shortenKnobLabel(label: string): string {
+  return label.slice(0, 4);
+}
+
+interface MacroKnobRowProps {
+  bindings: readonly ParamBinding[];
+  values: readonly number[];
+  color: string;
+  pageId: PageId;
+  onChange: (slot: number, next: number) => void;
+}
+
+function MacroKnobRow({ bindings, values, color, pageId, onChange }: MacroKnobRowProps) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) setWidth(e.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const mode: 'full' | 'short' | 'hidden' =
+    width === 0
+      ? 'full'
+      : width < KNOB_HIDE_LABEL_THRESHOLD
+        ? 'hidden'
+        : width < KNOB_SHORT_LABEL_THRESHOLD
+          ? 'short'
+          : 'full';
+
+  return (
+    <div
+      ref={rowRef}
+      // W10e (2026-04-22): py-1 → py-0 so the 8 knobs sit at their
+      // natural row height with zero extra vertical slack. Combined
+      // with MacroKnob's margin tightening, the whole strip is now
+      // flush top/bottom against the row seams.
+      className="grid grid-cols-8 gap-x-1 items-center justify-items-center px-3 py-0"
+      role="group"
+      aria-label="Macro knobs"
+    >
+      {bindings.map((binding, slot) => (
+        <MacroCell
+          key={`${pageId}-${slot}`}
+          slot={slot}
+          binding={binding}
+          value={values[slot] ?? 0.5}
+          color={color}
+          labelMode={mode}
+          onChange={(next) => onChange(slot, next)}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface MacroCellProps {
   slot: number;
   binding: ParamBinding;
   value: number;
   color: string;
+  labelMode: 'full' | 'short' | 'hidden';
   onChange: (next: number) => void;
 }
 
-function MacroCell({ binding, value, color, onChange }: MacroCellProps) {
+function MacroCell({ binding, value, color, labelMode, onChange }: MacroCellProps) {
   const scaledValue = scaleMacroValue(binding, value);
   const readout = binding.unwired
     ? '—'
@@ -390,51 +316,29 @@ function MacroCell({ binding, value, color, onChange }: MacroCellProps) {
     ? `${binding.label} — not yet wired (v1.1 modulation-routing work)`
     : `${binding.label} → ${binding.target} · range ${binding.min}–${binding.max} · drag up / down · double-click to center`;
 
+  const resolvedLabel =
+    labelMode === 'hidden'
+      ? ''
+      : labelMode === 'short'
+        ? shortenKnobLabel(binding.label)
+        : binding.label;
+
   return (
     <MacroKnob
-      label={binding.label}
+      label={resolvedLabel}
       value={value}
       color={binding.unwired ? 'rgb(var(--border-subtle) / 1)' : color}
       readout={readout}
       onChange={onChange}
       disabled={binding.unwired}
       title={title}
+      // W5e → W8b: 54 → 38 → 30. At 64px total row height, a 30px
+      // knob + 10px label + 10px readout + ~4px padding fits cleanly
+      // without crowding. Any smaller and the drag target gets too
+      // tight to hit comfortably.
+      size={30}
     />
   );
 }
 
-interface ReadoutRowProps {
-  label: string;
-  value: string;
-  mono?: boolean;
-  accent?: string;
-}
-
-function ReadoutRow({ label, value, mono, accent }: ReadoutRowProps) {
-  return (
-    <div className="flex items-center justify-between gap-2 whitespace-nowrap">
-      <span
-        className="font-mono uppercase text-text-muted"
-        style={{
-          fontSize: 9,
-          letterSpacing: '0.12em',
-        }}
-      >
-        {label}
-      </span>
-      <span
-        className={mono ? 'font-mono tabular-nums' : ''}
-        style={{
-          fontSize: 11,
-          color: accent ?? 'rgb(var(--text-secondary) / 1)',
-          maxWidth: 140,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          letterSpacing: mono ? '0.04em' : undefined,
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
+// W11: ReadoutRow removed. Readouts now live in AppPerfStrip.

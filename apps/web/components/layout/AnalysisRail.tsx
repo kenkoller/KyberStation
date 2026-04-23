@@ -1,54 +1,42 @@
 'use client';
 
 /**
- * AnalysisRail — left-side column hosting the 9 line-graph-shaped
- * analysis layers (UI_OVERHAUL_v2_PROPOSAL.md §2 region diagram, §13
- * OV5 row).
+ * AnalysisRail — left-side column hosting every line-graph analysis
+ * layer. Post-W1 (2026-04-22) every line-graph layer is always visible:
  *
- * Replaces the previous vertical stack (VisualizationStack)'s share of
- * the line-graph layers. Pixel-shaped layers (blade, pixel-strip,
- * effect-overlay) stay with the blade preview; scalar-shaped layers
- * (storage-budget) move to the Delivery rail.
- *
- * Width:
- *   - Desktop: 200px full labels + ↗ expand affordance.
- *   - Tablet:  40px icon-only (matches VisualizationToolbar vertical
- *              orientation below 1024px).
- *   - Mobile:  hidden by default — the workbench itself is gated on
- *              `desktop:` via AppShell, so mobile goes through the
- *              mobile shell and never mounts this rail.
- *
- * Each row:
- *   - [color dot] LABEL     [↗ expand]
- *   - 40px canvas rendering the live waveform.
- *   - Visible only when the layer is visible in visualizationStore;
- *     hidden layers don't reserve space.
+ *   - Eyeball hide removed — the product contract is "always on."
+ *   - Hidden-layer restore chips removed — nothing to restore.
+ *   - Per-row chips for `rgb-luma` moved to the ExpandedAnalysisSlot
+ *     header (next to the RGB+L label down there).
+ *   - Each row is a click target (click anywhere = expand below pixel
+ *     strip). The expand arrow is still shown for keyboard + mouse
+ *     visual discoverability but the whole row is the hit area.
+ *   - Canvas-internal labels / readouts gone (W1 VisualizationStack
+ *     rewrite). Labels live in the row header; numeric readouts come
+ *     from `computeLayerReadout` and render inline, responsive to row
+ *     width (full text → short label, readout hides at narrow widths).
+ *   - Rows flex-share the rail's vertical space with a floor of 36px —
+ *     no scrolling. Below the floor the rail enters a "compact" mode
+ *     where the canvas collapses and only the header row shows.
  */
 
-import { useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useVisualizationStore } from '@/stores/visualizationStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
-import { LayerCanvas } from '@/components/editor/VisualizationStack';
+import { LayerCanvas, computeLayerReadout } from '@/components/editor/VisualizationStack';
+import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import {
   getLayerById,
   LINE_GRAPH_SHAPED_LAYER_IDS,
-  VISUALIZATION_LAYERS,
+  type VisualizationLayer,
   type VisualizationLayerId,
 } from '@/lib/visualizationTypes';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 // ─── Pure helpers (exported for tests) ──────────────────────────────────────
 
-/**
- * Filter + order the layer ids that belong in AnalysisRail — the
- * intersection of `layerOrder` (the user's persisted ordering from the
- * visualizationStore) and the line-graph-shape set. Hidden layers are
- * excluded so the rail only shows what the user enabled.
- *
- * Exported so node-only regression tests can verify the data-driven
- * classification without rendering the component.
- */
 export function selectAnalysisRailLayerIds(
   layerOrder: VisualizationLayerId[],
   visibleLayers: Set<VisualizationLayerId>,
@@ -58,21 +46,27 @@ export function selectAnalysisRailLayerIds(
   );
 }
 
+// ─── Layout constants ───────────────────────────────────────────────────────
+
+/** Absolute row minimum — the header still fits at this height (18px
+ *  header + 4px breathing room). Below this the rail's
+ *  overflow-y auto kicks in and the rail becomes scrollable. */
+const ROW_MIN_HEIGHT = 22;
+/** Header band inside each row (reserved for the label + readout). */
+const ROW_HEADER_HEIGHT = 18;
+/** Width at which the row header switches from descriptive → short label. */
+const SHORT_LABEL_WIDTH_PX = 168;
+/** Width at which the readout gets dropped entirely. */
+const HIDE_READOUT_WIDTH_PX = 140;
+
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 export interface AnalysisRailProps {
-  /** Pixel buffer the rail shares with the blade canvas + VisualizationStack. */
   pixels: Uint8Array | null;
-  /** LED count matching engine.getPixels() shape. */
   pixelCount: number;
-  /** Called when the user clicks a layer's ↗ icon. */
   onExpand: (layerId: VisualizationLayerId) => void;
+  expandedLayerId?: VisualizationLayerId | null;
   className?: string;
-  /**
-   * Inline style override. OV11 threads the user-draggable width from
-   * uiStore.analysisRailWidth. When present, it takes precedence over
-   * the breakpoint-derived default width below.
-   */
   style?: React.CSSProperties;
 }
 
@@ -82,135 +76,137 @@ export function AnalysisRail({
   pixels,
   pixelCount,
   onExpand,
+  expandedLayerId = null,
   className = '',
   style,
 }: AnalysisRailProps) {
   const visibleLayers = useVisualizationStore((s) => s.visibleLayers);
   const layerOrder = useVisualizationStore((s) => s.layerOrder);
-  const toggleLayer = useVisualizationStore((s) => s.toggleLayer);
   const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
   const { breakpoint } = useBreakpoint();
 
-  // Icon-only collapse below desktop. Matches the proposal §10
-  // responsive table: desktop 200px / tablet 40px / mobile drawer.
-  // OV11: the caller can override the desktop width by passing a
-  // `style.width` (drives the user-draggable value from uiStore).
-  // The compact (tablet / mobile) width stays fixed at 40px — the
-  // rail is icon-only there and resizing doesn't apply.
-  const compact = breakpoint === 'phone' || breakpoint === 'tablet';
+  // OV10 icon-only on tablet/phone still applies. The "always visible"
+  // contract covers desktop; the mobile shell owns its own affordances.
+  const icon = breakpoint === 'phone' || breakpoint === 'tablet';
   const resolvedWidth =
-    compact ? 40 : (typeof style?.width === 'number' ? style.width : 200);
+    icon ? 40 : (typeof style?.width === 'number' ? style.width : 200);
 
-  const activeIds = selectAnalysisRailLayerIds(layerOrder, visibleLayers);
-
-  // Hidden layers — rendered under a collapsed "enable a layer" hint so
-  // the rail isn't empty when the user has toggled everything off.
-  const allLineGraphs = VISUALIZATION_LAYERS.filter(
-    (l) => l.shape === 'line-graph',
+  const activeIds = useMemo(
+    () => selectAnalysisRailLayerIds(layerOrder, visibleLayers),
+    [layerOrder, visibleLayers],
   );
+
+  // Dynamic height distribution is pure CSS now:
+  //   - Rows use `flex: 1 1 0` so they share rail height equally and
+  //     grow past the old "preferred" cap as the parent is enlarged.
+  //   - Each row's own min-height floors at ROW_MIN_HEIGHT. When the
+  //     rail shrinks below rowCount × ROW_MIN_HEIGHT, the container's
+  //     overflow-y: auto engages and the rail becomes scrollable.
+  //   - Each row's canvas wrapper is flex-1 inside the row, so at
+  //     larger row heights the waveform takes the extra pixels
+  //     automatically.
 
   return (
     <aside
       role="complementary"
       aria-label="Analysis layers"
-      // OV11: right border removed — the ResizeHandle to our right
-      // carries the seam, and doubling it with a border adds visual
-      // weight without new information.
-      className={`shrink-0 bg-bg-secondary/40 overflow-y-auto overflow-x-hidden ${className}`}
+      className={`shrink-0 bg-bg-secondary/40 overflow-x-hidden overflow-y-auto ${className}`}
       style={{ ...style, width: resolvedWidth }}
     >
       {activeIds.length > 0 ? (
-        <div className="flex flex-col gap-1 p-1">
-          {activeIds.map((id) => (
-            <AnalysisRailRow
-              key={id}
-              layerId={id}
-              pixels={pixels}
-              pixelCount={pixelCount}
-              isPaused={isPaused}
-              reducedMotion={reducedMotion}
-              compact={compact}
-              onExpand={onExpand}
-              onHide={() => toggleLayer(id)}
-            />
-          ))}
+        <div className="flex flex-col gap-1 p-1 h-full min-h-0">
+          {activeIds.map((id) => {
+            const layer = getLayerById(id);
+            if (!layer) return null;
+            return (
+              <AnalysisRailRow
+                key={id}
+                layer={layer}
+                pixels={pixels}
+                pixelCount={pixelCount}
+                isPaused={isPaused}
+                reducedMotion={reducedMotion}
+                icon={icon}
+                railWidth={resolvedWidth}
+                isExpanded={expandedLayerId === id}
+                onExpand={onExpand}
+              />
+            );
+          })}
         </div>
       ) : (
-        // Empty state — no line-graph layers visible. Rather than hiding
-        // the rail (which would make the blade jump horizontally on
-        // toggle), show a small hint. The toolbar's layer toggles are
-        // the primary path to show layers; this is a secondary nudge.
-        <div
-          className="flex flex-col gap-1 p-2 text-ui-xs text-text-muted font-mono"
-          aria-live="polite"
-        >
-          {!compact && (
-            <>
-              <span className="uppercase tracking-[0.12em] text-text-muted/70">
-                Analysis
-              </span>
-              <span className="leading-snug text-text-muted/80">
-                Enable a line-graph layer from the toolbar to see waveforms here.
-              </span>
-            </>
-          )}
-          {compact && (
-            <span
-              aria-hidden="true"
-              className="text-center text-ui-xs text-text-muted/60"
-            >
-              ···
+        !icon && (
+          <div
+            className="flex flex-col gap-1 p-2 text-ui-xs text-text-muted font-mono"
+            aria-live="polite"
+          >
+            <span className="uppercase tracking-[0.12em] text-text-muted/70">
+              Analysis
             </span>
-          )}
-          {/* Surface the hidden layer count for visual-debug parity. */}
-          {!compact && allLineGraphs.length > 0 && (
-            <span className="text-text-muted/60">
-              {allLineGraphs.length} layers available.
+            <span className="leading-snug text-text-muted/80">
+              No layers available.
             </span>
-          )}
-        </div>
+          </div>
+        )
       )}
     </aside>
   );
 }
 
-// ─── Row — individual layer + expand affordance ──────────────────────────────
+// ─── Row — one analysis layer, click-anywhere-to-expand ─────────────────────
 
 interface AnalysisRailRowProps {
-  layerId: VisualizationLayerId;
+  layer: VisualizationLayer;
   pixels: Uint8Array | null;
   pixelCount: number;
   isPaused: boolean;
   reducedMotion: boolean;
-  compact: boolean;
+  icon: boolean;
+  railWidth: number;
+  isExpanded: boolean;
   onExpand: (layerId: VisualizationLayerId) => void;
-  onHide: () => void;
 }
 
 function AnalysisRailRow({
-  layerId,
+  layer,
   pixels,
   pixelCount,
   isPaused,
   reducedMotion,
-  compact,
+  icon,
+  railWidth,
+  isExpanded,
   onExpand,
-  onHide,
 }: AnalysisRailRowProps) {
-  const layer = getLayerById(layerId);
-  const rowRef = useRef<HTMLDivElement>(null);
-  if (!layer) return null;
+  const showShortLabel = railWidth < SHORT_LABEL_WIDTH_PX;
+  const showReadout = railWidth >= HIDE_READOUT_WIDTH_PX;
+
+  const labelText = showShortLabel ? layer.shortLabel : layer.label;
 
   return (
-    <div
-      ref={rowRef}
-      className="flex flex-col rounded-chrome bg-bg-deep/40 border border-border-subtle/40"
-      aria-label={`${layer.label} analysis layer`}
+    <button
+      type="button"
+      onClick={() => onExpand(layer.id)}
+      aria-label={`${layer.label} — ${isExpanded ? 'currently expanded' : 'click to expand below pixel strip'}`}
+      aria-pressed={isExpanded}
+      title={layer.description}
+      className={`flex flex-col rounded-chrome text-left w-full overflow-hidden transition-colors ${
+        isExpanded
+          ? 'bg-accent-dim/25 border border-accent-border/60'
+          : 'bg-bg-deep/40 border border-border-subtle/40 hover:border-accent-border/50 hover:bg-bg-deep/60'
+      }`}
+      // flex: 1 1 0 lets rows share rail height evenly and grow past
+      // the old preferred cap. min-height floors at ROW_MIN_HEIGHT so
+      // the header stays readable; when the rail shrinks past
+      // rowCount × ROW_MIN_HEIGHT, the container's overflow-y:auto
+      // engages and rows scroll instead of compress further.
+      style={{ flex: '1 1 0', minHeight: ROW_MIN_HEIGHT }}
     >
-      {/* Header: dot + label + actions */}
+      {/* Header: dot + label + readout + active-state arrow */}
       <div
-        className={`flex items-center ${compact ? 'justify-center px-1' : 'justify-between px-2'} py-1`}
+        className={`flex items-center ${icon ? 'justify-center px-1' : 'justify-between px-2'} shrink-0`}
+        style={{ height: ROW_HEADER_HEIGHT }}
       >
         <div className="flex items-center gap-1.5 min-w-0">
           <span
@@ -218,66 +214,98 @@ function AnalysisRailRow({
             className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
             style={{ backgroundColor: layer.color }}
           />
-          {!compact && (
+          {!icon && (
             <span
               className="text-ui-xs font-mono uppercase tracking-[0.08em] text-text-secondary truncate"
-              title={layer.description}
             >
-              {layer.label}
+              {labelText}
             </span>
           )}
         </div>
 
-        {!compact && (
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => onExpand(layerId)}
-              aria-label={`Expand ${layer.label} to full width`}
-              title="Expand"
-              className="text-text-muted hover:text-accent transition-colors text-ui-xs w-5 h-5 rounded-chrome border border-border-subtle/60 hover:border-accent-border inline-flex items-center justify-center"
+        {!icon && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {showReadout && (
+              <LayerReadout
+                layerId={layer.id}
+                pixels={pixels}
+                pixelCount={pixelCount}
+                isPaused={isPaused}
+              />
+            )}
+            <span
+              aria-hidden="true"
+              className={`text-ui-xs transition-colors ${isExpanded ? 'text-accent' : 'text-text-muted/70'}`}
             >
-              <span aria-hidden="true">↗</span>
-            </button>
-            <button
-              type="button"
-              onClick={onHide}
-              aria-label={`Hide ${layer.label} layer`}
-              title="Hide"
-              className="text-text-muted hover:text-text-primary transition-colors text-ui-xs w-5 h-5 rounded-chrome border border-border-subtle/60 hover:border-border-light inline-flex items-center justify-center"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
+              ↗
+            </span>
           </div>
         )}
       </div>
 
-      {/* Canvas */}
-      <div className="w-full">
-        <LayerCanvas
-          layerId={layerId}
-          pixels={pixels}
-          pixelCount={pixelCount}
-          height={compact ? 24 : layer.height}
-          isPaused={isPaused}
-          reducedMotion={reducedMotion}
-        />
-      </div>
-
-      {/* Compact mode: tap-to-expand click target on the whole row so
-          40px columns remain usable. Screen readers + keyboard users
-          already have the toolbar buttons. */}
-      {compact && (
-        <button
-          type="button"
-          onClick={() => onExpand(layerId)}
-          aria-label={`Expand ${layer.label}`}
-          className="text-ui-xs text-text-muted hover:text-accent py-0.5 font-mono"
-          title="Expand"
-        >
-          ↗
-        </button>
+      {/* Canvas — flex-1 fills remaining row height. When the row
+          shrinks to its floor, the canvas gets ~4px and effectively
+          disappears under the header; when the rail grows, the canvas
+          absorbs all extra pixels automatically. No compact-mode branch
+          needed. */}
+      {!icon && (
+        <div className="w-full flex-1 min-h-0">
+          <LayerCanvas
+            layerId={layer.id}
+            pixels={pixels}
+            pixelCount={pixelCount}
+            isPaused={isPaused}
+            reducedMotion={reducedMotion}
+          />
+        </div>
       )}
-    </div>
+    </button>
+  );
+}
+
+// ─── Inline readout (throttled to ~10fps for legibility) ────────────────────
+
+/**
+ * Render the per-layer numeric readout inline with the row label. The
+ * readout is refreshed at a modest rate (~8fps) — high enough to track
+ * blade state but low enough to avoid flicker and unnecessary re-renders.
+ */
+function LayerReadout({
+  layerId,
+  pixels,
+  pixelCount,
+  isPaused,
+}: {
+  layerId: VisualizationLayerId;
+  pixels: Uint8Array | null;
+  pixelCount: number;
+  isPaused: boolean;
+}) {
+  const brightness = useUIStore((s) => s.brightness);
+  const swing = useBladeStore((s) => s.motionSim.swing);
+  const bladeState = useBladeStore((s) => s.bladeState);
+  const rgbLumaChannels = useVisualizationStore((s) => s.rgbLumaChannels);
+
+  const [readout, setReadout] = useState<string | null>(null);
+
+  useAnimationFrame(
+    () => {
+      const next = computeLayerReadout(layerId, pixels, pixelCount, {
+        brightness,
+        swingSpeed: swing / 100,
+        bladeState: bladeState as string,
+        rgbLumaChannels,
+      });
+      // Only trigger a render if the value changed — string compare is cheap.
+      setReadout((prev) => (prev === next ? prev : next));
+    },
+    { enabled: !isPaused, maxFps: 8 },
+  );
+
+  if (!readout) return null;
+  return (
+    <span className="text-ui-xs font-mono tabular-nums text-text-muted/80 truncate max-w-[96px]">
+      {readout}
+    </span>
   );
 }

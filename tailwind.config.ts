@@ -51,6 +51,14 @@ const config: Config = {
       },
       borderRadius: {
         panel: '6px',
+        // W12 (2026-04-22): existing codebase uses `rounded-chrome` +
+        // `rounded-interactive` as class names assuming they map to
+        // the CSS variables defined in globals.css. They previously
+        // didn't resolve (no Tailwind token); `rounded-chrome` was
+        // silently rendering 0px. Wiring them up here so the two
+        // radius scales are consistent everywhere the classes appear.
+        chrome: 'var(--r-chrome)',
+        interactive: 'var(--r-interactive)',
       },
       screens: {
         phone: { max: '599px' },

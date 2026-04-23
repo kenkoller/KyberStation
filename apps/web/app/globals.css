@@ -377,6 +377,28 @@ html.perf-lite [style*="skeleton-shimmer"] {
 .ignite-btn-off { animation: ignite-pulse 2s ease-in-out infinite; }
 .ignite-btn-on { animation: retract-breathe 1.5s ease-in-out infinite; }
 
+/* W5 (2026-04-22) — STATE-tab row pulse. Marks a state row as
+   currently auditioning so it's unmistakable even with many rows on
+   screen. No vertical growth — just a glow swell. */
+@keyframes state-row-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgb(var(--accent) / 0.28); }
+  50%      { box-shadow: 0 0 12px rgb(var(--accent) / 0.48); }
+}
+.state-row-active { animation: state-row-pulse 1.2s ease-in-out infinite; }
+
+/* W8 (2026-04-22) — Inspector GALLERY tab hover shimmer. Only runs
+   on the hovered row; other rows stay completely static. The
+   shimmer is a bright sweep that rides the blade's length. */
+@keyframes gallery-blade-shimmer {
+  0%   { background-position: 0% 50%; filter: brightness(1); }
+  50%  { background-position: 100% 50%; filter: brightness(1.18); }
+  100% { background-position: 0% 50%; filter: brightness(1); }
+}
+.gallery-blade-hover {
+  background-size: 200% 100% !important;
+  animation: gallery-blade-shimmer 1.8s ease-in-out infinite;
+}
+
 /* Card hover effect */
 .card-hover {
   transition: transform 0.15s ease, border-color 0.15s ease;
