@@ -2,12 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Inter + JetBrains Mono are self-hosted via next/font in app/layout.tsx and
-   published as CSS custom properties (--font-inter, --font-jetbrains-mono).
-   Only Orbitron and Exo 2 still need @import for the cinematic / SW-body
-   display faces kept for intentional exceptions per UX North Star §6. */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap');
+/* All four display faces (Inter, JetBrains Mono, Orbitron, Exo 2) are
+   self-hosted via next/font in app/layout.tsx and published as CSS custom
+   properties (--font-inter, --font-jetbrains-mono, --font-orbitron,
+   --font-exo2). No external Google Fonts request — eliminates ~200-400ms
+   FCP delay on slow 3G (P30 + P31 2026-04-22 audit finding). */
 
 :root {
   /* Channel-format: space-separated RGB for Tailwind opacity modifiers */
@@ -399,20 +398,21 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* ─── Star Wars Typography ─── */
 
-/* Cinematic title font (Orbitron — angular, sci-fi, Star Wars feel) */
+/* Cinematic title font (Orbitron — angular, sci-fi, Star Wars feel).
+   Served from next/font via var(--font-orbitron). */
 .font-cinematic {
-  font-family: 'Orbitron', 'Exo 2', sans-serif;
+  font-family: var(--font-orbitron), var(--font-exo2), 'Orbitron', 'Exo 2', sans-serif;
   letter-spacing: 0.15em;
 }
 
 /* Secondary cinematic font */
 .font-sw-body {
-  font-family: 'Exo 2', 'JetBrains Mono', sans-serif;
+  font-family: var(--font-exo2), var(--font-jetbrains-mono), 'Exo 2', 'JetBrains Mono', sans-serif;
 }
 
 /* Crawl text styling (opening crawl feel) */
 .sw-crawl-text {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--font-exo2), 'Exo 2', sans-serif;
   line-height: 1.8;
   letter-spacing: 0.02em;
   color: #ffd700;
@@ -426,7 +426,7 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* Section headers with Star Wars flair */
 .sw-header {
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -438,7 +438,7 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* Sith-style text */
 .sw-sith-text {
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   background: linear-gradient(
     180deg,
     rgb(var(--faction-sith)) 0%,
@@ -451,7 +451,7 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* Jedi-style text */
 .sw-jedi-text {
-  font-family: 'Orbitron', sans-serif;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   background: linear-gradient(
     180deg,
     rgb(var(--faction-jedi)) 0%,
@@ -993,16 +993,16 @@ html.aurebesh-labels .section-header,
 html.aurebesh-labels .tab-label,
 html.aurebesh-labels .sidebar-label,
 html.aurebesh-labels [data-aurebesh] {
-  font-family: 'FT Aurebesh', 'Exo 2', sans-serif;
+  font-family: 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
   letter-spacing: 0.06em;
 }
 
 /* Full mode: everything renders in Aurebesh */
 html.aurebesh-full body {
-  font-family: 'FT Aurebesh', 'Exo 2', sans-serif;
+  font-family: 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
 }
 html.aurebesh-full .font-cinematic {
-  font-family: 'FT Aurebesh', 'Orbitron', sans-serif;
+  font-family: 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
 }
 
 /* Exclusions — never render in Aurebesh regardless of mode */

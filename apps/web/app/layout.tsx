@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Orbitron, Exo_2 } from 'next/font/google';
 import { MobileTabBar } from '@/components/layout/MobileTabBar';
 import './globals.css';
 
-// UX North Star §6 — Inter for chrome + labels, JetBrains Mono for all data /
-// numerics / code / identifiers / ceremonial display at 80–120px. No third
-// typeface. Loaded via next/font for CLS-safe self-hosting.
+// UX North Star §5/§6/§8 — Inter (chrome + labels), JetBrains Mono (data /
+// numerics / code / identifiers), Orbitron (cinematic titles, §5 ratified
+// third ceremonial face), Exo 2 (SW-body fallback paired with Aurebesh).
+// All four self-hosted via next/font for CLS-safe loads.
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
@@ -16,6 +17,20 @@ const jetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-jetbrains-mono',
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-orbitron',
+  weight: ['400', '500', '600', '700', '800', '900'],
+});
+
+const exo2 = Exo_2({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-exo2',
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -43,7 +58,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${jetBrainsMono.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${jetBrainsMono.variable} ${orbitron.variable} ${exo2.variable}`}>
       <head>
         {process.env.NODE_ENV === 'production' && (
           <meta

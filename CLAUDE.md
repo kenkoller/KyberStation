@@ -449,11 +449,11 @@ pnpm typecheck                  # TypeScript strict check
 
 ---
 
-## Current State (2026-04-20, mid-walkthrough + cleanup session)
+## Current State (2026-04-22, post-merge)
 
-**Active branch: `test/launch-readiness-2026-04-18` / PR [#31](https://github.com/kenkoller/KyberStation/pull/31) — NOT YET MERGED. Awaiting full walkthrough + merge decision.**
+**Active branch: `main`. PR [#31](https://github.com/kenkoller/KyberStation/pull/31) merged as commit `1b5da69` (`feat: v0.13.0 — launch readiness`). All 2026-04-18 → 2026-04-20 session work is on main.**
 
-Last git tag: **v0.10.0**. No tag cut since; PR #31 is the staging area for everything past v0.10.0.
+Last git tag: **v0.13.0**. Launch-readiness body of work landed; remaining launch-blockers are the four ⏳ QA phases (P29 a11y / P30 perf / P31 cross-browser / P37 triage) plus hardware cross-OS + cross-board sweeps, not new code.
 
 ### 2026-04-19 session
 
@@ -634,18 +634,38 @@ Known deferred (don't treat as bugs next session):
 
 ### What's waiting
 
-- **Ken's walkthrough of the late 2026-04-20 workbench realignment** (W1 / W2a / W3 / W4 / W4b / W6a / W6b + polish wave). The smell-test checklist lives in the conversation record for that session; findings get queued against the docs below.
-- **W5 — PerformanceBar** (plan §W5). Post-launch per plan. Dedicated session. Starter prompt was drafted end-of-session (pasted into fresh Claude Code).
-- **W7 — 4-tab consolidation** (plan §W7). Post-launch + requires Ken's explicit product decisions on which current panels redistribute into Design / Audition / Code / Deliver. Migration-heavy (persisted user layouts).
-- **W8 — Inspector extraction** (plan §W8). v0.14+ sprint; XL effort on StylePanel (344 lines) + EffectPanel (768 lines).
-- **Hardware validation cross-OS + cross-board** — Phase A/B/C ✅ on macOS + V3.9. Windows / Linux + V2 / V3-OLED sweeps still pending.
-- **Deep a11y audit** (P29): VoiceOver walk, WCAG contrast sweep, keyboard-only nav.
-- **Perf deep-dive** (P30): LCP / FPS / memory.
-- **Cross-browser matrix** (P31): Safari / Firefox / Edge + mobile Safari / mobile Chrome.
-- **Launch-triage** (P37): go/no-go after above.
-- **1 remaining UX item** (#16 Figma color model) — prompt in `docs/NEXT_SESSIONS.md`.
-- **CHANGELOG + version tag** — plan recommends `v0.13.0 — Launch Readiness` for this PR's body of work (shifting Kyber Forge → v0.14.0 etc.). Still Ken's call when to tag.
-- **Beyond-the-plan polish sweeps** queued: density consumption (thread `--row-h` through panels so the SSL/Ableton/Mutable toggle has visible effect), radius token migration (rounded-lg → `--r-interactive`), Imperial amber as additive theme, typography hierarchy sweep, effect-chip preview animations.
+**Launch-blocker QA phases (from `docs/LAUNCH_QA_PLAN.md`):**
+- **P29 deep a11y audit** — VoiceOver walk, WCAG contrast sweep, keyboard-only nav.
+- **P30 perf deep-dive** — LCP / FPS / memory.
+- **P31 cross-browser matrix** — Safari / Firefox / Edge + mobile Safari / mobile Chrome.
+- **P37 launch-triage** — go/no-go after above.
+
+**Post-launch structural waves (from `docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md`):**
+- **W5 — PerformanceBar** (plan §W5). Dedicated session.
+- **W7 — 4-tab consolidation** (plan §W7). Requires Ken's explicit call on panel redistribution.
+- **W8 — Inspector extraction** (plan §W8). v0.14+; XL effort on StylePanel + EffectPanel.
+
+**Hardware:**
+- **Cross-OS + cross-board validation** — Phase A/B/C ✅ on macOS + V3.9. Windows / Linux + V2 / V3-OLED sweeps still pending.
+
+**UX:**
+- **1 remaining UX item** (#16 Figma color model — opacity + blend modes) — prompt in `docs/NEXT_SESSIONS.md`. Requires Kyber Glyph version bump + engine compositor changes.
+
+**Polish sweeps queued (from `docs/WORKBENCH_UX_REALIGNMENT_2026-04-20.md` §6b):**
+- **Radius token migration** (`rounded-*` → `var(--r-interactive)`). 39+ sites across 20 files.
+- **Density consumption** — thread `var(--row-h)` through `LayerRow` + `StylePanel` rows so the SSL/Ableton/Mutable toggle has visible effect. (`ModulatorRow` already consumes it.)
+- **Imperial amber as additive theme** — `lib/themeDefinitions.ts` addition (not a default swap).
+
+**Open PRs:** [#32](https://github.com/kenkoller/KyberStation/pull/32) (marketing site expansion, ready, not draft).
+
+**Housekeeping:** 5 stale feature branches merged into main (pruning candidates); 3 stashes on `test/launch-readiness-2026-04-18` worth triaging (WIP landing CTAs / ReleaseStrip URL / Footer changes).
+
+**Known TODOs surfaced in code:**
+- `StatusBar.tsx` CONN segment is a placeholder — global WebUSB store doesn't exist yet (FlashPanel holds state locally).
+- `WorkbenchLayout.tsx:682` — theme-row cap TODO pending theme-section redesign.
+- `packages/engine/src/modulation/index.ts` — 5 TODOs for v1.1 parser/evaluator/registry/sampler/binding-apply (architectural scaffold only).
+- `PauseButton` mobile touch-target 23px — needs 44px minimum per WCAG (flagged in `UX_OVERHAUL_MOBILE_2026-04-18.md §DEFER`).
+- Single-BladeEngine context consolidation to eliminate double-tick (`SABER_VISIBILITY_AUDIT_2026-04-18.md §Follow-Up`).
 
 ### Key session docs for future-Claude (or Ken)
 
@@ -742,9 +762,10 @@ Output of the 2026-04-17 12-question design review. Plan lives at
 | v0.11.3 | **Modular Hilt Library** | 🧪 complete, awaiting merge | 33 original line-art SVG parts across 5 type dirs composed into 8 canonical assemblies (Graflex, MPP, Negotiator, Count, Shoto Sage, Vented Crossguard, Staff, Fulcrum). 3-agent parallel fan-out via `feat/hilt-parts-{top,body,bottom}` merged back to `feat/hilt-library`. `HiltRenderer` supports vertical + horizontal orientation via internal viewBox rotation. 18 unit tests cover composition, connector validation, and catalog conformance. Plan: `~/.claude/plans/feat-hilt-library.md`. Spec: `docs/HILT_PART_SPEC.md`. PR #30. |
 | v0.12.0 | **Kyber Crystal — Three.js renderer** | ✅ shipped (PR #20) | Four commits: foundation (ddc5ee7) + camera-zoom reveal (1276edd) + real glyph encoder (783c3c6) + visual polish (59ed6f3). 294/294 tests. Deferred follow-ups: Crystal Vault panel, Re-attunement UI, favicon replacement, phone-camera scan validation, `CANONICAL_DEFAULT_CONFIG` drift-sentinel, `<HiltMesh>` extraction. Spec/arch in `docs/KYBER_CRYSTAL_3D.md`. |
 | v0.12.x | **Visualization Polish Pass** | 📋 planned | Gamma fidelity, LED bleed, polycarbonate diffusion accuracy, hilt integration, rim glow, bloom curves, motion blur on swing. Reference-stills library from films/shows. Dedicated multi-agent session — originally planned for v0.12.0, reassigned to let the crystal renderer take that slot. |
-| v0.13.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Blade+hilt hero full-width; flanking setup (left) + quick-options (right) sidebars; pixel-level LED debug row synced 1:1 beneath the hero; analysis panels stacked in a bottom row; status-ticker at the base. Cosplay + fan-film + livestream-optimised. |
-| v0.14.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. Deep-cut lanes: Prequel/OT/Sequel Jedi & Sith, Legends/KOTOR/SWTOR (incl. Dark Forces / Jedi Knight / Outcast / Academy), Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Space-combat (Rogue Squadron / X-Wing / TIE Fighter / Squadrons / Rebel Assault), Cross-franchise "inspired by". Could 4-5× the preset library in one session. |
-| v0.15.0 | **Multi-Blade Workbench** | 📋 planned | Channel-strip UI for editing dual-blade sabers / saberstaffs / crossguards. Blade-switching in the workbench. Sync / Unsync toggle for symmetry vs independence. Glyph format already supports multi-blade from v1, so this is purely the editing UI side. |
+| v0.13.0 | **Launch Readiness** | ✅ shipped (PR #31, commit `1b5da69`) | 37-phase QA sweep (28/37 complete pre-merge), UX overhaul (26/27 items), workbench realignment (W1/W2a/W3/W4/W4b/W6a/W6b + polish), landing page rework, hardware validation phases A/B/C on V3.9 + macOS. Remaining launch-blockers are P29/P30/P31/P37 + cross-OS hardware sweeps. |
+| v0.14.0 | **Kyber Forge (ultra-wide showcase)** | 📋 planned | Dedicated layout mode for 21:9 / 32:9 / 32:10 displays. Blade+hilt hero full-width; flanking setup (left) + quick-options (right) sidebars; pixel-level LED debug row synced 1:1 beneath the hero; analysis panels stacked in a bottom row; status-ticker at the base. Cosplay + fan-film + livestream-optimised. |
+| v0.15.0 | **Preset Cartography** | 📋 planned | Parallel-agent preset expansion. Deep-cut lanes: Prequel/OT/Sequel Jedi & Sith, Legends/KOTOR/SWTOR (incl. Dark Forces / Jedi Knight / Outcast / Academy), Animated/Rebels/BadBatch, Sequel/Mando/Ahsoka/Acolyte, Space-combat (Rogue Squadron / X-Wing / TIE Fighter / Squadrons / Rebel Assault), Cross-franchise "inspired by". Could 4-5× the preset library in one session. |
+| v0.16.0 | **Multi-Blade Workbench** | 📋 planned | Channel-strip UI for editing dual-blade sabers / saberstaffs / crossguards. Blade-switching in the workbench. Sync / Unsync toggle for symmetry vs independence. Glyph format already supports multi-blade from v1, so this is purely the editing UI side. |
 
 Legend: ✅ shipped · 🧪 complete, awaiting merge · 🚧 in progress · 🔜 next sprint · 📋 planned (doc exists) · ⏸ deferred
 
