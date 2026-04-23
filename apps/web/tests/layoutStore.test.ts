@@ -42,11 +42,18 @@ describe('layoutStore — default column assignment', () => {
     expect(allInColumns.sort()).toEqual(expected.sort());
   });
 
-  it('dynamics tab contains all expected panels', () => {
+  // OV6 (2026-04-21): Dynamics tab was absorbed into Design. Former
+  // dynamics panels now live on the Design tab; the standalone test
+  // is replaced by a regression test that the Design tab carries
+  // ignition-retraction + effect-triggers + motion-simulation +
+  // effect-config after the merge.
+  it('design tab absorbs former dynamics panels after OV6 merge', () => {
     const { columns } = useLayoutStore.getState();
-    const allInColumns = columns.dynamics.flat();
-    const expected = panelsForTab('dynamics');
-    expect(allInColumns.sort()).toEqual(expected.sort());
+    const designIds = columns.design.flat();
+    expect(designIds).toContain('ignition-retraction');
+    expect(designIds).toContain('effect-triggers');
+    expect(designIds).toContain('motion-simulation');
+    expect(designIds).toContain('effect-config');
   });
 
   it('audio tab contains all expected panels', () => {

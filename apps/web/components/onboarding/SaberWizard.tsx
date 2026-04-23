@@ -2,14 +2,17 @@
 
 // ─── Saber Wizard ───
 //
-// A guided 3-step flow for new users: archetype → colour → vibe.
+// A guided 4-step flow for new users: hardware → archetype → colour → vibe.
 // Combines into a fully-formed BladeConfig and loads it into the store.
 // Uses existing presets and theme tokens — zero new visual primitives.
 
 import { useState, useCallback } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { playUISound } from '@/lib/uiSounds';
 import { useModalDialog } from '@/hooks/useModalDialog';
+import { inferBladeInches } from '@/lib/bladeRenderMetrics';
+import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSignal';
 import type { BladeConfig } from '@kyberstation/engine';
 
 interface SaberWizardProps {
@@ -17,7 +20,113 @@ interface SaberWizardProps {
   onClose: () => void;
 }
 
-// ─── Step 1: Archetype ───────────────────────────────────────────────
+// ─── Step 1: Hardware (blade length + board) ─────────────────────────
+
+export interface BladeLengthOption {
+  inches: number;
+  ledCount: number;
+  label: string;
+}
+
+// LED counts mirror BLADE_LENGTH_PRESETS in packages/engine/src/types.ts
+// (3.66 LEDs/inch). 20" entry slots into the inferBladeInches ≤73 bucket.
+export const BLADE_LENGTHS: BladeLengthOption[] = [
+  { inches: 20, ledCount: 73, label: '20"' },
+  { inches: 24, ledCount: 88, label: '24"' },
+  { inches: 28, ledCount: 103, label: '28"' },
+  { inches: 32, ledCount: 117, label: '32"' },
+  { inches: 36, ledCount: 132, label: '36"' },
+  { inches: 40, ledCount: 147, label: '40"' },
+];
+
+export type BoardId = 'proffie-v3' | 'proffie-v2' | 'cfx' | 'gh-v4' | 'gh-v3';
+
+/**
+ * Hardware-compatibility tier for the wizard's board picker.
+ *
+ *   verified  — hardware-validated end-to-end (flash + boot + audio).
+ *               Proffie V3 only as of 2026-04-22 (89sabers V3.9, macOS+Brave).
+ *   untested  — KyberStation generates correct ProffieOS code for this board
+ *               but real-hardware flash hasn't been confirmed yet. Community
+ *               testing welcome.
+ *   reference — board lives in a different firmware ecosystem entirely
+ *               (CFX / GH / Xeno etc.); the editor + visualizer work but
+ *               flash output won't run. Picked for documentation parity,
+ *               not for export.
+ */
+export type BoardCompatibility = 'verified' | 'untested' | 'reference';
+
+export interface BoardOption {
+  id: BoardId;
+  label: string;
+  // Persisted on SaberProfile.boardType. CodeOutput.tsx maps these strings
+  // back to proffieboard_v{2,3} when generating config.h headers.
+  storeValue: string;
+  compatibility: BoardCompatibility;
+  tagline: string;
+}
+
+export const BOARDS: BoardOption[] = [
+  {
+    id: 'proffie-v3',
+    label: 'Proffie V3',
+    storeValue: 'Proffie V3',
+    compatibility: 'verified',
+    tagline: 'Recommended. Hardware-validated flash + editor.',
+  },
+  {
+    id: 'proffie-v2',
+    label: 'Proffie V2',
+    storeValue: 'Proffie V2',
+    compatibility: 'untested',
+    tagline: 'Code path ready, awaiting community hardware testing.',
+  },
+  {
+    id: 'cfx',
+    label: 'CFX',
+    storeValue: 'CFX',
+    compatibility: 'reference',
+    tagline: 'Editor + reference only — flash needs Proffie.',
+  },
+  {
+    id: 'gh-v4',
+    label: 'GH V4',
+    storeValue: 'GH V4',
+    compatibility: 'reference',
+    tagline: 'Editor + reference only — flash needs Proffie.',
+  },
+  {
+    id: 'gh-v3',
+    label: 'GH V3',
+    storeValue: 'GH V3',
+    compatibility: 'reference',
+    tagline: 'Editor + reference only — flash needs Proffie.',
+  },
+];
+
+/** Per-tier visual + a11y metadata for the board chip. */
+const COMPAT_META: Record<
+  BoardCompatibility,
+  { variant: StatusVariant; label: string; description: string }
+> = {
+  verified: {
+    variant: 'success',
+    label: 'VERIFIED',
+    description: 'Hardware-validated — known working',
+  },
+  untested: {
+    variant: 'warning',
+    label: 'UNTESTED',
+    description: 'Code ready, hardware testing pending',
+  },
+  reference: {
+    variant: 'error',
+    label: 'REFERENCE',
+    description: 'Editor + reference only — flash unsupported',
+  },
+};
+
+// ─── Step 2: Archetype ───────────────────────────────────────────────
 
 type Archetype = 'jedi' | 'sith' | 'grey' | 'unstable' | 'exotic';
 
@@ -67,7 +176,7 @@ const ARCHETYPES: ArchetypeOption[] = [
   },
 ];
 
-// ─── Step 2: Colour swatches (per archetype) ─────────────────────────
+// ─── Step 3: Colour swatches (per archetype) ─────────────────────────
 
 const COLOR_SWATCHES: Record<Archetype, Array<{ id: string; label: string; color: { r: number; g: number; b: number } }>> = {
   jedi: [
@@ -103,7 +212,7 @@ const COLOR_SWATCHES: Record<Archetype, Array<{ id: string; label: string; color
   ],
 };
 
-// ─── Step 3: Vibe presets (apply effect parameters) ──────────────────
+// ─── Step 4: Vibe presets (apply effect parameters) ──────────────────
 
 interface VibeOption {
   id: string;
@@ -164,18 +273,51 @@ const VIBES: VibeOption[] = [
 export function SaberWizard({ open, onClose }: SaberWizardProps) {
   const loadPreset = useBladeStore((s) => s.loadPreset);
   const currentConfig = useBladeStore((s) => s.config);
+  const profiles = useSaberProfileStore((s) => s.profiles);
+  const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
+  const updateProfileFn = useSaberProfileStore((s) => s.updateProfile);
+  const createProfileFn = useSaberProfileStore((s) => s.createProfile);
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
+
+  // Pre-select hardware defaults from current config + active profile so
+  // a user with existing setup sees their values reflected, and a fresh
+  // user sees sensible canon defaults (132 LEDs / 36" / Proffie V3).
+  const initialBladeLength = (() => {
+    const ledCount = currentConfig.ledCount ?? 132;
+    const exact = BLADE_LENGTHS.find((b) => b.ledCount === ledCount);
+    if (exact) return exact;
+    const inches = inferBladeInches(ledCount);
+    return BLADE_LENGTHS.find((b) => b.inches === inches) ?? BLADE_LENGTHS[4];
+  })();
+  const initialBoardId: BoardId = (() => {
+    const stored = activeProfile?.boardType;
+    if (stored) {
+      const match = BOARDS.find((b) => b.storeValue === stored);
+      if (match) return match.id;
+    }
+    return 'proffie-v3';
+  })();
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [bladeLength, setBladeLength] = useState<BladeLengthOption>(initialBladeLength);
+  const [boardId, setBoardId] = useState<BoardId>(initialBoardId);
+  // Tracks whether the user explicitly Continued past the hardware step.
+  // Skip leaves this false so apply() won't write ledCount or boardType.
+  const [applyHardware, setApplyHardware] = useState(false);
   const [archetype, setArchetype] = useState<Archetype | null>(null);
   const [color, setColor] = useState<{ r: number; g: number; b: number } | null>(null);
   const [vibe, setVibe] = useState<VibeOption | null>(null);
 
   const reset = useCallback(() => {
     setStep(1);
+    setBladeLength(initialBladeLength);
+    setBoardId(initialBoardId);
+    setApplyHardware(false);
     setArchetype(null);
     setColor(null);
     setVibe(null);
-  }, []);
+  }, [initialBladeLength, initialBoardId]);
 
   const close = useCallback(() => {
     reset();
@@ -194,6 +336,7 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
     const next: BladeConfig = {
       ...currentConfig,
       name: 'Wizard Saber',
+      ...(applyHardware ? { ledCount: bladeLength.ledCount } : {}),
       baseColor: color,
       clashColor,
       lockupColor: { r: 255, g: 200, b: 80 },
@@ -206,9 +349,34 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
       shimmer: vibe.shimmer,
     };
     loadPreset(next);
+
+    if (applyHardware) {
+      const board = BOARDS.find((b) => b.id === boardId);
+      if (board) {
+        if (activeProfile) {
+          updateProfileFn(activeProfile.id, { boardType: board.storeValue });
+        } else {
+          createProfileFn('My Saber', '', board.storeValue);
+        }
+      }
+    }
+
     playUISound('success');
     close();
-  }, [archetype, color, vibe, currentConfig, loadPreset, close]);
+  }, [
+    archetype,
+    color,
+    vibe,
+    currentConfig,
+    loadPreset,
+    close,
+    applyHardware,
+    bladeLength,
+    boardId,
+    activeProfile,
+    updateProfileFn,
+    createProfileFn,
+  ]);
 
   // Modal a11y: ESC-to-close, focus trap, initial + restore focus.
   // Hook is always called (rules-of-hooks); it no-ops when `open` is false.
@@ -237,7 +405,14 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
               Saber Wizard
             </h2>
             <p id="saber-wizard-step-label" className="text-ui-xs text-text-muted">
-              Step {step} of 3 · {step === 1 ? 'Archetype' : step === 2 ? 'Colour' : 'Vibe'}
+              Step {step} of 4 ·{' '}
+              {step === 1
+                ? 'Hardware'
+                : step === 2
+                ? 'Archetype'
+                : step === 3
+                ? 'Colour'
+                : 'Vibe'}
             </p>
           </div>
           <button
@@ -251,7 +426,7 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
 
         {/* Step indicator */}
         <div className="flex gap-1 px-4 pt-3">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
               className="h-1 flex-1 rounded-full"
@@ -268,32 +443,41 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
         {/* Content */}
         <div className="p-4 min-h-[280px]">
           {step === 1 && (
-            <Step1Archetype
+            <Step1Hardware
+              bladeLength={bladeLength}
+              boardId={boardId}
+              onBladeLength={setBladeLength}
+              onBoard={setBoardId}
+            />
+          )}
+
+          {step === 2 && (
+            <Step2Archetype
               selected={archetype}
               onSelect={(id) => {
                 setArchetype(id);
                 const archetypeOpt = ARCHETYPES.find((a) => a.id === id);
                 if (archetypeOpt) setColor(archetypeOpt.defaultColor);
-                setStep(2);
-                playUISound('button-click');
-              }}
-            />
-          )}
-
-          {step === 2 && archetype && (
-            <Step2Color
-              archetype={archetype}
-              selected={color}
-              onSelect={(c) => {
-                setColor(c);
                 setStep(3);
                 playUISound('button-click');
               }}
             />
           )}
 
-          {step === 3 && (
-            <Step3Vibe
+          {step === 3 && archetype && (
+            <Step3Color
+              archetype={archetype}
+              selected={color}
+              onSelect={(c) => {
+                setColor(c);
+                setStep(4);
+                playUISound('button-click');
+              }}
+            />
+          )}
+
+          {step === 4 && (
+            <Step4Vibe
               selected={vibe}
               onSelect={(v) => {
                 setVibe(v);
@@ -308,22 +492,40 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
           <button
             onClick={() => {
               if (step === 1) {
-                close();
+                // Skip hardware setup — applyHardware stays false so apply()
+                // won't touch ledCount or boardType. User can revisit later.
+                setStep(2);
+                playUISound('button-click');
               } else {
-                setStep((s) => (s === 3 ? 2 : 1));
+                setStep((s) => (s === 4 ? 3 : s === 3 ? 2 : 1) as 1 | 2 | 3 | 4);
               }
             }}
             className="touch-target px-3 py-1 text-ui-sm text-text-muted hover:text-text-primary"
           >
-            {step === 1 ? 'Cancel' : '← Back'}
+            {step === 1 ? 'Skip for now' : '← Back'}
           </button>
-          <button
-            onClick={apply}
-            disabled={!archetype || !color || !vibe}
-            className="touch-target px-4 py-1 rounded text-ui-sm font-medium bg-accent text-bg-deep disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Create saber
-          </button>
+          {step === 1 ? (
+            <button
+              onClick={() => {
+                setApplyHardware(true);
+                setStep(2);
+                playUISound('button-click');
+              }}
+              className="touch-target px-4 py-1 rounded text-ui-sm font-medium bg-accent text-bg-deep"
+            >
+              Continue →
+            </button>
+          ) : step === 4 ? (
+            <button
+              onClick={apply}
+              disabled={!archetype || !color || !vibe}
+              className="touch-target px-4 py-1 rounded text-ui-sm font-medium bg-accent text-bg-deep disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Create saber
+            </button>
+          ) : (
+            <div />
+          )}
         </div>
       </div>
     </div>
@@ -332,7 +534,98 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
 
 // ─── Step components ─────────────────────────────────────────────────
 
-function Step1Archetype({
+function Step1Hardware({
+  bladeLength,
+  boardId,
+  onBladeLength,
+  onBoard,
+}: {
+  bladeLength: BladeLengthOption;
+  boardId: BoardId;
+  onBladeLength: (b: BladeLengthOption) => void;
+  onBoard: (id: BoardId) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <p className="text-ui-sm text-text-muted">
+        Tell us about your saber so the editor matches your hardware. Already
+        set up? Pick &ldquo;Skip for now&rdquo; — you can change this later in
+        Profile + Code panels.
+      </p>
+
+      {/* Blade length */}
+      <div>
+        <div className="flex items-baseline justify-between mb-2">
+          <h3 className="text-ui-sm font-semibold text-text-primary">Blade length</h3>
+          <span className="text-ui-xs text-text-muted font-mono">
+            {bladeLength.ledCount} LEDs
+          </span>
+        </div>
+        <div className="grid grid-cols-3 tablet:grid-cols-6 gap-2">
+          {BLADE_LENGTHS.map((b) => {
+            const isSelected = b.inches === bladeLength.inches;
+            return (
+              <button
+                key={b.inches}
+                onClick={() => onBladeLength(b)}
+                aria-pressed={isSelected}
+                aria-label={`${b.label} blade — ${b.ledCount} LEDs`}
+                {...(isSelected ? { 'data-autofocus': true } : {})}
+                className={`touch-target px-2 py-2 rounded-panel border text-ui-sm font-mono transition-colors ${
+                  isSelected
+                    ? 'bg-accent-dim border-accent text-accent'
+                    : 'bg-bg-deep border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
+                }`}
+              >
+                {b.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Board */}
+      <div>
+        <div className="flex items-baseline justify-between mb-2">
+          <h3 className="text-ui-sm font-semibold text-text-primary">Board</h3>
+          <div className="flex items-center gap-3 text-ui-xs">
+            <StatusSignal variant="success" label="Verified — hardware-validated" compact />
+            <StatusSignal variant="warning" label="Untested — community testing pending" compact />
+            <StatusSignal variant="error" label="Reference only — flash unsupported" compact />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 tablet:grid-cols-2 gap-2">
+          {BOARDS.map((b) => {
+            const isSelected = b.id === boardId;
+            const meta = COMPAT_META[b.compatibility];
+            return (
+              <button
+                key={b.id}
+                onClick={() => onBoard(b.id)}
+                aria-pressed={isSelected}
+                className={`text-left p-2 rounded-panel border transition-colors ${
+                  isSelected
+                    ? 'bg-accent-dim border-accent text-accent'
+                    : 'bg-bg-deep border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-ui-base font-semibold">{b.label}</span>
+                  <StatusSignal variant={meta.variant} label={meta.description}>
+                    {meta.label}
+                  </StatusSignal>
+                </div>
+                <p className="text-ui-xs text-text-muted mt-0.5">{b.tagline}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Step2Archetype({
   selected,
   onSelect,
 }: {
@@ -376,7 +669,7 @@ function Step1Archetype({
   );
 }
 
-function Step2Color({
+function Step3Color({
   archetype,
   selected,
   onSelect,
@@ -431,7 +724,7 @@ function Step2Color({
   );
 }
 
-function Step3Vibe({
+function Step4Vibe({
   selected,
   onSelect,
 }: {

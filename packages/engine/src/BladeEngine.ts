@@ -368,6 +368,81 @@ export class BladeEngine {
   }
 
   /**
+   * OV8 — capture a snapshot RGB buffer for the given blade state.
+   *
+   * Creates a scratch BladeEngine (same topology), forces it into the
+   * target state, optionally triggers + holds a single effect, advances
+   * it by enough simulated time for styles + effects to converge, then
+   * returns a COPY of the scratch engine's pixel buffer. The main
+   * engine instance is untouched.
+   *
+   * Intended for UI snapshot grids (Inspector STATE tab) that want to
+   * preview "what does CLASH / BLAST / LOCKUP / etc. look like at this
+   * config right now?" without interrupting the main engine tick.
+   *
+   * Returns a Uint8Array of R,G,B triplets length = 3 * totalLEDs.
+   */
+  captureStateFrame(
+    state: BladeState,
+    config: BladeConfig,
+    effectHeld?: EffectType,
+    options?: { progress?: number; settleMs?: number },
+  ): Uint8Array {
+    const scratch = new BladeEngine(this._topology);
+    const settleMs = options?.settleMs ?? 120;
+    const progress = Math.max(0, Math.min(1, options?.progress ?? 1));
+
+    if (state === BladeState.OFF) {
+      // Already-off scratch — one update to zero the pixels.
+      scratch.update(1, config);
+      return new Uint8Array(scratch.leds.buffer);
+    }
+
+    // Force the state machine into a fully-extended ON. Ignition /
+    // retraction / preon are all expressed by directly setting the
+    // private state + progress fields; the normal ignite() path would
+    // otherwise walk through PREON → IGNITING gradually.
+    scratch['_state'] = BladeState.ON;
+    scratch['_extendProgress'] = 1;
+    // One tick to let styles sample a stable time anchor.
+    scratch.update(settleMs, config);
+
+    // Reinterpret the requested state on top of the ON baseline.
+    switch (state) {
+      case BladeState.PREON:
+        scratch['_state'] = BladeState.PREON;
+        scratch['_preonElapsed'] = Math.floor(progress * (config.preonMs ?? 300));
+        break;
+      case BladeState.IGNITING:
+        scratch['_state'] = BladeState.IGNITING;
+        scratch['_extendProgress'] = progress;
+        break;
+      case BladeState.RETRACTING:
+        scratch['_state'] = BladeState.RETRACTING;
+        // Retraction progress counts DOWN from 1 → 0, so pass the
+        // caller's progress through directly (0.5 = half-retracted).
+        scratch['_extendProgress'] = 1 - progress;
+        break;
+      case BladeState.ON:
+      default:
+        scratch['_state'] = BladeState.ON;
+        scratch['_extendProgress'] = 1;
+        break;
+    }
+
+    // Hold an effect on top of the captured state, if requested.
+    // Sustained effects (lockup / drag / melt / lightning / force)
+    // will remain active for this snapshot; one-shots (clash / blast /
+    // stab) fire and are captured at their peak via the settleMs tick.
+    if (effectHeld) {
+      scratch.triggerEffect(effectHeld, { position: 0.5 });
+    }
+
+    scratch.update(settleMs, config);
+    return new Uint8Array(scratch.leds.buffer);
+  }
+
+  /**
    * Reset the engine to initial state (OFF, all LEDs dark).
    */
   reset(): void {
