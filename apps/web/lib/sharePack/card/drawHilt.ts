@@ -1,15 +1,9 @@
-// ─── drawHilt — saber hilt (horizontal, blade exits the right/emitter end) ───
+// ─── drawHilt — saber hilt ─────────────────────────────────────
 //
-// Renders the real hilt SVG (from @/lib/hilts + @/components/hilt/HiltRenderer)
-// onto the card canvas. The horizontal orientation places the emitter at the
-// right edge of the SVG viewBox, so we right-align the drawn image to
-// `layout.bladeStartX` (with a small overlap so the blade visually emerges
-// from the emitter). If the SVG pipeline throws, we fall back to the
-// stylized canvas-draw hilt so the card still renders.
-//
-// Aspect ratio: HiltRenderer preserves the assembly's natural aspect, so the
-// drawn height is derived from the loaded Image rather than `layout.hiltH`,
-// and the image is vertically centered in the hero band.
+// Supports both horizontal (blade exits the right/emitter end) and
+// vertical (blade exits the top/emitter end, hilt grip at the bottom)
+// orientations. Uses the real hilt SVG via HiltRenderer; falls back to
+// a stylized canvas-draw hilt if the SVG pipeline throws.
 
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -29,6 +23,17 @@ const DEFAULT_ASSEMBLY_ID = 'graflex';
 const HILT_ACCENT = 'rgb(178,182,192)';
 
 export async function drawHilt(card: CardContext): Promise<void> {
+  const { layout } = card;
+  if (layout.saberOrientation === 'vertical') {
+    await drawHiltVertical(card);
+  } else {
+    await drawHiltHorizontal(card);
+  }
+}
+
+// ─── Horizontal hilt (existing behavior) ─────────────────────
+
+async function drawHiltHorizontal(card: CardContext): Promise<void> {
   const { ctx, layout, options } = card;
   const { config } = options;
 
@@ -53,27 +58,79 @@ export async function drawHilt(card: CardContext): Promise<void> {
 
     const img = await svgStringToImage(svgMarkup);
 
-    // Preserve the SVG's natural aspect ratio. Width is driven by layout;
-    // height scales so the assembly's pommel-to-emitter proportions hold.
+    // Preserve the SVG's natural aspect ratio.
     const drawW = layout.hiltW;
     const aspect = img.width > 0 ? img.height / img.width : layout.hiltH / layout.hiltW;
     const drawH = drawW * aspect;
 
-    // Right-align the image against the blade's start X (with a small
-    // overlap so the emitter tucks into the blade root).
+    // Right-align against the blade's start X.
     const drawRightX = layout.bladeStartX - EMITTER_OVERLAP;
     const drawX = drawRightX - drawW;
     const drawY = heroCenterY - drawH / 2;
 
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
   } catch {
-    // SVG render failed (server-render error, image decode failure, etc.) —
-    // fall back to the stylized canvas-draw path so the card still renders.
     drawStylizedHilt(ctx, layout.hiltX, fallbackY, layout.hiltW, layout.hiltH);
   }
 }
 
-// ─── Stylized canvas-draw hilt (fallback) ───
+// ─── Vertical hilt ───────────────────────────────────────────
+
+async function drawHiltVertical(card: CardContext): Promise<void> {
+  const { ctx, layout, options } = card;
+  const { config } = options;
+
+  // For vertical, hiltW is the long-axis dimension (top-to-bottom of
+  // grip); the short axis (horizontal width) derives from the SVG's
+  // natural aspect. HiltRenderer with orientation='vertical' emits
+  // emitter-at-top natural SVG, which suits a blade-pointing-up layout.
+  const longAxisSize = layout.hiltW;
+  const hiltTopY = layout.hiltY ?? (layout.heroY + layout.heroH - layout.hiltW);
+  const hiltCenterX = layout.hiltX + layout.hiltH / 2;
+
+  try {
+    const hiltId = (config as unknown as { hiltId?: string }).hiltId ?? DEFAULT_ASSEMBLY_ID;
+
+    const svgMarkup = renderToStaticMarkup(
+      createElement(HiltRenderer, {
+        assemblyId: hiltId,
+        orientation: 'vertical',
+        longAxisSize,
+        accentOverride: HILT_ACCENT,
+      }),
+    );
+
+    if (!svgMarkup) {
+      throw new Error('HiltRenderer produced empty markup');
+    }
+
+    const img = await svgStringToImage(svgMarkup);
+
+    // Long-axis (height) is fixed; compute short-axis (width) from the
+    // SVG's natural aspect ratio.
+    const drawH = longAxisSize;
+    const aspect = img.height > 0 ? img.width / img.height : layout.hiltH / layout.hiltW;
+    const drawW = drawH * aspect;
+
+    // Center horizontally on hiltCenterX; top at hiltTopY (so the
+    // emitter sits near the blade's bottom).
+    const drawX = hiltCenterX - drawW / 2;
+    const drawY = hiltTopY - EMITTER_OVERLAP;
+
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  } catch {
+    // Fallback — stylized vertical hilt.
+    drawStylizedHiltVertical(
+      ctx,
+      hiltCenterX,
+      hiltTopY,
+      layout.hiltH,
+      layout.hiltW,
+    );
+  }
+}
+
+// ─── Stylized canvas-draw hilt (horizontal fallback) ────────
 
 function drawStylizedHilt(ctx: Ctx, x: number, y: number, w: number, h: number): void {
   ctx.save();
@@ -124,6 +181,70 @@ function drawStylizedHilt(ctx: Ctx, x: number, y: number, w: number, h: number):
   highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = highlightGrad;
   fillRoundRect(ctx, x + 2, y + 2, w - 4, h * 0.2, 2);
+
+  ctx.restore();
+}
+
+// ─── Stylized canvas-draw hilt (vertical fallback) ──────────
+
+function drawStylizedHiltVertical(
+  ctx: Ctx,
+  cx: number,
+  topY: number,
+  width: number,
+  height: number,
+): void {
+  ctx.save();
+
+  const x = cx - width / 2;
+  const y = topY;
+
+  // Emitter (top, meets blade)
+  const emitterGrad = ctx.createLinearGradient(x, y, x, y + 14);
+  emitterGrad.addColorStop(0, '#5a5f6b');
+  emitterGrad.addColorStop(1, '#2c303a');
+  ctx.fillStyle = emitterGrad;
+  fillRoundRect(ctx, x, y - 14, width, 14, 1);
+
+  // Main grip — horizontal metal gradient (side-to-side sheen)
+  const bodyGrad = ctx.createLinearGradient(x, y, x + width, y);
+  bodyGrad.addColorStop(0, '#c6ccd6');
+  bodyGrad.addColorStop(0.35, '#8a90a0');
+  bodyGrad.addColorStop(0.65, '#575d6a');
+  bodyGrad.addColorStop(1, '#2d313b');
+  ctx.fillStyle = bodyGrad;
+  fillRoundRect(ctx, x, y, width, height, 3);
+
+  // Grip ribs — horizontal bands on a vertical hilt
+  ctx.strokeStyle = 'rgba(30, 32, 38, 0.75)';
+  ctx.lineWidth = 1;
+  const ribCount = 6;
+  for (let i = 1; i < ribCount; i++) {
+    const ry = y + (height / ribCount) * i;
+    ctx.beginPath();
+    ctx.moveTo(x + 4, ry);
+    ctx.lineTo(x + width - 4, ry);
+    ctx.stroke();
+  }
+
+  // Switch box (accent band near the emitter, top of grip)
+  ctx.fillStyle = '#4a5060';
+  ctx.fillRect(x + 6, y + 12, width - 12, 44);
+  ctx.fillStyle = '#c8a040';
+  ctx.fillRect(x + width / 2 - 3, y + 18, 6, 6);
+  ctx.fillStyle = '#2a6d4a';
+  ctx.fillRect(x + width / 2 - 3, y + 32, 6, 6);
+
+  // Pommel cap (bottom)
+  ctx.fillStyle = '#3a3e48';
+  fillRoundRect(ctx, x + 4, y + height, width - 8, 14, 2);
+
+  // Specular highlight along the left edge
+  const highlightGrad = ctx.createLinearGradient(x, y, x + width * 0.2, y);
+  highlightGrad.addColorStop(0, 'rgba(255,255,255,0.35)');
+  highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = highlightGrad;
+  fillRoundRect(ctx, x + 2, y + 2, width * 0.2, height - 4, 2);
 
   ctx.restore();
 }

@@ -26,6 +26,7 @@ const LAYOUT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'og', label: 'Twitter / OG' },
   { id: 'instagram', label: 'Instagram 1:1' },
   { id: 'story', label: 'Story 9:16' },
+  { id: 'vertical', label: 'Vertical Saber' },
 ];
 
 const THEME_OPTIONS: Array<{ id: string; label: string }> = [

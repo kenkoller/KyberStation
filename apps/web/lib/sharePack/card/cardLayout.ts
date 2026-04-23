@@ -117,6 +117,46 @@ export const STORY_LAYOUT: CardLayout = {
   metadataMaxWidth: 840,
 };
 
+// ─── Vertical Saber (trading-card portrait) — 675×1200 ───
+//
+// Saber runs vertically: hilt grip at bottom, blade extending up
+// toward the top edge. Classic movie-poster / trading-card layout.
+// Crystal + QR become corner accents (handled by metadata + QR
+// positioning). Hero band spans most of the card height; metadata +
+// footer sit at the foot.
+
+export const VERTICAL_LAYOUT: CardLayout = {
+  id: 'vertical',
+  width: 675,
+  height: 1200,
+  headerH: 48,
+  footerH: 40,
+  // Hero band covers the saber silhouette zone.
+  heroY: 64,
+  heroH: 900,
+  // Horizontal fields left at safe defaults — drawers ignore them when
+  // saberOrientation === 'vertical'.
+  hiltX: 245,
+  hiltW: 185,
+  hiltH: 44,
+  bladeStartX: 0,
+  bladeEndX: 0,
+  bladeThickness: 28,
+  // QR + metadata + footer.
+  qrSize: 140,
+  qrX: 495,
+  qrY: 80,
+  qrLabelGap: 12,
+  metadataLeftX: 56,
+  metadataTopY: 990,
+  metadataMaxWidth: 563,
+  // Vertical-saber fields — the real geometry.
+  saberOrientation: 'vertical',
+  bladeY1: 80,   // tip at top (just under header)
+  bladeY2: 820,  // emitter meets hilt
+  hiltY: 820,    // hilt starts where blade ends
+};
+
 // ─── Catalog + lookup ───
 
 export const LAYOUT_CATALOG: Record<string, CardLayout> = {
@@ -124,6 +164,7 @@ export const LAYOUT_CATALOG: Record<string, CardLayout> = {
   og: OG_LAYOUT,
   instagram: INSTAGRAM_LAYOUT,
   story: STORY_LAYOUT,
+  vertical: VERTICAL_LAYOUT,
 };
 
 export function getLayout(id: string): CardLayout {

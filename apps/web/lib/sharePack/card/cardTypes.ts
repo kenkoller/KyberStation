@@ -32,6 +32,13 @@ export interface CardSnapshotOptions {
 }
 
 // ─── Layout — positions and sizes in logical card coordinates ───
+//
+// Most layouts are "horizontal-saber" (hilt left, blade extending right).
+// A vertical-saber variant is supported via `saberOrientation: 'vertical'`
+// + the `bladeY1`/`bladeY2`/`hiltY` fields below. Drawers check the
+// orientation flag and consult the appropriate coordinate set.
+
+export type SaberOrientation = 'horizontal' | 'vertical';
 
 export interface CardLayout {
   id: string;
@@ -51,18 +58,20 @@ export interface CardLayout {
   /** Hero area height. */
   heroH: number;
 
-  /** Hilt bounding box (left X). */
+  /** Hilt bounding box (left X). Horizontal: grip left edge. Vertical:
+   *  hilt X-center anchor (combined with hiltW for horizontal width). */
   hiltX: number;
-  /** Hilt bounding box width. */
+  /** Hilt bounding box width (long-axis when horizontal). */
   hiltW: number;
-  /** Hilt bounding box height. */
+  /** Hilt bounding box height (short-axis when horizontal). */
   hiltH: number;
 
-  /** Blade start X (typically hiltX + hiltW + emitterOffset). */
+  /** Blade start X (typically hiltX + hiltW + emitterOffset). Used for
+   *  horizontal sabers only. */
   bladeStartX: number;
-  /** Blade end X (tip). */
+  /** Blade end X (tip). Used for horizontal sabers only. */
   bladeEndX: number;
-  /** Blade core thickness. */
+  /** Blade core thickness (perpendicular to the long axis). */
   bladeThickness: number;
 
   /** QR panel size (square). */
@@ -80,6 +89,16 @@ export interface CardLayout {
   metadataTopY: number;
   /** Metadata column max width (used for truncation). */
   metadataMaxWidth: number;
+
+  // ─── Vertical-saber fields (optional; unused when horizontal) ───
+  /** Saber orientation on this layout. Defaults to 'horizontal'. */
+  saberOrientation?: SaberOrientation;
+  /** Blade tip Y (top) — used when saberOrientation === 'vertical'. */
+  bladeY1?: number;
+  /** Blade emitter Y (bottom) — used when saberOrientation === 'vertical'. */
+  bladeY2?: number;
+  /** Hilt top Y — used when saberOrientation === 'vertical'. */
+  hiltY?: number;
 }
 
 // ─── Theme — color palette tokens ───
