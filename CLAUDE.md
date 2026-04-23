@@ -799,6 +799,40 @@ green CI on main:
    (pre-PR, cataloging hilt parts). Lint-enforcement sprint is the
    planned Phase C4 follow-up after those land.
 
+### Agent delegation discipline (added 2026-04-22 after near-miss)
+
+Subagents can confabulate when prompted for a verdict. The P29/P30/P31
+audits this session were reliable because the prompts required
+evidence-shape output (`file:line — description` with citations). Two
+other sweeps in the same session — "are these items still open?" and
+"are these branches merged?" — produced false positives, including one
+where an agent cited a real commit hash but fabricated its role
+(`64f3322` exists on the feature branches, not on main). Nearly led to
+destroying thousands of lines of unmerged feature work.
+
+Rules for future sessions:
+
+1. **Git / commit / merge / branch state — verify directly via `git`,
+   don't delegate.** One-shot Bash calls are cheap; delegation adds
+   hallucination surface area for no speed benefit. `git diff main..<branch>
+   --stat`, `git cat-file -e <hash>`, and `git cherry` are the canonical
+   checks for "is X on main?".
+2. **When delegating fact-finding, require evidence output, not
+   verdicts.** "Paste the first N lines of `<command>` for each target,
+   then draw conclusions" — not "is X true?". Forces the agent to look
+   at ground truth before concluding.
+3. **Match model to task shape.** Bulk evidence collection (grep, list
+   files, run commands) — default Haiku is fine. Verdict-making (is
+   this shipped? will this break?) — set `model: "sonnet"` or
+   `"opus"` on the `Agent` call.
+4. **Relay agent output with provenance.** "Agent reports X
+   (unverified)" until verified directly, then "Verified: X". Never
+   promote agent summary to a claim of fact via silent restatement.
+5. **Verify before any destructive action, even after user approval.**
+   "Can we prune X?" / "Is this safe to delete?" is a confirmation
+   request, not a green light. Re-verify in the main session with the
+   canonical git check before acting.
+
 ### Architecture decisions made this session
 
 1. **BladeConfig mirror + drift-sentinel.** `.npmrc` sets
