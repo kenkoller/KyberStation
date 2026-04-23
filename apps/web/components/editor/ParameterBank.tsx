@@ -3,7 +3,12 @@ import { useState, useCallback, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useClickToRoute } from '@/hooks/useClickToRoute';
 import { useUIStore } from '@/stores/uiStore';
-import { BUILT_IN_MODULATORS } from '@kyberstation/engine';
+import { BUILT_IN_MODULATORS, type SerializedBinding } from '@kyberstation/engine';
+
+// Stable empty-array reference for the modulation bindings selector.
+// Without this, `?? []` returns a new reference every render and
+// triggers Zustand's "store rerender detected" loop. See dcd4dd4 note.
+const EMPTY_BINDINGS: readonly SerializedBinding[] = [];
 
 // ─── Parameter Definition Types ───
 
@@ -206,41 +211,82 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   const displayValue = isShimmer ? Math.round(value * 100) : value;
   const inputId = `param-slider-${param.key}`;
 
-  // ── Click-to-route integration (v1.0 Modulation Preview) ────────────
-  // When a modulator plate is armed, clicking the label wires a binding
-  // from that modulator to this parameter. Visual affordance: label glows
-  // in the armed modulator's identity color while armed.
+  // ── Click-to-route + hover-wire integration (v1.0 Modulation Preview) ──
+  // Three overlapping visual states for the slider label:
+  //   1. ARMED — a plate is armed; ALL labels tint in its identity color
+  //      with "Click to wire" hover hint.
+  //   2. HOVERED — a plate is hovered; labels whose param is already a
+  //      binding target of THAT modulator tint in its color (the
+  //      "show me what this modulator drives" affordance).
+  //   3. BOUND — at least one binding targets this param; left-edge
+  //      accent stripe in the binding's source color so users see at
+  //      a glance which sliders are wired.
+  // Priority: ARMED > HOVERED > BOUND.
   const armedModulatorId = useUIStore((s) => s.armedModulatorId);
+  const hoveredModulatorId = useUIStore((s) => s.hoveredModulatorId);
+  const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? EMPTY_BINDINGS);
   const { onParameterClick } = useClickToRoute();
+
   const armedColor = useMemo(() => {
     if (!armedModulatorId) return null;
     const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === armedModulatorId);
     return desc?.colorVar ?? null;
   }, [armedModulatorId]);
+
+  const hoverDrivenColor = useMemo(() => {
+    if (armedModulatorId) return null;
+    if (!hoveredModulatorId) return null;
+    const drives = bindings.some(
+      (b) => b.source === hoveredModulatorId && b.target === param.key && !b.bypassed,
+    );
+    if (!drives) return null;
+    const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === hoveredModulatorId);
+    return desc?.colorVar ?? null;
+  }, [armedModulatorId, hoveredModulatorId, bindings, param.key]);
+
+  const boundColor = useMemo(() => {
+    if (armedColor || hoverDrivenColor) return null;
+    const first = bindings.find((b) => b.target === param.key && !b.bypassed);
+    if (!first || !first.source) return null;
+    const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === first.source);
+    return desc?.colorVar ?? null;
+  }, [armedColor, hoverDrivenColor, bindings, param.key]);
+
   const handleLabelClick = useCallback(() => {
     if (armedModulatorId) {
       onParameterClick(param.key);
     }
   }, [armedModulatorId, onParameterClick, param.key]);
 
+  const effectiveLabelColor = armedColor ?? hoverDrivenColor;
+
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2"
+      style={
+        boundColor
+          ? { boxShadow: `inset 2px 0 0 ${boundColor}`, paddingLeft: 4 }
+          : undefined
+      }
+    >
       <label
         htmlFor={inputId}
         className="text-ui-base w-24 shrink-0 truncate transition-colors cursor-pointer"
         title={
           armedModulatorId
             ? `Click to wire ${armedModulatorId} → ${param.label}`
-            : param.description
+            : hoverDrivenColor
+              ? `${hoveredModulatorId} drives ${param.label}`
+              : param.description
         }
         onClick={armedModulatorId ? handleLabelClick : undefined}
         style={
-          armedColor
-            ? { color: armedColor, textShadow: `0 0 4px ${armedColor}` }
+          effectiveLabelColor
+            ? { color: effectiveLabelColor, textShadow: `0 0 4px ${effectiveLabelColor}` }
             : undefined
         }
       >
-        <span className={armedColor ? '' : 'text-text-secondary'}>
+        <span className={effectiveLabelColor ? '' : 'text-text-secondary'}>
           {param.label}
         </span>
       </label>
