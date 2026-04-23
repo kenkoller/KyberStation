@@ -30,7 +30,7 @@
 // narrow viewports. Each section lives in a bordered card with a
 // header + body; no internal collapse since the pill does the hiding.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StylePanel } from './StylePanel';
 import { ColorPanel } from './ColorPanel';
 import { GradientBuilder } from './GradientBuilder';
@@ -112,13 +112,15 @@ export function DesignPanel() {
   // Board gating: on boards that don't support modulation (CFX /
   // Xenopixel / Verso / Proffie V2.2 for v1.0), the ROUTING pill is
   // hidden entirely. If the user was previously on routing, bounce
-  // back to Appearance.
+  // back to Appearance via effect (setState-in-render would loop).
   const visibleGroups = GROUPS.filter(
     (g) => g.id !== 'routing' || boardSupportsModulation,
   );
-  if (!boardSupportsModulation && activeGroup === 'routing') {
-    setActiveGroup('appearance');
-  }
+  useEffect(() => {
+    if (!boardSupportsModulation && activeGroup === 'routing') {
+      setActiveGroup('appearance');
+    }
+  }, [boardSupportsModulation, activeGroup]);
 
   const group = visibleGroups.find((g) => g.id === activeGroup) ?? visibleGroups[0];
 

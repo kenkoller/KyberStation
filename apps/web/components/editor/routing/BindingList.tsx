@@ -23,6 +23,11 @@ import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
 import { AddBindingForm } from './AddBindingForm';
 
+// Stable empty array reference — passing `[]` as a Zustand selector
+// fallback creates a new reference every render and triggers an
+// infinite-rerender loop. See commit note in dcd4dd4 / fix commit.
+const EMPTY_BINDINGS: readonly SerializedBinding[] = [];
+
 const COMBINATORS: readonly BindingCombinator[] = [
   'add',
   'replace',
@@ -33,7 +38,7 @@ const COMBINATORS: readonly BindingCombinator[] = [
 
 export function BindingList() {
   const boardId = useBoardProfile().boardId;
-  const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? []);
+  const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? EMPTY_BINDINGS);
   const clearAllBindings = useBladeStore((s) => s.clearAllBindings);
 
   if (!canBoardModulate(boardId)) {
