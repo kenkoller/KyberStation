@@ -3,7 +3,10 @@ import { useState, useCallback, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useClickToRoute } from '@/hooks/useClickToRoute';
 import { useUIStore } from '@/stores/uiStore';
+import { useBoardProfile } from '@/hooks/useBoardProfile';
+import { canBoardModulate } from '@/lib/boardProfiles';
 import { BUILT_IN_MODULATORS, type SerializedBinding } from '@kyberstation/engine';
+import { ExpressionEditor } from './routing/ExpressionEditor';
 
 // Stable empty-array reference for the modulation bindings selector.
 // Without this, `?? []` returns a new reference every render and
@@ -210,6 +213,8 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   const isShimmer = param.key === 'shimmer';
   const displayValue = isShimmer ? Math.round(value * 100) : value;
   const inputId = `param-slider-${param.key}`;
+  const boardId = useBoardProfile().boardId;
+  const [showFx, setShowFx] = useState(false);
 
   // ── Click-to-route + hover-wire integration (v1.0 Modulation Preview) ──
   // Three overlapping visual states for the slider label:
@@ -262,7 +267,7 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
 
   return (
     <div
-      className="flex items-center gap-2"
+      className="relative flex items-center gap-2"
       style={
         boundColor
           ? { boxShadow: `inset 2px 0 0 ${boundColor}`, paddingLeft: 4 }
@@ -309,6 +314,42 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
       <span className="text-ui-sm text-text-muted font-mono w-10 text-right shrink-0">
         {displayValue}{param.unit || ''}
       </span>
+
+      {/* fx button — opens the expression editor for this param. Hidden
+          when the board doesn't support modulation (the label tint +
+          stripe feedback covers "you can't modulate here" already). */}
+      {canBoardModulate(boardId) && (
+        <button
+          type="button"
+          onClick={() => setShowFx((v) => !v)}
+          className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors"
+          style={
+            showFx
+              ? {
+                  color: 'rgb(var(--status-magenta))',
+                  background: 'rgba(var(--status-magenta), 0.15)',
+                  borderColor: 'rgb(var(--status-magenta))',
+                }
+              : {
+                  color: 'rgb(var(--text-muted))',
+                  borderColor: 'rgb(var(--border-subtle))',
+                }
+          }
+          title="Author a math-expression binding (v1.1)"
+          aria-pressed={showFx}
+          aria-label={`Open expression editor for ${param.label}`}
+        >
+          fx
+        </button>
+      )}
+
+      {showFx && (
+        <ExpressionEditor
+          targetPath={param.key}
+          targetLabel={param.label}
+          onClose={() => setShowFx(false)}
+        />
+      )}
     </div>
   );
 }
