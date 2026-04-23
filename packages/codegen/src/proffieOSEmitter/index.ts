@@ -11,6 +11,18 @@ export {
   computeSnapshotValue,
   MAP_BINDINGS_REASONS,
 } from './mapBindings.js';
+
+export {
+  applyModulationSnapshot,
+  formatSnapshotCommentBlock,
+} from './applyModulationSnapshot.js';
+export type {
+  ModulationPayloadLike,
+  ModulationSnapshotReport,
+  AppliedBinding,
+  SkippedBinding,
+  ApplySnapshotOptions,
+} from './applyModulationSnapshot.js';
 export type {
   MapBindingsResult,
   MappedBinding,

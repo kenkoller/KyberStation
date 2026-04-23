@@ -96,14 +96,61 @@ import type { EmitOptions } from './types.js';
 import type { BladeConfig, BuildOptions } from './ASTBuilder.js';
 import { buildAST } from './ASTBuilder.js';
 import { emitCode } from './CodeEmitter.js';
+import {
+  applyModulationSnapshot,
+  formatSnapshotCommentBlock,
+  type ModulationPayloadLike,
+} from './proffieOSEmitter/applyModulationSnapshot.js';
+
+// ─── ProffieOS binding emitter (v1.0 Preview) ───
+
+export {
+  mapBindings,
+  computeSnapshotValue,
+  MAP_BINDINGS_REASONS,
+  applyModulationSnapshot,
+  formatSnapshotCommentBlock,
+} from './proffieOSEmitter/index.js';
+export type {
+  MapBindingsResult,
+  MappedBinding,
+  UnmappableBinding,
+  ModulationPayloadLike,
+  ModulationSnapshotReport,
+  AppliedBinding,
+  SkippedBinding,
+  ApplySnapshotOptions,
+} from './proffieOSEmitter/index.js';
 
 /**
  * One-shot convenience: BladeConfig -> ProffieOS C++ style code string.
+ *
+ * When the config carries a `config.modulation` payload (optional, added
+ * in v1.0 Modulation Routing Preview), every binding is snapshotted to
+ * its current value + baked into the config before the AST is built,
+ * and a comment block describing the bindings is prepended to the
+ * emitted code. v1.1 Core will replace snapshot-then-emit with live
+ * template injection (Scale<SwingSpeed<>, ...>).
  */
 export function generateStyleCode(
   config: BladeConfig,
   options?: EmitOptions & BuildOptions,
 ): string {
-  const ast = buildAST(config, { editMode: options?.editMode });
-  return emitCode(ast, options);
+  const payload =
+    (config as BladeConfig & { modulation?: ModulationPayloadLike }).modulation;
+  const { config: snapshotConfig, report } = applyModulationSnapshot(
+    config,
+    payload,
+  );
+  const ast = buildAST(snapshotConfig, { editMode: options?.editMode });
+  const code = emitCode(ast, options);
+  // The comment block is noisy when this function is called per-preset
+  // for the full config.h (one comment per preset would clutter the
+  // preset array). Callers set `comments: false` to opt out. The
+  // standalone view in CodeOutput.tsx calls with `comments: true` so
+  // the modulation note lands where users read the full single-style
+  // export.
+  const commentBlock =
+    options?.comments === false ? '' : formatSnapshotCommentBlock(report);
+  return commentBlock + code;
 }
