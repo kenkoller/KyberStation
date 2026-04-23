@@ -35,7 +35,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
       retraction: 'flickerOut',
       ignitionMs: 500,
       retractionMs: 400,
-      shimmer: 0.4,
+      shimmer: 0.6,
       ledCount: 144,
       unstableIntensity: 0.6,
       crossguard: true,
@@ -43,6 +43,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
       stutterCount: 4,
       noiseLevel: 0.2,
       swingFxIntensity: 0.5,
+      effects: [{ type: 'bifurcate', bind: 'clash' }],
     },
   },
 
@@ -99,7 +100,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
       lockupColor: { r: 255, g: 220, b: 80 },
       blastColor: { r: 255, g: 255, b: 220 },
       dragColor: { r: 200, g: 160, b: 0 },
-      style: 'photon',
+      style: 'aurora',
       ignition: 'wipe',
       retraction: 'fadeout',
       ignitionMs: 280,
@@ -210,11 +211,11 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     era: 'sequel',
     affiliation: 'sith',
     tier: 'detailed',
-    screenAccurate: true,
+    screenAccurate: false,
     description:
-      'The resurrected Emperor on Exegol. While Palpatine primarily uses Force lightning in TROS, his canonical saber is a deep blood-red blade befitting the Sith Eternal.',
+      'The resurrected Emperor on Exegol. Palpatine never ignites a saber on-screen in TROS — this is a Legends-era / speculative-canon interpretation based on supplementary material, showing a deep blood-red blade befitting the Sith Eternal.',
     hiltNotes:
-      'Electrum-plated Phrik hilt, same design as the prequel/OT era weapon. Rarely ignited by this point.',
+      'Electrum-plated Phrik hilt (Legends-era lore, pre-Disney canon). Rarely ignited by this point.',
     config: {
       name: 'PalpatineTROS',
       baseColor: { r: 255, g: 0, b: 0 },
@@ -250,7 +251,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     config: {
       name: 'FinnSkywalker',
       baseColor: { r: 0, g: 120, b: 255 },
-      clashColor: { r: 200, g: 220, b: 255 },
+      clashColor: { r: 190, g: 215, b: 255 },
       lockupColor: { r: 180, g: 200, b: 255 },
       blastColor: { r: 255, g: 255, b: 255 },
       style: 'stable',

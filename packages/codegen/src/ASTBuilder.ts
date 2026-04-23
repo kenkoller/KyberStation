@@ -201,6 +201,23 @@ function buildBaseStyle(config: BladeConfig): StyleNode {
       // Gradient<Rgb, Rgb_end>
       return templateNode('color', 'Gradient', base, gradEnd);
 
+    case 'darksaber':
+      // Mandalorian Darksaber — 1D-hardware-accurate approximation of the
+      // 2D-outlined blade. Canonical ProffieOS shape (see Fett263 libraries):
+      //   Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>
+      // Gradient<> interpolates between 4 color stops across the blade:
+      // white at position 0 (emitter), near-black at 1/3 and 2/3, white at
+      // position 1 (tip). That's the Darksaber on real Neopixel hardware —
+      // see docs/HARDWARE_FIDELITY_PRINCIPLE.md.
+      return templateNode(
+        'color',
+        'Gradient',
+        rawNode('White'),
+        rgbNode({ r: 5, g: 5, b: 5 }),
+        rgbNode({ r: 5, g: 5, b: 5 }),
+        rawNode('White'),
+      );
+
     case 'photon':
       // Stripes<5000,-1500,Rgb,Mix<Int<14000>,Black,Rgb>,Pulsing<Rgb,White,1200>>
       return templateNode(

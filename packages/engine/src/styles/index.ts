@@ -28,6 +28,7 @@ import { VortexStyle } from './VortexStyle.js';
 import { NebulaStyle } from './NebulaStyle.js';
 import { TidalStyle } from './TidalStyle.js';
 import { MirageStyle } from './MirageStyle.js';
+import { DarkSaberStyle } from './DarkSaberStyle.js';
 
 export { BaseStyle } from './BaseStyle.js';
 export { StableStyle } from './StableStyle.js';
@@ -59,6 +60,7 @@ export { VortexStyle } from './VortexStyle.js';
 export { NebulaStyle } from './NebulaStyle.js';
 export { TidalStyle } from './TidalStyle.js';
 export { MirageStyle } from './MirageStyle.js';
+export { DarkSaberStyle } from './DarkSaberStyle.js';
 
 /** Registry of all available blade styles, keyed by style ID. */
 export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
@@ -91,6 +93,7 @@ export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
   nebula: () => new NebulaStyle(),
   tidal: () => new TidalStyle(),
   mirage: () => new MirageStyle(),
+  darksaber: () => new DarkSaberStyle(),
 };
 
 /**
