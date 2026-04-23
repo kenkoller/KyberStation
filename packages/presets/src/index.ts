@@ -17,6 +17,24 @@ export {
   DUELING_MINIMALIST,
 } from './templates/card-templates.js';
 
+// ─── Modulation Routing Recipes (v1.0 Preview) ───────────────────────
+// Five starter recipes that seed the Gallery's Routing BETA section.
+// See `docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md` §3.1.
+export type {
+  ModulationRecipe,
+  SerializedBinding as RecipeSerializedBinding,
+  RecipeModulatorId,
+  RecipeBindingCombinator,
+} from './recipes/modulation/index.js';
+export {
+  MODULATION_RECIPES,
+  REACTIVE_SHIMMER_RECIPE,
+  SOUND_REACTIVE_MUSIC_RECIPE,
+  ANGLE_REACTIVE_TIP_RECIPE,
+  CLASH_FLASH_WHITE_RECIPE,
+  TWIST_DRIVES_HUE_RECIPE,
+} from './recipes/modulation/index.js';
+
 import type { Preset } from './types.js';
 import { PREQUEL_ERA_PRESETS } from './characters/prequel-era.js';
 import { ORIGINAL_TRILOGY_PRESETS } from './characters/original-trilogy.js';

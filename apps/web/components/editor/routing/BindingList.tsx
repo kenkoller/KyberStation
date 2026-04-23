@@ -22,6 +22,7 @@ import { getParameter } from '@/lib/parameterGroups';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
 import { AddBindingForm } from './AddBindingForm';
+import { RecipePicker } from './RecipePicker';
 
 // Stable empty array reference — passing `[]` as a Zustand selector
 // fallback creates a new reference every render and triggers an
@@ -47,6 +48,7 @@ export function BindingList() {
 
   return (
     <div className="space-y-2">
+      <RecipePicker />
       <AddBindingForm />
 
       {bindings.length === 0 ? (
