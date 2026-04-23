@@ -1,6 +1,9 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useClickToRoute } from '@/hooks/useClickToRoute';
+import { useUIStore } from '@/stores/uiStore';
+import { BUILT_IN_MODULATORS } from '@kyberstation/engine';
 
 // ─── Parameter Definition Types ───
 
@@ -203,10 +206,43 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   const displayValue = isShimmer ? Math.round(value * 100) : value;
   const inputId = `param-slider-${param.key}`;
 
+  // ── Click-to-route integration (v1.0 Modulation Preview) ────────────
+  // When a modulator plate is armed, clicking the label wires a binding
+  // from that modulator to this parameter. Visual affordance: label glows
+  // in the armed modulator's identity color while armed.
+  const armedModulatorId = useUIStore((s) => s.armedModulatorId);
+  const { onParameterClick } = useClickToRoute();
+  const armedColor = useMemo(() => {
+    if (!armedModulatorId) return null;
+    const desc = BUILT_IN_MODULATORS.find((m) => (m.id as string) === armedModulatorId);
+    return desc?.colorVar ?? null;
+  }, [armedModulatorId]);
+  const handleLabelClick = useCallback(() => {
+    if (armedModulatorId) {
+      onParameterClick(param.key);
+    }
+  }, [armedModulatorId, onParameterClick, param.key]);
+
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor={inputId} className="text-ui-base text-text-secondary w-24 shrink-0 truncate" title={param.description}>
-        {param.label}
+      <label
+        htmlFor={inputId}
+        className="text-ui-base w-24 shrink-0 truncate transition-colors cursor-pointer"
+        title={
+          armedModulatorId
+            ? `Click to wire ${armedModulatorId} → ${param.label}`
+            : param.description
+        }
+        onClick={armedModulatorId ? handleLabelClick : undefined}
+        style={
+          armedColor
+            ? { color: armedColor, textShadow: `0 0 4px ${armedColor}` }
+            : undefined
+        }
+      >
+        <span className={armedColor ? '' : 'text-text-secondary'}>
+          {param.label}
+        </span>
       </label>
       <input
         id={inputId}
