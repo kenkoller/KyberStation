@@ -31,13 +31,26 @@ const MA_PER_CHANNEL = 20;
 // `computeBladeRenderMetrics` returns CSS-pixel bladeLeftPx / bladeWidthPx
 // from the container width. Render functions operate in device pixels so
 // we convert on the way out. Returns `{gx, gw}` in device pixels.
+/**
+ * Current user-draggable Point-A value. Set by `LayerCanvas.draw` via
+ * `setCurrentBladeStartFrac` immediately before each render pass so
+ * every `computeGraphBounds` call downstream resolves the same
+ * Point A as the blade canvas + pixel strip.
+ *
+ * Module-level instead of threading bladeStartFrac through 7 function
+ * signatures — the render functions are stateless pure drawers otherwise.
+ */
+let currentBladeStartFrac = 180; // fallback matches REGION_LIMITS default
+
+function setCurrentBladeStartFrac(frac: number): void {
+  currentBladeStartFrac = frac;
+}
+
 function computeGraphBounds(
   cw: number,
   dpr: number,
   ledCount: number,
 ): { gx: number; gw: number } {
-  // cw is already in device pixels — convert back to CSS pixels for the
-  // metrics helper, then re-multiply the result.
   const containerWidthCssPx = cw / Math.max(dpr, 1);
   if (containerWidthCssPx <= 0 || ledCount <= 0) {
     const padX = 6 * dpr;
@@ -46,6 +59,7 @@ function computeGraphBounds(
   const metrics = computeBladeRenderMetrics({
     containerWidthPx: containerWidthCssPx,
     ledCount,
+    bladeStartFrac: currentBladeStartFrac,
   });
   return {
     gx: metrics.bladeLeftPx * dpr,
@@ -581,6 +595,7 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
   const containerRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
   const brightness = useUIStore((s) => s.brightness);
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
   const motionSim = useBladeStore((s) => s.motionSim);
   const bladeState = useBladeStore((s) => s.bladeState);
   const ledCount = useBladeStore((s) => s.config.ledCount);
@@ -612,6 +627,11 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Phase 1.5f: publish current Point-A divider to the module-level
+    // render-functions before each draw so computeGraphBounds resolves
+    // the same Point A as BladeCanvas + PixelStripPanel.
+    setCurrentBladeStartFrac(bladeStartFrac);
 
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;
@@ -648,7 +668,7 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
       default:
         break;
     }
-  }, [layerId, pixels, pixelCount, brightness, motionSim.swing, bladeState, ledCount, rgbLumaChannels]);
+  }, [layerId, pixels, pixelCount, brightness, bladeStartFrac, motionSim.swing, bladeState, ledCount, rgbLumaChannels]);
 
   useAnimationFrame(draw, {
     enabled: !isPaused,

@@ -23,6 +23,7 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
   const ledCount = useBladeStore((s) => s.config.ledCount);
   const brightness = useUIStore((s) => s.brightness);
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
   const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
@@ -84,6 +85,7 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     const metrics = computeBladeRenderMetrics({
       containerWidthPx: w,
       ledCount: leds,
+      bladeStartFrac,
     });
     const stripLeft = metrics.bladeLeftPx * dpr;
     const stripW = metrics.bladeWidthPx * dpr;

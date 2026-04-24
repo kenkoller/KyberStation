@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore, REGION_LIMITS } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
@@ -58,6 +58,8 @@ export function CanvasLayout({
   const showPixelPanel = useUIStore((s) => s.showPixelPanel);
   const showHilt = useUIStore((s) => s.showHilt);
   const showGrid = useUIStore((s) => s.showGrid);
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
+  const setBladeStartFrac = useUIStore((s) => s.setBladeStartFrac);
   const toggleBladePanel = useUIStore((s) => s.toggleBladePanel);
   const togglePixelPanel = useUIStore((s) => s.togglePixelPanel);
   const toggleShowHilt = useUIStore((s) => s.toggleShowHilt);
@@ -73,6 +75,51 @@ export function CanvasLayout({
     onToggleBlade !== undefined &&
     onTriggerEffect !== undefined &&
     onReleaseEffect !== undefined;
+
+  // Phase 1.5f: draggable Point-A divider — spans the entire BLADE
+  // PREVIEW panel vertically (toolbar + blade canvas + pixel strip +
+  // analysis rail). Dragging horizontally updates
+  // uiStore.bladeStartFrac, which every rail reads so they all
+  // re-anchor to the new Point A.
+  const handleDividerPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const panel = (e.currentTarget.parentElement as HTMLElement | null);
+    if (!panel) return;
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    const rect = panel.getBoundingClientRect();
+    const onMove = (ev: PointerEvent) => {
+      const frac = Math.round(((ev.clientX - rect.left) / rect.width) * 1000);
+      // clampRegion in uiStore enforces REGION_LIMITS.bladeStartFrac bounds.
+      setBladeStartFrac(frac);
+    };
+    const onUp = (ev: PointerEvent) => {
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+      try { target.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
+  }, [setBladeStartFrac]);
+
+  const handleDividerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 20 : 5;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      // Read latest value from store each press — closure-captured
+      // `bladeStartFrac` goes stale under rapid key repeat.
+      setBladeStartFrac(useUIStore.getState().bladeStartFrac - step);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setBladeStartFrac(useUIStore.getState().bladeStartFrac + step);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setBladeStartFrac(REGION_LIMITS.bladeStartFrac.default);
+    }
+  }, [setBladeStartFrac]);
+
+  const handleDividerDoubleClick = useCallback(() => {
+    setBladeStartFrac(REGION_LIMITS.bladeStartFrac.default);
+  }, [setBladeStartFrac]);
   const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
   const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedLayerId = useUIStore((s) => s.expandedAnalysisLayerId);
@@ -82,7 +129,7 @@ export function CanvasLayout({
   const visiblePanels = [showBladePanel, showPixelPanel].filter(Boolean).length;
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle">
+    <div ref={containerRef} className="relative flex flex-col h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle">
       {/* ── Blade Panel — full width, horizontal ── */}
       {showBladePanel && (
         <div className="flex flex-col min-h-0 overflow-hidden relative flex-1">
@@ -204,6 +251,39 @@ export function CanvasLayout({
           so the "pixel strip + waveform below" shape users had before
           the overhaul is preserved on fresh load. */}
       <ExpandedAnalysisSlot pixels={pixels} pixelCount={pixelCount} />
+
+      {/*
+        Phase 1.5f: draggable Point-A divider. Absolute-positioned
+        so it spans the entire BLADE PREVIEW panel vertically (panel
+        header, action bar, blade canvas, strip, analysis slot). The
+        divider's X is `bladeStartFrac / 10`% of the panel width —
+        identical formula to the one every rail's
+        computeBladeRenderMetrics call uses, so they all anchor
+        to this same X.
+
+        Drag to reposition; arrow keys step by 5 (shift+arrow 20);
+        Home / double-click reset to REGION_LIMITS default.
+      */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize blade start divider (Point A)"
+        aria-valuemin={REGION_LIMITS.bladeStartFrac.min}
+        aria-valuemax={REGION_LIMITS.bladeStartFrac.max}
+        aria-valuenow={bladeStartFrac}
+        tabIndex={0}
+        onPointerDown={handleDividerPointerDown}
+        onKeyDown={handleDividerKeyDown}
+        onDoubleClick={handleDividerDoubleClick}
+        className="absolute top-0 bottom-0 w-2 z-20 cursor-col-resize bg-transparent hover:bg-accent/30 active:bg-accent/50 transition-colors"
+        style={{
+          left: `calc(${bladeStartFrac / 10}% - 4px)`,
+          background:
+            'linear-gradient(to right, transparent 0, transparent 3px, rgb(var(--border-subtle) / 0.6) 3px, rgb(var(--border-subtle) / 0.6) 5px, transparent 5px)',
+          outline: 'none',
+          touchAction: 'none',
+        }}
+      />
 
       {/* Show hidden panels indicator when panels are hidden */}
       {visiblePanels < 2 && (

@@ -8,11 +8,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
-import {
-  AUTO_FIT_LEFT_PULL_DS,
-  AUTO_FIT_FILL,
-  BLADE_TAIL_MARGIN_DS,
-} from '@/lib/bladeRenderMetrics';
+import { AUTO_FIT_FILL } from '@/lib/bladeRenderMetrics';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 
 type RenderMode = 'photorealistic' | 'pixel';
@@ -372,13 +368,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
 
   // ─── Auto-fit scale ───
-  // v0.14.0 removed the user-facing zoom-in/zoom-out controls. The blade
-  // now always renders at its auto-fit scale: height-driven base scale
-  // with horizontal composition pulled left by AUTO_FIT_LEFT_PULL_DS so
-  // the hilt's left half slips off screen and the blade fills the rest
-  // of the preview. Resize recomputes the layout via the ResizeObserver
-  // below; no manual zoom state is needed.
-  const [panX] = useState<number>(-AUTO_FIT_LEFT_PULL_DS);
+  // Phase 1.5f (v0.14.0): horizontal placement is driven by the user's
+  // draggable Point-A divider in CanvasLayout — `uiStore.bladeStartFrac`
+  // (fraction-of-container × 1000). Hilt renders to the LEFT of that X,
+  // blade + pixel strip + analysis waveform all anchor to the RIGHT.
+  // `panX` stays at 0 (legacy prop kept so vertical / 3D call sites
+  // unchanged).
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
+  const [panX] = useState<number>(0);
   const hasAutoFitRef = useRef(false);
 
   // Re-run layout when blade length changes
@@ -513,17 +510,22 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   // ─── Scale factors: maps design-space → actual canvas pixels ───
   //
-  // v0.14.0 Phase 1.5: horizontal mode is WIDTH-driven. The blade's
-  // horizontal extent fits the container width (minus AUTO_FIT_FILL
-  // margin + tail), so dragging the pixel-strip resize handle below
-  // only changes the blade's vertical space, never its horizontal
-  // extent. Vertical mode (mobile fullscreen `/m` route) keeps the
-  // height-driven math — blade runs along canvas height there.
+  // Phase 1.5f (v0.14.0): horizontal mode is WIDTH-driven AND anchored
+  // to the user-draggable Point-A divider. A 40" blade fills the
+  // entire post-divider space (up to AUTO_FIT_FILL right margin); a
+  // 20" blade fills half of that space and leaves the rest empty.
   //
-  // This formula mirrors `computeBladeRenderMetrics` in
-  // `lib/bladeRenderMetrics.ts` so the blade preview, pixel strip,
-  // and RGB+luma expanded slot all resolve to the exact same Point A
-  // (blade start X) and Point B (blade tip X) at any container width.
+  //   bladeStartPx = cw * (bladeStartFrac / 1000)
+  //   maxBladePx   = cw * AUTO_FIT_FILL - bladeStartPx
+  //   scale        = maxBladePx / BLADE_LEN
+  //
+  // BLADE_LEN is the 40"-blade length in design-space so a 40" blade
+  // at scale `maxBladePx / BLADE_LEN` draws exactly maxBladePx pixels
+  // wide — Point B lands at AUTO_FIT_FILL × cw. Shorter blades render
+  // proportionally shorter from the divider rightward.
+  //
+  // Vertical mode (mobile fullscreen `/m` route) keeps the legacy
+  // height-driven math — blade runs along canvas height there.
   const getBaseScale = useCallback(() => {
     const { w, h, dpr } = sizeRef.current;
     if (vertical) {
@@ -531,17 +533,28 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       return ch / layoutRef.current.designH;
     }
     const cw = w * dpr;
-    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
-    const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
-    if (bladeExtentDS <= 0) return 1;
-    return (cw * AUTO_FIT_FILL) / bladeExtentDS;
-  }, [vertical, bladeLength]);
+    if (cw <= 0 || BLADE_LEN <= 0) return 1;
+    const startPx = cw * (bladeStartFrac / 1000);
+    const maxBladePx = Math.max(0, cw * AUTO_FIT_FILL - startPx);
+    return maxBladePx / BLADE_LEN;
+  }, [vertical, bladeStartFrac]);
 
   // Render scale: auto-fit. v0.14.0 removed the user zoom multiplier —
   // auto-fit IS the scale now.
   const getScale = useCallback(() => {
     return getBaseScale();
   }, [getBaseScale]);
+
+  // ─── Horizontal blade-start X (user-draggable Point A) ───
+  // Phase 1.5f: horizontal mode anchors the blade to
+  // `bladeStartFrac` — the user-draggable divider in CanvasLayout.
+  // Vertical (`/m` route) keeps the legacy `(BLADE_START + panX) * scale`
+  // math because the rotation transform is independent of the divider.
+  const getBladeStartPx = useCallback(() => {
+    const { w, dpr } = sizeRef.current;
+    const cw = w * dpr;
+    return cw * (bladeStartFrac / 1000);
+  }, [bladeStartFrac]);
 
   // ─── Blade vertical center (canvas-height-driven) ───
   // Phase 1.5 split: horizontal extent follows container width (above),
@@ -571,7 +584,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const pixelsPerInch = (scaledBladeLenDS * scale) / bladeLenInches;
 
-    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeStartPx = getBladeStartPx();
     const bladeEndPx = bladeStartPx + scaledBladeLenDS * scale;
     const bladeCenterY = getBladeCenterY();
 
@@ -649,7 +662,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.lineTo(x, rulerH * 0.3);
       ctx.stroke();
     }
-  }, [showGrid, bladeLength, panX, getScale, getBladeCenterY, theme]);
+  }, [showGrid, bladeLength, getScale, getBladeStartPx, getBladeCenterY, theme]);
 
   // ─── Draw vignette ───
   // Inner radius pushed out to 0.55 so the vignette only darkens the far
@@ -678,7 +691,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     // Compute hilt geometry from style
     const totalHiltW = hs.pommelW + hs.gripW + hs.shroudW + hs.emitterW;
-    const hiltStartX = ((BLADE_START + panX) * scale) - totalHiltW * scale;
+    const hiltStartX = getBladeStartPx() - totalHiltW * scale;
     const centerY = getBladeCenterY();
     const hiltH = hs.hiltH * scale;
     const hiltTop = centerY - hiltH / 2;
@@ -803,7 +816,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(bladeColor.r, bladeColor.g, bladeColor.b, 0.06);
       ctx.fillRect(curX, hiltTop - flare, emW, hiltH + flare * 2);
     }
-  }, [hiltStyle, panX, showHilt, getBladeCenterY]);
+  }, [hiltStyle, showHilt, getBladeStartPx, getBladeCenterY]);
 
   // ─── Draw blade (photorealistic enhanced) ───
   const drawBladePhotorealistic = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
@@ -824,7 +837,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Scale blade length proportionally to inches (shorter blades = shorter visual)
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
-    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeStartPx = getBladeStartPx();
     const bladeYPx = getBladeCenterY();
     const baseCoreH = BLADE_CORE_H * scale * diameterConfig.coreScale;
     const coreH = baseCoreH;
@@ -1251,7 +1264,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
     }
-  }, [brightness, drawHilt, getOffscreen, getScale, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, panX, theme]);
+  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
@@ -1272,7 +1285,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.fillRect(0, 0, cw, ch);
 
     // Blade position (scale-accurate: shorter blades = shorter visual)
-    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeStartPx = getBladeStartPx();
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
     const bladeYPx = getBladeCenterY();
@@ -1392,7 +1405,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fillText(ch.label, margin - 4 * scale, y + barH / 2 + 3 * scale);
       });
     }
-  }, [brightness, drawHilt, getScale, getBladeCenterY, stripType, bladeLength, panX]);
+  }, [brightness, drawHilt, getScale, getBladeStartPx, getBladeCenterY, stripType, bladeLength]);
 
   // ─── View modes ───
 
@@ -1425,7 +1438,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       drawBlade(ctx, engine);
 
       const scale = getScale();
-      const emitterX = (BLADE_START + panX) * scale;
+      const emitterX = getBladeStartPx();
       const bladeY = getBladeCenterY();
       const quillonLen = 60 * scale; // short quillon blades
       const quillonH = 6 * scale;
@@ -1469,7 +1482,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // Single blade or other topologies — default rendering
       drawBlade(ctx, engine);
     }
-  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, getBladeCenterY, panX]);
+  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, getBladeStartPx, getBladeCenterY]);
 
   const drawAngleView = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const { w, h, dpr } = sizeRef.current;
@@ -1865,7 +1878,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Design-space coordinates, scaled uniformly with blade
     const stripTop = layoutRef.current.stripY * scale;
     const stripH = 16 * scale;
-    const graphLeft = (BLADE_START + panX) * scale;
+    const graphLeft = getBladeStartPx();
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const stripW = scaledBladeLenDS * scale;
     const cellW = stripW / ledCount;
@@ -1913,7 +1926,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.moveTo(bgX, dividerY);
     ctx.lineTo(bgX + bgW, dividerY);
     ctx.stroke();
-  }, [config.ledCount, getScale, brightness, bladeLength, panX, theme]);
+  }, [config.ledCount, getScale, getBladeStartPx, brightness, bladeLength, theme]);
 
   // ─── RGB Line Graph (docked to bottom) ───
   const drawRGBGraph = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
@@ -1929,7 +1942,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const graphTop = layoutRef.current.graphTopY * scale;
     const graphBottom = layoutRef.current.graphBotY * scale;
     const graphH = graphBottom - graphTop;
-    const graphLeft = (BLADE_START + panX) * scale;
+    const graphLeft = getBladeStartPx();
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const graphW = scaledBladeLenDS * scale;
 
@@ -1988,7 +2001,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.font = `${8 * scale}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillText('RGB', graphLeft + 2 * scale, graphTop + 10 * scale);
-  }, [config.ledCount, getScale, bladeLength, panX, theme]);
+  }, [config.ledCount, getScale, getBladeStartPx, bladeLength, theme]);
 
   // ─── Vertical Pixel Strip (native screen-space, bottom → top) ───
   const drawVerticalStrip = useCallback((
@@ -2307,7 +2320,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       if (viewMode === 'blade') {
         const scale = getScale();
         const bladeYScreen = getBladeCenterY();
-        const hiltXScreen = (BLADE_START + panX) * scale;
+        const hiltXScreen = getBladeStartPx();
         const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
         const tipXScreen = hiltXScreen + scaledBladeLenDS * scale;
         bladeHitRef.current = {

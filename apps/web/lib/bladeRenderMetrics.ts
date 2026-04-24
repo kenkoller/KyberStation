@@ -38,20 +38,17 @@ export const AUTO_FIT_FILL = 0.98;
 /** Tail margin (past blade tip) BladeCanvas reserves in design-space. */
 export const BLADE_TAIL_MARGIN_DS = 40;
 /**
- * How far (in design-space units) to translate the whole hilt+blade
- * composition leftward during auto-fit. v0.14.0 Phase 1.5 reduced
- * this from 182 → 60. At 182 the hilt's left half slipped entirely
- * off the left edge (W6 "half-covered hilt" spec from 2026-04-22);
- * at 60 the full hilt is visible with a small leftward shift that
- * gives the blade a touch more room on the right without cropping
- * the hilt itself.
+ * Legacy design-space left-pull (pre-1.5f). Phase 1.5f replaced the
+ * fixed auto-fit pull with a user-draggable vertical divider —
+ * `bladeStartFrac` in uiStore — that defines Point A as a fraction
+ * of container width. Left as an export at 0 so external callers
+ * that still import the symbol compile, but NEW code should read
+ * `bladeStartFrac` from uiStore and feed it into
+ * `computeBladeRenderMetrics` via the `bladeStartFrac` option.
  *
- * Shared with BladeCanvas's getBaseScale so both the preview canvas
- * and every sibling panel (pixel strip, expanded analysis slot, state
- * grid when it chooses to honor the shift) line up 1:1 on Point A
- * (blade start X) and Point B (blade tip X).
+ * @deprecated Use `bladeStartFrac` (uiStore) + computeBladeRenderMetrics({ bladeStartFrac }).
  */
-export const AUTO_FIT_LEFT_PULL_DS = 60;
+export const AUTO_FIT_LEFT_PULL_DS = 0;
 
 /**
  * Map an LED count to the blade length in inches that BladeCanvas would
@@ -94,17 +91,36 @@ export interface ComputeBladeMetricsInput {
    * position, which is what BladeCanvas's auto-fit produces on first load.
    */
   panX?: number;
+  /**
+   * Phase 1.5f: Point A as fraction-of-container-width × 1000 (e.g. 180 →
+   * 0.18). Matches `uiStore.bladeStartFrac`. When omitted we fall back to
+   * REGION_LIMITS default so callers that haven't been wired up yet get
+   * the right-of-hilt position they used to get from AUTO_FIT_LEFT_PULL_DS.
+   */
+  bladeStartFrac?: number;
 }
+
+/**
+ * Default value mirrors `REGION_LIMITS.bladeStartFrac.default` in
+ * `uiStore.ts`. Kept here (not imported from the store) so this module
+ * stays store-agnostic for headless vitest + non-browser callers.
+ */
+const DEFAULT_BLADE_START_FRAC = 180;
 
 /**
  * Compute the blade's visible pixel rect within a given container width.
  *
- * Matches BladeCanvas's `computeFitZoom` horizontal branch:
- *   scale = (containerWidthPx * AUTO_FIT_FILL) / bladeExtentDS
- *   bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS
+ * Phase 1.5f (v0.14.0):
+ *   bladeLeftPx  = containerWidthPx * (bladeStartFrac / 1000)
+ *   maxBladePx   = containerWidthPx * AUTO_FIT_FILL - bladeLeftPx
+ *   bladeWidthPx = maxBladePx * (bladeInches / MAX_BLADE_INCHES)
  *
- * The extra `(1 - AUTO_FIT_FILL) / 2` left margin reflects the symmetric
- * empty-space ratio that BladeCanvas's auto-fit produces when panX = 0.
+ * The user-draggable vertical divider in CanvasLayout drives
+ * `bladeStartFrac` via uiStore. A 40" blade fills the entire
+ * post-divider space; shorter blades render proportionally shorter
+ * from the divider rightward. Same math is shared by all three rails
+ * (blade, pixel strip, analysis slot) so they align 1:1 on Point A
+ * (the divider) and Point B (the blade tip).
  *
  * Pixel-per-LED = bladeWidthPx / ledCount, clamped to at least 0.5 so
  * the downstream `Math.max(cellW - 0.3, 0.5)` render path in the pixel
@@ -114,26 +130,16 @@ export function computeBladeRenderMetrics(
   input: ComputeBladeMetricsInput,
 ): BladeRenderMetrics {
   const { containerWidthPx, ledCount } = input;
-  const panX = input.panX ?? 0;
+  const bladeStartFrac = input.bladeStartFrac ?? DEFAULT_BLADE_START_FRAC;
 
   const bladeInches = inferBladeInches(ledCount);
-  const scaledBladeLenDS = BLADE_LEN * (bladeInches / MAX_BLADE_INCHES);
-  const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
 
-  // W2 + W6 (2026-04-22): bladeLeftPx uses the same origin BladeCanvas
-  // does internally so every sibling surface (pixel strip, expanded
-  // analysis slot, state grid) lines up 1:1 with the preview. W6 adds
-  // AUTO_FIT_LEFT_PULL_DS to the pan so the whole composition drifts
-  // leftward — the hilt half-slides off the left edge, the blade has
-  // room to extend further right. Callers that want to bypass the
-  // pull (e.g. StateGrid when the user wants full-container LEDs)
-  // can override by computing their own geometry.
-  const usableWidthPx = containerWidthPx * AUTO_FIT_FILL;
-  const scale = usableWidthPx / bladeExtentDS;
-
-  const effectivePanX = panX - AUTO_FIT_LEFT_PULL_DS;
-  const bladeLeftPx = (BLADE_START + effectivePanX) * scale;
-  const bladeWidthPx = scaledBladeLenDS * scale;
+  const bladeLeftPx = containerWidthPx * (bladeStartFrac / 1000);
+  // Right end of the usable region (container's AUTO_FIT_FILL margin
+  // reserves a sliver of breathing room on the far right).
+  const usableRightPx = containerWidthPx * AUTO_FIT_FILL;
+  const maxBladePx = Math.max(0, usableRightPx - bladeLeftPx);
+  const bladeWidthPx = maxBladePx * (bladeInches / MAX_BLADE_INCHES);
   const pixelsPerLed = ledCount > 0 ? bladeWidthPx / ledCount : 0;
 
   return {

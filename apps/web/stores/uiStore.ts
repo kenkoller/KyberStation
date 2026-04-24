@@ -143,6 +143,13 @@ export interface UIStore {
   /** W2: ExpandedAnalysisSlot height in CSS pixels. Draggable 40-200. Default 110. */
   expandedSlotHeight: number;
   /**
+   * Phase 1.5f: "Point A" divider as fraction-of-container-width × 1000.
+   * 180 → 0.18 → hilt zone is leftmost 18% of the BLADE PREVIEW panel.
+   * Shared by BladeCanvas (hilt+blade positioning), PixelStripPanel
+   * (LED 0 left edge), and VisualizationStack (waveform start X).
+   */
+  bladeStartFrac: number;
+  /**
    * W4 (2026-04-22): which effects appear as chips in the action bar,
    * in render order. The dropdown next to the chips lets users toggle
    * individual effects in/out + offers a "Show all" that pins every
@@ -192,6 +199,7 @@ export interface UIStore {
   setPerformanceBarHeight: (h: number) => void;
   setPixelStripHeight: (h: number) => void;
   setExpandedSlotHeight: (h: number) => void;
+  setBladeStartFrac: (n: number) => void;
   setPinnedEffects: (effects: string[]) => void;
   togglePinnedEffect: (effect: string) => void;
 }
@@ -210,6 +218,16 @@ export const REGION_LIMITS = {
   performanceBarHeight: { min: 48, max: 200, default: 64 },
   pixelStripHeight:  { min: 24, max: 120, default: 36 },
   expandedSlotHeight:{ min: 40, max: 240, default: 110 },
+  /**
+   * Phase 1.5f: user-draggable Point A — the vertical divider inside
+   * the BLADE PREVIEW panel that defines where the blade, pixel strip
+   * and analysis-rail content all start. Expressed as a FRACTION of
+   * the panel's container width × 1000 so the ResizeHandle integer
+   * API (int min/max/default) can represent it without precision
+   * loss. 180 → 0.18 → hilt zone spans the leftmost 18% of the
+   * panel, blade + strip + waveform all render to the right of it.
+   */
+  bladeStartFrac:    { min: 80, max: 350, default: 180 },
 } as const;
 
 const OV11_STORAGE_KEY = 'kyberstation-ui-layout';
@@ -221,6 +239,7 @@ interface PersistedLayout {
   performanceBarHeight: number;
   pixelStripHeight: number;
   expandedSlotHeight: number;
+  bladeStartFrac: number;
 }
 
 function clampRegion(
@@ -336,6 +355,10 @@ export const useUIStore = create<UIStore>((set) => ({
     'expandedSlotHeight',
     storedLayout.expandedSlotHeight ?? REGION_LIMITS.expandedSlotHeight.default,
   ),
+  bladeStartFrac: clampRegion(
+    'bladeStartFrac',
+    storedLayout.bladeStartFrac ?? REGION_LIMITS.bladeStartFrac.default,
+  ),
   pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
 
   setViewMode: (viewMode) => set({ viewMode }),
@@ -425,6 +448,12 @@ export const useUIStore = create<UIStore>((set) => ({
       savePersistedLayout({ ...snapshotLayout(s), expandedSlotHeight });
       return { expandedSlotHeight };
     }),
+  setBladeStartFrac: (n) =>
+    set((s) => {
+      const bladeStartFrac = clampRegion('bladeStartFrac', n);
+      savePersistedLayout({ ...snapshotLayout(s), bladeStartFrac });
+      return { bladeStartFrac };
+    }),
   setPinnedEffects: (effects) => {
     savePinnedEffects(effects);
     set({ pinnedEffects: effects });
@@ -448,5 +477,6 @@ function snapshotLayout(s: UIStore): PersistedLayout {
     performanceBarHeight: s.performanceBarHeight,
     pixelStripHeight: s.pixelStripHeight,
     expandedSlotHeight: s.expandedSlotHeight,
+    bladeStartFrac: s.bladeStartFrac,
   };
 }
