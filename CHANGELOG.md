@@ -115,6 +115,80 @@ See `~/.claude/plans/declarative-strolling-dragonfly.md` for the
 orchestration plan that scopes the current sprints, and
 `docs/SESSION_2026-04-17.md` Part 2 for the full session summary.
 
+### Modulation polish + a11y clean (2026-04-23 late — untagged; candidate v0.14.1 or v0.15.0 once hardware-validated)
+
+Two PRs shipped on top of v0.14.0 (PR #41 + PR #42). Items ordered by PR.
+
+**PR #41 — modulation follow-up (merge commit `bd9bb7b`):**
+
+- **Generated code now reflects modulation.** `generateStyleCode` threads
+  a new `applyModulationSnapshot` helper that walks
+  `config.modulation.bindings`, snapshots each to its current value via
+  `computeSnapshotValue`, bakes the results into the config at each
+  binding's target path (shallow-clone-on-write, no mutation), and
+  prepends a BETA-labeled comment block listing every applied + skipped
+  binding. Opt out via `{ comments: false }` on the preset-array code
+  path to avoid one-comment-per-preset clutter in the full config.h.
+  Expression bindings currently snapshot; v1.1 Core adds AST-level
+  template injection for `Scale<SwingSpeed<>, ...>` + friends.
+- **Hover wire-highlighting + bound-param stripe.** Three priority-
+  stacked visual states on every slider label in ParameterBank:
+  ARMED (click-to-wire) > HOVERED (this plate drives this param) >
+  BOUND (some binding targets this param — persistent left-edge
+  identity-color stripe). Identity colors propagate via
+  `BUILT_IN_MODULATORS` descriptors.
+- **Inline BoardPicker chip in StatusBar** between Profile and Conn.
+  `BOARD · PROFFIE V3.9 · FULL`; click opens the modal picker. Reactive
+  across capability-sensitive UI.
+- **ExpressionEditor — v1.1 Core math-formula UI.** `fx` button on every
+  SliderControl opens a 380-px popover with auto-focused textarea,
+  live peggy parse status (✓ Valid / ✕ with error location + message),
+  5 starter-idiom chips (Breathing / Heartbeat / Battery dim / Swing
+  doubled / Loud OR fast), ⌘+Enter shortcut, Escape/outside-click
+  dismiss. Apply creates a binding with `source: null`, `expression: {
+  source, ast }`, `combinator: 'replace'`, `amount: 1.0`. BindingList
+  distinguishes expression bindings from bare-source with an `fx`
+  label in status-magenta + full-source hover tooltip.
+- **Color-contrast fix across 9 canvas themes + the root default.**
+  `--text-muted` bumped +40 each channel (106 110 120 → 146 150 160
+  for Deep Space, equivalent deltas for the other 8 themes). Fixes
+  82 axe-core color-contrast violations concentrated on muted-text
+  surfaces in the modulation UI.
+
+**PR #42 — a11y clean + first expression recipe (merge commit `c0a92c4`):**
+
+- **Zero axe-core WCAG 2 AA violations** at desktop (1600×1000, 30
+  passes) AND mobile (375×812) viewports on `/editor`. Closes the P29
+  launch blocker carried from v0.13.0 readiness.
+  - MobileTabBar: dropped `role="tablist"` / `role="tab"` —
+    semantically this is route navigation, not a tab interface;
+    `aria-current="page"` handles the active state.
+  - AppShell mobile tablist: scoped `role="tablist"` to an inner
+    wrapper so the collapse toggle + dot indicators become siblings of
+    the tablist, not children (fixes `aria-required-children`).
+  - AppShell tab `aria-controls`: replaced per-tab panel IDs with a
+    single stable `id="mobile-panel"`; dropped when `showPanel` is
+    false and paired with `aria-expanded`.
+  - MiniGalleryPicker: `role="listbox"` → `role="group"` (children use
+    `role="button"`, not `role="option"`).
+  - Cleared the final 5 contrast issues: DesignPanel BETA chip
+    `opacity-70`, ColorPanel preset subtitle `text-accent/70`,
+    PerformanceBar page tabs + SaberProfileManager source badge
+    `rgb(var(--text-muted) / 0.65)`.
+- **Breathing Blade — first expression-based starter recipe.**
+  `sin(time * 0.001) * 0.5 + 0.5 → shimmer · replace · 100%`. AST
+  hand-built inline (can't import `parseExpression` across the
+  `.npmrc` hoisted boundary per CLAUDE.md decision #1). Test split:
+  `V1_0_RECIPES` (5) vs `V1_1_EXPRESSION_RECIPES` (1). Presets test
+  count 29 → 40. The ProffieOS emitter's existing
+  `matchSinBreathingEnvelope` heuristic recognizes this exact shape
+  so the flashed blade will breathe live on hardware via
+  `Sin<Int<period>>`.
+
+**Tests delta since v0.14.0:** codegen +15, presets +11, web unchanged
+(new UI work covered by visual QA + axe audit, which itself ran clean
+on both viewports).
+
 ## [0.14.0] — 2026-04-23
 
 ### Added — Modulation Routing v1.0 Preview (BETA)
