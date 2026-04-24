@@ -138,7 +138,7 @@ export interface UIStore {
   section2Height: number;
   /** PerformanceBar total height in CSS pixels. Default 158. */
   performanceBarHeight: number;
-  /** W2: Pixel strip panel height in CSS pixels. Draggable 24-120. Default 36. */
+  /** W2: Pixel strip panel height in CSS pixels. Draggable 24-300 (Phase 1.5g bumped from 120). Default 36. */
   pixelStripHeight: number;
   /** W2: ExpandedAnalysisSlot height in CSS pixels. Draggable 40-200. Default 110. */
   expandedSlotHeight: number;
@@ -216,7 +216,7 @@ export const REGION_LIMITS = {
   inspectorWidth:    { min: 280, max: 520, default: 400 },
   section2Height:    { min: 220, max: 520, default: 320 },
   performanceBarHeight: { min: 48, max: 200, default: 64 },
-  pixelStripHeight:  { min: 24, max: 120, default: 36 },
+  pixelStripHeight:  { min: 24, max: 300, default: 36 },
   expandedSlotHeight:{ min: 40, max: 240, default: 110 },
   /**
    * Phase 1.5f: user-draggable Point A — the vertical divider inside
