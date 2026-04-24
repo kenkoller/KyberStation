@@ -43,6 +43,54 @@ export type RecipeBindingCombinator =
   | 'min'
   | 'max';
 
+// ─── Expression AST (mirror of engine's ExpressionNode) ───────────────
+//
+// Expression recipes (v1.1+) ship with a pre-parsed AST so the engine
+// can evaluate without re-invoking peggy at recipe-load time. We mirror
+// the minimal node shapes here for the same reason as the types above.
+
+export type RecipeBuiltInFnId =
+  | 'min'
+  | 'max'
+  | 'clamp'
+  | 'lerp'
+  | 'sin'
+  | 'cos'
+  | 'abs'
+  | 'floor'
+  | 'ceil'
+  | 'round';
+
+export type RecipeBinaryOp = '+' | '-' | '*' | '/';
+export type RecipeUnaryOp = '-';
+
+export type RecipeExpressionNode =
+  | { readonly kind: 'literal'; readonly value: number }
+  | { readonly kind: 'var'; readonly id: RecipeModulatorId }
+  | {
+      readonly kind: 'binary';
+      readonly op: RecipeBinaryOp;
+      readonly lhs: RecipeExpressionNode;
+      readonly rhs: RecipeExpressionNode;
+    }
+  | {
+      readonly kind: 'unary';
+      readonly op: RecipeUnaryOp;
+      readonly operand: RecipeExpressionNode;
+    }
+  | {
+      readonly kind: 'call';
+      readonly fn: RecipeBuiltInFnId;
+      readonly args: readonly RecipeExpressionNode[];
+    };
+
+export interface RecipeSerializedExpression {
+  /** Re-parseable source text for UI editing / diffs. */
+  readonly source: string;
+  /** Pre-parsed AST so recipe loading skips peggy. */
+  readonly ast: RecipeExpressionNode;
+}
+
 /**
  * Serialized form of a modulation binding, mirroring the engine's
  * `SerializedBinding` interface. Kept `readonly` at every level so the
@@ -50,12 +98,14 @@ export type RecipeBindingCombinator =
  * write access.
  *
  * v1.0 recipes use the bare-modulator-reference form (`source` set,
- * `expression` null). Math-expression recipes arrive in v1.1.
+ * `expression` null). v1.1+ recipes can set `expression` with a
+ * pre-parsed AST for math-formula routing (breathing / heartbeat /
+ * battery-saver / etc.); in that case `source` is null.
  */
 export interface SerializedBinding {
   readonly id: string;
   readonly source: RecipeModulatorId | null;
-  readonly expression: null;
+  readonly expression: RecipeSerializedExpression | null;
   readonly target: string;
   readonly combinator: RecipeBindingCombinator;
   readonly amount: number;

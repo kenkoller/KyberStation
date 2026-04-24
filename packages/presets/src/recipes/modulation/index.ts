@@ -21,6 +21,11 @@ export type {
   SerializedBinding,
   RecipeModulatorId,
   RecipeBindingCombinator,
+  RecipeExpressionNode,
+  RecipeSerializedExpression,
+  RecipeBuiltInFnId,
+  RecipeBinaryOp,
+  RecipeUnaryOp,
 } from './types.js';
 
 export { REACTIVE_SHIMMER_RECIPE } from './reactive-shimmer.js';
@@ -28,6 +33,7 @@ export { SOUND_REACTIVE_MUSIC_RECIPE } from './sound-reactive-music.js';
 export { ANGLE_REACTIVE_TIP_RECIPE } from './angle-reactive-tip.js';
 export { CLASH_FLASH_WHITE_RECIPE } from './clash-flash-white.js';
 export { TWIST_DRIVES_HUE_RECIPE } from './twist-drives-hue.js';
+export { BREATHING_BLADE_RECIPE } from './breathing-blade.js';
 
 import type { ModulationRecipe } from './types.js';
 import { REACTIVE_SHIMMER_RECIPE } from './reactive-shimmer.js';
@@ -35,12 +41,15 @@ import { SOUND_REACTIVE_MUSIC_RECIPE } from './sound-reactive-music.js';
 import { ANGLE_REACTIVE_TIP_RECIPE } from './angle-reactive-tip.js';
 import { CLASH_FLASH_WHITE_RECIPE } from './clash-flash-white.js';
 import { TWIST_DRIVES_HUE_RECIPE } from './twist-drives-hue.js';
+import { BREATHING_BLADE_RECIPE } from './breathing-blade.js';
 
 /**
- * All Friday v1.0 starter modulation recipes in display order. The
- * Gallery renders them top-to-bottom; keep simpler / more obvious
- * recipes first so new users see the one-binding case before the
- * three-binding clash-flash.
+ * All starter modulation recipes in display order. Simpler bare-source
+ * recipes first, then the expression-based v1.1 recipe so new users see
+ * the gesture-reactive case before the formula-driven case.
+ *
+ *  1-5: v1.0 bare-source recipes (expression: null)
+ *  6+ : v1.1 expression-based recipes (source: null, expression set)
  */
 export const MODULATION_RECIPES: readonly ModulationRecipe[] = Object.freeze([
   REACTIVE_SHIMMER_RECIPE,
@@ -48,4 +57,5 @@ export const MODULATION_RECIPES: readonly ModulationRecipe[] = Object.freeze([
   ANGLE_REACTIVE_TIP_RECIPE,
   CLASH_FLASH_WHITE_RECIPE,
   TWIST_DRIVES_HUE_RECIPE,
+  BREATHING_BLADE_RECIPE,
 ]);
