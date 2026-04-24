@@ -549,9 +549,11 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 - **`feat/preset-accuracy-audit-2026-04-22` merged via PR #39** (merge commit `cbeb7d5`) — full-library preset accuracy sweep + 89-preset pop-culture expansion + end-to-end Darksaber hardware parity + Hardware Fidelity Principle architectural doc. Details further below.
 - **`feat/modulation-routing-v1.1` merged via PR #35** (commit `43b73aa`, tagged `v0.14.0`) — Modulation Routing v1.0 Preview BETA. Details in the section after.
-- **`feat/modulation-snapshot-export` merged via PR #41** (commit `bd9bb7b`) + **`fix/a11y-clean-at-launch` merged via PR #42** (commit `c0a92c4`) — v0.14 follow-up polish, detailed in the block immediately below.
+- **`feat/modulation-snapshot-export` merged via PR #41** (commit `bd9bb7b`) + **`fix/a11y-clean-at-launch` merged via PR #42** (commit `c0a92c4`) + **`docs/modulation-followup-2026-04-23` merged via PR #43** (commit `b98af51`, docs catch-up) + **`docs/first-wire-svg-illustrations` merged via PR #44** (commit `bfcdbf6`, quick-start visuals) — v0.14 follow-up polish, detailed in the block immediately below.
 
-**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Today's follow-up work is untagged pending hardware validation. Post-hardware candidates: `v0.14.1` (patch) if we treat ExpressionEditor as a BETA completion, or `v0.15.0` (minor) if we treat ExpressionEditor's arrival as a new feature milestone.
+**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Today's follow-up work is untagged pending hardware validation on the 89sabers Proffieboard V3.9. Post-hardware candidates: `v0.14.1` (patch) if we treat ExpressionEditor as a BETA completion, or `v0.15.0` (minor) if we treat ExpressionEditor's arrival as a new feature milestone. I (the agent) would lean **v0.15.0** — it's the right semver read since a whole new inline UI surface landed.
+
+**Hardware validation handoff doc: [`docs/NEXT_HARDWARE_MODULATION_SESSION.md`](docs/NEXT_HARDWARE_MODULATION_SESSION.md)** — self-contained paste-in prompt for the fresh session that'll run the flash + boot test on the 89sabers V3.9, do the version tag, and optionally record the 3 replacement GIFs.
 
 ### What shipped on 2026-04-23 late — modulation polish + a11y clean
 
@@ -570,6 +572,17 @@ PR #42 (3 commits, a11y + breathing recipe):
   - MiniGalleryPicker: `role="listbox"` → `role="group"` (children use `role="button"`, not `role="option"`).
   - Cleared 5 remaining contrast violations: DesignPanel BETA chip `opacity-70`, ColorPanel preset subtitle `text-accent/70`, PerformanceBar page tabs + SaberProfileManager source badge `rgb(var(--text-muted) / 0.65)`.
 - **First expression-based starter recipe — Breathing Blade** at [`packages/presets/src/recipes/modulation/breathing-blade.ts`](packages/presets/src/recipes/modulation/breathing-blade.ts). Wiring: `sin(time * 0.001) * 0.5 + 0.5 → shimmer · replace · 100%`. AST hand-built inline (can't import `parseExpression` across `.npmrc` hoisted boundary). Test split: `V1_0_RECIPES` (5) vs `V1_1_EXPRESSION_RECIPES` (1, breathing). Presets test count: 29 → 40.
+
+PR #43 (docs catch-up, merge commit `b98af51`):
+- CLAUDE.md + CHANGELOG updated to document PRs #41 + #42. This block + the CHANGELOG's "Modulation polish + a11y clean" subsection were added then.
+
+PR #44 (quick-start illustrations, merge commit `bfcdbf6`):
+- Three hand-authored animated SVGs replace the `[gif-placeholder]` markers in [`docs/user-guide/modulation/your-first-wire.md`](docs/user-guide/modulation/your-first-wire.md):
+  - `first-wire-step-1.svg` (7.0 KB) — five-plate bar at rest with per-plate live viz (swing needle, angle tilt, sound VU, time sweep, clash flash)
+  - `first-wire-step-2.svg` (3.4 KB) — SWING plate armed, siblings dimmed, "◎ swing armed" banner
+  - `first-wire-step-3.svg` (7.1 KB) — two-column frame with animated dashed wire connecting plate → shimmer slider, plus binding row
+- ~17.5 KB combined. Native `<animate>` / `<animateMotion>` / `<animateTransform>` — no JS. Each SVG has `<title>` + `<desc>` for screen readers. Matches editor color tokens exactly (`#409cff` / `#e879f9` / `#2dd4bf` / `#fbbf24` / `#f8fafc`).
+- Inline HTML comment at the bottom of the markdown file documents the screen-recording replacement pass — ship the SVGs now, swap for real GIFs post-launch if recording fidelity matters more than vector sharpness.
 
 End-to-end browser-verified across all the above. Next: hardware validation on 89sabers V3.9 — the one remaining open ☐ from the modulation impl plan.
 
