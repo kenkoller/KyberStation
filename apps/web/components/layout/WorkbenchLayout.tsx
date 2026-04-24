@@ -683,6 +683,28 @@ export function WorkbenchLayout() {
     return () => cancelAnimationFrame(id);
   }, [engineRef]);
 
+  // Phase 1.5h: auto-ignite 500ms after the engine is ready — the
+  // workbench "comes alive" with a lit blade on first paint instead
+  // of a retracted hilt. Always drives the ignition animation
+  // regardless of persisted `isOn` state, because the BladeEngine
+  // itself is a fresh instance on each page load (extendProgress
+  // starts at 0) and would otherwise show a retracted hilt even
+  // when `bladeStore.isOn` was persisted as true. Reset-then-ignite
+  // forces both the store + engine into sync.
+  const autoIgnitedRef = useRef(false);
+  useEffect(() => {
+    if (!engineReady || autoIgnitedRef.current) return;
+    // Reset immediately so the blade starts from a clean retracted
+    // state; ignition animation will then play within the 500ms
+    // window from off → on.
+    useBladeStore.getState().setIsOn(false);
+    const timer = setTimeout(() => {
+      autoIgnitedRef.current = true;
+      toggleWithAudio();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [engineReady, toggleWithAudio]);
+
   // ── Header-level nav helpers ──
   // Promoted 2026-04-22 (post-W7): Design / Audio / Output moved from
   // the editor's internal tab bar up to the header, alongside Gallery.
