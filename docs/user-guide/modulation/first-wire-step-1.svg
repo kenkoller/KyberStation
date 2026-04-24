@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" role="img" aria-labelledby="title-1 desc-1">
+  <title id="title-1">Step 1 — SWING plate with a live needle</title>
+  <desc id="desc-1">The LayerStack modulator plate bar with five plates: SWING, ANGLE, SOUND, TIME, CLASH. The SWING plate is emphasized and shows a needle bouncing left-to-right to convey the live motion signal.</desc>
+
+  <!-- Editor-style dark background -->
+  <rect width="640" height="200" fill="#0a0a10"/>
+
+  <!-- Panel label -->
+  <text x="20" y="28" fill="#94a0b3" font-family="system-ui, sans-serif" font-size="11" letter-spacing="1.5" font-weight="600">MODULATORS</text>
+  <rect x="20" y="32" width="600" height="1" fill="#2a2d36"/>
+
+  <!-- Common plate group (5 plates) -->
+  <g font-family="ui-monospace, monospace" font-size="11" font-weight="600">
+    <!-- SWING plate — emphasized, with left-edge stripe + animated needle -->
+    <g>
+      <rect x="20" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36" stroke-width="1"/>
+      <!-- left-edge identity stripe -->
+      <rect x="20" y="50" width="3" height="130" fill="#409cff"/>
+      <text x="32" y="74" fill="#409cff">SWING</text>
+      <text x="110" y="74" fill="#409cff" text-anchor="end" opacity="0.7" font-size="9">swing</text>
+
+      <!-- Live "needle" area — a bar that scales horizontally to simulate a meter needle -->
+      <rect x="32" y="100" width="92" height="56" rx="3" fill="#0a0a10" stroke="#2a2d36" stroke-width="1"/>
+      <!-- The bar that animates -->
+      <rect x="36" y="122" width="12" height="14" fill="#409cff" rx="2">
+        <animate attributeName="x" values="36;104;36" dur="1.6s" repeatCount="indefinite" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/>
+        <animate attributeName="opacity" values="0.5;1;0.5" dur="1.6s" repeatCount="indefinite"/>
+      </rect>
+      <!-- Centerline -->
+      <line x1="80" y1="108" x2="80" y2="148" stroke="#2a2d36" stroke-width="1" stroke-dasharray="2 3"/>
+
+      <text x="32" y="172" fill="#94a0b3" font-size="9" opacity="0.8">LIVE · kinetic</text>
+    </g>
+
+    <!-- ANGLE plate -->
+    <g>
+      <rect x="146" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36" stroke-width="1"/>
+      <rect x="146" y="50" width="3" height="130" fill="#2dd4bf"/>
+      <text x="158" y="74" fill="#2dd4bf">ANGLE</text>
+      <text x="236" y="74" fill="#2dd4bf" text-anchor="end" opacity="0.7" font-size="9">angle</text>
+      <!-- Tilt needle (line rotating) -->
+      <g transform="translate(204 126)">
+        <line x1="0" y1="0" x2="0" y2="-22" stroke="#2dd4bf" stroke-width="3" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="-24;24;-24" dur="2.2s" repeatCount="indefinite"/>
+        </line>
+        <circle r="3" fill="#2dd4bf"/>
+      </g>
+    </g>
+
+    <!-- SOUND plate -->
+    <g>
+      <rect x="272" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36" stroke-width="1"/>
+      <rect x="272" y="50" width="3" height="130" fill="#e879f9"/>
+      <text x="284" y="74" fill="#e879f9">SOUND</text>
+      <text x="362" y="74" fill="#e879f9" text-anchor="end" opacity="0.7" font-size="9">sound</text>
+      <!-- VU meter bars -->
+      <g transform="translate(284 156)">
+        <rect x="0" y="-28" width="10" height="28" fill="#e879f9" rx="1">
+          <animate attributeName="height" values="8;28;12;22;8" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.2;0.5;0.75;1"/>
+          <animate attributeName="y" values="-8;-28;-12;-22;-8" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.2;0.5;0.75;1"/>
+        </rect>
+        <rect x="14" y="-20" width="10" height="20" fill="#e879f9" rx="1">
+          <animate attributeName="height" values="18;10;24;14;18" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.25;0.55;0.8;1"/>
+          <animate attributeName="y" values="-18;-10;-24;-14;-18" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.25;0.55;0.8;1"/>
+        </rect>
+        <rect x="28" y="-16" width="10" height="16" fill="#e879f9" rx="1">
+          <animate attributeName="height" values="12;20;8;18;12" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.3;0.6;0.85;1"/>
+          <animate attributeName="y" values="-12;-20;-8;-18;-12" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.3;0.6;0.85;1"/>
+        </rect>
+        <rect x="42" y="-24" width="10" height="24" fill="#e879f9" rx="1">
+          <animate attributeName="height" values="22;14;26;10;22" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.22;0.5;0.78;1"/>
+          <animate attributeName="y" values="-22;-14;-26;-10;-22" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.22;0.5;0.78;1"/>
+        </rect>
+        <rect x="56" y="-18" width="10" height="18" fill="#e879f9" rx="1">
+          <animate attributeName="height" values="16;24;10;20;16" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.28;0.6;0.82;1"/>
+          <animate attributeName="y" values="-16;-24;-10;-20;-16" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.28;0.6;0.82;1"/>
+        </rect>
+        <rect x="70" y="-22" width="10" height="22" fill="#e879f9" rx="1">
+          <animate attributeName="height" values="18;12;22;8;18" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.3;0.6;0.82;1"/>
+          <animate attributeName="y" values="-18;-12;-22;-8;-18" dur="0.9s" repeatCount="indefinite" keyTimes="0;0.3;0.6;0.82;1"/>
+        </rect>
+      </g>
+    </g>
+
+    <!-- TIME plate -->
+    <g>
+      <rect x="398" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36" stroke-width="1"/>
+      <rect x="398" y="50" width="3" height="130" fill="#fbbf24"/>
+      <text x="410" y="74" fill="#fbbf24">TIME</text>
+      <text x="488" y="74" fill="#fbbf24" text-anchor="end" opacity="0.7" font-size="9">time</text>
+      <!-- Clock sweep hand -->
+      <g transform="translate(456 126)">
+        <circle r="22" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.5"/>
+        <line x1="0" y1="0" x2="0" y2="-20" stroke="#fbbf24" stroke-width="2" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="4s" repeatCount="indefinite"/>
+        </line>
+        <circle r="2" fill="#fbbf24"/>
+      </g>
+    </g>
+
+    <!-- CLASH plate -->
+    <g>
+      <rect x="524" y="50" width="96" height="130" rx="6" fill="#14141e" stroke="#2a2d36" stroke-width="1"/>
+      <rect x="524" y="50" width="3" height="130" fill="#f8fafc"/>
+      <text x="536" y="74" fill="#f8fafc">CLASH</text>
+      <text x="614" y="74" fill="#f8fafc" text-anchor="end" opacity="0.7" font-size="9">clash</text>
+      <!-- Clash flash -->
+      <g transform="translate(572 126)">
+        <circle r="18" fill="#f8fafc">
+          <animate attributeName="r" values="2;20;10;2" dur="2.6s" repeatCount="indefinite" keyTimes="0;0.05;0.4;1"/>
+          <animate attributeName="opacity" values="0;1;0.2;0" dur="2.6s" repeatCount="indefinite" keyTimes="0;0.05;0.4;1"/>
+        </circle>
+      </g>
+    </g>
+  </g>
+</svg>
