@@ -373,7 +373,7 @@ function PixelStripHeader({
   );
 
   return (
-    <div className="flex items-center justify-between px-2 h-8 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+    <div className="flex items-center justify-between px-2 h-[30px] bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           Pixel Strip
@@ -416,7 +416,7 @@ function PanelHeader({
   // full horizontal space it needs for the consolidated IGNITE +
   // effects + view toggles.
   return (
-    <div className="flex items-center justify-between px-2 h-8 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+    <div className="flex items-center justify-between px-2 h-[30px] bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           {title}
@@ -497,7 +497,7 @@ function ExpandedAnalysisSlot({
       style={{ height: expandedSlotHeight }}
       aria-label={`${layer.label} expanded view`}
     >
-      <div className="flex items-center justify-between px-2 h-8 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+      <div className="flex items-center justify-between px-2 h-[30px] bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span
             aria-hidden="true"
