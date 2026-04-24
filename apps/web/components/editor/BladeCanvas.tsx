@@ -317,6 +317,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     mip1: HTMLCanvasElement;
     mip2: HTMLCanvasElement;
   } | null>(null);
+
+  // Phase 3 motion blur: persistent ghost buffer matching mip0 dims
+  // that each frame composites the current bloom mip 0 at a swing-
+  // speed-driven alpha, then blits back to main. Gives the blade a
+  // "trailing streak" during fast swings. Gated on !reducedMotion.
+  const motionGhostRef = useRef<HTMLCanvasElement | null>(null);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
@@ -360,6 +366,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const verticalPanelWidths = useUIStore((s) => s.verticalPanelWidths);
   const showHilt = useUIStore((s) => s.showHilt);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
   const isPaused = useUIStore((s) => s.isPaused);
   const pauseScope = useUIStore((s) => s.pauseScope);
   const editMode = useUIStore((s) => s.editMode);
@@ -1115,15 +1122,72 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // a soft continuous halo that wraps the entire blade without
       // visible ridges. shimmer adds the per-frame micro-variation
       // the old pipeline relied on for "alive" look.
+      //
+      // Phase 3: reduceBloom (a11y) scales the mip alpha to 40% of
+      // the authored value so photosensitive users get a dimmer halo
+      // while still seeing the blade is lit. Does NOT disable bloom
+      // entirely — the halo is intrinsic to the "lightsaber" identity.
+      const bloomAlphaScale = reduceBloom ? 0.4 : 1;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       for (const def of mipDefs) {
-        ctx.globalAlpha = def.alpha * bi * shimmer;
+        ctx.globalAlpha = def.alpha * bi * shimmer * bloomAlphaScale;
         ctx.drawImage(def.canvas, 0, 0, def.w, def.h, 0, 0, cw, ch);
       }
       ctx.restore();
+
+      // Phase 3 motion blur: persistent ghost buffer at mip 0 dims
+      // composites current mip 0 each frame with `(1 - swing * 0.3)`
+      // persistence. When the user's swing is fast, a blade trail
+      // lags visibly; at rest the ghost fades to nothing so there
+      // is zero visual cost. Gated on !reducedMotion so vestibular-
+      // sensitive users don't get streaks. Ghost buffer is separate
+      // from bloomMipsRef so the trail survives across frames
+      // independently of the current bloom chain.
+      if (!reducedMotion) {
+        const swing = Math.max(0, Math.min(1, useBladeStore.getState().motionSim.swing / 100));
+        if (swing > 0.02) {
+          const ghost = motionGhostRef.current ?? document.createElement('canvas');
+          if (!motionGhostRef.current) motionGhostRef.current = ghost;
+          const def0 = mipDefs[0];
+          if (ghost.width !== def0.w || ghost.height !== def0.h) {
+            ghost.width = def0.w;
+            ghost.height = def0.h;
+          }
+          const gCtx = ghost.getContext('2d')!;
+          // Fade the existing ghost by `swing * 0.3` of its own
+          // opacity, then paint the current mip 0 on top — that's
+          // the temporal integration the trail uses.
+          gCtx.save();
+          gCtx.globalCompositeOperation = 'destination-in';
+          gCtx.globalAlpha = Math.max(0, 1 - swing * 0.3);
+          gCtx.fillStyle = '#fff';
+          gCtx.fillRect(0, 0, def0.w, def0.h);
+          gCtx.restore();
+          gCtx.save();
+          gCtx.globalCompositeOperation = 'lighter';
+          gCtx.globalAlpha = 1;
+          gCtx.drawImage(def0.canvas, 0, 0);
+          gCtx.restore();
+          // Composite the trail back onto main. Upscaled with
+          // `lighter` so it stacks on top of the fresh bloom.
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = Math.min(0.5, swing * 0.5) * bloomAlphaScale;
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(ghost, 0, 0, def0.w, def0.h, 0, 0, cw, ch);
+          ctx.restore();
+        } else if (motionGhostRef.current) {
+          // Below the swing threshold — clear the ghost so the next
+          // swing starts from a clean buffer, not stale last-swing
+          // residual.
+          const g = motionGhostRef.current;
+          g.getContext('2d')?.clearRect(0, 0, g.width, g.height);
+        }
+      }
     }
 
     // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
@@ -1209,6 +1273,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // not the linear extendProgress which diverges for shatter/fadeout).
     const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
     const actualVisibleLen = maxLitT * bladeLenPx;
+
+    // Phase 3: rim glow — thin saturated stroke along the blade's
+    // top + bottom edges. Renders AFTER the blade body + whiteout
+    // stages so it reads as the "neon tube edge" cinematography sells
+    // on real Neopixel sabers. Alpha scales with bloomIntensity so
+    // dim profiles get a subtle rim and bright profiles a bold one.
+    // Skipped when blade isn't lit (avoids a thin line over the hilt).
+    if (actualVisibleLen > 1) {
+      const rimAlpha = 0.4 * bi * shimmer * (reduceBloom ? 0.4 : 1);
+      ctx.save();
+      ctx.strokeStyle = rgbStr(satR, satG, satB, rimAlpha);
+      ctx.lineWidth = 2 * dpr;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(bladeStartPx, bladeYPx - coreH / 2);
+      ctx.lineTo(actualVisibleEnd, bladeYPx - coreH / 2);
+      ctx.moveTo(bladeStartPx, bladeYPx + coreH / 2);
+      ctx.lineTo(actualVisibleEnd, bladeYPx + coreH / 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // Pass 8: Specular highlight line (thin white line down center)
     ctx.save();
@@ -1312,7 +1397,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
     }
-  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme]);
+  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
