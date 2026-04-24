@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
+import { AUTO_FIT_LEFT_PULL_DS } from '@/lib/bladeRenderMetrics';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 
 type RenderMode = 'photorealistic' | 'pixel';
@@ -35,11 +36,10 @@ const BLADE_Y = DESIGN_H / 2;
 const BLADE_CORE_H = 26;
 
 // W6 (2026-04-22): default auto-fit pan pulls the whole composition
-// left so the hilt's left half slips off the left edge. Matches
-// `AUTO_FIT_LEFT_PULL_DS` in `apps/web/lib/bladeRenderMetrics.ts`. Any
-// divergence between the two values re-introduces the old alignment
-// drift between the blade canvas and sibling panels — keep in sync.
-const AUTO_FIT_LEFT_PULL_DS = 182;
+// left so the hilt's left half slips off the left edge. Imported from
+// `apps/web/lib/bladeRenderMetrics.ts` — single source of truth shared
+// with every sibling panel (pixel strip, analysis rail, etc.) so the
+// two can never drift out of alignment.
 
 // Data readout positions (design-space Y)
 const STRIP_Y = 400;       // pixel strip top
@@ -363,66 +363,29 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const [hiltStyle, setHiltStyle] = useState<string>('minimal');
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
-  // ─── Zoom constants ───
-  const ZOOM_MIN = 0.9;
-  const ZOOM_MAX = 1.3;
-  const ZOOM_STEP = 0.1; // button increment
 
-  // Auto-fit zoom: compute zoom so the blade fills ~90% of the blade-length axis.
-  // Base scale is height-only, so for horizontal mode we fit within canvas width,
-  // for vertical mode we fit within canvas height (blade runs vertically).
-  const computeFitZoom = useCallback((): number => {
-    const { w, h, dpr } = sizeRef.current;
-    if (w < 1 || h < 1) return 1.0;
-    const cw = w * dpr;
-    const ch = h * dpr;
-    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
-    const bladeExtentDS = BLADE_START + scaledBladeLenDS + 40;
-
-    if (vertical) {
-      // Vertical: blade length runs along canvas height, base scale = ch / DESIGN_W
-      const baseScale = ch / DESIGN_W;
-      const fitZoom = (ch * 0.98) / (bladeExtentDS * baseScale);
-      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
-    } else {
-      // Horizontal: base scale is ch / designH (height-only), blade runs along width
-      const baseScale = ch / layoutRef.current.designH;
-      const fitZoom = (cw * 0.98) / (bladeExtentDS * baseScale);
-      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
-    }
-  }, [bladeLength, vertical]);
-
-  const [zoom, setZoom] = useState<number>(() => 1.0);
-  const [panX, setPanX] = useState<number>(0);
+  // ─── Auto-fit scale ───
+  // v0.14.0 removed the user-facing zoom-in/zoom-out controls. The blade
+  // now always renders at its auto-fit scale: height-driven base scale
+  // with horizontal composition pulled left by AUTO_FIT_LEFT_PULL_DS so
+  // the hilt's left half slips off screen and the blade fills the rest
+  // of the preview. Resize recomputes the layout via the ResizeObserver
+  // below; no manual zoom state is needed.
+  const [panX] = useState<number>(-AUTO_FIT_LEFT_PULL_DS);
   const hasAutoFitRef = useRef(false);
 
-  // Zoom display value (read-only label)
-  const zoomDisplayValue = String(Math.round(zoom * 100));
-
-  // Auto-fit on first meaningful resize
+  // Re-run layout when blade length changes
   useEffect(() => {
-    const { w, h } = sizeRef.current;
-    if (w > 1 && h > 1 && !hasAutoFitRef.current) {
-      hasAutoFitRef.current = true;
-      setZoom(computeFitZoom());
-      setPanX(-AUTO_FIT_LEFT_PULL_DS);
+    if (hasAutoFitRef.current && sizeRef.current.w > 1 && sizeRef.current.h > 1) {
+      // Force a redraw cycle; the new bladeLength propagates through getScale
+      // via `bladeLength` being read at draw time. No state to mutate here
+      // now that zoom is gone — kept as a hook so the next phase can wire
+      // mip-buffer resets here if bladeLength affects buffer sizing.
     }
-  });
-
-  // Re-fit when blade length changes
-  useEffect(() => {
-    if (hasAutoFitRef.current) {
-      setZoom(computeFitZoom());
-      setPanX(-AUTO_FIT_LEFT_PULL_DS);
-    }
-  }, [bladeLength, computeFitZoom]);
+  }, [bladeLength]);
 
   // Panel resize drag state
   const dragRef = useRef<{ handle: 'blade-strip' | 'strip-graph'; startX: number; startWidths: { blade: number; strip: number; graph: number } } | null>(null);
-
-  // Keep a ref to computeFitZoom so the ResizeObserver always uses the latest
-  const computeFitZoomRef = useRef(computeFitZoom);
-  computeFitZoomRef.current = computeFitZoom;
 
   // Shimmer state for organic animation
   const shimmerRef = useRef<number>(1.0);
@@ -459,18 +422,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     };
 
+    // RAF-coalesce: during rapid ResizeHandle drags the observer fires at
+    // sub-frame cadence. Batch the canvas-dim update into a single paint
+    // cycle so we don't do N mid-frame re-layouts per drag-pixel, and so
+    // subsequent state reads always see a coherent size.
+    let rafHandle: number | null = null;
     const observer = new ResizeObserver(() => {
-      resize();
-      // Re-fit zoom to new panel size
-      if (hasAutoFitRef.current) {
-        setZoom(computeFitZoomRef.current());
-        setPanX(-AUTO_FIT_LEFT_PULL_DS);
-      }
+      if (rafHandle !== null) return;
+      rafHandle = requestAnimationFrame(() => {
+        rafHandle = null;
+        resize();
+        hasAutoFitRef.current = true;
+      });
     });
     observer.observe(container);
     resize(); // initial
+    hasAutoFitRef.current = true;
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (rafHandle !== null) cancelAnimationFrame(rafHandle);
+    };
   }, []);
 
   // ─── Panel resize drag handling ───
@@ -541,10 +513,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     return ch / layoutRef.current.designH;
   }, []);
 
-  // Zoomed scale: used for blade/hilt/glow rendering
+  // Render scale: auto-fit, height-driven. v0.14.0 removed the user zoom
+  // multiplier — auto-fit IS the scale now.
   const getScale = useCallback(() => {
-    return getBaseScale() * zoom;
-  }, [getBaseScale, zoom]);
+    return getBaseScale();
+  }, [getBaseScale]);
 
   // ─── Draw background + measurement grid ───
   const drawBackground = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -927,18 +900,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         offCtx.arc(tipEndX, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
         offCtx.fill();
 
-        // Wider soft glow cap for bloom seed — extends well beyond core
-        // so outermost bloom passes have enough "fuel" for smooth wrap
-        const glowCapRadius = coreH * 2.0;
+        // Wider soft glow cap for bloom seed — must extend beyond the widest
+        // blur kernel (up to ~100 device px at default scale × bloomRadius).
+        // v0.14.0 Phase 1: widened from coreH*2.0 → coreH*4.0 so the bloom's
+        // outermost passes have enough seed to wrap smoothly; the old radius
+        // was tighter than the max kernel and produced a visible rectangular
+        // "bloom box" edge at the tip.
+        const glowCapRadius = coreH * 4.0;
         const capGrad = offCtx.createRadialGradient(
           tipEndX, bladeYPx, 0,
           tipEndX, bladeYPx, glowCapRadius,
         );
         capGrad.addColorStop(0, rgbStr(capR, capG, capB, 0.8));
-        capGrad.addColorStop(0.15, rgbStr(capR, capG, capB, 0.55));
-        capGrad.addColorStop(0.35, rgbStr(capR, capG, capB, 0.3));
-        capGrad.addColorStop(0.6, rgbStr(capR, capG, capB, 0.1));
-        capGrad.addColorStop(0.85, rgbStr(capR, capG, capB, 0.03));
+        capGrad.addColorStop(0.1, rgbStr(capR, capG, capB, 0.55));
+        capGrad.addColorStop(0.22, rgbStr(capR, capG, capB, 0.3));
+        capGrad.addColorStop(0.4, rgbStr(capR, capG, capB, 0.12));
+        capGrad.addColorStop(0.65, rgbStr(capR, capG, capB, 0.04));
+        capGrad.addColorStop(0.85, rgbStr(capR, capG, capB, 0.01));
         capGrad.addColorStop(1, rgbStr(capR, capG, capB, 0));
         offCtx.fillStyle = capGrad;
         offCtx.beginPath();
@@ -956,16 +934,22 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       offCtx.arc(emitterX, bladeYPx, coreH / 2, Math.PI / 2, -Math.PI / 2);
       offCtx.fill();
 
-      // Emitter glow seed — mirrors tip for smooth bloom wrapping
+      // Emitter glow seed — mirrors tip for smooth bloom wrapping.
+      // v0.14.0 Phase 1: widened from coreH*1.5 → coreH*4.0*0.7 (slightly
+      // tighter than the tip because the hilt occludes inward spill) so
+      // both endpoints seed the bloom symmetrically. Same stop density as
+      // the tip cap so the gradient decays at the same visual rate.
       if (emR + emG + emB > 0.5) {
-        const emGlowR = coreH * 1.5;
+        const emGlowR = coreH * 4.0 * 0.7;
         const emGrad = offCtx.createRadialGradient(
           emitterX, bladeYPx, 0,
           emitterX, bladeYPx, emGlowR,
         );
         emGrad.addColorStop(0, rgbStr(emR, emG, emB, 0.6));
-        emGrad.addColorStop(0.3, rgbStr(emR, emG, emB, 0.25));
-        emGrad.addColorStop(0.65, rgbStr(emR, emG, emB, 0.06));
+        emGrad.addColorStop(0.15, rgbStr(emR, emG, emB, 0.4));
+        emGrad.addColorStop(0.3, rgbStr(emR, emG, emB, 0.22));
+        emGrad.addColorStop(0.5, rgbStr(emR, emG, emB, 0.1));
+        emGrad.addColorStop(0.75, rgbStr(emR, emG, emB, 0.03));
         emGrad.addColorStop(1, rgbStr(emR, emG, emB, 0));
         offCtx.fillStyle = emGrad;
         offCtx.beginPath();
@@ -1840,7 +1824,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const ledCount = Math.min(config.ledCount, bufferLeds);
     if (ledCount <= 0) return;
 
-    const scale = getScale(); // zoomed scale — strip moves with blade
+    const scale = getScale(); // auto-fit scale — strip tracks blade
     const bri = brightness / 100;
 
     // Design-space coordinates, scaled uniformly with blade
@@ -1896,7 +1880,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.stroke();
   }, [config.ledCount, getScale, brightness, bladeLength, panX, theme]);
 
-  // ─── RGB Line Graph (docked to bottom, unaffected by zoom) ───
+  // ─── RGB Line Graph (docked to bottom) ───
   const drawRGBGraph = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const pixels = engine.getPixels();
     const bufferLeds = Math.floor(pixels.length / 3);
@@ -2174,7 +2158,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const rotatedW = ch;          // design-space W → canvas height
       const rotatedH = bladeEndX;   // design-space H → blade panel width (for centering only)
       const baseScale = rotatedW / DESIGN_W;
-      const rScale = baseScale * zoom;
+      const rScale = baseScale;
       const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
       const renderedH = layoutRef.current.designH * baseScale;
 
@@ -2536,23 +2520,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     </div>
   );
 
-  // ─── Always-in-frame zoom clamp ───
-  // Ensures the blade never scrolls entirely off-screen during pan/zoom.
-  const clampPanX = useCallback((newPanX: number, newZoom: number): number => {
-    const { w, dpr } = sizeRef.current;
-    const cw = w * dpr;
-    const bs = getBaseScale();
-    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
-    const visibleW = cw / (bs * newZoom);
-    // At least 20% of blade (or 30% of viewport) must remain visible
-    const margin = Math.min(scaledBladeLenDS * 0.2, visibleW * 0.3);
-
-    const maxPan = visibleW - BLADE_START - margin;
-    const minPan = -(BLADE_START + scaledBladeLenDS - margin);
-
-    return Math.max(minPan, Math.min(maxPan, newPanX));
-  }, [getBaseScale, bladeLength]);
-
   return (
     <div className="flex flex-col h-full w-full gap-1.5">
       {/* ── Blade Config Bar (tablet only — desktop uses CanvasToolbar + BladeHardwarePanel;
@@ -2607,51 +2574,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             />
           </div>
         )}
-        {/* Zoom controls overlay — hidden in mobileFullscreen mode (`/m` preset browser) */}
-        {!mobileFullscreen && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
-            <button
-              onClick={() => setZoom((prevZoom) => {
-                const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
-                const bs = getBaseScale();
-                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-                setPanX(clampPanX(newPanX, newZoom));
-                return newZoom;
-              })}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
-              {zoomDisplayValue}%
-            </span>
-            <button
-              onClick={() => setZoom((prevZoom) => {
-                const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
-                const bs = getBaseScale();
-                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-                setPanX(clampPanX(newPanX, newZoom));
-                return newZoom;
-              })}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <button
-              onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
-              aria-label="Fit blade to panel"
-            >
-              Fit
-            </button>
-          </div>
-        )}
+        {/* Zoom controls removed in v0.14.0 — auto-fit is the only scale. */}
         {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles; hidden in mobileFullscreen so `/m` stays a clean preset browser) */}
         {!panelMode && !mobileFullscreen && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">

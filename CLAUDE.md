@@ -57,7 +57,7 @@ kyberstation/
 │   │   │       └── page.tsx          # Built-in ProffieOS reference
 │   │   ├── components/
 │   │   │   ├── editor/
-│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas (zoom: 0.9x–1.3x)
+│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas (auto-fit scale)
 │   │   │   │   ├── BladeCanvas3D.tsx       # Three.js 3D hilt + blade
 │   │   │   │   ├── StylePanel.tsx          # Style selection + config
 │   │   │   │   ├── EffectPanel.tsx         # Effect triggers + config
