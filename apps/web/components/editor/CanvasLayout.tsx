@@ -128,7 +128,7 @@ export function CanvasLayout({
   const visiblePanels = [showBladePanel, showPixelPanel].filter(Boolean).length;
 
   return (
-    <div ref={containerRef} className="relative flex flex-col h-full w-full gap-0 overflow-hidden border border-border-subtle">
+    <div ref={containerRef} className="relative flex flex-col h-full w-full gap-0 overflow-hidden border-x border-border-subtle">
       {/* ── Blade Panel — full width, horizontal ── */}
       {showBladePanel && (
         <div className="flex flex-col min-h-0 overflow-hidden relative flex-1">
@@ -141,7 +141,7 @@ export function CanvasLayout({
           */}
           {canMountActionBar && (
             <div
-              className="shrink-0 flex items-center gap-1.5 px-2 py-1 border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
+              className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
               role="toolbar"
               aria-label="Blade actions and effects"
             >
