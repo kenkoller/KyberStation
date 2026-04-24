@@ -323,6 +323,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   // speed-driven alpha, then blits back to main. Gives the blade a
   // "trailing streak" during fast swings. Gated on !reducedMotion.
   const motionGhostRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Phase 4 ambient coupling: last-computed average bloom-mip-2
+  // luma, 0–1. Set each frame by drawBladePhotorealistic; read by
+  // drawVignette so the vignette darkens proportionally to blade
+  // brightness (simulates iris adjustment from dim-room footage).
+  const avgBloomLumRef = useRef<number>(0);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
@@ -691,10 +697,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cx = cw / 2;
     const cy = ch / 2;
     const radius = Math.sqrt(cx * cx + cy * cy);
+    // Phase 4: modulate vignette opacity by current blade brightness —
+    // corners darken slightly when blade is hot so the eye perceives a
+    // dim-room iris adjustment. Coefficient kept subtle (up to +8%)
+    // so the vignette never becomes a distracting flash.
+    const opacityScale = 1 + avgBloomLumRef.current * 0.08;
     const grad = ctx.createRadialGradient(cx, cy, radius * 0.55, cx, cy, radius);
     grad.addColorStop(0, `rgba(${theme.vignetteColor},0)`);
-    grad.addColorStop(0.6, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.3})`);
-    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.7})`);
+    grad.addColorStop(0.6, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.3 * opacityScale})`);
+    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.7 * opacityScale})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, cw, ch);
   }, [theme]);
@@ -1360,9 +1371,43 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fill();
     }
 
-    // ── Enhanced floor wash (wider, more saturated) ──
+    // ── Phase 4: ambient wash driven by mip 2 buffer luma ──
+    // Sample the bloom mip-2 buffer's average green-channel value
+    // as a luma proxy. This value tracks the blade's overall
+    // brightness automatically — ignitions pulse it, clash flashes
+    // spike it, retraction fades it — so the floor / ceiling /
+    // ambient-tint / hilt-wash alphas track the blade state without
+    // manual `* glow.bloomIntensity` multipliers. Falls back to the
+    // prior static formula when mip 2 hasn't been populated yet
+    // (first frame before bloom runs).
+    //
+    // Sampling mip 2 is cheap: at canvas 980×295 dim, mip 2 is
+    // ~123×37 = 4500 pixels. getImageData reads ~18 KB/frame.
+    let avgBloomLum = 0;
+    if (bloomActive && bloomMipsRef.current) {
+      const m2 = bloomMipsRef.current.mip2;
+      if (m2.width > 0 && m2.height > 0) {
+        try {
+          const m2Ctx = m2.getContext('2d')!;
+          const data = m2Ctx.getImageData(0, 0, m2.width, m2.height).data;
+          let sum = 0;
+          const count = data.length / 4;
+          for (let i = 0; i < data.length; i += 4) sum += data[i + 1];
+          avgBloomLum = count > 0 ? sum / (count * 255) : 0;
+        } catch {
+          // Cross-origin-tainted canvas or 0-size — skip coupling.
+          avgBloomLum = 0;
+        }
+      }
+    }
+    // Publish to ref for drawVignette + any future consumers.
+    avgBloomLumRef.current = avgBloomLum;
+    // Coupling coefficient: 0.5 avg luma → back to prior 0.08 alpha.
+    const lumaWash = Math.max(0.005, avgBloomLum * 0.18) * (reduceBloom ? 0.4 : 1);
+
+    // ── Floor + ceiling wash (mip-2-driven) ──
     if (activeCount > 0) {
-      const washAlpha = 0.08 * glow.bloomIntensity;
+      const washAlpha = lumaWash;
       const floorGrad = ctx.createLinearGradient(0, bladeYPx + coreH / 2, 0, ch);
       floorGrad.addColorStop(0, rgbStr(satR, satG, satB, washAlpha));
       floorGrad.addColorStop(0.3, rgbStr(satR, satG, satB, washAlpha * 0.5));
@@ -1382,17 +1427,17 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     // ── Background ambient tint (blade color bleeds into dark background) ──
     if (activeCount > 0) {
-      const ambientAlpha = 0.015 * glow.bloomIntensity;
-      ctx.fillStyle = rgbStr(satR, satG, satB, ambientAlpha);
+      ctx.fillStyle = rgbStr(satR, satG, satB, Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1));
       ctx.fillRect(0, 0, cw, ch);
     }
 
     // ── Hilt illumination: blade light washes over the metal ──
     if (bladeColor) {
       const hiltEndX = bladeStartPx;
+      const hiltAlpha = Math.max(0.02, avgBloomLum * 0.28) * (reduceBloom ? 0.4 : 1);
       const hiltWash = ctx.createLinearGradient(hiltEndX, 0, hiltEndX - 200 * scale, 0);
-      hiltWash.addColorStop(0, rgbStr(satR, satG, satB, 0.12 * glow.bloomIntensity));
-      hiltWash.addColorStop(0.3, rgbStr(satR, satG, satB, 0.05));
+      hiltWash.addColorStop(0, rgbStr(satR, satG, satB, hiltAlpha));
+      hiltWash.addColorStop(0.3, rgbStr(satR, satG, satB, hiltAlpha * 0.4));
       hiltWash.addColorStop(1, rgbStr(satR, satG, satB, 0));
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
