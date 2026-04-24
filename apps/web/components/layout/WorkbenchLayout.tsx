@@ -944,7 +944,17 @@ export function WorkbenchLayout() {
             tabs always show the single canvas regardless of the toggle
             (STATE mode is a Design-tab concern). */}
         <CornerBrackets className="flex-1 min-w-0" size={16} thickness={1} pulse={true}>
-          <div className="h-full p-1 relative">
+          {/*
+            Phase 1.5q: wrapper padding trimmed from `p-1` (4px all sides)
+            to `px-1` only. Removes the top + bottom gap so the
+            CanvasLayout's left + right `border-x` borders extend the
+            full section2 height, connecting to the horizontal lines
+            above (header border-b) and below (resize handle /
+            VisualizationStack border-t) instead of floating ~4px
+            short of each. Horizontal inset kept so the CornerBrackets
+            corner decorations still have a small breathing room.
+          */}
+          <div className="h-full px-1 relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
             ) : showStateGrid && activeTab === 'design' ? (
