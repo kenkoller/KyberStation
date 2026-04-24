@@ -7,6 +7,9 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useVisualizationStore, type RgbLumaChannelKey } from '@/stores/visualizationStore';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
+import { PauseButton } from '@/components/layout/PauseButton';
+import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/EffectsPinDropdown';
+import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
 import { LayerCanvas, computeLayerReadout } from './VisualizationStack';
@@ -20,6 +23,16 @@ interface CanvasLayoutProps {
   pixels?: Uint8Array | null;
   /** Current LED count — matches `pixels.length / 3`. */
   pixelCount?: number;
+  /**
+   * Phase 1.5d: action-bar handlers owned by WorkbenchLayout (they
+   * wrap the engine-level toggle/trigger with audio playback). We
+   * receive them as props and render the action bar inside the
+   * BLADE PREVIEW panel's toolbar row so the user's primary blade
+   * controls live in the same visual region as the blade they drive.
+   */
+  onToggleBlade?: () => void;
+  onTriggerEffect?: (type: string) => void;
+  onReleaseEffect?: (type: string) => void;
 }
 
 /**
@@ -33,7 +46,14 @@ interface CanvasLayoutProps {
  *      to the same blade-render-width as the pixel strip so the
  *      waveform maps 1:1 to the LEDs above.
  */
-export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: CanvasLayoutProps) {
+export function CanvasLayout({
+  engineRef,
+  pixels = null,
+  pixelCount = 0,
+  onToggleBlade,
+  onTriggerEffect,
+  onReleaseEffect,
+}: CanvasLayoutProps) {
   const showBladePanel = useUIStore((s) => s.showBladePanel);
   const showPixelPanel = useUIStore((s) => s.showPixelPanel);
   const showHilt = useUIStore((s) => s.showHilt);
@@ -42,8 +62,17 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
   const togglePixelPanel = useUIStore((s) => s.togglePixelPanel);
   const toggleShowHilt = useUIStore((s) => s.toggleShowHilt);
   const toggleShowGrid = useUIStore((s) => s.toggleShowGrid);
+  const isOn = useBladeStore((s) => s.isOn);
   const animationPaused = useUIStore((s) => s.animationPaused);
   const toggleAnimationPaused = useUIStore((s) => s.toggleAnimationPaused);
+
+  // Phase 1.5d: handlers plumbed from WorkbenchLayout. When any of the
+  // three are omitted, BladeActionBar is not rendered (keeps the standalone
+  // `/m` route from hosting a half-wired action bar).
+  const canMountActionBar =
+    onToggleBlade !== undefined &&
+    onTriggerEffect !== undefined &&
+    onReleaseEffect !== undefined;
   const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
   const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedLayerId = useUIStore((s) => s.expandedAnalysisLayerId);
@@ -98,6 +127,39 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
               Grid
             </button>
           </PanelHeader>
+          {/*
+            Phase 1.5d action-bar row — moved here from WorkbenchLayout's
+            section 2c so all blade controls live with the blade itself.
+            Only mounted when the parent provided the handlers (keeps the
+            standalone `/m` route clean).
+          */}
+          {canMountActionBar && (
+            <div
+              className="shrink-0 flex items-center gap-1.5 px-2 py-1 border-b border-border-subtle bg-bg-secondary/40"
+              role="toolbar"
+              aria-label="Blade actions and effects"
+            >
+              <button
+                onClick={onToggleBlade}
+                className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+                  isOn
+                    ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+                    : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+                }`}
+                title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
+              >
+                {isOn ? 'Retract' : 'Ignite'}
+              </button>
+              <PauseButton />
+              <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
+              <PinnedEffectChips
+                onToggle={toggleOrTriggerEffect}
+                triggerHandler={onTriggerEffect!}
+                releaseHandler={onReleaseEffect!}
+              />
+              <EffectsPinDropdown />
+            </div>
+          )}
           <div className="flex-1 min-h-0 overflow-hidden">
             {/* `compact` selects the 240-tall design-space layout (bladeY=60)
                 which is sized for small panel renders. */}

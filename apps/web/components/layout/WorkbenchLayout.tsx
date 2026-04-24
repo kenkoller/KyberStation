@@ -18,7 +18,6 @@ import { usePauseSystem } from '@/hooks/usePauseSystem';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { useHistoryTracking } from '@/hooks/useHistoryTracking';
 import { usePresetListStore } from '@/stores/presetListStore';
-import { PauseButton } from '@/components/layout/PauseButton';
 import { ShareButton } from '@/components/layout/ShareButton';
 import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 // W11: StatusBar retired — all its segments folded into AppPerfStrip.
@@ -47,7 +46,6 @@ import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { PerformanceBar } from '@/components/layout/PerformanceBar';
-import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/EffectsPinDropdown';
 import { DeliveryRail } from '@/components/layout/DeliveryRail';
 import { ShiftLightRail } from '@/components/layout/ShiftLightRail';
 import { AppPerfStrip } from '@/components/layout/AppPerfStrip';
@@ -232,7 +230,9 @@ export function WorkbenchLayout() {
   const setSection2Height = useUIStore((s) => s.setSection2Height);
   const setPerformanceBarHeight = useUIStore((s) => s.setPerformanceBarHeight);
 
-  const isOn = useBladeStore((s) => s.isOn);
+  // Phase 1.5d: action-bar-local `isOn` moved into CanvasLayout
+  // (which now renders the IGNITE/Retract toggle). Still referenced via
+  // `useBladeStore.getState()` below for toggleWithAudio's audio trigger.
   const ledCount = useBladeStore((s) => s.config.ledCount);
   // Subscribed for the HUD ticker live entries below. The `setCanvasTheme`
   // setter is separately memoed for the palette's theme commands.
@@ -934,6 +934,9 @@ export function WorkbenchLayout() {
                 engineRef={engineRef}
                 pixels={pixelBufRef.current}
                 pixelCount={ledCount}
+                onToggleBlade={toggleWithAudio}
+                onTriggerEffect={triggerEffectWithAudio}
+                onReleaseEffect={releaseEffect}
               />
             )}
             {/* Controls — top-right corner of canvas area */}
@@ -1091,44 +1094,9 @@ export function WorkbenchLayout() {
         />
       </div>
 
-      {/* ════════════════════════════════════════════════════
-       * 2c. ACTION BAR — W5 (2026-04-22) layout reordered:
-       *   IGNITE/Retract (far left) · Pause · | · effect chips
-       *   · + More ▾ · LIVE (right)
-       * ════════════════════════════════════════════════════ */}
-      <div
-        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b border-border-subtle bg-bg-secondary/40"
-        role="toolbar"
-        aria-label="Blade actions and effects"
-      >
-        {/* IGNITE / RETRACT — anchored to the far left. */}
-        <button
-          onClick={toggleWithAudio}
-          className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-            isOn
-              ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-              : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-          }`}
-          title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
-        >
-          {isOn ? 'Retract' : 'Ignite'}
-        </button>
-
-        <PauseButton />
-
-        <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
-
-        <PinnedEffectChips
-          onToggle={toggleOrTriggerEffect}
-          triggerHandler={triggerEffectWithAudio}
-          releaseHandler={releaseEffect}
-        />
-        <EffectsPinDropdown />
-
-        {/* W11: LIVE dot removed. The consolidated AppPerfStrip at
-            the bottom owns blade STATE + RMS so nothing duplicates
-            here. Action bar is now purely actions. */}
-      </div>
+      {/* Phase 1.5d (v0.14.0): action bar moved into CanvasLayout's
+          BLADE PREVIEW toolbar — IGNITE/Retract + Pause + effect chips
+          now sit directly above the blade they control. */}
 
       {/* 2026-04-22 (post-W7): the internal editor tab bar was retired.
           Design / Audio / Output moved up to the header nav alongside

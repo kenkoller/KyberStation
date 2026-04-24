@@ -2562,14 +2562,28 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       {!mobileFullscreen && <div className="hidden tablet:block desktop:hidden">{configBar}</div>}
 
       {/* ── Canvas Container ── */}
+      {/*
+        Phase 1.5c: drop the 200px minHeight when in panelMode (inside
+        CanvasLayout). The outer panel already has `min-h-0 overflow-hidden`
+        and the expanded-slot / pixel-strip resize handles have their own
+        region mins — the old 200px floor was causing the blade canvas to
+        overflow its parent when both handles dragged their regions large,
+        so the blade visibly shifted out of view. Outside panelMode (the
+        standalone mobile `/m` route) keep a small floor of 80px so the
+        canvas is still usable at extreme viewport sizes.
+      */}
       <div
         ref={containerRef}
-        className={`relative flex-1 overflow-hidden ${
+        className={`relative flex-1 min-h-0 overflow-hidden ${
           mobileFullscreen
             ? 'rounded-none border-0'
-            : 'rounded-panel border border-border-subtle'
+            : panelMode
+              ? 'border-0'
+              : 'rounded-panel border border-border-subtle'
         }`}
-        style={{ minHeight: mobileFullscreen ? undefined : '200px' }}
+        style={{
+          minHeight: mobileFullscreen || panelMode ? undefined : '80px',
+        }}
       >
         <canvas
           ref={canvasRef}
