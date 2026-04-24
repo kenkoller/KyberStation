@@ -293,38 +293,42 @@ function MobileShell({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Tab bar */}
-        <div
-          className="flex overflow-x-auto px-1 pt-0.5 shrink-0 border-b border-border-subtle"
-          role="tablist"
-        >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              id={`mobile-tab-${tab.id}`}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={`mobile-panel-${tab.id}`}
-              onClick={() => {
-                playUISound('tab-switch');
-                setActiveTab(tab.id);
-                setShowPanel(true);
-              }}
-              className={`flex-1 min-w-0 min-h-[44px] px-2 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
-                activeTab === tab.id && showPanel ? 'text-accent' : 'text-text-muted'
-              }`}
-            >
-              {tab.shortLabel}
-              {tab.id === 'output' && presetListCount > 0 && (
-                <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-              )}
-              {activeTab === tab.id && showPanel && (
-                <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
-              )}
-            </button>
-          ))}
+        {/* Tab bar row. The role="tablist" is scoped to the inner flex
+            that contains only the tab buttons — axe's
+            aria-required-children rule was failing when the dot
+            indicators + collapse toggle lived inside the same role=
+            tablist element as the tabs. */}
+        <div className="flex overflow-x-auto px-1 pt-0.5 shrink-0 border-b border-border-subtle">
+          <div className="flex flex-1 min-w-0" role="tablist">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                id={`mobile-tab-${tab.id}`}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={showPanel ? 'mobile-panel' : undefined}
+                aria-expanded={showPanel}
+                onClick={() => {
+                  playUISound('tab-switch');
+                  setActiveTab(tab.id);
+                  setShowPanel(true);
+                }}
+                className={`flex-1 min-w-0 min-h-[44px] px-2 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
+                  activeTab === tab.id && showPanel ? 'text-accent' : 'text-text-muted'
+                }`}
+              >
+                {tab.shortLabel}
+                {tab.id === 'output' && presetListCount > 0 && (
+                  <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
+                )}
+                {activeTab === tab.id && showPanel && (
+                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
+                )}
+              </button>
+            ))}
+          </div>
 
-          {/* Swipe position indicator dots */}
+          {/* Swipe position indicator dots (sibling to tablist, not a child) */}
           <div className="flex items-center px-2 gap-1 shrink-0" aria-hidden="true">
             {TABS.map((tab, i) => (
               <span
@@ -336,7 +340,7 @@ function MobileShell({
             ))}
           </div>
 
-          {/* Collapse toggle */}
+          {/* Collapse toggle (sibling to tablist, not a child) */}
           <button
             onClick={() => setShowPanel(!showPanel)}
             className="min-h-[44px] px-2 py-1.5 text-ui-sm text-text-muted shrink-0"
@@ -346,12 +350,14 @@ function MobileShell({
           </button>
         </div>
 
-        {/* Panel content — single scrollable column */}
+        {/* Panel content — single scrollable column. ID stays stable
+            so the tab buttons' aria-controls="mobile-panel" always
+            resolves even as the content switches tabs. */}
         {showPanel && (
           <div
             className="flex-1 min-h-0 overflow-y-auto p-3"
             role="tabpanel"
-            id={`mobile-panel-${activeTab}`}
+            id="mobile-panel"
             aria-labelledby={`mobile-tab-${activeTab}`}
           >
             <TabContent activeTab={activeTab} />

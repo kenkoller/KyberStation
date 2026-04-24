@@ -252,7 +252,7 @@ export function MiniGalleryPicker({
 
   return (
     <div
-      role="listbox"
+      role="group"
       aria-label={ariaLabel ?? 'Gallery picker'}
       className={`grid ${gridCols} ${gap} ${padding}`}
       data-testid="mini-gallery-picker"

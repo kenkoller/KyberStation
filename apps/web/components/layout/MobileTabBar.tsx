@@ -46,16 +46,21 @@ function MobileTabBarInner() {
       role="navigation"
       aria-label="Primary"
     >
-      <ul className="flex w-full" role="tablist">
+      {/* Semantic route nav, NOT an ARIA tablist — the outer <nav> +
+          aria-current="page" handle selection-aware a11y without the
+          tablist's strict parent/child role constraints. Previously
+          this used role="tablist" + role="tab" which failed axe rules
+          aria-required-children / aria-required-parent (the <li> in
+          between isn't a valid parent-of-tab). Switched to plain
+          list markup with aria-current for the active state. */}
+      <ul className="flex w-full">
         {TABS.map((tab) => {
           const active = tab.match();
           return (
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
-                role="tab"
                 aria-current={active ? 'page' : undefined}
-                aria-selected={active}
                 className={`flex flex-col items-center justify-center gap-0.5 min-h-[56px] py-1.5 transition-colors ${
                   active
                     ? 'text-accent'

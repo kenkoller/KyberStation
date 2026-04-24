@@ -33,8 +33,23 @@ import {
   ANGLE_REACTIVE_TIP_RECIPE,
   CLASH_FLASH_WHITE_RECIPE,
   TWIST_DRIVES_HUE_RECIPE,
+  BREATHING_BLADE_RECIPE,
   type ModulationRecipe,
 } from '../../src/recipes/modulation/index.js';
+
+/** Recipes authored in the v1.0 bare-source style (source set, expression null). */
+const V1_0_RECIPES = [
+  REACTIVE_SHIMMER_RECIPE,
+  SOUND_REACTIVE_MUSIC_RECIPE,
+  ANGLE_REACTIVE_TIP_RECIPE,
+  CLASH_FLASH_WHITE_RECIPE,
+  TWIST_DRIVES_HUE_RECIPE,
+];
+
+/** Recipes using math-formula expressions (source null, expression set). v1.1+. */
+const V1_1_EXPRESSION_RECIPES = [
+  BREATHING_BLADE_RECIPE,
+];
 
 // ─── Authoritative sets (mirror of source-of-truth registries) ─────────
 //
@@ -131,13 +146,16 @@ describe('Modulation recipes — v1.0 starter set', () => {
     expect(TWIST_DRIVES_HUE_RECIPE).toBeDefined();
   });
 
-  it('MODULATION_RECIPES contains exactly 5 entries, in display order', () => {
-    expect(MODULATION_RECIPES).toHaveLength(5);
+  it('MODULATION_RECIPES lists v1.0 bare-source recipes first, then v1.1 expression recipes', () => {
+    // 5 v1.0 + 1 v1.1 = 6 total. v1.0s come first so new users see the
+    // gesture-reactive case before the formula-driven case.
+    expect(MODULATION_RECIPES).toHaveLength(6);
     expect(MODULATION_RECIPES[0]).toBe(REACTIVE_SHIMMER_RECIPE);
     expect(MODULATION_RECIPES[1]).toBe(SOUND_REACTIVE_MUSIC_RECIPE);
     expect(MODULATION_RECIPES[2]).toBe(ANGLE_REACTIVE_TIP_RECIPE);
     expect(MODULATION_RECIPES[3]).toBe(CLASH_FLASH_WHITE_RECIPE);
     expect(MODULATION_RECIPES[4]).toBe(TWIST_DRIVES_HUE_RECIPE);
+    expect(MODULATION_RECIPES[5]).toBe(BREATHING_BLADE_RECIPE);
   });
 
   it('every recipe has a unique id with the `recipe-` prefix', () => {
@@ -189,10 +207,9 @@ describe('Modulation recipes — v1.0 starter set', () => {
     }
   });
 
-  it('every binding source is a built-in modulator ID', () => {
-    for (const recipe of MODULATION_RECIPES) {
+  it('v1.0 bare-source recipes: every binding has a built-in modulator source + null expression', () => {
+    for (const recipe of V1_0_RECIPES) {
       for (const binding of recipe.bindings) {
-        // v1.0 recipes are bare-source only (no expressions).
         expect(
           binding.source,
           `Recipe "${recipe.id}" binding "${binding.id}" has null source (v1.0 bindings must have a source set)`,
@@ -203,14 +220,35 @@ describe('Modulation recipes — v1.0 starter set', () => {
             `Recipe "${recipe.id}" binding "${binding.id}" references unknown modulator "${binding.source}"`,
           ).toBe(true);
         }
+        expect(
+          binding.expression,
+          `Recipe "${recipe.id}" binding "${binding.id}" has an expression set — that's v1.1+ territory`,
+        ).toBeNull();
       }
     }
   });
 
-  it('every binding has expression null (v1.0 bare-modulator-reference only)', () => {
-    for (const recipe of MODULATION_RECIPES) {
+  it('v1.1 expression recipes: every binding has null source + pre-parsed expression', () => {
+    for (const recipe of V1_1_EXPRESSION_RECIPES) {
       for (const binding of recipe.bindings) {
-        expect(binding.expression).toBeNull();
+        expect(
+          binding.source,
+          `Recipe "${recipe.id}" binding "${binding.id}" has a source set — expression recipes should have source: null`,
+        ).toBeNull();
+        expect(
+          binding.expression,
+          `Recipe "${recipe.id}" binding "${binding.id}" lacks an expression`,
+        ).not.toBeNull();
+        if (binding.expression !== null) {
+          expect(
+            binding.expression.source.length,
+            `Recipe "${recipe.id}" binding "${binding.id}" expression.source is empty`,
+          ).toBeGreaterThan(0);
+          expect(
+            binding.expression.ast,
+            `Recipe "${recipe.id}" binding "${binding.id}" expression.ast is missing`,
+          ).toBeDefined();
+        }
       }
     }
   });
@@ -325,5 +363,28 @@ describe('Twist-Drives-Hue recipe (recipe 5)', () => {
     expect(binding.target).toBe('colorHueShiftSpeed');
     expect(binding.combinator).toBe('add');
     expect(binding.amount).toBeCloseTo(1.0, 5);
+  });
+});
+
+describe('Breathing Blade recipe (recipe 6 — v1.1 expression)', () => {
+  const recipe: ModulationRecipe = BREATHING_BLADE_RECIPE;
+
+  it('has one expression-based binding on shimmer with replace @ 100%', () => {
+    expect(recipe.bindings).toHaveLength(1);
+    const [binding] = recipe.bindings;
+    expect(binding.source).toBeNull();
+    expect(binding.target).toBe('shimmer');
+    expect(binding.combinator).toBe('replace');
+    expect(binding.amount).toBeCloseTo(1.0, 5);
+  });
+
+  it('expression source matches the canonical sin(time) breathing idiom', () => {
+    const [binding] = recipe.bindings;
+    expect(binding.expression).not.toBeNull();
+    if (binding.expression !== null) {
+      expect(binding.expression.source).toBe('sin(time * 0.001) * 0.5 + 0.5');
+      // ast top-level is a binary + node adding 0.5 to a scaled sin
+      expect(binding.expression.ast.kind).toBe('binary');
+    }
   });
 });

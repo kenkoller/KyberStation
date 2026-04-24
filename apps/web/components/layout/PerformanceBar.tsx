@@ -192,7 +192,7 @@ export function PerformanceBar({ engineRef, height }: PerformanceBarProps) {
                     lineHeight: '13px',
                     color: active
                       ? PAGE_COLORS[page]
-                      : 'rgb(var(--text-muted) / 0.65)',
+                      : 'rgb(var(--text-muted))',
                     cursor: 'pointer',
                   }}
                   title={PAGE_LABELS[page]}

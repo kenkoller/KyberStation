@@ -47,6 +47,7 @@ export {
   ANGLE_REACTIVE_TIP_RECIPE,
   CLASH_FLASH_WHITE_RECIPE,
   TWIST_DRIVES_HUE_RECIPE,
+  BREATHING_BLADE_RECIPE,
 } from './recipes/modulation/index.js';
 
 import type { Preset } from './types.js';

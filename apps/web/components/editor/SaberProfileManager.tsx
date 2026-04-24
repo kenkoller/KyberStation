@@ -636,7 +636,7 @@ function CardEntryRow({
                   borderColor: 'rgb(var(--accent) / 0.3)',
                 }
               : {
-                  color: 'rgb(var(--text-muted) / 0.65)',
+                  color: 'rgb(var(--text-muted))',
                   borderColor: 'rgb(var(--border-subtle))',
                 }
         }
