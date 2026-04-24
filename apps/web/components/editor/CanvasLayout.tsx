@@ -121,6 +121,7 @@ export function CanvasLayout({
   const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
   const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedLayerId = useUIStore((s) => s.expandedAnalysisLayerId);
+  const isPausedForStats = useUIStore((s) => s.isPaused);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -131,15 +132,41 @@ export function CanvasLayout({
       {/* ── Blade Panel — full width, horizontal ── */}
       {showBladePanel && (
         <div className="flex flex-col min-h-0 overflow-hidden relative flex-1">
+          {/*
+            Phase 1.5j: merged the action-bar (IGNITE/Pause/effect chips)
+            into the PanelHeader's children alongside Hilt/Grid. One row
+            = less vertical chrome, all blade controls visually adjacent
+            to the title. Order left-to-right:
+              IGNITE · Pause · | · effect chips · +More · | · Hilt · Grid
+          */}
           <PanelHeader
             title="Blade Preview"
             onToggle={toggleBladePanel}
           >
-            {/* Phase 1.5i: header animation-pause button removed — the
-                action bar below already hosts a PauseButton covering
-                both full + partial pause scopes. Keeping both created
-                two visually-similar buttons that toggled different
-                things (confusing). */}
+            {canMountActionBar && (
+              <>
+                <button
+                  onClick={onToggleBlade}
+                  className={`px-2 py-0.5 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+                    isOn
+                      ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+                      : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+                  }`}
+                  title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
+                >
+                  {isOn ? 'Retract' : 'Ignite'}
+                </button>
+                <PauseButton />
+                <span className="w-px h-4 bg-border-subtle mx-0.5" aria-hidden="true" />
+                <PinnedEffectChips
+                  onToggle={toggleOrTriggerEffect}
+                  triggerHandler={onTriggerEffect!}
+                  releaseHandler={onReleaseEffect!}
+                />
+                <EffectsPinDropdown />
+                <span className="w-px h-4 bg-border-subtle mx-0.5" aria-hidden="true" />
+              </>
+            )}
             <button
               onClick={toggleShowHilt}
               className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
@@ -165,39 +192,6 @@ export function CanvasLayout({
               Grid
             </button>
           </PanelHeader>
-          {/*
-            Phase 1.5d action-bar row — moved here from WorkbenchLayout's
-            section 2c so all blade controls live with the blade itself.
-            Only mounted when the parent provided the handlers (keeps the
-            standalone `/m` route clean).
-          */}
-          {canMountActionBar && (
-            <div
-              className="shrink-0 flex items-center gap-1.5 px-2 py-1 border-b border-border-subtle bg-bg-secondary/40"
-              role="toolbar"
-              aria-label="Blade actions and effects"
-            >
-              <button
-                onClick={onToggleBlade}
-                className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-                  isOn
-                    ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-                    : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-                }`}
-                title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
-              >
-                {isOn ? 'Retract' : 'Ignite'}
-              </button>
-              <PauseButton />
-              <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
-              <PinnedEffectChips
-                onToggle={toggleOrTriggerEffect}
-                triggerHandler={onTriggerEffect!}
-                releaseHandler={onReleaseEffect!}
-              />
-              <EffectsPinDropdown />
-            </div>
-          )}
           <div className="flex-1 min-h-0 overflow-hidden">
             {/* `compact` selects the 240-tall design-space layout (bladeY=60)
                 which is sized for small panel renders. */}
@@ -223,8 +217,21 @@ export function CanvasLayout({
       )}
 
       {/* ── Pixel Strip Panel — horizontal, full width (user-draggable) ── */}
+      {/*
+        Phase 1.5j: wrapped PixelStripPanel with a small header row
+        mirroring the BLADE PREVIEW panel's header — title + live
+        stats (total amperage + avg luma). The in-canvas `PIXEL`
+        label + `0.00A bri:N%` readout were removed from
+        PixelStripPanel because they drew ON TOP of the rightmost
+        LEDs; rendering them in the DOM header is cleaner and
+        accessible to screen readers.
+      */}
       {showPixelPanel && (
-        <div className="flex flex-col min-h-0 overflow-hidden relative shrink-0" style={{ height: pixelStripHeight }}>
+        <div
+          className="flex flex-col min-h-0 overflow-hidden relative shrink-0"
+          style={{ height: pixelStripHeight }}
+        >
+          <PixelStripHeader pixels={pixels} pixelCount={pixelCount} isPaused={isPausedForStats} togglePixelPanel={togglePixelPanel} />
           <div className="flex-1 min-h-0 overflow-hidden">
             <PixelStripPanel engineRef={engineRef} />
           </div>
@@ -297,6 +304,81 @@ export function CanvasLayout({
 
 // ─── Sub-components ───
 
+/**
+ * PixelStripHeader — Phase 1.5j. Small header above PixelStripPanel
+ * with a uppercase `PIXEL STRIP` title + live stats readout (total
+ * amperage + avg blade luminance). Mirrors the BLADE PREVIEW panel's
+ * PanelHeader shape so the two stacked panels read as a pair. Title
+ * + readout on the left; ✕ close button on the right.
+ *
+ * Stats are computed by sampling the shared engine pixel buffer
+ * each animation frame (10fps cap — cheap + reads fine). The same
+ * buffer the ExpandedAnalysisSlot header already uses, so there's
+ * one source of truth for blade readouts across the workbench.
+ */
+function PixelStripHeader({
+  pixels,
+  pixelCount,
+  isPaused,
+  togglePixelPanel,
+}: {
+  pixels: Uint8Array | null;
+  pixelCount: number;
+  isPaused: boolean;
+  togglePixelPanel: () => void;
+}) {
+  const brightness = useUIStore((s) => s.brightness);
+  const [readout, setReadout] = useState<string>('');
+
+  useAnimationFrame(
+    () => {
+      if (!pixels || pixelCount <= 0) {
+        setReadout('');
+        return;
+      }
+      const briScale = brightness / 100;
+      let totalMa = 0;
+      let lumaSum = 0;
+      const count = Math.min(pixelCount, Math.floor(pixels.length / 3));
+      for (let i = 0; i < count; i++) {
+        const r = (pixels[i * 3] ?? 0) * briScale;
+        const g = (pixels[i * 3 + 1] ?? 0) * briScale;
+        const b = (pixels[i * 3 + 2] ?? 0) * briScale;
+        totalMa += ((r + g + b) / 255) * 20;
+        lumaSum += 0.299 * r + 0.587 * g + 0.114 * b;
+      }
+      const totalA = (totalMa / 1000).toFixed(2);
+      const avgBri = count > 0 ? Math.round((lumaSum / count / 255) * 100) : 0;
+      const next = `${totalA} A · ${avgBri}%`;
+      setReadout((prev) => (prev === next ? prev : next));
+    },
+    { enabled: !isPaused, maxFps: 10 },
+  );
+
+  return (
+    <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
+          Pixel Strip
+        </span>
+        {readout && (
+          <span className="text-ui-xs font-mono tabular-nums text-[rgba(255,170,0,0.75)] truncate">
+            {readout}
+          </span>
+        )}
+      </div>
+      <button
+        onClick={togglePixelPanel}
+        className="text-ui-xs text-text-muted/50 hover:text-text-muted transition-colors px-1 shrink-0"
+        aria-label="Hide Pixel Strip panel"
+        title="Hide Pixel Strip"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function PanelHeader({
   title,
   onToggle,
@@ -309,19 +391,20 @@ function PanelHeader({
   // Phase 1.5e: title + accessory buttons sit on the LEFT (right after
   // the title) instead of far-right. This clears the panel's top-right
   // corner for the absolute-positioned State/2D-3D/Fullscreen overlay
-  // in WorkbenchLayout, which used to horizontally overlap the header
-  // buttons and hide click targets.
+  // in WorkbenchLayout (moved DOWN to top-11 in 1.5e so it no longer
+  // competes with this row for horizontal space).
   //
-  // `pr-20` on the inner row reserves ~80px so that if the absolute
-  // overlay ever slides left (e.g. narrow viewport) the close button
-  // still has clickable space around it.
+  // Phase 1.5j: `pr-20` spacer dropped now that the overlay is moved
+  // vertically out of the collision zone. The children row gets the
+  // full horizontal space it needs for the consolidated IGNITE +
+  // effects + view toggles.
   return (
-    <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0">
-      <div className="flex items-center gap-2 min-w-0 pr-20">
+    <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+      <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           {title}
         </span>
-        <div className="flex items-center gap-1 min-w-0">
+        <div className="flex items-center gap-1 min-w-0 flex-wrap">
           {children}
         </div>
       </div>

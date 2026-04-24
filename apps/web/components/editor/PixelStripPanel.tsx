@@ -120,24 +120,16 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
       lumaSum += 0.299 * r + 0.587 * g + 0.114 * b;
     }
 
-    // "PIXEL" label at top-left of the panel — matches the `{bladeLength}" blade`
-    // label position in BladeCanvas (absolute top-left corner). Kept at canvas
-    // origin (8px inset), NOT at stripLeft, so it doesn't drift with blade
-    // length or get clipped inside the strip background rectangle.
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.font = `${8 * dpr}px monospace`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText('PIXEL', 8 * dpr, 8 * dpr);
-
-    // Live stats at right edge: total power + avg brightness
-    const totalA = (totalMa / 1000).toFixed(2);
-    const avgBri = leds > 0 ? Math.round((lumaSum / leds / 255) * 100) : 0;
-    ctx.fillStyle = 'rgba(255,170,0,0.55)';
-    ctx.font = `${7 * dpr}px monospace`;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${totalA}A  bri:${avgBri}%`, stripRight - 3 * dpr, ch / 2);
+    // Phase 1.5j: the in-canvas "PIXEL" label + `0.00A bri:N%` stats
+    // readout were drawn INSIDE this canvas (ON TOP of LED rendering
+    // at the right edge). Both moved to the new PIXEL STRIP panel
+    // header in CanvasLayout — they read more cleanly there and
+    // don't obscure the rightmost LEDs. `totalMa` / `lumaSum`
+    // computed above are intentionally unused here now; the header
+    // re-derives them from the engine pixel buffer.
+    void totalMa;
+    void lumaSum;
+    void stripRight;
   }, {
     // W5 pause model: freeze on any pause scope (full AND partial).
     // Partial-pause keeps the realistic blade canvas alive, but the
