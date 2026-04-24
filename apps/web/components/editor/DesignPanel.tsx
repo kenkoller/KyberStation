@@ -176,7 +176,7 @@ export function DesignPanel() {
                 {g.label}
                 {isRouting && (
                   <span
-                    className="ml-1.5 text-[8px] font-mono uppercase tracking-wider opacity-70"
+                    className="ml-1.5 text-[8px] font-mono uppercase tracking-wider"
                     style={{ color: 'rgb(var(--status-magenta))' }}
                     aria-label="Beta feature"
                   >

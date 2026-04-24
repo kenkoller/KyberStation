@@ -386,7 +386,7 @@ export function ColorPanel() {
               className="w-20 px-1.5 py-0.5 rounded text-ui-xs font-mono bg-bg-deep border border-border-subtle text-text-secondary focus:border-accent focus:text-accent focus:outline-none transition-colors"
             />
           </div>
-          <div className="text-ui-sm text-accent/70 italic leading-tight">
+          <div className="text-ui-sm text-accent italic leading-tight">
             {getSaberColorName(activeColor.r, activeColor.g, activeColor.b)}
           </div>
           <div className="text-ui-sm text-text-muted font-mono">
