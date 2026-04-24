@@ -173,19 +173,20 @@ export function ResizeHandle({
       onKeyDown={onKeyDown}
       className={[
         'shrink-0 bg-transparent hover:bg-accent/40 active:bg-accent/70 transition-colors',
-        // The handle visually occupies 4px; 2px of padding on each
-        // side of the hit target keeps it reachable without bloating
-        // the layout. Tailwind arbitrary values for the exact pixel
-        // footprint (rounding issues kept cropping up with w-[3px]).
-        isHorizontal ? 'w-1 h-full cursor-col-resize' : 'h-1 w-full cursor-row-resize',
+        // Phase 1.5p: handle widened 4px -> 8px in the drag axis so it's
+        // much easier to target with the cursor. Visible rule stays at
+        // 2px (same as before), centered in the 8px hit zone via the
+        // gradient stops below.
+        isHorizontal ? 'w-2 h-full cursor-col-resize' : 'h-2 w-full cursor-row-resize',
       ].join(' ')}
       style={{
-        // A thin inner rule gives the handle visible form at rest
-        // (matches the border-subtle token the surrounding chrome
-        // uses) without needing an adjacent element's border.
+        // Gradient places a 2px line at the center of the 8px hit area:
+        //   0-3px transparent | 3-5px visible rule | 5-8px transparent
+        // so the handle reads as a 2px divider while the entire 8px
+        // band captures pointer events and flips the cursor.
         background: isHorizontal
-          ? 'linear-gradient(to right, transparent 0, transparent 1px, rgb(var(--border-subtle) / 1) 1px, rgb(var(--border-subtle) / 1) 3px, transparent 3px)'
-          : 'linear-gradient(to bottom, transparent 0, transparent 1px, rgb(var(--border-subtle) / 1) 1px, rgb(var(--border-subtle) / 1) 3px, transparent 3px)',
+          ? 'linear-gradient(to right, transparent 0, transparent 3px, rgb(var(--border-subtle) / 1) 3px, rgb(var(--border-subtle) / 1) 5px, transparent 5px)'
+          : 'linear-gradient(to bottom, transparent 0, transparent 3px, rgb(var(--border-subtle) / 1) 3px, rgb(var(--border-subtle) / 1) 5px, transparent 5px)',
         outline: 'none',
         touchAction: 'none',
       }}
