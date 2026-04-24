@@ -33,6 +33,13 @@ interface CanvasLayoutProps {
   onToggleBlade?: () => void;
   onTriggerEffect?: (type: string) => void;
   onReleaseEffect?: (type: string) => void;
+  /**
+   * Phase 1.5r: view-controls JSX (Single / All States / 2D / 3D /
+   * Fullscreen) rendered inside the BLADE PREVIEW PanelHeader instead
+   * of floating over the canvas. WorkbenchLayout owns the state these
+   * buttons drive + defines the node; CanvasLayout just renders it.
+   */
+  viewControls?: React.ReactNode;
 }
 
 /**
@@ -53,6 +60,7 @@ export function CanvasLayout({
   onToggleBlade,
   onTriggerEffect,
   onReleaseEffect,
+  viewControls,
 }: CanvasLayoutProps) {
   const showBladePanel = useUIStore((s) => s.showBladePanel);
   const showPixelPanel = useUIStore((s) => s.showPixelPanel);
@@ -194,6 +202,12 @@ export function CanvasLayout({
             >
               Grid
             </button>
+            {viewControls && (
+              <>
+                <span className="w-px h-4 bg-border-subtle mx-0.5" aria-hidden="true" />
+                {viewControls}
+              </>
+            )}
           </PanelHeader>
           <div className="flex-1 min-h-0 overflow-hidden">
             {/* `compact` selects the 240-tall design-space layout (bladeY=60)
@@ -359,7 +373,7 @@ function PixelStripHeader({
   );
 
   return (
-    <div className="flex items-center justify-between px-2 py-2 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+    <div className="flex items-center justify-between px-2 h-8 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           Pixel Strip
@@ -402,7 +416,7 @@ function PanelHeader({
   // full horizontal space it needs for the consolidated IGNITE +
   // effects + view toggles.
   return (
-    <div className="flex items-center justify-between px-2 py-2 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+    <div className="flex items-center justify-between px-2 h-8 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           {title}
@@ -483,7 +497,7 @@ function ExpandedAnalysisSlot({
       style={{ height: expandedSlotHeight }}
       aria-label={`${layer.label} expanded view`}
     >
-      <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/60 shrink-0">
+      <div className="flex items-center justify-between px-2 h-8 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span
             aria-hidden="true"

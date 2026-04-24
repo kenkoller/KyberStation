@@ -253,6 +253,73 @@ export function WorkbenchLayout() {
   // Pattern: every 4th slot gets a live entry, then trailing live
   // entries flush at the end. Result: live data is spread through the
   // loop rather than clumped in one spot.
+  // Phase 1.5r: view-controls JSX shared between CanvasLayout's
+  // BLADE PREVIEW PanelHeader (primary) and the absolute fallback
+  // overlay (for 3D / StateGrid modes where CanvasLayout isn't
+  // mounted). Memoised on the state each button reads.
+  const viewControlsNode = useMemo(
+    () => (
+      <>
+        {activeTab === 'design' && (
+          <div className="flex rounded overflow-hidden border border-border-subtle">
+            <button
+              onClick={() => showStateGrid && toggleStateGrid()}
+              className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+                !showStateGrid
+                  ? 'bg-accent-dim text-accent border-r border-accent-border/40'
+                  : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
+              }`}
+              title="Single blade preview"
+              aria-pressed={!showStateGrid}
+            >
+              Single
+            </button>
+            <button
+              onClick={() => !showStateGrid && toggleStateGrid()}
+              className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+                showStateGrid
+                  ? 'bg-accent-dim text-accent'
+                  : 'bg-transparent text-text-muted hover:text-text-secondary'
+              }`}
+              title={`All 9 blade states · ${kbdFor('5')}`}
+              aria-pressed={showStateGrid}
+            >
+              All States
+            </button>
+          </div>
+        )}
+        <div className="flex rounded overflow-hidden border border-border-subtle">
+          <button
+            onClick={() => setCanvasMode('2d')}
+            className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
+              canvasMode === '2d'
+                ? 'bg-accent-dim text-accent border-r border-accent-border/40'
+                : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
+            }`}
+            title="2D blade view"
+            aria-pressed={canvasMode === '2d'}
+          >
+            2D
+          </button>
+          <button
+            onClick={() => setCanvasMode('3d')}
+            className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
+              canvasMode === '3d'
+                ? 'bg-accent-dim text-accent'
+                : 'bg-transparent text-text-muted hover:text-text-secondary'
+            }`}
+            title="3D hilt + blade view"
+            aria-pressed={canvasMode === '3d'}
+          >
+            3D
+          </button>
+        </div>
+        <FullscreenButton className="w-5 h-5" />
+      </>
+    ),
+    [activeTab, showStateGrid, toggleStateGrid, canvasMode, setCanvasMode, kbdFor],
+  );
+
   const tickerMessages = useMemo(() => {
     const live = [
       `TAB · ${activeTab.toUpperCase()}`,
@@ -969,75 +1036,22 @@ export function WorkbenchLayout() {
                 onToggleBlade={toggleWithAudio}
                 onTriggerEffect={triggerEffectWithAudio}
                 onReleaseEffect={releaseEffect}
+                viewControls={viewControlsNode}
               />
             )}
-            {/* View controls — slid down 40px (top-11) so they sit BELOW
-                CanvasLayout's BLADE PREVIEW PanelHeader row instead of
-                colliding with it horizontally. Pre-Phase-1.5e they were
-                at top-2 and landed on the same Y as the Pause/Hilt/Grid
-                buttons in the header, making both sets of targets mutually
-                obscuring. */}
-            <div className="absolute top-11 right-2 z-10 flex items-center gap-1">
-              {/* OV8: STATE-mode takeover toggle. Two-position segmented
-                  control. Desktop only (this block sits inside the
-                  desktop workbench); hidden on tabs other than Design. */}
-              {activeTab === 'design' && (
-                <div className="flex rounded overflow-hidden border border-border-subtle">
-                  <button
-                    onClick={() => showStateGrid && toggleStateGrid()}
-                    className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
-                      !showStateGrid
-                        ? 'bg-accent-dim text-accent border-r border-accent-border/40'
-                        : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
-                    }`}
-                    title="Single blade preview"
-                    aria-pressed={!showStateGrid}
-                  >
-                    Single
-                  </button>
-                  <button
-                    onClick={() => !showStateGrid && toggleStateGrid()}
-                    className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
-                      showStateGrid
-                        ? 'bg-accent-dim text-accent'
-                        : 'bg-transparent text-text-muted hover:text-text-secondary'
-                    }`}
-                    title={`All 9 blade states · ${kbdFor('5')}`}
-                    aria-pressed={showStateGrid}
-                  >
-                    All States
-                  </button>
-                </div>
-              )}
-              {/* 2D / 3D view toggle */}
-              <div className="flex rounded overflow-hidden border border-border-subtle">
-                <button
-                  onClick={() => setCanvasMode('2d')}
-                  className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
-                    canvasMode === '2d'
-                      ? 'bg-accent-dim text-accent border-r border-accent-border/40'
-                      : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
-                  }`}
-                  title="2D blade view"
-                  aria-pressed={canvasMode === '2d'}
-                >
-                  2D
-                </button>
-                <button
-                  onClick={() => setCanvasMode('3d')}
-                  className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
-                    canvasMode === '3d'
-                      ? 'bg-accent-dim text-accent'
-                      : 'bg-transparent text-text-muted hover:text-text-secondary'
-                  }`}
-                  title="3D hilt + blade view"
-                  aria-pressed={canvasMode === '3d'}
-                >
-                  3D
-                </button>
+            {/*
+              Phase 1.5r: view-controls live INSIDE CanvasLayout's BLADE
+              PREVIEW PanelHeader when CanvasLayout is mounted (2D single
+              mode). When 3D or StateGrid is active instead, CanvasLayout
+              isn't rendered — so we keep an absolute-positioned fallback
+              here so users can toggle back. Shared JSX extracted to
+              `viewControlsNode` and passed to CanvasLayout as a prop.
+            */}
+            {(canvasMode === '3d' || (showStateGrid && activeTab === 'design')) && (
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                {viewControlsNode}
               </div>
-              <FullscreenButton />
-            </div>
+            )}
             {/* Pixel debug overlay only applies to 2D canvas mode */}
             {canvasMode === '2d' && (
               <PixelDebugOverlay
