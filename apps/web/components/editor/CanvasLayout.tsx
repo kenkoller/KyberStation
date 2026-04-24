@@ -128,45 +128,20 @@ export function CanvasLayout({
   const visiblePanels = [showBladePanel, showPixelPanel].filter(Boolean).length;
 
   return (
-    <div ref={containerRef} className="relative flex flex-col h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle">
+    <div ref={containerRef} className="relative flex flex-col h-full w-full gap-0 overflow-hidden border border-border-subtle">
       {/* ── Blade Panel — full width, horizontal ── */}
       {showBladePanel && (
         <div className="flex flex-col min-h-0 overflow-hidden relative flex-1">
           {/*
-            Phase 1.5j: merged the action-bar (IGNITE/Pause/effect chips)
-            into the PanelHeader's children alongside Hilt/Grid. One row
-            = less vertical chrome, all blade controls visually adjacent
-            to the title. Order left-to-right:
-              IGNITE · Pause · | · effect chips · +More · | · Hilt · Grid
+            Phase 1.5k: blade-preview split into TWO rows to match the
+            pixel-strip + analysis-rail headers (which are title + readout
+            + ✕). This header = title + view toggles + ✕; the action bar
+            below = IGNITE + Pause + effect chips, no title.
           */}
           <PanelHeader
             title="Blade Preview"
             onToggle={toggleBladePanel}
           >
-            {canMountActionBar && (
-              <>
-                <button
-                  onClick={onToggleBlade}
-                  className={`px-2 py-0.5 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-                    isOn
-                      ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-                      : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-                  }`}
-                  title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
-                >
-                  {isOn ? 'Retract' : 'Ignite'}
-                </button>
-                <PauseButton />
-                <span className="w-px h-4 bg-border-subtle mx-0.5" aria-hidden="true" />
-                <PinnedEffectChips
-                  onToggle={toggleOrTriggerEffect}
-                  triggerHandler={onTriggerEffect!}
-                  releaseHandler={onReleaseEffect!}
-                />
-                <EffectsPinDropdown />
-                <span className="w-px h-4 bg-border-subtle mx-0.5" aria-hidden="true" />
-              </>
-            )}
             <button
               onClick={toggleShowHilt}
               className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
@@ -192,6 +167,37 @@ export function CanvasLayout({
               Grid
             </button>
           </PanelHeader>
+          {/* Action-bar row — IGNITE + effects. Lives below the panel
+              header so all blade-affecting controls are still visually
+              adjacent to the blade, but the title row now matches the
+              PIXEL STRIP / RGB+LUMA header shape. */}
+          {canMountActionBar && (
+            <div
+              className="shrink-0 flex items-center gap-1.5 px-2 py-1 border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
+              role="toolbar"
+              aria-label="Blade actions and effects"
+            >
+              <button
+                onClick={onToggleBlade}
+                className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+                  isOn
+                    ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+                    : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+                }`}
+                title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
+              >
+                {isOn ? 'Retract' : 'Ignite'}
+              </button>
+              <PauseButton />
+              <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
+              <PinnedEffectChips
+                onToggle={toggleOrTriggerEffect}
+                triggerHandler={onTriggerEffect!}
+                releaseHandler={onReleaseEffect!}
+              />
+              <EffectsPinDropdown />
+            </div>
+          )}
           <div className="flex-1 min-h-0 overflow-hidden">
             {/* `compact` selects the 240-tall design-space layout (bladeY=60)
                 which is sized for small panel renders. */}
@@ -356,7 +362,7 @@ function PixelStripHeader({
   );
 
   return (
-    <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+    <div className="flex items-center justify-between px-2 py-2 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           Pixel Strip
@@ -399,7 +405,7 @@ function PanelHeader({
   // full horizontal space it needs for the consolidated IGNITE +
   // effects + view toggles.
   return (
-    <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+    <div className="flex items-center justify-between px-2 py-2 bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
           {title}
