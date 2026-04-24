@@ -543,14 +543,35 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-04-23 evening, preset audit + modulation v0.14.0)
+## Current State (2026-04-23 late, modulation v0.14 polish + a11y clean)
 
-**Active branch: `main`. Two landings on 2026-04-23:**
+**Active branch: `main`. Three landings on 2026-04-23 in chronological order:**
 
-- **`feat/preset-accuracy-audit-2026-04-22` merged via PR #39** (merge commit `cbeb7d5`) — full-library preset accuracy sweep + 89-preset pop-culture expansion + end-to-end Darksaber hardware parity + Hardware Fidelity Principle architectural doc. Details immediately below.
+- **`feat/preset-accuracy-audit-2026-04-22` merged via PR #39** (merge commit `cbeb7d5`) — full-library preset accuracy sweep + 89-preset pop-culture expansion + end-to-end Darksaber hardware parity + Hardware Fidelity Principle architectural doc. Details further below.
 - **`feat/modulation-routing-v1.1` merged via PR #35** (commit `43b73aa`, tagged `v0.14.0`) — Modulation Routing v1.0 Preview BETA. Details in the section after.
+- **`feat/modulation-snapshot-export` merged via PR #41** (commit `bd9bb7b`) + **`fix/a11y-clean-at-launch` merged via PR #42** (commit `c0a92c4`) — v0.14 follow-up polish, detailed in the block immediately below.
 
-**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Prior tag was `v0.13.0` (launch readiness). The preset-audit landing is not tagged — candidate for a `v0.13.1` content/correctness tag or fold into v0.14.1 with modulation polish.
+**Last git tag: `v0.14.0`** (Modulation Routing v1.0 Preview BETA). Today's follow-up work is untagged pending hardware validation. Post-hardware candidates: `v0.14.1` (patch) if we treat ExpressionEditor as a BETA completion, or `v0.15.0` (minor) if we treat ExpressionEditor's arrival as a new feature milestone.
+
+### What shipped on 2026-04-23 late — modulation polish + a11y clean
+
+PR #41 (5 commits, modulation-snapshot-export branch):
+- **`generateStyleCode` now wires modulation bindings into the Output tab.** A new `applyModulationSnapshot` helper at [`packages/codegen/src/proffieOSEmitter/applyModulationSnapshot.ts`](packages/codegen/src/proffieOSEmitter/applyModulationSnapshot.ts) walks `config.modulation.bindings` in authoring order, computes each binding's snapshot via `computeSnapshotValue`, writes into the config at the target path with shallow-clone-on-write, and produces a `formatSnapshotCommentBlock(report)` that gets prepended to the style code. Suppressed via `{ comments: false }` on the preset-array path so the full config.h doesn't get one comment per preset. +15 new tests.
+- **Hover wire-highlighting + bound-param left-edge stripe** in ParameterBank. Three priority-stacked visual states for each slider label: ARMED (click-to-wire) > HOVERED (this modulator drives this param) > BOUND (some binding targets this param). Identity colors propagate from `BUILT_IN_MODULATORS` descriptors through the UI.
+- **Inline BoardPicker chip in StatusBar** between Profile and Conn — `BOARD · PROFFIE V3.9 · FULL`; click opens the modal picker.
+- **ExpressionEditor — the v1.1 Core math-formula UI.** `fx` button on every SliderControl opens a 380-px popover with auto-focused textarea, live peggy parse status (✓ Valid / ✕ with error), 5 starter chips (Breathing / Heartbeat / Battery dim / Swing doubled / Loud OR fast), ⌘+Enter shortcut, Escape/outside-click dismiss. Apply creates a binding with `source: null, expression: { source, ast }, combinator: 'replace', amount: 1.0`. BindingList distinguishes expression bindings from bare-source with `fx` label in magenta + full-source tooltip.
+- **Color-contrast fix across 9 canvas themes + root default** — `--text-muted` bumped +40 per channel (106 110 120 → 146 150 160 for Deep Space, equivalent deltas for Tatooine / Bespin / Dagobah / Mustafar / Kamino / Coruscant / Endor / Hoth). Fixes 82 axe-core violations on the modulation UI surfaces.
+
+PR #42 (3 commits, a11y + breathing recipe):
+- **Zero axe-core WCAG 2 AA violations** at desktop (1600×1000, 30 passes) AND mobile (375×812) viewports on the editor. Closes the P29 launch blocker carried from v0.13.0 readiness.
+  - MobileTabBar: dropped `role="tablist"`/`role="tab"` (it's route nav, not a tab interface) — `aria-current="page"` handles active state.
+  - AppShell mobile tablist: scoped `role="tablist"` to inner wrapper so collapse toggle + dot indicators become siblings, not children.
+  - AppShell tab `aria-controls`: replaced per-tab IDs with stable `id="mobile-panel"`; dropped when collapsed + paired with `aria-expanded`.
+  - MiniGalleryPicker: `role="listbox"` → `role="group"` (children use `role="button"`, not `role="option"`).
+  - Cleared 5 remaining contrast violations: DesignPanel BETA chip `opacity-70`, ColorPanel preset subtitle `text-accent/70`, PerformanceBar page tabs + SaberProfileManager source badge `rgb(var(--text-muted) / 0.65)`.
+- **First expression-based starter recipe — Breathing Blade** at [`packages/presets/src/recipes/modulation/breathing-blade.ts`](packages/presets/src/recipes/modulation/breathing-blade.ts). Wiring: `sin(time * 0.001) * 0.5 + 0.5 → shimmer · replace · 100%`. AST hand-built inline (can't import `parseExpression` across `.npmrc` hoisted boundary). Test split: `V1_0_RECIPES` (5) vs `V1_1_EXPRESSION_RECIPES` (1, breathing). Presets test count: 29 → 40.
+
+End-to-end browser-verified across all the above. Next: hardware validation on 89sabers V3.9 — the one remaining open ☐ from the modulation impl plan.
 
 ### What shipped in the preset accuracy audit landing (PR #39, commit `cbeb7d5`)
 
