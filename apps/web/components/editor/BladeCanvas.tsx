@@ -307,6 +307,16 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   // fresh <canvas> every frame, which caused GC churn (see the
   // 2026-04-19 perf audit P0).
   const diffusionTempRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Phase 2 bloom: 3-mip downsampled bright-pass chain. Lazily
+  // allocated + reused across frames (HMR-safe since they're
+  // component-scoped refs, not module-level). Sized per frame to
+  // 1/2, 1/4, 1/8 of the main canvas device-pixel dims.
+  const bloomMipsRef = useRef<{
+    mip0: HTMLCanvasElement;
+    mip1: HTMLCanvasElement;
+    mip2: HTMLCanvasElement;
+  } | null>(null);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
@@ -1037,44 +1047,82 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     drawHilt(ctx, bladeColor, scale);
 
     // ══════════════════════════════════════════════════
-    // ── SMOOTH BLOOM PIPELINE ──
-    // Graduated blur passes with continuous exponential
-    // alpha falloff for seamless glow without visible steps.
+    // ── PHASE 2 BLOOM PIPELINE ──
+    // Bright-pass (contrast+brightness threshold) → downsample to
+    // 3 mip levels (1/2, 1/4, 1/8) → blur each mip at its own
+    // resolution → composite all three back additively. Each blur
+    // kernel is small-pixel in its small buffer but gives a wide
+    // effective halo once upscaled, so the widest mip produces a
+    // smooth full-blade glow instead of the stacked-pass seam
+    // ridges the old 14-pass loop suffered from.
+    //
+    // Cost is ~1/8 the old loop's fragment work at DPR 2:
+    // 3 draws at downsampled sizes vs 14+ at full canvas res.
     // ══════════════════════════════════════════════════
 
     const br = glow.bloomRadius;
     const bi = glow.bloomIntensity;
 
-    // Skip the 14-pass bloom pipeline (+ bridge glow) when the blade is
-    // off or bloom intensity is zero — there's nothing to glow. Saves
-    // ~50% of frame budget during the retracted state. The blade-body
-    // pass below still runs; it self-skips unlit LEDs at the pixel
-    // level. See the 2026-04-19 perf audit quick-win #5.
     const bloomActive = activeCount > 0 && bi > 0;
     if (bloomActive) {
-      // Continuous bloom: 14 passes with geometric radius progression.
-      // Each overlaps its neighbors significantly → no visible banding.
-      const passCount = 14;
-      for (let i = 0; i < passCount; i++) {
-        const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
-        // Radius: exponential from 2px to 100px
-        const radius = 2 + 98 * Math.pow(t, 1.4);
-        // Alpha: tighter passes are more opaque, wider are subtle
-        const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
-        ctx.save();
-        ctx.filter = `blur(${radius * scale * br}px)`;
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = alpha;
-        ctx.drawImage(offscreen, 0, 0);
-        ctx.restore();
+      // Lazy allocate mip chain. Canvases are resized in place each
+      // frame to match the 1/2, 1/4, 1/8 dims of the main canvas.
+      if (!bloomMipsRef.current) {
+        bloomMipsRef.current = {
+          mip0: document.createElement('canvas'),
+          mip1: document.createElement('canvas'),
+          mip2: document.createElement('canvas'),
+        };
+      }
+      const mips = bloomMipsRef.current;
+      const mipDefs: Array<{
+        canvas: HTMLCanvasElement;
+        w: number;
+        h: number;
+        blurPx: number;
+        alpha: number;
+      }> = [
+        // mip0: tight near-core glow
+        { canvas: mips.mip0, w: Math.max(1, Math.ceil(cw / 2)), h: Math.max(1, Math.ceil(ch / 2)), blurPx: 6 * br, alpha: 0.55 },
+        // mip1: body-wide halo
+        { canvas: mips.mip1, w: Math.max(1, Math.ceil(cw / 4)), h: Math.max(1, Math.ceil(ch / 4)), blurPx: 10 * br, alpha: 0.40 },
+        // mip2: ambient wash (also usable by stage 10 later)
+        { canvas: mips.mip2, w: Math.max(1, Math.ceil(cw / 8)), h: Math.max(1, Math.ceil(ch / 8)), blurPx: 14 * br, alpha: 0.28 },
+      ];
+
+      // Populate each mip: single drawImage with a chained CSS filter
+      // (bright-pass threshold + blur) does the work in one GPU pass.
+      for (const def of mipDefs) {
+        if (def.canvas.width !== def.w || def.canvas.height !== def.h) {
+          def.canvas.width = def.w;
+          def.canvas.height = def.h;
+        }
+        const mCtx = def.canvas.getContext('2d')!;
+        mCtx.clearRect(0, 0, def.w, def.h);
+        mCtx.save();
+        // contrast(1.4) + brightness(1.05) drives mid tones toward 0
+        // and highlights toward 1.0 — the soft threshold that keeps
+        // only the blade's hot pixels glowing. blur is applied AFTER
+        // in the same filter chain so the small canvas holds a pre-
+        // blurred bright-pass image ready for additive compositing.
+        mCtx.filter = `contrast(1.4) brightness(1.05) blur(${def.blurPx}px)`;
+        mCtx.drawImage(offscreen, 0, 0, cw, ch, 0, 0, def.w, def.h);
+        mCtx.restore();
       }
 
-      // Bridge glow — soft additive fill between bloom and blade body
+      // Composite the three mips back onto the main canvas additively.
+      // Upscaled drawImage with bilinear smoothing + `lighter` gives
+      // a soft continuous halo that wraps the entire blade without
+      // visible ridges. shimmer adds the per-frame micro-variation
+      // the old pipeline relied on for "alive" look.
       ctx.save();
-      ctx.filter = `blur(${2.5 * scale * br}px)`;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.35 * bi * shimmer;
-      ctx.drawImage(offscreen, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      for (const def of mipDefs) {
+        ctx.globalAlpha = def.alpha * bi * shimmer;
+        ctx.drawImage(def.canvas, 0, 0, def.w, def.h, 0, 0, cw, ch);
+      }
       ctx.restore();
     }
 
