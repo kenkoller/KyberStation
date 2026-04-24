@@ -235,22 +235,33 @@ function PanelHeader({
   onToggle: () => void;
   children?: React.ReactNode;
 }) {
+  // Phase 1.5e: title + accessory buttons sit on the LEFT (right after
+  // the title) instead of far-right. This clears the panel's top-right
+  // corner for the absolute-positioned State/2D-3D/Fullscreen overlay
+  // in WorkbenchLayout, which used to horizontally overlap the header
+  // buttons and hide click targets.
+  //
+  // `pr-20` on the inner row reserves ~80px so that if the absolute
+  // overlay ever slides left (e.g. narrow viewport) the close button
+  // still has clickable space around it.
   return (
     <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0">
-      <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none">
-        {title}
-      </span>
-      <div className="flex items-center gap-1">
-        {children}
-        <button
-          onClick={onToggle}
-          className="text-ui-xs text-text-muted/50 hover:text-text-muted transition-colors px-1"
-          aria-label={`Hide ${title} panel`}
-          title={`Hide ${title}`}
-        >
-          ✕
-        </button>
+      <div className="flex items-center gap-2 min-w-0 pr-20">
+        <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
+          {title}
+        </span>
+        <div className="flex items-center gap-1 min-w-0">
+          {children}
+        </div>
       </div>
+      <button
+        onClick={onToggle}
+        className="text-ui-xs text-text-muted/50 hover:text-text-muted transition-colors px-1 shrink-0"
+        aria-label={`Hide ${title} panel`}
+        title={`Hide ${title}`}
+      >
+        ✕
+      </button>
     </div>
   );
 }

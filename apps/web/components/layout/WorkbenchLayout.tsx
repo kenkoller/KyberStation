@@ -939,8 +939,13 @@ export function WorkbenchLayout() {
                 onReleaseEffect={releaseEffect}
               />
             )}
-            {/* Controls — top-right corner of canvas area */}
-            <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+            {/* View controls — slid down 40px (top-11) so they sit BELOW
+                CanvasLayout's BLADE PREVIEW PanelHeader row instead of
+                colliding with it horizontally. Pre-Phase-1.5e they were
+                at top-2 and landed on the same Y as the Pause/Hilt/Grid
+                buttons in the header, making both sets of targets mutually
+                obscuring. */}
+            <div className="absolute top-11 right-2 z-10 flex items-center gap-1">
               {/* OV8: STATE-mode takeover toggle. Two-position segmented
                   control. Desktop only (this block sits inside the
                   desktop workbench); hidden on tabs other than Design. */}
