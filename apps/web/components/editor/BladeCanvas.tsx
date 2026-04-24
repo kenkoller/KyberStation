@@ -1736,6 +1736,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   // ─── View mode label ───
   const drawViewLabel = useCallback((ctx: CanvasRenderingContext2D, mode: string) => {
+    // Phase 1.5i: suppress the "Blade View" label in default mode —
+    // the BLADE PREVIEW panel header above the canvas already names
+    // the region. Keep the label for the less-common angle / strip /
+    // cross modes where the user might benefit from the hint.
+    if (mode === 'blade') return;
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;
     const ch = h * dpr;

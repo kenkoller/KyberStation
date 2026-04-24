@@ -65,8 +65,6 @@ export function CanvasLayout({
   const toggleShowHilt = useUIStore((s) => s.toggleShowHilt);
   const toggleShowGrid = useUIStore((s) => s.toggleShowGrid);
   const isOn = useBladeStore((s) => s.isOn);
-  const animationPaused = useUIStore((s) => s.animationPaused);
-  const toggleAnimationPaused = useUIStore((s) => s.toggleAnimationPaused);
 
   // Phase 1.5d: handlers plumbed from WorkbenchLayout. When any of the
   // three are omitted, BladeActionBar is not rendered (keeps the standalone
@@ -137,18 +135,11 @@ export function CanvasLayout({
             title="Blade Preview"
             onToggle={toggleBladePanel}
           >
-            <button
-              onClick={toggleAnimationPaused}
-              className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
-                animationPaused
-                  ? 'text-yellow-400 bg-yellow-900/20'
-                  : 'text-text-muted/40 hover:text-text-muted'
-              }`}
-              aria-label={animationPaused ? 'Resume animation' : 'Pause animation'}
-              title={animationPaused ? 'Resume' : 'Pause'}
-            >
-              {animationPaused ? 'Paused' : 'Pause'}
-            </button>
+            {/* Phase 1.5i: header animation-pause button removed — the
+                action bar below already hosts a PauseButton covering
+                both full + partial pause scopes. Keeping both created
+                two visually-similar buttons that toggled different
+                things (confusing). */}
             <button
               onClick={toggleShowHilt}
               className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
