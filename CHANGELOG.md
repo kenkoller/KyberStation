@@ -189,6 +189,27 @@ Two PRs shipped on top of v0.14.0 (PR #41 + PR #42). Items ordered by PR.
 (new UI work covered by visual QA + axe audit, which itself ran clean
 on both viewports).
 
+**PR #43 — docs catch-up (merge commit `b98af51`):** CLAUDE.md +
+CHANGELOG updates for PR #41 + PR #42. No code touched.
+
+**PR #44 — quick-start illustrations (merge commit `bfcdbf6`):** Three
+hand-authored animated SVGs replace the `[gif-placeholder]` markers in
+`docs/user-guide/modulation/your-first-wire.md`:
+
+- `first-wire-step-1.svg` (7.0 KB) — five-plate bar with per-plate
+  live viz (swing needle, angle tilt, sound VU, time sweep, clash
+  flash).
+- `first-wire-step-2.svg` (3.4 KB) — SWING plate armed, siblings
+  dimmed, "◎ swing armed" banner below.
+- `first-wire-step-3.svg` (7.1 KB) — two-column frame with an
+  animated dashed wire connecting plate → shimmer slider, plus the
+  binding row "SWING → Shimmer · add · 60%".
+
+~17.5 KB combined. Native SVG animation — no JS. Each has `<title>` +
+`<desc>` for screen readers. Matches editor color tokens exactly. An
+inline HTML comment at the bottom of the markdown documents the
+replacement pass for future screen-recorded GIFs.
+
 ## [0.14.0] — 2026-04-23
 
 ### Added — Modulation Routing v1.0 Preview (BETA)
