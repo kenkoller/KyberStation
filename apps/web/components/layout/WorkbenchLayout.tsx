@@ -1255,7 +1255,7 @@ export function WorkbenchLayout() {
        * ════════════════════════════════════════════════════ */}
       <div
         className="shrink-0 border-t border-border-subtle bg-bg-deep/60 overflow-hidden"
-        style={{ height: 12 }}
+        style={{ height: 18 }}
         aria-hidden="true"
       >
         <DataTicker

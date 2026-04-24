@@ -68,3 +68,38 @@ export function generateAurebeshStream(count: number = 50): string {
   }
   return result.join(' ');
 }
+
+/**
+ * Visual transliteration of Latin letters to Unicode glyphs that render
+ * as alien-script stand-ins for Aurebesh. Used while no actual FT Aurebesh
+ * font file is bundled in `public/fonts/` — the DataTicker calls this so
+ * the ambient-chrome scroll LOOKS like Aurebesh even on fresh clones
+ * where the font would silently fall back to the system monospace.
+ *
+ * Each character is mapped to a Unicode Canadian Syllabic that is
+ * (a) renderable in every major system font, (b) geometrically close to
+ * an Aurebesh letter shape (straight strokes + simple curves), and
+ * (c) visually distinctive enough to NOT look like a typo. Digits,
+ * punctuation, whitespace and CJK pass through unchanged so readouts
+ * like `LEDS · 144` stay scannable.
+ *
+ * When a real `FT Aurebesh` font is bundled later, the DataTicker's
+ * font-family declaration already points at it and the glyphs will
+ * reshape into the authentic Aurebesh letterforms.
+ */
+const AUREBESH_GLYPH_MAP: Record<string, string> = {
+  A: 'ᐱ', B: 'ᑊ', C: 'ᐸ', D: 'ᑭ', E: 'ᓀ', F: 'ᑐ',
+  G: 'ᑦ', H: 'ᕼ', I: 'ᔨ', J: 'ᔑ', K: 'ᓱ', L: 'ᒪ',
+  M: 'ᓯ', N: 'ᓗ', O: 'ᑕ', P: 'ᒃ', Q: 'ᖅ', R: 'ᕆ',
+  S: 'ᐅ', T: 'ᕕ', U: 'ᓄ', V: 'ᑲ', W: 'ᐧ', X: 'ᒍ',
+  Y: 'ᔨ', Z: 'ᓇ',
+};
+
+export function aurebeshTransliterate(text: string): string {
+  let out = '';
+  for (const ch of text) {
+    const upper = ch.toUpperCase();
+    out += AUREBESH_GLYPH_MAP[upper] ?? ch;
+  }
+  return out;
+}
