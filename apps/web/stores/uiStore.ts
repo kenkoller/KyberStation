@@ -32,6 +32,8 @@ export interface UIStore {
   sidebarWidth: number;
   /** Show/hide the hilt graphic in the blade panel */
   showHilt: boolean;
+  /** Show/hide the measurement-inch ruler + grid behind the blade. Phase 1.5. */
+  showGrid: boolean;
   /** Individual panel visibility toggles */
   showBladePanel: boolean;
   showPixelPanel: boolean;
@@ -162,6 +164,7 @@ export interface UIStore {
   setVerticalPanelWidths: (widths: { blade: number; strip: number; graph: number }) => void;
   setSidebarWidth: (width: number) => void;
   toggleShowHilt: () => void;
+  toggleShowGrid: () => void;
   toggleBladePanel: () => void;
   togglePixelPanel: () => void;
   toggleAnimationPaused: () => void;
@@ -291,6 +294,7 @@ export const useUIStore = create<UIStore>((set) => ({
   // Layout defaults
   sidebarWidth: 380,
   showHilt: true,
+  showGrid: true,
   showBladePanel: true,
   showPixelPanel: true,
   animationPaused: false,
@@ -347,6 +351,7 @@ export const useUIStore = create<UIStore>((set) => ({
   setVerticalPanelWidths: (verticalPanelWidths) => set({ verticalPanelWidths }),
   setSidebarWidth: (sidebarWidth) => set({ sidebarWidth: Math.max(280, Math.min(600, sidebarWidth)) }),
   toggleShowHilt: () => set((state) => ({ showHilt: !state.showHilt })),
+  toggleShowGrid: () => set((state) => ({ showGrid: !state.showGrid })),
   toggleBladePanel: () => set((state) => ({ showBladePanel: !state.showBladePanel })),
   togglePixelPanel: () => set((state) => ({ showPixelPanel: !state.showPixelPanel })),
   toggleAnimationPaused: () => set((state) => ({ animationPaused: !state.animationPaused })),

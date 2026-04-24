@@ -89,9 +89,12 @@ describe('BladeCanvas endpoint seeds — v0.14.0 Phase 1 widening', () => {
   it('AUTO_FIT_LEFT_PULL_DS is imported from bladeRenderMetrics (not redeclared)', () => {
     // Regression sentinel for the de-dup fix: prior versions declared
     // `const AUTO_FIT_LEFT_PULL_DS = 182` locally AND in bladeRenderMetrics.
-    // Phase 1 made bladeRenderMetrics the single source of truth.
-    expect(BLADE_CANVAS_SRC).toContain(
-      "import { AUTO_FIT_LEFT_PULL_DS } from '@/lib/bladeRenderMetrics'",
+    // Phase 1 made bladeRenderMetrics the single source of truth. Phase 1.5
+    // extended the import to include AUTO_FIT_FILL + BLADE_TAIL_MARGIN_DS
+    // so BladeCanvas's width-driven `getBaseScale` matches the shared
+    // bladeRenderMetrics formula.
+    expect(BLADE_CANVAS_SRC).toMatch(
+      /import\s*\{[^}]*\bAUTO_FIT_LEFT_PULL_DS\b[^}]*\}\s*from\s*['"]@\/lib\/bladeRenderMetrics['"]/,
     );
     expect(BLADE_CANVAS_SRC).not.toMatch(/const\s+AUTO_FIT_LEFT_PULL_DS\s*=/);
   });

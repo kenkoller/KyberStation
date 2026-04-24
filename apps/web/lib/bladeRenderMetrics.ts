@@ -38,23 +38,20 @@ export const AUTO_FIT_FILL = 0.98;
 /** Tail margin (past blade tip) BladeCanvas reserves in design-space. */
 export const BLADE_TAIL_MARGIN_DS = 40;
 /**
- * W6 (2026-04-22): how far (in design-space units) to translate the
- * whole hilt+blade composition leftward during auto-fit. Chosen so
- * that a typical hilt (~184 DS wide) ends up with its midpoint at
- * x=0 of the container — i.e. the left half of the hilt slips off
- * screen, the right half is visible, and the blade extends across
- * the rest of the preview. Matches the W6 "half-covered hilt" spec.
+ * How far (in design-space units) to translate the whole hilt+blade
+ * composition leftward during auto-fit. v0.14.0 Phase 1.5 reduced
+ * this from 182 → 60. At 182 the hilt's left half slipped entirely
+ * off the left edge (W6 "half-covered hilt" spec from 2026-04-22);
+ * at 60 the full hilt is visible with a small leftward shift that
+ * gives the blade a touch more room on the right without cropping
+ * the hilt itself.
  *
- * Derivation: hilt sits at design-space [BLADE_START - totalHiltW,
- * BLADE_START]. With totalHiltW ≈ 184 (graflex), midpoint ≈ 182
- * DS from BLADE_START. Shifting the whole composition left by 182
- * DS units puts that midpoint at screen x=0.
- *
- * Shared with BladeCanvas's computeFitZoom so both the preview canvas
+ * Shared with BladeCanvas's getBaseScale so both the preview canvas
  * and every sibling panel (pixel strip, expanded analysis slot, state
- * grid when it chooses to honor the shift) line up 1:1.
+ * grid when it chooses to honor the shift) line up 1:1 on Point A
+ * (blade start X) and Point B (blade tip X).
  */
-export const AUTO_FIT_LEFT_PULL_DS = 182;
+export const AUTO_FIT_LEFT_PULL_DS = 60;
 
 /**
  * Map an LED count to the blade length in inches that BladeCanvas would

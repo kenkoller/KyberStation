@@ -8,7 +8,11 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
-import { AUTO_FIT_LEFT_PULL_DS } from '@/lib/bladeRenderMetrics';
+import {
+  AUTO_FIT_LEFT_PULL_DS,
+  AUTO_FIT_FILL,
+  BLADE_TAIL_MARGIN_DS,
+} from '@/lib/bladeRenderMetrics';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 
 type RenderMode = 'photorealistic' | 'pixel';
@@ -359,7 +363,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const stripType = config.stripType ?? 'single';
   const setStripType = useCallback((v: string) => updateConfig({ stripType: v as BladeConfig['stripType'] }), [updateConfig]);
   const [bladeLength, setBladeLength] = useState<number>(config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 132 ? 36 : 40);
-  const [showGrid, setShowGrid] = useState<boolean>(true);
+  // v0.14.0 Phase 1.5: showGrid lifted to uiStore so the BLADE PREVIEW
+  // toolbar in CanvasLayout can toggle it alongside Pause/Hilt.
+  const showGrid = useUIStore((s) => s.showGrid);
+  const toggleShowGrid = useUIStore((s) => s.toggleShowGrid);
   const [hiltStyle, setHiltStyle] = useState<string>('minimal');
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
@@ -505,19 +512,47 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   }, []);
 
   // ─── Scale factors: maps design-space → actual canvas pixels ───
-  // Base scale: height-only — blade size is driven purely by panel height.
-  // Panel width never shrinks the blade; horizontal overflow is handled by panning.
+  //
+  // v0.14.0 Phase 1.5: horizontal mode is WIDTH-driven. The blade's
+  // horizontal extent fits the container width (minus AUTO_FIT_FILL
+  // margin + tail), so dragging the pixel-strip resize handle below
+  // only changes the blade's vertical space, never its horizontal
+  // extent. Vertical mode (mobile fullscreen `/m` route) keeps the
+  // height-driven math — blade runs along canvas height there.
+  //
+  // This formula mirrors `computeBladeRenderMetrics` in
+  // `lib/bladeRenderMetrics.ts` so the blade preview, pixel strip,
+  // and RGB+luma expanded slot all resolve to the exact same Point A
+  // (blade start X) and Point B (blade tip X) at any container width.
   const getBaseScale = useCallback(() => {
-    const { h, dpr } = sizeRef.current;
-    const ch = h * dpr;
-    return ch / layoutRef.current.designH;
-  }, []);
+    const { w, h, dpr } = sizeRef.current;
+    if (vertical) {
+      const ch = h * dpr;
+      return ch / layoutRef.current.designH;
+    }
+    const cw = w * dpr;
+    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+    const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
+    if (bladeExtentDS <= 0) return 1;
+    return (cw * AUTO_FIT_FILL) / bladeExtentDS;
+  }, [vertical, bladeLength]);
 
-  // Render scale: auto-fit, height-driven. v0.14.0 removed the user zoom
-  // multiplier — auto-fit IS the scale now.
+  // Render scale: auto-fit. v0.14.0 removed the user zoom multiplier —
+  // auto-fit IS the scale now.
   const getScale = useCallback(() => {
     return getBaseScale();
   }, [getBaseScale]);
+
+  // ─── Blade vertical center (canvas-height-driven) ───
+  // Phase 1.5 split: horizontal extent follows container width (above),
+  // vertical center follows container height. This keeps the blade
+  // vertically centered in its canvas region regardless of how the
+  // pixel-strip resize handle below has reshaped the blade's vertical
+  // allocation.
+  const getBladeCenterY = useCallback(() => {
+    const { h, dpr } = sizeRef.current;
+    return (h * dpr) / 2;
+  }, []);
 
   // ─── Draw background + measurement grid ───
   const drawBackground = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -538,7 +573,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     const bladeStartPx = (BLADE_START + panX) * scale;
     const bladeEndPx = bladeStartPx + scaledBladeLenDS * scale;
-    const bladeCenterY = layoutRef.current.bladeY * scale;
+    const bladeCenterY = getBladeCenterY();
 
     // Draw half-inch vertical lines along blade area
     ctx.textAlign = 'center';
@@ -574,7 +609,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Horizontal guide lines at blade center area
     const guideOffsets = [0, -BLADE_CORE_H / 2, BLADE_CORE_H / 2];
     for (const offset of guideOffsets) {
-      const y = (layoutRef.current.bladeY + offset) * scale;
+      const y = bladeCenterY + offset * scale;
       ctx.strokeStyle = offset === 0 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.02)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -614,7 +649,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.lineTo(x, rulerH * 0.3);
       ctx.stroke();
     }
-  }, [showGrid, bladeLength, panX, getScale, theme]);
+  }, [showGrid, bladeLength, panX, getScale, getBladeCenterY, theme]);
 
   // ─── Draw vignette ───
   // Inner radius pushed out to 0.55 so the vignette only darkens the far
@@ -644,7 +679,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Compute hilt geometry from style
     const totalHiltW = hs.pommelW + hs.gripW + hs.shroudW + hs.emitterW;
     const hiltStartX = ((BLADE_START + panX) * scale) - totalHiltW * scale;
-    const centerY = layoutRef.current.bladeY * scale;
+    const centerY = getBladeCenterY();
     const hiltH = hs.hiltH * scale;
     const hiltTop = centerY - hiltH / 2;
     const hiltBot = centerY + hiltH / 2;
@@ -768,7 +803,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(bladeColor.r, bladeColor.g, bladeColor.b, 0.06);
       ctx.fillRect(curX, hiltTop - flare, emW, hiltH + flare * 2);
     }
-  }, [hiltStyle, panX, showHilt]);
+  }, [hiltStyle, panX, showHilt, getBladeCenterY]);
 
   // ─── Draw blade (photorealistic enhanced) ───
   const drawBladePhotorealistic = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
@@ -790,7 +825,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
     const bladeStartPx = (BLADE_START + panX) * scale;
-    const bladeYPx = layoutRef.current.bladeY * scale;
+    const bladeYPx = getBladeCenterY();
     const baseCoreH = BLADE_CORE_H * scale * diameterConfig.coreScale;
     const coreH = baseCoreH;
 
@@ -1216,7 +1251,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
     }
-  }, [brightness, drawHilt, getOffscreen, getScale, stripType, diffusionType, bladeDiameter, bladeLength, panX, theme]);
+  }, [brightness, drawHilt, getOffscreen, getScale, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, panX, theme]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
@@ -1240,7 +1275,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const bladeStartPx = (BLADE_START + panX) * scale;
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
-    const bladeYPx = layoutRef.current.bladeY * scale;
+    const bladeYPx = getBladeCenterY();
     const bladeH = BLADE_CORE_H * scale;
     const pixelGap = 1 * scale; // gap between LED pixels
 
@@ -1357,7 +1392,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fillText(ch.label, margin - 4 * scale, y + barH / 2 + 3 * scale);
       });
     }
-  }, [brightness, drawHilt, getScale, stripType, bladeLength, panX]);
+  }, [brightness, drawHilt, getScale, getBladeCenterY, stripType, bladeLength, panX]);
 
   // ─── View modes ───
 
@@ -1391,7 +1426,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
       const scale = getScale();
       const emitterX = (BLADE_START + panX) * scale;
-      const bladeY = layoutRef.current.bladeY * scale;
+      const bladeY = getBladeCenterY();
       const quillonLen = 60 * scale; // short quillon blades
       const quillonH = 6 * scale;
 
@@ -1434,7 +1469,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // Single blade or other topologies — default rendering
       drawBlade(ctx, engine);
     }
-  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, panX]);
+  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, getBladeCenterY, panX]);
 
   const drawAngleView = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const { w, h, dpr } = sizeRef.current;
@@ -2271,7 +2306,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // mode-agnostic) can project clicks onto the hilt→tip line.
       if (viewMode === 'blade') {
         const scale = getScale();
-        const bladeYScreen = layoutRef.current.bladeY * scale;
+        const bladeYScreen = getBladeCenterY();
         const hiltXScreen = (BLADE_START + panX) * scale;
         const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
         const tipXScreen = hiltXScreen + scaledBladeLenDS * scale;
@@ -2505,7 +2540,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       {/* LED Count + Grid toggle */}
       <span className="text-text-muted">{config.ledCount} LEDs</span>
       <button
-        onClick={() => setShowGrid(!showGrid)}
+        onClick={toggleShowGrid}
         className={`touch-target px-1.5 py-0.5 rounded border text-ui-sm transition-colors ${
           showGrid
             ? 'border-accent/40 text-accent bg-accent-dim/30'

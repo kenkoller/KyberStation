@@ -37,9 +37,11 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
   const showBladePanel = useUIStore((s) => s.showBladePanel);
   const showPixelPanel = useUIStore((s) => s.showPixelPanel);
   const showHilt = useUIStore((s) => s.showHilt);
+  const showGrid = useUIStore((s) => s.showGrid);
   const toggleBladePanel = useUIStore((s) => s.toggleBladePanel);
   const togglePixelPanel = useUIStore((s) => s.togglePixelPanel);
   const toggleShowHilt = useUIStore((s) => s.toggleShowHilt);
+  const toggleShowGrid = useUIStore((s) => s.toggleShowGrid);
   const animationPaused = useUIStore((s) => s.animationPaused);
   const toggleAnimationPaused = useUIStore((s) => s.toggleAnimationPaused);
   const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
@@ -82,6 +84,18 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
               title={showHilt ? 'Hide hilt' : 'Show hilt'}
             >
               Hilt
+            </button>
+            <button
+              onClick={toggleShowGrid}
+              className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
+                showGrid
+                  ? 'text-accent/70 bg-accent/10'
+                  : 'text-text-muted/40 hover:text-text-muted'
+              }`}
+              aria-label={showGrid ? 'Hide inch-ruler grid' : 'Show inch-ruler grid'}
+              title={showGrid ? 'Hide grid' : 'Show grid'}
+            >
+              Grid
             </button>
           </PanelHeader>
           <div className="flex-1 min-h-0 overflow-hidden">

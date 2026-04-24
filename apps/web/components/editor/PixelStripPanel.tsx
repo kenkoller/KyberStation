@@ -118,12 +118,15 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
       lumaSum += 0.299 * r + 0.587 * g + 0.114 * b;
     }
 
-    // "PIXEL" label at left edge
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.font = `${7 * dpr}px monospace`;
+    // "PIXEL" label at top-left of the panel — matches the `{bladeLength}" blade`
+    // label position in BladeCanvas (absolute top-left corner). Kept at canvas
+    // origin (8px inset), NOT at stripLeft, so it doesn't drift with blade
+    // length or get clipped inside the strip background rectangle.
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.font = `${8 * dpr}px monospace`;
     ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('PIXEL', stripLeft + 3 * dpr, ch / 2);
+    ctx.textBaseline = 'top';
+    ctx.fillText('PIXEL', 8 * dpr, 8 * dpr);
 
     // Live stats at right edge: total power + avg brightness
     const totalA = (totalMa / 1000).toFixed(2);
