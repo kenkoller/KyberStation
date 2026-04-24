@@ -41,24 +41,36 @@ const MA_PER_CHANNEL = 20;
  * signatures — the render functions are stateless pure drawers otherwise.
  */
 let currentBladeStartFrac = 180; // fallback matches REGION_LIMITS default
+let currentBladeLedCount = 144;  // fallback matches bladeStore DEFAULT_CONFIG
 
 function setCurrentBladeStartFrac(frac: number): void {
   currentBladeStartFrac = frac;
 }
 
+function setCurrentBladeLedCount(count: number): void {
+  currentBladeLedCount = count;
+}
+
 function computeGraphBounds(
   cw: number,
   dpr: number,
-  ledCount: number,
+  // `_incomingLeds` is the buffer-clamped count each render fn passes in.
+  // We IGNORE it for extent purposes because the engine may briefly expose
+  // fewer LEDs than configured (mid-resize / mid-bind) which would drop
+  // bladeInches to a shorter bucket and shrink the waveform extent by
+  // ~10%, putting the analysis rail out of alignment with the blade
+  // canvas + pixel strip above. Instead, use the stable
+  // `currentBladeLedCount` set by LayerCanvas from bladeStore.config.
+  _incomingLeds: number,
 ): { gx: number; gw: number } {
   const containerWidthCssPx = cw / Math.max(dpr, 1);
-  if (containerWidthCssPx <= 0 || ledCount <= 0) {
+  if (containerWidthCssPx <= 0 || currentBladeLedCount <= 0) {
     const padX = 6 * dpr;
     return { gx: padX, gw: Math.max(cw - padX * 2, 0) };
   }
   const metrics = computeBladeRenderMetrics({
     containerWidthPx: containerWidthCssPx,
-    ledCount,
+    ledCount: currentBladeLedCount,
     bladeStartFrac: currentBladeStartFrac,
   });
   return {
@@ -628,10 +640,12 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Phase 1.5f: publish current Point-A divider to the module-level
-    // render-functions before each draw so computeGraphBounds resolves
-    // the same Point A as BladeCanvas + PixelStripPanel.
+    // Phase 1.5f/m: publish current Point-A divider AND the config-level
+    // LED count to the module-level render-functions before each draw
+    // so computeGraphBounds resolves the same Point A + bladeInches
+    // bucket as BladeCanvas + PixelStripPanel.
     setCurrentBladeStartFrac(bladeStartFrac);
+    setCurrentBladeLedCount(ledCount);
 
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;

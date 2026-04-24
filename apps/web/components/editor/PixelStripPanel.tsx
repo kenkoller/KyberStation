@@ -82,9 +82,15 @@ export function PixelStripPanel({ engineRef }: PixelStripPanelProps) {
     // ResizeObserver in CSS pixels; the metrics helper is CSS-pixel-native,
     // so we multiply by dpr once to convert to canvas space.
     const padY = 2 * dpr;
+    // Phase 1.5m: use the CONFIG ledCount (not the buffer-clamped `leds`)
+    // so inferBladeInches always resolves to the full blade length. If the
+    // engine is mid-resize or exposes fewer LEDs momentarily, the metrics
+    // helper would drop to a shorter bladeInches bucket (e.g. 132 LEDs →
+    // 36" instead of 144 → 40"), shrinking bladeWidthPx by 10% and
+    // making the strip end ~77 px left of where the blade canvas ends.
     const metrics = computeBladeRenderMetrics({
       containerWidthPx: w,
-      ledCount: leds,
+      ledCount,
       bladeStartFrac,
     });
     const stripLeft = metrics.bladeLeftPx * dpr;
