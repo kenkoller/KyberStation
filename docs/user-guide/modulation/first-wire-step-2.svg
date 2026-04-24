@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" role="img" aria-labelledby="title-2 desc-2">
+  <title id="title-2">Step 2 — SWING plate armed, ready to wire</title>
+  <desc id="desc-2">The same LayerStack plate bar as step 1, but now the SWING plate is highlighted with an accent border, a pulsing indicator dot, and a soft outer glow. A hint below the plate reads "armed — click any numeric parameter to wire".</desc>
+
+  <rect width="640" height="200" fill="#0a0a10"/>
+
+  <text x="20" y="28" fill="#94a0b3" font-family="system-ui, sans-serif" font-size="11" letter-spacing="1.5" font-weight="600">MODULATORS</text>
+  <rect x="20" y="32" width="600" height="1" fill="#2a2d36"/>
+
+  <!-- Armed glow — soft halo behind SWING plate -->
+  <rect x="14" y="44" width="128" height="142" rx="10" fill="#409cff" opacity="0.08">
+    <animate attributeName="opacity" values="0.05;0.15;0.05" dur="1.6s" repeatCount="indefinite"/>
+  </rect>
+
+  <g font-family="ui-monospace, monospace" font-size="11" font-weight="600">
+    <!-- SWING plate — ARMED state -->
+    <g>
+      <!-- Outer accent ring -->
+      <rect x="20" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#409cff" stroke-width="1.5"/>
+      <!-- Left-edge identity stripe at full strength -->
+      <rect x="20" y="50" width="4" height="130" fill="#409cff"/>
+      <!-- Pulsing armed dot -->
+      <circle cx="128" cy="58" r="3" fill="#409cff">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="0.9s" repeatCount="indefinite"/>
+      </circle>
+      <text x="32" y="74" fill="#409cff">SWING</text>
+      <text x="110" y="74" fill="#409cff" text-anchor="end" opacity="0.8" font-size="9">swing</text>
+
+      <!-- Live needle — still animating but subtly faster/louder in armed state -->
+      <rect x="32" y="100" width="92" height="56" rx="3" fill="#0a0a10" stroke="#409cff" stroke-width="1" opacity="0.7"/>
+      <rect x="36" y="122" width="12" height="14" fill="#409cff" rx="2">
+        <animate attributeName="x" values="36;104;36" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+
+      <!-- ARMED label -->
+      <text x="78" y="172" fill="#409cff" font-size="9" text-anchor="middle" font-weight="700" letter-spacing="1">◉ ARMED</text>
+    </g>
+
+    <!-- Other plates — dimmed to emphasize SWING -->
+    <g opacity="0.35">
+      <rect x="146" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36"/>
+      <rect x="146" y="50" width="3" height="130" fill="#2dd4bf"/>
+      <text x="158" y="74" fill="#2dd4bf">ANGLE</text>
+
+      <rect x="272" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36"/>
+      <rect x="272" y="50" width="3" height="130" fill="#e879f9"/>
+      <text x="284" y="74" fill="#e879f9">SOUND</text>
+
+      <rect x="398" y="50" width="116" height="130" rx="6" fill="#14141e" stroke="#2a2d36"/>
+      <rect x="398" y="50" width="3" height="130" fill="#fbbf24"/>
+      <text x="410" y="74" fill="#fbbf24">TIME</text>
+
+      <rect x="524" y="50" width="96" height="130" rx="6" fill="#14141e" stroke="#2a2d36"/>
+      <rect x="524" y="50" width="3" height="130" fill="#f8fafc"/>
+      <text x="536" y="74" fill="#f8fafc">CLASH</text>
+    </g>
+  </g>
+
+  <!-- Contextual hint banner below the plate bar -->
+  <g transform="translate(150 192)">
+    <text fill="#409cff" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" font-weight="600">◎ swing armed — click any numeric parameter to wire</text>
+  </g>
+</svg>

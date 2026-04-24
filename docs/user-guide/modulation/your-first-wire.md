@@ -16,7 +16,7 @@ A blade whose **shimmer** reacts when you **swing**. Hold still and it's calm. S
 
 Open the **DESIGN** tab. In the **LayerStack** panel on the left, find the **SWING** row. Its needle twitches when you move your mouse or wave your phone.
 
-![GIF 1: LayerStack with SWING plate needle moving][gif-placeholder]
+![LayerStack with SWING plate showing a live needle; four neighboring plates (ANGLE, SOUND, TIME, CLASH) each with their own live visualizations](./first-wire-step-1.svg)
 
 That needle is the live `swing` signal — the same one your finished blade will feel when you duel.
 
@@ -24,17 +24,17 @@ That needle is the live `swing` signal — the same one your finished blade will
 
 Click the **SWING** plate. It highlights with a soft glow. That's your cue: SWING is **armed** and ready to wire.
 
-![GIF 2: Clicking SWING plate; it highlights with arm-ready state][gif-placeholder]
+![SWING plate highlighted with an accent border, a pulsing indicator dot, and a banner below reading "swing armed — click any numeric parameter to wire"](./first-wire-step-2.svg)
 
 Like picking up a patch cable. One end's in your hand. Now plug it in.
 
 ## Step 3 — Click the shimmer knob
 
-In the **Inspector** on the right, open the **STYLE** tab and click the **shimmer** knob.
+In the **Inspector** on the right, open the **TUNE** tab and click the **shimmer** knob.
 
 A wire appears. The knob glows the same color as the plate.
 
-![GIF 3: Clicking shimmer knob; wire appears; shimmer reacts to phone wave][gif-placeholder]
+![Wider frame with the SWING plate on the left and a Shimmer slider on the right; an animated dashed wire connects them in swing-blue; a binding row below reads "SWING → Shimmer · add · 60%"](./first-wire-step-3.svg)
 
 **Wave your phone or shake your mouse.** The blade responds — shimmer rises with every swing, settles when you hold still.
 
@@ -67,4 +67,25 @@ Switch boards from the StatusBar badge or the blade creation wizard.
 > - Click any wire to tune its **amount** and **combinator**
 > - Hit **EXPORT** to flash it to your saber
 
-[gif-placeholder]: # "TODO: record GIF before launch"
+---
+
+<!--
+  The three images above are hand-authored animated SVGs. They play
+  natively in any browser renderer, match the editor's color tokens
+  (--mod-swing / --mod-sound / etc.), and stay version-control
+  friendly (text, diffable, <20 KB combined).
+
+  Swap for screen-recorded GIFs post-launch if you want true UI
+  fidelity. Recording notes for the replacement pass:
+    - Record on desktop (1600×1000), Tune tab active.
+    - GIF 1: LayerStack plate bar in resting state — 3s loop showing
+      the live CSS animations (swing needle bouncing, sound VU
+      dancing, clock sweeping, clash flashing).
+    - GIF 2: Click the SWING plate, hold the armed state ~2s,
+      showing the highlight transition + "swing armed" banner.
+    - GIF 3: With Swing armed, click the Shimmer label in the Tune
+      tab; the row should tint swing-blue and the binding should
+      appear in ACTIVE BINDINGS.  ~4-5s, wider framing so both
+      panels are visible.
+-->
+
