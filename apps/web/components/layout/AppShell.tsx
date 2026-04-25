@@ -47,7 +47,12 @@ import { FullscreenPreview, FullscreenButton } from '@/components/editor/Fullscr
 import { StatusBar } from '@/components/layout/StatusBar';
 import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
-import { TabColumnContent } from '@/components/layout/TabColumnContent';
+// Left-rail overhaul (v0.14.0 PR 5c): tablet migrated off TabColumnContent
+// to Sidebar + MainContent. Mobile shell still uses the local TabContent
+// router defined below — that branch keeps its swipe-driven 4-tab UI
+// until a dedicated mobile UX pass.
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MainContent } from '@/components/layout/MainContent';
 import { playUISound } from '@/lib/uiSounds';
 
 const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
@@ -386,13 +391,6 @@ function MobileShell({
 interface TabletShellProps {
   showA11yPanel: boolean;
   setShowA11yPanel: (v: boolean) => void;
-  showPanel: boolean;
-  setShowPanel: (v: boolean) => void;
-  activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
-  currentTabIndex: number;
-  tabIds: ActiveTab[];
-  presetListCount: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   engineRef: React.RefObject<any>;
   isOn: boolean;
@@ -405,16 +403,17 @@ interface TabletShellProps {
   audio: any;
 }
 
+// Left-rail overhaul (v0.14.0 PR 5c): TabletShell migrated from the
+// 4-tab + TabColumnContent layout to the unified Sidebar + MainContent
+// pattern that desktop uses. Swipe gestures, the inner tab bar, and
+// the showPanel collapse toggle were retired alongside the tabs.
+//
+// MobileShell is intentionally unchanged in this PR — its swipe-driven
+// tab UI is still load-bearing on small screens and benefits from a
+// dedicated UX pass (PR 5+ scope).
 function TabletShell({
   showA11yPanel,
   setShowA11yPanel,
-  showPanel,
-  setShowPanel,
-  activeTab,
-  setActiveTab,
-  currentTabIndex,
-  tabIds,
-  presetListCount,
   engineRef,
   isOn,
   toggleWithAudio,
@@ -424,69 +423,6 @@ function TabletShell({
   ledCount,
   audio,
 }: TabletShellProps) {
-  // ── Touch swipe gesture tracking (same pattern as MobileShell) ─────────────
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  // null = undetermined; true = user is scrolling vertically; false = swiping horizontally
-  const isScrollGesture = useRef<boolean | null>(null);
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    isScrollGesture.current = null;
-  }, []);
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const dx = e.touches[0].clientX - touchStartX.current;
-    const dy = e.touches[0].clientY - touchStartY.current;
-
-    // Classify intent on the first substantial movement
-    if (isScrollGesture.current === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-      isScrollGesture.current = Math.abs(dy) > Math.abs(dx);
-    }
-
-    // Prevent default scroll when committed to a horizontal swipe
-    if (isScrollGesture.current === false) {
-      e.preventDefault();
-    }
-  }, []);
-
-  const onTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (touchStartX.current === null || isScrollGesture.current !== false) {
-        touchStartX.current = null;
-        touchStartY.current = null;
-        isScrollGesture.current = null;
-        return;
-      }
-
-      const dx = e.changedTouches[0].clientX - touchStartX.current;
-      touchStartX.current = null;
-      touchStartY.current = null;
-      isScrollGesture.current = null;
-
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-
-      if (dx < 0) {
-        // Swipe left → advance to next tab
-        const next = tabIds[currentTabIndex + 1];
-        if (next) {
-          setActiveTab(next);
-          setShowPanel(true);
-        }
-      } else {
-        // Swipe right → go back to previous tab
-        const prev = tabIds[currentTabIndex - 1];
-        if (prev) {
-          setActiveTab(prev);
-          setShowPanel(true);
-        }
-      }
-    },
-    [currentTabIndex, tabIds, setActiveTab, setShowPanel],
-  );
-
   return (
     <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
 
@@ -573,80 +509,17 @@ function TabletShell({
           <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
         </div>
 
-        {/* ── Panel Area — swipeable, 2-column grid via TabColumnContent ──────── */}
+        {/* ── Panel Area — left-rail overhaul (PR 5c) ──────────────────────────────
+             Sidebar + MainContent, mirroring the desktop pattern at a
+             tighter sidebar width (240 px vs 280 px) so MainContent has
+             room to breathe at 600–1023 px viewports. */}
         <div
-          className="flex-1 min-h-0 flex flex-col bg-bg-secondary/50"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
+          className="flex-1 min-h-0 flex bg-bg-secondary/50"
+          role="region"
+          aria-label="Section navigation and content"
         >
-          {/* Tab bar */}
-          <div
-            className="flex overflow-x-auto border-b border-border-subtle shrink-0 px-2 pt-1"
-            role="tablist"
-            aria-label="Editor sections"
-          >
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                id={`tablet-tab-${tab.id}`}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`tablet-panel-${tab.id}`}
-                onClick={() => {
-                  playUISound('tab-switch');
-                  setActiveTab(tab.id);
-                  setShowPanel(true);
-                }}
-                className={`flex-shrink-0 min-h-[44px] px-3 py-2 text-ui-base font-medium transition-colors relative whitespace-nowrap ${
-                  activeTab === tab.id && showPanel
-                    ? 'text-accent'
-                    : 'text-text-muted hover:text-text-secondary'
-                }`}
-              >
-                {tab.label}
-                {tab.id === 'output' && presetListCount > 0 && (
-                  <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-                )}
-                {activeTab === tab.id && showPanel && (
-                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
-                )}
-              </button>
-            ))}
-
-            {/* Swipe position indicator dots */}
-            <div className="flex items-center px-2 gap-1 shrink-0 ml-auto" aria-hidden="true">
-              {TABS.map((tab, i) => (
-                <span
-                  key={tab.id}
-                  className={`inline-block rounded-full transition-all duration-200 ${
-                    i === currentTabIndex ? 'w-2 h-2 bg-accent' : 'w-1.5 h-1.5 bg-border-subtle'
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Collapse toggle */}
-            <button
-              onClick={() => setShowPanel(!showPanel)}
-              className="min-h-[44px] px-2 py-1.5 text-ui-sm text-text-muted shrink-0"
-              aria-label={showPanel ? 'Collapse panel' : 'Expand panel'}
-            >
-              {showPanel ? '\u25BC' : '\u25B2'}
-            </button>
-          </div>
-
-          {/* Panel content — 2-column ColumnGrid via TabColumnContent */}
-          {showPanel && (
-            <div
-              className="flex-1 min-h-0 overflow-y-auto"
-              role="tabpanel"
-              id={`tablet-panel-${activeTab}`}
-              aria-labelledby={`tablet-tab-${activeTab}`}
-            >
-              <TabColumnContent />
-            </div>
-          )}
+          <Sidebar style={{ width: 240 }} />
+          <MainContent />
         </div>
       </div>
 
@@ -817,20 +690,10 @@ export function AppShell() {
 
   // ─── Tablet Layout (600-1023px) ───
   if (isTablet) {
-    const tabIds = TABS.map((t) => t.id);
-    const currentTabIndex = tabIds.indexOf(activeTab);
-
     return (
       <TabletShell
         showA11yPanel={showA11yPanel}
         setShowA11yPanel={setShowA11yPanel}
-        showPanel={showPanel}
-        setShowPanel={setShowPanel}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        currentTabIndex={currentTabIndex}
-        tabIds={tabIds}
-        presetListCount={presetListCount}
         engineRef={engineRef}
         isOn={isOn}
         toggleWithAudio={toggleWithAudio}
