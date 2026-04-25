@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { playUISound } from '@/lib/uiSounds';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import {
@@ -13,7 +13,6 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { type AurebeshMode } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useAccessibilityStore, type DensityMode } from '@/stores/accessibilityStore';
-import { usePerformanceStore } from '@/stores/performanceStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,6 +42,23 @@ const DEFAULT_VISIBLE_LAYERS = new Set<LayerId>([
   'tip-glow',
   'base-bleed',
 ]);
+
+// ─── Tab definitions ─────────────────────────────────────────────────────────
+//
+// v0.14.0 left-rail overhaul: collapse 10 flat sections into 3 grouped tabs.
+// Tabs sit directly under the modal header (matches DesignPanel's pill row at
+// `apps/web/components/editor/DesignPanel.tsx` ~L130–168). Inside each tab
+// body the sections keep their existing `<SectionToggle>` collapsible
+// pattern — multiple sections within a tab can stay expanded together so
+// short tabs don't feel cramped.
+
+type TabId = 'appearance' | 'behavior' | 'advanced';
+
+const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'behavior', label: 'Behavior' },
+  { id: 'advanced', label: 'Advanced' },
+];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -127,23 +143,52 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     onClose: handleClose,
   });
 
-  // ── Section collapse state ──
+  // ── Active tab + per-tab section collapse state ──
+  const [activeTab, setActiveTab] = useState<TabId>('appearance');
+  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
+    appearance: null,
+    behavior: null,
+    advanced: null,
+  });
+
+  // Sections inside each tab. Multiple can be expanded simultaneously
+  // within a tab (mirrors the previous flat list's behavior).
   const [sections, setSections] = useState({
-    performance: true,
-    density: false,
-    perfBar: false,
-    effects: false,
+    // Appearance
     aurebesh: false,
-    sounds: false,
-    layout: false,
-    shortcuts: false,
     display: false,
+    density: false,
+    // Behavior
+    sounds: false,
+    effects: false,
+    shortcuts: false,
     feedback: false,
+    // Advanced
+    performance: true,
+    layout: false,
   });
 
   const toggleSection = useCallback((key: keyof typeof sections) => {
     setSections((s) => ({ ...s, [key]: !s[key] }));
   }, []);
+
+  // Tablist keyboard navigation: ←/→ moves between tabs, wrapping. Tab/
+  // Shift-Tab still flows naturally into the active tab body via the
+  // hook's focus trap.
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, currentId: TabId) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const idx = TABS.findIndex((t) => t.id === currentId);
+      const delta = e.key === 'ArrowRight' ? 1 : -1;
+      const nextIdx = (idx + delta + TABS.length) % TABS.length;
+      const next = TABS[nextIdx].id;
+      setActiveTab(next);
+      // Move focus to the newly-selected tab so screen readers announce it.
+      tabRefs.current[next]?.focus();
+    },
+    [],
+  );
 
   // ── Performance tier ──
   const [perfTier, setPerfTierState] = useState<PerformanceTier>('medium');
@@ -175,13 +220,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   //    useAccessibilityApplier; no layout shift today (components opt in later). ──
   const density = useAccessibilityStore((s) => s.density);
   const setDensity = useAccessibilityStore((s) => s.setDensity);
-
-  // ── Performance Bar visibility — Wave 5. Flipping this hides the
-  //    158px macro strip + shift-light rail between the main panel area
-  //    and the bottom ticker. Persists through the store. ──
-  const perfBarVisible = usePerformanceStore((s) => s.visible);
-  const setPerfBarVisible = usePerformanceStore((s) => s.setVisible);
-  const resetPerfBar = usePerformanceStore((s) => s.resetDefaults);
 
   // ── Effect auto-release (demo mode) — when enabled, sustained effects
   //    (Lockup, Drag, Melt, Lightning, Force) automatically release after
@@ -254,6 +292,664 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   if (!isOpen) return null;
 
+  // ─── Section renderers ───
+  // Each renders a complete `<section>` including its `<SectionToggle>`
+  // header and collapsible body. Composed into the tab panels below.
+
+  const renderAurebesh = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Aurebesh Mode"
+        open={sections.aurebesh}
+        onToggle={() => toggleSection('aurebesh')}
+      />
+      {sections.aurebesh && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            Render UI text in the Star Wars Aurebesh script.
+          </p>
+
+          <div className="space-y-2">
+            {(
+              [
+                { value: 'off', label: 'Off', desc: 'Normal English text throughout' },
+                {
+                  value: 'labels',
+                  label: 'Labels',
+                  desc: 'UI labels and section headings in Aurebesh',
+                },
+                {
+                  value: 'full',
+                  label: 'Full',
+                  desc: 'All interface text rendered in Aurebesh',
+                },
+              ] as Array<{ value: AurebeshMode; label: string; desc: string }>
+            ).map(({ value, label, desc }) => (
+              <label
+                key={value}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                  aurebeshMode === value
+                    ? 'border-accent/50 bg-accent/5 text-text-primary'
+                    : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="aurebesh-mode"
+                  value={value}
+                  checked={aurebeshMode === value}
+                  onChange={() => { playUISound('toggle-on'); setAurebeshMode(value); }}
+                  className="mt-0.5 accent-[rgb(var(--accent))]"
+                />
+                <div className="min-w-0">
+                  <div className="text-ui-sm font-medium">{label}</div>
+                  <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderDisplay = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Display"
+        open={sections.display}
+        onToggle={() => toggleSection('display')}
+      />
+      {sections.display && (
+        <div className="mt-3 space-y-4">
+          {/* FPS counter */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ui-sm text-text-secondary">FPS Counter</p>
+              <p className="text-ui-xs text-text-muted">Show frame rate in the status bar</p>
+            </div>
+            <ToggleSwitch
+              id="display-fps"
+              checked={showFpsCounter}
+              onChange={setShowFpsCounter}
+              label="FPS counter visibility"
+            />
+          </div>
+
+          {/* Reduce bloom */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ui-sm text-text-secondary">Reduce Bloom</p>
+              <p className="text-ui-xs text-text-muted">Dimmer blade halo for photosensitive viewing (glow scales to 40%)</p>
+            </div>
+            <ToggleSwitch
+              id="display-reduce-bloom"
+              checked={reduceBloom}
+              onChange={setReduceBloom}
+              label="Reduce blade bloom intensity"
+            />
+          </div>
+
+          {/* Visualization layer defaults */}
+          <div className="space-y-2">
+            <div>
+              <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+                Default Visualization Layers
+              </p>
+              <p className="text-ui-xs text-text-muted mt-0.5">
+                Which of the 12 compositing layers are visible when opening the editor
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+              {VISUALIZATION_LAYERS.map(({ id, label }) => (
+                <label
+                  key={id}
+                  className="flex items-center gap-2 cursor-pointer group"
+                >
+                  <input
+                    type="checkbox"
+                    checked={visibleLayers.has(id)}
+                    onChange={() => toggleLayer(id)}
+                    className="rounded accent-[rgb(var(--accent))]"
+                  />
+                  <span
+                    className={`text-ui-xs transition-colors ${
+                      visibleLayers.has(id)
+                        ? 'text-text-secondary group-hover:text-text-primary'
+                        : 'text-text-muted'
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleLayers(new Set(VISUALIZATION_LAYERS.map((l) => l.id)))
+                }
+                className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors"
+              >
+                All on
+              </button>
+              <span className="text-text-muted text-ui-xs">·</span>
+              <button
+                type="button"
+                onClick={() => setVisibleLayers(new Set())}
+                className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors"
+              >
+                All off
+              </button>
+              <span className="text-text-muted text-ui-xs">·</span>
+              <button
+                type="button"
+                onClick={() => setVisibleLayers(new Set(DEFAULT_VISIBLE_LAYERS))}
+                className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors"
+              >
+                Reset defaults
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderDensity = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Row density"
+        open={sections.density}
+        onToggle={() => toggleSection('density')}
+      />
+      {sections.density && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            Controls panel row height across the editor. Default matches
+            the current layout exactly — no shift when toggled today, and
+            components opt into the new rhythm gradually.
+          </p>
+
+          <div className="space-y-2">
+            {(
+              [
+                {
+                  value: 'ssl',
+                  label: 'SSL (22px)',
+                  desc: 'Console-dense. Best for 27"+ displays and power users.',
+                },
+                {
+                  value: 'ableton',
+                  label: 'Ableton (26px, default)',
+                  desc: 'Matches the shipped row rhythm. Balanced.',
+                },
+                {
+                  value: 'mutable',
+                  label: 'Mutable (32px)',
+                  desc: 'Airy. Easier to hit on touch or over long sessions.',
+                },
+              ] as Array<{ value: DensityMode; label: string; desc: string }>
+            ).map(({ value, label, desc }) => (
+              <label
+                key={value}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                  density === value
+                    ? 'border-accent/50 bg-accent/5 text-text-primary'
+                    : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="row-density"
+                  value={value}
+                  checked={density === value}
+                  onChange={() => { playUISound('toggle-on'); setDensity(value); }}
+                  className="mt-0.5 accent-[rgb(var(--accent))]"
+                />
+                <div className="min-w-0">
+                  <div className="text-ui-sm font-medium">{label}</div>
+                  <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderSounds = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="UI Sounds"
+        open={sections.sounds}
+        onToggle={() => toggleSection('sounds')}
+      />
+      {sections.sounds && (
+        <div className="mt-3">
+          <p className="text-ui-sm text-text-muted">
+            UI sound effects are coming in a future update.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderEffectAutoRelease = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Effect auto-release"
+        open={sections.effects}
+        onToggle={() => toggleSection('effects')}
+      />
+      {sections.effects && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            When enabled, sustained effects (Lockup, Drag, Melt, Lightning,
+            Force) automatically release after the configured duration —
+            useful for demos / showcases where manual release is awkward.
+            Default off; advanced users keep the explicit press-again-to-
+            release behavior.
+          </p>
+
+          <label
+            className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+              effectAutoRelease.enabled
+                ? 'border-accent/50 bg-accent/5 text-text-primary'
+                : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={effectAutoRelease.enabled}
+              onChange={(e) => {
+                playUISound('toggle-on');
+                setEffectAutoRelease({ enabled: e.target.checked });
+              }}
+              className="mt-0.5 accent-[rgb(var(--accent))]"
+            />
+            <div className="min-w-0">
+              <div className="text-ui-sm font-medium">
+                Enable auto-release
+              </div>
+              <div className="text-ui-xs text-text-muted mt-0.5">
+                Sustained effects release automatically after the timeout below.
+              </div>
+            </div>
+          </label>
+
+          <div
+            className={`px-3 py-2.5 rounded border transition-colors ${
+              effectAutoRelease.enabled
+                ? 'border-border-light bg-bg-deep/50'
+                : 'border-border-subtle/50 bg-bg-deep/30 opacity-60'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <label
+                htmlFor="effect-auto-release-seconds"
+                className="text-ui-sm text-text-primary font-medium"
+              >
+                Release after
+              </label>
+              <span className="text-ui-sm text-text-secondary font-mono tabular-nums">
+                {effectAutoRelease.seconds.toFixed(0)}s
+              </span>
+            </div>
+            <input
+              id="effect-auto-release-seconds"
+              type="range"
+              min={1}
+              max={15}
+              step={1}
+              value={effectAutoRelease.seconds}
+              onChange={(e) =>
+                setEffectAutoRelease({
+                  seconds: parseInt(e.target.value, 10),
+                })
+              }
+              disabled={!effectAutoRelease.enabled}
+              className="w-full mt-2 accent-[rgb(var(--accent))]"
+              aria-valuetext={`${effectAutoRelease.seconds} seconds`}
+            />
+            <div className="text-ui-xs text-text-muted mt-1">
+              Range: 1–15 seconds. Default: 4s.
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderShortcuts = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Keyboard Shortcuts"
+        open={sections.shortcuts}
+        onToggle={() => toggleSection('shortcuts')}
+      />
+      {sections.shortcuts && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            Keyboard shortcuts for blade simulation and editor controls.
+          </p>
+
+          {/* Blade effect shortcuts */}
+          <div className="space-y-1.5">
+            <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+              Blade Effects
+            </p>
+            <div className="space-y-1">
+              {([
+                { key: 'Space', action: 'Ignite / Retract' },
+                { key: 'C', action: 'Clash' },
+                { key: 'B', action: 'Blast' },
+                { key: 'S', action: 'Stab' },
+                { key: 'L', action: 'Lockup (toggle)' },
+                { key: 'N', action: 'Lightning (toggle)' },
+                { key: 'D', action: 'Drag (toggle)' },
+                { key: 'M', action: 'Melt (toggle)' },
+                { key: 'F', action: 'Force' },
+                { key: 'W', action: 'Shockwave' },
+                { key: 'R', action: 'Fragment' },
+                { key: 'V', action: 'Bifurcate' },
+                { key: 'G', action: 'Ghost Echo' },
+                { key: 'P', action: 'Splinter' },
+                { key: 'E', action: 'Coronary' },
+                { key: 'X', action: 'Glitch Matrix' },
+                { key: 'H', action: 'Siphon' },
+              ] as const).map(({ key, action }) => (
+                <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
+                  <span className="text-ui-sm text-text-secondary">{action}</span>
+                  <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
+                    {key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Editor shortcuts */}
+          <div className="space-y-1.5">
+            <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+              Editor
+            </p>
+            <div className="space-y-1">
+              {([
+                { key: 'Escape', action: 'Exit fullscreen' },
+                { key: 'O', action: 'Toggle blade orientation' },
+                { key: '⌘Z', action: 'Undo' },
+                { key: '⌘⇧Z', action: 'Redo' },
+              ] as const).map(({ key, action }) => (
+                <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
+                  <span className="text-ui-sm text-text-secondary">{action}</span>
+                  <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
+                    {key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderFeedback = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Feedback"
+        open={sections.feedback}
+        onToggle={() => toggleSection('feedback')}
+      />
+      {sections.feedback && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            KyberStation is a hobby project and your feedback shapes what comes next. Every report and suggestion goes to GitHub Issues — no account needed to read, a free GitHub account is required to post.
+          </p>
+
+          <div className="space-y-2">
+            <a
+              href="https://github.com/kenkoller/KyberStation/issues/new?template=bug_report.md&labels=bug"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+              onClick={() => playUISound('toggle-on')}
+            >
+              <span className="text-lg leading-none mt-0.5" aria-hidden="true">🐞</span>
+              <div className="min-w-0">
+                <div className="text-ui-sm font-medium text-text-primary">Report a bug</div>
+                <div className="text-ui-xs text-text-muted mt-0.5">Something is broken or behaving unexpectedly</div>
+              </div>
+            </a>
+
+            <a
+              href="https://github.com/kenkoller/KyberStation/issues/new?template=feature_request.md&labels=enhancement"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+              onClick={() => playUISound('toggle-on')}
+            >
+              <span className="text-lg leading-none mt-0.5" aria-hidden="true">💡</span>
+              <div className="min-w-0">
+                <div className="text-ui-sm font-medium text-text-primary">Suggest a feature</div>
+                <div className="text-ui-xs text-text-muted mt-0.5">Something new you'd like to see added</div>
+              </div>
+            </a>
+
+            <a
+              href="https://github.com/kenkoller/KyberStation/issues/new?template=style_request.md&labels=style-request"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+              onClick={() => playUISound('toggle-on')}
+            >
+              <span className="text-lg leading-none mt-0.5" aria-hidden="true">⚔️</span>
+              <div className="min-w-0">
+                <div className="text-ui-sm font-medium text-text-primary">Request a blade style or preset</div>
+                <div className="text-ui-xs text-text-muted mt-0.5">A new style, effect, ignition, or character preset</div>
+              </div>
+            </a>
+
+            <a
+              href="https://github.com/kenkoller/KyberStation/discussions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
+              onClick={() => playUISound('toggle-on')}
+            >
+              <span className="text-lg leading-none mt-0.5" aria-hidden="true">💬</span>
+              <div className="min-w-0">
+                <div className="text-ui-sm font-medium text-text-primary">Ask a question / start a discussion</div>
+                <div className="text-ui-xs text-text-muted mt-0.5">For anything that isn't a bug or concrete feature</div>
+              </div>
+            </a>
+          </div>
+
+          <div className="pt-1 flex items-center justify-between border-t border-border-subtle pt-3">
+            <a
+              href="https://github.com/kenkoller/KyberStation"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ui-xs text-text-muted hover:text-accent transition-colors"
+            >
+              View source on GitHub →
+            </a>
+            <span className="text-ui-xs text-text-muted">MIT licensed</span>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderPerformanceTier = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Performance Tier"
+        open={sections.performance}
+        onToggle={() => toggleSection('performance')}
+      />
+      {sections.performance && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            Controls visual complexity. Auto-detects based on your device.
+          </p>
+
+          <div className="space-y-2">
+            {(
+              [
+                {
+                  value: 'full',
+                  label: 'Full',
+                  desc: 'All animations, particles, and ambient effects',
+                },
+                {
+                  value: 'medium',
+                  label: 'Medium',
+                  desc: 'Reduced particles and simpler animations',
+                },
+                {
+                  value: 'lite',
+                  label: 'Lite',
+                  desc: 'Minimal animations, static decorations',
+                },
+              ] as Array<{ value: PerformanceTier; label: string; desc: string }>
+            ).map(({ value, label, desc }) => (
+              <label
+                key={value}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
+                  perfTier === value && !perfIsAuto
+                    ? 'border-accent/50 bg-accent/5 text-text-primary'
+                    : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="perf-tier"
+                  value={value}
+                  checked={perfTier === value && !perfIsAuto}
+                  onChange={() => handlePerfTierChange(value)}
+                  className="mt-0.5 accent-[rgb(var(--accent))]"
+                />
+                <div className="min-w-0">
+                  <div className="text-ui-sm font-medium">{label}</div>
+                  <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={handlePerfTierAuto}
+            className={`text-ui-xs px-3 py-1.5 rounded border transition-colors ${
+              perfIsAuto
+                ? 'border-accent/40 text-accent bg-accent/5'
+                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
+            }`}
+          >
+            {perfIsAuto ? `Auto-detected: ${perfTier}` : 'Reset to auto-detect'}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderLayout = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Layout"
+        open={sections.layout}
+        onToggle={() => toggleSection('layout')}
+      />
+      {sections.layout && (
+        <div className="mt-3 space-y-4">
+          {/* Reset */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ui-sm text-text-secondary">Default layout</p>
+              <p className="text-ui-xs text-text-muted">Restore sidebar widths and panel positions</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetLayout}
+              className="px-3 py-1.5 rounded border border-border-subtle text-ui-xs font-medium text-text-muted hover:text-text-primary hover:border-border-light transition-colors shrink-0"
+            >
+              Reset
+            </button>
+          </div>
+
+          {/* Saved presets */}
+          {layoutSavedPresets.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+                Saved Layouts
+              </p>
+              <div className="space-y-1">
+                {layoutSavedPresets.map((preset) => (
+                  <div
+                    key={preset.id}
+                    className="flex items-center gap-2 px-3 py-2 rounded border border-border-subtle bg-bg-deep/50"
+                  >
+                    <span className="flex-1 text-ui-sm text-text-secondary truncate">
+                      {preset.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadLayoutPreset(preset.id)}
+                      className="text-ui-xs text-accent hover:text-text-primary transition-colors px-1.5 py-0.5 rounded hover:bg-accent/10"
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLayoutPreset(preset.id)}
+                      className="text-ui-xs text-text-muted hover:text-red-400 transition-colors px-1.5 py-0.5 rounded hover:bg-red-900/20"
+                      aria-label={`Delete layout preset "${preset.name}"`}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Save current */}
+          <div className="space-y-1.5">
+            <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
+              Save Current Layout
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newLayoutName}
+                onChange={(e) => setNewLayoutName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveLayoutPreset();
+                }}
+                placeholder="Layout name..."
+                maxLength={40}
+                className="flex-1 bg-bg-deep border border-border-subtle rounded px-3 py-1.5 text-ui-sm text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleSaveLayoutPreset}
+                disabled={!newLayoutName.trim()}
+                className="px-3 py-1.5 rounded border border-accent/50 bg-accent/10 text-ui-xs font-medium text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
   // ─── Render ───
 
   return (
@@ -284,698 +980,93 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </button>
         </div>
 
-        {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-0 divide-y divide-border-subtle">
-
-          {/* ══ Performance Tier ══ */}
-          <section className="py-4 first:pt-0">
-            <SectionToggle
-              label="Performance Tier"
-              open={sections.performance}
-              onToggle={() => toggleSection('performance')}
-            />
-            {sections.performance && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  Controls visual complexity. Auto-detects based on your device.
-                </p>
-
-                <div className="space-y-2">
-                  {(
-                    [
-                      {
-                        value: 'full',
-                        label: 'Full',
-                        desc: 'All animations, particles, and ambient effects',
-                      },
-                      {
-                        value: 'medium',
-                        label: 'Medium',
-                        desc: 'Reduced particles and simpler animations',
-                      },
-                      {
-                        value: 'lite',
-                        label: 'Lite',
-                        desc: 'Minimal animations, static decorations',
-                      },
-                    ] as Array<{ value: PerformanceTier; label: string; desc: string }>
-                  ).map(({ value, label, desc }) => (
-                    <label
-                      key={value}
-                      className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
-                        perfTier === value && !perfIsAuto
-                          ? 'border-accent/50 bg-accent/5 text-text-primary'
-                          : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="perf-tier"
-                        value={value}
-                        checked={perfTier === value && !perfIsAuto}
-                        onChange={() => handlePerfTierChange(value)}
-                        className="mt-0.5 accent-[rgb(var(--accent))]"
-                      />
-                      <div className="min-w-0">
-                        <div className="text-ui-sm font-medium">{label}</div>
-                        <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-
+        {/* ── Tabs ── */}
+        {/* Pill row matches DesignPanel's group pills (font-mono uppercase
+            text-ui-xs tracking-[0.12em], accent active state). ←/→ moves
+            between tabs and refocuses the new active tab so screen
+            readers announce it. Tab/Shift-Tab continues to flow through
+            the dialog naturally via useModalDialog's focus trap. */}
+        <div className="px-5 pt-3 pb-3 border-b border-border-subtle shrink-0">
+          <div
+            role="tablist"
+            aria-label="Settings categories"
+            data-testid="settings-tablist"
+            className="flex items-center gap-1 flex-wrap"
+          >
+            {TABS.map((tab) => {
+              const active = tab.id === activeTab;
+              return (
                 <button
+                  key={tab.id}
+                  ref={(el) => {
+                    tabRefs.current[tab.id] = el;
+                  }}
+                  role="tab"
                   type="button"
-                  onClick={handlePerfTierAuto}
-                  className={`text-ui-xs px-3 py-1.5 rounded border transition-colors ${
-                    perfIsAuto
-                      ? 'border-accent/40 text-accent bg-accent/5'
-                      : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
-                  }`}
+                  id={`settings-tab-${tab.id}`}
+                  aria-selected={active}
+                  aria-controls={`settings-tabpanel-${tab.id}`}
+                  tabIndex={active ? 0 : -1}
+                  data-testid={`settings-tab-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
+                  className={[
+                    'px-4 py-2 rounded-lg font-mono uppercase text-ui-xs tracking-[0.12em] border transition-colors',
+                    active
+                      ? 'text-accent bg-accent-dim/30 border-accent-border/60'
+                      : 'text-text-muted hover:text-text-secondary border-border-subtle/60 hover:border-border-light',
+                  ].join(' ')}
                 >
-                  {perfIsAuto ? `Auto-detected: ${perfTier}` : 'Reset to auto-detect'}
+                  {tab.label}
                 </button>
-              </div>
-            )}
-          </section>
+              );
+            })}
+          </div>
+        </div>
 
-          {/* ══ Row Density ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Row density"
-              open={sections.density}
-              onToggle={() => toggleSection('density')}
-            />
-            {sections.density && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  Controls panel row height across the editor. Default matches
-                  the current layout exactly — no shift when toggled today, and
-                  components opt into the new rhythm gradually.
-                </p>
+        {/* ── Scrollable body — one tabpanel per tab ── */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Appearance: Aurebesh Mode → Display → Row density */}
+          <div
+            role="tabpanel"
+            id="settings-tabpanel-appearance"
+            aria-labelledby="settings-tab-appearance"
+            data-testid="settings-tabpanel-appearance"
+            hidden={activeTab !== 'appearance'}
+            className="divide-y divide-border-subtle"
+          >
+            <div className="first:[&>section]:pt-0">{renderAurebesh()}</div>
+            <div>{renderDisplay()}</div>
+            <div>{renderDensity()}</div>
+          </div>
 
-                <div className="space-y-2">
-                  {(
-                    [
-                      {
-                        value: 'ssl',
-                        label: 'SSL (22px)',
-                        desc: 'Console-dense. Best for 27"+ displays and power users.',
-                      },
-                      {
-                        value: 'ableton',
-                        label: 'Ableton (26px, default)',
-                        desc: 'Matches the shipped row rhythm. Balanced.',
-                      },
-                      {
-                        value: 'mutable',
-                        label: 'Mutable (32px)',
-                        desc: 'Airy. Easier to hit on touch or over long sessions.',
-                      },
-                    ] as Array<{ value: DensityMode; label: string; desc: string }>
-                  ).map(({ value, label, desc }) => (
-                    <label
-                      key={value}
-                      className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
-                        density === value
-                          ? 'border-accent/50 bg-accent/5 text-text-primary'
-                          : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="row-density"
-                        value={value}
-                        checked={density === value}
-                        onChange={() => { playUISound('toggle-on'); setDensity(value); }}
-                        className="mt-0.5 accent-[rgb(var(--accent))]"
-                      />
-                      <div className="min-w-0">
-                        <div className="text-ui-sm font-medium">{label}</div>
-                        <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
+          {/* Behavior: UI Sounds → Effect auto-release → Keyboard Shortcuts → Feedback */}
+          <div
+            role="tabpanel"
+            id="settings-tabpanel-behavior"
+            aria-labelledby="settings-tab-behavior"
+            data-testid="settings-tabpanel-behavior"
+            hidden={activeTab !== 'behavior'}
+            className="divide-y divide-border-subtle"
+          >
+            <div className="first:[&>section]:pt-0">{renderSounds()}</div>
+            <div>{renderEffectAutoRelease()}</div>
+            <div>{renderShortcuts()}</div>
+            <div>{renderFeedback()}</div>
+          </div>
 
-          {/* ══ Performance Bar ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Performance Bar"
-              open={sections.perfBar}
-              onToggle={() => toggleSection('perfBar')}
-            />
-            {sections.perfBar && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  The persistent macro strip + shift-light rail at the bottom
-                  of the editor. Four pages (Ignition / Motion / Color / FX)
-                  each expose 8 macro knobs bound to live blade parameters.
-                  Takes ~158px of vertical space — disable if you want the
-                  main panel area to reclaim it.
-                </p>
-
-                <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50">
-                  <div>
-                    <p className="text-ui-sm text-text-primary font-medium">
-                      Show Performance Bar
-                    </p>
-                    <p className="text-ui-xs text-text-muted mt-0.5">
-                      Default on. Toggle off to reclaim the bottom strip.
-                    </p>
-                  </div>
-                  <ToggleSwitch
-                    id="perf-bar-visible"
-                    checked={perfBarVisible}
-                    onChange={setPerfBarVisible}
-                    label="Performance Bar visibility"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={resetPerfBar}
-                  className="text-ui-xs px-3 py-1.5 rounded border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
-                >
-                  Reset macro values + page to defaults
-                </button>
-              </div>
-            )}
-          </section>
-
-          {/* ══ Effect Auto-Release ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Effect auto-release"
-              open={sections.effects}
-              onToggle={() => toggleSection('effects')}
-            />
-            {sections.effects && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  When enabled, sustained effects (Lockup, Drag, Melt, Lightning,
-                  Force) automatically release after the configured duration —
-                  useful for demos / showcases where manual release is awkward.
-                  Default off; advanced users keep the explicit press-again-to-
-                  release behavior.
-                </p>
-
-                <label
-                  className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
-                    effectAutoRelease.enabled
-                      ? 'border-accent/50 bg-accent/5 text-text-primary'
-                      : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={effectAutoRelease.enabled}
-                    onChange={(e) => {
-                      playUISound('toggle-on');
-                      setEffectAutoRelease({ enabled: e.target.checked });
-                    }}
-                    className="mt-0.5 accent-[rgb(var(--accent))]"
-                  />
-                  <div className="min-w-0">
-                    <div className="text-ui-sm font-medium">
-                      Enable auto-release
-                    </div>
-                    <div className="text-ui-xs text-text-muted mt-0.5">
-                      Sustained effects release automatically after the timeout below.
-                    </div>
-                  </div>
-                </label>
-
-                <div
-                  className={`px-3 py-2.5 rounded border transition-colors ${
-                    effectAutoRelease.enabled
-                      ? 'border-border-light bg-bg-deep/50'
-                      : 'border-border-subtle/50 bg-bg-deep/30 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <label
-                      htmlFor="effect-auto-release-seconds"
-                      className="text-ui-sm text-text-primary font-medium"
-                    >
-                      Release after
-                    </label>
-                    <span className="text-ui-sm text-text-secondary font-mono tabular-nums">
-                      {effectAutoRelease.seconds.toFixed(0)}s
-                    </span>
-                  </div>
-                  <input
-                    id="effect-auto-release-seconds"
-                    type="range"
-                    min={1}
-                    max={15}
-                    step={1}
-                    value={effectAutoRelease.seconds}
-                    onChange={(e) =>
-                      setEffectAutoRelease({
-                        seconds: parseInt(e.target.value, 10),
-                      })
-                    }
-                    disabled={!effectAutoRelease.enabled}
-                    className="w-full mt-2 accent-[rgb(var(--accent))]"
-                    aria-valuetext={`${effectAutoRelease.seconds} seconds`}
-                  />
-                  <div className="text-ui-xs text-text-muted mt-1">
-                    Range: 1–15 seconds. Default: 4s.
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ══ Aurebesh Mode ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Aurebesh Mode"
-              open={sections.aurebesh}
-              onToggle={() => toggleSection('aurebesh')}
-            />
-            {sections.aurebesh && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  Render UI text in the Star Wars Aurebesh script.
-                </p>
-
-                <div className="space-y-2">
-                  {(
-                    [
-                      { value: 'off', label: 'Off', desc: 'Normal English text throughout' },
-                      {
-                        value: 'labels',
-                        label: 'Labels',
-                        desc: 'UI labels and section headings in Aurebesh',
-                      },
-                      {
-                        value: 'full',
-                        label: 'Full',
-                        desc: 'All interface text rendered in Aurebesh',
-                      },
-                    ] as Array<{ value: AurebeshMode; label: string; desc: string }>
-                  ).map(({ value, label, desc }) => (
-                    <label
-                      key={value}
-                      className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
-                        aurebeshMode === value
-                          ? 'border-accent/50 bg-accent/5 text-text-primary'
-                          : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="aurebesh-mode"
-                        value={value}
-                        checked={aurebeshMode === value}
-                        onChange={() => { playUISound('toggle-on'); setAurebeshMode(value); }}
-                        className="mt-0.5 accent-[rgb(var(--accent))]"
-                      />
-                      <div className="min-w-0">
-                        <div className="text-ui-sm font-medium">{label}</div>
-                        <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ══ UI Sounds ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="UI Sounds"
-              open={sections.sounds}
-              onToggle={() => toggleSection('sounds')}
-            />
-            {sections.sounds && (
-              <div className="mt-3">
-                <p className="text-ui-sm text-text-muted">
-                  UI sound effects are coming in a future update.
-                </p>
-              </div>
-            )}
-          </section>
-
-          {/* ══ Layout Management ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Layout"
-              open={sections.layout}
-              onToggle={() => toggleSection('layout')}
-            />
-            {sections.layout && (
-              <div className="mt-3 space-y-4">
-                {/* Reset */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-ui-sm text-text-secondary">Default layout</p>
-                    <p className="text-ui-xs text-text-muted">Restore sidebar widths and panel positions</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleResetLayout}
-                    className="px-3 py-1.5 rounded border border-border-subtle text-ui-xs font-medium text-text-muted hover:text-text-primary hover:border-border-light transition-colors shrink-0"
-                  >
-                    Reset
-                  </button>
-                </div>
-
-                {/* Saved presets */}
-                {layoutSavedPresets.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                      Saved Layouts
-                    </p>
-                    <div className="space-y-1">
-                      {layoutSavedPresets.map((preset) => (
-                        <div
-                          key={preset.id}
-                          className="flex items-center gap-2 px-3 py-2 rounded border border-border-subtle bg-bg-deep/50"
-                        >
-                          <span className="flex-1 text-ui-sm text-text-secondary truncate">
-                            {preset.name}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleLoadLayoutPreset(preset.id)}
-                            className="text-ui-xs text-accent hover:text-text-primary transition-colors px-1.5 py-0.5 rounded hover:bg-accent/10"
-                          >
-                            Load
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteLayoutPreset(preset.id)}
-                            className="text-ui-xs text-text-muted hover:text-red-400 transition-colors px-1.5 py-0.5 rounded hover:bg-red-900/20"
-                            aria-label={`Delete layout preset "${preset.name}"`}
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Save current */}
-                <div className="space-y-1.5">
-                  <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                    Save Current Layout
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newLayoutName}
-                      onChange={(e) => setNewLayoutName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveLayoutPreset();
-                      }}
-                      placeholder="Layout name..."
-                      maxLength={40}
-                      className="flex-1 bg-bg-deep border border-border-subtle rounded px-3 py-1.5 text-ui-sm text-text-secondary placeholder:text-text-muted focus:outline-none focus:border-accent/50 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSaveLayoutPreset}
-                      disabled={!newLayoutName.trim()}
-                      className="px-3 py-1.5 rounded border border-accent/50 bg-accent/10 text-ui-xs font-medium text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ══ Keyboard Shortcuts ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Keyboard Shortcuts"
-              open={sections.shortcuts}
-              onToggle={() => toggleSection('shortcuts')}
-            />
-            {sections.shortcuts && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  Keyboard shortcuts for blade simulation and editor controls.
-                </p>
-
-                {/* Blade effect shortcuts */}
-                <div className="space-y-1.5">
-                  <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                    Blade Effects
-                  </p>
-                  <div className="space-y-1">
-                    {([
-                      { key: 'Space', action: 'Ignite / Retract' },
-                      { key: 'C', action: 'Clash' },
-                      { key: 'B', action: 'Blast' },
-                      { key: 'S', action: 'Stab' },
-                      { key: 'L', action: 'Lockup (toggle)' },
-                      { key: 'N', action: 'Lightning (toggle)' },
-                      { key: 'D', action: 'Drag (toggle)' },
-                      { key: 'M', action: 'Melt (toggle)' },
-                      { key: 'F', action: 'Force' },
-                      { key: 'W', action: 'Shockwave' },
-                      { key: 'R', action: 'Fragment' },
-                      { key: 'V', action: 'Bifurcate' },
-                      { key: 'G', action: 'Ghost Echo' },
-                      { key: 'P', action: 'Splinter' },
-                      { key: 'E', action: 'Coronary' },
-                      { key: 'X', action: 'Glitch Matrix' },
-                      { key: 'H', action: 'Siphon' },
-                    ] as const).map(({ key, action }) => (
-                      <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
-                        <span className="text-ui-sm text-text-secondary">{action}</span>
-                        <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
-                          {key}
-                        </kbd>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Editor shortcuts */}
-                <div className="space-y-1.5">
-                  <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                    Editor
-                  </p>
-                  <div className="space-y-1">
-                    {([
-                      { key: 'Escape', action: 'Exit fullscreen' },
-                      { key: 'O', action: 'Toggle blade orientation' },
-                      { key: '\u2318Z', action: 'Undo' },
-                      { key: '\u2318\u21E7Z', action: 'Redo' },
-                    ] as const).map(({ key, action }) => (
-                      <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
-                        <span className="text-ui-sm text-text-secondary">{action}</span>
-                        <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
-                          {key}
-                        </kbd>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ══ Feedback ══ */}
-          <section className="py-4">
-            <SectionToggle
-              label="Feedback"
-              open={sections.feedback}
-              onToggle={() => toggleSection('feedback')}
-            />
-            {sections.feedback && (
-              <div className="mt-3 space-y-3">
-                <p className="text-ui-xs text-text-muted">
-                  KyberStation is a hobby project and your feedback shapes what comes next. Every report and suggestion goes to GitHub Issues — no account needed to read, a free GitHub account is required to post.
-                </p>
-
-                <div className="space-y-2">
-                  <a
-                    href="https://github.com/kenkoller/KyberStation/issues/new?template=bug_report.md&labels=bug"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
-                    onClick={() => playUISound('toggle-on')}
-                  >
-                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">🐞</span>
-                    <div className="min-w-0">
-                      <div className="text-ui-sm font-medium text-text-primary">Report a bug</div>
-                      <div className="text-ui-xs text-text-muted mt-0.5">Something is broken or behaving unexpectedly</div>
-                    </div>
-                  </a>
-
-                  <a
-                    href="https://github.com/kenkoller/KyberStation/issues/new?template=feature_request.md&labels=enhancement"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
-                    onClick={() => playUISound('toggle-on')}
-                  >
-                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">💡</span>
-                    <div className="min-w-0">
-                      <div className="text-ui-sm font-medium text-text-primary">Suggest a feature</div>
-                      <div className="text-ui-xs text-text-muted mt-0.5">Something new you'd like to see added</div>
-                    </div>
-                  </a>
-
-                  <a
-                    href="https://github.com/kenkoller/KyberStation/issues/new?template=style_request.md&labels=style-request"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
-                    onClick={() => playUISound('toggle-on')}
-                  >
-                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">⚔️</span>
-                    <div className="min-w-0">
-                      <div className="text-ui-sm font-medium text-text-primary">Request a blade style or preset</div>
-                      <div className="text-ui-xs text-text-muted mt-0.5">A new style, effect, ignition, or character preset</div>
-                    </div>
-                  </a>
-
-                  <a
-                    href="https://github.com/kenkoller/KyberStation/discussions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3 px-3 py-2.5 rounded border border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary transition-colors"
-                    onClick={() => playUISound('toggle-on')}
-                  >
-                    <span className="text-lg leading-none mt-0.5" aria-hidden="true">💬</span>
-                    <div className="min-w-0">
-                      <div className="text-ui-sm font-medium text-text-primary">Ask a question / start a discussion</div>
-                      <div className="text-ui-xs text-text-muted mt-0.5">For anything that isn't a bug or concrete feature</div>
-                    </div>
-                  </a>
-                </div>
-
-                <div className="pt-1 flex items-center justify-between border-t border-border-subtle pt-3">
-                  <a
-                    href="https://github.com/kenkoller/KyberStation"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-ui-xs text-text-muted hover:text-accent transition-colors"
-                  >
-                    View source on GitHub →
-                  </a>
-                  <span className="text-ui-xs text-text-muted">MIT licensed</span>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ══ Display ══ */}
-          <section className="py-4 last:pb-0">
-            <SectionToggle
-              label="Display"
-              open={sections.display}
-              onToggle={() => toggleSection('display')}
-            />
-            {sections.display && (
-              <div className="mt-3 space-y-4">
-                {/* FPS counter */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-ui-sm text-text-secondary">FPS Counter</p>
-                    <p className="text-ui-xs text-text-muted">Show frame rate in the status bar</p>
-                  </div>
-                  <ToggleSwitch
-                    id="display-fps"
-                    checked={showFpsCounter}
-                    onChange={setShowFpsCounter}
-                    label="FPS counter visibility"
-                  />
-                </div>
-
-                {/* Reduce bloom */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-ui-sm text-text-secondary">Reduce Bloom</p>
-                    <p className="text-ui-xs text-text-muted">Dimmer blade halo for photosensitive viewing (glow scales to 40%)</p>
-                  </div>
-                  <ToggleSwitch
-                    id="display-reduce-bloom"
-                    checked={reduceBloom}
-                    onChange={setReduceBloom}
-                    label="Reduce blade bloom intensity"
-                  />
-                </div>
-
-                {/* Visualization layer defaults */}
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-                      Default Visualization Layers
-                    </p>
-                    <p className="text-ui-xs text-text-muted mt-0.5">
-                      Which of the 12 compositing layers are visible when opening the editor
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                    {VISUALIZATION_LAYERS.map(({ id, label }) => (
-                      <label
-                        key={id}
-                        className="flex items-center gap-2 cursor-pointer group"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleLayers.has(id)}
-                          onChange={() => toggleLayer(id)}
-                          className="rounded accent-[rgb(var(--accent))]"
-                        />
-                        <span
-                          className={`text-ui-xs transition-colors ${
-                            visibleLayers.has(id)
-                              ? 'text-text-secondary group-hover:text-text-primary'
-                              : 'text-text-muted'
-                          }`}
-                        >
-                          {label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVisibleLayers(new Set(VISUALIZATION_LAYERS.map((l) => l.id)))
-                      }
-                      className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors"
-                    >
-                      All on
-                    </button>
-                    <span className="text-text-muted text-ui-xs">·</span>
-                    <button
-                      type="button"
-                      onClick={() => setVisibleLayers(new Set())}
-                      className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors"
-                    >
-                      All off
-                    </button>
-                    <span className="text-text-muted text-ui-xs">·</span>
-                    <button
-                      type="button"
-                      onClick={() => setVisibleLayers(new Set(DEFAULT_VISIBLE_LAYERS))}
-                      className="text-ui-xs text-text-muted hover:text-text-secondary transition-colors"
-                    >
-                      Reset defaults
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
+          {/* Advanced: Performance Tier → Layout */}
+          <div
+            role="tabpanel"
+            id="settings-tabpanel-advanced"
+            aria-labelledby="settings-tab-advanced"
+            data-testid="settings-tabpanel-advanced"
+            hidden={activeTab !== 'advanced'}
+            className="divide-y divide-border-subtle"
+          >
+            <div className="first:[&>section]:pt-0">{renderPerformanceTier()}</div>
+            <div>{renderLayout()}</div>
+          </div>
         </div>
 
         {/* ── Footer ── */}
