@@ -6,8 +6,10 @@
 //
 // Clicking a chip writes the color into whichever channel is currently
 // active in the Inspector (read from `uiStore.activeColorChannel`) via
-// `bladeStore.setColor`. The Custom... chip is a visual placeholder —
-// PR 3b (or later) will wire it to open a custom-color popover.
+// `bladeStore.setColor`. The Custom... chip jumps to the deep Color
+// sidebar section (PR 5b) so users who want HSL / hex / harmony / preset
+// access don't have to hunt for it — one click takes them to the full
+// editor for the same active channel.
 //
 // Canonical color values below are locked to film/hobbyist standards;
 // do not drift them without coordinating with the preset library.
@@ -91,6 +93,7 @@ export function QuickColorChips() {
   const config = useBladeStore((s) => s.config);
   const setColor = useBladeStore((s) => s.setColor);
   const activeChannel = useUIStore((s) => s.activeColorChannel);
+  const setActiveSection = useUIStore((s) => s.setActiveSection);
 
   // Resolve the channel's current color for active-chip highlighting.
   // `config` is typed as BladeConfig in the store; cast through Record
@@ -107,6 +110,14 @@ export function QuickColorChips() {
     },
     [activeChannel, setColor],
   );
+
+  // PR 5b: Custom chip jumps to the deep Color sidebar section. The
+  // active channel carries over via uiStore (ColorPanel reads
+  // `activeColorChannel` directly), so the user lands on the full picker
+  // already focused on whatever they were tweaking.
+  const handleCustomClick = useCallback(() => {
+    setActiveSection('color');
+  }, [setActiveSection]);
 
   return (
     <div data-testid="quick-color-chips" className="space-y-1.5">
@@ -143,17 +154,19 @@ export function QuickColorChips() {
         })}
 
         {/*
-          Custom... chip — visual affordance only for PR 3a. PR 3b or
-          later will wire this to open a custom-color popover. Currently
-          a disabled-look button that doesn't change state on click.
-          TODO(PR 3b): open custom-color popover on click.
+          Custom... chip — jumps to the deep Color sidebar section
+          (PR 5b). The HSL sliders, hex field, color-harmony presets,
+          and gradient editor all live there. We don't open a separate
+          popover because the deep panel already does the job and
+          there's no benefit to maintaining two custom-color surfaces.
         */}
         <button
           type="button"
           data-testid="quick-color-chip-custom"
-          aria-label="Custom color (coming soon)"
-          title="Custom..."
-          className="w-6 h-6 rounded-full border border-border-subtle hover:border-accent-border text-text-muted text-ui-xs font-mono flex items-center justify-center transition-colors shrink-0"
+          onClick={handleCustomClick}
+          aria-label="Open full color editor"
+          title="Custom… — open the full Color editor"
+          className="w-6 h-6 rounded-full border border-border-subtle hover:border-accent-border hover:text-accent text-text-muted text-ui-xs font-mono flex items-center justify-center transition-colors shrink-0"
         >
           <span aria-hidden="true">⊕</span>
         </button>
