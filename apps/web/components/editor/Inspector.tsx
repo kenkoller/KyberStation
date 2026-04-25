@@ -73,7 +73,7 @@ export function Inspector({ className, style }: InspectorProps) {
               onClick={() => setActiveTab(tab.id)}
               title={tab.label}
               className={[
-                'flex-1 min-w-0 px-2 py-2 font-mono uppercase text-ui-xs transition-colors whitespace-nowrap',
+                'flex-1 min-w-0 px-2 pt-[9px] pb-2 font-mono uppercase text-ui-xs transition-colors whitespace-nowrap',
                 'tracking-[0.1em]',
                 active
                   ? 'text-accent border-b-2 border-accent'

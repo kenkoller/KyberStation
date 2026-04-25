@@ -149,7 +149,7 @@ export function CanvasLayout({
           */}
           {canMountActionBar && (
             <div
-              className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
+              className="shrink-0 flex items-center gap-1.5 px-2 min-h-8 border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
               role="toolbar"
               aria-label="Blade actions and effects"
             >
@@ -451,23 +451,124 @@ function PanelHeader({
  * collapsing the slot and handing the vertical space back to the
  * blade preview.
  */
-/** Resize handle between pixel strip and expanded slot. Extracted so
- *  it can pull uiStore state without polluting the CanvasLayout render
- *  when no layer is expanded. */
+/** Splitter handle between PIXEL STRIP and the EXPANDED ANALYSIS SLOT.
+ *
+ *  Behaves as a true splitter: dragging the handle grows one neighbor
+ *  by exactly the same number of pixels the other shrinks. The
+ *  `flex-1` BLADE PREVIEW above is untouched, so the pixel strip
+ *  doesn't translate vertically when the user drags the seam.
+ *
+ *  Coordinates both `pixelStripHeight` and `expandedSlotHeight`
+ *  inversely with a single linked clamp range so neither store can
+ *  overshoot its limits while the other keeps moving (which would
+ *  desync the seam from the pointer).
+ */
 function ExpandedSlotResizeHandle() {
+  const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
+  const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedSlotHeight = useUIStore((s) => s.expandedSlotHeight);
   const setExpandedSlotHeight = useUIStore((s) => s.setExpandedSlotHeight);
+
+  const dragRef = useRef<{
+    pointerId: number;
+    startY: number;
+    startStrip: number;
+    startSlot: number;
+  } | null>(null);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+      dragRef.current = {
+        pointerId: e.pointerId,
+        startY: e.clientY,
+        startStrip: pixelStripHeight,
+        startSlot: expandedSlotHeight,
+      };
+    },
+    [pixelStripHeight, expandedSlotHeight],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const s = dragRef.current;
+      if (!s || s.pointerId !== e.pointerId) return;
+      const STRIP = REGION_LIMITS.pixelStripHeight;
+      const SLOT = REGION_LIMITS.expandedSlotHeight;
+      // Linked clamp: drag-down (positive delta) is bounded by whichever
+      // side hits its limit first. Same for drag-up.
+      const maxDown = Math.min(STRIP.max - s.startStrip, s.startSlot - SLOT.min);
+      const maxUp = Math.min(s.startStrip - STRIP.min, SLOT.max - s.startSlot);
+      const raw = e.clientY - s.startY;
+      const delta = Math.max(-maxUp, Math.min(maxDown, raw));
+      setPixelStripHeight(s.startStrip + delta);
+      setExpandedSlotHeight(s.startSlot - delta);
+    },
+    [setPixelStripHeight, setExpandedSlotHeight],
+  );
+
+  const endDrag = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const s = dragRef.current;
+    if (s && s.pointerId === e.pointerId) {
+      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+      dragRef.current = null;
+    }
+  }, []);
+
+  const onDoubleClick = useCallback(() => {
+    setPixelStripHeight(REGION_LIMITS.pixelStripHeight.default);
+    setExpandedSlotHeight(REGION_LIMITS.expandedSlotHeight.default);
+  }, [setPixelStripHeight, setExpandedSlotHeight]);
+
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const step = e.shiftKey ? 24 : 8;
+      const STRIP = REGION_LIMITS.pixelStripHeight;
+      const SLOT = REGION_LIMITS.expandedSlotHeight;
+      const apply = (rawDelta: number) => {
+        const maxDown = Math.min(STRIP.max - pixelStripHeight, expandedSlotHeight - SLOT.min);
+        const maxUp = Math.min(pixelStripHeight - STRIP.min, SLOT.max - expandedSlotHeight);
+        const delta = Math.max(-maxUp, Math.min(maxDown, rawDelta));
+        setPixelStripHeight(pixelStripHeight + delta);
+        setExpandedSlotHeight(expandedSlotHeight - delta);
+      };
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        apply(step);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        apply(-step);
+      } else if (e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        setPixelStripHeight(REGION_LIMITS.pixelStripHeight.default);
+        setExpandedSlotHeight(REGION_LIMITS.expandedSlotHeight.default);
+      }
+    },
+    [pixelStripHeight, expandedSlotHeight, setPixelStripHeight, setExpandedSlotHeight],
+  );
+
   return (
-    <ResizeHandle
-      orientation="vertical"
-      value={expandedSlotHeight}
-      min={REGION_LIMITS.expandedSlotHeight.min}
-      max={REGION_LIMITS.expandedSlotHeight.max}
-      defaultValue={REGION_LIMITS.expandedSlotHeight.default}
-      onChange={setExpandedSlotHeight}
-      invert
-      ariaLabel="Resize expanded analysis view"
-    />
+    <div className="relative shrink-0" style={{ width: '100%', height: 0 }}>
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize expanded analysis view"
+        aria-valuemin={REGION_LIMITS.expandedSlotHeight.min}
+        aria-valuemax={REGION_LIMITS.expandedSlotHeight.max}
+        aria-valuenow={Math.round(expandedSlotHeight)}
+        tabIndex={0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onDoubleClick={onDoubleClick}
+        onKeyDown={onKeyDown}
+        className="absolute -top-1 -bottom-1 left-0 right-0 bg-transparent hover:bg-accent/40 active:bg-accent/70 transition-colors z-10 cursor-row-resize"
+        style={{ outline: 'none', touchAction: 'none' }}
+      />
+    </div>
   );
 }
 

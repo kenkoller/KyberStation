@@ -1015,13 +1015,18 @@ export function WorkbenchLayout() {
             Phase 1.5q: wrapper padding trimmed from `p-1` (4px all sides)
             to `px-1` only. Removes the top + bottom gap so the
             CanvasLayout's left + right `border-x` borders extend the
-            full section2 height, connecting to the horizontal lines
-            above (header border-b) and below (resize handle /
-            VisualizationStack border-t) instead of floating ~4px
-            short of each. Horizontal inset kept so the CornerBrackets
-            corner decorations still have a small breathing room.
+            full section2 height.
+
+            Phase 1.5t (2026-04-24): horizontal inset dropped too.
+            With ResizeHandle now a 0-width wrapper, the canvas column
+            butts directly against Inspector / RightRail; keeping
+            `px-1` produced a 4px dark stripe (section bg) between the
+            Inspector edge and CanvasLayout's `border-l`. Letting the
+            CornerBrackets sit flush with the column edges is fine —
+            the corner decorations are subtle accent-25% L-shapes and
+            read as part of the canvas column boundary.
           */}
-          <div className="h-full px-1 relative">
+          <div className="h-full relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
             ) : showStateGrid && activeTab === 'design' ? (
