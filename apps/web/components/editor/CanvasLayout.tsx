@@ -149,7 +149,7 @@ export function CanvasLayout({
           */}
           {canMountActionBar && (
             <div
-              className="shrink-0 flex items-center gap-1.5 px-2 min-h-8 border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
+              className="shrink-0 flex items-center gap-1.5 px-2 min-h-[33px] border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
               role="toolbar"
               aria-label="Blade actions and effects"
             >
