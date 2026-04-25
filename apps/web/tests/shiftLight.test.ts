@@ -16,7 +16,7 @@ import {
   meanLuminance,
   smoothRms,
   shiftLedColor,
-} from '../components/layout/PerformanceBar';
+} from '../lib/shiftLight';
 
 // ─── meanLuminance ───────────────────────────────────────────────────────────
 
