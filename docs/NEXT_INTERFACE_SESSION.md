@@ -1,106 +1,69 @@
-# Next Session — Interface Polish (picking up from PR #46)
+# Next Session — Interface Polish (picking up from PR #46, post-2026-04-24-late)
 
-Self-contained paste-in prompt for a fresh Claude conversation. Ken and the prior session shipped the v0.14.0 Visualization Polish Pass across 23 commits on `feat/v0.14.0-blade-polish` (PR [#46](https://github.com/kenkoller/KyberStation/pull/46)). This file documents the state, the outstanding work, and what to look at first.
+Self-contained paste-in prompt for a fresh Claude conversation. Two iterative-walkthrough sessions have shipped on `feat/v0.14.0-blade-polish` (PR [#46](https://github.com/kenkoller/KyberStation/pull/46)) — 29 commits ahead of main, pushed to origin, **NOT yet merged**. This file documents the current state and what's left to pick up.
 
 ## Start state
 
-- **Branch:** `feat/v0.14.0-blade-polish`, 23 commits ahead of main, pushed to origin.
-- **PR:** [#46](https://github.com/kenkoller/KyberStation/pull/46) open, NOT yet merged. Typecheck clean, 912/912 web tests pass, browser-verified on /editor at 1600×1000.
-- **Plan file:** `~/.claude/plans/i-would-like-to-starry-moon.md` — the original 4-phase blade-polish plan approved at the start of the prior session. All 4 phases shipped; a few deferred items remain (see below).
-- **Last entry in `CLAUDE.md`:** the "Current State (2026-04-24, v0.14.0 Visualization Polish Pass)" block at the top of the Current State section — read that first for the commit-by-commit breakdown.
+- **Branch:** `feat/v0.14.0-blade-polish`, 29 commits ahead of main, pushed to `origin`.
+- **PR:** [#46](https://github.com/kenkoller/KyberStation/pull/46) open, NOT merged.
+- **Last commit:** `6a93889` — Phase 1.5x (retire 2D/3D + rework All States layout).
+- **Workspace gates:** `pnpm -w typecheck` clean, `pnpm -w test` 912/912 web + workspace packages all green.
+- **Plan file:** `~/.claude/plans/i-would-like-to-starry-moon.md` (the original 4-phase bloom rewrite plan; all 4 phases shipped + a11y-toggle done; module extraction + golden-hash tests still open).
+- **Last entry in `CLAUDE.md`:** the "Current State (2026-04-24 late, v0.14.0 Visualization Polish + Workbench Chrome Pass)" block — read that first for the commit-by-commit breakdown.
 
-## What's working right now
+## What shipped this session (2026-04-24 late)
 
-The workbench blade preview area is in a good visual state:
+Six commits, all on `feat/v0.14.0-blade-polish`:
 
-- Width-driven auto-fit scale; blade + pixel strip + RGB+luma analysis rail all anchor to the user-draggable Point-A divider (`uiStore.bladeStartFrac`).
-- 3-mip downsampled bright-pass bloom replaces the old 14-pass stack — continuous smooth halo with no seam ridges.
-- Rim glow, motion blur (swing-driven), mip-2-driven ambient wash, vignette brightness coupling all shipped.
-- All three canvas-column panel headers (BLADE PREVIEW, PIXEL STRIP, RGB + LUMA) unified to exact same 30 px height.
-- Action bar lives on its own row above BLADE PREVIEW title row inside the panel; view controls (Single / All States / 2D / 3D / Fullscreen) are in the BLADE PREVIEW header children.
-- Aurebesh AF font bundled; data ticker renders in Aurebesh glyphs at 10 px on an 18 px strip.
-- Resize handles all 8 px hit targets.
-- 500 ms auto-ignite on workbench load.
+| Commit | Phase | Scope |
+|---|---|---|
+| `a023b0b` | a11y | **Reduce Bloom toggle** — Settings → Display section + AccessibilityPanel under Reduced Motion. Persists via localStorage, single store flag, both surfaces share state. Closes the dead-UI item from the prior handoff doc. |
+| `a4f55e4` | 1.5t | **Chrome alignment + true slot splitter.** ResizeHandle = 0-size wrapper + absolute hit target straddling the seam. Blade-canvas wrapper `px-1` dropped (CanvasLayout `border-x` butts directly against Inspector / RightRail). Toolbar `min-h-8` to match Inspector tab BAR. ExpandedSlotResizeHandle is now a true 2-store splitter (PIXEL STRIP no longer translates when seam moves). TUNE / GALLERY tabs `+1px`. |
+| `683227a` | 1.5u | **Surprise Me + Undo relocated** to the Inspector's TUNE tab top, above ParameterBank. DesignPanel's top bar now hosts only group pills. |
+| `8c05e83` | 1.5v | **AnalysisRail full-width + matched border tone.** Width-resolver fix (was hardcoded 200 px because `style.width: '100%'` is a string, not a number). Row borders bumped from `/40` → full opacity to match every other panel border in the app. |
+| `85c38db` | 1.5w | Action toolbar `min-h-8` → `min-h-[33px]` to match Inspector tab BAR's outer height (32 px tab button + 1 px bar border-b = 33 px). |
+| `6a93889` | 1.5x | **Retire 2D/3D toggle + rework All States.** 3D parked indefinitely; toggle group + `BladeCanvas3D` import + absolute fallback overlay all removed. PixelDebugOverlay always-on. **All States now keeps BLADE PREVIEW visible** and replaces only the PIXEL STRIP + Expanded Slot regions with the StateGrid. Each state row uses `computeBladeRenderMetrics` + `bladeStartFrac` so it lines up Point A → Point B with the main blade above. |
 
-## Still open — interface polish tasks to pick from
+## Suggested merge plan
 
-These all build on the current state without blocking launch. Pick whichever reads highest-priority when you start.
+1. **Verify gates one more time:** `pnpm -w typecheck && pnpm -w test`. Browser smoke test at `/editor` 1600×1000.
+2. **Merge strategy: merge commit** (NOT squash) — `gh pr merge 46 --merge --delete-branch`. The 29 commits are all atomic + descriptive enough to read as `git log main` annotation.
+3. **Optional tag after merge:** `v0.15.0` (v0.14.0 was already taken by Modulation Routing v1.0 BETA in `43b73aa`). The bloom rewrite + chrome polish is a natural minor bump.
 
-### A. AccessibilityPanel toggle for `reduceBloom`
+## Still open after this branch merges
 
-The flag is in `accessibilityStore` + wired through bloom / rim / motion-blur math. No UI toggle yet. Reachable only via `useAccessibilityStore.getState().setReduceBloom(true)` in devtools.
+### Easy follow-ups (small, isolated)
 
-Add a checkbox in `AccessibilityPanel.tsx` (wherever `reducedMotion` + other a11y prefs are listed). Label: "Reduce bloom intensity" or "Dimmer blade glow". Short description: "Scales blade bloom alpha to 40% for photosensitive users — halo remains visible but subdued."
+- **Drop `BladeCanvas3DWrapper`** — file still exists at `apps/web/components/editor/BladeCanvas3DWrapper.tsx` but no longer has any import path after Phase 1.5x. Safe to delete after one quick sweep confirming no test / storybook / Cypress references.
+- **Drop `canvasMode` field from uiStore** — kept after 1.5x for persistence-state safety. Once enough sessions have passed with no readers, the field + its setter can be removed cleanly.
 
-### B. Module extraction to `lib/blade/*`
+### Medium tasks (still planned from the original bloom-rewrite)
 
-Originally planned as Phase 4 of the bloom rewrite. Currently all blade rendering is inline in `apps/web/components/editor/BladeCanvas.tsx` (~2800 lines). Extracting would enable MiniSaber / FullscreenPreview / saber-card renderers to adopt the same pipeline.
+- **Module extraction to `lib/blade/*`** — Phase 4 of the original plan. `BladeCanvas.tsx` is ~2800 lines with the entire rendering pipeline inline. Extracting to `lib/blade/{pipeline,bloom,endpoints,rim,ambient,diffusion,motionBlur,glowProfile,types}.ts` would let MiniSaber + FullscreenPreview + SaberCard share the same polished pipeline. Non-urgent, but unlocks broader pipeline reuse. Risk: medium-high without golden-hash tests as a regression net (see next item).
 
-Suggested module structure (from the original plan):
+- **Golden-hash blade-render tests** — 8 canonical configs (Obi-Wan Azure, Vader Crimson, Darksaber, Rey TROS Yellow, Mace Windu Amethyst, Luke ROTJ Green, Kylo Unstable, Trans-White) rendered to offscreen canvas at fixed dimensions, FNV-1a hashed, committed as goldens. CI fails on drift. CLI flag `--update-goldens` to regenerate after intentional changes. **Should land before module extraction** so the extraction has a regression sentinel.
 
-```
-apps/web/lib/blade/
-├── pipeline.ts       # drawBlade() top-level orchestrator
-├── bloom.ts          # 3-mip bright-pass chain
-├── endpoints.ts      # tip + emitter seed rendering
-├── rim.ts            # rim-glow stroke
-├── ambient.ts        # floor/ceiling wash + vignette modulator
-├── diffusion.ts      # LED bleed + polycarb desat
-├── motionBlur.ts     # ghost buffer + swing persistence
-├── colorSpace.ts     # (already exists — move here)
-├── glowProfile.ts    # per-color GlowProfile table
-├── types.ts          # BloomConfig, MipChain, etc.
-└── index.ts          # barrel
-```
+### Continued UX-walkthrough items (Ken-driven, drop-in as observed)
 
-Public API target:
-```ts
-drawBlade({
-  ctx, offscreen, mipBuffers, ledBuffer,
-  bounds, theme, styleConfig, bloomConfig, frameState,
-}): void
-```
+This session's iteration cadence — Ken annotates a screenshot, Claude proposes a fix, walkthrough confirms, commit. There may be more polish items in Ken's queue when he resumes. Look for:
 
-Expected BladeCanvas.tsx reduction: 2800 → ~2200 lines. MiniSaber could then adopt with `mipCount: 1` fast-tier.
+- Click targets that are still hard to hit
+- Stale borders / padding mismatches between neighbors
+- Action-bar chip readability
+- Blade rendering at extreme container widths (Inspector at max, AnalysisRail at max)
+- Aurebesh ticker overflow on narrow widths
 
-### C. Golden-hash blade-render tests
+## Files touched this session
 
-No tests currently lock down blade visual output. Planned approach:
-- 8 canonical configs: Obi-Wan Azure, Vader Crimson, Darksaber, Rey TROS Yellow, Mace Windu Amethyst, Luke ROTJ Green, Kylo Unstable, Trans-White.
-- Render each to an offscreen canvas at 1200×600.
-- Extract `ImageData`, FNV-1a hash, commit as golden.
-- CI fails on drift. CLI flag `--update-goldens` to regenerate.
-
-Would catch accidental drift from future edits to the bloom / rim / endpoint code.
-
-### D. Small UX items Ken may have queued since this session
-
-Open the `/editor` route at 1600×1000 and walk through:
-- Is there a click target that's still hard to hit?
-- Does any panel have a stale border / padding that doesn't match its neighbors?
-- Are the action-bar chips readable at a glance or do they need size/color tuning?
-- Does the blade render correctly at very narrow container widths (drag Inspector to max, drag analysis rail to max)?
-
-### E. Merge PR #46 to main
-
-23 commits is a large PR. Recommended merge strategy: **merge commit** (not squash) so the phase-by-phase history stays visible in `git log main`. Each commit message is descriptive enough to be a useful annotation of "when did we change X."
-
-Before merging:
-- Verify one last time that `pnpm -w typecheck` + `pnpm -w test` both green on the latest commit.
-- Verify browser state at `/editor` loads cleanly.
-- Consider cutting a `v0.15.0` tag after merge (the original plan suggested v0.14.0 for this work but v0.14.0 was already taken by Modulation Routing v1.0 Preview BETA — so promote to v0.15.0).
-
-## Files the next session is most likely to touch
-
-- `apps/web/components/editor/CanvasLayout.tsx` — canvas-column layout, three panel headers, draggable Point-A divider, view-controls slot
-- `apps/web/components/editor/BladeCanvas.tsx` — main blade rendering (huge file, candidate for extraction)
-- `apps/web/components/editor/PixelStripPanel.tsx` — LED strip canvas
-- `apps/web/components/editor/VisualizationStack.tsx` — RGB+luma + other analysis layer render functions
-- `apps/web/components/layout/WorkbenchLayout.tsx` — top-level workbench shell, view-controls extraction
-- `apps/web/stores/uiStore.ts` — `bladeStartFrac`, `pixelStripHeight`, `expandedSlotHeight`, `showGrid`, view-state
-- `apps/web/stores/accessibilityStore.ts` — `reduceBloom` flag (for item A)
-- `apps/web/lib/bladeRenderMetrics.ts` — shared Point A / Point B math
-- `apps/web/lib/blade/colorSpace.ts` — gamma LUT + tonemap helpers (the first `lib/blade/*` module)
+- `apps/web/components/editor/AccessibilityPanel.tsx` — added Reduce Bloom toggle row
+- `apps/web/components/layout/SettingsModal.tsx` — added Reduce Bloom toggle in Display section
+- `apps/web/components/shared/ResizeHandle.tsx` — restructured to 0-size wrapper + absolute hit target
+- `apps/web/components/layout/WorkbenchLayout.tsx` — dropped `px-1` on blade wrapper, removed 2D/3D toggle, removed BladeCanvas3D + StateGrid imports + the 3D / StateGrid render branches + the absolute fallback overlay
+- `apps/web/components/editor/CanvasLayout.tsx` — toolbar `min-h-[33px]`, true splitter for ExpandedSlotResizeHandle, conditional StateGrid in place of pixel strip + slot when `showStateGrid` is on
+- `apps/web/components/editor/StateGrid.tsx` — Point A / Point B alignment via `computeBladeRenderMetrics` + `bladeStartFrac`, full-width canvas with absolute label overlay, dropped header strip
+- `apps/web/components/editor/Inspector.tsx` — TUNE / GALLERY tabs `pt-[9px] pb-2` (+1 px), added TuneTabActionRow with Surprise Me + Undo at the top of TUNE tab
+- `apps/web/components/editor/DesignPanel.tsx` — removed Surprise Me + Undo block, kept group pills
+- `apps/web/components/layout/AnalysisRail.tsx` — width-resolver fix (string `'100%'` honored), row border `/40` → full opacity
 
 ## How to resume
 
@@ -115,20 +78,24 @@ pnpm -w test
 pnpm --filter @kyberstation/web dev  # or use preview_start in Claude tools
 ```
 
-Then paste this file (or reference it) and ask Claude to pick up on whichever of items A–E feels next.
+Then either:
+- **Merge the PR**: `gh pr merge 46 --merge --delete-branch`, optionally tag `v0.15.0`.
+- **Or pick up another iteration**: ask Ken what to look at next.
 
 ## Known quirks + gotchas
 
-1. **Dev server stale module resolution.** The preview server was restarted multiple times during this session to clear Next.js module caches after creating / moving files. If the editor shows import errors for files that actually exist on disk, `rm -rf apps/web/.next` + restart is the fix.
+1. **Dev server stale module resolution.** Restart the preview server if you see import errors for files that exist on disk: `rm -rf apps/web/.next && pnpm --filter @kyberstation/web dev`.
 
-2. **`uiStore.isOn` persists across reloads.** The auto-ignite on workbench load (Phase 1.5h) explicitly resets `isOn` to `false` before the 500 ms timer so the ignition animation always plays, even if the prior session persisted `isOn: true`. Don't remove the reset step — it keeps the engine (fresh on each mount) in sync with the store.
+2. **`uiStore.isOn` persists across reloads.** Phase 1.5h's auto-ignite (500 ms after workbench load) explicitly resets `isOn` to `false` first so the ignition animation always plays. Don't remove the reset.
 
-3. **`computeBladeRenderMetrics` takes `ledCount` for bladeInches bucket.** Pass the stable CONFIG `ledCount` (from the store), NOT the buffer-clamped `min(pixelCount, Math.floor(pixels.length / 3))`. The latter can briefly drop into a shorter bladeInches bucket mid-render and break Point B alignment (Phase 1.5m fix).
+3. **`computeBladeRenderMetrics` takes the CONFIG `ledCount`**, not the buffer-clamped `min(pixelCount, Math.floor(pixels.length / 3))`. The buffer count can briefly drop into a shorter `bladeInches` bucket mid-render and break Point B alignment (Phase 1.5m fix). PixelStrip + StateGrid both honor this.
 
-4. **The absolute view-controls overlay (WorkbenchLayout) only renders when `canvasMode === '3d' || (showStateGrid && activeTab === 'design')`.** If you move state-grid / 3D / fullscreen controls somewhere else, verify those edge cases still let users toggle back to 2D + single mode.
+4. **`canvasMode` is dead UI** but stays in uiStore for now. Don't add new readers; pretend the field doesn't exist. Drop it cleanly in a future session once enough time has passed.
 
-5. **Aurebesh font is monospace-fallback on unbundled clones.** The project has 4 OTF variants checked in, but if someone clones fresh without `git lfs` (if LFS is ever added) or if the `font-display: swap` never resolves, the ticker falls back to monospace. Currently works fine via standard git clone.
+5. **`BladeCanvas3DWrapper.tsx` is dead code** — file still exists in the editor folder but has no importers. Drop it cleanly in a future session.
+
+6. **Aurebesh font is monospace-fallback on unbundled clones.** OTF files at `apps/web/public/fonts/aurebesh/*.otf` ship with the repo via standard git clone — no LFS needed.
 
 ## One-line status
 
-**v0.14.0 Visualization Polish Pass complete (Phases 1–4); 23 commits on PR #46; ready for final review + merge; interface polish items A–D available for the next session.**
+**v0.14.0 Visualization Polish + Workbench Chrome Pass complete; 29 commits on PR #46 pushed to origin; gates clean; ready for final merge + optional `v0.15.0` tag.**
