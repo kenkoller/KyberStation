@@ -1,49 +1,39 @@
 'use client';
 
-// ─── Inspector — W10 slim + W13 rename (2026-04-22) ────────────────────────
+// ─── Inspector / Quick Controls — left-rail overhaul (v0.14.0 PR 3) ─────────
 //
-// Left-column panel on the Design tab. Two tabs, in order:
+// Left-column panel of the desktop editor. Post left-rail overhaul, the
+// Inspector exists as a single-surface "Quick Controls" panel — the
+// tabbed TUNE / GALLERY framing is retired because the sidebar
+// (Sidebar.tsx) absorbed the preset Gallery (routed to /gallery) and
+// the sidebar section nav absorbed the deep-tuning surfaces. What
+// remains here is the always-visible fast-access set:
 //
-//   TUNE    — ParameterBank. Renamed from "Quick" → "Tune" per W13;
-//             "Quick" implied a Quick-vs-Advanced split that no
-//             longer exists. This is where all the live-tuning
-//             sliders live (shimmer, noise, swing FX, etc).
-//   GALLERY — compact preset picker (thin blade-shaped rows with in-
-//             place hover animation). Clicking a row loads the preset
-//             into the engine without navigating away from Design.
+//   · Surprise Me + Undo        (keeps its Phase 1.5u position)
+//   · QuickColorChips           (8 canonical saber colors + Custom)
+//   · QuickIgnitionPicker       (compact row with MGP popover)
+//   · QuickRetractionPicker     (compact row with MGP popover)
+//   · ParameterBank             (7 live-tune sliders — existing)
 //
-// Everything that used to live in STYLE / COLOR / FX now lives in the
-// consolidated DesignPanel. STATE continues to live in the right-side
-// RightRail.
+// The deep tuning for each of these lives one sidebar click away
+// (APPEARANCE ▸ Color, BEHAVIOR ▸ Ignition & Retraction, etc.) — the
+// Quick Controls surface is the 80% path for new / non-power users.
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { ParameterBank } from './ParameterBank';
 import { useSurpriseMe } from './Randomizer';
-import { InspectorGalleryTab } from './InspectorGalleryTab';
-
-export type InspectorTab = 'tune' | 'gallery';
-
-interface TabDef {
-  id: InspectorTab;
-  label: string;
-}
-
-// W13 (2026-04-22): TUNE first (primary editing surface), GALLERY
-// second (preset swap). "Quick" renamed to "Tune".
-const TABS: TabDef[] = [
-  { id: 'tune',    label: 'TUNE' },
-  { id: 'gallery', label: 'GALLERY' },
-];
+import { QuickColorChips } from './quick/QuickColorChips';
+import { QuickIgnitionPicker } from './quick/QuickIgnitionPicker';
+import { QuickRetractionPicker } from './quick/QuickRetractionPicker';
 
 interface InspectorProps {
   className?: string;
-  /** Inline style overrides. OV11 uses this to thread the user-
-   *  draggable width from uiStore.inspectorWidth. */
+  /** Inline style overrides. The user-draggable width from
+   *  `uiStore.inspectorWidth` is threaded through by WorkbenchLayout. */
   style?: React.CSSProperties;
 }
 
 export function Inspector({ className, style }: InspectorProps) {
-  const [activeTab, setActiveTab] = useState<InspectorTab>('tune');
   const rootRef = useRef<HTMLElement | null>(null);
 
   return (
@@ -55,64 +45,36 @@ export function Inspector({ className, style }: InspectorProps) {
         className ?? '',
       ].join(' ')}
       role="region"
-      aria-label="Inspector"
+      aria-label="Quick Controls"
       style={style}
     >
-      {/* Tab bar — two tabs after W10 slim, so labels always fit. */}
-      <div
-        className="flex items-center border-b border-border-subtle bg-bg-deep/40 shrink-0"
-        role="tablist"
-        aria-label="Inspector tabs"
-      >
-        {TABS.map((tab) => {
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={active}
-              onClick={() => setActiveTab(tab.id)}
-              title={tab.label}
-              className={[
-                'flex-1 min-w-0 px-2 pt-[9px] pb-2 font-mono uppercase text-ui-xs transition-colors whitespace-nowrap',
-                'tracking-[0.1em]',
-                active
-                  ? 'text-accent border-b-2 border-accent'
-                  : 'text-text-muted hover:text-text-secondary border-b-2 border-transparent',
-              ].join(' ')}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Header strip — reads as a section title + aligns visually with
+          the STATE/ANALYSIS tabs on the opposite side of the canvas. */}
+      <div className="flex items-center px-3 py-2 border-b border-border-subtle bg-bg-deep/40 shrink-0">
+        <h2 className="font-mono uppercase text-ui-xs tracking-[0.12em] text-accent">
+          Quick Controls
+        </h2>
       </div>
 
-      {/* Tab body */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {activeTab === 'tune' && (
-          <div className="p-3 flex flex-col gap-3">
-            <TuneTabActionRow />
-            <ParameterBank />
-          </div>
-        )}
-        {activeTab === 'gallery' && <InspectorGalleryTab />}
+      {/* Body — scrolls independently if content exceeds canvas-row
+          height. Sections spaced with `gap-4` to separate the action
+          row, color chips, transition pickers, and slider stack. */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-4">
+        <ActionRow />
+        <QuickColorChips />
+        <QuickIgnitionPicker />
+        <QuickRetractionPicker />
+        <ParameterBank />
       </div>
     </aside>
   );
 }
 
-// InspectorGalleryTab lives in its own file so Inspector.tsx stays
-// a lean router-of-tabs shell. STATE tab continues to live in
-// RightRail (components/layout/RightRail.tsx + components/editor/StateTab.tsx).
-// The ROUTING placeholder was dropped in W10; v1.1 modulation-routing
-// work will surface in the LayerStack section inside DesignPanel
-// instead (see docs/MODULATION_ROUTING_V1.1.md).
-
-// Phase 1.5u (2026-04-24): Surprise Me + Undo were lifted out of
-// DesignPanel's top bar into the TUNE tab top, where they sit
-// directly above ParameterBank as the primary "shake the dice"
-// entry point for the live-tune surface.
-function TuneTabActionRow() {
+// Phase 1.5u (2026-04-24): Surprise Me + Undo sit at the top of the
+// Quick Controls surface — the "shake the dice" entry point stays
+// immediately reachable regardless of which sidebar section the user
+// is drilled into.
+function ActionRow() {
   const { surprise, undo, canUndo } = useSurpriseMe();
   return (
     <div className="flex items-center gap-2">
