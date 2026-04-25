@@ -6,6 +6,10 @@ import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { MiniGalleryPicker } from '@/components/shared/MiniGalleryPicker';
 import { getIgnitionThumbnail } from '@/lib/ignitionThumbnails';
 import { getRetractionThumbnail } from '@/lib/retractionThumbnails';
+import {
+  IGNITION_STYLES,
+  RETRACTION_STYLES,
+} from '@/lib/transitionCatalogs';
 
 // ─── Ignition / Retraction focused panel ─────────────────────────────────────
 //
@@ -14,44 +18,10 @@ import { getRetractionThumbnail } from '@/lib/retractionThumbnails';
 // Extracted from TabColumnContent.tsx inline 2026-04-21 as part of OV9; same
 // catalog entries, same store wiring, now driven by MiniGalleryPicker +
 // static SVG thumbnails (lib/ignitionThumbnails.tsx + retractionThumbnails.tsx).
-
-const IGNITION_STYLES = [
-  { id: 'standard',     label: 'Standard',    desc: 'Classic linear ignition' },
-  { id: 'scroll',       label: 'Scroll',       desc: 'Scrolling pixel fill' },
-  { id: 'spark',        label: 'Spark',        desc: 'Crackling spark ignition' },
-  { id: 'center',       label: 'Center Out',   desc: 'Ignites from center' },
-  { id: 'wipe',         label: 'Wipe',         desc: 'Soft wipe reveal' },
-  { id: 'stutter',      label: 'Stutter',      desc: 'Flickering unstable ignition' },
-  { id: 'glitch',       label: 'Glitch',       desc: 'Digital glitch effect' },
-  { id: 'twist',        label: 'Twist',        desc: 'Spiral ignition driven by twist' },
-  { id: 'swing',        label: 'Swing',        desc: 'Speed-reactive swing ignition' },
-  { id: 'stab',         label: 'Stab',         desc: 'Rapid center-out burst' },
-  { id: 'crackle',      label: 'Crackle',      desc: 'Random segment flicker fill' },
-  { id: 'fracture',     label: 'Fracture',     desc: 'Radiating crack points' },
-  { id: 'flash-fill',   label: 'Flash Fill',   desc: 'White flash then color wipe' },
-  { id: 'pulse-wave',   label: 'Pulse Wave',   desc: 'Sequential building waves' },
-  { id: 'drip-up',      label: 'Drip Up',      desc: 'Fluid upward flow' },
-  { id: 'hyperspace',   label: 'Hyperspace',   desc: 'Streaking star-line ignition' },
-  { id: 'summon',       label: 'Summon',       desc: 'Force-pull ignition' },
-  { id: 'seismic',      label: 'Seismic',      desc: 'Ground-shake ripple ignition' },
-  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
-];
-
-const RETRACTION_STYLES = [
-  { id: 'standard',     label: 'Standard',    desc: 'Linear retraction' },
-  { id: 'scroll',       label: 'Scroll',       desc: 'Scrolling retract' },
-  { id: 'fadeout',      label: 'Fade Out',     desc: 'Fading retraction' },
-  { id: 'center',       label: 'Center In',    desc: 'Retracts to center' },
-  { id: 'shatter',      label: 'Shatter',      desc: 'Shattering retraction' },
-  { id: 'dissolve',     label: 'Dissolve',     desc: 'Random shuffle turn-off' },
-  { id: 'flickerOut',   label: 'Flicker Out',  desc: 'Tip-to-base flicker band' },
-  { id: 'unravel',      label: 'Unravel',      desc: 'Sinusoidal thread unwind' },
-  { id: 'drain',        label: 'Drain',        desc: 'Gravity drain with meniscus' },
-  { id: 'implode',      label: 'Implode',      desc: 'Collapsing inward retraction' },
-  { id: 'evaporate',    label: 'Evaporate',    desc: 'Fading particle evaporation' },
-  { id: 'spaghettify',  label: 'Spaghettify',  desc: 'Stretching gravitational pull' },
-  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
-];
+//
+// PR 5a (2026-04-24): the 19-ignition + 13-retraction tables moved to
+// `lib/transitionCatalogs.ts` so the Inspector's QuickIgnition /
+// QuickRetraction pickers and this deep-tuning panel share one source.
 
 export function IgnitionRetractionPanel() {
   const config = useBladeStore((s) => s.config);
