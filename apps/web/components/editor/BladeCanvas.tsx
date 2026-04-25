@@ -10,6 +10,7 @@ import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
 import { AUTO_FIT_FILL } from '@/lib/bladeRenderMetrics';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
+import { BladeLayersDebugOverlay, type DebugLayerCapture } from './BladeLayersDebugOverlay';
 
 type RenderMode = 'photorealistic' | 'pixel';
 
@@ -389,6 +390,80 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const [hiltStyle, setHiltStyle] = useState<string>('minimal');
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
+
+  // ─── Render-layer debug capture (?debug=layers) ───
+  // Lazy initializer reads the URL once on first client render — avoids
+  // the useEffect-then-setState round trip that can leave the button
+  // hidden during Fast Refresh. When the flag is on, a floating "Capture
+  // Layers" button appears bottom-right; clicking it sets captureRequestRef,
+  // and the next render frame snapshots the canvas before/after each pass,
+  // computes the per-pass diff, and pushes each as its own opaque-on-black
+  // canvas. Zero overhead when the flag is off (one ref read).
+  const [debugLayersEnabled] = useState(() =>
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debug') === 'layers',
+  );
+  const [debugCaptures, setDebugCaptures] = useState<DebugLayerCapture[] | null>(null);
+  const captureRequestRef = useRef(false);
+  const captureCollectorRef = useRef<DebugLayerCapture[] | null>(null);
+  const debugSnapBeforeRef = useRef<ImageData | null>(null);
+
+  // Snapshot a ready-made canvas (offscreen, mip buffer, motion ghost) onto
+  // its own black background so the user can see what the buffer looks like
+  // in isolation. No-op when not capturing.
+  const captureBufferAsLayer = useCallback((
+    source: HTMLCanvasElement,
+    name: string,
+    description: string,
+    cw: number,
+    ch: number,
+  ) => {
+    const collector = captureCollectorRef.current;
+    if (!collector) return;
+    const out = document.createElement('canvas');
+    out.width = cw;
+    out.height = ch;
+    const oCtx = out.getContext('2d')!;
+    oCtx.fillStyle = '#000';
+    oCtx.fillRect(0, 0, cw, ch);
+    oCtx.drawImage(source, 0, 0, source.width, source.height, 0, 0, cw, ch);
+    collector.push({ name, description, canvas: out });
+  }, []);
+
+  // Diff the visible canvas against the previous snapshot — the changed
+  // pixels become the layer, unchanged pixels render black. Updates the
+  // baseline snapshot so the next call captures only what's NEW after this
+  // one. No-op when not capturing.
+  const captureDeltaAsLayer = useCallback((
+    ctx: CanvasRenderingContext2D,
+    name: string,
+    description: string,
+    cw: number,
+    ch: number,
+  ) => {
+    const collector = captureCollectorRef.current;
+    const snapBefore = debugSnapBeforeRef.current;
+    if (!collector || !snapBefore) return;
+    const after = ctx.getImageData(0, 0, cw, ch);
+    const out = document.createElement('canvas');
+    out.width = cw;
+    out.height = ch;
+    const oCtx = out.getContext('2d')!;
+    const diff = new ImageData(cw, ch);
+    const before = snapBefore.data;
+    const aft = after.data;
+    for (let i = 0; i < aft.length; i += 4) {
+      diff.data[i + 3] = 255;
+      if (before[i] !== aft[i] || before[i + 1] !== aft[i + 1] || before[i + 2] !== aft[i + 2]) {
+        diff.data[i] = aft[i];
+        diff.data[i + 1] = aft[i + 1];
+        diff.data[i + 2] = aft[i + 2];
+      }
+    }
+    oCtx.putImageData(diff, 0, 0);
+    collector.push({ name, description, canvas: out });
+    debugSnapBeforeRef.current = after;
+  }, []);
 
   // ─── Auto-fit scale ───
   // Phase 1.5f (v0.14.0): horizontal placement is driven by the user's
@@ -952,6 +1027,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
+    captureBufferAsLayer(offscreen, '01. Offscreen — LED segments', 'Per-LED rectangles drawn to the offscreen buffer. Raw pixel-strip data, before tip caps, blur, or bloom.', cw, ch);
+
     // ── Draw rounded tip cap on offscreen buffer ──
     // Ensures bloom passes wrap glow around the tip naturally
     // instead of producing a flat rectangular cutoff.
@@ -1034,6 +1111,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
+    captureBufferAsLayer(offscreen, '02. Offscreen — + endpoint glow seeds', 'LED strip + tip and emitter rounded caps + soft radial gradients at both endpoints. These widen the bloom kernel coverage so the halo wraps the blade smoothly instead of producing a rectangular cutoff.', cw, ch);
+
     // ── Apply diffusion blur to offscreen if needed ──
     if (diffusion.blurKernel > 0) {
       offCtx.save();
@@ -1058,11 +1137,13 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       offCtx.clearRect(0, 0, cw, ch);
       offCtx.drawImage(tempCanvas, 0, 0);
       offCtx.restore();
+      captureBufferAsLayer(offscreen, '03. Offscreen — diffusion blur', `CSS blur filter (kernel ${diffusion.blurKernel}px × scale) applied to the offscreen buffer. Simulates the polycarbonate diffusion tube. Only present when the selected diffusion type has blurKernel > 0.`, cw, ch);
     }
 
     // ── Draw hilt BEFORE bloom so glow overlaps it naturally ──
     const bladeColor = activeCount > 0 ? { r: satR, g: satG, b: satB } : null;
     drawHilt(ctx, bladeColor, scale);
+    captureDeltaAsLayer(ctx, '04. Hilt', 'Procedural metallic hilt drawn on the visible canvas (pommel, grip ribs, shroud, emitter). Drawn BEFORE the bloom so the halo can spill over it naturally.', cw, ch);
 
     // ══════════════════════════════════════════════════
     // ── PHASE 2 BLOOM PIPELINE ──
@@ -1128,6 +1209,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         mCtx.restore();
       }
 
+      captureBufferAsLayer(mipDefs[0].canvas, '05. Bloom mip 0 — raw (1/2 res)', `Bright-pass + ${mipDefs[0].blurPx.toFixed(1)}px blur in 1/2 res buffer. The TIGHTEST near-core glow source. Composited at α ${mipDefs[0].alpha}.`, cw, ch);
+      captureBufferAsLayer(mipDefs[1].canvas, '06. Bloom mip 1 — raw (1/4 res)', `Bright-pass + ${mipDefs[1].blurPx.toFixed(1)}px blur in 1/4 res buffer. The MID body-wide halo source. Composited at α ${mipDefs[1].alpha}.`, cw, ch);
+      captureBufferAsLayer(mipDefs[2].canvas, '07. Bloom mip 2 — raw (1/8 res)', `Bright-pass + ${mipDefs[2].blurPx.toFixed(1)}px blur in 1/8 res buffer. The WIDEST ambient wash source — also sampled below for avgBloomLum (drives floor wash, hilt wash, vignette opacity). Composited at α ${mipDefs[2].alpha}.`, cw, ch);
+
       // Composite the three mips back onto the main canvas additively.
       // Upscaled drawImage with bilinear smoothing + `lighter` gives
       // a soft continuous halo that wraps the entire blade without
@@ -1143,9 +1228,21 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.globalCompositeOperation = 'lighter';
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      for (const def of mipDefs) {
+      for (let mIdx = 0; mIdx < mipDefs.length; mIdx++) {
+        const def = mipDefs[mIdx];
         ctx.globalAlpha = def.alpha * bi * shimmer * bloomAlphaScale;
         ctx.drawImage(def.canvas, 0, 0, def.w, def.h, 0, 0, cw, ch);
+        if (captureCollectorRef.current) {
+          // Restore + capture + re-save so the delta call sees the
+          // composited mip without the bloom-loop's globalAlpha bleeding
+          // into the diff snapshot.
+          ctx.restore();
+          captureDeltaAsLayer(ctx, `${8 + mIdx}. Bloom mip ${mIdx} — composited (lighter blend, α=${(def.alpha * bi * shimmer * bloomAlphaScale).toFixed(3)})`, `Mip ${mIdx} (${def.canvas.width}×${def.canvas.height}) upscaled to canvas size and composited additively. Stacks on top of the previous bloom contribution.`, cw, ch);
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+        }
       }
       ctx.restore();
 
@@ -1191,6 +1288,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(ghost, 0, 0, def0.w, def0.h, 0, 0, cw, ch);
           ctx.restore();
+          captureBufferAsLayer(ghost, '11a. Motion ghost — raw buffer', `Persistent mip-0-sized ghost buffer integrating mip 0 across frames with (1 - swing × 0.3) persistence. Current swing: ${(swing * 100).toFixed(1)}%. Empty when swing < 2%.`, cw, ch);
+          captureDeltaAsLayer(ctx, '11b. Motion ghost — composited trail', `Ghost buffer composited additively at α=${(Math.min(0.5, swing * 0.5) * bloomAlphaScale).toFixed(3)}. The blade trail you see at high swing speeds.`, cw, ch);
         } else if (motionGhostRef.current) {
           // Below the swing threshold — clear the ghost so the next
           // swing starts from a clean buffer, not stale last-swing
@@ -1253,6 +1352,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fill();
       }
     }
+    captureDeltaAsLayer(ctx, '12. LED body segments (visible canvas)', 'Per-LED filled rectangles with 4-stop vertical gradient (edge dim → mid → bright center → mid → edge dim), plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).', cw, ch);
 
     // Pass 7: Core whiteout (HDR overexposed center — fills middle of blade body)
     const whiteH = coreH * 0.45; // wider hot core reduces dark banding
@@ -1279,6 +1379,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
       ctx.fillRect(x, bladeYPx - whiteH / 2, segW, whiteH);
     }
+    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}). Simulates the blinding overexposed center real cinematography sells.`, cw, ch);
 
     // Compute actual visible end from LED data (matches engine mask,
     // not the linear extendProgress which diverges for shatter/fadeout).
@@ -1305,6 +1406,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.stroke();
       ctx.restore();
     }
+    captureDeltaAsLayer(ctx, '14. Rim glow stroke', `2-device-pixel saturated stroke along blade top + bottom edges (α=${(0.4 * bi * shimmer * (reduceBloom ? 0.4 : 1)).toFixed(3)}). The "neon tube edge" cinematography sells on real Neopixel sabers.`, cw, ch);
 
     // Pass 8: Specular highlight line (thin white line down center)
     ctx.save();
@@ -1315,6 +1417,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.lineTo(actualVisibleEnd, bladeYPx);
     ctx.stroke();
     ctx.restore();
+    captureDeltaAsLayer(ctx, '15. Specular highlight line', '1.2px white center line at α=0.35×shimmer. Reads as polished tube specularity.', cw, ch);
 
     // ── Blade tip corona ──
     if (actualVisibleLen > 1) {
@@ -1356,6 +1459,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.arc(actualVisibleEnd, bladeYPx, tipGlowR, 0, Math.PI * 2);
       ctx.fill();
     }
+    captureDeltaAsLayer(ctx, '16. Tip corona (cap + whiteout + glow)', 'Three sub-passes drawn at the blade tip: colored semicircle, white-hot semicircle, wider radial corona gradient. Larger when mid-extension (igniting/retracting) than fully extended.', cw, ch);
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
@@ -1370,6 +1474,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.arc(bladeStartPx, bladeYPx, flashR, 0, Math.PI * 2);
       ctx.fill();
     }
+    captureDeltaAsLayer(ctx, '17. Ignition flash burst', `Bright white radial centered at the emitter, decaying quickly via ignitionFlashRef (current value: ${ignitionFlashRef.current.toFixed(3)}). Empty unless mid-ignition.`, cw, ch);
 
     // ── Phase 4: ambient wash driven by mip 2 buffer luma ──
     // Sample the bloom mip-2 buffer's average green-channel value
@@ -1424,12 +1529,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = ceilGrad;
       ctx.fillRect(bladeStartPx - 60 * scale, 0, actualVisibleLen + 120 * scale, bladeYPx - coreH / 2);
     }
+    captureDeltaAsLayer(ctx, '18. Floor + ceiling wash', `Two vertical gradients above + below the blade, alpha driven by avgBloomLum (currently ${avgBloomLum.toFixed(3)} → α=${lumaWash.toFixed(3)}). Tracks blade brightness automatically.`, cw, ch);
 
     // ── Background ambient tint (blade color bleeds into dark background) ──
     if (activeCount > 0) {
       ctx.fillStyle = rgbStr(satR, satG, satB, Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1));
       ctx.fillRect(0, 0, cw, ch);
     }
+    captureDeltaAsLayer(ctx, '19. Background ambient tint', `Full-canvas color tint at α=${(Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1)).toFixed(4)}. Pulls the dark surroundings toward the blade hue.`, cw, ch);
 
     // ── Hilt illumination: blade light washes over the metal ──
     if (bladeColor) {
@@ -1442,7 +1549,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
     }
-  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion]);
+    captureDeltaAsLayer(ctx, '20. Hilt illumination wash', `Horizontal gradient from blade-start back into the hilt area. α=${(Math.max(0.02, avgBloomLum * 0.28) * (reduceBloom ? 0.4 : 1)).toFixed(3)}. The "blade light reflecting off the metal" effect.`, cw, ch);
+  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion, captureBufferAsLayer, captureDeltaAsLayer]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
@@ -2370,6 +2478,17 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     ctx.clearRect(0, 0, cw, ch);
 
+    // ── Render-layer debug capture lifecycle (?debug=layers) ──
+    // Begin a capture session if the floating "Capture Layers" button
+    // was clicked. Each instrumented draw call below contributes one
+    // layer; the session is finalized at the bottom of this callback.
+    // Zero overhead when not capturing (one ref read).
+    if (captureRequestRef.current) {
+      captureCollectorRef.current = [];
+      captureRequestRef.current = false;
+      debugSnapBeforeRef.current = ctx.getImageData(0, 0, cw, ch);
+    }
+
     if (vertical && viewMode === 'blade') {
       // ══════════════════════════════════════════════════
       // ── VERTICAL BLADE MODE ──
@@ -2432,6 +2551,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
       // Draw blade + background in rotated space
       drawBackground(ctx);
+      captureDeltaAsLayer(ctx, '00. Background — theme fill + grid + rulers', 'Theme background color + (optional) measurement grid + edge rulers. The starting canvas before any blade pixels are drawn.', cw, ch);
       drawBladeView(ctx, engine);
 
       // Restore rotation and original dimensions
@@ -2440,6 +2560,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
       // Vignette + data panels in native screen space
       drawVignette(ctx);
+      captureDeltaAsLayer(ctx, '21. Vignette', `Radial darkening of canvas corners. Opacity modulated by avgBloomLum (currently ${avgBloomLumRef.current.toFixed(3)}) — vignette darkens proportionally to blade brightness.`, cw, ch);
 
       if (showDataPanels) {
         const padY = 20 * dpr;
@@ -2520,6 +2641,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
 
       drawBackground(ctx);
+      captureDeltaAsLayer(ctx, '00. Background — theme fill + grid + rulers', 'Theme background color + (optional) measurement grid + edge rulers. The starting canvas before any blade pixels are drawn.', cw, ch);
 
       switch (viewMode) {
         case 'blade': drawBladeView(ctx, engine); break;
@@ -2529,6 +2651,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
 
       drawVignette(ctx);
+      captureDeltaAsLayer(ctx, '21. Vignette', `Radial darkening of canvas corners. Opacity modulated by avgBloomLum (currently ${avgBloomLumRef.current.toFixed(3)}) — vignette darkens proportionally to blade brightness.`, cw, ch);
 
       if (viewMode === 'blade' && !panelMode && !mobileFullscreen && analyzeMode) {
         drawInlineStrip(ctx, engine);
@@ -2542,6 +2665,17 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
 
       if (!mobileFullscreen) drawViewLabel(ctx, viewMode);
+    }
+
+    // ── Capture-session finalize ──
+    // Hand the collected layers to React state so the overlay can render
+    // them, then tear down the session ref so subsequent frames are
+    // normal renders.
+    if (captureCollectorRef.current) {
+      const finalCaptures = captureCollectorRef.current;
+      captureCollectorRef.current = null;
+      debugSnapBeforeRef.current = null;
+      setDebugCaptures(finalCaptures);
     }
   }, {
     maxFps: reducedMotion ? 2 : undefined,
@@ -2871,6 +3005,13 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           </>
         )}
       </div>
+      {/* Render-layer debug overlay (?debug=layers) — floating capture button + grid modal. */}
+      <BladeLayersDebugOverlay
+        enabled={debugLayersEnabled}
+        captures={debugCaptures}
+        onCapture={() => { captureRequestRef.current = true; }}
+        onClear={() => setDebugCaptures(null)}
+      />
     </div>
   );
 }
