@@ -18,13 +18,12 @@ import { describe, it, expect } from 'vitest';
 import {
   inferBladeInches,
   computeBladeRenderMetrics,
-  BLADE_START,
-  BLADE_LEN,
-  MAX_BLADE_INCHES,
   AUTO_FIT_FILL,
-  AUTO_FIT_LEFT_PULL_DS,
-  BLADE_TAIL_MARGIN_DS,
 } from '../lib/bladeRenderMetrics';
+
+// Phase 1.5f: DEFAULT_BLADE_START_FRAC in bladeRenderMetrics.ts mirrors
+// REGION_LIMITS.bladeStartFrac.default in uiStore. Kept in sync by hand.
+const DEFAULT_BLADE_START_FRAC = 180;
 
 // ─── inferBladeInches ────────────────────────────────────────────────────────
 
@@ -101,26 +100,17 @@ describe('computeBladeRenderMetrics', () => {
     expect(m36.bladeWidthPx).toBeLessThan(m40.bladeWidthPx);
   });
 
-  it('blade width scales with inches but not strictly linearly (auto-fit buffer)', () => {
+  it('blade width is strictly proportional to inches (Phase 1.5f)', () => {
+    // Phase 1.5f removed the design-space auto-fit buffer. All blades
+    // share the same `maxBladePx` (container × AUTO_FIT_FILL - bladeLeftPx);
+    // blade width = maxBladePx × (inches / MAX_INCHES). So a 24" blade is
+    // exactly 24/40 = 0.6× the width of a 40" blade at the same container
+    // width + bladeStartFrac.
     const cw = 1000;
-    // BladeCanvas's auto-fit makes each blade's (hilt + blade + tail)
-    // extent fill 90% of the container, so a 24" blade gets scaled UP
-    // more than a 40" blade to hit the same target. Width ratio is
-    // therefore NOT 24/40 — it's (scaledBladeLen24 / bladeExtent24) /
-    // (scaledBladeLen40 / bladeExtent40) times the common usable width,
-    // which simplifies to (498/812) / (830/1144) ≈ 0.845.
     const m24 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 88 });
     const m40 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 144 });
     const actualRatio = m24.bladeWidthPx / m40.bladeWidthPx;
-    // Reconstruct the expected ratio from the design-space constants so
-    // the assertion stays stable if those constants are ever re-tuned.
-    const scaledLen24 = BLADE_LEN * (24 / MAX_BLADE_INCHES);
-    const scaledLen40 = BLADE_LEN * (40 / MAX_BLADE_INCHES);
-    const ext24 = BLADE_START + scaledLen24 + BLADE_TAIL_MARGIN_DS;
-    const ext40 = BLADE_START + scaledLen40 + BLADE_TAIL_MARGIN_DS;
-    const expectedRatio = (scaledLen24 / ext24) / (scaledLen40 / ext40);
-    expect(actualRatio).toBeCloseTo(expectedRatio, 10);
-    // Sanity: shorter blade should still be visibly smaller than longer.
+    expect(actualRatio).toBeCloseTo(24 / 40, 10);
     expect(actualRatio).toBeLessThan(1);
   });
 
@@ -143,34 +133,34 @@ describe('computeBladeRenderMetrics', () => {
     expect(m1000.bladeLeftPx / m500.bladeLeftPx).toBeCloseTo(2, 10);
   });
 
-  it('bladeLeftPx matches BladeCanvas origin minus the W6 left-pull', () => {
-    // W2 aligned both surfaces on `BLADE_START * scale`. W6 adds
-    // `AUTO_FIT_LEFT_PULL_DS` which shifts the whole composition left
-    // so the hilt half-slips off the container's left edge. Both
-    // BladeCanvas and computeBladeRenderMetrics apply the pull, so
-    // the alignment invariant still holds between surfaces — just
-    // against the pulled origin.
+  it('bladeLeftPx = containerWidthPx * (bladeStartFrac / 1000) — Phase 1.5f', () => {
+    // Point-A divider: user-draggable fraction-of-container-width × 1000.
+    // Same formula shared by BladeCanvas getBladeStartPx, PixelStripPanel,
+    // and VisualizationStack's computeGraphBounds so all three rails
+    // anchor to the same X.
     const cw = 1000;
-    const ledCount = 144;
-    const m = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount });
-    const scaledBladeLenDS = BLADE_LEN * (m.bladeInches / MAX_BLADE_INCHES);
-    const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
-    const scale = (cw * AUTO_FIT_FILL) / bladeExtentDS;
-    const expectedLeft = (BLADE_START - AUTO_FIT_LEFT_PULL_DS) * scale;
-    expect(m.bladeLeftPx).toBeCloseTo(expectedLeft, 10);
+    const m = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 144 });
+    // Default bladeStartFrac = 180 → 0.18 → 180 px at cw=1000.
+    expect(m.bladeLeftPx).toBeCloseTo(cw * (DEFAULT_BLADE_START_FRAC / 1000), 10);
   });
 
-  it('panX shifts bladeLeftPx without changing width', () => {
+  it('bladeStartFrac shifts bladeLeftPx; 40" width fills post-divider space', () => {
     const cw = 1000;
-    const ledCount = 144;
-    const m0 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount, panX: 0 });
-    const m50 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount, panX: 50 });
-    // panX=50 design-space → scale * 50 px real shift to the right.
-    const scaledBladeLenDS = BLADE_LEN * (m0.bladeInches / MAX_BLADE_INCHES);
-    const bladeExtentDS = BLADE_START + scaledBladeLenDS + BLADE_TAIL_MARGIN_DS;
-    const scale = (cw * AUTO_FIT_FILL) / bladeExtentDS;
-    expect(m50.bladeLeftPx - m0.bladeLeftPx).toBeCloseTo(50 * scale, 5);
-    expect(m50.bladeWidthPx).toBeCloseTo(m0.bladeWidthPx, 10);
+    const m180 = computeBladeRenderMetrics({
+      containerWidthPx: cw,
+      ledCount: 144,
+      bladeStartFrac: 180,
+    });
+    const m250 = computeBladeRenderMetrics({
+      containerWidthPx: cw,
+      ledCount: 144,
+      bladeStartFrac: 250,
+    });
+    // 250 - 180 = 70 → 70/1000 * cw = 70 px rightward shift.
+    expect(m250.bladeLeftPx - m180.bladeLeftPx).toBeCloseTo(70, 5);
+    // 40" blade width = (cw * AUTO_FIT_FILL - bladeLeftPx) * (40/40).
+    const expected40Width = cw * AUTO_FIT_FILL - m180.bladeLeftPx;
+    expect(m180.bladeWidthPx).toBeCloseTo(expected40Width, 5);
   });
 
   it('never returns NaN values for edge inputs', () => {

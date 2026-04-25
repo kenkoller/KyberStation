@@ -8,6 +8,41 @@
    --font-exo2). No external Google Fonts request — eliminates ~200-400ms
    FCP delay on slow 3G (P30 + P31 2026-04-22 audit finding). */
 
+/* Phase 1.5n (2026-04-24): Aurebesh AF self-hosted from /public/fonts/aurebesh.
+   Four variants — Canon (primary), CanonTech (tech/numeric emphasis),
+   Legends (expanded-universe forms), LegendsTech. Referenced by the HUD
+   DataTicker, .sw-aurebesh decorative class, and the aurebesh-labels /
+   aurebesh-full immersion modes. `font-display: swap` so text renders
+   immediately with the monospace fallback and re-flows on font load. */
+@font-face {
+  font-family: 'Aurebesh AF';
+  src: url('/fonts/aurebesh/AurebeshAF-Canon.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aurebesh AF Tech';
+  src: url('/fonts/aurebesh/AurebeshAF-CanonTech.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aurebesh AF Legends';
+  src: url('/fonts/aurebesh/AurebeshAF-Legends.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aurebesh AF Legends Tech';
+  src: url('/fonts/aurebesh/AurebeshAF-LegendsTech.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Channel-format: space-separated RGB for Tailwind opacity modifiers */
   --bg-deep: 6 6 10;
@@ -475,7 +510,7 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* Aurebesh decorative text */
 .sw-aurebesh {
-  font-family: 'FT Aurebesh', monospace;
+  font-family: 'Aurebesh AF', 'FT Aurebesh', monospace;
   letter-spacing: 0.05em;
 }
 
@@ -1048,16 +1083,16 @@ html.aurebesh-labels .section-header,
 html.aurebesh-labels .tab-label,
 html.aurebesh-labels .sidebar-label,
 html.aurebesh-labels [data-aurebesh] {
-  font-family: 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
+  font-family: 'Aurebesh AF', 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
   letter-spacing: 0.06em;
 }
 
 /* Full mode: everything renders in Aurebesh */
 html.aurebesh-full body {
-  font-family: 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
+  font-family: 'Aurebesh AF', 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
 }
 html.aurebesh-full .font-cinematic {
-  font-family: 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
+  font-family: 'Aurebesh AF', 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
 }
 
 /* Exclusions — never render in Aurebesh regardless of mode */

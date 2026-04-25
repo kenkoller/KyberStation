@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
+import { AUTO_FIT_FILL } from '@/lib/bladeRenderMetrics';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 
 type RenderMode = 'photorealistic' | 'pixel';
@@ -35,11 +36,10 @@ const BLADE_Y = DESIGN_H / 2;
 const BLADE_CORE_H = 26;
 
 // W6 (2026-04-22): default auto-fit pan pulls the whole composition
-// left so the hilt's left half slips off the left edge. Matches
-// `AUTO_FIT_LEFT_PULL_DS` in `apps/web/lib/bladeRenderMetrics.ts`. Any
-// divergence between the two values re-introduces the old alignment
-// drift between the blade canvas and sibling panels — keep in sync.
-const AUTO_FIT_LEFT_PULL_DS = 182;
+// left so the hilt's left half slips off the left edge. Imported from
+// `apps/web/lib/bladeRenderMetrics.ts` — single source of truth shared
+// with every sibling panel (pixel strip, analysis rail, etc.) so the
+// two can never drift out of alignment.
 
 // Data readout positions (design-space Y)
 const STRIP_Y = 400;       // pixel strip top
@@ -307,6 +307,28 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   // fresh <canvas> every frame, which caused GC churn (see the
   // 2026-04-19 perf audit P0).
   const diffusionTempRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Phase 2 bloom: 3-mip downsampled bright-pass chain. Lazily
+  // allocated + reused across frames (HMR-safe since they're
+  // component-scoped refs, not module-level). Sized per frame to
+  // 1/2, 1/4, 1/8 of the main canvas device-pixel dims.
+  const bloomMipsRef = useRef<{
+    mip0: HTMLCanvasElement;
+    mip1: HTMLCanvasElement;
+    mip2: HTMLCanvasElement;
+  } | null>(null);
+
+  // Phase 3 motion blur: persistent ghost buffer matching mip0 dims
+  // that each frame composites the current bloom mip 0 at a swing-
+  // speed-driven alpha, then blits back to main. Gives the blade a
+  // "trailing streak" during fast swings. Gated on !reducedMotion.
+  const motionGhostRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Phase 4 ambient coupling: last-computed average bloom-mip-2
+  // luma, 0–1. Set each frame by drawBladePhotorealistic; read by
+  // drawVignette so the vignette darkens proportionally to blade
+  // brightness (simulates iris adjustment from dim-room footage).
+  const avgBloomLumRef = useRef<number>(0);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
 
@@ -350,6 +372,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const verticalPanelWidths = useUIStore((s) => s.verticalPanelWidths);
   const showHilt = useUIStore((s) => s.showHilt);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
   const isPaused = useUIStore((s) => s.isPaused);
   const pauseScope = useUIStore((s) => s.pauseScope);
   const editMode = useUIStore((s) => s.editMode);
@@ -359,70 +382,37 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const stripType = config.stripType ?? 'single';
   const setStripType = useCallback((v: string) => updateConfig({ stripType: v as BladeConfig['stripType'] }), [updateConfig]);
   const [bladeLength, setBladeLength] = useState<number>(config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 132 ? 36 : 40);
-  const [showGrid, setShowGrid] = useState<boolean>(true);
+  // v0.14.0 Phase 1.5: showGrid lifted to uiStore so the BLADE PREVIEW
+  // toolbar in CanvasLayout can toggle it alongside Pause/Hilt.
+  const showGrid = useUIStore((s) => s.showGrid);
+  const toggleShowGrid = useUIStore((s) => s.toggleShowGrid);
   const [hiltStyle, setHiltStyle] = useState<string>('minimal');
   const [diffusionType, setDiffusionType] = useState<string>('medium');
   const [bladeDiameter, setBladeDiameter] = useState<number>(0.875);
-  // ─── Zoom constants ───
-  const ZOOM_MIN = 0.9;
-  const ZOOM_MAX = 1.3;
-  const ZOOM_STEP = 0.1; // button increment
 
-  // Auto-fit zoom: compute zoom so the blade fills ~90% of the blade-length axis.
-  // Base scale is height-only, so for horizontal mode we fit within canvas width,
-  // for vertical mode we fit within canvas height (blade runs vertically).
-  const computeFitZoom = useCallback((): number => {
-    const { w, h, dpr } = sizeRef.current;
-    if (w < 1 || h < 1) return 1.0;
-    const cw = w * dpr;
-    const ch = h * dpr;
-    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
-    const bladeExtentDS = BLADE_START + scaledBladeLenDS + 40;
-
-    if (vertical) {
-      // Vertical: blade length runs along canvas height, base scale = ch / DESIGN_W
-      const baseScale = ch / DESIGN_W;
-      const fitZoom = (ch * 0.98) / (bladeExtentDS * baseScale);
-      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
-    } else {
-      // Horizontal: base scale is ch / designH (height-only), blade runs along width
-      const baseScale = ch / layoutRef.current.designH;
-      const fitZoom = (cw * 0.98) / (bladeExtentDS * baseScale);
-      return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
-    }
-  }, [bladeLength, vertical]);
-
-  const [zoom, setZoom] = useState<number>(() => 1.0);
-  const [panX, setPanX] = useState<number>(0);
+  // ─── Auto-fit scale ───
+  // Phase 1.5f (v0.14.0): horizontal placement is driven by the user's
+  // draggable Point-A divider in CanvasLayout — `uiStore.bladeStartFrac`
+  // (fraction-of-container × 1000). Hilt renders to the LEFT of that X,
+  // blade + pixel strip + analysis waveform all anchor to the RIGHT.
+  // `panX` stays at 0 (legacy prop kept so vertical / 3D call sites
+  // unchanged).
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
+  const [panX] = useState<number>(0);
   const hasAutoFitRef = useRef(false);
 
-  // Zoom display value (read-only label)
-  const zoomDisplayValue = String(Math.round(zoom * 100));
-
-  // Auto-fit on first meaningful resize
+  // Re-run layout when blade length changes
   useEffect(() => {
-    const { w, h } = sizeRef.current;
-    if (w > 1 && h > 1 && !hasAutoFitRef.current) {
-      hasAutoFitRef.current = true;
-      setZoom(computeFitZoom());
-      setPanX(-AUTO_FIT_LEFT_PULL_DS);
+    if (hasAutoFitRef.current && sizeRef.current.w > 1 && sizeRef.current.h > 1) {
+      // Force a redraw cycle; the new bladeLength propagates through getScale
+      // via `bladeLength` being read at draw time. No state to mutate here
+      // now that zoom is gone — kept as a hook so the next phase can wire
+      // mip-buffer resets here if bladeLength affects buffer sizing.
     }
-  });
-
-  // Re-fit when blade length changes
-  useEffect(() => {
-    if (hasAutoFitRef.current) {
-      setZoom(computeFitZoom());
-      setPanX(-AUTO_FIT_LEFT_PULL_DS);
-    }
-  }, [bladeLength, computeFitZoom]);
+  }, [bladeLength]);
 
   // Panel resize drag state
   const dragRef = useRef<{ handle: 'blade-strip' | 'strip-graph'; startX: number; startWidths: { blade: number; strip: number; graph: number } } | null>(null);
-
-  // Keep a ref to computeFitZoom so the ResizeObserver always uses the latest
-  const computeFitZoomRef = useRef(computeFitZoom);
-  computeFitZoomRef.current = computeFitZoom;
 
   // Shimmer state for organic animation
   const shimmerRef = useRef<number>(1.0);
@@ -459,18 +449,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     };
 
+    // RAF-coalesce: during rapid ResizeHandle drags the observer fires at
+    // sub-frame cadence. Batch the canvas-dim update into a single paint
+    // cycle so we don't do N mid-frame re-layouts per drag-pixel, and so
+    // subsequent state reads always see a coherent size.
+    let rafHandle: number | null = null;
     const observer = new ResizeObserver(() => {
-      resize();
-      // Re-fit zoom to new panel size
-      if (hasAutoFitRef.current) {
-        setZoom(computeFitZoomRef.current());
-        setPanX(-AUTO_FIT_LEFT_PULL_DS);
-      }
+      if (rafHandle !== null) return;
+      rafHandle = requestAnimationFrame(() => {
+        rafHandle = null;
+        resize();
+        hasAutoFitRef.current = true;
+      });
     });
     observer.observe(container);
     resize(); // initial
+    hasAutoFitRef.current = true;
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (rafHandle !== null) cancelAnimationFrame(rafHandle);
+    };
   }, []);
 
   // ─── Panel resize drag handling ───
@@ -533,18 +532,63 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   }, []);
 
   // ─── Scale factors: maps design-space → actual canvas pixels ───
-  // Base scale: height-only — blade size is driven purely by panel height.
-  // Panel width never shrinks the blade; horizontal overflow is handled by panning.
+  //
+  // Phase 1.5f (v0.14.0): horizontal mode is WIDTH-driven AND anchored
+  // to the user-draggable Point-A divider. A 40" blade fills the
+  // entire post-divider space (up to AUTO_FIT_FILL right margin); a
+  // 20" blade fills half of that space and leaves the rest empty.
+  //
+  //   bladeStartPx = cw * (bladeStartFrac / 1000)
+  //   maxBladePx   = cw * AUTO_FIT_FILL - bladeStartPx
+  //   scale        = maxBladePx / BLADE_LEN
+  //
+  // BLADE_LEN is the 40"-blade length in design-space so a 40" blade
+  // at scale `maxBladePx / BLADE_LEN` draws exactly maxBladePx pixels
+  // wide — Point B lands at AUTO_FIT_FILL × cw. Shorter blades render
+  // proportionally shorter from the divider rightward.
+  //
+  // Vertical mode (mobile fullscreen `/m` route) keeps the legacy
+  // height-driven math — blade runs along canvas height there.
   const getBaseScale = useCallback(() => {
-    const { h, dpr } = sizeRef.current;
-    const ch = h * dpr;
-    return ch / layoutRef.current.designH;
-  }, []);
+    const { w, h, dpr } = sizeRef.current;
+    if (vertical) {
+      const ch = h * dpr;
+      return ch / layoutRef.current.designH;
+    }
+    const cw = w * dpr;
+    if (cw <= 0 || BLADE_LEN <= 0) return 1;
+    const startPx = cw * (bladeStartFrac / 1000);
+    const maxBladePx = Math.max(0, cw * AUTO_FIT_FILL - startPx);
+    return maxBladePx / BLADE_LEN;
+  }, [vertical, bladeStartFrac]);
 
-  // Zoomed scale: used for blade/hilt/glow rendering
+  // Render scale: auto-fit. v0.14.0 removed the user zoom multiplier —
+  // auto-fit IS the scale now.
   const getScale = useCallback(() => {
-    return getBaseScale() * zoom;
-  }, [getBaseScale, zoom]);
+    return getBaseScale();
+  }, [getBaseScale]);
+
+  // ─── Horizontal blade-start X (user-draggable Point A) ───
+  // Phase 1.5f: horizontal mode anchors the blade to
+  // `bladeStartFrac` — the user-draggable divider in CanvasLayout.
+  // Vertical (`/m` route) keeps the legacy `(BLADE_START + panX) * scale`
+  // math because the rotation transform is independent of the divider.
+  const getBladeStartPx = useCallback(() => {
+    const { w, dpr } = sizeRef.current;
+    const cw = w * dpr;
+    return cw * (bladeStartFrac / 1000);
+  }, [bladeStartFrac]);
+
+  // ─── Blade vertical center (canvas-height-driven) ───
+  // Phase 1.5 split: horizontal extent follows container width (above),
+  // vertical center follows container height. This keeps the blade
+  // vertically centered in its canvas region regardless of how the
+  // pixel-strip resize handle below has reshaped the blade's vertical
+  // allocation.
+  const getBladeCenterY = useCallback(() => {
+    const { h, dpr } = sizeRef.current;
+    return (h * dpr) / 2;
+  }, []);
 
   // ─── Draw background + measurement grid ───
   const drawBackground = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -563,9 +607,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const pixelsPerInch = (scaledBladeLenDS * scale) / bladeLenInches;
 
-    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeStartPx = getBladeStartPx();
     const bladeEndPx = bladeStartPx + scaledBladeLenDS * scale;
-    const bladeCenterY = layoutRef.current.bladeY * scale;
+    const bladeCenterY = getBladeCenterY();
 
     // Draw half-inch vertical lines along blade area
     ctx.textAlign = 'center';
@@ -601,7 +645,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Horizontal guide lines at blade center area
     const guideOffsets = [0, -BLADE_CORE_H / 2, BLADE_CORE_H / 2];
     for (const offset of guideOffsets) {
-      const y = (layoutRef.current.bladeY + offset) * scale;
+      const y = bladeCenterY + offset * scale;
       ctx.strokeStyle = offset === 0 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.02)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -641,7 +685,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.lineTo(x, rulerH * 0.3);
       ctx.stroke();
     }
-  }, [showGrid, bladeLength, panX, getScale, theme]);
+  }, [showGrid, bladeLength, getScale, getBladeStartPx, getBladeCenterY, theme]);
 
   // ─── Draw vignette ───
   // Inner radius pushed out to 0.55 so the vignette only darkens the far
@@ -653,10 +697,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const cx = cw / 2;
     const cy = ch / 2;
     const radius = Math.sqrt(cx * cx + cy * cy);
+    // Phase 4: modulate vignette opacity by current blade brightness —
+    // corners darken slightly when blade is hot so the eye perceives a
+    // dim-room iris adjustment. Coefficient kept subtle (up to +8%)
+    // so the vignette never becomes a distracting flash.
+    const opacityScale = 1 + avgBloomLumRef.current * 0.08;
     const grad = ctx.createRadialGradient(cx, cy, radius * 0.55, cx, cy, radius);
     grad.addColorStop(0, `rgba(${theme.vignetteColor},0)`);
-    grad.addColorStop(0.6, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.3})`);
-    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.7})`);
+    grad.addColorStop(0.6, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.3 * opacityScale})`);
+    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.7 * opacityScale})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, cw, ch);
   }, [theme]);
@@ -670,8 +719,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     // Compute hilt geometry from style
     const totalHiltW = hs.pommelW + hs.gripW + hs.shroudW + hs.emitterW;
-    const hiltStartX = ((BLADE_START + panX) * scale) - totalHiltW * scale;
-    const centerY = layoutRef.current.bladeY * scale;
+    const hiltStartX = getBladeStartPx() - totalHiltW * scale;
+    const centerY = getBladeCenterY();
     const hiltH = hs.hiltH * scale;
     const hiltTop = centerY - hiltH / 2;
     const hiltBot = centerY + hiltH / 2;
@@ -795,7 +844,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(bladeColor.r, bladeColor.g, bladeColor.b, 0.06);
       ctx.fillRect(curX, hiltTop - flare, emW, hiltH + flare * 2);
     }
-  }, [hiltStyle, panX, showHilt]);
+  }, [hiltStyle, showHilt, getBladeStartPx, getBladeCenterY]);
 
   // ─── Draw blade (photorealistic enhanced) ───
   const drawBladePhotorealistic = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
@@ -816,8 +865,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Scale blade length proportionally to inches (shorter blades = shorter visual)
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
-    const bladeStartPx = (BLADE_START + panX) * scale;
-    const bladeYPx = layoutRef.current.bladeY * scale;
+    const bladeStartPx = getBladeStartPx();
+    const bladeYPx = getBladeCenterY();
     const baseCoreH = BLADE_CORE_H * scale * diameterConfig.coreScale;
     const coreH = baseCoreH;
 
@@ -927,18 +976,23 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         offCtx.arc(tipEndX, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
         offCtx.fill();
 
-        // Wider soft glow cap for bloom seed — extends well beyond core
-        // so outermost bloom passes have enough "fuel" for smooth wrap
-        const glowCapRadius = coreH * 2.0;
+        // Wider soft glow cap for bloom seed — must extend beyond the widest
+        // blur kernel (up to ~100 device px at default scale × bloomRadius).
+        // v0.14.0 Phase 1: widened from coreH*2.0 → coreH*4.0 so the bloom's
+        // outermost passes have enough seed to wrap smoothly; the old radius
+        // was tighter than the max kernel and produced a visible rectangular
+        // "bloom box" edge at the tip.
+        const glowCapRadius = coreH * 4.0;
         const capGrad = offCtx.createRadialGradient(
           tipEndX, bladeYPx, 0,
           tipEndX, bladeYPx, glowCapRadius,
         );
         capGrad.addColorStop(0, rgbStr(capR, capG, capB, 0.8));
-        capGrad.addColorStop(0.15, rgbStr(capR, capG, capB, 0.55));
-        capGrad.addColorStop(0.35, rgbStr(capR, capG, capB, 0.3));
-        capGrad.addColorStop(0.6, rgbStr(capR, capG, capB, 0.1));
-        capGrad.addColorStop(0.85, rgbStr(capR, capG, capB, 0.03));
+        capGrad.addColorStop(0.1, rgbStr(capR, capG, capB, 0.55));
+        capGrad.addColorStop(0.22, rgbStr(capR, capG, capB, 0.3));
+        capGrad.addColorStop(0.4, rgbStr(capR, capG, capB, 0.12));
+        capGrad.addColorStop(0.65, rgbStr(capR, capG, capB, 0.04));
+        capGrad.addColorStop(0.85, rgbStr(capR, capG, capB, 0.01));
         capGrad.addColorStop(1, rgbStr(capR, capG, capB, 0));
         offCtx.fillStyle = capGrad;
         offCtx.beginPath();
@@ -956,16 +1010,22 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       offCtx.arc(emitterX, bladeYPx, coreH / 2, Math.PI / 2, -Math.PI / 2);
       offCtx.fill();
 
-      // Emitter glow seed — mirrors tip for smooth bloom wrapping
+      // Emitter glow seed — mirrors tip for smooth bloom wrapping.
+      // v0.14.0 Phase 1: widened from coreH*1.5 → coreH*4.0*0.7 (slightly
+      // tighter than the tip because the hilt occludes inward spill) so
+      // both endpoints seed the bloom symmetrically. Same stop density as
+      // the tip cap so the gradient decays at the same visual rate.
       if (emR + emG + emB > 0.5) {
-        const emGlowR = coreH * 1.5;
+        const emGlowR = coreH * 4.0 * 0.7;
         const emGrad = offCtx.createRadialGradient(
           emitterX, bladeYPx, 0,
           emitterX, bladeYPx, emGlowR,
         );
         emGrad.addColorStop(0, rgbStr(emR, emG, emB, 0.6));
-        emGrad.addColorStop(0.3, rgbStr(emR, emG, emB, 0.25));
-        emGrad.addColorStop(0.65, rgbStr(emR, emG, emB, 0.06));
+        emGrad.addColorStop(0.15, rgbStr(emR, emG, emB, 0.4));
+        emGrad.addColorStop(0.3, rgbStr(emR, emG, emB, 0.22));
+        emGrad.addColorStop(0.5, rgbStr(emR, emG, emB, 0.1));
+        emGrad.addColorStop(0.75, rgbStr(emR, emG, emB, 0.03));
         emGrad.addColorStop(1, rgbStr(emR, emG, emB, 0));
         offCtx.fillStyle = emGrad;
         offCtx.beginPath();
@@ -1005,45 +1065,140 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     drawHilt(ctx, bladeColor, scale);
 
     // ══════════════════════════════════════════════════
-    // ── SMOOTH BLOOM PIPELINE ──
-    // Graduated blur passes with continuous exponential
-    // alpha falloff for seamless glow without visible steps.
+    // ── PHASE 2 BLOOM PIPELINE ──
+    // Bright-pass (contrast+brightness threshold) → downsample to
+    // 3 mip levels (1/2, 1/4, 1/8) → blur each mip at its own
+    // resolution → composite all three back additively. Each blur
+    // kernel is small-pixel in its small buffer but gives a wide
+    // effective halo once upscaled, so the widest mip produces a
+    // smooth full-blade glow instead of the stacked-pass seam
+    // ridges the old 14-pass loop suffered from.
+    //
+    // Cost is ~1/8 the old loop's fragment work at DPR 2:
+    // 3 draws at downsampled sizes vs 14+ at full canvas res.
     // ══════════════════════════════════════════════════
 
     const br = glow.bloomRadius;
     const bi = glow.bloomIntensity;
 
-    // Skip the 14-pass bloom pipeline (+ bridge glow) when the blade is
-    // off or bloom intensity is zero — there's nothing to glow. Saves
-    // ~50% of frame budget during the retracted state. The blade-body
-    // pass below still runs; it self-skips unlit LEDs at the pixel
-    // level. See the 2026-04-19 perf audit quick-win #5.
     const bloomActive = activeCount > 0 && bi > 0;
     if (bloomActive) {
-      // Continuous bloom: 14 passes with geometric radius progression.
-      // Each overlaps its neighbors significantly → no visible banding.
-      const passCount = 14;
-      for (let i = 0; i < passCount; i++) {
-        const t = i / (passCount - 1); // 0 (tightest) → 1 (widest)
-        // Radius: exponential from 2px to 100px
-        const radius = 2 + 98 * Math.pow(t, 1.4);
-        // Alpha: tighter passes are more opaque, wider are subtle
-        const alpha = (0.02 + 0.36 * Math.pow(1 - t, 1.8)) * bi * shimmer;
-        ctx.save();
-        ctx.filter = `blur(${radius * scale * br}px)`;
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = alpha;
-        ctx.drawImage(offscreen, 0, 0);
-        ctx.restore();
+      // Lazy allocate mip chain. Canvases are resized in place each
+      // frame to match the 1/2, 1/4, 1/8 dims of the main canvas.
+      if (!bloomMipsRef.current) {
+        bloomMipsRef.current = {
+          mip0: document.createElement('canvas'),
+          mip1: document.createElement('canvas'),
+          mip2: document.createElement('canvas'),
+        };
+      }
+      const mips = bloomMipsRef.current;
+      const mipDefs: Array<{
+        canvas: HTMLCanvasElement;
+        w: number;
+        h: number;
+        blurPx: number;
+        alpha: number;
+      }> = [
+        // mip0: tight near-core glow
+        { canvas: mips.mip0, w: Math.max(1, Math.ceil(cw / 2)), h: Math.max(1, Math.ceil(ch / 2)), blurPx: 6 * br, alpha: 0.55 },
+        // mip1: body-wide halo
+        { canvas: mips.mip1, w: Math.max(1, Math.ceil(cw / 4)), h: Math.max(1, Math.ceil(ch / 4)), blurPx: 10 * br, alpha: 0.40 },
+        // mip2: ambient wash (also usable by stage 10 later)
+        { canvas: mips.mip2, w: Math.max(1, Math.ceil(cw / 8)), h: Math.max(1, Math.ceil(ch / 8)), blurPx: 14 * br, alpha: 0.28 },
+      ];
+
+      // Populate each mip: single drawImage with a chained CSS filter
+      // (bright-pass threshold + blur) does the work in one GPU pass.
+      for (const def of mipDefs) {
+        if (def.canvas.width !== def.w || def.canvas.height !== def.h) {
+          def.canvas.width = def.w;
+          def.canvas.height = def.h;
+        }
+        const mCtx = def.canvas.getContext('2d')!;
+        mCtx.clearRect(0, 0, def.w, def.h);
+        mCtx.save();
+        // contrast(1.4) + brightness(1.05) drives mid tones toward 0
+        // and highlights toward 1.0 — the soft threshold that keeps
+        // only the blade's hot pixels glowing. blur is applied AFTER
+        // in the same filter chain so the small canvas holds a pre-
+        // blurred bright-pass image ready for additive compositing.
+        mCtx.filter = `contrast(1.4) brightness(1.05) blur(${def.blurPx}px)`;
+        mCtx.drawImage(offscreen, 0, 0, cw, ch, 0, 0, def.w, def.h);
+        mCtx.restore();
       }
 
-      // Bridge glow — soft additive fill between bloom and blade body
+      // Composite the three mips back onto the main canvas additively.
+      // Upscaled drawImage with bilinear smoothing + `lighter` gives
+      // a soft continuous halo that wraps the entire blade without
+      // visible ridges. shimmer adds the per-frame micro-variation
+      // the old pipeline relied on for "alive" look.
+      //
+      // Phase 3: reduceBloom (a11y) scales the mip alpha to 40% of
+      // the authored value so photosensitive users get a dimmer halo
+      // while still seeing the blade is lit. Does NOT disable bloom
+      // entirely — the halo is intrinsic to the "lightsaber" identity.
+      const bloomAlphaScale = reduceBloom ? 0.4 : 1;
       ctx.save();
-      ctx.filter = `blur(${2.5 * scale * br}px)`;
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.35 * bi * shimmer;
-      ctx.drawImage(offscreen, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      for (const def of mipDefs) {
+        ctx.globalAlpha = def.alpha * bi * shimmer * bloomAlphaScale;
+        ctx.drawImage(def.canvas, 0, 0, def.w, def.h, 0, 0, cw, ch);
+      }
       ctx.restore();
+
+      // Phase 3 motion blur: persistent ghost buffer at mip 0 dims
+      // composites current mip 0 each frame with `(1 - swing * 0.3)`
+      // persistence. When the user's swing is fast, a blade trail
+      // lags visibly; at rest the ghost fades to nothing so there
+      // is zero visual cost. Gated on !reducedMotion so vestibular-
+      // sensitive users don't get streaks. Ghost buffer is separate
+      // from bloomMipsRef so the trail survives across frames
+      // independently of the current bloom chain.
+      if (!reducedMotion) {
+        const swing = Math.max(0, Math.min(1, useBladeStore.getState().motionSim.swing / 100));
+        if (swing > 0.02) {
+          const ghost = motionGhostRef.current ?? document.createElement('canvas');
+          if (!motionGhostRef.current) motionGhostRef.current = ghost;
+          const def0 = mipDefs[0];
+          if (ghost.width !== def0.w || ghost.height !== def0.h) {
+            ghost.width = def0.w;
+            ghost.height = def0.h;
+          }
+          const gCtx = ghost.getContext('2d')!;
+          // Fade the existing ghost by `swing * 0.3` of its own
+          // opacity, then paint the current mip 0 on top — that's
+          // the temporal integration the trail uses.
+          gCtx.save();
+          gCtx.globalCompositeOperation = 'destination-in';
+          gCtx.globalAlpha = Math.max(0, 1 - swing * 0.3);
+          gCtx.fillStyle = '#fff';
+          gCtx.fillRect(0, 0, def0.w, def0.h);
+          gCtx.restore();
+          gCtx.save();
+          gCtx.globalCompositeOperation = 'lighter';
+          gCtx.globalAlpha = 1;
+          gCtx.drawImage(def0.canvas, 0, 0);
+          gCtx.restore();
+          // Composite the trail back onto main. Upscaled with
+          // `lighter` so it stacks on top of the fresh bloom.
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = Math.min(0.5, swing * 0.5) * bloomAlphaScale;
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(ghost, 0, 0, def0.w, def0.h, 0, 0, cw, ch);
+          ctx.restore();
+        } else if (motionGhostRef.current) {
+          // Below the swing threshold — clear the ghost so the next
+          // swing starts from a clean buffer, not stale last-swing
+          // residual.
+          const g = motionGhostRef.current;
+          g.getContext('2d')?.clearRect(0, 0, g.width, g.height);
+        }
+      }
     }
 
     // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
@@ -1130,6 +1285,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
     const actualVisibleLen = maxLitT * bladeLenPx;
 
+    // Phase 3: rim glow — thin saturated stroke along the blade's
+    // top + bottom edges. Renders AFTER the blade body + whiteout
+    // stages so it reads as the "neon tube edge" cinematography sells
+    // on real Neopixel sabers. Alpha scales with bloomIntensity so
+    // dim profiles get a subtle rim and bright profiles a bold one.
+    // Skipped when blade isn't lit (avoids a thin line over the hilt).
+    if (actualVisibleLen > 1) {
+      const rimAlpha = 0.4 * bi * shimmer * (reduceBloom ? 0.4 : 1);
+      ctx.save();
+      ctx.strokeStyle = rgbStr(satR, satG, satB, rimAlpha);
+      ctx.lineWidth = 2 * dpr;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(bladeStartPx, bladeYPx - coreH / 2);
+      ctx.lineTo(actualVisibleEnd, bladeYPx - coreH / 2);
+      ctx.moveTo(bladeStartPx, bladeYPx + coreH / 2);
+      ctx.lineTo(actualVisibleEnd, bladeYPx + coreH / 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Pass 8: Specular highlight line (thin white line down center)
     ctx.save();
     ctx.strokeStyle = `rgba(255,255,255,${0.35 * shimmer})`;
@@ -1195,9 +1371,43 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fill();
     }
 
-    // ── Enhanced floor wash (wider, more saturated) ──
+    // ── Phase 4: ambient wash driven by mip 2 buffer luma ──
+    // Sample the bloom mip-2 buffer's average green-channel value
+    // as a luma proxy. This value tracks the blade's overall
+    // brightness automatically — ignitions pulse it, clash flashes
+    // spike it, retraction fades it — so the floor / ceiling /
+    // ambient-tint / hilt-wash alphas track the blade state without
+    // manual `* glow.bloomIntensity` multipliers. Falls back to the
+    // prior static formula when mip 2 hasn't been populated yet
+    // (first frame before bloom runs).
+    //
+    // Sampling mip 2 is cheap: at canvas 980×295 dim, mip 2 is
+    // ~123×37 = 4500 pixels. getImageData reads ~18 KB/frame.
+    let avgBloomLum = 0;
+    if (bloomActive && bloomMipsRef.current) {
+      const m2 = bloomMipsRef.current.mip2;
+      if (m2.width > 0 && m2.height > 0) {
+        try {
+          const m2Ctx = m2.getContext('2d')!;
+          const data = m2Ctx.getImageData(0, 0, m2.width, m2.height).data;
+          let sum = 0;
+          const count = data.length / 4;
+          for (let i = 0; i < data.length; i += 4) sum += data[i + 1];
+          avgBloomLum = count > 0 ? sum / (count * 255) : 0;
+        } catch {
+          // Cross-origin-tainted canvas or 0-size — skip coupling.
+          avgBloomLum = 0;
+        }
+      }
+    }
+    // Publish to ref for drawVignette + any future consumers.
+    avgBloomLumRef.current = avgBloomLum;
+    // Coupling coefficient: 0.5 avg luma → back to prior 0.08 alpha.
+    const lumaWash = Math.max(0.005, avgBloomLum * 0.18) * (reduceBloom ? 0.4 : 1);
+
+    // ── Floor + ceiling wash (mip-2-driven) ──
     if (activeCount > 0) {
-      const washAlpha = 0.08 * glow.bloomIntensity;
+      const washAlpha = lumaWash;
       const floorGrad = ctx.createLinearGradient(0, bladeYPx + coreH / 2, 0, ch);
       floorGrad.addColorStop(0, rgbStr(satR, satG, satB, washAlpha));
       floorGrad.addColorStop(0.3, rgbStr(satR, satG, satB, washAlpha * 0.5));
@@ -1217,22 +1427,22 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
     // ── Background ambient tint (blade color bleeds into dark background) ──
     if (activeCount > 0) {
-      const ambientAlpha = 0.015 * glow.bloomIntensity;
-      ctx.fillStyle = rgbStr(satR, satG, satB, ambientAlpha);
+      ctx.fillStyle = rgbStr(satR, satG, satB, Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1));
       ctx.fillRect(0, 0, cw, ch);
     }
 
     // ── Hilt illumination: blade light washes over the metal ──
     if (bladeColor) {
       const hiltEndX = bladeStartPx;
+      const hiltAlpha = Math.max(0.02, avgBloomLum * 0.28) * (reduceBloom ? 0.4 : 1);
       const hiltWash = ctx.createLinearGradient(hiltEndX, 0, hiltEndX - 200 * scale, 0);
-      hiltWash.addColorStop(0, rgbStr(satR, satG, satB, 0.12 * glow.bloomIntensity));
-      hiltWash.addColorStop(0.3, rgbStr(satR, satG, satB, 0.05));
+      hiltWash.addColorStop(0, rgbStr(satR, satG, satB, hiltAlpha));
+      hiltWash.addColorStop(0.3, rgbStr(satR, satG, satB, hiltAlpha * 0.4));
       hiltWash.addColorStop(1, rgbStr(satR, satG, satB, 0));
       ctx.fillStyle = hiltWash;
       ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
     }
-  }, [brightness, drawHilt, getOffscreen, getScale, stripType, diffusionType, bladeDiameter, bladeLength, panX, theme]);
+  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
@@ -1253,10 +1463,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.fillRect(0, 0, cw, ch);
 
     // Blade position (scale-accurate: shorter blades = shorter visual)
-    const bladeStartPx = (BLADE_START + panX) * scale;
+    const bladeStartPx = getBladeStartPx();
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
-    const bladeYPx = layoutRef.current.bladeY * scale;
+    const bladeYPx = getBladeCenterY();
     const bladeH = BLADE_CORE_H * scale;
     const pixelGap = 1 * scale; // gap between LED pixels
 
@@ -1373,7 +1583,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fillText(ch.label, margin - 4 * scale, y + barH / 2 + 3 * scale);
       });
     }
-  }, [brightness, drawHilt, getScale, stripType, bladeLength, panX]);
+  }, [brightness, drawHilt, getScale, getBladeStartPx, getBladeCenterY, stripType, bladeLength]);
 
   // ─── View modes ───
 
@@ -1406,8 +1616,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       drawBlade(ctx, engine);
 
       const scale = getScale();
-      const emitterX = (BLADE_START + panX) * scale;
-      const bladeY = layoutRef.current.bladeY * scale;
+      const emitterX = getBladeStartPx();
+      const bladeY = getBladeCenterY();
       const quillonLen = 60 * scale; // short quillon blades
       const quillonH = 6 * scale;
 
@@ -1450,7 +1660,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // Single blade or other topologies — default rendering
       drawBlade(ctx, engine);
     }
-  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, panX]);
+  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, getBladeStartPx, getBladeCenterY]);
 
   const drawAngleView = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const { w, h, dpr } = sizeRef.current;
@@ -1704,6 +1914,11 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   // ─── View mode label ───
   const drawViewLabel = useCallback((ctx: CanvasRenderingContext2D, mode: string) => {
+    // Phase 1.5i: suppress the "Blade View" label in default mode —
+    // the BLADE PREVIEW panel header above the canvas already names
+    // the region. Keep the label for the less-common angle / strip /
+    // cross modes where the user might benefit from the hint.
+    if (mode === 'blade') return;
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;
     const ch = h * dpr;
@@ -1840,13 +2055,13 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const ledCount = Math.min(config.ledCount, bufferLeds);
     if (ledCount <= 0) return;
 
-    const scale = getScale(); // zoomed scale — strip moves with blade
+    const scale = getScale(); // auto-fit scale — strip tracks blade
     const bri = brightness / 100;
 
     // Design-space coordinates, scaled uniformly with blade
     const stripTop = layoutRef.current.stripY * scale;
     const stripH = 16 * scale;
-    const graphLeft = (BLADE_START + panX) * scale;
+    const graphLeft = getBladeStartPx();
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const stripW = scaledBladeLenDS * scale;
     const cellW = stripW / ledCount;
@@ -1894,9 +2109,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.moveTo(bgX, dividerY);
     ctx.lineTo(bgX + bgW, dividerY);
     ctx.stroke();
-  }, [config.ledCount, getScale, brightness, bladeLength, panX, theme]);
+  }, [config.ledCount, getScale, getBladeStartPx, brightness, bladeLength, theme]);
 
-  // ─── RGB Line Graph (docked to bottom, unaffected by zoom) ───
+  // ─── RGB Line Graph (docked to bottom) ───
   const drawRGBGraph = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const pixels = engine.getPixels();
     const bufferLeds = Math.floor(pixels.length / 3);
@@ -1910,7 +2125,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const graphTop = layoutRef.current.graphTopY * scale;
     const graphBottom = layoutRef.current.graphBotY * scale;
     const graphH = graphBottom - graphTop;
-    const graphLeft = (BLADE_START + panX) * scale;
+    const graphLeft = getBladeStartPx();
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const graphW = scaledBladeLenDS * scale;
 
@@ -1969,7 +2184,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     ctx.font = `${8 * scale}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillText('RGB', graphLeft + 2 * scale, graphTop + 10 * scale);
-  }, [config.ledCount, getScale, bladeLength, panX, theme]);
+  }, [config.ledCount, getScale, getBladeStartPx, bladeLength, theme]);
 
   // ─── Vertical Pixel Strip (native screen-space, bottom → top) ───
   const drawVerticalStrip = useCallback((
@@ -2174,7 +2389,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const rotatedW = ch;          // design-space W → canvas height
       const rotatedH = bladeEndX;   // design-space H → blade panel width (for centering only)
       const baseScale = rotatedW / DESIGN_W;
-      const rScale = baseScale * zoom;
+      const rScale = baseScale;
       const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
       const renderedH = layoutRef.current.designH * baseScale;
 
@@ -2287,8 +2502,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // mode-agnostic) can project clicks onto the hilt→tip line.
       if (viewMode === 'blade') {
         const scale = getScale();
-        const bladeYScreen = layoutRef.current.bladeY * scale;
-        const hiltXScreen = (BLADE_START + panX) * scale;
+        const bladeYScreen = getBladeCenterY();
+        const hiltXScreen = getBladeStartPx();
         const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
         const tipXScreen = hiltXScreen + scaledBladeLenDS * scale;
         bladeHitRef.current = {
@@ -2521,7 +2736,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       {/* LED Count + Grid toggle */}
       <span className="text-text-muted">{config.ledCount} LEDs</span>
       <button
-        onClick={() => setShowGrid(!showGrid)}
+        onClick={toggleShowGrid}
         className={`touch-target px-1.5 py-0.5 rounded border text-ui-sm transition-colors ${
           showGrid
             ? 'border-accent/40 text-accent bg-accent-dim/30'
@@ -2536,23 +2751,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     </div>
   );
 
-  // ─── Always-in-frame zoom clamp ───
-  // Ensures the blade never scrolls entirely off-screen during pan/zoom.
-  const clampPanX = useCallback((newPanX: number, newZoom: number): number => {
-    const { w, dpr } = sizeRef.current;
-    const cw = w * dpr;
-    const bs = getBaseScale();
-    const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
-    const visibleW = cw / (bs * newZoom);
-    // At least 20% of blade (or 30% of viewport) must remain visible
-    const margin = Math.min(scaledBladeLenDS * 0.2, visibleW * 0.3);
-
-    const maxPan = visibleW - BLADE_START - margin;
-    const minPan = -(BLADE_START + scaledBladeLenDS - margin);
-
-    return Math.max(minPan, Math.min(maxPan, newPanX));
-  }, [getBaseScale, bladeLength]);
-
   return (
     <div className="flex flex-col h-full w-full gap-1.5">
       {/* ── Blade Config Bar (tablet only — desktop uses CanvasToolbar + BladeHardwarePanel;
@@ -2560,14 +2758,28 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       {!mobileFullscreen && <div className="hidden tablet:block desktop:hidden">{configBar}</div>}
 
       {/* ── Canvas Container ── */}
+      {/*
+        Phase 1.5c: drop the 200px minHeight when in panelMode (inside
+        CanvasLayout). The outer panel already has `min-h-0 overflow-hidden`
+        and the expanded-slot / pixel-strip resize handles have their own
+        region mins — the old 200px floor was causing the blade canvas to
+        overflow its parent when both handles dragged their regions large,
+        so the blade visibly shifted out of view. Outside panelMode (the
+        standalone mobile `/m` route) keep a small floor of 80px so the
+        canvas is still usable at extreme viewport sizes.
+      */}
       <div
         ref={containerRef}
-        className={`relative flex-1 overflow-hidden ${
+        className={`relative flex-1 min-h-0 overflow-hidden ${
           mobileFullscreen
             ? 'rounded-none border-0'
-            : 'rounded-panel border border-border-subtle'
+            : panelMode
+              ? 'border-0'
+              : 'rounded-panel border border-border-subtle'
         }`}
-        style={{ minHeight: mobileFullscreen ? undefined : '200px' }}
+        style={{
+          minHeight: mobileFullscreen || panelMode ? undefined : '80px',
+        }}
       >
         <canvas
           ref={canvasRef}
@@ -2607,51 +2819,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
             />
           </div>
         )}
-        {/* Zoom controls overlay — hidden in mobileFullscreen mode (`/m` preset browser) */}
-        {!mobileFullscreen && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
-            <button
-              onClick={() => setZoom((prevZoom) => {
-                const newZoom = Math.max(ZOOM_MIN, prevZoom - ZOOM_STEP);
-                const bs = getBaseScale();
-                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-                setPanX(clampPanX(newPanX, newZoom));
-                return newZoom;
-              })}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <span className="text-ui-xs text-text-muted tabular-nums w-8 text-center select-none" aria-label={`Zoom ${zoomDisplayValue}%`}>
-              {zoomDisplayValue}%
-            </span>
-            <button
-              onClick={() => setZoom((prevZoom) => {
-                const newZoom = Math.min(ZOOM_MAX, prevZoom + ZOOM_STEP);
-                const bs = getBaseScale();
-                const bladeMidDS = BLADE_START + (BLADE_LEN * (bladeLength / MAX_BLADE_INCHES)) / 2;
-                const oldScreenX = (bladeMidDS + panX) * bs * prevZoom;
-                const newPanX = oldScreenX / (bs * newZoom) - bladeMidDS;
-                setPanX(clampPanX(newPanX, newZoom));
-                return newZoom;
-              })}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1"
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <button
-              onClick={() => { setZoom(computeFitZoom()); setPanX(0); }}
-              className="touch-target text-text-muted hover:text-text-primary text-ui-xs px-1 border-l border-border-subtle ml-0.5 pl-1.5"
-              aria-label="Fit blade to panel"
-            >
-              Fit
-            </button>
-          </div>
-        )}
+        {/* Zoom controls removed in v0.14.0 — auto-fit is the only scale. */}
         {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles; hidden in mobileFullscreen so `/m` stays a clean preset browser) */}
         {!panelMode && !mobileFullscreen && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">

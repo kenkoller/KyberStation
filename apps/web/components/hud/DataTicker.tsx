@@ -51,10 +51,10 @@ export function DataTicker({
         style={{
           display: 'inline-block',
           whiteSpace: 'nowrap',
-          fontFamily: "var(--font-jetbrains-mono), 'JetBrains Mono', monospace",
-          fontSize: 7,
-          letterSpacing: '0.05em',
-          color: 'rgba(var(--accent), 0.15)',
+          fontFamily: "'Aurebesh AF', 'FT Aurebesh', monospace",
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          color: 'rgba(var(--accent), 0.18)',
           opacity: 'var(--ambient-intensity, 1)',
           animation: `hud-ticker-scroll ${speed}s linear infinite`,
         }}

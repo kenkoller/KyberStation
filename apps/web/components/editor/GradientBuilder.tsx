@@ -1,4 +1,5 @@
 'use client';
+// TODO(left-rail-overhaul): consumer migration in progress — content now lives in ColorPanel.tsx
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';

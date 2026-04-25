@@ -12,11 +12,72 @@ import {
   LINE_GRAPH_SHAPED_LAYER_IDS,
   type VisualizationLayerId,
 } from '@/lib/visualizationTypes';
+import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
 
 // ─── Constants ───
 
 /** mA per WS2812B channel at full brightness */
 const MA_PER_CHANNEL = 20;
+
+// ─── Graph-bounds helper ─────────────────────────────────────────────────
+//
+// Phase 1.5b: all line-graph render functions below (rgb-luma, power-draw,
+// hue, saturation, swing-response, transition-progress) need to map their
+// horizontal extent to the blade's Point A → Point B, not the full canvas.
+// Otherwise the waveform runs edge-to-edge inside the analysis slot while
+// the blade + pixel strip above it sit at ~90% width, producing visible
+// misalignment between the three rails.
+//
+// `computeBladeRenderMetrics` returns CSS-pixel bladeLeftPx / bladeWidthPx
+// from the container width. Render functions operate in device pixels so
+// we convert on the way out. Returns `{gx, gw}` in device pixels.
+/**
+ * Current user-draggable Point-A value. Set by `LayerCanvas.draw` via
+ * `setCurrentBladeStartFrac` immediately before each render pass so
+ * every `computeGraphBounds` call downstream resolves the same
+ * Point A as the blade canvas + pixel strip.
+ *
+ * Module-level instead of threading bladeStartFrac through 7 function
+ * signatures — the render functions are stateless pure drawers otherwise.
+ */
+let currentBladeStartFrac = 180; // fallback matches REGION_LIMITS default
+let currentBladeLedCount = 144;  // fallback matches bladeStore DEFAULT_CONFIG
+
+function setCurrentBladeStartFrac(frac: number): void {
+  currentBladeStartFrac = frac;
+}
+
+function setCurrentBladeLedCount(count: number): void {
+  currentBladeLedCount = count;
+}
+
+function computeGraphBounds(
+  cw: number,
+  dpr: number,
+  // `_incomingLeds` is the buffer-clamped count each render fn passes in.
+  // We IGNORE it for extent purposes because the engine may briefly expose
+  // fewer LEDs than configured (mid-resize / mid-bind) which would drop
+  // bladeInches to a shorter bucket and shrink the waveform extent by
+  // ~10%, putting the analysis rail out of alignment with the blade
+  // canvas + pixel strip above. Instead, use the stable
+  // `currentBladeLedCount` set by LayerCanvas from bladeStore.config.
+  _incomingLeds: number,
+): { gx: number; gw: number } {
+  const containerWidthCssPx = cw / Math.max(dpr, 1);
+  if (containerWidthCssPx <= 0 || currentBladeLedCount <= 0) {
+    const padX = 6 * dpr;
+    return { gx: padX, gw: Math.max(cw - padX * 2, 0) };
+  }
+  const metrics = computeBladeRenderMetrics({
+    containerWidthPx: containerWidthCssPx,
+    ledCount: currentBladeLedCount,
+    bladeStartFrac: currentBladeStartFrac,
+  });
+  return {
+    gx: metrics.bladeLeftPx * dpr,
+    gw: metrics.bladeWidthPx * dpr,
+  };
+}
 /** Proffieboard max recommended continuous draw (mA) */
 const BOARD_MAX_MA = 5000;
 /** Dark background color for all layer graphs */
@@ -169,15 +230,14 @@ function drawWaveform(
   yMax: number,
   lineColor: string,
   dpr: number,
+  ledCount: number,
 ) {
   const n = values.length;
   if (n === 0) return;
 
-  const padX = 6 * dpr;
   const padY = 3 * dpr;
-  const gx = padX;
+  const { gx, gw } = computeGraphBounds(cw, dpr, ledCount);
   const gy = padY;
-  const gw = cw - padX * 2;
   const gh = ch - padY * 2;
   if (gw <= 0 || gh <= 0) return;
 
@@ -244,11 +304,9 @@ function renderRgbLumaLayer(
   ctx.fillRect(0, 0, cw, ch);
   if (leds <= 0) return;
 
-  const padX = 6 * dpr;
   const padY = 3 * dpr;
-  const gx = padX;
+  const { gx, gw } = computeGraphBounds(cw, dpr, leds);
   const gy = padY;
-  const gw = cw - padX * 2;
   const gh = ch - padY * 2;
   if (gw <= 0 || gh <= 0) return;
 
@@ -315,14 +373,12 @@ function renderPowerDrawLayer(
     const b = (pixels[i * 3 + 2] ?? 0) * briScale;
     values.push(((r + g + b) / 255) * MA_PER_CHANNEL);
   }
-  drawWaveform(ctx, values, cw, ch, 0, maxMaPerPixel, '#ffaa00', dpr);
+  drawWaveform(ctx, values, cw, ch, 0, maxMaPerPixel, '#ffaa00', dpr, leds);
 
   // 5A limit line
-  const padX = 6 * dpr;
   const padY = 3 * dpr;
-  const gx = padX;
+  const { gx, gw } = computeGraphBounds(cw, dpr, leds);
   const gy = padY;
-  const gw = cw - padX * 2;
   const gh = ch - padY * 2;
   if (gw > 0 && gh > 0) {
     const safePerPixel = leds > 0 ? BOARD_MAX_MA / leds : maxMaPerPixel;
@@ -356,7 +412,7 @@ function renderHueLayer(
     const b = pixels[i * 3 + 2] ?? 0;
     values.push(rgbToHsv(r, g, b).h);
   }
-  drawWaveform(ctx, values, cw, ch, 0, 360, '#cc88ff', dpr);
+  drawWaveform(ctx, values, cw, ch, 0, 360, '#cc88ff', dpr, leds);
 }
 
 function renderSaturationLayer(
@@ -374,7 +430,7 @@ function renderSaturationLayer(
     const b = pixels[i * 3 + 2] ?? 0;
     values.push(rgbToHsv(r, g, b).s * 100);
   }
-  drawWaveform(ctx, values, cw, ch, 0, 100, '#ff88cc', dpr);
+  drawWaveform(ctx, values, cw, ch, 0, 100, '#ff88cc', dpr, leds);
 }
 
 function renderEffectOverlayLayer(
@@ -385,10 +441,8 @@ function renderEffectOverlayLayer(
   ch: number,
   dpr: number,
 ) {
-  const padX = 6 * dpr;
   const padY = 3 * dpr;
-  const gx = padX;
-  const gw = cw - padX * 2;
+  const { gx, gw } = computeGraphBounds(cw, dpr, leds);
   const gh = ch - padY * 2;
 
   ctx.fillStyle = BG_COLOR;
@@ -420,15 +474,14 @@ function renderSwingResponseLayer(
   ch: number,
   swingSpeed: number,
   dpr: number,
+  ledCount: number,
 ) {
   ctx.fillStyle = BG_COLOR;
   ctx.fillRect(0, 0, cw, ch);
 
-  const padX = 6 * dpr;
   const padY = 3 * dpr;
-  const gx = padX;
+  const { gx, gw } = computeGraphBounds(cw, dpr, ledCount);
   const gy = padY;
-  const gw = cw - padX * 2;
   const gh = ch - padY * 2;
   if (gw <= 0 || gh <= 0) return;
 
@@ -464,15 +517,14 @@ function renderTransitionProgressLayer(
   ch: number,
   bladeState: string,
   dpr: number,
+  ledCount: number,
 ) {
   ctx.fillStyle = BG_COLOR;
   ctx.fillRect(0, 0, cw, ch);
 
-  const padX = 6 * dpr;
   const padY = 3 * dpr;
-  const gx = padX;
+  const { gx, gw } = computeGraphBounds(cw, dpr, ledCount);
   const gy = padY;
-  const gw = cw - padX * 2;
   const gh = ch - padY * 2;
   if (gw <= 0 || gh <= 0) return;
 
@@ -555,6 +607,7 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
   const containerRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
   const brightness = useUIStore((s) => s.brightness);
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
   const motionSim = useBladeStore((s) => s.motionSim);
   const bladeState = useBladeStore((s) => s.bladeState);
   const ledCount = useBladeStore((s) => s.config.ledCount);
@@ -587,6 +640,13 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Phase 1.5f/m: publish current Point-A divider AND the config-level
+    // LED count to the module-level render-functions before each draw
+    // so computeGraphBounds resolves the same Point A + bladeInches
+    // bucket as BladeCanvas + PixelStripPanel.
+    setCurrentBladeStartFrac(bladeStartFrac);
+    setCurrentBladeLedCount(ledCount);
+
     const { w, h, dpr } = sizeRef.current;
     const cw = w * dpr;
     const ch = h * dpr;
@@ -611,10 +671,10 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
         renderEffectOverlayLayer(ctx, pixels ?? [], leds, cw, ch, dpr);
         break;
       case 'swing-response':
-        renderSwingResponseLayer(ctx, cw, ch, motionSim.swing / 100, dpr);
+        renderSwingResponseLayer(ctx, cw, ch, motionSim.swing / 100, dpr, ledCount);
         break;
       case 'transition-progress':
-        renderTransitionProgressLayer(ctx, cw, ch, bladeState as string, dpr);
+        renderTransitionProgressLayer(ctx, cw, ch, bladeState as string, dpr, ledCount);
         break;
       case 'storage-budget':
         renderStorageBudgetLayer(ctx, cw, ch, ledCount, dpr);
@@ -622,7 +682,7 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
       default:
         break;
     }
-  }, [layerId, pixels, pixelCount, brightness, motionSim.swing, bladeState, ledCount, rgbLumaChannels]);
+  }, [layerId, pixels, pixelCount, brightness, bladeStartFrac, motionSim.swing, bladeState, ledCount, rgbLumaChannels]);
 
   useAnimationFrame(draw, {
     enabled: !isPaused,

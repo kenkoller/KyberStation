@@ -1,5 +1,12 @@
 'use client';
 
+// DEPRECATED — Left-rail overhaul (v0.14.0 PR 2): the PerformanceBar is
+// no longer mounted in WorkbenchLayout. The Inspector's TUNE tab + the
+// new sidebar cover the live-tune surfaces it used to expose. The file
+// is kept alive only because ShiftLightRail.tsx still imports the pure
+// `shiftLedColor` helper below; PR 5 will inline the helper into the
+// rail and delete this file along with the macro knobs.
+
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';

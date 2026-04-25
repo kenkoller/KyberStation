@@ -31,6 +31,15 @@
 //      which desaturates the perceived colour. Modelled as a simple blend
 //      toward luminance-weighted grey.
 
+// Gamma utilities now live in `lib/blade/colorSpace.ts` so the color
+// picker preview and the blade pipeline share one pre-baked LUT. Keep
+// the imports here as the canonical path for any caller that was
+// already importing them from neopixelColor; re-export below preserves
+// external callers' API surface.
+import { srgbToLinear, linearToSrgb } from './blade/colorSpace';
+
+export { srgbToLinear, linearToSrgb };
+
 export interface RGB {
   r: number;
   g: number;
@@ -39,21 +48,6 @@ export interface RGB {
 
 const clamp255 = (n: number): number =>
   Math.max(0, Math.min(255, Math.round(n)));
-
-/** sRGB → linear (inverse gamma). Input 0..255, output 0..1. */
-function srgbToLinear(c8: number): number {
-  const c = c8 / 255;
-  // IEC 61966-2-1 sRGB EOTF — the accurate curve near black.
-  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-}
-
-/** Linear → sRGB. Input 0..1, output 0..255. */
-function linearToSrgb(lin: number): number {
-  const l = Math.max(0, Math.min(1, lin));
-  const c =
-    l <= 0.0031308 ? l * 12.92 : 1.055 * Math.pow(l, 1 / 2.4) - 0.055;
-  return clamp255(c * 255);
-}
 
 /**
  * Convert a source sRGB colour (as picked in a colour picker) into the

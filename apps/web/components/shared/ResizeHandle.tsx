@@ -156,39 +156,42 @@ export function ResizeHandle({
 
   const isHorizontal = orientation === 'horizontal';
 
+  // The outer wrapper takes ZERO space in the flex layout, so the
+  // neighboring panels' borders meet directly with no intervening
+  // visual gap. The inner hit band absolutely straddles that seam
+  // (extending 4px into each neighbor) to give us an 8px drag target
+  // that paints nothing at rest, and blooms to `accent/40` on hover
+  // as the affordance cue.
   return (
     <div
-      role="separator"
-      aria-orientation={isHorizontal ? 'vertical' : 'horizontal'}
-      aria-label={ariaLabel ?? `Resize (${orientation})`}
-      aria-valuemin={min}
-      aria-valuemax={max}
-      aria-valuenow={Math.round(value)}
-      tabIndex={0}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-      onDoubleClick={onDoubleClick}
-      onKeyDown={onKeyDown}
-      className={[
-        'shrink-0 bg-transparent hover:bg-accent/40 active:bg-accent/70 transition-colors',
-        // The handle visually occupies 4px; 2px of padding on each
-        // side of the hit target keeps it reachable without bloating
-        // the layout. Tailwind arbitrary values for the exact pixel
-        // footprint (rounding issues kept cropping up with w-[3px]).
-        isHorizontal ? 'w-1 h-full cursor-col-resize' : 'h-1 w-full cursor-row-resize',
-      ].join(' ')}
-      style={{
-        // A thin inner rule gives the handle visible form at rest
-        // (matches the border-subtle token the surrounding chrome
-        // uses) without needing an adjacent element's border.
-        background: isHorizontal
-          ? 'linear-gradient(to right, transparent 0, transparent 1px, rgb(var(--border-subtle) / 1) 1px, rgb(var(--border-subtle) / 1) 3px, transparent 3px)'
-          : 'linear-gradient(to bottom, transparent 0, transparent 1px, rgb(var(--border-subtle) / 1) 1px, rgb(var(--border-subtle) / 1) 3px, transparent 3px)',
-        outline: 'none',
-        touchAction: 'none',
-      }}
-    />
+      className="relative shrink-0"
+      style={isHorizontal ? { width: 0, height: '100%' } : { width: '100%', height: 0 }}
+    >
+      <div
+        role="separator"
+        aria-orientation={isHorizontal ? 'vertical' : 'horizontal'}
+        aria-label={ariaLabel ?? `Resize (${orientation})`}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={Math.round(value)}
+        tabIndex={0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onDoubleClick={onDoubleClick}
+        onKeyDown={onKeyDown}
+        className={[
+          'absolute bg-transparent hover:bg-accent/40 active:bg-accent/70 transition-colors z-10',
+          isHorizontal
+            ? 'top-0 bottom-0 -left-1 -right-1 cursor-col-resize'
+            : '-top-1 -bottom-1 left-0 right-0 cursor-row-resize',
+        ].join(' ')}
+        style={{
+          outline: 'none',
+          touchAction: 'none',
+        }}
+      />
+    </div>
   );
 }

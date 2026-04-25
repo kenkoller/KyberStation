@@ -11,6 +11,37 @@ export type ActiveTab = 'gallery' | 'design' | 'audio' | 'output';
 export type LayoutMode = 'sidebar' | 'horizontal';
 export type FullscreenOrientation = 'horizontal' | 'vertical';
 
+// ─── Left-rail overhaul (v0.14.0) ────────────────────────────────────────────
+// Unified section taxonomy for the left sidebar nav. Each ID maps to one
+// component slot in MainContent. PR 2 made this the only path on desktop;
+// `activeTab` survives only for the mobile/tablet shells until PR 5.
+
+export type SectionId =
+  // Design — Appearance
+  | 'blade-style'
+  | 'color'
+  // Design — Behavior
+  | 'ignition-retraction'
+  | 'combat-effects'
+  | 'gesture-controls'
+  // Design — Advanced
+  | 'layer-compositor'
+  | 'hardware'
+  | 'my-crystal'
+  // Design — Routing (BETA, board-gated at the sidebar level)
+  | 'routing'
+  // Top-level destinations
+  | 'audio'
+  | 'output';
+
+export type SidebarGroupId =
+  | 'appearance'
+  | 'behavior'
+  | 'advanced'
+  | 'routing'
+  | 'audio'
+  | 'output';
+
 export interface UIStore {
   viewMode: ViewMode;
   renderMode: RenderMode;
@@ -32,6 +63,8 @@ export interface UIStore {
   sidebarWidth: number;
   /** Show/hide the hilt graphic in the blade panel */
   showHilt: boolean;
+  /** Show/hide the measurement-inch ruler + grid behind the blade. Phase 1.5. */
+  showGrid: boolean;
   /** Individual panel visibility toggles */
   showBladePanel: boolean;
   showPixelPanel: boolean;
@@ -136,10 +169,23 @@ export interface UIStore {
   section2Height: number;
   /** PerformanceBar total height in CSS pixels. Default 158. */
   performanceBarHeight: number;
-  /** W2: Pixel strip panel height in CSS pixels. Draggable 24-120. Default 36. */
+  // ── Left-rail overhaul (v0.14.0) ──
+  /** Which sidebar section is selected. Default 'blade-style'. */
+  activeSection: SectionId;
+  /** Per-group collapse state for the sidebar. Default: all expanded. */
+  sidebarGroupCollapsed: Record<SidebarGroupId, boolean>;
+
+  /** W2: Pixel strip panel height in CSS pixels. Draggable 24-300 (Phase 1.5g bumped from 120). Default 36. */
   pixelStripHeight: number;
-  /** W2: ExpandedAnalysisSlot height in CSS pixels. Draggable 40-200. Default 110. */
+  /** W2: ExpandedAnalysisSlot height in CSS pixels. Draggable 40-400 (Phase 1.5i bumped from 240). Default 110. */
   expandedSlotHeight: number;
+  /**
+   * Phase 1.5f: "Point A" divider as fraction-of-container-width × 1000.
+   * 180 → 0.18 → hilt zone is leftmost 18% of the BLADE PREVIEW panel.
+   * Shared by BladeCanvas (hilt+blade positioning), PixelStripPanel
+   * (LED 0 left edge), and VisualizationStack (waveform start X).
+   */
+  bladeStartFrac: number;
   /**
    * W4 (2026-04-22): which effects appear as chips in the action bar,
    * in render order. The dropdown next to the chips lets users toggle
@@ -162,6 +208,7 @@ export interface UIStore {
   setVerticalPanelWidths: (widths: { blade: number; strip: number; graph: number }) => void;
   setSidebarWidth: (width: number) => void;
   toggleShowHilt: () => void;
+  toggleShowGrid: () => void;
   toggleBladePanel: () => void;
   togglePixelPanel: () => void;
   toggleAnimationPaused: () => void;
@@ -189,8 +236,13 @@ export interface UIStore {
   setPerformanceBarHeight: (h: number) => void;
   setPixelStripHeight: (h: number) => void;
   setExpandedSlotHeight: (h: number) => void;
+  setBladeStartFrac: (n: number) => void;
   setPinnedEffects: (effects: string[]) => void;
   togglePinnedEffect: (effect: string) => void;
+
+  // ── Left-rail overhaul setters ──
+  setActiveSection: (section: SectionId) => void;
+  toggleSidebarGroup: (group: SidebarGroupId) => void;
 }
 
 // ─── OV11: resizable-region persistence ──────────────────────────────────────
@@ -205,8 +257,18 @@ export const REGION_LIMITS = {
   inspectorWidth:    { min: 280, max: 520, default: 400 },
   section2Height:    { min: 220, max: 520, default: 320 },
   performanceBarHeight: { min: 48, max: 200, default: 64 },
-  pixelStripHeight:  { min: 24, max: 120, default: 36 },
-  expandedSlotHeight:{ min: 40, max: 240, default: 110 },
+  pixelStripHeight:  { min: 24, max: 300, default: 36 },
+  expandedSlotHeight:{ min: 40, max: 400, default: 110 },
+  /**
+   * Phase 1.5f: user-draggable Point A — the vertical divider inside
+   * the BLADE PREVIEW panel that defines where the blade, pixel strip
+   * and analysis-rail content all start. Expressed as a FRACTION of
+   * the panel's container width × 1000 so the ResizeHandle integer
+   * API (int min/max/default) can represent it without precision
+   * loss. 180 → 0.18 → hilt zone spans the leftmost 18% of the
+   * panel, blade + strip + waveform all render to the right of it.
+   */
+  bladeStartFrac:    { min: 80, max: 350, default: 180 },
 } as const;
 
 const OV11_STORAGE_KEY = 'kyberstation-ui-layout';
@@ -218,6 +280,7 @@ interface PersistedLayout {
   performanceBarHeight: number;
   pixelStripHeight: number;
   expandedSlotHeight: number;
+  bladeStartFrac: number;
 }
 
 function clampRegion(
@@ -275,6 +338,65 @@ function savePinnedEffects(effects: string[]): void {
   }
 }
 
+// ─── Left-rail overhaul persistence (v0.14.0) ────────────────────────────────
+
+const ACTIVE_SECTION_STORAGE_KEY = 'kyberstation-active-section';
+const SIDEBAR_COLLAPSE_STORAGE_KEY = 'kyberstation-sidebar-collapse';
+
+const VALID_SECTION_IDS: ReadonlyArray<SectionId> = [
+  'blade-style', 'color',
+  'ignition-retraction', 'combat-effects', 'gesture-controls',
+  'layer-compositor', 'hardware', 'my-crystal',
+  'routing',
+  'audio', 'output',
+];
+
+const DEFAULT_SIDEBAR_COLLAPSE: Record<SidebarGroupId, boolean> = {
+  appearance: false,
+  behavior: false,
+  advanced: false,
+  routing: false,
+  audio: true,
+  output: true,
+};
+
+function loadActiveSection(): SectionId {
+  try {
+    if (typeof localStorage === 'undefined') return 'blade-style';
+    const raw = localStorage.getItem(ACTIVE_SECTION_STORAGE_KEY);
+    if (raw && VALID_SECTION_IDS.includes(raw as SectionId)) return raw as SectionId;
+    return 'blade-style';
+  } catch {
+    return 'blade-style';
+  }
+}
+
+function saveActiveSection(s: SectionId): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(ACTIVE_SECTION_STORAGE_KEY, s);
+  } catch { /* ignore */ }
+}
+
+function loadSidebarCollapse(): Record<SidebarGroupId, boolean> {
+  try {
+    if (typeof localStorage === 'undefined') return { ...DEFAULT_SIDEBAR_COLLAPSE };
+    const raw = localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_SIDEBAR_COLLAPSE };
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_SIDEBAR_COLLAPSE, ...parsed };
+  } catch {
+    return { ...DEFAULT_SIDEBAR_COLLAPSE };
+  }
+}
+
+function saveSidebarCollapse(c: Record<SidebarGroupId, boolean>): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(SIDEBAR_COLLAPSE_STORAGE_KEY, JSON.stringify(c));
+  } catch { /* ignore */ }
+}
+
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
   renderMode: 'photorealistic',
@@ -291,6 +413,7 @@ export const useUIStore = create<UIStore>((set) => ({
   // Layout defaults
   sidebarWidth: 380,
   showHilt: true,
+  showGrid: true,
   showBladePanel: true,
   showPixelPanel: true,
   animationPaused: false,
@@ -332,7 +455,15 @@ export const useUIStore = create<UIStore>((set) => ({
     'expandedSlotHeight',
     storedLayout.expandedSlotHeight ?? REGION_LIMITS.expandedSlotHeight.default,
   ),
+  bladeStartFrac: clampRegion(
+    'bladeStartFrac',
+    storedLayout.bladeStartFrac ?? REGION_LIMITS.bladeStartFrac.default,
+  ),
   pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
+
+  // ── Left-rail overhaul defaults ──
+  activeSection: loadActiveSection(),
+  sidebarGroupCollapsed: loadSidebarCollapse(),
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -347,6 +478,7 @@ export const useUIStore = create<UIStore>((set) => ({
   setVerticalPanelWidths: (verticalPanelWidths) => set({ verticalPanelWidths }),
   setSidebarWidth: (sidebarWidth) => set({ sidebarWidth: Math.max(280, Math.min(600, sidebarWidth)) }),
   toggleShowHilt: () => set((state) => ({ showHilt: !state.showHilt })),
+  toggleShowGrid: () => set((state) => ({ showGrid: !state.showGrid })),
   toggleBladePanel: () => set((state) => ({ showBladePanel: !state.showBladePanel })),
   togglePixelPanel: () => set((state) => ({ showPixelPanel: !state.showPixelPanel })),
   toggleAnimationPaused: () => set((state) => ({ animationPaused: !state.animationPaused })),
@@ -420,6 +552,12 @@ export const useUIStore = create<UIStore>((set) => ({
       savePersistedLayout({ ...snapshotLayout(s), expandedSlotHeight });
       return { expandedSlotHeight };
     }),
+  setBladeStartFrac: (n) =>
+    set((s) => {
+      const bladeStartFrac = clampRegion('bladeStartFrac', n);
+      savePersistedLayout({ ...snapshotLayout(s), bladeStartFrac });
+      return { bladeStartFrac };
+    }),
   setPinnedEffects: (effects) => {
     savePinnedEffects(effects);
     set({ pinnedEffects: effects });
@@ -433,6 +571,19 @@ export const useUIStore = create<UIStore>((set) => ({
       return { pinnedEffects: next };
     });
   },
+
+  // ── Left-rail overhaul setters ──
+  setActiveSection: (section) => {
+    saveActiveSection(section);
+    set({ activeSection: section });
+  },
+  toggleSidebarGroup: (group) => {
+    set((s) => {
+      const next = { ...s.sidebarGroupCollapsed, [group]: !s.sidebarGroupCollapsed[group] };
+      saveSidebarCollapse(next);
+      return { sidebarGroupCollapsed: next };
+    });
+  },
 }));
 
 function snapshotLayout(s: UIStore): PersistedLayout {
@@ -443,5 +594,6 @@ function snapshotLayout(s: UIStore): PersistedLayout {
     performanceBarHeight: s.performanceBarHeight,
     pixelStripHeight: s.pixelStripHeight,
     expandedSlotHeight: s.expandedSlotHeight,
+    bladeStartFrac: s.bladeStartFrac,
   };
 }

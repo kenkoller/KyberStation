@@ -1,3 +1,4 @@
+// TODO(left-rail-overhaul): consumer migration in progress — content now lives in HardwarePanel.tsx
 'use client';
 
 import { useMemo } from 'react';

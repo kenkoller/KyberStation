@@ -57,7 +57,7 @@ kyberstation/
 │   │   │       └── page.tsx          # Built-in ProffieOS reference
 │   │   ├── components/
 │   │   │   ├── editor/
-│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas (zoom: 0.9x–1.3x)
+│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas (auto-fit scale)
 │   │   │   │   ├── BladeCanvas3D.tsx       # Three.js 3D hilt + blade
 │   │   │   │   ├── StylePanel.tsx          # Style selection + config
 │   │   │   │   ├── EffectPanel.tsx         # Effect triggers + config
@@ -542,6 +542,69 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
    clobbered.
 
 ---
+
+## Current State (2026-04-24 late, v0.14.0 Visualization Polish + Workbench Chrome Pass)
+
+**Active branch: `feat/v0.14.0-blade-polish` — PR [#46](https://github.com/kenkoller/KyberStation/pull/46), 29 commits, pushed to origin, NOT YET MERGED.** This branch ships the v0.12.x Visualization Polish Pass (promoted into the v0.14.0 release slot) plus two multi-hour iterative-walkthrough sweeps with Ken on workbench chrome / layout refinements.
+
+Handoff doc for the next session: [`docs/NEXT_INTERFACE_SESSION.md`](docs/NEXT_INTERFACE_SESSION.md). That file is self-contained and paste-in-ready for a fresh Claude conversation to pick up where this one left off.
+
+**Plan file:** `~/.claude/plans/i-would-like-to-starry-moon.md` (the original 4-phase bloom rewrite plan approved earlier; Phases 1–4 all shipped; module extraction + golden-hash tests remain open).
+
+### What shipped on this branch (chronological)
+
+| Phase | Commit | Scope |
+|---|---|---|
+| 1 | `52d3e11` | Zoom removal + endpoint bloom-seed widening (tip coreH\*4.0, emitter coreH\*4.0\*0.7) + gamma wiring via new `lib/blade/colorSpace.ts` |
+| 1.5 | `33e96e7` | Width-driven auto-fit scale + vertical centering + `showGrid` lifted to uiStore + Grid toggle in BLADE PREVIEW header |
+| 1.5b | `28dfd75` | Analysis rail rails anchored to blade Point A → Point B via `computeGraphBounds` |
+| 1.5c/d | `4b939c2` | Blade-canvas `minHeight: 200` floor dropped in panelMode + action bar moved into BLADE PREVIEW toolbar |
+| 1.5e | `b2c3bbb` | Toolbar overlap fix — 8 overlapping click-targets → 0 |
+| 1.5f | `e0461d5` | User-draggable **Point-A divider** (`uiStore.bladeStartFrac`, fraction-of-container × 1000, min 80 / max 350 / default 180). Replaces legacy `AUTO_FIT_LEFT_PULL_DS`. Blade / pixel strip / analysis rail all read the same fraction → single source of truth for Point A |
+| 1.5g | `5fc5be9` | `pixelStripHeight.max` 120 → 300 |
+| 1.5h | `20873f4` | 500ms auto-ignite on workbench load |
+| 1.5i | `2bd58a9` | `expandedSlotHeight.max` 240 → 400 + de-dup Pause button + drop "Blade View" canvas label |
+| **2** | **`00fb455`** | **Bloom rewrite** — 14-pass additive blur loop replaced with 3-mip downsampled bright-pass chain. Per-mip: `filter: contrast(1.4) brightness(1.05) blur(Npx)` applied to downsampled buffer at 1/2, 1/4, 1/8 of canvas dims, composited back additively with `lighter`. ~1/8 the fragment cost of the old loop. Smooth continuous halo wrapping the entire blade, no visible seam ridges — Ken's primary "hard edges" complaint resolved. |
+| **3** | **`a2fc1a8`** | Rim glow (2-device-px saturated stroke on blade top/bottom edges) + motion blur (ghost buffer at mip-0 dims, `motionSim.swing`-driven persistence) + new `reduceBloom` a11y flag in accessibilityStore |
+| **4** | **`01766b4`** | Ambient wash driven by mip-2 avg luma + vignette brightness coupling (`1 + avgBloomLum * 0.08` opacity modulator) |
+| 1.5j | `9ce3a18` | PIXEL STRIP header row added + in-canvas stats text removed from PixelStripPanel + merged action bar into BLADE PREVIEW panel header |
+| 1.5k | `b6c81dd` | Split blade preview into two rows (title + action bar) + `rounded-panel` dropped + header height bumped to `py-2` to match Inspector tabs |
+| 1.5l | `238b63c` | Swap row order — action bar row now ON TOP of title row |
+| 1.5m | `0d4d862` | Point B alignment fix — pass config `ledCount` (not buffer-clamped `leds`) to `computeBladeRenderMetrics` |
+| 1.5n | `c90a44c` | **Aurebesh AF font bundled** at `/public/fonts/aurebesh/*.otf` (4 variants: Canon / CanonTech / Legends / LegendsTech) + `@font-face` declarations + ticker height +50% (12 → 18 px) + ticker font 7 → 10 px |
+| 1.5o | `437bb28` | Canvas outer border `border` → `border-x` (top+bottom removed) + action bar height matched to Inspector tab (30.59 px exact) |
+| 1.5p | `1757650` | ResizeHandle hit target 4 → 8 px (all 7 workbench handles) |
+| 1.5q | `e87f0be` | Canvas wrapper `p-1` → `px-1` so left+right borders extend to section2 top+bottom |
+| 1.5r | `998155c` | All 3 canvas-column panel headers unified to `h-8` 32 px + view controls (`Single / All States / 2D / 3D / Fullscreen`) moved INTO BLADE PREVIEW PanelHeader children (out of absolute overlay). Fallback overlay kept for 3D / StateGrid modes only. |
+| 1.5s | `7254195` | Header height 32 → 30 px + CLAUDE.md summary + `docs/NEXT_INTERFACE_SESSION.md` handoff |
+| **a11y** | **`a023b0b`** | **Reduce Bloom toggle** — Settings → Display section (desktop) + AccessibilityPanel under Reduced Motion (mobile/tablet). Both write the same store flag + persist via localStorage; toggling on either surface flows through every shell mode. The flag was already wired through bloom + rim + motion-blur math; this surfaces it in the UI. |
+| **1.5t** | **`a4f55e4`** | **Chrome alignment + true slot splitter.** ResizeHandle: 0-width wrapper with absolute hit target straddling the seam — neighbor borders meet directly, no 8 px gap. Blade-canvas wrapper: dropped `px-1` so CanvasLayout's `border-l` butts against Inspector / RightRail edges. Toolbar: `py-0.5` → `min-h-8` (32 px) to match Inspector tab BAR. **ExpandedSlotResizeHandle is now a true two-store splitter** — drag-down grows `pixelStripHeight` AND shrinks `expandedSlotHeight` simultaneously with linked clamps; PIXEL STRIP no longer translates vertically when seam moves. TUNE / GALLERY tabs `py-2` → `pt-[9px] pb-2` (+1 px) to match toolbar. |
+| 1.5u | `683227a` | **Surprise Me + Undo relocated** — out of DesignPanel's top bar, into the Inspector's TUNE tab top, directly above ParameterBank. Surprise Me now spans the Inspector column width (flex-1); Undo stays compact. DesignPanel's top bar now hosts only the APPEARANCE / BEHAVIOR / ADVANCED / ROUTING group pills. |
+| 1.5v | `8c05e83` | **AnalysisRail full-width + matched border tone.** AnalysisRail's width-resolver was honoring `style.width` only when it was a `number` — RightRail passed `'100%'` (string) so it fell through to the 200 px default. Resolver now uses `'100%'` on desktop (icon mode still 40 px) so the aside fills its parent column exactly. Row borders bumped from `border-border-subtle/40` to full `border-border-subtle` so they match every other panel/card border in the app (was reading whitish at ~6 % white due to compounded translucency). |
+| 1.5w | `85c38db` | Action toolbar bumped `min-h-8` → `min-h-[33px]` to match Inspector tab BAR's outer height (33 px = 32 px tab button + 1 px bar border-b). |
+| **1.5x** | **`6a93889`** | **Retire 2D/3D toggle + rework All States layout.** 3D blade view parked indefinitely — `[2D | 3D]` button group, `BladeCanvas3D` import, and the absolute fallback overlay all removed from WorkbenchLayout. PixelDebugOverlay is no longer gated behind `canvasMode === '2d'` (always on while engine is ready). `canvasMode` field stays in `uiStore` for persistence-state safety; nothing in the UI references it. **All States behavior reshaped:** previously the 9-state stack replaced the entire canvas column, hiding BLADE PREVIEW. Now BLADE PREVIEW stays visible; the StateGrid replaces only the PIXEL STRIP + Expanded Slot regions. Each state row's LED band uses `computeBladeRenderMetrics` with `bladeStartFrac` so it lines up Point A → Point B exactly with the BLADE PREVIEW above. StateGridRowView now uses an absolute-positioned canvas with the state label overlaid in the pre-blade hilt area. Dropped the StateGrid header strip (no longer needed inside CanvasLayout). |
+
+### Architectural decisions worth carrying forward
+
+- **`lib/blade/colorSpace.ts`** is the canonical gamma LUT + tonemap helpers. `neopixelColor.ts` re-exports `srgbToLinear` / `linearToSrgb` from it so the color picker + blade renderer share one source.
+- **`uiStore.bladeStartFrac`** is the single source of truth for Point A (blade-start X fraction × 1000). `bladeRenderMetrics.ts` consumes it via an input prop; BladeCanvas reads it directly; PixelStripPanel + VisualizationStack + StateGrid (1.5x) all thread it through `computeBladeRenderMetrics`. `AUTO_FIT_LEFT_PULL_DS` is deprecated but exported as 0 so legacy imports don't break.
+- **Bloom pipeline lives inline in `BladeCanvas.tsx`** — originally planned (phase 4) as `lib/blade/pipeline.ts` extraction but that's deferred; the current inline implementation is ~80 lines of focused code and works well.
+- **View controls are a shared `viewControlsNode`** memoised in WorkbenchLayout, passed to CanvasLayout as a prop. After 1.5x, CanvasLayout is the only renderer (no 3D / no full-takeover StateGrid), so the absolute fallback overlay was removed.
+- **ResizeHandle is a 0-size wrapper + absolute hit target** straddling the seam (1.5t). All seven workbench handles paint nothing at rest — neighbor borders form continuous T-intersections. Splitter handles (currently just ExpandedSlotResizeHandle, between PIXEL STRIP and Slot) coordinate two stores inversely with linked clamps so the seam moves but the unrelated regions stay put. The section-2 handle is single-store on purpose — bottom-anchored content under a flex-1 region naturally translates with the bottom edge, matching every DAW/IDE's vertical-split mental model.
+- **All States toggle (1.5x)** swaps PIXEL STRIP + ExpandedSlotResizeHandle + Slot for the StateGrid (9 rows), keeping BLADE PREVIEW visible. Each StateGrid row uses the same `bladeStartFrac` + `computeBladeRenderMetrics` so its LED band aligns Point A → Point B with the live blade above. Implementation lives inside CanvasLayout (no longer takes over WorkbenchLayout's whole canvas column).
+- **`canvasMode` is dead UI** but kept in uiStore for persistence-state safety. If a user has `canvasMode: '3d'` in localStorage from before 1.5x, nothing breaks — the field is just no longer read by any component.
+
+### Still open (deferred from the original plan)
+
+- ~~**AccessibilityPanel UI toggle for `reduceBloom`**~~ — **Done in `a023b0b`.** Toggle now lives in Settings → Display (desktop) + AccessibilityPanel under Reduced Motion (mobile/tablet).
+- **Module extraction to `lib/blade/*`** — Phase 4 of the original plan. Blade rendering is currently all in `BladeCanvas.tsx` (~2800 lines). Extracting to `lib/blade/pipeline.ts`, `lib/blade/bloom.ts`, etc. would enable MiniSaber / FullscreenPreview / SaberCard to adopt the same pipeline. Non-urgent; the rendering works great inline.
+- **Golden-hash blade-render tests** — planned regression sentinel for 8 canonical configs. Would catch accidental visual drift. Not built yet.
+- **Aurebesh font variants beyond Canon** — CanonTech / Legends / LegendsTech OTF files are bundled and have `@font-face` declarations, but no UI uses them yet. Future immersion-mode variants could surface via a toggle.
+- **Final merge of PR #46 to main + tag** — gates green, working tree clean, branch pushed at `6a93889`. Merge strategy: merge commit (preserve phase-by-phase history). After merge, optionally tag `v0.15.0` (v0.14.0 was already taken by Modulation Routing v1.0 BETA).
+- **Cleanup of dead `canvasMode` field in uiStore** — kept after 1.5x for persistence-state safety. Once enough sessions have passed with no readers, remove the field + its setter.
+- **Cleanup of dead `BladeCanvas3DWrapper`** — the file still exists in `apps/web/components/editor/` but no longer has an import path. Safe to delete after a sweep confirms no test/storybook references.
+
+### Pre-session state before v0.14.0 (kept for history)
 
 ## Current State (2026-04-23 late, modulation v0.14 polish + a11y clean)
 

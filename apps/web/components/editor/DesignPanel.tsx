@@ -44,7 +44,6 @@ import { PowerDrawPanel } from './PowerDrawPanel';
 import { CrystalPanel } from './CrystalPanel';
 import { ModulatorPlateBar } from './routing/ModulatorPlateBar';
 import { BindingList } from './routing/BindingList';
-import { useSurpriseMe } from './Randomizer';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
 import type { ReactNode } from 'react';
@@ -105,7 +104,6 @@ const GROUPS: GroupDef[] = [
 
 export function DesignPanel() {
   const [activeGroup, setActiveGroup] = useState<DesignGroup>('appearance');
-  const { surprise, undo, canUndo } = useSurpriseMe();
   const boardId = useBoardProfile().boardId;
   const boardSupportsModulation = canBoardModulate(boardId);
 
@@ -126,34 +124,15 @@ export function DesignPanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Top bar: Surprise Me + group pills */}
+      {/* Top bar: group pills (Phase 1.5u — Surprise Me + Undo
+          relocated to the Inspector's TUNE tab top, where they
+          live above the parameter bank as the primary "shake the
+          dice" entry point for the live-tune surface). */}
       <div className="flex flex-wrap items-center gap-3 px-1">
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={surprise}
-            className="relative px-4 py-2 rounded-lg text-ui-sm font-semibold transition-all border border-accent/50 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent active:scale-[0.97] font-cinematic overflow-hidden group"
-          >
-            <span className="absolute inset-0 rounded-lg bg-accent/5 animate-pulse pointer-events-none" />
-            <span className="relative z-10">Surprise Me</span>
-          </button>
-          <button
-            onClick={undo}
-            disabled={!canUndo}
-            className={`px-3 py-2 rounded-lg text-ui-xs font-medium transition-colors border ${
-              canUndo
-                ? 'border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light'
-                : 'border-border-subtle/50 text-text-muted/50 cursor-not-allowed'
-            }`}
-            title={canUndo ? 'Undo last Surprise Me' : 'No history'}
-          >
-            Undo
-          </button>
-        </div>
-
         <div
           role="tablist"
           aria-label="Design section groups"
-          className="flex items-center gap-1 ml-auto"
+          className="flex items-center gap-1"
         >
           {visibleGroups.map((g) => {
             const active = g.id === activeGroup;

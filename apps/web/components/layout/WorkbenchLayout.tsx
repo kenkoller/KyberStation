@@ -6,7 +6,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 
 import { useUIStore } from '@/stores/uiStore';
-import type { ActiveTab } from '@/stores/uiStore';
+import type { SectionId } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { playUISound, getUISoundEngine } from '@/lib/uiSounds';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
@@ -17,8 +17,6 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { usePauseSystem } from '@/hooks/usePauseSystem';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { useHistoryTracking } from '@/hooks/useHistoryTracking';
-import { usePresetListStore } from '@/stores/presetListStore';
-import { PauseButton } from '@/components/layout/PauseButton';
 import { ShareButton } from '@/components/layout/ShareButton';
 import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 // W11: StatusBar retired — all its segments folded into AppPerfStrip.
@@ -29,14 +27,10 @@ import { SaberWizard } from '@/components/onboarding/SaberWizard';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
 import { PixelDebugOverlay } from '@/components/editor/PixelDebugOverlay';
 import { CanvasLayout } from '@/components/editor/CanvasLayout';
-import { BladeCanvas3D } from '@/components/editor/BladeCanvas3DWrapper';
-import { DesignPanel } from '@/components/editor/DesignPanel';
-// W10 (2026-04-22): DynamicsPanel's sections were absorbed into
-// DesignPanel — no longer mounted separately.
-import { AudioPanel } from '@/components/editor/AudioPanel';
-// W7: PresetGallery is no longer mounted inside the editor — it lives
-// at the /gallery top-level route now via `components/gallery/GalleryPage`.
-import { OutputPanel } from '@/components/editor/OutputPanel';
+// Left-rail overhaul (v0.14.0 PR 2): DesignPanel / AudioPanel / OutputPanel
+// no longer mounted here — Sidebar + MainContent route to them via
+// `components/layout/MainContent.tsx`. DesignPanel.tsx is still alive
+// for the mobile/tablet shells (AppShell) and gets removed in PR 5.
 import { EffectComparisonPanel } from '@/components/editor/EffectComparisonPanel';
 import { SaberProfileSwitcher } from '@/components/editor/SaberProfileSwitcher';
 // W10 (2026-04-22): desktop retired the 4-column TabColumnContent
@@ -46,16 +40,15 @@ import { DataTicker } from '@/components/hud/DataTicker';
 import { CornerBrackets } from '@/components/hud/CornerBrackets';
 import { CanvasSkeleton } from '@/components/shared/Skeleton';
 import { CommandPalette } from '@/components/shared/CommandPalette';
-import { PerformanceBar } from '@/components/layout/PerformanceBar';
-import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/EffectsPinDropdown';
 import { DeliveryRail } from '@/components/layout/DeliveryRail';
 import { ShiftLightRail } from '@/components/layout/ShiftLightRail';
 import { AppPerfStrip } from '@/components/layout/AppPerfStrip';
 import { RightRail } from '@/components/layout/RightRail';
 import { Inspector } from '@/components/editor/Inspector';
-import { StateGrid } from '@/components/editor/StateGrid';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { REGION_LIMITS } from '@/stores/uiStore';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MainContent } from '@/components/layout/MainContent';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
@@ -128,26 +121,9 @@ const HUD_TICKER_MESSAGES = [
 // more because the header links are hand-wired rather than rendered
 // from a table.
 
-// ─── Tab Content Router ───
-
-function TabContent({ activeTab }: { activeTab: ActiveTab }) {
-  switch (activeTab) {
-    // W7 (2026-04-22): 'gallery' was promoted out of the editor tab
-    // bar into its own /gallery route. Any persisted state that still
-    // has activeTab='gallery' falls through to Design so the editor
-    // renders something reasonable instead of a dead tab.
-    case 'gallery':
-    case 'design':
-      // W10: DesignPanel absorbed DynamicsPanel's sections (Effects,
-      // Motion Simulation, A/B Comparison). Single scrollable panel
-      // now owns every design-authoring control.
-      return <DesignPanel />;
-    case 'audio':
-      return <AudioPanel />;
-    case 'output':
-      return <OutputPanel />;
-  }
-}
+// Left-rail overhaul (v0.14.0 PR 2): TabContent removed. Section
+// routing now lives in `components/layout/MainContent.tsx`, driven by
+// `uiStore.activeSection` instead of `activeTab`.
 
 // ─── Effect Chip ──────────────────────────────────────────────────────────
 //
@@ -202,22 +178,23 @@ export function WorkbenchLayout() {
   const meta = useMetaKey();
   const kbdFor = (key: string) => `${meta.symbol}${meta.sep}${key}`;
 
-  // Router for the header-level nav + palette navigation commands.
-  // Gallery is the only cross-route destination; Design / Audio / Output
-  // stay on /editor and only flip `activeTab`.
+  // Router for ⌘K palette navigation. Gallery is a cross-route
+  // destination; everything else routes via `setActiveSection`.
   const router = useRouter();
 
   // ── Store selectors ──
-  const activeTab = useUIStore((s) => s.activeTab);
-  const setActiveTab = useUIStore((s) => s.setActiveTab);
+  // Left-rail overhaul (v0.14.0 PR 2): activeTab + setActiveTab are no
+  // longer driven from this layout. activeSection drives the sidebar +
+  // MainContent. Mobile/tablet shells still use activeTab; the field
+  // remains in uiStore for them.
+  const activeSection = useUIStore((s) => s.activeSection);
+  const setActiveSection = useUIStore((s) => s.setActiveSection);
   const showEffectComparison = useUIStore((s) => s.showEffectComparison);
   const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
-  const presetListCount = usePresetListStore((s) => s.entries.length);
-  const canvasMode = useUIStore((s) => s.canvasMode);
-  const setCanvasMode = useUIStore((s) => s.setCanvasMode);
-  // OV8: STATE-mode takeover toggle. When true and activeTab === 'design',
-  // the center blade preview is replaced by a full-workbench-width
-  // 9-state stack. Toggled by the header chip or ⌘5 / Ctrl+5.
+  // Phase 1.5x (2026-04-24): All States behavior reworked. The 9-state
+  // stack now replaces the PIXEL STRIP + Expanded Slot regions only;
+  // BLADE PREVIEW stays visible. The 2D/3D toggle is also retired —
+  // 2D is the only mode going forward.
   const showStateGrid = useUIStore((s) => s.showStateGrid);
   const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
 
@@ -226,13 +203,13 @@ export function WorkbenchLayout() {
   const analysisRailWidth = useUIStore((s) => s.analysisRailWidth);
   const inspectorWidth = useUIStore((s) => s.inspectorWidth);
   const section2Height = useUIStore((s) => s.section2Height);
-  const performanceBarHeight = useUIStore((s) => s.performanceBarHeight);
   const setAnalysisRailWidth = useUIStore((s) => s.setAnalysisRailWidth);
   const setInspectorWidth = useUIStore((s) => s.setInspectorWidth);
   const setSection2Height = useUIStore((s) => s.setSection2Height);
-  const setPerformanceBarHeight = useUIStore((s) => s.setPerformanceBarHeight);
 
-  const isOn = useBladeStore((s) => s.isOn);
+  // Phase 1.5d: action-bar-local `isOn` moved into CanvasLayout
+  // (which now renders the IGNITE/Retract toggle). Still referenced via
+  // `useBladeStore.getState()` below for toggleWithAudio's audio trigger.
   const ledCount = useBladeStore((s) => s.config.ledCount);
   // Subscribed for the HUD ticker live entries below. The `setCanvasTheme`
   // setter is separately memoed for the palette's theme commands.
@@ -253,9 +230,48 @@ export function WorkbenchLayout() {
   // Pattern: every 4th slot gets a live entry, then trailing live
   // entries flush at the end. Result: live data is spread through the
   // loop rather than clumped in one spot.
+  // Phase 1.5r: view-controls JSX shared between CanvasLayout's
+  // BLADE PREVIEW PanelHeader (primary) and the absolute fallback
+  // overlay (for 3D / StateGrid modes where CanvasLayout isn't
+  // mounted). Memoised on the state each button reads.
+  const viewControlsNode = useMemo(
+    () => (
+      <>
+        <div className="flex rounded overflow-hidden border border-border-subtle">
+          <button
+            onClick={() => showStateGrid && toggleStateGrid()}
+            className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+              !showStateGrid
+                ? 'bg-accent-dim text-accent border-r border-accent-border/40'
+                : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
+            }`}
+            title="Single blade preview"
+            aria-pressed={!showStateGrid}
+          >
+            Single
+          </button>
+          <button
+            onClick={() => !showStateGrid && toggleStateGrid()}
+            className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+              showStateGrid
+                ? 'bg-accent-dim text-accent'
+                : 'bg-transparent text-text-muted hover:text-text-secondary'
+            }`}
+            title={`All 9 blade states · ${kbdFor('5')}`}
+            aria-pressed={showStateGrid}
+          >
+            All States
+          </button>
+        </div>
+        <FullscreenButton className="w-5 h-5" />
+      </>
+    ),
+    [showStateGrid, toggleStateGrid, kbdFor],
+  );
+
   const tickerMessages = useMemo(() => {
     const live = [
-      `TAB · ${activeTab.toUpperCase()}`,
+      `SECTION · ${activeSection.toUpperCase()}`,
       `THEME · ${canvasTheme.toUpperCase()}`,
       `LEDS · ${ledCount}`,
     ];
@@ -269,7 +285,7 @@ export function WorkbenchLayout() {
     }
     while (liveIdx < live.length) out.push(live[liveIdx++]);
     return out;
-  }, [activeTab, canvasTheme, ledCount]);
+  }, [activeSection, canvasTheme, ledCount]);
 
   // ── Pixel buffer for VisualizationStack ──
   // Capture the engine's live Uint8Array once after mount. getPixels() returns
@@ -376,16 +392,16 @@ export function WorkbenchLayout() {
   useCommandPalette();
 
   const commands = useMemo<Command[]>(() => {
-    const nav = (tab: ActiveTab) => () => {
+    const goToSection = (section: SectionId) => () => {
       playUISound('tab-switch');
-      setActiveTab(tab);
+      router.push('/editor');
+      setActiveSection(section);
     };
     const out: Command[] = [
-      // ── NAVIGATE (post-W7: 4-link header nav) ──────────────────────
-      // Gallery is a top-level route (/gallery). The other three live
-      // on /editor and flip `activeTab`. The keyboard handler in
-      // useKeyboardShortcuts.ts routes ⌘1–⌘4 to these same four
-      // destinations; here we just surface them in the palette.
+      // ── NAVIGATE — left-rail overhaul (v0.14.0) ───────────────────
+      // Gallery is a top-level route (/gallery). The remaining entries
+      // route via `setActiveSection`. ⌘1–⌘5 in useKeyboardShortcuts.ts
+      // mirror these.
       {
         id: 'nav:gallery',
         group: 'NAVIGATE',
@@ -395,12 +411,19 @@ export function WorkbenchLayout() {
         run: () => router.push('/gallery'),
       },
       {
-        id: 'nav:design',
+        id: 'nav:blade-style',
         group: 'NAVIGATE',
-        title: 'Go to Design',
+        title: 'Go to Blade Style',
         kbd: kbdFor('2'),
         icon: '⚒',
-        run: () => { router.push('/editor'); nav('design')(); },
+        run: goToSection('blade-style'),
+      },
+      {
+        id: 'nav:color',
+        group: 'NAVIGATE',
+        title: 'Go to Color',
+        icon: '⚒',
+        run: goToSection('color'),
       },
       {
         id: 'nav:audio',
@@ -408,7 +431,7 @@ export function WorkbenchLayout() {
         title: 'Go to Audio',
         kbd: kbdFor('3'),
         icon: '⚒',
-        run: () => { router.push('/editor'); nav('audio')(); },
+        run: goToSection('audio'),
       },
       {
         id: 'nav:output',
@@ -416,7 +439,7 @@ export function WorkbenchLayout() {
         title: 'Go to Output',
         kbd: kbdFor('4'),
         icon: '⚒',
-        run: () => { router.push('/editor'); nav('output')(); },
+        run: goToSection('output'),
       },
       // ── AUDITION ──────────────────────────────────────────────────
       {
@@ -662,7 +685,7 @@ export function WorkbenchLayout() {
 
     return out;
   }, [
-    setActiveTab,
+    setActiveSection,
     toggleWithAudio,
     handleEffectCommand,
     toggleEffectComparison,
@@ -670,6 +693,7 @@ export function WorkbenchLayout() {
     openShortcutsHelp,
     setCanvasTheme,
     router,
+    kbdFor,
   ]);
 
   useRegisterCommands(commands);
@@ -683,20 +707,27 @@ export function WorkbenchLayout() {
     return () => cancelAnimationFrame(id);
   }, [engineRef]);
 
-  // ── Header-level nav helpers ──
-  // Promoted 2026-04-22 (post-W7): Design / Audio / Output moved from
-  // the editor's internal tab bar up to the header, alongside Gallery.
-  // Each link uses `headerNavLinkClass(active)` so the 4 links share one
-  // styling function and read as peers. The editor no longer has an
-  // inner tab bar; switching tabs happens via header click, ⌘1–⌘4, or
-  // the ⌘K palette.
-  const headerNavLinkClass = useCallback((active: boolean) =>
-    [
-      'px-2 py-0.5 rounded font-mono uppercase text-ui-xs tracking-[0.1em] border transition-colors',
-      active
-        ? 'text-accent bg-accent-dim/30 border-accent-border/60'
-        : 'text-text-muted hover:text-text-primary border-transparent hover:border-border-subtle',
-    ].join(' '), []);
+  // Phase 1.5h: auto-ignite 500ms after the engine is ready — the
+  // workbench "comes alive" with a lit blade on first paint instead
+  // of a retracted hilt. Always drives the ignition animation
+  // regardless of persisted `isOn` state, because the BladeEngine
+  // itself is a fresh instance on each page load (extendProgress
+  // starts at 0) and would otherwise show a retracted hilt even
+  // when `bladeStore.isOn` was persisted as true. Reset-then-ignite
+  // forces both the store + engine into sync.
+  const autoIgnitedRef = useRef(false);
+  useEffect(() => {
+    if (!engineReady || autoIgnitedRef.current) return;
+    // Reset immediately so the blade starts from a clean retracted
+    // state; ignition animation will then play within the 500ms
+    // window from off → on.
+    useBladeStore.getState().setIsOn(false);
+    const timer = setTimeout(() => {
+      autoIgnitedRef.current = true;
+      toggleWithAudio();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [engineReady, toggleWithAudio]);
 
   // ─── Render ───
   return (
@@ -717,45 +748,10 @@ export function WorkbenchLayout() {
             </h1>
           </div>
 
-          {/* Header-level nav. W10 reorder (2026-04-22):
-              Design → Audio → Output → Gallery (editor modes first,
-              browse mode last). Design / Audio / Output all live at
-              /editor and flip `activeTab`; Gallery is a real route. */}
-          <nav className="flex items-center gap-1 ml-2" aria-label="Top-level navigation">
-            <button
-              type="button"
-              onClick={() => { playUISound('tab-switch'); setActiveTab('design'); }}
-              className={headerNavLinkClass(activeTab === 'design')}
-              aria-current={activeTab === 'design' ? 'page' : undefined}
-            >
-              Design
-            </button>
-            <button
-              type="button"
-              onClick={() => { playUISound('tab-switch'); setActiveTab('audio'); }}
-              className={headerNavLinkClass(activeTab === 'audio')}
-              aria-current={activeTab === 'audio' ? 'page' : undefined}
-            >
-              Audio
-            </button>
-            <button
-              type="button"
-              onClick={() => { playUISound('tab-switch'); setActiveTab('output'); }}
-              className={headerNavLinkClass(activeTab === 'output')}
-              aria-current={activeTab === 'output' ? 'page' : undefined}
-            >
-              Output
-              {presetListCount > 0 && (
-                <span className="ml-1 text-accent">({presetListCount})</span>
-              )}
-            </button>
-            <Link
-              href="/gallery"
-              className={headerNavLinkClass(false)}
-            >
-              Gallery
-            </Link>
-          </nav>
+          {/* Header-level nav: removed in left-rail overhaul (v0.14.0
+              PR 2). The sidebar (Sidebar.tsx) absorbs Gallery / Design /
+              Audio / Output. ⌘K palette NAVIGATE commands route via
+              `setActiveSection`. */}
 
           <UndoRedoButtons />
 
@@ -894,27 +890,23 @@ export function WorkbenchLayout() {
             status bar); the waveform rail reads more like a monitoring
             surface and sits across from the hilt tip.
 
-            LEFT — Inspector (Design tab only). Width user-draggable
-            via the handle to its right. */}
-        {activeTab === 'design' && (
-          <Inspector
-            className="h-full"
-            style={{ width: inspectorWidth }}
-          />
-        )}
+            LEFT — Inspector (always visible post left-rail overhaul).
+            Width user-draggable via the handle to its right. */}
+        <Inspector
+          className="h-full"
+          style={{ width: inspectorWidth }}
+        />
 
-        {/* OV11 — Inspector ↔ blade resize handle (Design tab only). */}
-        {activeTab === 'design' && (
-          <ResizeHandle
-            orientation="horizontal"
-            value={inspectorWidth}
-            min={REGION_LIMITS.inspectorWidth.min}
-            max={REGION_LIMITS.inspectorWidth.max}
-            defaultValue={REGION_LIMITS.inspectorWidth.default}
-            onChange={setInspectorWidth}
-            ariaLabel="Resize inspector"
-          />
-        )}
+        {/* OV11 — Inspector ↔ blade resize handle. */}
+        <ResizeHandle
+          orientation="horizontal"
+          value={inspectorWidth}
+          min={REGION_LIMITS.inspectorWidth.min}
+          max={REGION_LIMITS.inspectorWidth.max}
+          defaultValue={REGION_LIMITS.inspectorWidth.default}
+          onChange={setInspectorWidth}
+          ariaLabel="Resize inspector"
+        />
 
         {/* Blade canvas area — horizontal, fills remaining width.
             OV8: when showStateGrid is on and we're on Design, the
@@ -922,84 +914,38 @@ export function WorkbenchLayout() {
             tabs always show the single canvas regardless of the toggle
             (STATE mode is a Design-tab concern). */}
         <CornerBrackets className="flex-1 min-w-0" size={16} thickness={1} pulse={true}>
-          <div className="h-full p-1 relative">
+          {/*
+            Phase 1.5q: wrapper padding trimmed from `p-1` (4px all sides)
+            to `px-1` only. Removes the top + bottom gap so the
+            CanvasLayout's left + right `border-x` borders extend the
+            full section2 height.
+
+            Phase 1.5t (2026-04-24): horizontal inset dropped too.
+            With ResizeHandle now a 0-width wrapper, the canvas column
+            butts directly against Inspector / RightRail; keeping
+            `px-1` produced a 4px dark stripe (section bg) between the
+            Inspector edge and CanvasLayout's `border-l`. Letting the
+            CornerBrackets sit flush with the column edges is fine —
+            the corner decorations are subtle accent-25% L-shapes and
+            read as part of the canvas column boundary.
+          */}
+          <div className="h-full relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
-            ) : showStateGrid && activeTab === 'design' ? (
-              <StateGrid engineRef={engineRef} className="h-full" />
-            ) : canvasMode === '3d' ? (
-              <BladeCanvas3D />
             ) : (
               <CanvasLayout
                 engineRef={engineRef}
                 pixels={pixelBufRef.current}
                 pixelCount={ledCount}
+                onToggleBlade={toggleWithAudio}
+                onTriggerEffect={triggerEffectWithAudio}
+                onReleaseEffect={releaseEffect}
+                viewControls={viewControlsNode}
               />
             )}
-            {/* Controls — top-right corner of canvas area */}
-            <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-              {/* OV8: STATE-mode takeover toggle. Two-position segmented
-                  control. Desktop only (this block sits inside the
-                  desktop workbench); hidden on tabs other than Design. */}
-              {activeTab === 'design' && (
-                <div className="flex rounded overflow-hidden border border-border-subtle">
-                  <button
-                    onClick={() => showStateGrid && toggleStateGrid()}
-                    className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
-                      !showStateGrid
-                        ? 'bg-accent-dim text-accent border-r border-accent-border/40'
-                        : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
-                    }`}
-                    title="Single blade preview"
-                    aria-pressed={!showStateGrid}
-                  >
-                    Single
-                  </button>
-                  <button
-                    onClick={() => !showStateGrid && toggleStateGrid()}
-                    className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
-                      showStateGrid
-                        ? 'bg-accent-dim text-accent'
-                        : 'bg-transparent text-text-muted hover:text-text-secondary'
-                    }`}
-                    title={`All 9 blade states · ${kbdFor('5')}`}
-                    aria-pressed={showStateGrid}
-                  >
-                    All States
-                  </button>
-                </div>
-              )}
-              {/* 2D / 3D view toggle */}
-              <div className="flex rounded overflow-hidden border border-border-subtle">
-                <button
-                  onClick={() => setCanvasMode('2d')}
-                  className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
-                    canvasMode === '2d'
-                      ? 'bg-accent-dim text-accent border-r border-accent-border/40'
-                      : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
-                  }`}
-                  title="2D blade view"
-                  aria-pressed={canvasMode === '2d'}
-                >
-                  2D
-                </button>
-                <button
-                  onClick={() => setCanvasMode('3d')}
-                  className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
-                    canvasMode === '3d'
-                      ? 'bg-accent-dim text-accent'
-                      : 'bg-transparent text-text-muted hover:text-text-secondary'
-                  }`}
-                  title="3D hilt + blade view"
-                  aria-pressed={canvasMode === '3d'}
-                >
-                  3D
-                </button>
-              </div>
-              <FullscreenButton />
-            </div>
-            {/* Pixel debug overlay only applies to 2D canvas mode */}
-            {canvasMode === '2d' && (
+            {/* Pixel debug overlay — CanvasLayout (2D) is the only mode now,
+                so this can always be on while the engine is ready. */}
+            {engineReady && (
               <PixelDebugOverlay
                 getPixelRgb={(index) => {
                   const engine = engineRef.current;
@@ -1091,44 +1037,9 @@ export function WorkbenchLayout() {
         />
       </div>
 
-      {/* ════════════════════════════════════════════════════
-       * 2c. ACTION BAR — W5 (2026-04-22) layout reordered:
-       *   IGNITE/Retract (far left) · Pause · | · effect chips
-       *   · + More ▾ · LIVE (right)
-       * ════════════════════════════════════════════════════ */}
-      <div
-        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 border-b border-border-subtle bg-bg-secondary/40"
-        role="toolbar"
-        aria-label="Blade actions and effects"
-      >
-        {/* IGNITE / RETRACT — anchored to the far left. */}
-        <button
-          onClick={toggleWithAudio}
-          className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
-            isOn
-              ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
-              : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
-          }`}
-          title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
-        >
-          {isOn ? 'Retract' : 'Ignite'}
-        </button>
-
-        <PauseButton />
-
-        <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
-
-        <PinnedEffectChips
-          onToggle={toggleOrTriggerEffect}
-          triggerHandler={triggerEffectWithAudio}
-          releaseHandler={releaseEffect}
-        />
-        <EffectsPinDropdown />
-
-        {/* W11: LIVE dot removed. The consolidated AppPerfStrip at
-            the bottom owns blade STATE + RMS so nothing duplicates
-            here. Action bar is now purely actions. */}
-      </div>
+      {/* Phase 1.5d (v0.14.0): action bar moved into CanvasLayout's
+          BLADE PREVIEW toolbar — IGNITE/Retract + Pause + effect chips
+          now sit directly above the blade they control. */}
 
       {/* 2026-04-22 (post-W7): the internal editor tab bar was retired.
           Design / Audio / Output moved up to the header nav alongside
@@ -1138,28 +1049,24 @@ export function WorkbenchLayout() {
           commands surface the same four destinations. */}
 
       {/* ════════════════════════════════════════════════════
-       * 4. MULTI-COLUMN PANEL CONTENT — fills remaining space
+       * 4. PANEL CONTENT — fills remaining space
+       *
+       * Left-rail overhaul (v0.14.0): when `useNewLayout` is on, the
+       * legacy multi-column TabContent + DesignPanel pills are replaced
+       * by a `[Sidebar | MainContent]` split. Sidebar owns navigation
+       * (replaces top tabs + DesignPanel pills); MainContent renders the
+       * one panel matching the active section. Old TabContent path stays
+       * intact for the dual-mount window so the flag can be flipped /
+       * unflipped without breakage.
        * ════════════════════════════════════════════════════ */}
-      <main
-        className="flex-1 min-h-0 overflow-y-auto bg-bg-deep"
-        role="tabpanel"
-        id={`panel-${activeTab}`}
-        aria-labelledby={`tab-${activeTab}`}
+      <div
+        className="flex-1 min-h-0 flex overflow-hidden bg-bg-deep"
+        role="region"
+        aria-label="Section navigation and content"
       >
-        {/* W10f (2026-04-22): desktop uses DesignPanel's three-group
-            pill + 3-column grid (APPEARANCE / BEHAVIOR / ADVANCED).
-            Max-width bumped from 960 → 1600px so a 3-column grid at
-            ~500px per card renders comfortably without stretching on
-            ultra-wide displays. */}
-        <div className="hidden desktop:block max-w-[1600px] mx-auto p-3">
-          <TabContent activeTab={activeTab} />
-        </div>
-
-        {/* Mobile / tablet fallback: same single-column router. */}
-        <div className="desktop:hidden max-w-6xl mx-auto p-4">
-          <TabContent activeTab={activeTab} />
-        </div>
-      </main>
+        <Sidebar style={{ width: 280 }} />
+        <MainContent />
+      </div>
 
       {/* ════════════════════════════════════════════════════
        * 5. EFFECT COMPARISON STRIPS — collapsible
@@ -1174,37 +1081,10 @@ export function WorkbenchLayout() {
         </section>
       )}
 
-      {/* ════════════════════════════════════════════════════
-       * 5b. PERFORMANCE BAR — Wave 5 persistent macro strip
-       *
-       * 158px tall (10px shift-light rail + 148px perf body). Sits
-       * between the multi-column panel area and the ambient ticker at
-       * the foot. Gated by performanceStore.visible — Settings Modal's
-       * "Performance Bar" toggle flips it off for users who want the
-       * vertical space back. Engine ref is passed so the shift-light
-       * rail can compute live RMS from the same pixel buffer the
-       * BladeCanvas paints from (no second RAF loop in the engine).
-       * ════════════════════════════════════════════════════ */}
-
-      {/* OV11 — panels ↔ PerformanceBar vertical resize handle. Only
-          visible when the PerformanceBar is rendered (Design tab).
-          Drag up to grow the macro region, drag down to reclaim the
-          space for the panel area. `invert` because the PerformanceBar
-          sits below the handle. */}
-      {activeTab === 'design' && (
-        <ResizeHandle
-          orientation="vertical"
-          value={performanceBarHeight}
-          min={REGION_LIMITS.performanceBarHeight.min}
-          max={REGION_LIMITS.performanceBarHeight.max}
-          defaultValue={REGION_LIMITS.performanceBarHeight.default}
-          onChange={setPerformanceBarHeight}
-          invert
-          ariaLabel="Resize performance bar height"
-        />
-      )}
-
-      <PerformanceBar engineRef={engineRef} height={performanceBarHeight} />
+      {/* PerformanceBar removed in left-rail overhaul (v0.14.0 PR 2).
+          The Inspector's TUNE tab + the new sidebar cover the live-tune
+          surfaces it used to expose. ShiftLightRail still imports
+          `shiftLedColor` from the file; final deletion is PR 5 scope. */}
 
       {/* ════════════════════════════════════════════════════
        * 5c. DELIVERY RAIL — persistent 50px bottom bar
@@ -1260,7 +1140,7 @@ export function WorkbenchLayout() {
        * ════════════════════════════════════════════════════ */}
       <div
         className="shrink-0 border-t border-border-subtle bg-bg-deep/60 overflow-hidden"
-        style={{ height: 12 }}
+        style={{ height: 18 }}
         aria-hidden="true"
       >
         <DataTicker

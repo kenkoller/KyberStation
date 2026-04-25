@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore, REGION_LIMITS } from '@/stores/uiStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
@@ -7,8 +7,12 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useVisualizationStore, type RgbLumaChannelKey } from '@/stores/visualizationStore';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
+import { PauseButton } from '@/components/layout/PauseButton';
+import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/EffectsPinDropdown';
+import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
+import { StateGrid } from './StateGrid';
 import { LayerCanvas, computeLayerReadout } from './VisualizationStack';
 import { getLayerById, type VisualizationLayerId } from '@/lib/visualizationTypes';
 
@@ -20,6 +24,23 @@ interface CanvasLayoutProps {
   pixels?: Uint8Array | null;
   /** Current LED count — matches `pixels.length / 3`. */
   pixelCount?: number;
+  /**
+   * Phase 1.5d: action-bar handlers owned by WorkbenchLayout (they
+   * wrap the engine-level toggle/trigger with audio playback). We
+   * receive them as props and render the action bar inside the
+   * BLADE PREVIEW panel's toolbar row so the user's primary blade
+   * controls live in the same visual region as the blade they drive.
+   */
+  onToggleBlade?: () => void;
+  onTriggerEffect?: (type: string) => void;
+  onReleaseEffect?: (type: string) => void;
+  /**
+   * Phase 1.5r: view-controls JSX (Single / All States / 2D / 3D /
+   * Fullscreen) rendered inside the BLADE PREVIEW PanelHeader instead
+   * of floating over the canvas. WorkbenchLayout owns the state these
+   * buttons drive + defines the node; CanvasLayout just renders it.
+   */
+  viewControls?: React.ReactNode;
 }
 
 /**
@@ -33,44 +54,132 @@ interface CanvasLayoutProps {
  *      to the same blade-render-width as the pixel strip so the
  *      waveform maps 1:1 to the LEDs above.
  */
-export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: CanvasLayoutProps) {
+export function CanvasLayout({
+  engineRef,
+  pixels = null,
+  pixelCount = 0,
+  onToggleBlade,
+  onTriggerEffect,
+  onReleaseEffect,
+  viewControls,
+}: CanvasLayoutProps) {
   const showBladePanel = useUIStore((s) => s.showBladePanel);
   const showPixelPanel = useUIStore((s) => s.showPixelPanel);
   const showHilt = useUIStore((s) => s.showHilt);
+  const showGrid = useUIStore((s) => s.showGrid);
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
+  const setBladeStartFrac = useUIStore((s) => s.setBladeStartFrac);
   const toggleBladePanel = useUIStore((s) => s.toggleBladePanel);
   const togglePixelPanel = useUIStore((s) => s.togglePixelPanel);
   const toggleShowHilt = useUIStore((s) => s.toggleShowHilt);
-  const animationPaused = useUIStore((s) => s.animationPaused);
-  const toggleAnimationPaused = useUIStore((s) => s.toggleAnimationPaused);
+  const toggleShowGrid = useUIStore((s) => s.toggleShowGrid);
+  const isOn = useBladeStore((s) => s.isOn);
+
+  // Phase 1.5d: handlers plumbed from WorkbenchLayout. When any of the
+  // three are omitted, BladeActionBar is not rendered (keeps the standalone
+  // `/m` route from hosting a half-wired action bar).
+  const canMountActionBar =
+    onToggleBlade !== undefined &&
+    onTriggerEffect !== undefined &&
+    onReleaseEffect !== undefined;
+
+  // Phase 1.5f: draggable Point-A divider — spans the entire BLADE
+  // PREVIEW panel vertically (toolbar + blade canvas + pixel strip +
+  // analysis rail). Dragging horizontally updates
+  // uiStore.bladeStartFrac, which every rail reads so they all
+  // re-anchor to the new Point A.
+  const handleDividerPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const panel = (e.currentTarget.parentElement as HTMLElement | null);
+    if (!panel) return;
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    const rect = panel.getBoundingClientRect();
+    const onMove = (ev: PointerEvent) => {
+      const frac = Math.round(((ev.clientX - rect.left) / rect.width) * 1000);
+      // clampRegion in uiStore enforces REGION_LIMITS.bladeStartFrac bounds.
+      setBladeStartFrac(frac);
+    };
+    const onUp = (ev: PointerEvent) => {
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+      try { target.releasePointerCapture(ev.pointerId); } catch { /* noop */ }
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
+  }, [setBladeStartFrac]);
+
+  const handleDividerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 20 : 5;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      // Read latest value from store each press — closure-captured
+      // `bladeStartFrac` goes stale under rapid key repeat.
+      setBladeStartFrac(useUIStore.getState().bladeStartFrac - step);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setBladeStartFrac(useUIStore.getState().bladeStartFrac + step);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setBladeStartFrac(REGION_LIMITS.bladeStartFrac.default);
+    }
+  }, [setBladeStartFrac]);
+
+  const handleDividerDoubleClick = useCallback(() => {
+    setBladeStartFrac(REGION_LIMITS.bladeStartFrac.default);
+  }, [setBladeStartFrac]);
   const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
   const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedLayerId = useUIStore((s) => s.expandedAnalysisLayerId);
+  const isPausedForStats = useUIStore((s) => s.isPaused);
+  const showStateGrid = useUIStore((s) => s.showStateGrid);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const visiblePanels = [showBladePanel, showPixelPanel].filter(Boolean).length;
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full gap-0 overflow-hidden rounded-panel border border-border-subtle">
+    <div ref={containerRef} className="relative flex flex-col h-full w-full gap-0 overflow-hidden border-x border-border-subtle">
       {/* ── Blade Panel — full width, horizontal ── */}
       {showBladePanel && (
         <div className="flex flex-col min-h-0 overflow-hidden relative flex-1">
+          {/*
+            Phase 1.5l: row order swapped. Action bar (IGNITE + effects)
+            is now the TOP row — it's the highest-frequency interaction
+            so it belongs at the top edge of the panel where the cursor
+            naturally lands. The title/toggles row sits BELOW the action
+            bar, still above the blade canvas.
+          */}
+          {canMountActionBar && (
+            <div
+              className="shrink-0 flex items-center gap-1.5 px-2 min-h-[33px] border-b border-border-subtle bg-bg-secondary/40 flex-wrap"
+              role="toolbar"
+              aria-label="Blade actions and effects"
+            >
+              <button
+                onClick={onToggleBlade}
+                className={`px-3 py-1 rounded text-ui-xs font-bold uppercase tracking-wider transition-all border ${
+                  isOn
+                    ? 'bg-red-900/30 border-red-700/50 text-red-400 hover:bg-red-900/50 ignite-btn-on'
+                    : 'bg-accent-dim border-accent-border text-accent hover:bg-accent/20 ignite-btn-off'
+                }`}
+                title={isOn ? 'Retract blade (Space)' : 'Ignite blade (Space)'}
+              >
+                {isOn ? 'Retract' : 'Ignite'}
+              </button>
+              <PauseButton />
+              <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
+              <PinnedEffectChips
+                onToggle={toggleOrTriggerEffect}
+                triggerHandler={onTriggerEffect!}
+                releaseHandler={onReleaseEffect!}
+              />
+              <EffectsPinDropdown />
+            </div>
+          )}
           <PanelHeader
             title="Blade Preview"
             onToggle={toggleBladePanel}
           >
-            <button
-              onClick={toggleAnimationPaused}
-              className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
-                animationPaused
-                  ? 'text-yellow-400 bg-yellow-900/20'
-                  : 'text-text-muted/40 hover:text-text-muted'
-              }`}
-              aria-label={animationPaused ? 'Resume animation' : 'Pause animation'}
-              title={animationPaused ? 'Resume' : 'Pause'}
-            >
-              {animationPaused ? 'Paused' : 'Pause'}
-            </button>
             <button
               onClick={toggleShowHilt}
               className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
@@ -83,6 +192,24 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
             >
               Hilt
             </button>
+            <button
+              onClick={toggleShowGrid}
+              className={`text-ui-xs px-1.5 py-0.5 rounded transition-colors ${
+                showGrid
+                  ? 'text-accent/70 bg-accent/10'
+                  : 'text-text-muted/40 hover:text-text-muted'
+              }`}
+              aria-label={showGrid ? 'Hide inch-ruler grid' : 'Show inch-ruler grid'}
+              title={showGrid ? 'Hide grid' : 'Show grid'}
+            >
+              Grid
+            </button>
+            {viewControls && (
+              <>
+                <span className="w-px h-4 bg-border-subtle mx-0.5" aria-hidden="true" />
+                {viewControls}
+              </>
+            )}
           </PanelHeader>
           <div className="flex-1 min-h-0 overflow-hidden">
             {/* `compact` selects the 240-tall design-space layout (bladeY=60)
@@ -108,26 +235,84 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
         />
       )}
 
-      {/* ── Pixel Strip Panel — horizontal, full width (user-draggable) ── */}
-      {showPixelPanel && (
-        <div className="flex flex-col min-h-0 overflow-hidden relative shrink-0" style={{ height: pixelStripHeight }}>
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <PixelStripPanel engineRef={engineRef} />
-          </div>
+      {/*
+        Phase 1.5x (2026-04-24): when ALL STATES is on, the pixel
+        strip + ExpandedSlotResizeHandle + Expanded Analysis Slot
+        are replaced by a 9-row StateGrid that aligns Point A →
+        Point B with the BLADE PREVIEW canvas above. BLADE PREVIEW
+        itself stays visible (it's flex-1 above this conditional)
+        so the user can keep editing the blade while comparing
+        across states. Otherwise, the normal pixel strip + slot
+        stack renders.
+      */}
+      {showStateGrid ? (
+        <div className="flex-1 min-h-0">
+          <StateGrid engineRef={engineRef} />
         </div>
+      ) : (
+        <>
+          {/* ── Pixel Strip Panel — horizontal, full width (user-draggable) ──
+              Phase 1.5j: wrapped PixelStripPanel with a small header row
+              mirroring the BLADE PREVIEW panel's header — title + live
+              stats (total amperage + avg luma). */}
+          {showPixelPanel && (
+            <div
+              className="flex flex-col min-h-0 overflow-hidden relative shrink-0"
+              style={{ height: pixelStripHeight }}
+            >
+              <PixelStripHeader pixels={pixels} pixelCount={pixelCount} isPaused={isPausedForStats} togglePixelPanel={togglePixelPanel} />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <PixelStripPanel engineRef={engineRef} />
+              </div>
+            </div>
+          )}
+
+          {/* W2 resize handle between pixel strip ↔ expanded slot. Only
+              rendered when a layer is expanded (slot is mounted). */}
+          {showPixelPanel && expandedLayerId && (
+            <ExpandedSlotResizeHandle />
+          )}
+
+          {/* ── Expanded Analysis Slot ──
+              Populated by AnalysisRail's ↗ affordance. Defaults to rgb-luma
+              so the "pixel strip + waveform below" shape users had before
+              the overhaul is preserved on fresh load. */}
+          <ExpandedAnalysisSlot pixels={pixels} pixelCount={pixelCount} />
+        </>
       )}
 
-      {/* W2 resize handle between pixel strip ↔ expanded slot. Only
-          rendered when a layer is expanded (slot is mounted). */}
-      {showPixelPanel && expandedLayerId && (
-        <ExpandedSlotResizeHandle />
-      )}
+      {/*
+        Phase 1.5f: draggable Point-A divider. Absolute-positioned
+        so it spans the entire BLADE PREVIEW panel vertically (panel
+        header, action bar, blade canvas, strip, analysis slot). The
+        divider's X is `bladeStartFrac / 10`% of the panel width —
+        identical formula to the one every rail's
+        computeBladeRenderMetrics call uses, so they all anchor
+        to this same X.
 
-      {/* ── Expanded Analysis Slot ──
-          Populated by AnalysisRail's ↗ affordance. Defaults to rgb-luma
-          so the "pixel strip + waveform below" shape users had before
-          the overhaul is preserved on fresh load. */}
-      <ExpandedAnalysisSlot pixels={pixels} pixelCount={pixelCount} />
+        Drag to reposition; arrow keys step by 5 (shift+arrow 20);
+        Home / double-click reset to REGION_LIMITS default.
+      */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize blade start divider (Point A)"
+        aria-valuemin={REGION_LIMITS.bladeStartFrac.min}
+        aria-valuemax={REGION_LIMITS.bladeStartFrac.max}
+        aria-valuenow={bladeStartFrac}
+        tabIndex={0}
+        onPointerDown={handleDividerPointerDown}
+        onKeyDown={handleDividerKeyDown}
+        onDoubleClick={handleDividerDoubleClick}
+        className="absolute top-0 bottom-0 w-2 z-20 cursor-col-resize bg-transparent hover:bg-accent/30 active:bg-accent/50 transition-colors"
+        style={{
+          left: `calc(${bladeStartFrac / 10}% - 4px)`,
+          background:
+            'linear-gradient(to right, transparent 0, transparent 3px, rgb(var(--border-subtle) / 0.6) 3px, rgb(var(--border-subtle) / 0.6) 5px, transparent 5px)',
+          outline: 'none',
+          touchAction: 'none',
+        }}
+      />
 
       {/* Show hidden panels indicator when panels are hidden */}
       {visiblePanels < 2 && (
@@ -150,6 +335,81 @@ export function CanvasLayout({ engineRef, pixels = null, pixelCount = 0 }: Canva
 
 // ─── Sub-components ───
 
+/**
+ * PixelStripHeader — Phase 1.5j. Small header above PixelStripPanel
+ * with a uppercase `PIXEL STRIP` title + live stats readout (total
+ * amperage + avg blade luminance). Mirrors the BLADE PREVIEW panel's
+ * PanelHeader shape so the two stacked panels read as a pair. Title
+ * + readout on the left; ✕ close button on the right.
+ *
+ * Stats are computed by sampling the shared engine pixel buffer
+ * each animation frame (10fps cap — cheap + reads fine). The same
+ * buffer the ExpandedAnalysisSlot header already uses, so there's
+ * one source of truth for blade readouts across the workbench.
+ */
+function PixelStripHeader({
+  pixels,
+  pixelCount,
+  isPaused,
+  togglePixelPanel,
+}: {
+  pixels: Uint8Array | null;
+  pixelCount: number;
+  isPaused: boolean;
+  togglePixelPanel: () => void;
+}) {
+  const brightness = useUIStore((s) => s.brightness);
+  const [readout, setReadout] = useState<string>('');
+
+  useAnimationFrame(
+    () => {
+      if (!pixels || pixelCount <= 0) {
+        setReadout('');
+        return;
+      }
+      const briScale = brightness / 100;
+      let totalMa = 0;
+      let lumaSum = 0;
+      const count = Math.min(pixelCount, Math.floor(pixels.length / 3));
+      for (let i = 0; i < count; i++) {
+        const r = (pixels[i * 3] ?? 0) * briScale;
+        const g = (pixels[i * 3 + 1] ?? 0) * briScale;
+        const b = (pixels[i * 3 + 2] ?? 0) * briScale;
+        totalMa += ((r + g + b) / 255) * 20;
+        lumaSum += 0.299 * r + 0.587 * g + 0.114 * b;
+      }
+      const totalA = (totalMa / 1000).toFixed(2);
+      const avgBri = count > 0 ? Math.round((lumaSum / count / 255) * 100) : 0;
+      const next = `${totalA} A · ${avgBri}%`;
+      setReadout((prev) => (prev === next ? prev : next));
+    },
+    { enabled: !isPaused, maxFps: 10 },
+  );
+
+  return (
+    <div className="flex items-center justify-between px-2 h-[30px] bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
+          Pixel Strip
+        </span>
+        {readout && (
+          <span className="text-ui-xs font-mono tabular-nums text-[rgba(255,170,0,0.75)] truncate">
+            {readout}
+          </span>
+        )}
+      </div>
+      <button
+        onClick={togglePixelPanel}
+        className="text-ui-xs text-text-muted/50 hover:text-text-muted transition-colors px-1 shrink-0"
+        aria-label="Hide Pixel Strip panel"
+        title="Hide Pixel Strip"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function PanelHeader({
   title,
   onToggle,
@@ -159,22 +419,34 @@ function PanelHeader({
   onToggle: () => void;
   children?: React.ReactNode;
 }) {
+  // Phase 1.5e: title + accessory buttons sit on the LEFT (right after
+  // the title) instead of far-right. This clears the panel's top-right
+  // corner for the absolute-positioned State/2D-3D/Fullscreen overlay
+  // in WorkbenchLayout (moved DOWN to top-11 in 1.5e so it no longer
+  // competes with this row for horizontal space).
+  //
+  // Phase 1.5j: `pr-20` spacer dropped now that the overlay is moved
+  // vertically out of the collision zone. The children row gets the
+  // full horizontal space it needs for the consolidated IGNITE +
+  // effects + view toggles.
   return (
-    <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/80 border-b border-border-subtle shrink-0">
-      <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none">
-        {title}
-      </span>
-      <div className="flex items-center gap-1">
-        {children}
-        <button
-          onClick={onToggle}
-          className="text-ui-xs text-text-muted/50 hover:text-text-muted transition-colors px-1"
-          aria-label={`Hide ${title} panel`}
-          title={`Hide ${title}`}
-        >
-          ✕
-        </button>
+    <div className="flex items-center justify-between px-2 h-[30px] bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
+      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+        <span className="text-ui-xs text-text-muted uppercase tracking-wider font-medium select-none shrink-0">
+          {title}
+        </span>
+        <div className="flex items-center gap-1 min-w-0 flex-wrap">
+          {children}
+        </div>
       </div>
+      <button
+        onClick={onToggle}
+        className="text-ui-xs text-text-muted/50 hover:text-text-muted transition-colors px-1 shrink-0"
+        aria-label={`Hide ${title} panel`}
+        title={`Hide ${title}`}
+      >
+        ✕
+      </button>
     </div>
   );
 }
@@ -193,23 +465,124 @@ function PanelHeader({
  * collapsing the slot and handing the vertical space back to the
  * blade preview.
  */
-/** Resize handle between pixel strip and expanded slot. Extracted so
- *  it can pull uiStore state without polluting the CanvasLayout render
- *  when no layer is expanded. */
+/** Splitter handle between PIXEL STRIP and the EXPANDED ANALYSIS SLOT.
+ *
+ *  Behaves as a true splitter: dragging the handle grows one neighbor
+ *  by exactly the same number of pixels the other shrinks. The
+ *  `flex-1` BLADE PREVIEW above is untouched, so the pixel strip
+ *  doesn't translate vertically when the user drags the seam.
+ *
+ *  Coordinates both `pixelStripHeight` and `expandedSlotHeight`
+ *  inversely with a single linked clamp range so neither store can
+ *  overshoot its limits while the other keeps moving (which would
+ *  desync the seam from the pointer).
+ */
 function ExpandedSlotResizeHandle() {
+  const pixelStripHeight = useUIStore((s) => s.pixelStripHeight);
+  const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedSlotHeight = useUIStore((s) => s.expandedSlotHeight);
   const setExpandedSlotHeight = useUIStore((s) => s.setExpandedSlotHeight);
+
+  const dragRef = useRef<{
+    pointerId: number;
+    startY: number;
+    startStrip: number;
+    startSlot: number;
+  } | null>(null);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+      dragRef.current = {
+        pointerId: e.pointerId,
+        startY: e.clientY,
+        startStrip: pixelStripHeight,
+        startSlot: expandedSlotHeight,
+      };
+    },
+    [pixelStripHeight, expandedSlotHeight],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const s = dragRef.current;
+      if (!s || s.pointerId !== e.pointerId) return;
+      const STRIP = REGION_LIMITS.pixelStripHeight;
+      const SLOT = REGION_LIMITS.expandedSlotHeight;
+      // Linked clamp: drag-down (positive delta) is bounded by whichever
+      // side hits its limit first. Same for drag-up.
+      const maxDown = Math.min(STRIP.max - s.startStrip, s.startSlot - SLOT.min);
+      const maxUp = Math.min(s.startStrip - STRIP.min, SLOT.max - s.startSlot);
+      const raw = e.clientY - s.startY;
+      const delta = Math.max(-maxUp, Math.min(maxDown, raw));
+      setPixelStripHeight(s.startStrip + delta);
+      setExpandedSlotHeight(s.startSlot - delta);
+    },
+    [setPixelStripHeight, setExpandedSlotHeight],
+  );
+
+  const endDrag = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const s = dragRef.current;
+    if (s && s.pointerId === e.pointerId) {
+      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+      dragRef.current = null;
+    }
+  }, []);
+
+  const onDoubleClick = useCallback(() => {
+    setPixelStripHeight(REGION_LIMITS.pixelStripHeight.default);
+    setExpandedSlotHeight(REGION_LIMITS.expandedSlotHeight.default);
+  }, [setPixelStripHeight, setExpandedSlotHeight]);
+
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const step = e.shiftKey ? 24 : 8;
+      const STRIP = REGION_LIMITS.pixelStripHeight;
+      const SLOT = REGION_LIMITS.expandedSlotHeight;
+      const apply = (rawDelta: number) => {
+        const maxDown = Math.min(STRIP.max - pixelStripHeight, expandedSlotHeight - SLOT.min);
+        const maxUp = Math.min(pixelStripHeight - STRIP.min, SLOT.max - expandedSlotHeight);
+        const delta = Math.max(-maxUp, Math.min(maxDown, rawDelta));
+        setPixelStripHeight(pixelStripHeight + delta);
+        setExpandedSlotHeight(expandedSlotHeight - delta);
+      };
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        apply(step);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        apply(-step);
+      } else if (e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        setPixelStripHeight(REGION_LIMITS.pixelStripHeight.default);
+        setExpandedSlotHeight(REGION_LIMITS.expandedSlotHeight.default);
+      }
+    },
+    [pixelStripHeight, expandedSlotHeight, setPixelStripHeight, setExpandedSlotHeight],
+  );
+
   return (
-    <ResizeHandle
-      orientation="vertical"
-      value={expandedSlotHeight}
-      min={REGION_LIMITS.expandedSlotHeight.min}
-      max={REGION_LIMITS.expandedSlotHeight.max}
-      defaultValue={REGION_LIMITS.expandedSlotHeight.default}
-      onChange={setExpandedSlotHeight}
-      invert
-      ariaLabel="Resize expanded analysis view"
-    />
+    <div className="relative shrink-0" style={{ width: '100%', height: 0 }}>
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize expanded analysis view"
+        aria-valuemin={REGION_LIMITS.expandedSlotHeight.min}
+        aria-valuemax={REGION_LIMITS.expandedSlotHeight.max}
+        aria-valuenow={Math.round(expandedSlotHeight)}
+        tabIndex={0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onDoubleClick={onDoubleClick}
+        onKeyDown={onKeyDown}
+        className="absolute -top-1 -bottom-1 left-0 right-0 bg-transparent hover:bg-accent/40 active:bg-accent/70 transition-colors z-10 cursor-row-resize"
+        style={{ outline: 'none', touchAction: 'none' }}
+      />
+    </div>
   );
 }
 
@@ -239,7 +612,7 @@ function ExpandedAnalysisSlot({
       style={{ height: expandedSlotHeight }}
       aria-label={`${layer.label} expanded view`}
     >
-      <div className="flex items-center justify-between px-2 py-1 bg-bg-secondary/60 shrink-0">
+      <div className="flex items-center justify-between px-2 h-[30px] bg-bg-secondary/80 border-b border-border-subtle shrink-0 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span
             aria-hidden="true"

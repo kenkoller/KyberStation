@@ -62,6 +62,13 @@ interface AccessibilityState {
   density: DensityMode;
   effectAutoRelease: EffectAutoRelease;
   graphicsQuality: GraphicsQuality;
+  /**
+   * Phase 3 (v0.14.0): when true, blade bloom alpha is scaled by 0.4 so
+   * the halo is visibly dimmer without turning off completely. For users
+   * with photosensitive triggers or who just prefer a calmer visual.
+   * Defaults to false; persisted alongside other a11y prefs.
+   */
+  reduceBloom: boolean;
 
   setHighContrast: (on: boolean) => void;
   setColorblindMode: (mode: ColorblindMode) => void;
@@ -70,6 +77,7 @@ interface AccessibilityState {
   setDensity: (density: DensityMode) => void;
   setEffectAutoRelease: (config: Partial<EffectAutoRelease>) => void;
   setGraphicsQuality: (quality: GraphicsQuality) => void;
+  setReduceBloom: (on: boolean) => void;
   syncReducedMotionFromOS: () => void;
   reset: () => void;
 }
@@ -84,7 +92,7 @@ function loadFromStorage(): Partial<AccessibilityState> {
   return {};
 }
 
-function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality'>) {
+function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality' | 'reduceBloom'>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
@@ -99,6 +107,7 @@ const defaults = {
   density: 'ableton' as DensityMode,
   effectAutoRelease: { enabled: false, seconds: 4 } as EffectAutoRelease,
   graphicsQuality: 'high' as GraphicsQuality,
+  reduceBloom: false,
 };
 
 const stored = loadFromStorage();
@@ -113,6 +122,7 @@ function persist(s: AccessibilityState) {
     density: s.density,
     effectAutoRelease: s.effectAutoRelease,
     graphicsQuality: s.graphicsQuality,
+    reduceBloom: s.reduceBloom,
   });
 }
 
@@ -125,6 +135,7 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   density: stored.density ?? defaults.density,
   effectAutoRelease: stored.effectAutoRelease ?? defaults.effectAutoRelease,
   graphicsQuality: stored.graphicsQuality ?? defaults.graphicsQuality,
+  reduceBloom: stored.reduceBloom ?? defaults.reduceBloom,
 
   setHighContrast: (highContrast) => {
     set({ highContrast });
@@ -166,6 +177,11 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
 
   setGraphicsQuality: (graphicsQuality) => {
     set({ graphicsQuality });
+    persist(get());
+  },
+
+  setReduceBloom: (reduceBloom) => {
+    set({ reduceBloom });
     persist(get());
   },
 

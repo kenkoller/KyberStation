@@ -89,8 +89,20 @@ export function AnalysisRail({
   // OV10 icon-only on tablet/phone still applies. The "always visible"
   // contract covers desktop; the mobile shell owns its own affordances.
   const icon = breakpoint === 'phone' || breakpoint === 'tablet';
-  const resolvedWidth =
-    icon ? 40 : (typeof style?.width === 'number' ? style.width : 200);
+  // Phase 1.5v (2026-04-24): on desktop, fill the parent column instead
+  // of hardcoding 200 px — RightRail / WorkbenchLayout already control
+  // the column width via `analysisRailWidth`. Only enforce a fixed
+  // 40 px in icon mode.
+  const resolvedWidth = icon ? 40 : '100%';
+  // Used by AnalysisRailRow to decide between short/long labels +
+  // whether to show the readout. On desktop we don't have a single
+  // pixel width number anymore (rail flexes with column), so fall
+  // back to the parent's passed width or our default heuristic.
+  const railWidthForLabel = icon
+    ? 40
+    : typeof style?.width === 'number'
+      ? style.width
+      : 220;
 
   const activeIds = useMemo(
     () => selectAnalysisRailLayerIds(layerOrder, visibleLayers),
@@ -128,7 +140,7 @@ export function AnalysisRail({
                 isPaused={isPaused}
                 reducedMotion={reducedMotion}
                 icon={icon}
-                railWidth={resolvedWidth}
+                railWidth={railWidthForLabel}
                 isExpanded={expandedLayerId === id}
                 onExpand={onExpand}
               />
@@ -194,7 +206,7 @@ function AnalysisRailRow({
       className={`flex flex-col rounded-chrome text-left w-full overflow-hidden transition-colors ${
         isExpanded
           ? 'bg-accent-dim/25 border border-accent-border/60'
-          : 'bg-bg-deep/40 border border-border-subtle/40 hover:border-accent-border/50 hover:bg-bg-deep/60'
+          : 'bg-bg-deep/40 border border-border-subtle hover:border-accent-border/50 hover:bg-bg-deep/60'
       }`}
       // flex: 1 1 0 lets rows share rail height evenly and grow past
       // the old preferred cap. min-height floors at ROW_MIN_HEIGHT so
