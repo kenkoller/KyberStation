@@ -12,6 +12,7 @@ import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/Effec
 import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
+import { StateGrid } from './StateGrid';
 import { LayerCanvas, computeLayerReadout } from './VisualizationStack';
 import { getLayerById, type VisualizationLayerId } from '@/lib/visualizationTypes';
 
@@ -130,6 +131,7 @@ export function CanvasLayout({
   const setPixelStripHeight = useUIStore((s) => s.setPixelStripHeight);
   const expandedLayerId = useUIStore((s) => s.expandedAnalysisLayerId);
   const isPausedForStats = useUIStore((s) => s.isPaused);
+  const showStateGrid = useUIStore((s) => s.showStateGrid);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -233,39 +235,51 @@ export function CanvasLayout({
         />
       )}
 
-      {/* ── Pixel Strip Panel — horizontal, full width (user-draggable) ── */}
       {/*
-        Phase 1.5j: wrapped PixelStripPanel with a small header row
-        mirroring the BLADE PREVIEW panel's header — title + live
-        stats (total amperage + avg luma). The in-canvas `PIXEL`
-        label + `0.00A bri:N%` readout were removed from
-        PixelStripPanel because they drew ON TOP of the rightmost
-        LEDs; rendering them in the DOM header is cleaner and
-        accessible to screen readers.
+        Phase 1.5x (2026-04-24): when ALL STATES is on, the pixel
+        strip + ExpandedSlotResizeHandle + Expanded Analysis Slot
+        are replaced by a 9-row StateGrid that aligns Point A →
+        Point B with the BLADE PREVIEW canvas above. BLADE PREVIEW
+        itself stays visible (it's flex-1 above this conditional)
+        so the user can keep editing the blade while comparing
+        across states. Otherwise, the normal pixel strip + slot
+        stack renders.
       */}
-      {showPixelPanel && (
-        <div
-          className="flex flex-col min-h-0 overflow-hidden relative shrink-0"
-          style={{ height: pixelStripHeight }}
-        >
-          <PixelStripHeader pixels={pixels} pixelCount={pixelCount} isPaused={isPausedForStats} togglePixelPanel={togglePixelPanel} />
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <PixelStripPanel engineRef={engineRef} />
-          </div>
+      {showStateGrid ? (
+        <div className="flex-1 min-h-0">
+          <StateGrid engineRef={engineRef} />
         </div>
-      )}
+      ) : (
+        <>
+          {/* ── Pixel Strip Panel — horizontal, full width (user-draggable) ──
+              Phase 1.5j: wrapped PixelStripPanel with a small header row
+              mirroring the BLADE PREVIEW panel's header — title + live
+              stats (total amperage + avg luma). */}
+          {showPixelPanel && (
+            <div
+              className="flex flex-col min-h-0 overflow-hidden relative shrink-0"
+              style={{ height: pixelStripHeight }}
+            >
+              <PixelStripHeader pixels={pixels} pixelCount={pixelCount} isPaused={isPausedForStats} togglePixelPanel={togglePixelPanel} />
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <PixelStripPanel engineRef={engineRef} />
+              </div>
+            </div>
+          )}
 
-      {/* W2 resize handle between pixel strip ↔ expanded slot. Only
-          rendered when a layer is expanded (slot is mounted). */}
-      {showPixelPanel && expandedLayerId && (
-        <ExpandedSlotResizeHandle />
-      )}
+          {/* W2 resize handle between pixel strip ↔ expanded slot. Only
+              rendered when a layer is expanded (slot is mounted). */}
+          {showPixelPanel && expandedLayerId && (
+            <ExpandedSlotResizeHandle />
+          )}
 
-      {/* ── Expanded Analysis Slot ──
-          Populated by AnalysisRail's ↗ affordance. Defaults to rgb-luma
-          so the "pixel strip + waveform below" shape users had before
-          the overhaul is preserved on fresh load. */}
-      <ExpandedAnalysisSlot pixels={pixels} pixelCount={pixelCount} />
+          {/* ── Expanded Analysis Slot ──
+              Populated by AnalysisRail's ↗ affordance. Defaults to rgb-luma
+              so the "pixel strip + waveform below" shape users had before
+              the overhaul is preserved on fresh load. */}
+          <ExpandedAnalysisSlot pixels={pixels} pixelCount={pixelCount} />
+        </>
+      )}
 
       {/*
         Phase 1.5f: draggable Point-A divider. Absolute-positioned

@@ -28,7 +28,6 @@ import { SaberWizard } from '@/components/onboarding/SaberWizard';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
 import { PixelDebugOverlay } from '@/components/editor/PixelDebugOverlay';
 import { CanvasLayout } from '@/components/editor/CanvasLayout';
-import { BladeCanvas3D } from '@/components/editor/BladeCanvas3DWrapper';
 import { DesignPanel } from '@/components/editor/DesignPanel';
 // W10 (2026-04-22): DynamicsPanel's sections were absorbed into
 // DesignPanel — no longer mounted separately.
@@ -51,7 +50,6 @@ import { ShiftLightRail } from '@/components/layout/ShiftLightRail';
 import { AppPerfStrip } from '@/components/layout/AppPerfStrip';
 import { RightRail } from '@/components/layout/RightRail';
 import { Inspector } from '@/components/editor/Inspector';
-import { StateGrid } from '@/components/editor/StateGrid';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { REGION_LIMITS } from '@/stores/uiStore';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
@@ -211,11 +209,10 @@ export function WorkbenchLayout() {
   const showEffectComparison = useUIStore((s) => s.showEffectComparison);
   const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
   const presetListCount = usePresetListStore((s) => s.entries.length);
-  const canvasMode = useUIStore((s) => s.canvasMode);
-  const setCanvasMode = useUIStore((s) => s.setCanvasMode);
-  // OV8: STATE-mode takeover toggle. When true and activeTab === 'design',
-  // the center blade preview is replaced by a full-workbench-width
-  // 9-state stack. Toggled by the header chip or ⌘5 / Ctrl+5.
+  // Phase 1.5x (2026-04-24): All States behavior reworked. The 9-state
+  // stack now replaces the PIXEL STRIP + Expanded Slot regions only;
+  // BLADE PREVIEW stays visible. The 2D/3D toggle is also retired —
+  // 2D is the only mode going forward.
   const showStateGrid = useUIStore((s) => s.showStateGrid);
   const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
 
@@ -288,36 +285,10 @@ export function WorkbenchLayout() {
             </button>
           </div>
         )}
-        <div className="flex rounded overflow-hidden border border-border-subtle">
-          <button
-            onClick={() => setCanvasMode('2d')}
-            className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
-              canvasMode === '2d'
-                ? 'bg-accent-dim text-accent border-r border-accent-border/40'
-                : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
-            }`}
-            title="2D blade view"
-            aria-pressed={canvasMode === '2d'}
-          >
-            2D
-          </button>
-          <button
-            onClick={() => setCanvasMode('3d')}
-            className={`px-2 py-0.5 text-ui-xs font-medium transition-colors ${
-              canvasMode === '3d'
-                ? 'bg-accent-dim text-accent'
-                : 'bg-transparent text-text-muted hover:text-text-secondary'
-            }`}
-            title="3D hilt + blade view"
-            aria-pressed={canvasMode === '3d'}
-          >
-            3D
-          </button>
-        </div>
         <FullscreenButton className="w-5 h-5" />
       </>
     ),
-    [activeTab, showStateGrid, toggleStateGrid, canvasMode, setCanvasMode, kbdFor],
+    [activeTab, showStateGrid, toggleStateGrid, kbdFor],
   );
 
   const tickerMessages = useMemo(() => {
@@ -1029,10 +1000,6 @@ export function WorkbenchLayout() {
           <div className="h-full relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
-            ) : showStateGrid && activeTab === 'design' ? (
-              <StateGrid engineRef={engineRef} className="h-full" />
-            ) : canvasMode === '3d' ? (
-              <BladeCanvas3D />
             ) : (
               <CanvasLayout
                 engineRef={engineRef}
@@ -1044,21 +1011,9 @@ export function WorkbenchLayout() {
                 viewControls={viewControlsNode}
               />
             )}
-            {/*
-              Phase 1.5r: view-controls live INSIDE CanvasLayout's BLADE
-              PREVIEW PanelHeader when CanvasLayout is mounted (2D single
-              mode). When 3D or StateGrid is active instead, CanvasLayout
-              isn't rendered — so we keep an absolute-positioned fallback
-              here so users can toggle back. Shared JSX extracted to
-              `viewControlsNode` and passed to CanvasLayout as a prop.
-            */}
-            {(canvasMode === '3d' || (showStateGrid && activeTab === 'design')) && (
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-                {viewControlsNode}
-              </div>
-            )}
-            {/* Pixel debug overlay only applies to 2D canvas mode */}
-            {canvasMode === '2d' && (
+            {/* Pixel debug overlay — CanvasLayout (2D) is the only mode now,
+                so this can always be on while the engine is ready. */}
+            {engineReady && (
               <PixelDebugOverlay
                 getPixelRgb={(index) => {
                   const engine = engineRef.current;

@@ -17,6 +17,8 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { BladeEngine, EffectType } from '@kyberstation/engine';
 import { BladeState } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useUIStore } from '@/stores/uiStore';
+import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
 
 interface StateGridRow {
   id: string;
@@ -46,6 +48,7 @@ interface StateGridProps {
 export function StateGrid({ engineRef, className }: StateGridProps) {
   const config = useBladeStore((s) => s.config);
   const ledCount = config.ledCount;
+  const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
 
   const frames = useMemo(() => {
     const engine = engineRef.current;
@@ -67,20 +70,6 @@ export function StateGrid({ engineRef, className }: StateGridProps) {
       role="region"
       aria-label="All blade states"
     >
-      <div
-        className="font-mono uppercase text-text-muted px-3 py-1.5 border-b border-border-subtle shrink-0"
-        style={{
-          fontSize: 10,
-          letterSpacing: '0.1em',
-          // OV10: reserve right-side room for the SINGLE/ALL STATES +
-          // 2D/3D + Fullscreen controls cluster that lives on top of
-          // the same canvas region. Without this pad the header text
-          // collides with the buttons at 1024px-ish widths.
-          paddingRight: 280,
-        }}
-      >
-        All states · config-driven snapshots · {ledCount} LEDs
-      </div>
       <div className="flex-1 min-h-0 flex flex-col gap-[2px] p-2">
         {ROWS.map((row, i) => (
           <StateGridRowView
@@ -88,6 +77,7 @@ export function StateGrid({ engineRef, className }: StateGridProps) {
             label={row.label}
             frame={frames?.[i] ?? null}
             ledCount={ledCount}
+            bladeStartFrac={bladeStartFrac}
           />
         ))}
       </div>
@@ -99,9 +89,10 @@ interface StateGridRowViewProps {
   label: string;
   frame: Uint8Array | null;
   ledCount: number;
+  bladeStartFrac: number;
 }
 
-function StateGridRowView({ label, frame, ledCount }: StateGridRowViewProps) {
+function StateGridRowView({ label, frame, ledCount, bladeStartFrac }: StateGridRowViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -124,22 +115,26 @@ function StateGridRowView({ label, frame, ledCount }: StateGridRowViewProps) {
       ctx.fillStyle = '#03030a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (!frame || ledCount <= 0) return;
-      // W6 (2026-04-22): StateGrid rows span the full row width so
-      // each state gets maximum canvas area for comparison. Dropping
-      // `computeBladeRenderMetrics` here is intentional — in this
-      // view the "compare across states" read matters more than
-      // physical-blade proportionality with the main preview. When
-      // the preview canvas is visible on the Design tab, alignment
-      // is handled by the pixel strip + expanded slot (which still
-      // honor the metrics). Here we stretch the LEDs corner-to-corner.
+      // Phase 1.5x (2026-04-24): rows now align Point A → Point B
+      // with the main BLADE PREVIEW canvas above. Each row's LED band
+      // starts at `bladeStartFrac/1000 * containerWidth` and ends at
+      // the auto-fit bladeWidth — same metrics the pixel strip uses,
+      // so all three regions share one anchored coordinate system.
+      const metrics = computeBladeRenderMetrics({
+        containerWidthPx: w,
+        ledCount,
+        bladeStartFrac,
+      });
+      const stripLeft = metrics.bladeLeftPx * dpr;
+      const stripW = metrics.bladeWidthPx * dpr;
       const leds = Math.min(ledCount, Math.floor(frame.length / 3));
-      const cellW = canvas.width / leds;
+      const cellW = stripW / leds;
       for (let i = 0; i < leds; i++) {
         const r = frame[i * 3] ?? 0;
         const g = frame[i * 3 + 1] ?? 0;
         const b = frame[i * 3 + 2] ?? 0;
         ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(i * cellW, 0, Math.max(cellW + 0.5, 1), canvas.height);
+        ctx.fillRect(stripLeft + i * cellW, 0, Math.max(cellW + 0.5, 1), canvas.height);
       }
     };
 
@@ -147,23 +142,24 @@ function StateGridRowView({ label, frame, ledCount }: StateGridRowViewProps) {
     const observer = new ResizeObserver(draw);
     observer.observe(container);
     return () => observer.disconnect();
-  }, [frame, ledCount]);
+  }, [frame, ledCount, bladeStartFrac]);
 
   return (
-    <div className="flex items-center gap-2 shrink-0" style={{ height: 28 }}>
+    <div
+      ref={containerRef}
+      className="relative shrink-0 rounded-sm border border-border-subtle overflow-hidden"
+      style={{ height: 28, minWidth: 0 }}
+    >
+      <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} className="absolute inset-0" />
+      {/* Label is overlaid in the pre-blade hilt area (X < bladeLeftPx)
+          so the canvas can span full row width and Point A / Point B
+          line up exactly with the main BLADE PREVIEW above. */}
       <span
-        className="font-mono uppercase text-text-secondary shrink-0"
-        style={{ fontSize: 9, letterSpacing: '0.08em', width: 110 }}
+        className="absolute top-1/2 -translate-y-1/2 left-2 font-mono uppercase text-text-secondary pointer-events-none"
+        style={{ fontSize: 9, letterSpacing: '0.08em' }}
       >
         {label}
       </span>
-      <div
-        ref={containerRef}
-        className="flex-1 h-full rounded-sm border border-border-subtle overflow-hidden"
-        style={{ minWidth: 0 }}
-      >
-        <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} />
-      </div>
     </div>
   );
 }
