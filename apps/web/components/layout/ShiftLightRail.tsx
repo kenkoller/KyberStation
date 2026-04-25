@@ -16,7 +16,7 @@
 import { type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useRmsLevel } from '@/hooks/useRmsLevel';
-import { shiftLedColor } from '@/components/layout/PerformanceBar';
+import { shiftLedColor } from '@/lib/shiftLight';
 import { usePerformanceStore } from '@/stores/performanceStore';
 
 const SHIFT_LED_COUNT = 32;
