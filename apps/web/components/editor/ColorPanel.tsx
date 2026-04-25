@@ -1,4 +1,32 @@
 'use client';
+
+// ─── ColorPanel — unified color + gradient editor ────────────────────────────
+//
+// v0.14.0 left-rail overhaul (2026-04-24): the former GradientBuilder panel
+// has been merged into ColorPanel. Picking a color and editing a gradient are
+// the same conceptual job ("decide what color the blade is") — they live in
+// one place now.
+//
+// Top-to-bottom flow:
+//   1. CHANNEL selector — 4 buttons [Base · Clash · Lockup · Blast]. The
+//      active channel determines what's being edited below.
+//   2. Color preview swatch (sRGB + as-on-blade Neopixel approximation),
+//      hex input, and RGB/HSL readouts.
+//   3. HSL sliders (Hue · Saturation · Lightness).
+//   4. Visual divider labelled "─── GRADIENT (base channel only) ───".
+//   5. Gradient region — Linear/Smooth/Step interpolation picker, stops bar
+//      with click-to-add, drag-to-reposition, Delete-to-remove. Only renders
+//      when the active channel is "Base" (clash/lockup/blast are typically
+//      solid colors and have no gradient editor).
+//   6. RGB sliders, Color Harmony, Canon Presets, and Auto-Suggest are kept
+//      from the previous ColorPanel — they apply to whichever channel is
+//      currently active.
+//
+// Both halves are views over the same `bladeStore` — gradient stops live in
+// `config.gradientStops`, gradient mode in `config.gradientInterpolation`,
+// channel colors in `config.{baseColor|clashColor|lockupColor|blastColor}`.
+// No state duplication.
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -179,16 +207,54 @@ function ScrubLabel({
   );
 }
 
-// ─── Color channel names ───
+// ─── Color channel registry ───
+//
+// v0.14.0: trimmed to the 4 primary channels. The former drag/melt/lightning
+// channels were rarely customised; they fall back to clash by default in
+// codegen, so dropping them from the picker is non-destructive — bindings
+// in `config.dragColor` etc. are still persisted by `bladeStore.setColor`
+// when set programmatically.
 
 const COLOR_CHANNELS: Array<{ key: string; label: string; description: string }> = [
-  { key: 'baseColor', label: 'Base Color', description: 'Primary blade color' },
+  { key: 'baseColor', label: 'Base', description: 'Primary blade color' },
   { key: 'clashColor', label: 'Clash', description: 'Flash on impact' },
   { key: 'lockupColor', label: 'Lockup', description: 'Sustained blade lock' },
   { key: 'blastColor', label: 'Blast', description: 'Blaster deflection' },
-  { key: 'dragColor', label: 'Drag', description: 'Blade tip drag on ground' },
-  { key: 'meltColor', label: 'Melt', description: 'Blade melt effect' },
-  { key: 'lightningColor', label: 'Lightning Block', description: 'Force lightning deflection' },
+];
+
+/**
+ * Channels that show the gradient editor. Per the v0.14.0 brief, only the
+ * base channel gets a gradient — clash/lockup/blast are typically solid
+ * colors driven by hardware-fidelity `Rgb<>` templates in ProffieOS, not
+ * gradients. Exported for the merged-panel tests.
+ */
+export const GRADIENT_ENABLED_CHANNELS: ReadonlyArray<string> = ['baseColor'];
+
+/** Whether the active channel should render the inline gradient region. */
+export function shouldShowGradient(activeChannel: string): boolean {
+  return GRADIENT_ENABLED_CHANNELS.includes(activeChannel);
+}
+
+// ─── Gradient interpolation options ───
+
+interface GradientStop {
+  position: number;
+  color: { r: number; g: number; b: number };
+}
+
+const DEFAULT_GRADIENT_STOPS: GradientStop[] = [
+  { position: 0, color: { r: 0, g: 100, b: 255 } },
+  { position: 1, color: { r: 255, g: 50, b: 0 } },
+];
+
+const INTERPOLATION_OPTIONS: Array<{
+  id: 'linear' | 'smooth' | 'step';
+  label: string;
+  description: string;
+}> = [
+  { id: 'linear', label: 'Linear', description: 'Straight-line blending between colors' },
+  { id: 'smooth', label: 'Smooth', description: 'Eased transitions (S-curve) between colors' },
+  { id: 'step', label: 'Step', description: 'Hard color bands with no blending' },
 ];
 
 // ─── Component ───
@@ -203,7 +269,14 @@ export function ColorPanel() {
   const [hexInput, setHexInput] = useState('');
   const [hexFocused, setHexFocused] = useState(false);
 
-  const activeColor = (config as Record<string, unknown>)[activeChannel] as { r: number; g: number; b: number } | undefined
+  // Coerce non-canonical channels (e.g. legacy `dragColor` left over from
+  // pre-v0.14.0 sessions) back to baseColor so the picker stays responsive.
+  const isCanonicalChannel = COLOR_CHANNELS.some((c) => c.key === activeChannel);
+  const effectiveChannel = isCanonicalChannel ? activeChannel : 'baseColor';
+
+  const activeColor = (config as Record<string, unknown>)[effectiveChannel] as
+    | { r: number; g: number; b: number }
+    | undefined
     ?? { r: 128, g: 128, b: 128 };
   const hsl = rgbToHsl(activeColor.r, activeColor.g, activeColor.b);
   const currentHex = rgbToHex(activeColor.r, activeColor.g, activeColor.b).toUpperCase();
@@ -219,55 +292,53 @@ export function ColorPanel() {
     const cleaned = value.trim().replace(/^#?/, '#');
     if (/^#[a-fA-F0-9]{6}$/.test(cleaned)) {
       const rgb = hexToRgb(cleaned);
-      setColor(activeChannel, rgb);
-      if (activeChannel === 'baseColor') {
+      setColor(effectiveChannel, rgb);
+      if (effectiveChannel === 'baseColor') {
         setColor('clashColor', suggestClashColor(rgb));
         setColor('lockupColor', suggestLockupColor(rgb));
       }
     }
-  }, [activeChannel, setColor]);
+  }, [effectiveChannel, setColor]);
 
   const handleHSLChange = useCallback((field: 'h' | 's' | 'l', value: number) => {
     const newHsl = { ...hsl, [field]: value };
     const rgb = hslToRgb(newHsl.h, newHsl.s, newHsl.l);
-    setColor(activeChannel, rgb);
-  }, [hsl, activeChannel, setColor]);
+    setColor(effectiveChannel, rgb);
+  }, [hsl, effectiveChannel, setColor]);
 
   const handleRGBChange = useCallback((field: 'r' | 'g' | 'b', value: number) => {
     const newColor = { ...activeColor, [field]: value };
-    setColor(activeChannel, newColor);
-  }, [activeColor, activeChannel, setColor]);
+    setColor(effectiveChannel, newColor);
+  }, [activeColor, effectiveChannel, setColor]);
 
   const handlePresetClick = useCallback((preset: ColorPreset) => {
     playUISound('button-click');
-    setColor(activeChannel, preset.color);
+    setColor(effectiveChannel, preset.color);
     // Auto-suggest complementary clash/lockup when base color changes
-    if (activeChannel === 'baseColor') {
+    if (effectiveChannel === 'baseColor') {
       setColor('clashColor', suggestClashColor(preset.color));
       setColor('lockupColor', suggestLockupColor(preset.color));
     }
-  }, [activeChannel, setColor]);
+  }, [effectiveChannel, setColor]);
 
   const filteredPresets = presetFilter === 'all'
     ? COLOR_PRESETS
     : COLOR_PRESETS.filter(p => p.category === presetFilter);
 
-  const showGradientEnd = config.style === 'gradient';
-  const showEdgeColor = config.style === 'plasma';
+  const showGradient = shouldShowGradient(effectiveChannel);
 
   return (
     <div className="space-y-2">
-      {/* ── Active channel selector ── */}
+      {/* ── Channel selector ── */}
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
-          Color Channel
-          <HelpTooltip text="Select which effect color to edit. Each channel controls a different combat interaction — clash for blade impacts, blast for blaster deflections, lockup for sustained blade contact. See also: Effect Panel for effect trigger configuration." proffie="Rgb<r,g,b> / RgbArg<>" />
+          Channel
+          <HelpTooltip text="Select which color channel to edit. Base is the primary blade color, Clash flashes on impact, Lockup holds during sustained blade contact, Blast deflects blaster bolts. The gradient editor is available on the Base channel only — other channels are typically solid colors." proffie="Rgb<r,g,b> / RgbArg<>" />
         </h3>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_CHANNELS.map((ch) => {
             const color = (config as Record<string, unknown>)[ch.key] as { r: number; g: number; b: number } | undefined;
-            if (!color && ch.key !== 'baseColor' && ch.key !== 'clashColor' && ch.key !== 'lockupColor' && ch.key !== 'blastColor') return null;
-            const isActive = activeChannel === ch.key;
+            const isActive = effectiveChannel === ch.key;
             const displayColor = color ?? { r: 128, g: 128, b: 128 };
             return (
               <button
@@ -288,46 +359,6 @@ export function ColorPanel() {
               </button>
             );
           })}
-          {showGradientEnd && (
-            <button
-              onClick={() => setActiveChannel('gradientEnd')}
-              className={`touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border transition-colors ${
-                activeChannel === 'gradientEnd'
-                  ? 'border-accent bg-accent-dim text-accent'
-                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
-              }`}
-            >
-              <span
-                className="w-3 h-3 rounded-full border border-white/20 shrink-0"
-                style={{ backgroundColor: rgbToHex(
-                  (config.gradientEnd ?? { r: 0, g: 255, b: 100 }).r,
-                  (config.gradientEnd ?? { r: 0, g: 255, b: 100 }).g,
-                  (config.gradientEnd ?? { r: 0, g: 255, b: 100 }).b
-                ) }}
-              />
-              Gradient End
-            </button>
-          )}
-          {showEdgeColor && (
-            <button
-              onClick={() => setActiveChannel('edgeColor')}
-              className={`touch-target flex items-center gap-1.5 px-2 py-1 rounded text-ui-sm border transition-colors ${
-                activeChannel === 'edgeColor'
-                  ? 'border-accent bg-accent-dim text-accent'
-                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-light'
-              }`}
-            >
-              <span
-                className="w-3 h-3 rounded-full border border-white/20 shrink-0"
-                style={{ backgroundColor: rgbToHex(
-                  (config.edgeColor ?? { r: 255, g: 255, b: 255 }).r,
-                  (config.edgeColor ?? { r: 255, g: 255, b: 255 }).g,
-                  (config.edgeColor ?? { r: 255, g: 255, b: 255 }).b
-                ) }}
-              />
-              Edge
-            </button>
-          )}
         </div>
       </div>
 
@@ -360,9 +391,9 @@ export function ColorPanel() {
               value={rgbToHex(activeColor.r, activeColor.g, activeColor.b)}
               onChange={(e) => {
                 const rgb = hexToRgb(e.target.value);
-                setColor(activeChannel, rgb);
+                setColor(effectiveChannel, rgb);
               }}
-              aria-label={`Pick color for ${activeChannel}`}
+              aria-label={`Pick color for ${effectiveChannel}`}
               className="touch-target w-6 h-6 rounded cursor-pointer border border-border-subtle bg-transparent"
             />
             <input
@@ -382,7 +413,7 @@ export function ColorPanel() {
               }}
               maxLength={7}
               spellCheck={false}
-              aria-label={`Hex color for ${activeChannel}`}
+              aria-label={`Hex color for ${effectiveChannel}`}
               className="w-20 px-1.5 py-0.5 rounded text-ui-xs font-mono bg-bg-deep border border-border-subtle text-text-secondary focus:border-accent focus:text-accent focus:outline-none transition-colors"
             />
           </div>
@@ -482,6 +513,18 @@ export function ColorPanel() {
         </div>
       </div>
 
+      {/* ── Gradient region (base channel only) ── */}
+      <div
+        data-testid="gradient-divider"
+        className="pt-2 border-t border-border-subtle"
+        aria-hidden={!showGradient}
+      >
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 font-mono flex items-center gap-1">
+          ─── Gradient (base channel only) ───
+        </h3>
+      </div>
+      {showGradient && <GradientRegion />}
+
       {/* ── RGB sliders ── */}
       <div>
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
@@ -519,7 +562,7 @@ export function ColorPanel() {
       {/* ── Color Harmony ── */}
       <ColorHarmonySection
         activeColor={activeColor}
-        activeChannel={activeChannel}
+        activeChannel={effectiveChannel}
         setColor={setColor}
       />
 
@@ -573,7 +616,7 @@ export function ColorPanel() {
       </div>
 
       {/* ── Auto-suggest ── */}
-      {activeChannel === 'baseColor' && (
+      {effectiveChannel === 'baseColor' && (
         <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle">
           <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
             Auto-Suggest
@@ -775,6 +818,289 @@ function ColorHarmonySection({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Gradient region (inlined from former GradientBuilder.tsx) ─────────────
+//
+// Identical behavior to the standalone GradientBuilder panel: click bar to
+// add stops, drag stops to reposition, select+Delete to remove (min 2).
+// Reads/writes `config.gradientStops` and `config.gradientInterpolation`
+// via `useBladeStore` — no state duplication with the picker above.
+
+function GradientRegion() {
+  const config = useBladeStore((s) => s.config);
+  const updateConfig = useBladeStore((s) => s.updateConfig);
+
+  const stops: GradientStop[] =
+    (config.gradientStops as GradientStop[] | undefined) ?? DEFAULT_GRADIENT_STOPS;
+  const interpolation =
+    (config.gradientInterpolation as 'linear' | 'smooth' | 'step' | undefined) ?? 'linear';
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  const sortedStops = [...stops].sort((a, b) => a.position - b.position);
+
+  const setStops = useCallback(
+    (newStops: GradientStop[]) => {
+      updateConfig({ gradientStops: newStops });
+    },
+    [updateConfig],
+  );
+
+  const handleBarClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // Don't add stops during drag
+      if (draggingIndex !== null) return;
+      if (!barRef.current) return;
+      const rect = barRef.current.getBoundingClientRect();
+      const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+      // Don't add if clicking near an existing stop
+      const tooClose = stops.some((s) => Math.abs(s.position - pos) < 0.03);
+      if (tooClose) return;
+
+      // Interpolate color at this position
+      const sorted = [...stops].sort((a, b) => a.position - b.position);
+      let lower = sorted[0];
+      let upper = sorted[sorted.length - 1];
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (pos >= sorted[i].position && pos <= sorted[i + 1].position) {
+          lower = sorted[i];
+          upper = sorted[i + 1];
+          break;
+        }
+      }
+      const range = upper.position - lower.position;
+      const t = range > 0 ? (pos - lower.position) / range : 0;
+      const newColor = {
+        r: Math.round(lower.color.r + (upper.color.r - lower.color.r) * t),
+        g: Math.round(lower.color.g + (upper.color.g - lower.color.g) * t),
+        b: Math.round(lower.color.b + (upper.color.b - lower.color.b) * t),
+      };
+
+      const newStops = [...stops, { position: pos, color: newColor }];
+      setStops(newStops);
+      setSelectedIndex(newStops.length - 1);
+    },
+    [stops, setStops, draggingIndex],
+  );
+
+  const handleStopColorChange = useCallback(
+    (index: number, hex: string) => {
+      const newStops = stops.map((s, i) => (i === index ? { ...s, color: hexToRgb(hex) } : s));
+      setStops(newStops);
+    },
+    [stops, setStops],
+  );
+
+  const handleDeleteStop = useCallback(
+    (index: number) => {
+      if (stops.length <= 2) return;
+      const newStops = stops.filter((_, i) => i !== index);
+      setStops(newStops);
+      setSelectedIndex(null);
+    },
+    [stops, setStops],
+  );
+
+  // Drag-to-reposition stops
+  const handleStopPointerDown = useCallback(
+    (index: number, e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDraggingIndex(index);
+      setSelectedIndex(index);
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (draggingIndex === null || !barRef.current) return;
+      const rect = barRef.current.getBoundingClientRect();
+      const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const rounded = Math.round(pos * 1000) / 1000;
+      const newStops = stops.map((s, i) =>
+        i === draggingIndex ? { ...s, position: rounded } : s,
+      );
+      setStops(newStops);
+    },
+    [draggingIndex, stops, setStops],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    setDraggingIndex(null);
+  }, []);
+
+  const handlePositionInput = useCallback(
+    (index: number, value: number) => {
+      const clamped = Math.max(0, Math.min(100, value)) / 100;
+      const newStops = stops.map((s, i) =>
+        i === index ? { ...s, position: Math.round(clamped * 1000) / 1000 } : s,
+      );
+      setStops(newStops);
+    },
+    [stops, setStops],
+  );
+
+  // Handle keyboard delete
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIndex !== null) {
+        e.preventDefault();
+        handleDeleteStop(selectedIndex);
+      }
+    };
+    if (typeof window === 'undefined') return;
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedIndex, handleDeleteStop]);
+
+  // Build CSS gradient string
+  const gradientCSS = sortedStops
+    .map((s) => {
+      const hex = rgbToHex(s.color.r, s.color.g, s.color.b);
+      const pct = (s.position * 100).toFixed(0);
+      return `${hex} ${pct}%`;
+    })
+    .join(', ');
+
+  return (
+    <div
+      data-testid="gradient-region"
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2"
+    >
+      {/* Interpolation mode picker */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-ui-xs text-text-muted uppercase tracking-wider font-mono">Mode</span>
+        <div className="flex gap-1" role="radiogroup" aria-label="Interpolation mode">
+          {INTERPOLATION_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              role="radio"
+              aria-checked={interpolation === opt.id}
+              onClick={() => updateConfig({ gradientInterpolation: opt.id })}
+              className={`px-1.5 py-0.5 rounded text-ui-xs border transition-colors ${
+                interpolation === opt.id
+                  ? 'bg-accent-dim border-accent-border text-accent'
+                  : 'border-border-subtle text-text-muted hover:text-text-secondary'
+              }`}
+              title={opt.description}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stop color inputs positioned above the bar */}
+      <div className="relative h-8">
+        {stops.map((stop, i) => (
+          <div
+            key={i}
+            className="absolute -translate-x-1/2 flex flex-col items-center"
+            style={{ left: `${stop.position * 100}%` }}
+            onPointerDown={(e) => handleStopPointerDown(i, e)}
+          >
+            <input
+              type="color"
+              value={rgbToHex(stop.color.r, stop.color.g, stop.color.b)}
+              onChange={(e) => handleStopColorChange(i, e.target.value)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedIndex(i);
+              }}
+              aria-label={`Color for gradient stop ${i + 1}`}
+              className={`w-5 h-5 rounded cursor-pointer border-2 bg-transparent ${
+                selectedIndex === i ? 'border-accent' : 'border-border-subtle'
+              }`}
+              style={{ width: '20px', height: '20px' }}
+              title={`Stop ${i + 1} — drag to reposition`}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Gradient bar */}
+      <div
+        ref={barRef}
+        onClick={handleBarClick}
+        role="application"
+        aria-label="Gradient bar — click to add color stops"
+        className={`h-6 rounded border border-border-subtle ${
+          draggingIndex !== null ? 'cursor-grabbing' : 'cursor-crosshair'
+        }`}
+        style={{ background: `linear-gradient(to right, ${gradientCSS})` }}
+      />
+
+      {/* Stop markers below the bar */}
+      <div className="relative h-3">
+        {stops.map((stop, i) => (
+          <div
+            key={i}
+            role="slider"
+            aria-label={`Drag handle for gradient stop ${i + 1}`}
+            aria-valuenow={Math.round(stop.position * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            tabIndex={0}
+            className="absolute -translate-x-1/2 w-0 h-0 cursor-grab"
+            style={{
+              left: `${stop.position * 100}%`,
+              borderLeft: '4px solid transparent',
+              borderRight: '4px solid transparent',
+              borderBottom:
+                selectedIndex === i ? '6px solid var(--accent)' : '6px solid var(--text-muted, #888)',
+            }}
+            onPointerDown={(e) => handleStopPointerDown(i, e)}
+          />
+        ))}
+      </div>
+
+      {/* Selected stop details */}
+      {selectedIndex !== null && selectedIndex < stops.length && (
+        <div className="flex items-center gap-2 bg-bg-primary rounded p-2 border border-border-subtle">
+          <span className="text-ui-xs text-text-muted">Position:</span>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            value={Math.round(stops[selectedIndex].position * 100)}
+            onChange={(e) => handlePositionInput(selectedIndex, Number(e.target.value))}
+            aria-label="Stop position percent"
+            className="w-12 px-1 py-0.5 rounded text-ui-sm bg-bg-deep border border-border-subtle text-text-primary text-center"
+          />
+          <span className="text-ui-xs text-text-muted">%</span>
+          <div className="flex-1" />
+          <button
+            onClick={() => handleDeleteStop(selectedIndex)}
+            disabled={stops.length <= 2}
+            aria-label="Delete selected gradient stop"
+            className="text-ui-xs px-1.5 py-0.5 rounded border border-border-subtle disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            style={{ color: 'rgb(var(--status-error))' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgb(var(--status-error) / 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '';
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
+      {/* Instructions */}
+      <p className="text-ui-xs text-text-muted">
+        Click bar to add stops. Drag stops to reposition. Select + Delete to remove (min 2).
+      </p>
     </div>
   );
 }
