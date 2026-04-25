@@ -26,6 +26,7 @@ const mockState = vi.hoisted(() => ({
     key: string;
     color: { r: number; g: number; b: number };
   }>,
+  setActiveSectionCalls: [] as string[],
   config: {
     name: 'Obi-Wan ANH',
     baseColor: { r: 0, g: 140, b: 255 },
@@ -43,10 +44,14 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock('@/stores/uiStore', () => {
+  const setActiveSection = (section: string) => {
+    mockState.setActiveSectionCalls.push(section);
+  };
   const useUIStore = ((selector: (s: unknown) => unknown) =>
     selector({
       activeColorChannel: mockState.activeColorChannel,
       setActiveColorChannel: () => {},
+      setActiveSection,
     })) as unknown as {
     (selector: (s: unknown) => unknown): unknown;
     getState: () => Record<string, unknown>;
@@ -54,6 +59,7 @@ vi.mock('@/stores/uiStore', () => {
   };
   useUIStore.getState = () => ({
     activeColorChannel: mockState.activeColorChannel,
+    setActiveSection,
   });
   useUIStore.setState = (partial) => {
     if (typeof partial === 'object' && partial !== null) {
@@ -101,6 +107,7 @@ beforeEach(() => {
   mockState.activeColorChannel = 'baseColor';
   mockState.config = { ...DEFAULT_CONFIG };
   mockState.setColorCalls = [];
+  mockState.setActiveSectionCalls = [];
 });
 
 // ─── (a) Render contract ────────────────────────────────────────────
@@ -143,7 +150,7 @@ describe('QuickColorChips — render contract', () => {
   it('renders a Custom... affordance chip', () => {
     const markup = html();
     expect(markup).toContain('data-testid="quick-color-chip-custom"');
-    expect(markup).toContain('aria-label="Custom color (coming soon)"');
+    expect(markup).toContain('aria-label="Open full color editor"');
   });
 
   it('renders all 8 canonical chips + 1 Custom = 9 buttons total', () => {
@@ -274,13 +281,40 @@ describe('QuickColorChips — setColor dispatch', () => {
 
   it('the Custom chip has no aria-pressed attribute (not a toggle)', () => {
     const markup = html();
-    // Extract the custom chip's fragment. The brief says Custom must not
-    // change state on click, so it's not an aria-pressed toggle.
+    // Extract the custom chip's fragment. Custom is a navigation jump,
+    // not a toggle — no aria-pressed.
     const customIdx = markup.indexOf('data-testid="quick-color-chip-custom"');
     expect(customIdx).toBeGreaterThan(-1);
     // Grab ~200 chars around the chip opening tag.
     const around = markup.slice(Math.max(0, customIdx - 200), customIdx + 200);
     expect(around).not.toContain('aria-pressed');
+  });
+});
+
+// ─── (c.5) Custom chip wiring (PR 5b) ──────────────────────────────
+
+describe('QuickColorChips — Custom chip jumps to Color section', () => {
+  // PR 5b: the Custom chip used to be inert. It now jumps to the deep
+  // Color sidebar section. We can't drive a real click in this node-only
+  // SSR env, so we pin the wiring with three observables: (a) the
+  // aria-label changed from the old "coming soon" copy to the new
+  // "Open full color editor" copy, (b) the title text matches the new
+  // tooltip, (c) the chip button still exists with the same testid so
+  // future click-driven tests (jsdom env) can locate it without churn.
+
+  it('Custom chip aria-label reflects the editor jump intent', () => {
+    const markup = html();
+    expect(markup).toContain('aria-label="Open full color editor"');
+  });
+
+  it('Custom chip title carries the secondary label hint', () => {
+    const markup = html();
+    expect(markup).toContain('open the full Color editor');
+  });
+
+  it('Custom chip retains its data-testid for future click tests', () => {
+    const markup = html();
+    expect(markup).toContain('data-testid="quick-color-chip-custom"');
   });
 });
 
