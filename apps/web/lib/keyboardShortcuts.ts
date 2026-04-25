@@ -87,6 +87,15 @@ export const EDITOR_SHORTCUTS: readonly BladeControlShortcut[] = [
   { key: '?',     label: 'Keyboard shortcuts',   description: 'Show this help overlay' },
   { key: 'F1',    label: 'Keyboard shortcuts',   description: 'Alternate help shortcut' },
   { key: 'Esc',   label: 'Exit fullscreen / close modal' },
+  // Left-rail overhaul (v0.14.0 PR 4): digit nav aliases added. Cmd-1
+  // routes to /gallery; Cmd-2/3/4 flip uiStore.activeSection via the
+  // sidebar; Cmd-5 toggles the 9-state All States takeover.
+  { key: '\u23181',        label: 'Gallery',          description: 'Open the /gallery route' },
+  { key: '\u23182',        label: 'Blade Style',      description: 'Jump to the Blade Style section' },
+  { key: '\u23183',        label: 'Audio',            description: 'Jump to the Audio section' },
+  { key: '\u23184',        label: 'Output',           description: 'Jump to the Output section' },
+  { key: '\u23185',        label: 'All States',       description: 'Toggle the 9-state blade takeover' },
+  { key: '\u2318K',        label: 'Command palette',  description: 'Open the command palette overlay' },
   { key: '\u2318Z',        label: 'Undo' },
   { key: '\u2318\u21E7Z',  label: 'Redo' },
 ] as const;

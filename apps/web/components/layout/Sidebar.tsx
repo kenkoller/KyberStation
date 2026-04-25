@@ -67,9 +67,10 @@ const GROUPS: GroupDef[] = [
     id: 'advanced',
     label: 'Advanced',
     sections: [
-      { id: 'layer-compositor', label: 'Layer Compositor' },
-      { id: 'hardware',         label: 'Hardware' },
-      { id: 'my-crystal',       label: 'My Crystal' },
+      { id: 'layer-compositor',  label: 'Layer Compositor' },
+      { id: 'motion-simulation', label: 'Motion Simulation' },
+      { id: 'hardware',          label: 'Hardware' },
+      { id: 'my-crystal',        label: 'My Crystal' },
     ],
   },
   {

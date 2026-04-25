@@ -15,6 +15,7 @@ import { IgnitionRetractionPanel } from '@/components/editor/IgnitionRetractionP
 import { EffectPanel } from '@/components/editor/EffectPanel';
 import { GestureControlPanel } from '@/components/editor/GestureControlPanel';
 import { LayerStack } from '@/components/editor/LayerStack';
+import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { HardwarePanel } from '@/components/editor/HardwarePanel';
 import { CrystalPanel } from '@/components/editor/CrystalPanel';
 import { RoutingPanel } from '@/components/editor/routing/RoutingPanel';
@@ -33,6 +34,7 @@ const SECTION_LABELS: Record<SectionId, string> = {
   'combat-effects':      'Combat Effects',
   'gesture-controls':    'Gesture Controls',
   'layer-compositor':    'Layer Compositor',
+  'motion-simulation':   'Motion Simulation',
   'hardware':            'Hardware',
   'my-crystal':          'My Crystal',
   'routing':             'Routing',
@@ -48,6 +50,7 @@ function renderSection(activeSection: SectionId): React.ReactNode {
     case 'combat-effects':      return <EffectPanel />;
     case 'gesture-controls':    return <GestureControlPanel />;
     case 'layer-compositor':    return <LayerStack />;
+    case 'motion-simulation':   return <MotionSimPanel />;
     case 'hardware':            return <HardwarePanel />;
     case 'my-crystal':          return <CrystalPanel />;
     case 'routing':             return <RoutingPanel />;

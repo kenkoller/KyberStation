@@ -26,6 +26,7 @@ export type SectionId =
   | 'gesture-controls'
   // Design — Advanced
   | 'layer-compositor'
+  | 'motion-simulation'
   | 'hardware'
   | 'my-crystal'
   // Design — Routing (BETA, board-gated at the sidebar level)
@@ -346,7 +347,7 @@ const SIDEBAR_COLLAPSE_STORAGE_KEY = 'kyberstation-sidebar-collapse';
 const VALID_SECTION_IDS: ReadonlyArray<SectionId> = [
   'blade-style', 'color',
   'ignition-retraction', 'combat-effects', 'gesture-controls',
-  'layer-compositor', 'hardware', 'my-crystal',
+  'layer-compositor', 'motion-simulation', 'hardware', 'my-crystal',
   'routing',
   'audio', 'output',
 ];
