@@ -190,6 +190,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const effectAutoRelease = useAccessibilityStore((s) => s.effectAutoRelease);
   const setEffectAutoRelease = useAccessibilityStore((s) => s.setEffectAutoRelease);
 
+  // ── Reduce bloom (v0.14.0 Phase 3) — when on, scales blade halo alpha
+  //    to 40% for photosensitive users. Halo stays visible but subdued. ──
+  const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
+  const setReduceBloom = useAccessibilityStore((s) => s.setReduceBloom);
+
   // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
   const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
 
@@ -888,6 +893,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     checked={showFpsCounter}
                     onChange={setShowFpsCounter}
                     label="FPS counter visibility"
+                  />
+                </div>
+
+                {/* Reduce bloom */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-ui-sm text-text-secondary">Reduce Bloom</p>
+                    <p className="text-ui-xs text-text-muted">Dimmer blade halo for photosensitive viewing (glow scales to 40%)</p>
+                  </div>
+                  <ToggleSwitch
+                    id="display-reduce-bloom"
+                    checked={reduceBloom}
+                    onChange={setReduceBloom}
+                    label="Reduce blade bloom intensity"
                   />
                 </div>
 

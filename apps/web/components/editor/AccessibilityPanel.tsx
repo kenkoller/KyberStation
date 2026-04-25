@@ -24,6 +24,8 @@ export function AccessibilityPanel({ onClose }: { onClose: () => void }) {
   const setColorblindMode = useAccessibilityStore((s) => s.setColorblindMode);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
   const setReducedMotion = useAccessibilityStore((s) => s.setReducedMotion);
+  const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
+  const setReduceBloom = useAccessibilityStore((s) => s.setReduceBloom);
   const fontScale = useAccessibilityStore((s) => s.fontScale);
   const setFontScale = useAccessibilityStore((s) => s.setFontScale);
   const reset = useAccessibilityStore((s) => s.reset);
@@ -140,6 +142,32 @@ export function AccessibilityPanel({ onClose }: { onClose: () => void }) {
             </div>
             <p className="text-ui-xs text-text-muted">
               Disables all ambient animations and transitions. Blade preview still updates normally.
+            </p>
+          </div>
+
+          {/* Reduce Bloom */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="a11y-reduce-bloom" className="text-ui-base font-medium text-text-primary">
+                Reduce Bloom
+              </label>
+              <button
+                id="a11y-reduce-bloom"
+                role="switch"
+                aria-checked={reduceBloom}
+                onClick={() => setReduceBloom(!reduceBloom)}
+                className={`relative w-10 h-5 rounded-full transition-colors ${
+                  reduceBloom ? 'bg-accent' : 'bg-bg-deep border border-border-subtle'
+                }`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  reduceBloom ? 'translate-x-5' : ''
+                }`} />
+                <span className="sr-only">{reduceBloom ? 'Enabled' : 'Disabled'}</span>
+              </button>
+            </div>
+            <p className="text-ui-xs text-text-muted">
+              Scales blade halo brightness to 40% for photosensitive users. The glow remains visible but subdued.
             </p>
           </div>
 
