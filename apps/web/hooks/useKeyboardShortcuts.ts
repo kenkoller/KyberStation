@@ -2,26 +2,20 @@
 import { useEffect } from 'react';
 import { EFFECT_SHORTCUTS_BY_CODE } from '@/lib/keyboardShortcuts';
 import { toggleOrTriggerEffect } from '@/lib/effectToggle';
-import { useUIStore, type ActiveTab } from '@/stores/uiStore';
+import { useUIStore, type SectionId } from '@/stores/uiStore';
 
 /**
- * `⌘1` … `⌘4` / `Ctrl+1` … `Ctrl+4` — switch tabs in header-nav order.
- * OV6 (2026-04-21) collapsed Dynamics → Design; 2026-04-22 (post-W7)
- * promoted Design / Audio / Output out of the retired editor tab bar
- * up to the header nav alongside Gallery. ⌘1 (Gallery) now route-
- * pushes to `/gallery` rather than flipping `activeTab`. ⌘5 stays
- * free and is reserved for OV8's STATE-mode takeover toggle (proposal
- * §12b.4). The digits here mirror the header-link order in
- * WorkbenchLayout.tsx.
+ * `⌘1` … `⌘4` / `Ctrl+1` … `Ctrl+4` — left-rail overhaul (v0.14.0 PR 4)
+ * digit nav. ⌘1 still route-pushes to `/gallery`. ⌘2–⌘4 now flip
+ * `activeSection` via the sidebar nav store (matches the ⌘K palette
+ * NAVIGATE commands in WorkbenchLayout). ⌘5 is reserved for OV8's
+ * STATE-mode takeover toggle — unchanged.
  */
-// W10 (2026-04-22) header reorder: Design → Audio → Output → Gallery.
-// Digit shortcuts mirror the visible header-link order so muscle memory
-// follows the layout.
-const TAB_BY_DIGIT: Record<string, ActiveTab> = {
-  '1': 'design',
-  '2': 'audio',
-  '3': 'output',
-  '4': 'gallery',
+const SECTION_BY_DIGIT: Record<string, SectionId | 'gallery'> = {
+  '1': 'gallery',
+  '2': 'blade-style',
+  '3': 'audio',
+  '4': 'output',
 };
 
 export interface KeyboardShortcutHandlers {
@@ -74,19 +68,19 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       // so route it through uiStore and let the render path gate the
       // visible effect.
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
-        const tab = TAB_BY_DIGIT[e.key];
-        if (tab) {
+        const target = SECTION_BY_DIGIT[e.key];
+        if (target) {
           e.preventDefault();
-          if (tab === 'gallery') {
+          if (target === 'gallery') {
             if (typeof window !== 'undefined' && window.location.pathname !== '/gallery') {
               window.location.href = '/gallery';
             }
             return;
           }
-          // For Design / Audio / Output: flip activeTab and, if the
-          // user is not on /editor, route them there so the change
-          // actually takes effect.
-          useUIStore.getState().setActiveTab(tab);
+          // ⌘2–⌘4 → flip the sidebar's active section. If the user is
+          // on /gallery (or any other route), route them back to /editor
+          // so the section change has a visible effect.
+          useUIStore.getState().setActiveSection(target);
           if (
             typeof window !== 'undefined' &&
             window.location.pathname !== '/editor'
