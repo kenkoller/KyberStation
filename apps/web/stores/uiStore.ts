@@ -12,10 +12,9 @@ export type LayoutMode = 'sidebar' | 'horizontal';
 export type FullscreenOrientation = 'horizontal' | 'vertical';
 
 // ─── Left-rail overhaul (v0.14.0) ────────────────────────────────────────────
-// New unified section taxonomy for the left sidebar nav. Replaces the
-// `activeTab` mode switch when `useNewLayout` is on. Each ID maps to one
-// component slot in MainContent. Dual-mounted behind the `useNewLayout`
-// flag during PR 1 so the existing tabbed layout keeps working.
+// Unified section taxonomy for the left sidebar nav. Each ID maps to one
+// component slot in MainContent. PR 2 made this the only path on desktop;
+// `activeTab` survives only for the mobile/tablet shells until PR 5.
 
 export type SectionId =
   // Design — Appearance
@@ -171,15 +170,6 @@ export interface UIStore {
   /** PerformanceBar total height in CSS pixels. Default 158. */
   performanceBarHeight: number;
   // ── Left-rail overhaul (v0.14.0) ──
-  /**
-   * Master flag for the new sidebar layout. When true, WorkbenchLayout
-   * renders `[Sidebar | MainContent]` in place of the multi-column tabbed
-   * panel area, and the header's page-tabs nav is hidden. When false (the
-   * default during PR 1), the existing layout is unchanged.
-   *
-   * Persisted to localStorage so testing the flag survives reload.
-   */
-  useNewLayout: boolean;
   /** Which sidebar section is selected. Default 'blade-style'. */
   activeSection: SectionId;
   /** Per-group collapse state for the sidebar. Default: all expanded. */
@@ -251,8 +241,6 @@ export interface UIStore {
   togglePinnedEffect: (effect: string) => void;
 
   // ── Left-rail overhaul setters ──
-  setUseNewLayout: (on: boolean) => void;
-  toggleUseNewLayout: () => void;
   setActiveSection: (section: SectionId) => void;
   toggleSidebarGroup: (group: SidebarGroupId) => void;
 }
@@ -352,7 +340,6 @@ function savePinnedEffects(effects: string[]): void {
 
 // ─── Left-rail overhaul persistence (v0.14.0) ────────────────────────────────
 
-const NEW_LAYOUT_STORAGE_KEY = 'kyberstation-use-new-layout';
 const ACTIVE_SECTION_STORAGE_KEY = 'kyberstation-active-section';
 const SIDEBAR_COLLAPSE_STORAGE_KEY = 'kyberstation-sidebar-collapse';
 
@@ -372,22 +359,6 @@ const DEFAULT_SIDEBAR_COLLAPSE: Record<SidebarGroupId, boolean> = {
   audio: true,
   output: true,
 };
-
-function loadUseNewLayout(): boolean {
-  try {
-    if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem(NEW_LAYOUT_STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function saveUseNewLayout(on: boolean): void {
-  try {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(NEW_LAYOUT_STORAGE_KEY, on ? 'true' : 'false');
-  } catch { /* ignore */ }
-}
 
 function loadActiveSection(): SectionId {
   try {
@@ -491,7 +462,6 @@ export const useUIStore = create<UIStore>((set) => ({
   pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
 
   // ── Left-rail overhaul defaults ──
-  useNewLayout: loadUseNewLayout(),
   activeSection: loadActiveSection(),
   sidebarGroupCollapsed: loadSidebarCollapse(),
 
@@ -603,17 +573,6 @@ export const useUIStore = create<UIStore>((set) => ({
   },
 
   // ── Left-rail overhaul setters ──
-  setUseNewLayout: (on) => {
-    saveUseNewLayout(on);
-    set({ useNewLayout: on });
-  },
-  toggleUseNewLayout: () => {
-    set((s) => {
-      const next = !s.useNewLayout;
-      saveUseNewLayout(next);
-      return { useNewLayout: next };
-    });
-  },
   setActiveSection: (section) => {
     saveActiveSection(section);
     set({ activeSection: section });
