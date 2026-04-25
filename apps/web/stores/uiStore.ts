@@ -11,6 +11,38 @@ export type ActiveTab = 'gallery' | 'design' | 'audio' | 'output';
 export type LayoutMode = 'sidebar' | 'horizontal';
 export type FullscreenOrientation = 'horizontal' | 'vertical';
 
+// ─── Left-rail overhaul (v0.14.0) ────────────────────────────────────────────
+// New unified section taxonomy for the left sidebar nav. Replaces the
+// `activeTab` mode switch when `useNewLayout` is on. Each ID maps to one
+// component slot in MainContent. Dual-mounted behind the `useNewLayout`
+// flag during PR 1 so the existing tabbed layout keeps working.
+
+export type SectionId =
+  // Design — Appearance
+  | 'blade-style'
+  | 'color'
+  // Design — Behavior
+  | 'ignition-retraction'
+  | 'combat-effects'
+  | 'gesture-controls'
+  // Design — Advanced
+  | 'layer-compositor'
+  | 'hardware'
+  | 'my-crystal'
+  // Design — Routing (BETA, board-gated at the sidebar level)
+  | 'routing'
+  // Top-level destinations
+  | 'audio'
+  | 'output';
+
+export type SidebarGroupId =
+  | 'appearance'
+  | 'behavior'
+  | 'advanced'
+  | 'routing'
+  | 'audio'
+  | 'output';
+
 export interface UIStore {
   viewMode: ViewMode;
   renderMode: RenderMode;
@@ -138,6 +170,21 @@ export interface UIStore {
   section2Height: number;
   /** PerformanceBar total height in CSS pixels. Default 158. */
   performanceBarHeight: number;
+  // ── Left-rail overhaul (v0.14.0) ──
+  /**
+   * Master flag for the new sidebar layout. When true, WorkbenchLayout
+   * renders `[Sidebar | MainContent]` in place of the multi-column tabbed
+   * panel area, and the header's page-tabs nav is hidden. When false (the
+   * default during PR 1), the existing layout is unchanged.
+   *
+   * Persisted to localStorage so testing the flag survives reload.
+   */
+  useNewLayout: boolean;
+  /** Which sidebar section is selected. Default 'blade-style'. */
+  activeSection: SectionId;
+  /** Per-group collapse state for the sidebar. Default: all expanded. */
+  sidebarGroupCollapsed: Record<SidebarGroupId, boolean>;
+
   /** W2: Pixel strip panel height in CSS pixels. Draggable 24-300 (Phase 1.5g bumped from 120). Default 36. */
   pixelStripHeight: number;
   /** W2: ExpandedAnalysisSlot height in CSS pixels. Draggable 40-400 (Phase 1.5i bumped from 240). Default 110. */
@@ -202,6 +249,12 @@ export interface UIStore {
   setBladeStartFrac: (n: number) => void;
   setPinnedEffects: (effects: string[]) => void;
   togglePinnedEffect: (effect: string) => void;
+
+  // ── Left-rail overhaul setters ──
+  setUseNewLayout: (on: boolean) => void;
+  toggleUseNewLayout: () => void;
+  setActiveSection: (section: SectionId) => void;
+  toggleSidebarGroup: (group: SidebarGroupId) => void;
 }
 
 // ─── OV11: resizable-region persistence ──────────────────────────────────────
@@ -297,6 +350,82 @@ function savePinnedEffects(effects: string[]): void {
   }
 }
 
+// ─── Left-rail overhaul persistence (v0.14.0) ────────────────────────────────
+
+const NEW_LAYOUT_STORAGE_KEY = 'kyberstation-use-new-layout';
+const ACTIVE_SECTION_STORAGE_KEY = 'kyberstation-active-section';
+const SIDEBAR_COLLAPSE_STORAGE_KEY = 'kyberstation-sidebar-collapse';
+
+const VALID_SECTION_IDS: ReadonlyArray<SectionId> = [
+  'blade-style', 'color',
+  'ignition-retraction', 'combat-effects', 'gesture-controls',
+  'layer-compositor', 'hardware', 'my-crystal',
+  'routing',
+  'audio', 'output',
+];
+
+const DEFAULT_SIDEBAR_COLLAPSE: Record<SidebarGroupId, boolean> = {
+  appearance: false,
+  behavior: false,
+  advanced: false,
+  routing: false,
+  audio: true,
+  output: true,
+};
+
+function loadUseNewLayout(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem(NEW_LAYOUT_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function saveUseNewLayout(on: boolean): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(NEW_LAYOUT_STORAGE_KEY, on ? 'true' : 'false');
+  } catch { /* ignore */ }
+}
+
+function loadActiveSection(): SectionId {
+  try {
+    if (typeof localStorage === 'undefined') return 'blade-style';
+    const raw = localStorage.getItem(ACTIVE_SECTION_STORAGE_KEY);
+    if (raw && VALID_SECTION_IDS.includes(raw as SectionId)) return raw as SectionId;
+    return 'blade-style';
+  } catch {
+    return 'blade-style';
+  }
+}
+
+function saveActiveSection(s: SectionId): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(ACTIVE_SECTION_STORAGE_KEY, s);
+  } catch { /* ignore */ }
+}
+
+function loadSidebarCollapse(): Record<SidebarGroupId, boolean> {
+  try {
+    if (typeof localStorage === 'undefined') return { ...DEFAULT_SIDEBAR_COLLAPSE };
+    const raw = localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_SIDEBAR_COLLAPSE };
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_SIDEBAR_COLLAPSE, ...parsed };
+  } catch {
+    return { ...DEFAULT_SIDEBAR_COLLAPSE };
+  }
+}
+
+function saveSidebarCollapse(c: Record<SidebarGroupId, boolean>): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(SIDEBAR_COLLAPSE_STORAGE_KEY, JSON.stringify(c));
+  } catch { /* ignore */ }
+}
+
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
   renderMode: 'photorealistic',
@@ -360,6 +489,11 @@ export const useUIStore = create<UIStore>((set) => ({
     storedLayout.bladeStartFrac ?? REGION_LIMITS.bladeStartFrac.default,
   ),
   pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
+
+  // ── Left-rail overhaul defaults ──
+  useNewLayout: loadUseNewLayout(),
+  activeSection: loadActiveSection(),
+  sidebarGroupCollapsed: loadSidebarCollapse(),
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -465,6 +599,30 @@ export const useUIStore = create<UIStore>((set) => ({
         : [...s.pinnedEffects, effect];
       savePinnedEffects(next);
       return { pinnedEffects: next };
+    });
+  },
+
+  // ── Left-rail overhaul setters ──
+  setUseNewLayout: (on) => {
+    saveUseNewLayout(on);
+    set({ useNewLayout: on });
+  },
+  toggleUseNewLayout: () => {
+    set((s) => {
+      const next = !s.useNewLayout;
+      saveUseNewLayout(next);
+      return { useNewLayout: next };
+    });
+  },
+  setActiveSection: (section) => {
+    saveActiveSection(section);
+    set({ activeSection: section });
+  },
+  toggleSidebarGroup: (group) => {
+    set((s) => {
+      const next = { ...s.sidebarGroupCollapsed, [group]: !s.sidebarGroupCollapsed[group] };
+      saveSidebarCollapse(next);
+      return { sidebarGroupCollapsed: next };
     });
   },
 }));

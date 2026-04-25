@@ -52,6 +52,8 @@ import { RightRail } from '@/components/layout/RightRail';
 import { Inspector } from '@/components/editor/Inspector';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { REGION_LIMITS } from '@/stores/uiStore';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MainContent } from '@/components/layout/MainContent';
 import { useCommandPalette, useRegisterCommands } from '@/hooks/useCommandPalette';
 import { useCommandStore, type Command } from '@/stores/commandStore';
 import { CANVAS_THEMES } from '@/lib/canvasThemes';
@@ -206,6 +208,12 @@ export function WorkbenchLayout() {
   // ── Store selectors ──
   const activeTab = useUIStore((s) => s.activeTab);
   const setActiveTab = useUIStore((s) => s.setActiveTab);
+  // ── Left-rail overhaul flag (v0.14.0) ──
+  // When `useNewLayout` is true, the editor renders a unified left
+  // sidebar + MainContent in place of the multi-column TabContent panel
+  // area, and the header's page-tabs nav is hidden. Default false during
+  // PR 1 — toggle via uiStore (Settings or ⌘K command will land later).
+  const useNewLayout = useUIStore((s) => s.useNewLayout);
   const showEffectComparison = useUIStore((s) => s.showEffectComparison);
   const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
   const presetListCount = usePresetListStore((s) => s.entries.length);
@@ -780,42 +788,46 @@ export function WorkbenchLayout() {
           {/* Header-level nav. W10 reorder (2026-04-22):
               Design → Audio → Output → Gallery (editor modes first,
               browse mode last). Design / Audio / Output all live at
-              /editor and flip `activeTab`; Gallery is a real route. */}
-          <nav className="flex items-center gap-1 ml-2" aria-label="Top-level navigation">
-            <button
-              type="button"
-              onClick={() => { playUISound('tab-switch'); setActiveTab('design'); }}
-              className={headerNavLinkClass(activeTab === 'design')}
-              aria-current={activeTab === 'design' ? 'page' : undefined}
-            >
-              Design
-            </button>
-            <button
-              type="button"
-              onClick={() => { playUISound('tab-switch'); setActiveTab('audio'); }}
-              className={headerNavLinkClass(activeTab === 'audio')}
-              aria-current={activeTab === 'audio' ? 'page' : undefined}
-            >
-              Audio
-            </button>
-            <button
-              type="button"
-              onClick={() => { playUISound('tab-switch'); setActiveTab('output'); }}
-              className={headerNavLinkClass(activeTab === 'output')}
-              aria-current={activeTab === 'output' ? 'page' : undefined}
-            >
-              Output
-              {presetListCount > 0 && (
-                <span className="ml-1 text-accent">({presetListCount})</span>
-              )}
-            </button>
-            <Link
-              href="/gallery"
-              className={headerNavLinkClass(false)}
-            >
-              Gallery
-            </Link>
-          </nav>
+              /editor and flip `activeTab`; Gallery is a real route.
+              Left-rail overhaul (v0.14.0): hidden when `useNewLayout`
+              is on — the sidebar absorbs all top-level navigation. */}
+          {!useNewLayout && (
+            <nav className="flex items-center gap-1 ml-2" aria-label="Top-level navigation">
+              <button
+                type="button"
+                onClick={() => { playUISound('tab-switch'); setActiveTab('design'); }}
+                className={headerNavLinkClass(activeTab === 'design')}
+                aria-current={activeTab === 'design' ? 'page' : undefined}
+              >
+                Design
+              </button>
+              <button
+                type="button"
+                onClick={() => { playUISound('tab-switch'); setActiveTab('audio'); }}
+                className={headerNavLinkClass(activeTab === 'audio')}
+                aria-current={activeTab === 'audio' ? 'page' : undefined}
+              >
+                Audio
+              </button>
+              <button
+                type="button"
+                onClick={() => { playUISound('tab-switch'); setActiveTab('output'); }}
+                className={headerNavLinkClass(activeTab === 'output')}
+                aria-current={activeTab === 'output' ? 'page' : undefined}
+              >
+                Output
+                {presetListCount > 0 && (
+                  <span className="ml-1 text-accent">({presetListCount})</span>
+                )}
+              </button>
+              <Link
+                href="/gallery"
+                className={headerNavLinkClass(false)}
+              >
+                Gallery
+              </Link>
+            </nav>
+          )}
 
           <UndoRedoButtons />
 
@@ -1117,28 +1129,47 @@ export function WorkbenchLayout() {
           commands surface the same four destinations. */}
 
       {/* ════════════════════════════════════════════════════
-       * 4. MULTI-COLUMN PANEL CONTENT — fills remaining space
+       * 4. PANEL CONTENT — fills remaining space
+       *
+       * Left-rail overhaul (v0.14.0): when `useNewLayout` is on, the
+       * legacy multi-column TabContent + DesignPanel pills are replaced
+       * by a `[Sidebar | MainContent]` split. Sidebar owns navigation
+       * (replaces top tabs + DesignPanel pills); MainContent renders the
+       * one panel matching the active section. Old TabContent path stays
+       * intact for the dual-mount window so the flag can be flipped /
+       * unflipped without breakage.
        * ════════════════════════════════════════════════════ */}
-      <main
-        className="flex-1 min-h-0 overflow-y-auto bg-bg-deep"
-        role="tabpanel"
-        id={`panel-${activeTab}`}
-        aria-labelledby={`tab-${activeTab}`}
-      >
-        {/* W10f (2026-04-22): desktop uses DesignPanel's three-group
-            pill + 3-column grid (APPEARANCE / BEHAVIOR / ADVANCED).
-            Max-width bumped from 960 → 1600px so a 3-column grid at
-            ~500px per card renders comfortably without stretching on
-            ultra-wide displays. */}
-        <div className="hidden desktop:block max-w-[1600px] mx-auto p-3">
-          <TabContent activeTab={activeTab} />
+      {useNewLayout ? (
+        <div
+          className="flex-1 min-h-0 flex overflow-hidden bg-bg-deep"
+          role="region"
+          aria-label="Section navigation and content"
+        >
+          <Sidebar style={{ width: 280 }} />
+          <MainContent />
         </div>
+      ) : (
+        <main
+          className="flex-1 min-h-0 overflow-y-auto bg-bg-deep"
+          role="tabpanel"
+          id={`panel-${activeTab}`}
+          aria-labelledby={`tab-${activeTab}`}
+        >
+          {/* W10f (2026-04-22): desktop uses DesignPanel's three-group
+              pill + 3-column grid (APPEARANCE / BEHAVIOR / ADVANCED).
+              Max-width bumped from 960 → 1600px so a 3-column grid at
+              ~500px per card renders comfortably without stretching on
+              ultra-wide displays. */}
+          <div className="hidden desktop:block max-w-[1600px] mx-auto p-3">
+            <TabContent activeTab={activeTab} />
+          </div>
 
-        {/* Mobile / tablet fallback: same single-column router. */}
-        <div className="desktop:hidden max-w-6xl mx-auto p-4">
-          <TabContent activeTab={activeTab} />
-        </div>
-      </main>
+          {/* Mobile / tablet fallback: same single-column router. */}
+          <div className="desktop:hidden max-w-6xl mx-auto p-4">
+            <TabContent activeTab={activeTab} />
+          </div>
+        </main>
+      )}
 
       {/* ════════════════════════════════════════════════════
        * 5. EFFECT COMPARISON STRIPS — collapsible
