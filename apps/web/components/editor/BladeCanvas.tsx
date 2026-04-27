@@ -1160,12 +1160,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         blurPx: number;
         alpha: number;
       }> = [
-        // mip0: tight near-core glow
-        { canvas: mips.mip0, w: Math.max(1, Math.ceil(cw / 2)), h: Math.max(1, Math.ceil(ch / 2)), blurPx: 6 * br, alpha: 0.55 },
-        // mip1: body-wide halo
-        { canvas: mips.mip1, w: Math.max(1, Math.ceil(cw / 4)), h: Math.max(1, Math.ceil(ch / 4)), blurPx: 10 * br, alpha: 0.40 },
-        // mip2: ambient wash (also usable by stage 10 later)
-        { canvas: mips.mip2, w: Math.max(1, Math.ceil(cw / 8)), h: Math.max(1, Math.ceil(ch / 8)), blurPx: 14 * br, alpha: 0.28 },
+        // mip0: tight near-core glow (bumped 0.55 → 0.65 to compensate
+        // for the dropped Layer 18 floor+ceiling wash)
+        { canvas: mips.mip0, w: Math.max(1, Math.ceil(cw / 2)), h: Math.max(1, Math.ceil(ch / 2)), blurPx: 6 * br, alpha: 0.65 },
+        // mip1: body-wide halo (bumped 0.40 → 0.52)
+        { canvas: mips.mip1, w: Math.max(1, Math.ceil(cw / 4)), h: Math.max(1, Math.ceil(ch / 4)), blurPx: 10 * br, alpha: 0.52 },
+        // mip2: widest ambient wash — bumped most aggressively (0.28 → 0.45)
+        // since this mip's role most overlaps the dropped floor+ceiling wash.
+        // Also still sampled below for avgBloomLum (background tint, etc).
+        { canvas: mips.mip2, w: Math.max(1, Math.ceil(cw / 8)), h: Math.max(1, Math.ceil(ch / 8)), blurPx: 14 * br, alpha: 0.45 },
       ];
 
       // Populate each mip: single drawImage with a chained CSS filter
@@ -1292,6 +1295,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
+    // Compute actual visible end from LED data (matches engine mask,
+    // not the linear extendProgress which diverges for shatter/fadeout).
+    // Used by both Pass 6 (tip cap) + Pass 7 (whiteout cap) below.
+    const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
+    const actualVisibleLen = maxLitT * bladeLenPx;
+
     // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
     for (let i = 0; i < ledCount; i++) {
       const t = i / (ledCount - 1);
@@ -1344,12 +1353,33 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fill();
       }
     }
-    captureDeltaAsLayer(ctx, '12. LED body segments (visible canvas)', 'Per-LED filled rectangles with 4-stop vertical gradient (edge dim → mid → bright center → mid → edge dim), plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).', cw, ch);
 
-    // Compute actual visible end from LED data (matches engine mask,
-    // not the linear extendProgress which diverges for shatter/fadeout).
-    const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
-    const actualVisibleLen = maxLitT * bladeLenPx;
+    // Colored tip cap on the visible blade body — semicircle of the tip
+    // LED's color extending past the last rectangular segment. Without
+    // this, the visible blade body ends in a flat rectangle even though
+    // the offscreen bloom feed has a rounded cap. Restored after the
+    // dropped tip-corona pass (Layer 16) lost it.
+    if (actualVisibleLen > 1) {
+      const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
+      let tipR: number, tipG: number, tipB: number;
+      if (isInHilt) {
+        const falloff = Math.pow(1 - maxLitT, 1.8);
+        tipR = avgR * falloff * shimmer;
+        tipG = avgG * falloff * shimmer;
+        tipB = avgB * falloff * shimmer;
+      } else {
+        tipR = leds.getR(tipIdx) * effectiveBri * shimmer;
+        tipG = leds.getG(tipIdx) * effectiveBri * shimmer;
+        tipB = leds.getB(tipIdx) * effectiveBri * shimmer;
+      }
+      if (tipR + tipG + tipB > 0.5) {
+        ctx.fillStyle = rgbStr(tipR, tipG, tipB);
+        ctx.beginPath();
+        ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
+        ctx.fill();
+      }
+    }
+    captureDeltaAsLayer(ctx, '12. LED body segments + tip cap (visible canvas)', 'Per-LED filled rectangles with 4-stop vertical gradient (edge dim → mid → bright center → mid → edge dim), capped with a colored semicircle at the tip using the last lit LED color. Plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).', cw, ch);
 
     // Pass 7: Core whiteout (HDR overexposed center — fills middle of
     // blade body AND extends past the last LED with a semicircular cap
@@ -1455,26 +1485,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // Coupling coefficient: 0.5 avg luma → back to prior 0.08 alpha.
     const lumaWash = Math.max(0.005, avgBloomLum * 0.18) * (reduceBloom ? 0.4 : 1);
 
-    // ── Floor + ceiling wash (mip-2-driven) ──
-    if (activeCount > 0) {
-      const washAlpha = lumaWash;
-      const floorGrad = ctx.createLinearGradient(0, bladeYPx + coreH / 2, 0, ch);
-      floorGrad.addColorStop(0, rgbStr(satR, satG, satB, washAlpha));
-      floorGrad.addColorStop(0.3, rgbStr(satR, satG, satB, washAlpha * 0.5));
-      floorGrad.addColorStop(0.7, rgbStr(satR, satG, satB, washAlpha * 0.15));
-      floorGrad.addColorStop(1, rgbStr(satR, satG, satB, 0));
-      ctx.fillStyle = floorGrad;
-      ctx.fillRect(bladeStartPx - 60 * scale, bladeYPx + coreH / 2, actualVisibleLen + 120 * scale, ch - bladeYPx);
-
-      // Ceiling wash (subtle upward light spill)
-      const ceilGrad = ctx.createLinearGradient(0, bladeYPx - coreH / 2, 0, 0);
-      ceilGrad.addColorStop(0, rgbStr(satR, satG, satB, washAlpha * 0.5));
-      ceilGrad.addColorStop(0.5, rgbStr(satR, satG, satB, washAlpha * 0.1));
-      ceilGrad.addColorStop(1, rgbStr(satR, satG, satB, 0));
-      ctx.fillStyle = ceilGrad;
-      ctx.fillRect(bladeStartPx - 60 * scale, 0, actualVisibleLen + 120 * scale, bladeYPx - coreH / 2);
-    }
-    captureDeltaAsLayer(ctx, '18. Floor + ceiling wash', `Two vertical gradients above + below the blade, alpha driven by avgBloomLum (currently ${avgBloomLum.toFixed(3)} → α=${lumaWash.toFixed(3)}). Tracks blade brightness automatically.`, cw, ch);
+    // Layer 18 (Floor + ceiling wash) removed in v0.14.x pipeline cleanup.
+    // The wash was a vertical gradient above + below the blade body that
+    // produced a "lit floor / lit ceiling" effect — but it stopped at the
+    // blade tip horizontally, leaving the tip with no surrounding glow.
+    // Bumping the bloom mip alphas (above) replaces the missing brightness
+    // with a more uniform halo that wraps the blade including its tip.
+    // `lumaWash` stays computed because Layer 19 (background tint) and
+    // Layer 20 (hilt wash, when re-enabled) read avgBloomLum directly.
+    void lumaWash;
 
     // ── Background ambient tint (blade color bleeds into dark background) ──
     if (activeCount > 0) {
