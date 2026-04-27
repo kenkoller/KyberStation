@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Tracking work on the v1.0 path.
+Tracking work on the v1.0 path. (No new entries since the v0.15.0 cut.)
+
+---
+
+## [0.15.0] — 2026-04-27
+
+**Codename:** Modulation Routing v1.1 Core. Bundles the Modulation v1.1 Core overnight wave (PRs #57-#65) with the Saber GIF Sprint 1 infrastructure (PR #67), the vertical Saber Card layout polish (PR #36), the v0.14.0 left-rail overhaul recap (PR #68 docs), the launch-prep SEO infrastructure (PR #69), the post-launch backlog index (PR #70), and the blade render rewrite + left-rail overhaul + Saber Wizard hardware step that landed across 2026-04-22 → 2026-04-27.
+
+Hardware-validated on 89sabers Proffieboard V3.9 / macOS / Brave (Chromium WebUSB). Cross-OS + cross-board sweeps remain post-launch per `docs/POST_LAUNCH_BACKLOG.md`.
 
 ### Saber GIF Sprint 1 — animated share-card export (2026-04-27)
 
