@@ -1147,12 +1147,25 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         const mCtx = def.canvas.getContext('2d')!;
         mCtx.clearRect(0, 0, def.w, def.h);
         mCtx.save();
-        // contrast(1.4) + brightness(1.05) drives mid tones toward 0
-        // and highlights toward 1.0 — the soft threshold that keeps
-        // only the blade's hot pixels glowing. blur is applied AFTER
-        // in the same filter chain so the small canvas holds a pre-
-        // blurred bright-pass image ready for additive compositing.
-        mCtx.filter = `contrast(1.4) brightness(1.05) blur(${def.blurPx}px)`;
+        // Soft bright-pass: contrast(1.15) + brightness(1.05) gently
+        // pushes mid tones toward 0 and highlights toward 1 without
+        // crushing the falloff into a near-binary mask. The previous
+        // 1.4 contrast produced a hard threshold edge — when blurred,
+        // that edge showed through as a visible rectangular cutoff at
+        // the bloom outer extent (most obvious on mips 1 + 2). With
+        // 1.15 the bright-pass is a smooth gradient, so blurring it
+        // produces a smooth halo with natural falloff instead of a
+        // box-shaped wash. blur runs in the same filter chain so the
+        // small canvas holds a pre-blurred bright-pass image ready
+        // for additive compositing.
+        //
+        // Trade-offs (intentional, both wins for accuracy):
+        //  - bloom now bleeds slightly onto darker adjacent surfaces
+        //    (hilt, dim blade areas). This is physically correct —
+        //    real bright lights spill onto adjacent matter.
+        //  - bloom looks less "snappy" / more diffuse. Closer to what
+        //    real cameras + real eyes produce.
+        mCtx.filter = `contrast(1.15) brightness(1.05) blur(${def.blurPx}px)`;
         mCtx.drawImage(offscreen, 0, 0, cw, ch, 0, 0, def.w, def.h);
         mCtx.restore();
       }
@@ -1439,18 +1452,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     }
     captureDeltaAsLayer(ctx, '19. Background ambient tint', `Full-canvas color tint at α=${(Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1)).toFixed(4)}. Pulls the dark surroundings toward the blade hue.`, cw, ch);
 
-    // ── Hilt illumination: blade light washes over the metal ──
-    if (bladeColor) {
-      const hiltEndX = bladeStartPx;
-      const hiltAlpha = Math.max(0.02, avgBloomLum * 0.28) * (reduceBloom ? 0.4 : 1);
-      const hiltWash = ctx.createLinearGradient(hiltEndX, 0, hiltEndX - 200 * scale, 0);
-      hiltWash.addColorStop(0, rgbStr(satR, satG, satB, hiltAlpha));
-      hiltWash.addColorStop(0.3, rgbStr(satR, satG, satB, hiltAlpha * 0.4));
-      hiltWash.addColorStop(1, rgbStr(satR, satG, satB, 0));
-      ctx.fillStyle = hiltWash;
-      ctx.fillRect(hiltEndX - 200 * scale, bladeYPx - 30 * scale, 200 * scale, 60 * scale);
-    }
-    captureDeltaAsLayer(ctx, '20. Hilt illumination wash', `Horizontal gradient from blade-start back into the hilt area. α=${(Math.max(0.02, avgBloomLum * 0.28) * (reduceBloom ? 0.4 : 1)).toFixed(3)}. The "blade light reflecting off the metal" effect.`, cw, ch);
+    // Layer 20 (Hilt illumination wash) removed in v0.14.x pipeline
+    // cleanup. The softened bloom threshold (1.4 → 1.15) now bleeds onto
+    // the hilt naturally via additive blending, replacing the explicit
+    // directional wash. Keeps `bladeColor` available for any future
+    // hilt-coupled effect without a stale `unused-var` warning.
+    void bladeColor;
   }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion, captureBufferAsLayer, captureDeltaAsLayer]);
 
   // ─── Pixel Visualizer Mode ───
