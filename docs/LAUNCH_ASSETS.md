@@ -43,7 +43,7 @@ Capture on a high-DPI / Retina display. Save as PNG. 1600–2400px wide is the s
 | # | Shot | What to show | Notes |
 |---|---|---|---|
 | 1 | **Editor hero** | Full editor layout with a visually striking blade design loaded (try Plasma Storm, Unstable Kylo Ren, or an Aurora preset) | This is the shot that goes at the top of the Reddit post. Make it the best one. |
-| 2 | **Preset gallery** | The character preset library with several film-accurate presets visible | Show the breadth — "700+ presets" is a selling point |
+| 2 | **Preset gallery** | The character preset library with several film-accurate presets visible | Show the breadth — "305+ presets" is a selling point |
 | 3 | **Code output** | The CodeOutput panel showing generated ProffieOS C++ | Proves the real output, not just visuals |
 | 4 | **Mobile view** | iPhone / Android screenshot of the PWA running | Safari / Chrome on iOS — use device screenshot, not Chrome DevTools emulation (looks fake) |
 | 5 | **Saber profile manager** | Card preset composer with multiple presets queued up | Shows the SD card workflow |
@@ -235,7 +235,7 @@ total. Works on desktop and mobile (installable as a PWA).
 - 🎨 29 blade styles (Stable, Unstable, Fire, Rotoscope, Plasma Storm, Aurora, Cinder, and more)
 - ⚡ 21 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
 - 🔥 19 ignition + 13 retraction animations
-- 👥 700+ character presets spanning every era of the saga
+- 👥 305+ character presets spanning every era of the saga
 - 💻 ProffieOS C++ code generator — output compiles directly in Arduino IDE
 - 🔊 Sound font library with SmoothSwing simulation
 - 📂 Saber profile manager + card preset composer for SD card writing
@@ -335,7 +335,7 @@ sharing it with the world.
 KyberStation is a browser-based visual editor for designing custom
 lightsaber blade styles and generating ProffieOS firmware code. It's a
 monorepo (TypeScript, Next.js, Zustand) with a headless simulation
-engine, an AST-based C++ code generator, a 700+ preset character
+engine, an AST-based C++ code generator, a 305+ preset character
 library, and Web Audio–based sound font playback — all running locally
 in the browser as a PWA.
 
@@ -399,7 +399,7 @@ For your personal/professional site. Target length: 1500–2500 words. Include s
 [Screenshot of editor hero]
 
 - Browser-based visual editor
-- 29 blade styles, 21 effects, 700+ presets
+- 29 blade styles, 21 effects, 305+ presets
 - ProffieOS C++ code generator
 - Sound font management, multi-board compatibility, PWA install
 - All local, no backend
@@ -736,7 +736,7 @@ Complete, organized feature list. Use this to generate the Reddit bullet list, o
 - 6 built-in filter chain presets
 
 ### User Presets & Libraries
-- 700+ character presets across every era (Prequels, OT, Sequels, Clone Wars, Rebels, Bad Batch, Legends, community)
+- 305+ character presets across every era (Prequels, OT, Sequels, Clone Wars, Rebels, Bad Batch, Legends, community)
 - Save any blade configuration as a reusable preset in your personal library
 - Tag, search, sort, duplicate, and organize presets
 - Export/import preset collections as `.kyberstation-collection.json`
