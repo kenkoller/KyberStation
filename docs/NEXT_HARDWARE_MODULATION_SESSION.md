@@ -1,8 +1,8 @@
 # Next Session — Hardware Validation + v0.15.0 Tag for Modulation v1.1 Core
 
-**Purpose:** Paste the prompt block below into a fresh Claude Code session to finish the modulation v1.1 Core release: hardware validation on Proffieboard V3.9, optional Wave 7/8 follow-on, then cut the `v0.15.0` tag.
+**Purpose:** Paste the prompt block below into a fresh Claude Code session to finish the modulation v1.1 Core release: hardware validation on Proffieboard V3.9. The `v0.15.0` tag is **already cut** at commit `42b3d2b` per Ken's call (validate-then-fix-as-v0.15.1-if-needed). This session's job is now confirmation, not gating.
 
-**This session ended at:** main `b4a73c9` (post pre-launch cleanup, 2026-04-27 evening). PR #65 merged the overnight modulation v1.1 Core recap, then the pre-launch cleanup pass landed PR #67 (saber GIF Sprint 1), PR #36 (vertical Saber Card), PR #56 (saber GIF roadmap docs), PR #68 (left-rail overhaul recap), and PR #69 (SEO infrastructure). All code-side v1.1 Core scope is done. Only hardware-gated work remains for the tag.
+**This session ended at:** main `de6a66d` (post pre-launch sprint, 2026-04-27 evening — 18 PRs over ~5 hours). Headline post-tag work since `v0.15.0`: Wave 7 Kyber Glyph v2 modulation round-trip ([PR #72](https://github.com/kenkoller/KyberStation/pull/72)), Sidebar A/B v2 Phase 1 foundation ([PR #78](https://github.com/kenkoller/KyberStation/pull/78)), Hilt Library Stage 2 with 7 canon-character assemblies ([PR #79](https://github.com/kenkoller/KyberStation/pull/79)), Saber GIF Sprint 2 picker-GIF infrastructure ([PR #80](https://github.com/kenkoller/KyberStation/pull/80)), useSharedConfig URL handler tests + Priority-5 effects proposal ([PR #81](https://github.com/kenkoller/KyberStation/pull/81)), and saber-card share-artifact unification with the workbench v0.14 pipeline + canvas-hilt extraction to `lib/blade/canvasHilt.ts` ([PR #82](https://github.com/kenkoller/KyberStation/pull/82)). All code-side v1.1 Core scope is done. Only hardware-gated work remains. See [`docs/SESSION_2026-04-27.md`](SESSION_2026-04-27.md) for the full session archive.
 
 ---
 

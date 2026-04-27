@@ -9,7 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Tracking work on the v1.0 path. (No new entries since the v0.15.0 cut.)
+Post-`v0.15.0`-tag work landed the same launch-prep evening (2026-04-27). None of these entries need a separate version bump unless we cut a `v0.15.1` patch — most are additive / cleanup, none change the `v0.15.0` tag's narrative.
+
+### Saber-card share-artifact unification (2026-04-27 evening)
+
+Per Ken's architectural call: the workbench preview is the canonical render — every other surface should use it (or be based on it). Three commits in [PR #82](https://github.com/kenkoller/KyberStation/pull/82) make the static Saber Card PNG byte-identical to the editor preview.
+
+#### Changed
+- **Static card blade now delegates to `bladeRenderHeadless::drawWorkbenchBlade`** — same v0.14 capsule rasterizer + 3-mip downsampled bright-pass bloom chain that lives inline in `BladeCanvas.tsx` and that the animated GIF (Sprint 1) already used. The static PNG was the last holdout running its own 14-pass additive-blur bloom + body gradient + tip corona overlays. **−186 lines** from `apps/web/lib/sharePack/card/drawBlade.ts`.
+- **Hilt:blade WIDTH ratio matches the workbench** (`bladeStartFrac = 0.18`, ~1:4.5). Saber card was at 1:2.98 (chunky). All 4 horizontal layouts adjusted: `DEFAULT 260→195`, `OG 240→180`, `INSTAGRAM 220→165`, `STORY 220→165`. Hilt:blade thickness ratio dropped from ~2.4× to ~1.8× (within real Graflex's 1.5–1.8× range).
+- **Saber card horizontal hilt now uses workbench's canvas-primitive renderer** (Phase 4 partial module extraction). Workbench's `drawHilt` + `HILT_STYLES` + color constants extracted to a new shared module at `apps/web/lib/blade/canvasHilt.ts`. Card consumes `drawCanvasHilt(ctx, { styleId, bladeStartX, centerY, scale, bladeColor })` directly. Default style is `'minimal'` (matches the editor's default). SVG-modular ids (`graflex-svg`, `count-svg`, etc.) map to their closest canvas equivalent.
+- **README polish for launch** ([PR #77](https://github.com/kenkoller/KyberStation/pull/77)): added "Free, browser-based, MIT licensed, no accounts. Hobby project." line under the tagline + `### v0.15.0 — Launch (2026-04-28)` block at the top of Status.
+
+#### Added
+- **`apps/web/lib/blade/canvasHilt.ts`** — pure-`CanvasRenderingContext2D` headless-renderer-compatible hilt module. Exports `CANVAS_HILT_STYLES` (9 entries: minimal/classic/graflex/thin-neck/maul/dooku/kylo/ahsoka/cal), `DEFAULT_CANVAS_HILT_STYLE_ID = 'minimal'`, color constants, and `drawCanvasHilt()`. Both BladeCanvas (workbench preview) and the saber-card path can now share one source of truth — the BladeCanvas migration is the remaining v0.15.x cleanup PR.
+- **Sidebar A/B v2 Phase 1 foundation** ([PR #78](https://github.com/kenkoller/KyberStation/pull/78)) — new `<MainContentABLayout>` wrapper at `apps/web/components/layout/MainContentABLayout.tsx` for the upcoming Sidebar → Column A list → Column B detail editor pattern (per `docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md`). Adds `uiStore.columnAWidth` + `useABLayout` fields with persistence. Behind feature flag default `false`. +12 tests. Phase 2 (`blade-style` migration) is the next PR.
+- **Hilt Library Stage 2** ([PR #79](https://github.com/kenkoller/KyberStation/pull/79)) — 7 canon-character assemblies + 29 character-specific parts. Assemblies: `anakin-rots`, `ahsoka-clone-wars`, `dooku-canon`, `ventress-pair`, `rey-tros`, `plo-koon`, `leia-rebels`. Parts: 7 emitters + 7 switches + 7 grips + 6 pommels + 2 accents (`bronze-band`, `chrome-trim`). +5 tests. CI caught a connector mismatch (`pointed-pommel` narrow-top vs `leia-rebels-grip` standard-bottom); fixed by swapping to `classic-pommel`.
+- **Saber GIF Sprint 2 — per-variant picker GIFs** ([PR #80](https://github.com/kenkoller/KyberStation/pull/80)). Augments `MiniGalleryPicker` with optional `gifPath` field that triggers an SVG → GIF swap on hover (with `prefers-reduced-motion` respect + `<img>.onError` graceful fallback). New `gifPath()` + `allPickerGifPaths()` helpers in `apps/web/lib/transitionCatalogs.ts`. Build-time generator at `packages/engine/scripts/generate-picker-gifs.mjs` (uses `gifenc` + `@napi-rs/canvas` for Node compat; runtime in-app saves still use `gif.js`). +7 tests. Binary GIFs follow-up: `pnpm --filter @kyberstation/engine gif:pickers`.
+- **`useSharedConfig` URL handler tests** ([PR #81](https://github.com/kenkoller/KyberStation/pull/81)) — closes Saber Card audit P1. New `apps/web/tests/useSharedConfig.test.ts` (8 tests) covers `?s=<glyph>` decode, `loadPreset` invocation, URL strip, other-params + hash preservation, malformed-glyph error, version-error glyph, no-op cases, v2 (modulation) round-trip. Adds `@testing-library/react` + `@testing-library/dom` + `jsdom` to `apps/web` devDeps. First jsdom-using test in the package.
+- **`docs/NEW_EFFECTS_PRIORITY_5_PROPOSAL_2026-04-27.md`** — Effects research output (PR [#81](https://github.com/kenkoller/KyberStation/pull/81)). Selects 3 Priority-5 effects + 1 bonus for v0.15.x: **Sith Flicker** (3-8 Hz unstable-saber flicker, ~2 h), **Blade Charge** (swing-reactive tip pooling, ~2 h), **Unstable Kylo** (clash spark spray, ~3 h), bonus **Tempo Lock** (BPM-phased intensity, ~2 h). All 4 emit valid ProffieOS templates per `HARDWARE_FIDELITY_PRINCIPLE.md`. 5 open questions queued for Ken.
+- **`docs/POST_LAUNCH_BACKLOG.md` progress update** ([PR #76](https://github.com/kenkoller/KyberStation/pull/76)) — marks Wave 7 + dead-code cleanup ✅, adds 5 new v0.15.x items (sidebar IA reorg, A/B Phase 2 build-out, useSharedConfig test, Hilt Stage 2, consumer-migration stub deletion). New "Launch-night progress recap" section.
+
+#### Tests
+- **web**: 1,069 → **1,112** passing across 64 test files (+43 net across the 7 PRs)
+- Typecheck clean across all 10 packages
+- All 7 PRs CI-green at merge
+
+#### Deferred follow-ups
+- Refactor `BladeCanvas.tsx` to import from `lib/blade/canvasHilt.ts` instead of maintaining inline copies — closes the Phase 4 extraction loop
+- Apply `drawCanvasHilt` swap to the GIF path (`renderCardGif` still uses HiltRenderer SVG for the hilt)
+- Generate the picker-GIF binaries (~32 files, ~1 MB total)
+- Sidebar A/B Phase 2 — migrate `blade-style` section
+- Sith Flicker / Blade Charge / Unstable Kylo effects implementation
+- Marketing copy ship — drafts in `docs/launch/`, Fett263 contact + YouTuber names need filling
+- Hardware flash test on V3.9 (deferred per Ken's call)
 
 ---
 

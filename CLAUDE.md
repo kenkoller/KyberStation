@@ -559,11 +559,35 @@ This release bundles ~5 weeks of work since `v0.14.0` (2026-04-23):
 - **Saber Wizard hardware step** (2026-04-22) — first-step blade-length + board picker with 3-tier compatibility chips on the StatusBar's BoardPicker primitive.
 - **Pre-launch cleanup pass** (PRs #36, #56, #67, #68, #69, #70, 2026-04-27 evening) — merge of in-flight feature branches, salvage of the left-rail overhaul recap docs, SEO infrastructure (`robots.txt` / `sitemap.xml` / `siteConfig.ts`), and the new `docs/POST_LAUNCH_BACKLOG.md` single-source backlog index.
 
-Hardware validation status: ✅ macOS + 89sabers V3.9 + Brave (Chromium WebUSB). Cross-OS (Windows / Linux) + cross-board (V2, V3-OLED, CFX, Golden Harvest, Xenopixel) sweeps are post-launch per `docs/POST_LAUNCH_BACKLOG.md`. Public launch communication acknowledges this honestly.
+Hardware validation status: ✅ macOS + 89sabers V3.9 + Brave (Chromium WebUSB). Cross-OS (Windows / Linux) + cross-board (V2, V3-OLED, CFX, Golden Harvest, Xenopixel) sweeps are post-launch per `docs/POST_LAUNCH_BACKLOG.md`. The v1.1 Core flash test on the V3.9 is also deferred per Ken's call — if anything fails, fix as v0.15.1 patch.
 
-Test count at tag: **3,168** workspace-wide (60 web suites at 1,064 tests + 740 engine + 1,859 codegen + 47 presets + 260 boards + 40 sound + 158 in flight). Typecheck clean across all 10 packages.
+Test count at tag: **3,168** workspace-wide. After post-tag work landed (see below): **~3,200** workspace-wide (1,112 web tests + the rest unchanged). Typecheck clean across all 10 packages.
 
-Single source of truth for the backlog: [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md). Hardware validator handoff: [`docs/NEXT_HARDWARE_MODULATION_SESSION.md`](docs/NEXT_HARDWARE_MODULATION_SESSION.md).
+Single source of truth for the backlog: [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md). Hardware validator handoff: [`docs/NEXT_HARDWARE_MODULATION_SESSION.md`](docs/NEXT_HARDWARE_MODULATION_SESSION.md). Full session archive: [`docs/SESSION_2026-04-27.md`](docs/SESSION_2026-04-27.md).
+
+### Post-tag work (2026-04-27 evening, PRs #76-#82)
+
+Seven additional PRs landed on top of the `v0.15.0` tag during the same launch-prep evening session — none of them changed the tag's narrative, but several materially improved share-artifact quality and unlocked new v0.15.x backlog items:
+
+- **PR [#76](https://github.com/kenkoller/KyberStation/pull/76)** — `docs/POST_LAUNCH_BACKLOG.md` updated with the night's progress + 5 new v0.15.x items (sidebar IA, A/B build-out, useSharedConfig test, Hilt Stage 2, consumer-migration stubs).
+- **PR [#77](https://github.com/kenkoller/KyberStation/pull/77)** — README polish: added "Free, browser-based, MIT licensed, no accounts. Hobby project." line + `### v0.15.0 — Launch (2026-04-28)` Status entry.
+- **PR [#78](https://github.com/kenkoller/KyberStation/pull/78)** — **Sidebar A/B v2 Phase 1 foundation**. New `<MainContentABLayout>` wrapper at `apps/web/components/layout/MainContentABLayout.tsx`, `uiStore.columnAWidth` + `useABLayout` fields, REGION_LIMITS entry. Behind feature flag (default false). Phase 2 (`blade-style` migration) is the natural follow-up.
+- **PR [#79](https://github.com/kenkoller/KyberStation/pull/79)** — **Hilt Library Stage 2**: 7 canon-character assemblies (Anakin ROTS, Ahsoka Clone Wars, Dooku canon, Ventress pair, Rey TROS, Plo Koon, Leia Rebels) + 29 character-specific parts. Append-only — Stage 1 untouched. CI caught a `leia-rebels` connector mismatch (pointed-pommel narrow-top vs leia-rebels-grip standard-bottom); fixed by swapping to classic-pommel.
+- **PR [#80](https://github.com/kenkoller/KyberStation/pull/80)** — **Saber GIF Sprint 2**: per-variant ignition + retraction picker GIF infrastructure. New `MiniGalleryItem.gifPath` field with hover-driven SVG↔GIF swap + `prefers-reduced-motion` respect. Build-time generator at `packages/engine/scripts/generate-picker-gifs.mjs` using `gifenc` + `@napi-rs/canvas` (the `gif.js` runtime path stays for in-app saves). Binary GIFs follow-up; the script is ready.
+- **PR [#81](https://github.com/kenkoller/KyberStation/pull/81)** — useSharedConfig URL handler tests (Saber Card audit P1) + Priority-5 effects proposal. Adds `@testing-library/react` + `jsdom` as devDeps (first jsdom test in `apps/web`). 8 new tests covering `?s=<glyph>` decode + URL strip + malformed/version errors + v2 round-trip. Effects proposal at `docs/NEW_EFFECTS_PRIORITY_5_PROPOSAL_2026-04-27.md` selects Sith Flicker / Blade Charge / Unstable Kylo + bonus Tempo Lock for v0.15.x.
+- **PR [#82](https://github.com/kenkoller/KyberStation/pull/82)** — **Saber-card share-artifact unification** (3 commits, big architectural win). Static Saber Card PNG now byte-identical to the workbench preview:
+  - **Blade**: was running its own 14-pass additive-blur bloom + body gradient + tip corona inline. Now delegates to `bladeRenderHeadless::drawWorkbenchBlade` (v0.14 capsule + 3-mip bloom — same pipeline as the live editor + animated GIF). −186 lines from `card/drawBlade.ts`.
+  - **Hilt proportions**: 28% of card width → 18% (matches workbench `bladeStartFrac`). All 4 horizontal layouts adjusted uniformly.
+  - **Hilt visual identity** (Phase 4 partial extraction): workbench's canvas-primitive `drawHilt` + `HILT_STYLES` + color constants extracted to **NEW** `apps/web/lib/blade/canvasHilt.ts` shared module. Saber card horizontal path now consumes it (default style `'minimal'` matching the editor; SVG-modular ids map to closest canvas equivalent). Vertical card path still uses HiltRenderer SVG (vertical layout dormant). Browser-verified: editor preview + static card PNG render byte-identical hilt + matching capsule blade.
+
+What's deferred from this evening's work, all queued in `docs/POST_LAUNCH_BACKLOG.md`:
+
+- **Phase 4 extraction completion** — refactor `BladeCanvas.tsx` itself to import `HILT_STYLES` + `drawCanvasHilt` from `lib/blade/canvasHilt.ts` instead of maintaining inline copies. Closes the loop. (~30 min v0.15.x cleanup PR.)
+- **Apply canvas-hilt to GIF path** — `renderCardGif` still routes through HiltRenderer SVG. Same one-line swap as PR #82 horizontal path.
+- **Sidebar A/B Phase 2** — migrate `blade-style` section to use the new wrapper. Foundation in PR #78; spec at `docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md`.
+- **Picker GIF binary generation** — `pnpm --filter @kyberstation/engine add -D @napi-rs/canvas gifenc tsx && pnpm --filter @kyberstation/engine gif:pickers` produces ~32 .gif files at ~1 MB total.
+- **Marketing copy ship** — drafts in `docs/launch/`, FILL-IN placeholders for Fett263 contact + specific YouTuber / TikTok handles.
+- **Hardware flash test** — handoff doc paste-ready.
 
 ---
 
