@@ -29,12 +29,19 @@ export const MAX_BLADE_INCHES = 40;
  * BladeCanvas's auto-fit zoom targets `cw * AUTO_FIT_FILL` as the visible
  * extent of the hilt+blade run. Matches `computeFitZoom` in BladeCanvas.
  *
- * W2 bump (2026-04-22): 0.90 → 0.98. The extra 8% of container width
- * makes the saber fill its frame and pushes the blade tip close to the
- * right edge — the prior margin felt cramped, especially when the panel
- * was narrow.
+ * History:
+ *   - W2 (2026-04-22): bumped 0.90 → 0.98. The extra 8% of container
+ *     width made the saber fill its frame; old margin felt cramped.
+ *   - v0.14.x pipeline cleanup (2026-04-26): rolled back to 0.90. The
+ *     softened bloom threshold produces a much wider, smoother halo
+ *     (~150 device pixels past the blade tip on a typical 1200px
+ *     canvas). At 0.98 fill the halo + rounded tip cap got clipped at
+ *     the right edge, so the user could not see the entire blade in
+ *     the BLADE PREVIEW / PIXEL STRIP / RGB+LUMA panels. 0.90 reserves
+ *     enough headroom that the full blade + glow is always visible
+ *     even on the longest 40" preset.
  */
-export const AUTO_FIT_FILL = 0.98;
+export const AUTO_FIT_FILL = 0.90;
 /** Tail margin (past blade tip) BladeCanvas reserves in design-space. */
 export const BLADE_TAIL_MARGIN_DS = 40;
 /**

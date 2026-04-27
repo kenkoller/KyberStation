@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path.
 
+### Blade render rewrite — capsule rasterizer + additive composite (2026-04-27)
+
+Major rework of the blade preview pipeline, landed on `feat/blade-layers-debug`. Collapses the prior body + separate tip cap + parallel offscreen mirror into a single per-pixel capsule rasterizer that's the source of truth for blade geometry. Pipeline goes from 14 passes → 13, ~140 lines of body/cap matching code removed.
+
+- **Capsule rasterizer** — `rasterizeCapsuleToOffscreen` walks the capsule's bounding box per-pixel, samples LED color via axial position with linear interpolation between adjacent LEDs, applies a feathered Gaussian-α radial profile, and lerps toward a luma-driven white-shifted core. Capsule is fixed at the full configured blade length — retraction is rendered via per-LED brightness (engine-driven), not geometry truncation, so the tube doesn't physically shrink during retract. Replaces 4 parallel render paths (offscreen body + offscreen cap + visible body + visible cap) with one.
+- **Sharp + soft offscreen split** — sharp offscreen feeds the visible body composite; soft offscreen (sharp + diffusion blur) feeds the bloom mips. Decouples "crisp body silhouette" from "diffuse halo source" so cranking diffusion doesn't shorten or soften the visible blade.
+- **Pass 12 additive blend** — body capsule now ADDS to the bloom underneath via `lighter` blend instead of occluding it via normal alpha. Eliminates the visible "body sitting on top of halo" seam that the prior normal-blend produced at the body's α-decay zone. Physically correct compositing for emissive surfaces — light adds, doesn't replace.
+- **Feathered Gaussian α profile** — rasterizer's α curve is now a smooth bell shape (1.0 at center, 0 at rim) with no plateau. Combined with the additive composite, the body and surrounding bloom are continuous expressions of the same emission. No detectable boundary between body silhouette and halo.
+- **Tip axial extension** — geometric capsule rim sits 0.15 × radius past the LED endpoint so the feathered α can decay to 0 at the rim while visible-bright pixels reach EXACTLY the configured blade length (verified to the pixel for a 40" blade — body terminates at the 40" grid mark, bloom continues past as natural surrounding halo).
+- **Body height rebalanced** (`BLADE_CORE_H` 26 → 32) — paired with the feathered α curve to give a clearly-defined bright tube proportional to the BLADE itself (~1" real neopixel diameter), not the hilt graphic. Hilt is treated as a visual placeholder; blade width stays consistent regardless of hilt sizing.
+- **Hilt-tuck + clipped body** — capsule extends `coreH` left of the hilt edge so its rounded LEFT cap sits behind the hilt (invisible to the user, but bloom mips still see it and produce halo into the hilt area). Visible body composite is clipped to `x ≥ bladeStartPx` so the body itself doesn't paint over the hilt's metallic surface. Hilt drawn before bloom so additive bloom mips spill onto the metal naturally — preserves the "lit blade illuminating the metal" look.
+- **Per-LED axial linear interpolation** — eliminates hard vertical seams between bright and dim adjacent LEDs (prior hard quantization showed ~17 luma steps every 6 px at a Stripes-style transition; max per-pixel delta now ~3 luma). Implements axial polycarbonate diffusion: light from each LED bleeds into its neighbors along the tube length.
+- **+25% white-core exposure boost** — `ledCoreWhiteAmount` multiplied 1.25× (clamped to 1.0). White plateau now reaches pure white (luma 250+) instead of stopping at the per-color asymptote (0.82–0.95). Iconic blown-out tube look for any LED color, not just white blades.
+- **Drops `tests/blade/endpointSeeds.test.ts`** — sentinel for the v0.14.0 Phase 1 endpoint-seed widening (`glowCapRadius`, `emGlowR`), constants the capsule unified out of existence.
+
+Performance: 120 FPS at 1600×1000 viewport / DPR 2. Per-pixel rasterization adds modest CPU cost but stays well within budget.
+
+Status: shipped on `feat/blade-layers-debug`, NOT yet merged to main. Branch is in a clean checkpoint state; further tweaks to white-shift/bloom layering deferred.
+
 ### Saber Wizard — hardware step (2026-04-22)
 
 Added a new first step to the Saber Wizard so newcomers tell the app about the saber they actually own (blade length + board) before picking aesthetic. The 3-step archetype/colour/vibe flow shifts to steps 2/3/4 and is otherwise unchanged.
