@@ -14,10 +14,12 @@ import type { CrystalHandle, AnimationTrigger } from '@/lib/crystal';
 import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
 import {
   renderCardSnapshot,
+  renderCardGif,
   LAYOUT_CATALOG,
   THEME_CATALOG,
   getLayout,
   getTheme,
+  type GifVariant,
 } from '@/lib/sharePack/cardSnapshot';
 import { toast } from '@/lib/toastManager';
 
@@ -35,6 +37,21 @@ const THEME_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'jedi', label: 'Jedi' },
   { id: 'space', label: 'Pure Black' },
 ];
+
+const GIF_VARIANT_OPTIONS: Array<{ id: GifVariant; label: string; tooltip: string }> = [
+  { id: 'idle', label: 'Idle', tooltip: 'Steady-state shimmer loop (~1s, ~1MB)' },
+  { id: 'ignition', label: 'Ignition cycle', tooltip: 'Full PREON → ON → RETRACT arc (~2.5s)' },
+];
+
+/** Slug a preset name into something filename-safe — falls back to the form id. */
+function presetSlug(name: string | undefined, fallback: string): string {
+  const base = (name && name.trim()) || fallback;
+  return base
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 32) || fallback;
+}
 
 // Dynamic import keeps Three.js out of the SSR bundle
 const KyberCrystal = dynamic(
@@ -56,6 +73,8 @@ export function CrystalPanel() {
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [layoutId, setLayoutId] = useState<string>('default');
   const [themeId, setThemeId] = useState<string>('default');
+  const [gifVariant, setGifVariant] = useState<GifVariant>('idle');
+  const [gifEncoding, setGifEncoding] = useState<boolean>(false);
 
   const form = selectForm(config);
   const formInfo = CRYSTAL_FORMS[form];
@@ -114,6 +133,36 @@ export function CrystalPanel() {
       toast.error("Couldn't render share card");
     }
   }, [config, glyph, layoutId, themeId]);
+
+  const saveShareGif = useCallback(async () => {
+    if (gifEncoding) return;
+    setGifEncoding(true);
+    try {
+      setLastAction('Encoding GIF… (1–3s)');
+      const blob = await renderCardGif({
+        variant: gifVariant,
+        config,
+        glyph,
+        presetName: config.name,
+        layout: getLayout(layoutId),
+        theme: getTheme(themeId),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const slug = presetSlug(config.name, form);
+      a.download = `kyberstation-card-${gifVariant}-${slug}-${Date.now()}.gif`;
+      a.click();
+      URL.revokeObjectURL(url);
+      const sizeKb = Math.round(blob.size / 1024);
+      setLastAction(`Share GIF saved (${sizeKb} KB)`);
+    } catch (err) {
+      console.warn('[crystal] gif render failed:', err);
+      toast.error("Couldn't render share GIF");
+    } finally {
+      setGifEncoding(false);
+    }
+  }, [config, glyph, layoutId, themeId, gifVariant, gifEncoding, form]);
 
   const copyGlyph = useCallback(async () => {
     try {
@@ -226,6 +275,37 @@ export function CrystalPanel() {
           className="py-1.5 text-ui-xs font-mono border border-accent/40 rounded bg-accent/10 hover:bg-accent/20 transition-colors text-accent"
         >
           Save share card
+        </button>
+      </div>
+
+      {/* Animated share GIF — variant select + render button */}
+      <div className="grid grid-cols-[auto,1fr] gap-1.5 items-stretch">
+        <select
+          value={gifVariant}
+          onChange={(e) => setGifVariant(e.target.value as GifVariant)}
+          disabled={gifEncoding}
+          aria-label="Animation variant"
+          className="py-1.5 px-2 text-ui-xs font-mono bg-bg-panel border border-border-subtle rounded hover:border-border-light focus:outline-none focus:border-accent disabled:opacity-60"
+        >
+          {GIF_VARIANT_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id} title={o.tooltip}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={saveShareGif}
+          disabled={gifEncoding}
+          aria-busy={gifEncoding || undefined}
+          className="py-1.5 text-ui-xs font-mono border border-accent/40 rounded bg-accent/10 hover:bg-accent/20 transition-colors text-accent disabled:opacity-60 disabled:cursor-wait"
+          title={
+            gifEncoding
+              ? 'Encoding GIF — please wait'
+              : 'Save an animated GIF of the share card'
+          }
+        >
+          {gifEncoding ? 'Encoding GIF…' : 'Save share GIF'}
         </button>
       </div>
 
