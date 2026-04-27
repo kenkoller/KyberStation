@@ -1,14 +1,30 @@
 // ─── drawHilt — saber hilt ─────────────────────────────────────
 //
-// Supports both horizontal (blade exits the right/emitter end) and
-// vertical (blade exits the top/emitter end, hilt grip at the bottom)
-// orientations. Uses the real hilt SVG via HiltRenderer; falls back to
-// a stylized canvas-draw hilt if the SVG pipeline throws.
+// Horizontal path renders the workbench's canvas-primitive hilt via
+// `lib/blade/canvasHilt.ts::drawCanvasHilt`. Same pipeline the editor
+// uses for the default 9 hilt styles (classic / graflex / thin-neck /
+// maul / dooku / kylo / ahsoka / cal / minimal). Recipients of a
+// shared card see the same hilt the user sees in the workbench.
+//
+// Vertical path still uses HiltRenderer SVG overlay because there's
+// no canvas-primitive vertical pipeline yet (vertical layout is
+// hidden in CrystalPanel's UI today; revisit when re-enabled).
+//
+// Custom modular SVG hilts (graflex-svg / mpp-svg / etc.) are
+// deferred — the workbench has the SVG path but the saber card
+// always uses the canvas-primitive default for share-artifact
+// consistency. Custom hilt support on the card is a future
+// enhancement once the editor's hilt picker UX stabilizes.
 
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
+import {
+  drawCanvasHilt,
+  CANVAS_HILT_STYLES,
+  DEFAULT_CANVAS_HILT_STYLE_ID,
+} from '@/lib/blade/canvasHilt';
 
 import type { CardContext, Ctx } from './cardTypes';
 import { fillRoundRect, svgStringToImage } from './canvasUtils';
@@ -16,62 +32,79 @@ import { fillRoundRect, svgStringToImage } from './canvasUtils';
 /** Emitter/blade overlap in logical px — keeps the blade flush against the hilt. */
 const EMITTER_OVERLAP = 4;
 
-/** Default assembly when the config doesn't declare one. */
+/** Default assembly when the config doesn't declare one (vertical fallback only). */
 const DEFAULT_ASSEMBLY_ID = 'graflex';
 
-/** Accent color for the hilt — neutral chrome to avoid fighting the blade color. */
+/** Accent color for the hilt SVG — neutral chrome (vertical fallback only). */
 const HILT_ACCENT = 'rgb(178,182,192)';
+
+/** Default canvas hilt style for share artifacts. Matches the editor. */
+const DEFAULT_HILT_STYLE_ID = DEFAULT_CANVAS_HILT_STYLE_ID;
 
 export async function drawHilt(card: CardContext): Promise<void> {
   const { layout } = card;
   if (layout.saberOrientation === 'vertical') {
     await drawHiltVertical(card);
   } else {
-    await drawHiltHorizontal(card);
+    drawHiltHorizontal(card);
   }
 }
 
-// ─── Horizontal hilt (existing behavior) ─────────────────────
+// ─── Horizontal hilt — workbench canvas-primitive pipeline ───
 
-async function drawHiltHorizontal(card: CardContext): Promise<void> {
+function drawHiltHorizontal(card: CardContext): void {
   const { ctx, layout, options } = card;
   const { config } = options;
 
   const heroCenterY = layout.heroY + layout.heroH / 2;
-  const fallbackY = heroCenterY - layout.hiltH / 2;
 
-  try {
-    const hiltId = (config as unknown as { hiltId?: string }).hiltId ?? DEFAULT_ASSEMBLY_ID;
+  // Style selection: read config.hiltId if present + map to a canvas
+  // style; otherwise use the workbench default. Custom SVG-modular
+  // hilts (e.g. 'graflex-svg', 'mpp-svg') are resolved to their
+  // closest canvas equivalent for the share artifact — full SVG
+  // hilt parity on the card is a deferred enhancement.
+  const hiltId = (config as unknown as { hiltId?: string }).hiltId;
+  const styleId = resolveCanvasHiltStyle(hiltId);
 
-    const svgMarkup = renderToStaticMarkup(
-      createElement(HiltRenderer, {
-        assemblyId: hiltId,
-        orientation: 'horizontal',
-        longAxisSize: layout.hiltW,
-        accentOverride: HILT_ACCENT,
-      }),
-    );
+  // Render at workbench's natural 1.0× scale so the hilt the recipient
+  // sees on a shared card is byte-identical to what the user composed
+  // in the editor. The layout's `hiltW` field is now a layout HINT
+  // (used to reserve horizontal space for chrome alignment) rather
+  // than a strict size — the hilt's actual rendered width is the
+  // sum of its part widths.
+  const scale = 1.0;
 
-    if (!svgMarkup) {
-      throw new Error('HiltRenderer produced empty markup');
-    }
+  // Right-align: hilt's right edge sits at bladeStartX - emitter overlap
+  // so the blade hugs the emitter cap. drawCanvasHilt naturally extends
+  // leftward from the bladeStartX it's given.
+  const bladeStartForHilt = layout.bladeStartX - EMITTER_OVERLAP;
 
-    const img = await svgStringToImage(svgMarkup);
+  drawCanvasHilt(ctx, {
+    styleId,
+    bladeStartX: bladeStartForHilt,
+    centerY: heroCenterY,
+    scale,
+    bladeColor: config.baseColor,
+  });
+}
 
-    // Preserve the SVG's natural aspect ratio.
-    const drawW = layout.hiltW;
-    const aspect = img.width > 0 ? img.height / img.width : layout.hiltH / layout.hiltW;
-    const drawH = drawW * aspect;
-
-    // Right-align against the blade's start X.
-    const drawRightX = layout.bladeStartX - EMITTER_OVERLAP;
-    const drawX = drawRightX - drawW;
-    const drawY = heroCenterY - drawH / 2;
-
-    ctx.drawImage(img, drawX, drawY, drawW, drawH);
-  } catch {
-    drawStylizedHilt(ctx, layout.hiltX, fallbackY, layout.hiltW, layout.hiltH);
-  }
+/** Map a hilt id (config.hiltId, possibly an SVG-modular id) to the
+ *  closest canvas-primitive style. Today this is a thin defaulting
+ *  layer; when full SVG-modular support lands on the card, this
+ *  becomes the fallback path for older / unrecognised ids. */
+function resolveCanvasHiltStyle(hiltId: string | undefined): string {
+  if (!hiltId) return DEFAULT_HILT_STYLE_ID;
+  // Any direct match against a canvas style → use it.
+  if (CANVAS_HILT_STYLES.some((h) => h.id === hiltId)) return hiltId;
+  // Common SVG-modular id mapping. Extend as needed.
+  if (hiltId === 'graflex-svg' || hiltId === 'graflex') return 'graflex';
+  if (hiltId === 'mpp-svg' || hiltId === 'mpp') return 'classic';
+  if (hiltId === 'count-svg' || hiltId === 'count' || hiltId === 'dooku-canon') return 'dooku';
+  if (hiltId === 'ren-vent-svg' || hiltId === 'ren-vent') return 'kylo';
+  if (hiltId === 'fulcrum-pair-svg' || hiltId === 'fulcrum-pair' || hiltId === 'ahsoka-clone-wars') return 'ahsoka';
+  if (hiltId === 'shoto-sage-svg' || hiltId === 'shoto-sage') return 'minimal';
+  if (hiltId === 'zabrak-staff-svg' || hiltId === 'zabrak-staff') return 'maul';
+  return DEFAULT_HILT_STYLE_ID;
 }
 
 // ─── Vertical hilt ───────────────────────────────────────────
@@ -130,62 +163,12 @@ async function drawHiltVertical(card: CardContext): Promise<void> {
   }
 }
 
-// ─── Stylized canvas-draw hilt (horizontal fallback) ────────
-
-function drawStylizedHilt(ctx: Ctx, x: number, y: number, w: number, h: number): void {
-  ctx.save();
-
-  // Pommel cap (left)
-  ctx.fillStyle = '#3a3e48';
-  fillRoundRect(ctx, x - 10, y + 4, 14, h - 8, 2);
-
-  // Main grip — vertical metal gradient
-  const bodyGrad = ctx.createLinearGradient(x, y, x, y + h);
-  bodyGrad.addColorStop(0, '#c6ccd6');
-  bodyGrad.addColorStop(0.35, '#8a90a0');
-  bodyGrad.addColorStop(0.65, '#575d6a');
-  bodyGrad.addColorStop(1, '#2d313b');
-  ctx.fillStyle = bodyGrad;
-  fillRoundRect(ctx, x, y, w, h, 3);
-
-  // Grip ribs — 6 vertical lines dividing the grip zones
-  ctx.strokeStyle = 'rgba(30, 32, 38, 0.75)';
-  ctx.lineWidth = 1;
-  const ribCount = 6;
-  for (let i = 1; i < ribCount; i++) {
-    const rx = x + (w / ribCount) * i;
-    ctx.beginPath();
-    ctx.moveTo(rx, y + 4);
-    ctx.lineTo(rx, y + h - 4);
-    ctx.stroke();
-  }
-
-  // Switch box (accent band near the emitter)
-  ctx.fillStyle = '#4a5060';
-  ctx.fillRect(x + w - 64, y + 6, 44, h - 12);
-  ctx.fillStyle = '#c8a040';
-  ctx.fillRect(x + w - 58, y + h / 2 - 3, 6, 6);
-  ctx.fillStyle = '#2a6d4a';
-  ctx.fillRect(x + w - 44, y + h / 2 - 3, 6, 6);
-
-  // Emitter (right end)
-  const emitterGrad = ctx.createLinearGradient(x + w, y, x + w + 14, y);
-  emitterGrad.addColorStop(0, '#2c303a');
-  emitterGrad.addColorStop(1, '#5a5f6b');
-  ctx.fillStyle = emitterGrad;
-  fillRoundRect(ctx, x + w, y, 14, h, 1);
-
-  // Specular highlight along the grip's top edge
-  const highlightGrad = ctx.createLinearGradient(x, y, x, y + h * 0.2);
-  highlightGrad.addColorStop(0, 'rgba(255,255,255,0.35)');
-  highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = highlightGrad;
-  fillRoundRect(ctx, x + 2, y + 2, w - 4, h * 0.2, 2);
-
-  ctx.restore();
-}
-
 // ─── Stylized canvas-draw hilt (vertical fallback) ──────────
+//
+// `drawStylizedHilt` (horizontal) was retired when the horizontal path
+// switched to `drawCanvasHilt` from `lib/blade/canvasHilt.ts`. The
+// vertical fallback below is still alive for the dormant
+// vertical-orientation path.
 
 function drawStylizedHiltVertical(
   ctx: Ctx,
