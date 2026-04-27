@@ -362,7 +362,7 @@ export function MiniSaber({
   return (
     <div
       className={`relative flex items-center justify-center ${flexDirection} ${className ?? ''}`}
-      aria-label={ariaLabel}
+      {...(ariaLabel ? { role: 'img', 'aria-label': ariaLabel } : {})}
     >
       {/* Hilt — mirrored via CSS when hiltPosition='end' so the emitter
           always faces the blade. The SVG itself always draws with
