@@ -69,6 +69,20 @@ Switch boards from the StatusBar badge or the blade creation wizard.
 
 ---
 
+## Read more
+
+You've got the basic move down. From here, the rest of the guide covers what to wire and how to wire it well:
+
+- [**Recipes to Steal**](./recipes.md) — 10 ready-made patches with wirings and what they feel like
+- [**The 11 Modulators**](./modulators.md) — every signal source, what gesture produces it, and what it pairs well with
+- [**Combinator Cookbook**](./combinators.md) — how `add` / `multiply` / `replace` / `min` / `max` actually compose
+- [**Expression Reference**](./expressions.md) — the math editor: variables, functions, five worked examples
+- [**Patterns from Film and Lore**](./canon-patterns.md) — Kylo, Maul, Anakin, Qui-Gon, Ahsoka as modulation recipes
+- [**Troubleshooting**](./troubleshooting.md) — named failure modes when a patch isn't behaving
+- [**Sharing**](./sharing.md) — Kyber Glyphs, the Community Gallery, and crediting remixes
+
+---
+
 <!--
   The three images above are hand-authored animated SVGs. They play
   natively in any browser renderer, match the editor's color tokens
