@@ -18,12 +18,19 @@ export const DEFAULT_LAYOUT: CardLayout = {
   heroY: 72,
   heroH: 220,
   hiltX: 80,
-  hiltW: 260,
-  // Hilt-to-blade cross-section ratio 40/26 = 1.54 — matches real Graflex
-  // proportions (~1.5–1.8× blade diameter). Previous 56/26 = 2.15 read
-  // as a fat hilt.
-  hiltH: 40,
-  bladeStartX: 346, // hiltX + hiltW + 6
+  // Hilt-to-blade WIDTH ratio matches the workbench's bladeStartFrac
+  // default (~18% of canvas width = 1:4.5 hilt:blade). Previous 260/774
+  // = 1:2.98 read as a chunky hilt — recipients saw a different
+  // proportion than the editor preview. 195/839 = 1:4.30 keeps the
+  // hilt readable while letting the blade dominate the hero band.
+  hiltW: 195,
+  // Fallback only — drawHilt.ts uses the SVG's natural aspect when
+  // the rendered image dimensions are known (which they are, post
+  // svgStringToImage). The Graflex assembly's natural aspect renders
+  // ~47 px tall at 195 px wide → hilt:blade thickness 47/26 = 1.81,
+  // within real Graflex's 1.5–1.8× range.
+  hiltH: 30,
+  bladeStartX: 281, // hiltX + hiltW + 6
   bladeEndX: 1120,
   bladeThickness: 26,
   qrSize: 168,
@@ -49,10 +56,11 @@ export const OG_LAYOUT: CardLayout = {
   heroY: 64,
   heroH: 200,
   hiltX: 80,
-  hiltW: 240,
-  // 36/24 = 1.5 — real Graflex cross-section ratio.
-  hiltH: 36,
-  bladeStartX: 326,
+  // Workbench-parity 1:4.5 hilt:blade WIDTH ratio. See DEFAULT_LAYOUT
+  // comment for the rationale.
+  hiltW: 180,
+  hiltH: 28,
+  bladeStartX: 266,
   bladeEndX: 1120,
   bladeThickness: 24,
   qrSize: 150,
@@ -79,10 +87,10 @@ export const INSTAGRAM_LAYOUT: CardLayout = {
   heroY: 300,
   heroH: 240,
   hiltX: 80,
-  hiltW: 220,
-  // 40/26 = 1.54 — real Graflex cross-section ratio.
-  hiltH: 40,
-  bladeStartX: 306,
+  // Workbench-parity 1:4.5 hilt:blade WIDTH ratio.
+  hiltW: 165,
+  hiltH: 30,
+  bladeStartX: 251,
   bladeEndX: 1000,
   bladeThickness: 26,
   qrSize: 180,
@@ -108,10 +116,10 @@ export const STORY_LAYOUT: CardLayout = {
   heroY: 540,
   heroH: 260,
   hiltX: 80,
-  hiltW: 220,
-  // 44/28 = 1.57 — real Graflex cross-section ratio.
-  hiltH: 44,
-  bladeStartX: 306,
+  // Workbench-parity 1:4.5 hilt:blade WIDTH ratio.
+  hiltW: 165,
+  hiltH: 33,
+  bladeStartX: 251,
   bladeEndX: 1000,
   bladeThickness: 28,
   qrSize: 220,
