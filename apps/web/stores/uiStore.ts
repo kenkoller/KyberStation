@@ -3,7 +3,9 @@ import type { VisualizationLayerId } from '@/lib/visualizationTypes';
 
 export type ViewMode = 'blade' | 'angle' | 'strip' | 'cross' | 'uv-unwrap';
 export type RenderMode = 'photorealistic' | 'pixel';
-export type CanvasMode = '2d' | '3d';
+// `CanvasMode` removed in v0.15.x — 3D blade view was retired in v0.14
+// (see CLAUDE.md `1.5x` entry). The field had been kept on the store
+// for persistence-state safety; with no readers, it's now safe to drop.
 // OV6 (2026-04-21): 5 → 4 tabs. Dynamics was absorbed into Design per
 // UI_OVERHAUL_v2_PROPOSAL §1. Persisted state referencing 'dynamics' is
 // remapped to 'design' at load time by the layoutStore migration.
@@ -46,7 +48,6 @@ export type SidebarGroupId =
 export interface UIStore {
   viewMode: ViewMode;
   renderMode: RenderMode;
-  canvasMode: CanvasMode;
   activeTab: ActiveTab;
   brightness: number;
   showHUD: boolean;
@@ -211,7 +212,6 @@ export interface UIStore {
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
-  setCanvasMode: (mode: CanvasMode) => void;
   setActiveTab: (tab: ActiveTab) => void;
   setBrightness: (brightness: number) => void;
   toggleHUD: () => void;
@@ -415,7 +415,6 @@ function saveSidebarCollapse(c: Record<SidebarGroupId, boolean>): void {
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
   renderMode: 'photorealistic',
-  canvasMode: '2d',
   activeTab: 'design',
   brightness: 100,
   showHUD: true,
@@ -483,7 +482,6 @@ export const useUIStore = create<UIStore>((set) => ({
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
-  setCanvasMode: (canvasMode) => set({ canvasMode }),
   setActiveTab: (activeTab) => set({ activeTab }),
   setBrightness: (brightness) => set({ brightness }),
   toggleHUD: () => set((state) => ({ showHUD: !state.showHUD })),
