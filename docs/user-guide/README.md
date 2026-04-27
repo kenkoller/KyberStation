@@ -11,13 +11,13 @@ The guide is written for saber builders and cosplayers first, engineers second. 
 Wire live signals — swing, sound, angle, time, clash — to any blade parameter. Think Ableton's modulation matrix, but for your saber.
 
 - [Your First Wire in 30 Seconds](./modulation/your-first-wire.md) — 60-second quick-start
-- Recipes to Steal *(coming soon)*
-- The 11 Modulators Illustrated *(coming soon)*
-- Combinator Cookbook *(coming soon)*
-- Expression Language Reference *(coming soon)*
-- Patterns from Film and Lore *(coming soon)*
-- Troubleshooting *(coming soon)*
-- Sharing Your Creation *(coming soon)*
+- [Recipes to Steal](./modulation/recipes.md) — 10 ready-made patches
+- [The 11 Modulators](./modulation/modulators.md) — every signal source illustrated
+- [Combinator Cookbook](./modulation/combinators.md) — when to pick `add` vs. `replace` vs. `multiply`
+- [Expression Reference](./modulation/expressions.md) — the math editor (`fx` button)
+- [Patterns from Film and Lore](./modulation/canon-patterns.md) — Kylo, Maul, Anakin, Qui-Gon, Ahsoka
+- [Troubleshooting](./modulation/troubleshooting.md) — named failure modes
+- [Sharing Your Creation](./modulation/sharing.md) — Kyber Glyphs + Community Gallery
 
 ---
 
