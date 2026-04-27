@@ -7,6 +7,10 @@ import { ScrubField } from '@/components/shared/ScrubField';
 import { MiniGalleryPicker } from '@/components/shared/MiniGalleryPicker';
 import { getIgnitionThumbnail } from '@/lib/ignitionThumbnails';
 import { getRetractionThumbnail } from '@/lib/retractionThumbnails';
+import {
+  IGNITION_STYLES,
+  RETRACTION_STYLES,
+} from '@/lib/transitionCatalogs';
 
 const EASING_PRESETS = [
   { id: 'linear', label: 'Linear' },
@@ -26,43 +30,11 @@ const EASING_PRESETS = [
   { id: 'snap', label: 'Snap' },
 ];
 
-const IGNITION_STYLES = [
-  { id: 'standard', label: 'Standard', desc: 'Classic linear ignition' },
-  { id: 'scroll', label: 'Scroll', desc: 'Scrolling pixel fill' },
-  { id: 'spark', label: 'Spark', desc: 'Crackling spark ignition' },
-  { id: 'center', label: 'Center Out', desc: 'Ignites from center' },
-  { id: 'wipe', label: 'Wipe', desc: 'Soft wipe reveal' },
-  { id: 'stutter', label: 'Stutter', desc: 'Flickering unstable ignition' },
-  { id: 'glitch', label: 'Glitch', desc: 'Digital glitch effect' },
-  { id: 'twist', label: 'Twist', desc: 'Spiral ignition driven by twist' },
-  { id: 'swing', label: 'Swing', desc: 'Speed-reactive swing ignition' },
-  { id: 'stab', label: 'Stab', desc: 'Rapid center-out burst' },
-  { id: 'crackle', label: 'Crackle', desc: 'Random segment flicker fill' },
-  { id: 'fracture', label: 'Fracture', desc: 'Radiating crack points' },
-  { id: 'flash-fill', label: 'Flash Fill', desc: 'White flash then color wipe' },
-  { id: 'pulse-wave', label: 'Pulse Wave', desc: 'Sequential building waves' },
-  { id: 'drip-up', label: 'Drip Up', desc: 'Fluid upward flow' },
-  { id: 'hyperspace', label: 'Hyperspace', desc: 'Streaking star-line ignition' },
-  { id: 'summon', label: 'Summon', desc: 'Force-pull ignition' },
-  { id: 'seismic', label: 'Seismic', desc: 'Ground-shake ripple ignition' },
-  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
-];
-
-const RETRACTION_STYLES = [
-  { id: 'standard', label: 'Standard', desc: 'Linear retraction' },
-  { id: 'scroll', label: 'Scroll', desc: 'Scrolling retract' },
-  { id: 'fadeout', label: 'Fade Out', desc: 'Fading retraction' },
-  { id: 'center', label: 'Center In', desc: 'Retracts to center' },
-  { id: 'shatter', label: 'Shatter', desc: 'Shattering retraction' },
-  { id: 'dissolve', label: 'Dissolve', desc: 'Random shuffle turn-off' },
-  { id: 'flickerOut', label: 'Flicker Out', desc: 'Tip-to-base flicker band' },
-  { id: 'unravel', label: 'Unravel', desc: 'Sinusoidal thread unwind' },
-  { id: 'drain', label: 'Drain', desc: 'Gravity drain with meniscus' },
-  { id: 'implode', label: 'Implode', desc: 'Collapsing inward retraction' },
-  { id: 'evaporate', label: 'Evaporate', desc: 'Fading particle evaporation' },
-  { id: 'spaghettify', label: 'Spaghettify', desc: 'Stretching gravitational pull' },
-  { id: 'custom-curve', label: 'Custom Curve', desc: 'User-defined Bezier curve' },
-];
+// IGNITION_STYLES + RETRACTION_STYLES now imported from
+// `lib/transitionCatalogs.ts` so this surface, IgnitionRetractionPanel,
+// and the Inspector quick pickers all share one source. The catalog
+// also carries optional `pickerGifPath` per entry (Saber GIF Sprint 2)
+// — we forward that through to MiniGalleryPicker below.
 
 export function EffectPanel() {
   const config = useBladeStore((s) => s.config);
@@ -84,6 +56,7 @@ export function EffectPanel() {
           label: style.label,
           thumbnail: entry.thumbnail,
           description: style.desc,
+          gifPath: style.pickerGifPath,
         };
       }),
     [],
@@ -98,6 +71,7 @@ export function EffectPanel() {
           label: style.label,
           thumbnail: entry.thumbnail,
           description: style.desc,
+          gifPath: style.pickerGifPath,
         };
       }),
     [],
