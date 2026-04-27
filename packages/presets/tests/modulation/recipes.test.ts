@@ -33,22 +33,32 @@ import {
   ANGLE_REACTIVE_TIP_RECIPE,
   CLASH_FLASH_WHITE_RECIPE,
   TWIST_DRIVES_HUE_RECIPE,
+  IDLE_HUE_DRIFT_RECIPE,
+  SOUND_DRIVEN_HUE_RECIPE,
+  TWIST_DRIVEN_SATURATION_RECIPE,
   BREATHING_BLADE_RECIPE,
+  HEARTBEAT_PULSE_RECIPE,
+  BATTERY_SAVER_RECIPE,
   type ModulationRecipe,
 } from '../../src/recipes/modulation/index.js';
 
-/** Recipes authored in the v1.0 bare-source style (source set, expression null). */
+/** Recipes authored in the bare-source style (source set, expression null). */
 const V1_0_RECIPES = [
   REACTIVE_SHIMMER_RECIPE,
   SOUND_REACTIVE_MUSIC_RECIPE,
   ANGLE_REACTIVE_TIP_RECIPE,
   CLASH_FLASH_WHITE_RECIPE,
   TWIST_DRIVES_HUE_RECIPE,
+  IDLE_HUE_DRIFT_RECIPE,
+  SOUND_DRIVEN_HUE_RECIPE,
+  TWIST_DRIVEN_SATURATION_RECIPE,
 ];
 
 /** Recipes using math-formula expressions (source null, expression set). v1.1+. */
 const V1_1_EXPRESSION_RECIPES = [
   BREATHING_BLADE_RECIPE,
+  HEARTBEAT_PULSE_RECIPE,
+  BATTERY_SAVER_RECIPE,
 ];
 
 // ─── Authoritative sets (mirror of source-of-truth registries) ─────────
@@ -137,25 +147,37 @@ const MAX_BINDINGS_PER_RECIPE = 5;
 
 // ─── Tests ─────────────────────────────────────────────────────────────
 
-describe('Modulation recipes — v1.0 starter set', () => {
-  it('exports all 5 recipes via the barrel', () => {
+describe('Modulation recipes — v1.0 + v1.1 starter set', () => {
+  it('exports all 11 recipes via the barrel', () => {
     expect(REACTIVE_SHIMMER_RECIPE).toBeDefined();
     expect(SOUND_REACTIVE_MUSIC_RECIPE).toBeDefined();
     expect(ANGLE_REACTIVE_TIP_RECIPE).toBeDefined();
     expect(CLASH_FLASH_WHITE_RECIPE).toBeDefined();
     expect(TWIST_DRIVES_HUE_RECIPE).toBeDefined();
+    expect(IDLE_HUE_DRIFT_RECIPE).toBeDefined();
+    expect(SOUND_DRIVEN_HUE_RECIPE).toBeDefined();
+    expect(TWIST_DRIVEN_SATURATION_RECIPE).toBeDefined();
+    expect(BREATHING_BLADE_RECIPE).toBeDefined();
+    expect(HEARTBEAT_PULSE_RECIPE).toBeDefined();
+    expect(BATTERY_SAVER_RECIPE).toBeDefined();
   });
 
-  it('MODULATION_RECIPES lists v1.0 bare-source recipes first, then v1.1 expression recipes', () => {
-    // 5 v1.0 + 1 v1.1 = 6 total. v1.0s come first so new users see the
-    // gesture-reactive case before the formula-driven case.
-    expect(MODULATION_RECIPES).toHaveLength(6);
+  it('MODULATION_RECIPES lists bare-source recipes first, then expression recipes', () => {
+    // 8 bare-source + 3 expression = 11 total. Bare-source comes first
+    // so new users see the gesture-reactive case before the formula-driven
+    // case.
+    expect(MODULATION_RECIPES).toHaveLength(11);
     expect(MODULATION_RECIPES[0]).toBe(REACTIVE_SHIMMER_RECIPE);
     expect(MODULATION_RECIPES[1]).toBe(SOUND_REACTIVE_MUSIC_RECIPE);
     expect(MODULATION_RECIPES[2]).toBe(ANGLE_REACTIVE_TIP_RECIPE);
     expect(MODULATION_RECIPES[3]).toBe(CLASH_FLASH_WHITE_RECIPE);
     expect(MODULATION_RECIPES[4]).toBe(TWIST_DRIVES_HUE_RECIPE);
-    expect(MODULATION_RECIPES[5]).toBe(BREATHING_BLADE_RECIPE);
+    expect(MODULATION_RECIPES[5]).toBe(IDLE_HUE_DRIFT_RECIPE);
+    expect(MODULATION_RECIPES[6]).toBe(SOUND_DRIVEN_HUE_RECIPE);
+    expect(MODULATION_RECIPES[7]).toBe(TWIST_DRIVEN_SATURATION_RECIPE);
+    expect(MODULATION_RECIPES[8]).toBe(BREATHING_BLADE_RECIPE);
+    expect(MODULATION_RECIPES[9]).toBe(HEARTBEAT_PULSE_RECIPE);
+    expect(MODULATION_RECIPES[10]).toBe(BATTERY_SAVER_RECIPE);
   });
 
   it('every recipe has a unique id with the `recipe-` prefix', () => {
@@ -385,6 +407,99 @@ describe('Breathing Blade recipe (recipe 6 — v1.1 expression)', () => {
       expect(binding.expression.source).toBe('sin(time * 0.001) * 0.5 + 0.5');
       // ast top-level is a binary + node adding 0.5 to a scaled sin
       expect(binding.expression.ast.kind).toBe('binary');
+    }
+  });
+});
+
+describe('Idle Hue Drift recipe (v1.1 bare-source)', () => {
+  const recipe: ModulationRecipe = IDLE_HUE_DRIFT_RECIPE;
+
+  it('has one binding wiring time → colorHueShiftSpeed with add @ 30%', () => {
+    expect(recipe.bindings).toHaveLength(1);
+    const [binding] = recipe.bindings;
+    expect(binding.source).toBe('time');
+    expect(binding.target).toBe('colorHueShiftSpeed');
+    expect(binding.combinator).toBe('add');
+    expect(binding.amount).toBeCloseTo(0.3, 5);
+  });
+});
+
+describe('Sound-Driven Hue recipe (v1.1 bare-source)', () => {
+  const recipe: ModulationRecipe = SOUND_DRIVEN_HUE_RECIPE;
+
+  it('has one binding wiring sound → colorHueShiftSpeed with add @ 80%', () => {
+    expect(recipe.bindings).toHaveLength(1);
+    const [binding] = recipe.bindings;
+    expect(binding.source).toBe('sound');
+    expect(binding.target).toBe('colorHueShiftSpeed');
+    expect(binding.combinator).toBe('add');
+    expect(binding.amount).toBeCloseTo(0.8, 5);
+  });
+});
+
+describe('Twist-Driven Saturation recipe (v1.1 bare-source)', () => {
+  const recipe: ModulationRecipe = TWIST_DRIVEN_SATURATION_RECIPE;
+
+  it('has one binding wiring twist → colorSaturationPulse with multiply @ 100%', () => {
+    expect(recipe.bindings).toHaveLength(1);
+    const [binding] = recipe.bindings;
+    expect(binding.source).toBe('twist');
+    expect(binding.target).toBe('colorSaturationPulse');
+    expect(binding.combinator).toBe('multiply');
+    expect(binding.amount).toBeCloseTo(1.0, 5);
+  });
+});
+
+describe('Heartbeat Pulse recipe (v1.1 expression)', () => {
+  const recipe: ModulationRecipe = HEARTBEAT_PULSE_RECIPE;
+
+  it('has one expression-based binding on shimmer with replace @ 100%', () => {
+    expect(recipe.bindings).toHaveLength(1);
+    const [binding] = recipe.bindings;
+    expect(binding.source).toBeNull();
+    expect(binding.target).toBe('shimmer');
+    expect(binding.combinator).toBe('replace');
+    expect(binding.amount).toBeCloseTo(1.0, 5);
+  });
+
+  it('expression source matches the abs(sin(time)) heartbeat idiom', () => {
+    const [binding] = recipe.bindings;
+    expect(binding.expression).not.toBeNull();
+    if (binding.expression !== null) {
+      expect(binding.expression.source).toBe('abs(sin(time * 0.002))');
+      // ast top-level is a `call abs(...)` node
+      expect(binding.expression.ast.kind).toBe('call');
+      if (binding.expression.ast.kind === 'call') {
+        expect(binding.expression.ast.fn).toBe('abs');
+        expect(binding.expression.ast.args).toHaveLength(1);
+      }
+    }
+  });
+});
+
+describe('Battery Saver recipe (v1.1 expression)', () => {
+  const recipe: ModulationRecipe = BATTERY_SAVER_RECIPE;
+
+  it('has one expression-based binding on shimmer with replace @ 100%', () => {
+    expect(recipe.bindings).toHaveLength(1);
+    const [binding] = recipe.bindings;
+    expect(binding.source).toBeNull();
+    expect(binding.target).toBe('shimmer');
+    expect(binding.combinator).toBe('replace');
+    expect(binding.amount).toBeCloseTo(1.0, 5);
+  });
+
+  it('expression source matches the clamp(1 - battery, 0, 0.5) idiom', () => {
+    const [binding] = recipe.bindings;
+    expect(binding.expression).not.toBeNull();
+    if (binding.expression !== null) {
+      expect(binding.expression.source).toBe('clamp(1 - battery, 0, 0.5)');
+      // ast top-level is a `call clamp(...)` node with 3 args
+      expect(binding.expression.ast.kind).toBe('call');
+      if (binding.expression.ast.kind === 'call') {
+        expect(binding.expression.ast.fn).toBe('clamp');
+        expect(binding.expression.ast.args).toHaveLength(3);
+      }
     }
   });
 });
