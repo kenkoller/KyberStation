@@ -1331,7 +1331,17 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     }
     captureDeltaAsLayer(ctx, '12. LED body segments (visible canvas)', 'Per-LED filled rectangles with 4-stop vertical gradient (edge dim → mid → bright center → mid → edge dim), plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).', cw, ch);
 
-    // Pass 7: Core whiteout (HDR overexposed center — fills middle of blade body)
+    // Compute actual visible end from LED data (matches engine mask,
+    // not the linear extendProgress which diverges for shatter/fadeout).
+    const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
+    const actualVisibleLen = maxLitT * bladeLenPx;
+
+    // Pass 7: Core whiteout (HDR overexposed center — fills middle of
+    // blade body AND extends past the last LED with a semicircular cap
+    // at the tip so the rounded end matches the body's whiteout band.
+    // The tip whiteout used to live in the dedicated Tip Corona pass,
+    // which has been folded in here so the entire blade has consistent
+    // HDR treatment in one pass.
     const whiteH = coreH * 0.45; // wider hot core reduces dark banding
     const coreWhiteout = glow.coreWhiteout;
     for (let i = 0; i < ledCount; i++) {
@@ -1356,14 +1366,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
       ctx.fillRect(x, bladeYPx - whiteH / 2, segW, whiteH);
     }
-    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}). Simulates the blinding overexposed center real cinematography sells.`, cw, ch);
 
-    // Compute actual visible end from LED data (matches engine mask,
-    // not the linear extendProgress which diverges for shatter/fadeout).
-    const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
-    const actualVisibleLen = maxLitT * bladeLenPx;
-
-    // ── Blade tip corona ──
+    // Tip whiteout cap — semicircle extending past the last LED so the
+    // rounded blade tip carries the same HDR overexposure band as the
+    // body. Color borrowed from the last lit LED.
     if (actualVisibleLen > 1) {
       const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
       let tipR: number, tipG: number, tipB: number;
@@ -1375,35 +1381,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         tipG = leds.getG(tipIdx) * effectiveBri;
         tipB = leds.getB(tipIdx) * effectiveBri;
       }
-
-      // Colored tip cap
-      ctx.fillStyle = rgbStr(tipR, tipG, tipB);
-      ctx.beginPath();
-      ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
-      ctx.fill();
-
-      // White-hot tip center
       const wr = lerpToWhite(tipR, coreWhiteout);
       const wg = lerpToWhite(tipG, coreWhiteout);
       const wb = lerpToWhite(tipB, coreWhiteout);
-      ctx.fillStyle = rgbStr(wr, wg, wb, 0.90);
+      ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
       ctx.beginPath();
       ctx.arc(actualVisibleEnd, bladeYPx, whiteH / 2, -Math.PI / 2, Math.PI / 2);
       ctx.fill();
-
-      // Tip corona glow (larger, softer)
-      const tipGlowR = (maxLitT < 1 ? 65 : 40) * scale * glow.bloomRadius;
-      const tipGlowA = (maxLitT < 1 ? 0.6 : 0.25) * glow.bloomIntensity;
-      const tipGrad = ctx.createRadialGradient(actualVisibleEnd, bladeYPx, 0, actualVisibleEnd, bladeYPx, tipGlowR);
-      tipGrad.addColorStop(0, rgbStr(lerpToWhite(tipR, 0.5), lerpToWhite(tipG, 0.5), lerpToWhite(tipB, 0.5), tipGlowA));
-      tipGrad.addColorStop(0.3, rgbStr(tipR, tipG, tipB, tipGlowA * 0.6));
-      tipGrad.addColorStop(1, rgbStr(tipR, tipG, tipB, 0));
-      ctx.fillStyle = tipGrad;
-      ctx.beginPath();
-      ctx.arc(actualVisibleEnd, bladeYPx, tipGlowR, 0, Math.PI * 2);
-      ctx.fill();
     }
-    captureDeltaAsLayer(ctx, '16. Tip corona (cap + whiteout + glow)', 'Three sub-passes drawn at the blade tip: colored semicircle, white-hot semicircle, wider radial corona gradient. Larger when mid-extension (igniting/retracting) than fully extended.', cw, ch);
+    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure + tip cap)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}). Body band + semicircular cap at the tip. Simulates the blinding overexposed center real cinematography sells, uniformly across the entire visible blade.`, cw, ch);
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
