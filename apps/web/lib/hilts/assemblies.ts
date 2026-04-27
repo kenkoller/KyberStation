@@ -366,6 +366,170 @@ export const palpatineAssembly: HiltAssembly = {
   ],
 };
 
+/**
+ * Anakin (Revenge of the Sith) — single-classic archetype.
+ * Black-rubber inset grip, activation-box switch, flat-cap pommel.
+ */
+export const anakinRotsAssembly: HiltAssembly = {
+  id: 'anakin-rots',
+  displayName: 'Anakin (ROTS)',
+  archetype: 'single-classic',
+  era: 'prequel',
+  faction: 'jedi',
+  description:
+    'Field-machined Jedi hilt with a black-rubber inset grip and '
+    + 'activation-box switch. The Chosen One\'s second saber, before '
+    + 'the fall.',
+  parts: [
+    { partId: 'anakin-rots-emitter' },
+    { partId: 'anakin-rots-switch' },
+    { partId: 'anakin-rots-grip' },
+    { partId: 'anakin-rots-pommel' },
+  ],
+};
+
+/**
+ * Ahsoka Tano (Clone Wars) — single-classic archetype.
+ * Geometric ridged grip + tri-button switch + stepped pommel.
+ */
+export const ahsokaCloneWarsAssembly: HiltAssembly = {
+  id: 'ahsoka-clone-wars',
+  displayName: 'Ahsoka (Clone Wars)',
+  archetype: 'single-classic',
+  era: 'prequel',
+  faction: 'jedi',
+  description:
+    'Padawan-era main hilt with a geometric diamond-cross grip and '
+    + 'tri-button activator. Slightly compressed for the youthful '
+    + 'fighting scale.',
+  parts: [
+    { partId: 'ahsoka-clone-wars-emitter' },
+    { partId: 'ahsoka-clone-wars-switch' },
+    { partId: 'ahsoka-clone-wars-grip' },
+    { partId: 'ahsoka-clone-wars-pommel' },
+  ],
+};
+
+/**
+ * Count Dooku (Canon) — curved archetype.
+ * The full canonical Dooku silhouette: collared emitter, bronze
+ * curved grip, hooked cane-style pommel. Distinct from the legacy
+ * 'count' assembly which uses generic curved parts.
+ */
+export const dookuCanonAssembly: HiltAssembly = {
+  id: 'dooku-canon',
+  displayName: 'Count Dooku (Canon)',
+  archetype: 'curved',
+  era: 'prequel',
+  faction: 'sith',
+  description:
+    'Canonical Count Dooku dueling hilt — collared emitter, bronze-'
+    + 'banded curved grip, and the unmistakable hooked cane-style '
+    + 'pommel. Aristocratic menace, every line.',
+  parts: [
+    { partId: 'dooku-canon-emitter' },
+    { partId: 'bronze-band' },
+    { partId: 'dooku-canon-switch' },
+    { partId: 'dooku-canon-grip' },
+    { partId: 'dooku-canon-pommel' },
+  ],
+};
+
+/**
+ * Asajj Ventress (Pair) — curved archetype.
+ * One of two matched twin-curve hilts. Pair is rendered side-by-side
+ * (or mirrored) at presentation time. Bronze accents throughout.
+ */
+export const ventressPairAssembly: HiltAssembly = {
+  id: 'ventress-pair',
+  displayName: 'Ventress (Pair)',
+  archetype: 'curved',
+  era: 'prequel',
+  faction: 'sith',
+  description:
+    'One of Asajj Ventress\'s matched twin-curve hilts. Compact bend, '
+    + 'twin-button switch, bronze accents — paired with a mirror of '
+    + 'itself in performance.',
+  parts: [
+    { partId: 'ventress-emitter' },
+    { partId: 'ventress-switch' },
+    { partId: 'ventress-grip' },
+    { partId: 'ventress-pommel' },
+  ],
+};
+
+/**
+ * Rey (TROS) — single-classic archetype.
+ * Self-built post-TROS hilt with leather wrap throughout the body
+ * and a yellow-blade-friendly silhouette.
+ */
+export const reyTrosAssembly: HiltAssembly = {
+  id: 'rey-tros',
+  displayName: 'Rey (TROS)',
+  archetype: 'single-classic',
+  era: 'sequel',
+  faction: 'jedi',
+  description:
+    'Self-built ceremonial hilt — leather strap wraps the emitter, '
+    + 'switch, grip, and pommel into a continuous handmade silhouette. '
+    + 'The Skywalker name lights yellow.',
+  parts: [
+    { partId: 'rey-tros-emitter' },
+    { partId: 'rey-tros-switch' },
+    { partId: 'rey-tros-grip' },
+    { partId: 'rey-tros-pommel' },
+  ],
+};
+
+/**
+ * Plo Koon — single-ornate archetype.
+ * Council-grade Jedi formal hilt — chrome-banded, multi-step ornate
+ * pommel, every line precisely intended.
+ */
+export const ploKoonAssembly: HiltAssembly = {
+  id: 'plo-koon',
+  displayName: 'Plo Koon',
+  archetype: 'single-ornate',
+  era: 'prequel',
+  faction: 'jedi',
+  description:
+    'Master of the Order-grade hilt — twin chrome-banded emitter, '
+    + 'long polished grip with triple chrome trims, and a multi-step '
+    + 'finial. Council-formal at every joint.',
+  parts: [
+    { partId: 'plo-koon-emitter' },
+    { partId: 'chrome-trim' },
+    { partId: 'plo-koon-switch' },
+    { partId: 'plo-koon-grip' },
+    { partId: 'plo-koon-pommel' },
+  ],
+};
+
+/**
+ * Leia (Rebels) — single-classic archetype.
+ * Modest training saber from her Rebels-era Jedi instruction. Reuses
+ * the existing pointed-pommel — the briefing notes Leia's hilt has
+ * no character-specific pommel and the pointed silhouette is the
+ * closest canonical match.
+ */
+export const leiaRebelsAssembly: HiltAssembly = {
+  id: 'leia-rebels',
+  displayName: 'Leia (Rebels)',
+  archetype: 'single-classic',
+  era: 'original',
+  faction: 'jedi',
+  description:
+    'Training-grade saber from Princess Leia\'s Rebels-era Jedi '
+    + 'instruction with Luke. Minimal lathework, single button — '
+    + 'the discipline of beginning.',
+  parts: [
+    { partId: 'leia-rebels-emitter' },
+    { partId: 'leia-rebels-switch' },
+    { partId: 'leia-rebels-grip' },
+    { partId: 'classic-pommel' },
+  ],
+};
+
 export const ASSEMBLY_CATALOG: Record<string, HiltAssembly> = {
   [graflexAssembly.id]: graflexAssembly,
   [mppAssembly.id]: mppAssembly,
@@ -383,6 +547,13 @@ export const ASSEMBLY_CATALOG: Record<string, HiltAssembly> = {
   [calKestisAssembly.id]: calKestisAssembly,
   [starkillerAssembly.id]: starkillerAssembly,
   [palpatineAssembly.id]: palpatineAssembly,
+  [anakinRotsAssembly.id]: anakinRotsAssembly,
+  [ahsokaCloneWarsAssembly.id]: ahsokaCloneWarsAssembly,
+  [dookuCanonAssembly.id]: dookuCanonAssembly,
+  [ventressPairAssembly.id]: ventressPairAssembly,
+  [reyTrosAssembly.id]: reyTrosAssembly,
+  [ploKoonAssembly.id]: ploKoonAssembly,
+  [leiaRebelsAssembly.id]: leiaRebelsAssembly,
 };
 
 export function getAssembly(id: string): HiltAssembly | undefined {

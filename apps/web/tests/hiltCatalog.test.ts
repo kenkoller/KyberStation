@@ -151,3 +151,98 @@ describe('v0.13.1 content batch — new assemblies', () => {
     }
   });
 });
+
+describe('v0.15.0 content batch — Stage 2 character parts', () => {
+  const newPartIds = [
+    // Emitters
+    'anakin-rots-emitter',
+    'ahsoka-clone-wars-emitter',
+    'dooku-canon-emitter',
+    'ventress-emitter',
+    'rey-tros-emitter',
+    'plo-koon-emitter',
+    'leia-rebels-emitter',
+    // Switches
+    'anakin-rots-switch',
+    'ahsoka-clone-wars-switch',
+    'dooku-canon-switch',
+    'ventress-switch',
+    'rey-tros-switch',
+    'plo-koon-switch',
+    'leia-rebels-switch',
+    // Grips
+    'anakin-rots-grip',
+    'ahsoka-clone-wars-grip',
+    'dooku-canon-grip',
+    'ventress-grip',
+    'rey-tros-grip',
+    'plo-koon-grip',
+    'leia-rebels-grip',
+    // Pommels
+    'anakin-rots-pommel',
+    'ahsoka-clone-wars-pommel',
+    'dooku-canon-pommel',
+    'ventress-pommel',
+    'rey-tros-pommel',
+    'plo-koon-pommel',
+    // Accents
+    'bronze-band',
+    'chrome-trim',
+  ];
+
+  it('catalog contains all 29 new Stage 2 parts', () => {
+    expect(newPartIds).toHaveLength(29);
+    for (const id of newPartIds) {
+      expect(getPart(id), `part "${id}" missing from catalog`).toBeDefined();
+    }
+  });
+
+  it('all 29 new parts carry era + faction metadata', () => {
+    for (const id of newPartIds) {
+      const part = getPart(id)!;
+      expect(part.era, `part "${id}" missing era`).toBeDefined();
+      expect(part.faction, `part "${id}" missing faction`).toBeDefined();
+    }
+  });
+
+  it('all 29 new parts pass spec width 48 + cx 24 invariants', () => {
+    for (const id of newPartIds) {
+      const part = getPart(id)!;
+      expect(part.svg.width, `${id} canvas width`).toBe(48);
+      expect(part.topConnector.cx, `${id} top cx`).toBe(24);
+      expect(part.bottomConnector.cx, `${id} bottom cx`).toBe(24);
+      expect(part.topConnector.cy, `${id} top cy`).toBe(0);
+      expect(part.bottomConnector.cy, `${id} bottom cy`).toBe(part.svg.height);
+    }
+  });
+});
+
+describe('v0.15.0 content batch — Stage 2 character assemblies', () => {
+  const newAssemblyIds = [
+    'anakin-rots',
+    'ahsoka-clone-wars',
+    'dooku-canon',
+    'ventress-pair',
+    'rey-tros',
+    'plo-koon',
+    'leia-rebels',
+  ];
+
+  it('all 7 new assemblies are in the catalog', () => {
+    for (const id of newAssemblyIds) {
+      expect(getAssembly(id), `assembly "${id}" missing`).toBeDefined();
+    }
+  });
+
+  it('all 7 new assemblies compose cleanly in strict mode', () => {
+    for (const id of newAssemblyIds) {
+      const assembly = getAssembly(id)!;
+      const { hilt, errors } = resolveAssembly(assembly, PART_CATALOG, 'strict');
+      expect(
+        errors,
+        `${id}: ${errors.map((e) => e.message).join('; ')}`,
+      ).toHaveLength(0);
+      expect(hilt, `${id} produced null hilt`).not.toBeNull();
+    }
+  });
+});
