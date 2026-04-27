@@ -543,7 +543,55 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-04-24 late, v0.14.0 Visualization Polish + Workbench Chrome Pass)
+## Current State (2026-04-27 overnight, Modulation Routing v1.1 Core)
+
+**Active branch: `main` (tip `ddaa3b6`).** Eight PRs landed overnight on top of v0.14.0, completing the v1.1 Core scope from `docs/MODULATION_ROUTING_ROADMAP.md`. Last tag is still `v0.14.0` — pending hardware-gated v0.15.0 tag. Tonight's run was Phase 1 (4 parallel agents in worktrees) + Phase 2a (3 parallel agents) + Phase 2b (Wave 5, salvaged after agent stalled pre-commit).
+
+### What shipped overnight (chronological)
+
+| # | PR | Wave | Scope |
+|---|---|---|---|
+| 1 | [#57](https://github.com/kenkoller/KyberStation/pull/57) | Wave 1 | **Activate 6 dormant modulators** — `twist` / `battery` / `lockup` / `preon` / `ignition` / `retraction` plates with bespoke CSS-keyframe live-viz glyphs (rotating axis bar, battery-fill cell, sustained pulse ring, flickering charge spark, extension/contraction wipes). Plate grid bumped to `lg:grid-cols-4 xl:grid-cols-6` to fit 11 readably. Touched `routing/ModulatorPlateBar.tsx` + `routing/AddBindingForm.tsx`. |
+| 2 | [#58](https://github.com/kenkoller/KyberStation/pull/58) | Wave 4 | **5 new starter recipes** — `heartbeat-pulse` (`abs(sin(time*0.002))`), `battery-saver` (`clamp(1-battery, 0, 0.5)`), `idle-hue-drift` (time→colorHueShiftSpeed), `sound-driven-hue` (sound→colorHueShiftSpeed), `twist-driven-saturation` (twist→colorSaturationPulse). Recipe library: 6 → 11. `V1_0_RECIPES` now 8; `V1_1_EXPRESSION_RECIPES` now 3 (Breathing + Heartbeat + Battery Saver). +18 tests. Brightness target swapped to shimmer in two recipes since `brightness` isn't a discrete leaf in BladeConfig (matches the existing `breathing-blade` substitution). |
+| 3 | [#59](https://github.com/kenkoller/KyberStation/pull/59) | Wave 9 | **7 new user-guide pages** — `recipes.md` / `combinators.md` / `modulators.md` / `expressions.md` / `canon-patterns.md` / `troubleshooting.md` / `sharing.md`. ~5,400 new words total. Voice-matched to the existing quick-start. Honest-scope-tagged throughout — every recipe + feature flagged `(v1.0)` / `(v1.1+)` / `(v1.2+)`. Updated `your-first-wire.md` with a "Read more" section linking the 7 new pages. |
+| 4 | [#60](https://github.com/kenkoller/KyberStation/pull/60) | Wave 6 | **AST-level template injection** — `composeBindings(ast, mappable)` in `packages/codegen/src/proffieOSEmitter/composeBindings.ts` walks the style AST and grafts each mapped binding's `astPatch` into the slot identified by `targetPath`. v1.1 Core slot set handles the **shimmer-Mix slot pattern** (`Mix<Int<N>, X, Y>`) used by `stable`/`unstable`/`pulse`/`photon`/`crystalShatter`/`cinder`. `generateStyleCode` rewired: `mapBindings` → `applyModulationSnapshot` (full set baseline) → `buildAST` → `composeBindings` (overwrites mappable slots with live drivers) → `emitCode` → v1.1 comment block distinguishing live / snapshotted / deferred / skipped bindings. **Targets handled live**: `shimmer`. **Targets still deferred to snapshot** (v1.2 candidates): `baseColor.r/g/b` + timing scalars — would need `Mix<driver, ColorLow, ColorHigh>` restructuring. Test file shipped separately as PR #62 (Wave 6b) due to a worktree-environment file-revert issue mid-agent. |
+| 5 | [#61](https://github.com/kenkoller/KyberStation/pull/61) | Wave 2 | **Reciprocal hover highlight** — hovering a parameter row in ParameterBank now highlights every modulator plate that drives it. New `uiStore.hoveredParameterPath: string \| null` field + setter, written from `SliderControl`'s pointer events. `ModulatorPlate` reads + computes `isDrivenByThis = bindings.some(b => b.source === id && b.target === hoveredParameterPath && !b.bypassed)`. When true (and not armed), layers a 1.5 px outer ring + opacity boost on top of the existing inset stripe. Bypassed bindings filtered out. Multi-driver case lights multiple plates simultaneously. |
+| 6 | [#62](https://github.com/kenkoller/KyberStation/pull/62) | Wave 6b | **Backfill `composeBindings.test.ts`** — 17 tests across 9 groups: pure-function invariants, single binding swing→shimmer @ 60%, breathing heuristic detection, multi-binding composition, fall-through to deferred, purity (no mutation / idempotency / structural sharing), result shape, `generateStyleCode` integration, snapshot/live boundary. Codegen test count 1842 → 1859. |
+| 7 | [#63](https://github.com/kenkoller/KyberStation/pull/63) | Wave 3 | **Per-binding expression editing** — `BindingList`'s `BindingRow` shows a magenta `fx` button on expression-bound rows (where `binding.source === null && binding.expression !== null`). Clicking it opens `ExpressionEditor` as a popover preloaded with the binding's existing source. The editor's existing `existingBindingId` flow correctly delegates to `bladeStore.updateBinding`. New 28-px fx-slot grid column on every row keeps alignment consistent across mixed expression / bare-source lists. +7 tests in `apps/web/tests/bindingListEditExpression.test.tsx`. |
+| 8 | [#64](https://github.com/kenkoller/KyberStation/pull/64) | Wave 5 | **True drag-to-route** — HTML5 drag-and-drop layered on click-to-route as the primary mouse/trackpad gesture (Vital / Bitwig pattern). Plates `draggable={true}` write modulator id onto `dataTransfer` under MIME type `application/x-kyberstation-modulator`. Slider rows are drop targets with `isDropTarget` visual cue (dashed accent in dragged modulator's identity color). New `useClickToRoute.dragBind(modulatorId, targetPath)` action bypasses the arm/click sequence. Same `BindingCreateResult` gating semantics as click-to-route. `MODULATOR_DRAG_MIME_TYPE` exported as a constant. Click-to-route preserved unchanged as the keyboard / a11y fallback. +9 tests. **Salvage note**: original Wave 5 agent stalled post-implementation but pre-commit; parent session re-ran gates against the worktree (clean) and committed/pushed. |
+
+### Test deltas overnight
+
+| Package | Pre-night | Post-night | Δ |
+|---|---:|---:|---:|
+| codegen | 1,842 | 1,859 | +17 |
+| web | 1,025 | ≥1,041 (+9 from #64; more from #61, #63) | ≥+16 |
+| presets | 29 | 47 | +18 |
+
+### Architectural notes worth carrying forward
+
+- **Worktree path discipline.** Three of seven background agents tonight (Wave 4, Wave 6, Wave 6b) initially leaked file writes into the main repo path instead of their own worktree, requiring recovery. Wave 5 stalled before committing entirely. Future agent prompts must include the explicit `cd <worktree-path> && pwd` confirmation step + the warning header about other agents that hit the issue.
+- **Wave 5 salvage pattern**: when an agent stalls after writing files but before committing, check the worktree state directly — if typecheck + tests pass, the parent session can commit + push + open PR using the agent's exact code. Don't re-run the agent to redo the work.
+- **`shimmer-Mix` slot was the canonical first AST target.** It's the most common modulation entry in ProffieOS (every base-style passes shimmer through `Mix<Int<N>, X, Y>` for `AudioFlicker` blending). Future composer expansion (per-channel RGB, timing scalars) needs deeper AST restructuring per the Wave 6 PR body.
+- **Reciprocal hover replaces the legacy 1:1 stub.** The 2026-04-20 ModulatorRow's `hoveredModulatorId` 1:1 mapping was always meant as a placeholder until v1.1 wired the proper bindings-aware version. Wave 2 closes that.
+
+### Still open (post-overnight)
+
+- **Wave 7 — Kyber Glyph v2 modulation round-trip.** PR #38 (the multi-version dispatcher) merged earlier; the actual v2 encoder body for the `modulation` payload field is still outstanding.
+- **Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates.** L scope (~6-8 hours), its own session.
+- **Wave 10 — Hardware validation + V2.2 modulation flash + cut `v0.15.0` tag.** Hardware-gated. Handoff doc at `docs/NEXT_HARDWARE_MODULATION_SESSION.md` still applies; refresh it for v1.1 Core scope before running.
+- **Wave 6 follow-on — composer slot expansion.** v1.1 Core ships with shimmer-Mix only. Per-channel RGB + timing scalars are v1.2 candidates per the PR #60 body.
+- **Manual visual verification of all 8 PRs in the live editor.** Browser-driven walkthrough of: 11 plates render with viz, drag-to-route lands a binding, fx-edit on existing binding updates correctly, reciprocal hover lights the right plate, generated config.h shows the v1.1 comment block.
+
+### Ready for morning
+
+- All 8 PRs CI-green and merged to main. Local main = origin/main = `ddaa3b6`.
+- Worktrees still locked under `.claude/worktrees/agent-*` from background agents — manually clean via `git worktree remove --force` for each, OR they may auto-release after the parent session ends.
+- No tag cut. Recommend `v0.15.0` post-hardware-validation per the same flow used for v0.14.0.
+
+### Pre-overnight state (kept for history)
+
+### Earlier 2026-04-24 — v0.14.0 Visualization Polish + Workbench Chrome Pass
 
 **Active branch: `feat/v0.14.0-blade-polish` — PR [#46](https://github.com/kenkoller/KyberStation/pull/46), 29 commits, pushed to origin, NOT YET MERGED.** This branch ships the v0.12.x Visualization Polish Pass (promoted into the v0.14.0 release slot) plus two multi-hour iterative-walkthrough sweeps with Ken on workbench chrome / layout refinements.
 

@@ -11,6 +11,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path.
 
+### Modulation Routing v1.1 Core — overnight wave (2026-04-27)
+
+Eight PRs landed overnight on top of v0.14.0, completing the v1.1 Core scope from `docs/MODULATION_ROUTING_ROADMAP.md`. Three parallel-agent phases (Phase 1: 4 worktree agents, Phase 2a: 3 worktree agents, Phase 2b: Wave 5 salvaged after agent stalled). All CI-green, all merged. **No tag cut yet — pending hardware validation. Candidate `v0.15.0`.**
+
+#### Added
+
+- **All 11 modulators surface as plates** (was 5 in v1.0). PR #57 unblocks `twist` / `battery` / `lockup` / `preon` / `ignition` / `retraction` with bespoke CSS-keyframe live-viz glyphs. Plate grid `lg:grid-cols-4 xl:grid-cols-6` for 11-plate readability.
+- **Reciprocal hover highlight** — hovering any parameter row in ParameterBank now lights up every modulator plate that drives it (PR #61). New `uiStore.hoveredParameterPath` field. Multi-driver case lights multiple plates simultaneously. Replaces the 2026-04-20 1:1 placeholder mapping.
+- **Per-binding expression editing** — magenta `fx` button on every expression-bound row in `BindingList` opens `ExpressionEditor` preloaded with the existing source for in-place iteration (PR #63). Bare-source rows leave the slot empty so column alignment stays consistent.
+- **True drag-to-route** — HTML5 drag-and-drop layered on click-to-route as the primary mouse/trackpad gesture, Vital / Bitwig style (PR #64). Plates are draggable; slider rows are drop targets with identity-color visual cue. New `useClickToRoute.dragBind(modulatorId, targetPath)` action. MIME type `application/x-kyberstation-modulator` exported as a constant. Click-to-route preserved as keyboard / a11y fallback.
+- **AST-level template injection in codegen** (PR #60) — `composeBindings(ast, mappable)` walks the style AST and grafts each mapped binding's `astPatch` into the slot identified by `targetPath`. v1.1 Core ships the **shimmer-Mix slot pattern** (`Mix<Int<N>, X, Y>`) used by every base-style. `generateStyleCode` rewired: mapBindings → applyModulationSnapshot baseline → buildAST → composeBindings → emitCode + v1.1 comment block distinguishing live / snapshotted / deferred / skipped bindings. Snapshot path retained for unmappable bindings as the always-flashable fallback.
+- **5 new starter recipes** (PR #58): `heartbeat-pulse` (`abs(sin(time*0.002))`), `battery-saver` (`clamp(1-battery, 0, 0.5)`), `idle-hue-drift`, `sound-driven-hue`, `twist-driven-saturation`. Recipe library 6 → 11. `V1_0_RECIPES` 8; `V1_1_EXPRESSION_RECIPES` 3.
+- **7 new user-guide pages** (PR #59) — `recipes.md` / `combinators.md` / `modulators.md` / `expressions.md` / `canon-patterns.md` / `troubleshooting.md` / `sharing.md`. ~5,400 new words, voice-matched to the existing quick-start. Honest-scope-tagged (`v1.0` / `v1.1+` / `v1.2+`).
+- `MODULATOR_DRAG_MIME_TYPE` constant exported from `useClickToRoute` (PR #64).
+- `MODULATOR_DRAG_MIME_TYPE` constant + `dragBind` action in `useClickToRoute` (PR #64).
+- `applyModulationSnapshot.ts` — new `onlyBindingIds` filter + `CommentBlockExtras` shape with `mappedBindings` / `deferredFromMapping` for the v1.1 comment block (PR #60).
+
+#### Changed
+
+- **`generateStyleCode` flow rewired** to a 6-step pipeline (PR #60): mapBindings → applyModulationSnapshot baseline → buildAST → composeBindings (overwrites mappable slots with live drivers) → emitCode → v1.1 comment block. Backward-compatible — configs without modulation payload short-circuit to byte-identical v0.14.0 output.
+- **BindingList row grid** picked up a 28-px fx-slot column (PR #63) — bare-source rows render an empty placeholder so the columns stay aligned across mixed lists.
+- **Modulator plate grid** bumped from `lg:grid-cols-5` to `lg:grid-cols-4 xl:grid-cols-6` to fit 11 plates readably (PR #57).
+
+#### Tests
+
+- **codegen**: 1,842 → 1,859 (+17 new in `composeBindings.test.ts`, PR #62).
+- **web**: 1,025 → 1,041+ (+9 dragBind in `useClickToRoute.test.ts` from PR #64; +7 in `bindingListEditExpression.test.tsx` from PR #63; reciprocal-hover regression coverage from PR #61).
+- **presets**: 29 → 47 (+18 in `recipes.test.ts` from PR #58).
+
+#### Backfill
+
+- **PR #62 — composeBindings test backfill.** PR #60 (Wave 6) shipped the AST composer without test coverage due to a worktree-environment file-revert issue mid-agent. PR #62 adds 17 tests across 9 groups (pure-function invariants, single binding, breathing heuristic, multi-binding, deferred fall-through, purity / idempotency / structural sharing, result shape, `generateStyleCode` integration, snapshot/live boundary).
+
+#### Salvage
+
+- **PR #64 — Wave 5 (drag-to-route) post-stall recovery.** Background agent stalled post-implementation but pre-commit. Parent session re-ran typecheck + tests against the worktree (clean, 1041 web tests passing), committed the agent's exact code, pushed, and opened the PR. Code is the agent's; commit message + PR shape are the parent session's.
+
+#### Open / pending
+
+- Wave 7 — Kyber Glyph v2 modulation round-trip (encoder body)
+- Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates (L scope, separate session)
+- Wave 10 — Hardware validation + V2.2 modulation flash + cut `v0.15.0` tag (hardware-gated)
+- Wave 6 follow-on — composer slot expansion to per-channel RGB + timing scalars (v1.2 candidates per PR #60 body)
+- Manual visual verification of all 8 PRs in the live editor
+
 ### Blade render rewrite — capsule rasterizer + additive composite (2026-04-27)
 
 Major rework of the blade preview pipeline, landed on `feat/blade-layers-debug`. Collapses the prior body + separate tip cap + parallel offscreen mirror into a single per-pixel capsule rasterizer that's the source of truth for blade geometry. Pipeline goes from 14 passes → 13, ~140 lines of body/cap matching code removed.
