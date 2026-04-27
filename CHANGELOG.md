@@ -119,6 +119,29 @@ Performance: 120 FPS at 1600×1000 viewport / DPR 2. Per-pixel rasterization add
 
 Status: shipped on `feat/blade-layers-debug`, NOT yet merged to main. Branch is in a clean checkpoint state; further tweaks to white-shift/bloom layering deferred.
 
+### Left-rail overhaul (2026-04-25)
+
+Replaced the multi-tab + multi-column workbench with a unified **Sidebar + MainContent** shell driven by a single `uiStore.activeSection` slot. Page-tabs nav, the DesignPanel pill bar, the macro-knob PerformanceBar, and the swipe-driven tablet tab UI all retired together. Seven PRs (#47-#53) shipped in one day via parallel-agent dispatch.
+
+**Final desktop shape.** The header keeps its utility chrome (logo, Share, FPS, Sound, Docs, ⌘K, Wizard, Settings) but loses the Gallery/Design/Audio/Output tabs — the sidebar absorbs them. Inspector stays left of the canvas as the always-visible "Quick Controls" surface; RightRail (STATE + ANALYSIS) stays right; new Sidebar (~280px) + MainContent split fills the panel area below the canvas. Tablet (600–1023px) uses the same shell at 240px sidebar width. Mobile is intentionally unchanged in this sprint — a small-screen drawer/bottom-sheet UX pass is owned for a follow-up.
+
+**Sidebar groups (collapsible, localStorage-persisted)**: GALLERY → /gallery · APPEARANCE (Blade Style · Color) · BEHAVIOR (Ignition & Retraction · Combat Effects · Gesture Controls) · ADVANCED (Layer Compositor · Motion Simulation · Hardware · My Crystal) · ROUTING BETA (board-gated) · AUDIO · OUTPUT.
+
+**Quick Controls (Inspector left rail).** GALLERY tab retired. Single-surface stack: Surprise Me + Undo · 8 canonical color chips (Blue / Red / Green / Yellow / Purple / Orange / White / Cyan) + Custom (jumps to deep Color section) · compact ignition + retraction MGP pickers with inline ms field · the existing 7 ParameterBank sliders. Every fast-access section is a thin view over the same store as the deep sidebar section, so changes propagate both directions.
+
+**Three panel merges** ([#47](https://github.com/kenkoller/KyberStation/pull/47)):
+- Colors + Gradient Builder → unified `ColorPanel` (channel selector at top; gradient region only renders for the Base channel)
+- BladeHardwarePanel + PowerDrawPanel → `HardwarePanel` (config inputs on top, live power readout below the divider with `<StatusSignal>` headroom indicator)
+- ModulatorPlateBar + BindingList → `RoutingPanel` (plate bar + binding count divider + active bindings list)
+
+**SettingsModal reorganized to 3 tabs** ([#47](https://github.com/kenkoller/KyberStation/pull/47)): Appearance (Aurebesh Mode · Display · Row density) · Behavior (UI Sounds · Effect auto-release · Keyboard Shortcuts · Feedback) · Advanced (Performance Tier · Layout). The "Performance Bar" toggle was deleted alongside the bar itself.
+
+**Other shipped pieces.** Motion Simulation restored under sidebar Advanced ([#49](https://github.com/kenkoller/KyberStation/pull/49)) after PR 1 dropped its mount point. ⌘1–⌘4 digit nav rewired from `setActiveTab` → `setActiveSection`; ⌘5 still toggles the All States takeover. KeyboardShortcutsModal now surfaces ⌘1–⌘5, ⌘K, ⌘Z, ⌘⇧Z as first-class Editor rows ([#49](https://github.com/kenkoller/KyberStation/pull/49)). The 19-ignition + 13-retraction style tables that were copy-pasted across three sites moved to a shared `lib/transitionCatalogs.ts` ([#50](https://github.com/kenkoller/KyberStation/pull/50)). The previously-inert Custom color chip now jumps to the deep Color sidebar section ([#51](https://github.com/kenkoller/KyberStation/pull/51)). Tablet shell migrated to Sidebar + MainContent ([#52](https://github.com/kenkoller/KyberStation/pull/52)). PerformanceBar.tsx + MacroKnob.tsx + QuickMacroPreview.tsx finally deleted ([#53](https://github.com/kenkoller/KyberStation/pull/53)) — the surviving `shiftLedColor` helper moved to a tiny `lib/shiftLight.ts` for ShiftLightRail's exclusive use.
+
+**Test count:** 1030 / 1030 passing across 58 files (was 1044 across 59 pre-overhaul; net change reflects the deletion of the MacroKnob test suite + the addition of QuickColorChips + QuickTransitionPicker + Inspector regression tests). Typecheck clean across all 10 workspace packages. Verified end-to-end at desktop (1600×1000) and tablet (900×1024) viewports.
+
+**Deferred** (post-overhaul follow-ups, not blocking a v0.15 tag): mobile shell migration (needs UX call on drawer vs bottom-sheet), inline custom-color popover, and `compactThumbnail` field on transition catalog entries to author crisp 24×24 MGP triggers instead of scaled-down 100×60 SVGs.
+
 ### Saber Wizard — hardware step (2026-04-22)
 
 Added a new first step to the Saber Wizard so newcomers tell the app about the saber they actually own (blade length + board) before picking aesthetic. The 3-step archetype/colour/vibe flow shifts to steps 2/3/4 and is otherwise unchanged.
