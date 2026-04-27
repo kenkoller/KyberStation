@@ -23,6 +23,7 @@ import {
   decideBindingOutcome,
   buildBinding,
   useClickToRoute,
+  MODULATOR_DRAG_MIME_TYPE,
   type BindingCreateResult,
 } from '../hooks/useClickToRoute';
 import { useUIStore } from '../stores/uiStore';
@@ -366,5 +367,167 @@ describe('useClickToRoute — Escape disarms (via setArmedModulatorId)', () => {
     // covered in the Component integration test (to land in a follow-up
     // session alongside the Inspector ROUTING tab).
     expect(typeof useClickToRoute).toBe('function');
+  });
+});
+
+// ─── Wave 5 — drag-to-route (dragBind action) ─────────────────────────────
+//
+// dragBind is the one-shot binding creation path used by ParameterBank's
+// slider-row onDrop handler. It bypasses the arm/click two-step entirely:
+// given the dragged modulator id from dataTransfer + the target path
+// under the cursor, it goes straight from `(modulatorId, targetPath)` to
+// a binding, gated by the same modulatable + board-permits checks as the
+// click path.
+//
+// We test it through the same store-driven adapter pattern the click-to-
+// route tests use: build a `dragBind` simulator that mirrors the hook's
+// real `dragBind` callback (decideBindingOutcome with armedModulatorId =
+// dragged id, then buildBinding + addBinding + clear-armed-if-set), then
+// drive it with happy-path + non-modulatable + board-rejects scenarios.
+
+describe('useClickToRoute — dragBind (Wave 5)', () => {
+  let mockAddBinding: (b: SerializedBinding) => void;
+  let bindings: SerializedBinding[];
+  let idCounter: number;
+
+  beforeEach(() => {
+    resetUIStoreArm();
+    bindings = [];
+    idCounter = 0;
+    mockAddBinding = vi.fn((b: SerializedBinding) => {
+      bindings.push(b);
+    });
+  });
+
+  function callHook(boardId: string = BOARD_FULL) {
+    return {
+      get armedModulatorId() {
+        return getArmedId();
+      },
+      arm(id: string) {
+        const ui = useUIStore.getState() as unknown as {
+          setArmedModulatorId?: (v: string | null) => void;
+        };
+        ui.setArmedModulatorId?.(id);
+      },
+      dragBind(modulatorId: string, targetPath: string): BindingCreateResult {
+        const outcome = decideBindingOutcome({
+          armedModulatorId: modulatorId,
+          targetPath,
+          boardId,
+        });
+        if (outcome.kind !== 'allowed') {
+          return outcome;
+        }
+        idCounter += 1;
+        const id = `test-binding-${idCounter}`;
+        const binding = buildBinding({ id, source: modulatorId, target: targetPath });
+        mockAddBinding(binding);
+        // Clear any armed state so the user's drag-expressed intent
+        // doesn't leave a stale armed plate behind. Mirrors the hook.
+        if (getArmedId() !== null) {
+          const ui = useUIStore.getState() as unknown as {
+            setArmedModulatorId?: (v: string | null) => void;
+          };
+          ui.setArmedModulatorId?.(null);
+        }
+        return { kind: 'created', bindingId: id };
+      },
+    };
+  }
+
+  it('happy path: dragBind with a valid modulator + modulatable target on a full board creates a binding', () => {
+    const h = callHook();
+    const result = h.dragBind('swing', MODULATABLE);
+    expect(result.kind).toBe('created');
+    if (result.kind !== 'created') throw new Error('unreachable');
+    expect(result.bindingId).toMatch(/^test-binding-/);
+    expect(mockAddBinding).toHaveBeenCalledTimes(1);
+    const b = bindings[0];
+    expect(b.source).toBe('swing');
+    expect(b.target).toBe(MODULATABLE);
+    expect(b.amount).toBe(0.6);
+    expect(b.combinator).toBe('add');
+    expect(b.bypassed).toBe(false);
+    expect(b.expression).toBeNull();
+  });
+
+  it('returns ignored/not-modulatable when the target is a non-modulatable parameter', () => {
+    const h = callHook();
+    const result = h.dragBind('swing', NOT_MODULATABLE);
+    expect(result).toEqual({ kind: 'ignored', reason: 'not-modulatable' });
+    expect(mockAddBinding).not.toHaveBeenCalled();
+  });
+
+  it('returns ignored/not-modulatable when the target is an unknown path', () => {
+    const h = callHook();
+    const result = h.dragBind('swing', UNKNOWN);
+    expect(result).toEqual({ kind: 'ignored', reason: 'not-modulatable' });
+    expect(mockAddBinding).not.toHaveBeenCalled();
+  });
+
+  it('returns ignored/board-rejects when the board does not permit modulation', () => {
+    const h = callHook(BOARD_PREVIEW);
+    const result = h.dragBind('swing', MODULATABLE);
+    expect(result).toEqual({ kind: 'ignored', reason: 'board-rejects' });
+    expect(mockAddBinding).not.toHaveBeenCalled();
+  });
+
+  it('does not require a plate to be armed (drag-to-route is independent of click-to-route arm state)', () => {
+    const h = callHook();
+    expect(h.armedModulatorId).toBeNull(); // start with nothing armed
+    const result = h.dragBind('clash', 'baseColor.r');
+    expect(result.kind).toBe('created');
+    expect(mockAddBinding).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears any previously-armed plate after a successful drop (drop wins over stale arm state)', () => {
+    const h = callHook();
+    h.arm('swing'); // user had armed swing via click before they decided to drag clash instead
+    expect(h.armedModulatorId).toBe('swing');
+    const result = h.dragBind('clash', MODULATABLE);
+    expect(result.kind).toBe('created');
+    // Drop wins. The dropped source ('clash') is what got bound, and
+    // the stale armed plate ('swing') is cleared so the next click
+    // doesn't accidentally fire a phantom click-to-route binding.
+    expect(h.armedModulatorId).toBeNull();
+    expect(bindings[0].source).toBe('clash');
+  });
+
+  it('successive drops accumulate distinct binding IDs', () => {
+    const h = callHook();
+    const r1 = h.dragBind('swing', 'shimmer');
+    const r2 = h.dragBind('clash', 'baseColor.r');
+    expect(r1.kind).toBe('created');
+    expect(r2.kind).toBe('created');
+    if (r1.kind === 'created' && r2.kind === 'created') {
+      expect(r1.bindingId).not.toBe(r2.bindingId);
+    }
+    expect(bindings).toHaveLength(2);
+  });
+});
+
+// ─── Wave 5 — drag MIME type drift sentinel ───────────────────────────────
+
+describe('MODULATOR_DRAG_MIME_TYPE', () => {
+  it('matches the exact wire-format string used by ParameterBank + ModulatorPlateBar', () => {
+    // This is a drift sentinel: the MIME type is the contract between
+    // the drag source (ModulatorPlateBar's onDragStart) and the drop
+    // target (ParameterBank SliderControl's onDragOver/onDrop). If the
+    // string drifts in one place, drag-to-route silently breaks across
+    // the whole UI. Pin the value here so any change forces a
+    // deliberate test update + cross-reference at both ends.
+    expect(MODULATOR_DRAG_MIME_TYPE).toBe('application/x-kyberstation-modulator');
+  });
+
+  it('is a kyberstation-specific MIME type (rejects external app drags)', () => {
+    // The MIME type is intentionally namespaced so random external
+    // drags (text selections from other apps, files dragged from
+    // Finder, images from a browser tab) don't match the slider-row
+    // drop target's `dataTransfer.types.includes(...)` check. This
+    // assertion guards against accidentally widening the type to
+    // something more permissive (e.g. 'text/plain') that would let
+    // any drag activate the drop cue.
+    expect(MODULATOR_DRAG_MIME_TYPE).toMatch(/^application\/x-kyberstation-/);
   });
 });

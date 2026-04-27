@@ -1,7 +1,10 @@
 'use client';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, type CSSProperties, type DragEvent } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
-import { useClickToRoute } from '@/hooks/useClickToRoute';
+import {
+  useClickToRoute,
+  MODULATOR_DRAG_MIME_TYPE,
+} from '@/hooks/useClickToRoute';
 import { useUIStore } from '@/stores/uiStore';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
@@ -216,6 +219,22 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   const boardId = useBoardProfile().boardId;
   const [showFx, setShowFx] = useState(false);
 
+  // ── Drag-to-route drop-target state (Wave 5) ──
+  // While a modulator plate is being dragged over this row, we paint a
+  // distinct dashed cue (visually separate from ARMED / HOVERED /
+  // BOUND so users can distinguish "I'm dragging onto this" from the
+  // other three states). `dragModulatorId` is non-null only between
+  // dragenter and (drop|dragleave). `dragDepthRef` tracks dragenter
+  // vs. dragleave events: child elements inside the row each fire a
+  // pair of dragenter/dragleave bubble events as the cursor crosses
+  // their boundaries, and we only want to clear the cue when the
+  // *outer* boundary is crossed. The depth counter is the standard
+  // HTML5 DnD workaround. We use a ref (not state) because the count
+  // never needs to trigger a re-render — only the cleared/non-cleared
+  // transition into setDragModulatorId(null) does.
+  const [dragModulatorId, setDragModulatorId] = useState<string | null>(null);
+  const dragDepthRef = useRef(0);
+
   // ── Click-to-route + hover-wire integration (v1.0 Modulation Preview) ──
   // Three overlapping visual states for the slider label:
   //   1. ARMED — a plate is armed; ALL labels tint in its identity color
@@ -226,12 +245,14 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   //   3. BOUND — at least one binding targets this param; left-edge
   //      accent stripe in the binding's source color so users see at
   //      a glance which sliders are wired.
-  // Priority: ARMED > HOVERED > BOUND.
+  // Priority: ARMED > HOVERED > BOUND. Drop-target cue (Wave 5) is a
+  // FOURTH, separate visual layer — dashed border around the row +
+  // identity-color glow — so it's distinct from the other three.
   const armedModulatorId = useUIStore((s) => s.armedModulatorId);
   const hoveredModulatorId = useUIStore((s) => s.hoveredModulatorId);
   const setHoveredParameterPath = useUIStore((s) => s.setHoveredParameterPath);
   const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? EMPTY_BINDINGS);
-  const { onParameterClick } = useClickToRoute();
+  const { onParameterClick, dragBind } = useClickToRoute();
 
   const armedColor = useMemo(() => {
     if (!armedModulatorId) return null;
@@ -266,16 +287,85 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
 
   const effectiveLabelColor = armedColor ?? hoverDrivenColor;
 
+  // ── Drag-to-route handlers (Wave 5) ──
+  // The four standard HTML5 drag-and-drop seams. We only react when
+  // the dataTransfer carries our specific MIME type; that filter
+  // prevents random external drags (text selections, files, images
+  // from other apps) from being interpreted as modulator drops.
+  //
+  // Note on drag identity: HTML5 dataTransfer.getData() returns ''
+  // during dragenter/dragover in every modern browser — security
+  // protection so cross-origin drags can't peek at payloads pre-drop.
+  // That means we can't show the *exact* dragged modulator's identity
+  // color while the drag is in flight; only on drop. Until then, the
+  // drop cue uses --status-magenta (the modulation accent token), so
+  // it reads as "modulation incoming" without faking an identity. The
+  // moment the drop completes, the binding's BOUND-color stripe takes
+  // over for ongoing identification.
+  const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(MODULATOR_DRAG_MIME_TYPE)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setDragModulatorId('__drag__');
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(MODULATOR_DRAG_MIME_TYPE)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'link';
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(MODULATOR_DRAG_MIME_TYPE)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setDragModulatorId(null);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(MODULATOR_DRAG_MIME_TYPE)) return;
+    e.preventDefault();
+    const modulatorId = e.dataTransfer.getData(MODULATOR_DRAG_MIME_TYPE);
+    dragDepthRef.current = 0;
+    setDragModulatorId(null);
+    if (!modulatorId) return;
+    dragBind(modulatorId, param.key);
+  }, [dragBind, param.key]);
+
+  const isDropTarget = dragModulatorId !== null;
+
+  // Compose the drop-target visual on top of the existing bound stripe.
+  // We use a 2 px solid magenta outer ring (`outline`) so it overlays
+  // outside the row geometry without disturbing the inset bound stripe
+  // and without re-flowing layout. A subtle magenta wash inside makes
+  // the drop zone unmistakable. This treatment is intentionally
+  // distinct from ARMED (label tinting), HOVERED (label tinting), and
+  // BOUND (left-edge stripe) — all four states can co-exist visually
+  // without conflict.
+  const composedStyle: CSSProperties = {};
+  if (boundColor) {
+    composedStyle.boxShadow = `inset 2px 0 0 ${boundColor}`;
+    composedStyle.paddingLeft = 4;
+  }
+  if (isDropTarget) {
+    composedStyle.outline = '2px dashed rgb(var(--status-magenta))';
+    composedStyle.outlineOffset = 2;
+    composedStyle.background = 'rgba(var(--status-magenta), 0.08)';
+    composedStyle.borderRadius = 4;
+  }
+
   return (
     <div
       className="relative flex items-center gap-2"
       onPointerEnter={() => setHoveredParameterPath(param.key)}
       onPointerLeave={() => setHoveredParameterPath(null)}
-      style={
-        boundColor
-          ? { boxShadow: `inset 2px 0 0 ${boundColor}`, paddingLeft: 4 }
-          : undefined
-      }
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      aria-dropeffect={isDropTarget ? 'link' : undefined}
+      style={composedStyle}
     >
       <label
         htmlFor={inputId}

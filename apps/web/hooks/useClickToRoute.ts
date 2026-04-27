@@ -10,8 +10,13 @@
 //   3. Escape (or clicking the armed plate again) disarms without
 //      creating a binding.
 //
-// True drag-to-route lands in v1.1 (see impl plan §10). This hook is the
-// state machine for the click-to-route flow.
+// v1.1 Wave 5 — drag-to-route. HTML5 drag-and-drop layered on top of
+// click-to-route as the primary mouse/trackpad interaction (Vital /
+// Bitwig pattern). Plates become draggable; slider rows become drop
+// targets. The drop handler calls `dragBind(modulatorId, targetPath)`
+// (added below) which atomically creates a binding without touching
+// the armed-plate state. Click-to-route remains the keyboard / a11y
+// path — the two flows are independent. See impl plan §10.
 //
 // ── Store wiring ────────────────────────────────────────────────────────
 //
@@ -43,6 +48,17 @@ import type { SerializedBinding } from '@kyberstation/engine';
 
 // ─── Public API ─────────────────────────────────────────────────────────
 
+/**
+ * The MIME type used for HTML5 drag-and-drop payloads when a modulator
+ * plate is dragged onto a parameter row. v1.1 Wave 5 — drag-to-route.
+ *
+ * Specific enough that random external drags (text, files, images from
+ * other apps) don't accidentally register as modulator drops. Drop
+ * targets check `dataTransfer.types.includes(MODULATOR_DRAG_MIME_TYPE)`
+ * before calling `preventDefault` on dragover.
+ */
+export const MODULATOR_DRAG_MIME_TYPE = 'application/x-kyberstation-modulator';
+
 export type BindingCreateResult =
   | { kind: 'created'; bindingId: string }
   | { kind: 'ignored'; reason: 'not-armed' | 'not-modulatable' | 'board-rejects' };
@@ -71,6 +87,17 @@ export interface UseClickToRouteReturn {
    * after a successful call.
    */
   onParameterClick: (targetPath: string) => BindingCreateResult;
+  /**
+   * One-shot binding creation for drag-and-drop drops. Bypasses the
+   * arm/click sequence — given the modulator id from the drag payload
+   * and the target path under the cursor, atomically arms the source
+   * and creates the binding. Used by drop handlers in ParameterBank.
+   *
+   * Returns the same `BindingCreateResult` shape as `onParameterClick`,
+   * with the same gating semantics (modulatable + board-permits checks
+   * still apply).
+   */
+  dragBind: (modulatorId: string, targetPath: string) => BindingCreateResult;
 }
 
 // ─── Optional hook options ──────────────────────────────────────────────
@@ -241,6 +268,51 @@ export function useClickToRoute(
     ],
   );
 
+  // ── Drag-to-route: one-shot bind from a drop event ───────────────────
+  //
+  // Wave 5 (v1.1 Core). Used by ParameterBank's slider-row onDrop
+  // handler. Skips the "arm then click" two-step entirely: the drop
+  // event already carries the source modulator id in dataTransfer, so
+  // we go straight from `(modulatorId, targetPath)` to a binding,
+  // gated by the same modulatable + board-permits checks as the click
+  // path. We deliberately don't touch the armed-plate state during the
+  // drag so click-to-route remains uninterrupted; if the user happens
+  // to have a plate armed when they drop, the drop still wins because
+  // we ignore the armed state and bind to the dragged source.
+  const dragBind = useCallback(
+    (modulatorId: string, targetPath: string): BindingCreateResult => {
+      const outcome = decideBindingOutcome({
+        armedModulatorId: modulatorId,
+        targetPath,
+        boardId,
+      });
+      if (outcome.kind !== 'allowed') {
+        return outcome;
+      }
+
+      const id = generateBindingId();
+      const binding = buildBinding({ id, source: modulatorId, target: targetPath });
+
+      addBinding(binding);
+      // If a plate happened to be armed when the drop completed, clear
+      // it — the user's expressed intent (the drop) takes precedence
+      // and we don't want a stale armed state to keep the next click
+      // from doing what they expect.
+      if (armedModulatorId !== null) {
+        setArmedModulatorId(null);
+      }
+
+      return { kind: 'created', bindingId: id };
+    },
+    [
+      addBinding,
+      armedModulatorId,
+      boardId,
+      generateBindingId,
+      setArmedModulatorId,
+    ],
+  );
+
   // ── Global Escape-key listener ───────────────────────────────────────
   //
   // Disarm on Escape. Only attach the listener while something is armed
@@ -269,7 +341,8 @@ export function useClickToRoute(
       arm,
       disarm,
       onParameterClick,
+      dragBind,
     }),
-    [armedModulatorId, arm, disarm, onParameterClick],
+    [armedModulatorId, arm, disarm, onParameterClick, dragBind],
   );
 }
