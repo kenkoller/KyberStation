@@ -24,6 +24,11 @@ export interface QrSurfaceOptions {
   errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
   /** Invert polarity (white modules on black). Form 4 darksaber case. */
   invertPolarity?: boolean;
+  /** Quiet-zone margin in modules. Crystal default = 4 (phones need
+   *  extra breathing room against refractive clutter). Share-card pass
+   *  overrides with 2 because the card already draws its own white
+   *  panel behind the QR — the library margin would double-up. */
+  margin?: number;
 }
 
 export interface QrSurfaceResult {
@@ -52,6 +57,7 @@ export async function createQrSurface(
   const dark = options.invertPolarity ? '#ffffff' : (options.darkColor ?? '#0a0a10');
   const light = options.invertPolarity ? '#0a0a10' : (options.lightColor ?? '#ffffff');
   const errorLevel = options.errorCorrectionLevel ?? 'Q';
+  const margin = options.margin ?? 4;
 
   if (typeof document === 'undefined') {
     throw new Error('createQrSurface requires a browser environment (document)');
@@ -61,13 +67,15 @@ export async function createQrSurface(
   canvas.width = canvasSize;
   canvas.height = canvasSize;
 
-  // Margin 4 = 4-module quiet zone. Phone QR scanners routinely fail on
-  // the 2-module spec minimum when the code is embedded against visual
-  // clutter (the crystal body's reflections and fleck layer both count
-  // as clutter from a scanner's perspective).
+  // Default margin 4 = 4-module quiet zone (crystal use case — phones
+  // routinely fail on the 2-module spec minimum when the code is embedded
+  // against visual clutter; the refractive crystal body + fleck layer
+  // both count as clutter from a scanner's perspective). Callers that
+  // draw their own quiet zone (e.g. the share card's white panel) should
+  // pass `margin: 2` to avoid doubling-up.
   await QRCode.toCanvas(canvas, glyph, {
     width: canvasSize,
-    margin: 4,
+    margin,
     errorCorrectionLevel: errorLevel,
     color: { dark, light },
   });
