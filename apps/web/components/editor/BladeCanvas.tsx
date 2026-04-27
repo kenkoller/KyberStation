@@ -327,8 +327,8 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
   // Phase 4 ambient coupling: last-computed average bloom-mip-2
   // luma, 0–1. Set each frame by drawBladePhotorealistic; read by
-  // drawVignette so the vignette darkens proportionally to blade
-  // brightness (simulates iris adjustment from dim-room footage).
+  // the floor wash + hilt illumination + ambient tint passes so
+  // those scale proportionally to blade brightness.
   const avgBloomLumRef = useRef<number>(0);
   const fpsFrames = useRef<number[]>([]);
   const sizeRef = useRef({ w: DESIGN_W, h: DESIGN_H, dpr: 1 });
@@ -761,29 +761,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.stroke();
     }
   }, [showGrid, bladeLength, getScale, getBladeStartPx, getBladeCenterY, theme]);
-
-  // ─── Draw vignette ───
-  // Inner radius pushed out to 0.55 so the vignette only darkens the far
-  // corners — blade tip (at the canvas edge in vertical mode) stays clean.
-  const drawVignette = useCallback((ctx: CanvasRenderingContext2D) => {
-    const { w, h, dpr } = sizeRef.current;
-    const cw = w * dpr;
-    const ch = h * dpr;
-    const cx = cw / 2;
-    const cy = ch / 2;
-    const radius = Math.sqrt(cx * cx + cy * cy);
-    // Phase 4: modulate vignette opacity by current blade brightness —
-    // corners darken slightly when blade is hot so the eye perceives a
-    // dim-room iris adjustment. Coefficient kept subtle (up to +8%)
-    // so the vignette never becomes a distracting flash.
-    const opacityScale = 1 + avgBloomLumRef.current * 0.08;
-    const grad = ctx.createRadialGradient(cx, cy, radius * 0.55, cx, cy, radius);
-    grad.addColorStop(0, `rgba(${theme.vignetteColor},0)`);
-    grad.addColorStop(0.6, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.3 * opacityScale})`);
-    grad.addColorStop(1, `rgba(${theme.vignetteColor},${theme.vignetteOpacity * 0.7 * opacityScale})`);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, cw, ch);
-  }, [theme]);
 
   // ─── Draw metallic hilt (uses selected hilt style) ───
   const drawHilt = useCallback((ctx: CanvasRenderingContext2D, bladeColor: { r: number; g: number; b: number } | null, scale: number) => {
@@ -1386,39 +1363,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
     const actualVisibleLen = maxLitT * bladeLenPx;
 
-    // Phase 3: rim glow — thin saturated stroke along the blade's
-    // top + bottom edges. Renders AFTER the blade body + whiteout
-    // stages so it reads as the "neon tube edge" cinematography sells
-    // on real Neopixel sabers. Alpha scales with bloomIntensity so
-    // dim profiles get a subtle rim and bright profiles a bold one.
-    // Skipped when blade isn't lit (avoids a thin line over the hilt).
-    if (actualVisibleLen > 1) {
-      const rimAlpha = 0.4 * bi * shimmer * (reduceBloom ? 0.4 : 1);
-      ctx.save();
-      ctx.strokeStyle = rgbStr(satR, satG, satB, rimAlpha);
-      ctx.lineWidth = 2 * dpr;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(bladeStartPx, bladeYPx - coreH / 2);
-      ctx.lineTo(actualVisibleEnd, bladeYPx - coreH / 2);
-      ctx.moveTo(bladeStartPx, bladeYPx + coreH / 2);
-      ctx.lineTo(actualVisibleEnd, bladeYPx + coreH / 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-    captureDeltaAsLayer(ctx, '14. Rim glow stroke', `2-device-pixel saturated stroke along blade top + bottom edges (α=${(0.4 * bi * shimmer * (reduceBloom ? 0.4 : 1)).toFixed(3)}). The "neon tube edge" cinematography sells on real Neopixel sabers.`, cw, ch);
-
-    // Pass 8: Specular highlight line (thin white line down center)
-    ctx.save();
-    ctx.strokeStyle = `rgba(255,255,255,${0.35 * shimmer})`;
-    ctx.lineWidth = 1.2 * scale;
-    ctx.beginPath();
-    ctx.moveTo(bladeStartPx, bladeYPx);
-    ctx.lineTo(actualVisibleEnd, bladeYPx);
-    ctx.stroke();
-    ctx.restore();
-    captureDeltaAsLayer(ctx, '15. Specular highlight line', '1.2px white center line at α=0.35×shimmer. Reads as polished tube specularity.', cw, ch);
-
     // ── Blade tip corona ──
     if (actualVisibleLen > 1) {
       const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
@@ -1505,7 +1449,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         }
       }
     }
-    // Publish to ref for drawVignette + any future consumers.
+    // Publish to ref for downstream wash + tint passes.
     avgBloomLumRef.current = avgBloomLum;
     // Coupling coefficient: 0.5 avg luma → back to prior 0.08 alpha.
     const lumaWash = Math.max(0.005, avgBloomLum * 0.18) * (reduceBloom ? 0.4 : 1);
@@ -2559,8 +2503,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       sizeRef.current = savedSize;
 
       // Vignette + data panels in native screen space
-      drawVignette(ctx);
-      captureDeltaAsLayer(ctx, '21. Vignette', `Radial darkening of canvas corners. Opacity modulated by avgBloomLum (currently ${avgBloomLumRef.current.toFixed(3)}) — vignette darkens proportionally to blade brightness.`, cw, ch);
 
       if (showDataPanels) {
         const padY = 20 * dpr;
@@ -2650,8 +2592,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         case 'cross': drawCrossSection(ctx, engine); break;
       }
 
-      drawVignette(ctx);
-      captureDeltaAsLayer(ctx, '21. Vignette', `Radial darkening of canvas corners. Opacity modulated by avgBloomLum (currently ${avgBloomLumRef.current.toFixed(3)}) — vignette darkens proportionally to blade brightness.`, cw, ch);
 
       if (viewMode === 'blade' && !panelMode && !mobileFullscreen && analyzeMode) {
         drawInlineStrip(ctx, engine);
