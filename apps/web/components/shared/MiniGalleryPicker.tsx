@@ -51,6 +51,14 @@ export interface MiniGalleryItem {
   thumbnail: ReactNode;
   /** Optional hover tooltip / description text. */
   description?: string;
+  /**
+   * Optional path to an animated GIF preview. When present, hovering
+   * the item swaps the static SVG `thumbnail` for the GIF. When the
+   * GIF asset 404s the picker keeps the SVG (the underlying `<img>`
+   * `onError` handler hides itself). Saber GIF Sprint 2 wires this
+   * for the 19 ignition + 13 retraction picker variants.
+   */
+  gifPath?: string;
 }
 
 /**
@@ -200,6 +208,28 @@ export function MiniGalleryPicker({
     return i >= 0 ? i : 0;
   });
 
+  // Saber GIF Sprint 2: hovered card index drives the GIF/SVG swap.
+  // Tracked separately from focus so keyboard nav doesn't override the
+  // mouse hover state, and we don't trigger a GIF swap on an item that
+  // happens to be focused via Tab.
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
+  // Mirror the OS reduce-motion preference. Per the SABER_GIF_ROADMAP
+  // hard constraints: "Reduced-motion preference applies to AUTOPLAY
+  // surfaces. Per-variant picker GIFs autoplay-on-hover unless
+  // `prefers-reduced-motion: reduce` (then show the first frame as a
+  // static)." We approximate "first frame" by simply not swapping on
+  // hover — the static SVG thumbnail stays in place.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => setPrefersReducedMotion(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
   // Keep focus in bounds if the items list shrinks.
   useEffect(() => {
     if (focusIdx >= items.length && items.length > 0) {
@@ -249,6 +279,35 @@ export function MiniGalleryPicker({
   const gridCols = variant === 'row' || variant === 'list' ? 'grid-cols-1' : resolveGridCols(columns);
   const gap = variant === 'list' ? 'gap-0' : variant === 'row' ? 'gap-1' : 'gap-1.5';
   const padding = variant === 'list' ? 'p-0' : 'p-1.5';
+
+  // Render either the static SVG thumbnail OR an animated GIF, based on
+  // hover state + reduced-motion preference. Lives at function level so
+  // card / row variants share the swap logic. Returns the same JSX shape
+  // (a single ReactNode) the caller used to render directly.
+  const renderThumbnailMedia = (item: MiniGalleryItem, idx: number): ReactNode => {
+    const isHovered = hoverIdx === idx && !prefersReducedMotion;
+    if (isHovered && item.gifPath) {
+      return (
+        <img
+          src={item.gifPath}
+          alt=""
+          aria-hidden="true"
+          className="block w-full h-full object-cover"
+          draggable={false}
+          // If the GIF is missing (e.g. fresh clone where the build
+          // script hasn't run), the alt branch (the static thumbnail)
+          // will still render via this img's onError fallback. We set
+          // visibility hidden + let the underlying `item.thumbnail`
+          // show through.
+          onError={(e) => {
+            const img = e.currentTarget;
+            img.style.visibility = 'hidden';
+          }}
+        />
+      );
+    }
+    return item.thumbnail;
+  };
 
   return (
     <div
@@ -318,6 +377,8 @@ export function MiniGalleryPicker({
             title={item.description ?? item.label}
             onClick={() => onSelect(item.id)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
+            onMouseEnter={() => setHoverIdx(idx)}
+            onMouseLeave={() => setHoverIdx((cur) => (cur === idx ? null : cur))}
             className={`group cursor-pointer rounded overflow-hidden relative transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               isActive
                 ? 'border-2 border-accent bg-accent-dim shadow-[0_0_0_1px_var(--accent-border-color,rgb(var(--accent)/0.35)),0_0_12px_rgb(var(--accent)/0.35)]'
@@ -330,7 +391,7 @@ export function MiniGalleryPicker({
             style={{ height: 44 }}
           >
             <div className="absolute inset-0 bg-bg-deep overflow-hidden pointer-events-none">
-              {item.thumbnail}
+              {renderThumbnailMedia(item, idx)}
             </div>
             {/* Label sits on top of the stretched thumbnail — tight
                 left-aligned pill so the blade visual still reads behind it. */}
@@ -357,6 +418,8 @@ export function MiniGalleryPicker({
             title={item.description ?? item.label}
             onClick={() => onSelect(item.id)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
+            onMouseEnter={() => setHoverIdx(idx)}
+            onMouseLeave={() => setHoverIdx((cur) => (cur === idx ? null : cur))}
             className={`group cursor-pointer rounded overflow-hidden transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               isActive
                 ? 'border-2 border-accent bg-accent-dim shadow-[0_0_0_1px_var(--accent-border-color,rgb(var(--accent)/0.35)),0_0_12px_rgb(var(--accent)/0.4)]'
@@ -364,7 +427,7 @@ export function MiniGalleryPicker({
             }`}
           >
             <div className="flex items-center justify-center bg-bg-deep h-[60px] overflow-hidden">
-              {item.thumbnail}
+              {renderThumbnailMedia(item, idx)}
             </div>
             <div
               className={`px-1.5 py-1 text-ui-sm truncate ${

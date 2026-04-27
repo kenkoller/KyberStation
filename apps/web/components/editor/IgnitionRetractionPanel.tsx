@@ -38,6 +38,10 @@ export function IgnitionRetractionPanel() {
           label: style.label,
           thumbnail: entry.thumbnail,
           description: style.desc,
+          // Sprint 2: surface the optional generated GIF for hover swap.
+          // Passes through unchanged (undefined) when the catalog entry
+          // lacks one — picker stays SVG-only.
+          gifPath: style.pickerGifPath,
         };
       }),
     [],
@@ -52,6 +56,7 @@ export function IgnitionRetractionPanel() {
           label: style.label,
           thumbnail: entry.thumbnail,
           description: style.desc,
+          gifPath: style.pickerGifPath,
         };
       }),
     [],

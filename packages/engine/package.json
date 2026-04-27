@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'lint: placeholder — eslint not yet configured'",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "gif:pickers": "tsx scripts/generate-picker-gifs.mjs"
   },
   "dependencies": {
     "peggy": "^4.2.0"
