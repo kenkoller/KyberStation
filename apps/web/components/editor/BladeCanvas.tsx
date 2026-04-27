@@ -408,9 +408,24 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const captureCollectorRef = useRef<DebugLayerCapture[] | null>(null);
   const debugSnapBeforeRef = useRef<ImageData | null>(null);
 
+  // Helper: snapshot the visible canvas into a fresh canvas of the same
+  // size so the cumulative-view captures don't share pixels with the live
+  // canvas (which keeps drawing on subsequent passes).
+  const cloneVisibleCanvas = useCallback((cw: number, ch: number): HTMLCanvasElement => {
+    const visible = canvasRef.current;
+    const out = document.createElement('canvas');
+    out.width = cw;
+    out.height = ch;
+    if (visible) {
+      out.getContext('2d')!.drawImage(visible, 0, 0);
+    }
+    return out;
+  }, []);
+
   // Snapshot a ready-made canvas (offscreen, mip buffer, motion ghost) onto
   // its own black background so the user can see what the buffer looks like
-  // in isolation. No-op when not capturing.
+  // in isolation. Also snapshots the visible canvas state at this point so
+  // the cumulative-view shows the in-progress render. No-op when not capturing.
   const captureBufferAsLayer = useCallback((
     source: HTMLCanvasElement,
     name: string,
@@ -420,20 +435,26 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   ) => {
     const collector = captureCollectorRef.current;
     if (!collector) return;
-    const out = document.createElement('canvas');
-    out.width = cw;
-    out.height = ch;
-    const oCtx = out.getContext('2d')!;
-    oCtx.fillStyle = '#000';
-    oCtx.fillRect(0, 0, cw, ch);
-    oCtx.drawImage(source, 0, 0, source.width, source.height, 0, 0, cw, ch);
-    collector.push({ name, description, canvas: out });
-  }, []);
+    const isolated = document.createElement('canvas');
+    isolated.width = cw;
+    isolated.height = ch;
+    const iCtx = isolated.getContext('2d')!;
+    iCtx.fillStyle = '#000';
+    iCtx.fillRect(0, 0, cw, ch);
+    iCtx.drawImage(source, 0, 0, source.width, source.height, 0, 0, cw, ch);
+    collector.push({
+      name,
+      description,
+      isolatedCanvas: isolated,
+      cumulativeCanvas: cloneVisibleCanvas(cw, ch),
+    });
+  }, [cloneVisibleCanvas]);
 
   // Diff the visible canvas against the previous snapshot — the changed
-  // pixels become the layer, unchanged pixels render black. Updates the
-  // baseline snapshot so the next call captures only what's NEW after this
-  // one. No-op when not capturing.
+  // pixels become the isolated layer, unchanged pixels render black. Also
+  // captures the cumulative visible canvas state. Updates the baseline
+  // snapshot so the next call captures only what's NEW after this one.
+  // No-op when not capturing.
   const captureDeltaAsLayer = useCallback((
     ctx: CanvasRenderingContext2D,
     name: string,
@@ -445,10 +466,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const snapBefore = debugSnapBeforeRef.current;
     if (!collector || !snapBefore) return;
     const after = ctx.getImageData(0, 0, cw, ch);
-    const out = document.createElement('canvas');
-    out.width = cw;
-    out.height = ch;
-    const oCtx = out.getContext('2d')!;
+    const isolated = document.createElement('canvas');
+    isolated.width = cw;
+    isolated.height = ch;
+    const iCtx = isolated.getContext('2d')!;
     const diff = new ImageData(cw, ch);
     const before = snapBefore.data;
     const aft = after.data;
@@ -460,8 +481,18 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         diff.data[i + 2] = aft[i + 2];
       }
     }
-    oCtx.putImageData(diff, 0, 0);
-    collector.push({ name, description, canvas: out });
+    iCtx.putImageData(diff, 0, 0);
+    // Cumulative = the canvas state right now, after this pass.
+    const cumulative = document.createElement('canvas');
+    cumulative.width = cw;
+    cumulative.height = ch;
+    cumulative.getContext('2d')!.putImageData(after, 0, 0);
+    collector.push({
+      name,
+      description,
+      isolatedCanvas: isolated,
+      cumulativeCanvas: cumulative,
+    });
     debugSnapBeforeRef.current = after;
   }, []);
 

@@ -4,8 +4,23 @@ import { useEffect, useRef, useState } from 'react';
 export interface DebugLayerCapture {
   name: string;
   description: string;
-  canvas: HTMLCanvasElement;
+  /**
+   * Pass on black — only the pixels this pass added/changed,
+   * everything else black. The "what does this pass contribute"
+   * view.
+   */
+  isolatedCanvas: HTMLCanvasElement;
+  /**
+   * Visible canvas snapshot AFTER this pass ran. The "what does
+   * the canvas look like after this pass stacks on the previous
+   * passes" view. For passes that draw to the offscreen / mip /
+   * ghost buffers (which don't change the visible canvas), this
+   * snapshot will look identical to the previous pass's snapshot.
+   */
+  cumulativeCanvas: HTMLCanvasElement;
 }
+
+type LayerView = 'isolated' | 'cumulative';
 
 interface BladeLayersDebugOverlayProps {
   enabled: boolean;
@@ -21,6 +36,7 @@ export function BladeLayersDebugOverlay({
   onClear,
 }: BladeLayersDebugOverlayProps) {
   const [enlargedIndex, setEnlargedIndex] = useState<number | null>(null);
+  const [view, setView] = useState<LayerView>('isolated');
 
   if (!enabled) return null;
 
@@ -55,7 +71,32 @@ export function BladeLayersDebugOverlay({
                 · {captures.length} passes · click to enlarge
               </span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {/* Isolated vs cumulative toggle */}
+              <div className="flex border border-border-subtle rounded-md overflow-hidden font-mono text-sm">
+                <button
+                  onClick={() => setView('isolated')}
+                  className={`px-3 py-1.5 transition-colors ${
+                    view === 'isolated'
+                      ? 'bg-accent text-bg-deep font-semibold'
+                      : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
+                  }`}
+                  title="Each pass on black — what this pass alone contributes"
+                >
+                  Isolated
+                </button>
+                <button
+                  onClick={() => setView('cumulative')}
+                  className={`px-3 py-1.5 border-l border-border-subtle transition-colors ${
+                    view === 'cumulative'
+                      ? 'bg-accent text-bg-deep font-semibold'
+                      : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
+                  }`}
+                  title="Cumulative canvas state after each pass — watch the render build up"
+                >
+                  Cumulative
+                </button>
+              </div>
               <button
                 onClick={onCapture}
                 className="px-3 py-1.5 rounded-md bg-accent text-bg-deep font-mono text-sm font-semibold hover:bg-accent/90"
@@ -76,6 +117,7 @@ export function BladeLayersDebugOverlay({
               <LayerThumbnail
                 key={i}
                 capture={c}
+                view={view}
                 onClick={() => setEnlargedIndex(i)}
               />
             ))}
@@ -105,7 +147,13 @@ export function BladeLayersDebugOverlay({
             </button>
           </div>
           <div className="flex-1 flex items-center justify-center p-4">
-            <CanvasMirror canvas={captures[enlargedIndex].canvas} />
+            <CanvasMirror
+              canvas={
+                view === 'cumulative'
+                  ? captures[enlargedIndex].cumulativeCanvas
+                  : captures[enlargedIndex].isolatedCanvas
+              }
+            />
           </div>
         </div>
       )}
@@ -115,9 +163,11 @@ export function BladeLayersDebugOverlay({
 
 function LayerThumbnail({
   capture,
+  view,
   onClick,
 }: {
   capture: DebugLayerCapture;
+  view: LayerView;
   onClick: () => void;
 }) {
   return (
@@ -126,7 +176,9 @@ function LayerThumbnail({
       className="text-left bg-bg-deep border border-border-subtle rounded-md overflow-hidden hover:border-accent/60 transition-colors"
     >
       <div className="aspect-video bg-black">
-        <CanvasMirror canvas={capture.canvas} />
+        <CanvasMirror
+          canvas={view === 'cumulative' ? capture.cumulativeCanvas : capture.isolatedCanvas}
+        />
       </div>
       <div className="px-3 py-2">
         <div className="font-mono text-xs text-accent font-semibold truncate">
