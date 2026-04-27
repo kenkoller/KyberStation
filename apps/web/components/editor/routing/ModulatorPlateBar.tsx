@@ -1,9 +1,8 @@
 'use client';
 
-// ─── ModulatorPlateBar — v1.0 Modulation Preview ─────────────────────
+// ─── ModulatorPlateBar — v1.1 Core Modulation ─────────────────────────
 //
-// Renders the 5 built-in modulators as clickable "plates" for the
-// Friday 2026-04-24 Modulation Preview.
+// Renders all 11 built-in modulators as clickable "plates".
 //
 // Interaction (click-to-route):
 //   1. User clicks a plate → arms it (sets uiStore.armedModulatorId)
@@ -15,15 +14,20 @@
 // modulation (CFX / Xenopixel / Verso / Proffie V2.2 for v1.0).
 //
 // Live viz is a lightweight CSS-driven shape per modulator kind:
-//   - swing:  traveling wave bars (kinetic feel)
-//   - sound:  pulsing VU-meter column
-//   - angle:  tilting needle
-//   - time:   sweeping hand
-//   - clash:  flash decay pulse
+//   - swing:      traveling wave bars (kinetic feel)
+//   - sound:      pulsing VU-meter column
+//   - angle:      tilting needle
+//   - twist:      rotating axis bar (spin about long axis)
+//   - time:       sweeping hand
+//   - clash:      flash decay pulse
+//   - battery:    cell with animating fill level
+//   - lockup:     pinned bright center + sustained ring pulse
+//   - preon:      flickering charge-up spark
+//   - ignition:   left-to-right extension wipe (one-shot loop)
+//   - retraction: right-to-left contraction wipe (one-shot loop)
 //
-// 6 additional modulators (twist, battery, lockup, preon, ignition,
-// retraction) are scaffolded in registry.ts but not shown as plates
-// until v1.1 Core (per MODULATION_ROUTING_v1.1_IMPL_PLAN.md §3.2).
+// All 11 modulator descriptors live in
+// `packages/engine/src/modulation/registry.ts`.
 
 import { useEffect } from 'react';
 import {
@@ -33,16 +37,6 @@ import {
 import { useUIStore } from '@/stores/uiStore';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
-
-// Friday v1.0 ships 5 plates. The remaining 6 descriptors from
-// BUILT_IN_MODULATORS stay hidden until v1.1 Core lands them.
-const V1_0_MODULATOR_IDS: readonly string[] = [
-  'swing',
-  'sound',
-  'angle',
-  'time',
-  'clash',
-];
 
 export function ModulatorPlateBar() {
   const boardId = useBoardProfile().boardId;
@@ -69,9 +63,8 @@ export function ModulatorPlateBar() {
     );
   }
 
-  const plates = BUILT_IN_MODULATORS.filter((m) =>
-    V1_0_MODULATOR_IDS.includes(m.id as string),
-  );
+  // v1.1 Core: surface all 11 built-in modulators.
+  const plates = BUILT_IN_MODULATORS;
 
   return (
     <div className="space-y-2">
@@ -82,7 +75,7 @@ export function ModulatorPlateBar() {
       <div
         role="toolbar"
         aria-label="Modulator plates"
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2"
       >
         {plates.map((plate) => (
           <ModulatorPlate
@@ -195,12 +188,18 @@ function ModulatorPlate({ descriptor, armed, onClick }: ModulatorPlateProps) {
 function ModulatorGlyph({ kind, color }: { kind: string; color: string }) {
   const common = { color, height: 14 };
   switch (kind) {
-    case 'swing':   return <SwingGlyph {...common} />;
-    case 'sound':   return <SoundGlyph {...common} />;
-    case 'angle':   return <AngleGlyph {...common} />;
-    case 'time':    return <TimeGlyph {...common} />;
-    case 'clash':   return <ClashGlyph {...common} />;
-    default:        return <div style={{ height: 14 }} />;
+    case 'swing':      return <SwingGlyph {...common} />;
+    case 'sound':      return <SoundGlyph {...common} />;
+    case 'angle':      return <AngleGlyph {...common} />;
+    case 'twist':      return <TwistGlyph {...common} />;
+    case 'time':       return <TimeGlyph {...common} />;
+    case 'clash':      return <ClashGlyph {...common} />;
+    case 'battery':    return <BatteryGlyph {...common} />;
+    case 'lockup':     return <LockupGlyph {...common} />;
+    case 'preon':      return <PreonGlyph {...common} />;
+    case 'ignition':   return <IgnitionGlyph {...common} />;
+    case 'retraction': return <RetractionGlyph {...common} />;
+    default:           return <div style={{ height: 14 }} />;
   }
 }
 
@@ -339,6 +338,229 @@ function ClashGlyph({ color, height }: { color: string; height: number }) {
           5%   { transform: scale(1.0); opacity: 1; }
           40%  { transform: scale(0.6); opacity: 0.3; }
           100% { transform: scale(0.2); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function TwistGlyph({ color, height }: { color: string; height: number }) {
+  // Horizontal bar that 2D-rotates about its center, evoking spin
+  // about the blade's long axis.
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ height }}
+      aria-hidden="true"
+    >
+      <span
+        className="rounded-sm"
+        style={{
+          width: height + 6,
+          height: 2,
+          background: color,
+          opacity: 0.85,
+          animation: 'twist-spin 1.6s linear infinite',
+        }}
+      />
+      <style jsx>{`
+        @keyframes twist-spin {
+          0%   { transform: rotate(0deg)   scaleX(1.0); }
+          25%  { transform: rotate(90deg)  scaleX(0.3); }
+          50%  { transform: rotate(180deg) scaleX(1.0); }
+          75%  { transform: rotate(270deg) scaleX(0.3); }
+          100% { transform: rotate(360deg) scaleX(1.0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function BatteryGlyph({ color, height }: { color: string; height: number }) {
+  // Battery body with a small terminal nub on the right; the inner
+  // fill bar animates between low and full.
+  const bodyW = height + 4;
+  const bodyH = height - 4;
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ height }}
+      aria-hidden="true"
+    >
+      <span
+        className="relative inline-flex items-center"
+        style={{
+          width: bodyW,
+          height: bodyH,
+          border: `1px solid ${color}`,
+          borderRadius: 1,
+          padding: 1,
+        }}
+      >
+        <span
+          style={{
+            display: 'block',
+            height: '100%',
+            background: color,
+            opacity: 0.85,
+            animation: 'battery-fill 2.4s ease-in-out infinite alternate',
+          }}
+        />
+        {/* terminal nub */}
+        <span
+          style={{
+            position: 'absolute',
+            right: -2,
+            top: '25%',
+            width: 1,
+            height: '50%',
+            background: color,
+          }}
+        />
+      </span>
+      <style jsx>{`
+        @keyframes battery-fill {
+          0%   { width: 25%; }
+          100% { width: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function LockupGlyph({ color, height }: { color: string; height: number }) {
+  // Held-bright center dot with a sustained pulsing ring around it —
+  // reads as a steady "locked" state with live energy.
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ height }}
+      aria-hidden="true"
+    >
+      <span
+        className="absolute rounded-full"
+        style={{
+          width: height - 2,
+          height: height - 2,
+          border: `1px solid ${color}`,
+          opacity: 0.6,
+          animation: 'lockup-ring 1.4s ease-in-out infinite',
+        }}
+      />
+      <span
+        className="rounded-full"
+        style={{
+          width: height / 2,
+          height: height / 2,
+          background: color,
+          animation: 'lockup-core 1.4s ease-in-out infinite',
+        }}
+      />
+      <style jsx>{`
+        @keyframes lockup-ring {
+          0%, 100% { transform: scale(0.7); opacity: 0.7; }
+          50%      { transform: scale(1.05); opacity: 0.25; }
+        }
+        @keyframes lockup-core {
+          0%, 100% { opacity: 0.85; }
+          50%      { opacity: 1.0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function PreonGlyph({ color, height }: { color: string; height: number }) {
+  // Pre-ignition charge-up: a small dim spark that flickers and
+  // grows, never quite reaching full brightness.
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ height }}
+      aria-hidden="true"
+    >
+      <span
+        className="rounded-full"
+        style={{
+          width: height / 2,
+          height: height / 2,
+          background: color,
+          filter: `drop-shadow(0 0 2px ${color})`,
+          animation: 'preon-spark 1.1s ease-in-out infinite',
+        }}
+      />
+      <style jsx>{`
+        @keyframes preon-spark {
+          0%   { transform: scale(0.4); opacity: 0.2; }
+          20%  { transform: scale(0.7); opacity: 0.6; }
+          35%  { transform: scale(0.5); opacity: 0.3; }
+          55%  { transform: scale(0.85); opacity: 0.75; }
+          70%  { transform: scale(0.65); opacity: 0.5; }
+          100% { transform: scale(1.0); opacity: 0.85; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function IgnitionGlyph({ color, height }: { color: string; height: number }) {
+  // One-shot extension wipe: bar grows from left edge to full width,
+  // resets, repeats. Reads as "blade extending."
+  return (
+    <div
+      className="relative flex items-center"
+      style={{ height, width: '100%' }}
+      aria-hidden="true"
+    >
+      <span
+        className="block rounded-sm"
+        style={{
+          height: 3,
+          background: color,
+          boxShadow: `0 0 4px ${color}`,
+          transformOrigin: 'left center',
+          animation: 'ignition-extend 1.6s cubic-bezier(.4,.0,.2,1) infinite',
+        }}
+      />
+      <style jsx>{`
+        @keyframes ignition-extend {
+          0%   { width: 0%;   opacity: 0.4; }
+          15%  { width: 20%;  opacity: 0.9; }
+          85%  { width: 100%; opacity: 1.0; }
+          92%  { width: 100%; opacity: 1.0; }
+          100% { width: 100%; opacity: 0.0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function RetractionGlyph({ color, height }: { color: string; height: number }) {
+  // One-shot retraction wipe: bar starts full, contracts toward the
+  // right edge (i.e. retreats toward the hilt). Reads as "blade
+  // retracting."
+  return (
+    <div
+      className="relative flex items-center justify-end"
+      style={{ height, width: '100%' }}
+      aria-hidden="true"
+    >
+      <span
+        className="block rounded-sm"
+        style={{
+          height: 3,
+          background: color,
+          boxShadow: `0 0 4px ${color}`,
+          transformOrigin: 'right center',
+          animation: 'retraction-contract 1.6s cubic-bezier(.4,.0,.2,1) infinite',
+        }}
+      />
+      <style jsx>{`
+        @keyframes retraction-contract {
+          0%   { width: 100%; opacity: 1.0; }
+          15%  { width: 100%; opacity: 1.0; }
+          85%  { width: 8%;   opacity: 0.6; }
+          100% { width: 0%;   opacity: 0.0; }
         }
       `}</style>
     </div>

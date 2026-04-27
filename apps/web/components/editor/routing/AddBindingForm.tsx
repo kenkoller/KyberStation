@@ -1,14 +1,18 @@
 'use client';
 
-// ─── AddBindingForm — v1.0 Modulation Preview ─────────────────────────
+// ─── AddBindingForm — v1.1 Core Modulation ────────────────────────────
 //
 // Simple dropdown-based form for creating a new ModulationBinding.
 // Complements the click-to-route UX from ModulatorPlateBar — some users
 // prefer forms, and some surfaces (small viewports, a11y screen readers)
 // work better with explicit controls.
 //
-// Friday v1.0 scope: bare-source bindings only (source + target +
-// combinator + amount). Expression editor arrives in v1.1 Core.
+// Scope: bare-source bindings (source + target + combinator + amount).
+// Expression-based bindings authored via the inline ExpressionEditor on
+// any SliderControl.
+//
+// Source dropdown surfaces all 11 built-in modulators from
+// `packages/engine/src/modulation/registry.ts`.
 //
 // Board gating: hidden when the current board doesn't support
 // modulation — the parent route already hides the whole ROUTING pill,
@@ -26,15 +30,6 @@ import {
 } from '@/lib/parameterGroups';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
-
-// Friday v1.0 plates the same 5 modulators as the plate bar.
-const V1_0_MODULATOR_IDS: readonly string[] = [
-  'swing',
-  'sound',
-  'angle',
-  'time',
-  'clash',
-];
 
 const COMBINATORS: readonly BindingCombinator[] = [
   'add',
@@ -70,9 +65,8 @@ export function AddBindingForm() {
     return null;
   }
 
-  const modulators = BUILT_IN_MODULATORS.filter((m) =>
-    V1_0_MODULATOR_IDS.includes(m.id as string),
-  );
+  // v1.1 Core: surface all 11 built-in modulators in the source dropdown.
+  const modulators = BUILT_IN_MODULATORS;
   const parameters = getModulatableParameters();
 
   const handleSubmit = (e: React.FormEvent) => {
