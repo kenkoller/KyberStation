@@ -1030,12 +1030,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         offCtx.arc(tipEndX, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
         offCtx.fill();
 
-        // Wider soft glow cap for bloom seed — must extend beyond the widest
-        // blur kernel (up to ~100 device px at default scale × bloomRadius).
-        // v0.14.0 Phase 1: widened from coreH*2.0 → coreH*4.0 so the bloom's
-        // outermost passes have enough seed to wrap smoothly; the old radius
-        // was tighter than the max kernel and produced a visible rectangular
-        // "bloom box" edge at the tip.
+        // Wider soft glow seed at the tip — must extend beyond the widest
+        // blur kernel (up to ~100 device px at default scale × bloomRadius)
+        // so the bloom's outermost mip wraps the rounded tip smoothly
+        // instead of producing a rectangular cutoff.
         const glowCapRadius = coreH * 4.0;
         const capGrad = offCtx.createRadialGradient(
           tipEndX, bladeYPx, 0,
@@ -1053,42 +1051,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         offCtx.arc(tipEndX, bladeYPx, glowCapRadius, 0, Math.PI * 2);
         offCtx.fill();
       }
-
-      // Rounded cap at emitter end for symmetry
-      const emitterX = bladeStartPx;
-      const emR = isInHilt ? avgR * shimmer : leds.getR(0) * effectiveBri * shimmer;
-      const emG = isInHilt ? avgG * shimmer : leds.getG(0) * effectiveBri * shimmer;
-      const emB = isInHilt ? avgB * shimmer : leds.getB(0) * effectiveBri * shimmer;
-      offCtx.fillStyle = rgbStr(emR, emG, emB);
-      offCtx.beginPath();
-      offCtx.arc(emitterX, bladeYPx, coreH / 2, Math.PI / 2, -Math.PI / 2);
-      offCtx.fill();
-
-      // Emitter glow seed — mirrors tip for smooth bloom wrapping.
-      // v0.14.0 Phase 1: widened from coreH*1.5 → coreH*4.0*0.7 (slightly
-      // tighter than the tip because the hilt occludes inward spill) so
-      // both endpoints seed the bloom symmetrically. Same stop density as
-      // the tip cap so the gradient decays at the same visual rate.
-      if (emR + emG + emB > 0.5) {
-        const emGlowR = coreH * 4.0 * 0.7;
-        const emGrad = offCtx.createRadialGradient(
-          emitterX, bladeYPx, 0,
-          emitterX, bladeYPx, emGlowR,
-        );
-        emGrad.addColorStop(0, rgbStr(emR, emG, emB, 0.6));
-        emGrad.addColorStop(0.15, rgbStr(emR, emG, emB, 0.4));
-        emGrad.addColorStop(0.3, rgbStr(emR, emG, emB, 0.22));
-        emGrad.addColorStop(0.5, rgbStr(emR, emG, emB, 0.1));
-        emGrad.addColorStop(0.75, rgbStr(emR, emG, emB, 0.03));
-        emGrad.addColorStop(1, rgbStr(emR, emG, emB, 0));
-        offCtx.fillStyle = emGrad;
-        offCtx.beginPath();
-        offCtx.arc(emitterX, bladeYPx, emGlowR, 0, Math.PI * 2);
-        offCtx.fill();
-      }
+      // Emitter end intentionally left flat — the hilt covers the visible
+      // portion, and any rectangular bloom artifact peeking past the hilt
+      // edges is acceptable per the v0.14.x pipeline-cleanup pass. If the
+      // boxy artifact ever becomes visible in practice, escalate to a soft
+      // alpha falloff at x=bladeStartPx (or mask the offscreen behind the
+      // hilt outline).
     }
 
-    captureBufferAsLayer(offscreen, '02. Offscreen — + endpoint glow seeds', 'LED strip + tip and emitter rounded caps + soft radial gradients at both endpoints. These widen the bloom kernel coverage so the halo wraps the blade smoothly instead of producing a rectangular cutoff.', cw, ch);
+    captureBufferAsLayer(offscreen, '02. Offscreen — tip rounded cap + glow seed', 'LED strip + rounded semicircular cap at the TIP only (color borrowed from the last lit LED) + soft radial gradient seed extending beyond the bloom kernel. Emitter end stays flat — the hilt covers it, so no seed work needed there.', cw, ch);
 
     // ── Apply diffusion blur to offscreen if needed ──
     if (diffusion.blurKernel > 0) {
