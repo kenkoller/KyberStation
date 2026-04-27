@@ -1055,31 +1055,21 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         capB = leds.getB(tipIdx) * effectiveBri * shimmer;
       }
       if (capR + capG + capB > 0.5) {
-        // Semicircular cap matching blade core height
+        // Semicircular cap matching blade core height. This is the ONLY
+        // tip-specific bright pixel in the offscreen now — no wider soft
+        // seed extending past the cap. The cap shape alone gives the
+        // bloom kernel enough geometry to wrap the tip smoothly with
+        // the softened bright-pass threshold (contrast 1.15).
+        //
+        // Earlier the offscreen also drew a coreH * 4.0 radius radial
+        // gradient seed at the tip to "help" the bloom wrap. Result:
+        // bloom around the tip ended up ~2x wider than bloom around
+        // the body, producing a visible bulge that did not match the
+        // body width. Dropping the seed makes the bloom contribution
+        // at the tip match the bloom around the rest of the blade.
         offCtx.fillStyle = rgbStr(capR, capG, capB);
         offCtx.beginPath();
         offCtx.arc(tipEndX, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
-        offCtx.fill();
-
-        // Wider soft glow seed at the tip — must extend beyond the widest
-        // blur kernel (up to ~100 device px at default scale × bloomRadius)
-        // so the bloom's outermost mip wraps the rounded tip smoothly
-        // instead of producing a rectangular cutoff.
-        const glowCapRadius = coreH * 4.0;
-        const capGrad = offCtx.createRadialGradient(
-          tipEndX, bladeYPx, 0,
-          tipEndX, bladeYPx, glowCapRadius,
-        );
-        capGrad.addColorStop(0, rgbStr(capR, capG, capB, 0.8));
-        capGrad.addColorStop(0.1, rgbStr(capR, capG, capB, 0.55));
-        capGrad.addColorStop(0.22, rgbStr(capR, capG, capB, 0.3));
-        capGrad.addColorStop(0.4, rgbStr(capR, capG, capB, 0.12));
-        capGrad.addColorStop(0.65, rgbStr(capR, capG, capB, 0.04));
-        capGrad.addColorStop(0.85, rgbStr(capR, capG, capB, 0.01));
-        capGrad.addColorStop(1, rgbStr(capR, capG, capB, 0));
-        offCtx.fillStyle = capGrad;
-        offCtx.beginPath();
-        offCtx.arc(tipEndX, bladeYPx, glowCapRadius, 0, Math.PI * 2);
         offCtx.fill();
       }
       // Emitter end intentionally left flat — the hilt covers the visible
@@ -1355,10 +1345,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     }
 
     // Colored tip cap on the visible blade body — semicircle of the tip
-    // LED's color extending past the last rectangular segment. Without
-    // this, the visible blade body ends in a flat rectangle even though
-    // the offscreen bloom feed has a rounded cap. Restored after the
-    // dropped tip-corona pass (Layer 16) lost it.
+    // LED's color extending past the last rectangular segment. Painted
+    // with the SAME vertical gradient as the body so its edges fade at
+    // the same alpha (0.92) and dimming (×0.82) as the body edges.
+    // Without matching the body's gradient, the cap reads ~2× wider than
+    // the body at any brightness threshold (cap is fully opaque to its
+    // edges; body edges fade transparent).
     if (actualVisibleLen > 1) {
       const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
       let tipR: number, tipG: number, tipB: number;
@@ -1373,7 +1365,25 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         tipB = leds.getB(tipIdx) * effectiveBri * shimmer;
       }
       if (tipR + tipG + tipB > 0.5) {
-        ctx.fillStyle = rgbStr(tipR, tipG, tipB);
+        // Same 9-stop vertical gradient as the body LED loop, applied to
+        // the cap fill so the cap profile matches the body profile at
+        // every horizontal slice.
+        const tipEdgeDim = 0.82;
+        const tipCenterBoost = 1.12;
+        const tipRW = clamp(tipR * tipCenterBoost + 35, 0, 255);
+        const tipGW = clamp(tipG * tipCenterBoost + 35, 0, 255);
+        const tipBW = clamp(tipB * tipCenterBoost + 35, 0, 255);
+        const capGrad = ctx.createLinearGradient(actualVisibleEnd, bladeYPx - coreH / 2, actualVisibleEnd, bladeYPx + coreH / 2);
+        capGrad.addColorStop(0, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
+        capGrad.addColorStop(0.08, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
+        capGrad.addColorStop(0.2, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
+        capGrad.addColorStop(0.4, rgbStr(tipR, tipG, tipB));
+        capGrad.addColorStop(0.5, rgbStr(tipRW, tipGW, tipBW));
+        capGrad.addColorStop(0.6, rgbStr(tipR, tipG, tipB));
+        capGrad.addColorStop(0.8, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
+        capGrad.addColorStop(0.92, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
+        capGrad.addColorStop(1, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
+        ctx.fillStyle = capGrad;
         ctx.beginPath();
         ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
         ctx.fill();
@@ -1412,19 +1422,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillRect(x, bladeYPx - whiteH / 2, segW, whiteH);
     }
 
-    // Tip whiteout cap — semicircle matching the FULL colored tip cap
-    // radius (coreH/2), not the narrower body whiteout band radius
-    // (whiteH/2 = 22% of coreH). Real saber tips emit light in all
-    // directions (not just radially through the tube), so the rounded
-    // tip end is uniformly bright/over-exposed — not just a small
-    // white dot in the middle of the rounded cap. Matching the colored
-    // cap radius makes the entire rounded tip read as "bright glowing
-    // hemisphere" instead of "small white center inside colored ring."
-    //
-    // The slight discontinuity where the whiteout balloons out from
-    // the body band (whiteH wide) to the tip cap (coreH/2 = 2.2× wider
-    // radius) is physically reasonable — the tip really is brighter
-    // than the body's edges, and bloom softens any visible seam.
+    // Tip whiteout cap — semicircle matching the body's whiteout BAND
+    // radius (whiteH/2). Keeping the whiteout cap and body band the same
+    // size means the bright HDR overexposure region is uniform end-to-
+    // end. The colored tip cap (Layer 12) handles the rounded silhouette
+    // with body-matching edge alpha so the visible tip width matches
+    // the visible body width.
     if (actualVisibleLen > 1) {
       const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
       let tipR: number, tipG: number, tipB: number;
@@ -1441,10 +1444,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const wb = lerpToWhite(tipB, coreWhiteout);
       ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
       ctx.beginPath();
-      ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
+      ctx.arc(actualVisibleEnd, bladeYPx, whiteH / 2, -Math.PI / 2, Math.PI / 2);
       ctx.fill();
     }
-    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure + full tip cap)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}) along the body. At the tip, the whiteout cap matches the FULL colored tip radius (coreH/2) so the entire rounded tip reads as bright glowing hemisphere — like real saber tips that emit in all directions.`, cw, ch);
+    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure + tip cap)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}). Body band + matching whiteH-radius semicircle at the tip — uniform width end to end so the tip whiteout does not bulge wider than the body.`, cw, ch);
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
