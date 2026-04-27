@@ -107,14 +107,20 @@ export function HiltRenderer({
     ?? (assemblyId ? getAssembly(assemblyId)?.displayName : undefined)
     ?? 'Hilt';
 
+  // When ariaLabel is explicitly empty, treat the SVG as decorative —
+  // a parent has the accessible name and a redundant role/label here would
+  // double-announce in screen readers and trip axe's svg-img-alt rule.
+  const decorative = ariaLabel === '';
+
   return (
     <svg
       viewBox={viewBox}
       width={outerCssWidth}
       height={outerCssHeight}
       className={className}
-      role="img"
-      aria-label={ariaLabel ?? `${displayName} hilt`}
+      {...(decorative
+        ? { 'aria-hidden': true, role: 'presentation' as const }
+        : { role: 'img' as const, 'aria-label': ariaLabel ?? `${displayName} hilt` })}
     >
       <defs>
         <linearGradient id={METAL_BODY_ID} x1="0" y1="0" x2="0" y2="1">

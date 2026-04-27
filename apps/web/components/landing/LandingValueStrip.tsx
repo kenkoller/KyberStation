@@ -12,7 +12,7 @@ function ValueCell({ index, title, detail }: ValueCellProps) {
     >
       <div
         className="font-mono text-xs tracking-widest mb-4 tabular-nums"
-        style={{ color: 'rgb(var(--accent) / 0.7)' }}
+        style={{ color: 'rgb(var(--accent))' }}
       >
         {index}
       </div>

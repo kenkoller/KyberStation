@@ -3003,7 +3003,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         )}
         {/* Blade length label — hidden in mobileFullscreen to keep the `/m` preset browser clean */}
         {!mobileFullscreen && (
-          <div className="absolute top-2 left-2 text-ui-sm text-text-muted/50 font-mono">
+          <div className="absolute top-2 left-2 text-ui-sm text-text-muted font-mono">
             {bladeLength}" blade
           </div>
         )}

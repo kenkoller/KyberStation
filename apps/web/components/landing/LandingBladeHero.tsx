@@ -107,6 +107,7 @@ export function LandingBladeHero({ which, className }: LandingBladeHeroProps) {
   return (
     <div
       className={`relative pointer-events-none ${className ?? ''}`}
+      role="img"
       aria-label={`${which === 'top' ? 'Upper' : 'Lower'} kyber saber preview — ${
         which === 'top'
           ? 'canonical hero colors'
