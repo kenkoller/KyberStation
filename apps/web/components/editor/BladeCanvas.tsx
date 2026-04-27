@@ -1313,12 +1313,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // Gentle edge dimming — smoother transition into bloom halo
       const edgeDim = 0.82;
       // Center: lerp toward white using the per-color glow profile's
-      // coreWhiteout factor. This is the HDR overexposure effect that
-      // used to be a separate pass (Layer 13). Integrating it into the
-      // body gradient guarantees the whiteout silhouette matches the
-      // body silhouette EXACTLY — no possible discontinuity at any
-      // boundary. The "mid" stops add an intermediate transition so
-      // the white core fades smoothly through pure-color into edge dim.
+      // coreWhiteout factor. White plateau widened from ~16% (mid stops
+      // at 0.42/0.58) to ~30% (full plateau between 0.35 and 0.65) so
+      // the bright/white core reads as a thick "white-hot tube" instead
+      // of a thin stripe. mid-lerp transitions on either side smooth
+      // the falloff back into pure color, then the existing edge-dim
+      // stops carry the body into the bloom halo.
       const cR = lerpToWhite(r, glow.coreWhiteout);
       const cG = lerpToWhite(g, glow.coreWhiteout);
       const cB = lerpToWhite(b, glow.coreWhiteout);
@@ -1328,13 +1328,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
       grad.addColorStop(0, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
       grad.addColorStop(0.08, rgbStr(r * 0.88, g * 0.88, b * 0.88));
-      grad.addColorStop(0.2, rgbStr(r * 0.95, g * 0.95, b * 0.95));
-      grad.addColorStop(0.35, rgbStr(r, g, b));
-      grad.addColorStop(0.42, rgbStr(mR, mG, mB));
-      grad.addColorStop(0.5, rgbStr(cR, cG, cB));
-      grad.addColorStop(0.58, rgbStr(mR, mG, mB));
-      grad.addColorStop(0.65, rgbStr(r, g, b));
-      grad.addColorStop(0.8, rgbStr(r * 0.95, g * 0.95, b * 0.95));
+      grad.addColorStop(0.18, rgbStr(r * 0.95, g * 0.95, b * 0.95));
+      grad.addColorStop(0.25, rgbStr(r, g, b));
+      grad.addColorStop(0.30, rgbStr(mR, mG, mB));
+      grad.addColorStop(0.35, rgbStr(cR, cG, cB));
+      grad.addColorStop(0.65, rgbStr(cR, cG, cB));
+      grad.addColorStop(0.70, rgbStr(mR, mG, mB));
+      grad.addColorStop(0.75, rgbStr(r, g, b));
+      grad.addColorStop(0.82, rgbStr(r * 0.95, g * 0.95, b * 0.95));
       grad.addColorStop(0.92, rgbStr(r * 0.88, g * 0.88, b * 0.88));
       grad.addColorStop(1, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
 
@@ -1375,9 +1376,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         tipB = leds.getB(tipIdx) * effectiveBri * shimmer;
       }
       if (tipR + tipG + tipB > 0.5) {
-        // Same vertical gradient as the body LED loop above, with the
-        // same white-cored center, so the cap silhouette IS the
-        // whiteout silhouette at the tip — no possible mismatch.
+        // Same vertical gradient as the body LED loop above (with the
+        // widened white plateau) so the cap silhouette IS the whiteout
+        // silhouette at the tip — no possible mismatch.
         const tipEdgeDim = 0.82;
         const tipCR = lerpToWhite(tipR, glow.coreWhiteout);
         const tipCG = lerpToWhite(tipG, glow.coreWhiteout);
@@ -1388,13 +1389,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         const capGrad = ctx.createLinearGradient(actualVisibleEnd, bladeYPx - coreH / 2, actualVisibleEnd, bladeYPx + coreH / 2);
         capGrad.addColorStop(0, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
         capGrad.addColorStop(0.08, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
-        capGrad.addColorStop(0.2, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
-        capGrad.addColorStop(0.35, rgbStr(tipR, tipG, tipB));
-        capGrad.addColorStop(0.42, rgbStr(tipMR, tipMG, tipMB));
-        capGrad.addColorStop(0.5, rgbStr(tipCR, tipCG, tipCB));
-        capGrad.addColorStop(0.58, rgbStr(tipMR, tipMG, tipMB));
-        capGrad.addColorStop(0.65, rgbStr(tipR, tipG, tipB));
-        capGrad.addColorStop(0.8, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
+        capGrad.addColorStop(0.18, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
+        capGrad.addColorStop(0.25, rgbStr(tipR, tipG, tipB));
+        capGrad.addColorStop(0.30, rgbStr(tipMR, tipMG, tipMB));
+        capGrad.addColorStop(0.35, rgbStr(tipCR, tipCG, tipCB));
+        capGrad.addColorStop(0.65, rgbStr(tipCR, tipCG, tipCB));
+        capGrad.addColorStop(0.70, rgbStr(tipMR, tipMG, tipMB));
+        capGrad.addColorStop(0.75, rgbStr(tipR, tipG, tipB));
+        capGrad.addColorStop(0.82, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
         capGrad.addColorStop(0.92, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
         capGrad.addColorStop(1, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
         ctx.fillStyle = capGrad;
