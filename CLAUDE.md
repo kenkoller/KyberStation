@@ -543,6 +543,79 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-25, v0.14.0 left-rail overhaul shipped to main)
+
+**Active branch: `main`. Seven PRs merged 2026-04-25 (#47 through #53) implementing the full left-rail overhaul that replaces the multi-tab + multi-column workbench with a unified Sidebar + MainContent shell.** PR #46 (the prior session's blade-polish branch) merged earlier the same day; the left-rail work was cut as a separate sprint after a long planning conversation with Ken about UI/UX direction.
+
+Last git tag: still **v0.14.0** (the earlier modulation cut). The left-rail overhaul is on main but untagged — likely candidate for a `v0.15.0` bump when Ken is ready, since it's a meaningful structural change.
+
+### What shipped 2026-04-25 — left-rail overhaul (7 PRs)
+
+End-to-end browser-verified at desktop (1600×1000) and tablet (900×1024). 1030 / 1030 tests passing. Typecheck clean.
+
+| PR | Commit | Scope | LOC |
+|---|---|---|---|
+| **#47** | merge `39ebf4d` | PR 1 + PR 2 stacked: built sidebar shell behind a `useNewLayout` flag, then flipped the flag and removed the legacy chrome (page tabs, dual-mount conditional, PerformanceBar mount, activeTab gates) | +1828 / −861 |
+| **#48** | merge `d15dfd3` | PR 3 — Inspector becomes single-surface "Quick Controls"; GALLERY tab retired; 8 canonical color chips + ignition/retraction MGP pickers added above the existing parameter sliders | +853 / −213 |
+| **#49** | merge `517b9d7` | PR 4 — restored Motion Simulation in sidebar Advanced group; ⌘1–⌘4 digit nav rewired from `setActiveTab` → `setActiveSection`; cheatsheet surfaces all nav shortcuts | +36 / −28 |
+| **#50** | merge `995e710` | PR 5a — extracted duplicated 19-ignition + 13-retraction catalogs to `lib/transitionCatalogs.ts`; three call sites now share one source | +95 / −106 |
+| **#51** | merge `3f44947` | PR 5b — wired the previously-inert Custom color chip to jump to the deep Color sidebar section | +59 / −12 |
+| **#52** | merge `ac4d75f` | PR 5c — migrated the tablet shell from 4-tab + TabColumnContent to Sidebar + MainContent at 240px sidebar width | +23 / −160 |
+| **#53** | merge `34f7520` | PR 5d — deleted PerformanceBar.tsx + MacroKnob.tsx + QuickMacroPreview.tsx (truly dead after PR 2); extracted `shiftLedColor` to `lib/shiftLight.ts` for the lone surviving consumer (ShiftLightRail) | +32 / −959 |
+
+### Final desktop layout shape (post-overhaul)
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  HEADER  (logo, ShareButton, FPS, Sound, Docs, ⌘K, Wizard, │
+│           ?, ⚙)  — page-tabs nav removed                   │
+├────────────────────────────────────────────────────────────┤
+│ INSPECTOR │   BLADE PREVIEW  + pixel strip + RGB           │ ANALYSIS │
+│ (Quick    │                                                │ RAIL     │
+│ Controls) │   ┌─ action bar — IGNITE · CLASH · BLAST · …─┐ │ STATE +  │
+│ ~320-400  │                                                │ ANALYSIS │
+│ ✨ + ↶    │                                                │ tabs     │
+│ COLOR · 8 │                                                │ ~200-280 │
+│ chips +   │                                                │          │
+│ Custom    │                                                │          │
+│ IGNITION  │                                                │          │
+│ RETRACT   │                                                │          │
+│ 7 sliders │                                                │          │
+├───────────┴────────────────────────────────────────────────┤          │
+│ SIDEBAR (~280, collapsible) │ MAINCONTENT (active section) │          │
+├──────────────────────────────────────────────────────────────────────│
+│ DELIVERY RAIL · SHIFT-LIGHT RAIL · APPPERFSTRIP · DATATICKER         │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+Sidebar groups (collapsible, persisted): GALLERY → /gallery route · APPEARANCE (Blade Style · Color) · BEHAVIOR (Ignition & Retraction · Combat Effects · Gesture Controls) · ADVANCED (Layer Compositor · Motion Simulation · Hardware · My Crystal) · ROUTING BETA (board-gated) · AUDIO · OUTPUT.
+
+Three panel merges shipped in PR 1: Colors + Gradient Builder → unified ColorPanel (channel-scoped gradient region); BladeHardwarePanel + PowerDrawPanel → HardwarePanel (config + live readout); ModulatorPlateBar + BindingList → RoutingPanel.
+
+SettingsModal reorganized to 3 tabs (Appearance / Behavior / Advanced); the dead "Performance Bar" toggle removed alongside the bar itself.
+
+### Architectural decisions worth carrying forward
+
+1. **Sidebar pattern is `aside[aria-label="Editor sections"]`.** Single nav for the entire editor — replaces both the page tabs in the header AND the per-tab DesignPanel pill bar. `uiStore.activeSection` is the one selection slot. New section IDs go in `SectionId` union + `VALID_SECTION_IDS` list + `MainContent.tsx` switch + `Sidebar.tsx` group definitions.
+2. **Quick Controls is the left "fast tune" surface; sidebar Color is the deep editor.** Both views over the same `bladeStore` — changes propagate. Custom color chip jumps to the deep Color section rather than opening a separate popover (one custom-color surface, not two).
+3. **Tablet uses the same Sidebar + MainContent at 240px width.** No more swipe-driven tab UI. Mobile shell still uses the 4-tab swipe layout — that's intentional, awaiting a UX-judgment session on small-screen drawer / bottom-sheet patterns.
+4. **`lib/transitionCatalogs.ts` is the source of truth** for the 19 ignition + 13 retraction styles. Both `IgnitionRetractionPanel` (deep) and `QuickIgnitionPicker` / `QuickRetractionPicker` (compact) consume it.
+5. **`lib/shiftLight.ts` houses `shiftLedColor`** (extracted from the deleted PerformanceBar). ShiftLightRail is the only consumer.
+
+### Parallel-agent dispatch pattern that worked
+
+PR 1 fanned out into 5 lanes — Lane A (layout shell) in the main session, Lanes B/C/D/E dispatched as parallel agents touching disjoint files. PR 3 fanned out into 3 lanes (QuickColorChips, QuickTransitionPicker, Inspector shell). All agents committed with `Co-Authored-By: Claude Opus 4.7 (1M context)` trailers.
+
+The discipline that made it work: (a) every agent prompt is self-contained — it doesn't see the parent conversation; (b) lanes touch entirely disjoint files (write-disjoint, read-overlap is fine); (c) main session integrates last so the tree is consistent; (d) main session typecheck runs against the integrated state, not each agent's branch. Three of seven agents had Bash blocked mid-session and couldn't commit themselves — main session committed their files at integration time and that worked cleanly.
+
+### Still deferred (needs Ken's input — not blocking the v0.15 tag)
+
+- **Mobile shell migration to Sidebar + MainContent.** Current mobile shell is still on `MergedDesignPanel` + 4-tab swipe UI. At 375px viewport the sidebar pattern doesn't fit cleanly without picking a drawer / bottom-sheet idiom. Once mobile migrates, `DesignPanel.tsx`, `DynamicsPanel.tsx`, `MergedDesignPanel`, and `uiStore.activeTab` can all leave together.
+- **Custom color popover.** Currently the Custom chip jumps to the deep Color section. If Ken prefers an inline HSL popover, that's a small follow-up.
+- **MGP thumbnail crispness.** PR 3 Lane C's note — the 24×24 ignition/retraction triggers are scaled-down 100×60 SVGs via `transform: scale(0.24)`. A `compactThumbnail` field on the catalog entries would allow authors to provide optimised small-size SVGs.
+
+---
+
 ## Current State (2026-04-24 late, v0.14.0 Visualization Polish + Workbench Chrome Pass)
 
 **Active branch: `feat/v0.14.0-blade-polish` — PR [#46](https://github.com/kenkoller/KyberStation/pull/46), 29 commits, pushed to origin, NOT YET MERGED.** This branch ships the v0.12.x Visualization Polish Pass (promoted into the v0.14.0 release slot) plus two multi-hour iterative-walkthrough sweeps with Ken on workbench chrome / layout refinements.
