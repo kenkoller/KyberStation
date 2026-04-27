@@ -229,6 +229,7 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   // Priority: ARMED > HOVERED > BOUND.
   const armedModulatorId = useUIStore((s) => s.armedModulatorId);
   const hoveredModulatorId = useUIStore((s) => s.hoveredModulatorId);
+  const setHoveredParameterPath = useUIStore((s) => s.setHoveredParameterPath);
   const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? EMPTY_BINDINGS);
   const { onParameterClick } = useClickToRoute();
 
@@ -268,6 +269,8 @@ function SliderControl({ param, value, onChange }: { param: SliderParam; value: 
   return (
     <div
       className="relative flex items-center gap-2"
+      onPointerEnter={() => setHoveredParameterPath(param.key)}
+      onPointerLeave={() => setHoveredParameterPath(null)}
       style={
         boundColor
           ? { boxShadow: `inset 2px 0 0 ${boundColor}`, paddingLeft: 4 }

@@ -128,6 +128,19 @@ export interface UIStore {
   hoveredModulatorId: string | null;
 
   /**
+   * Reciprocal hover identity — the parameter path (e.g. `shimmer`,
+   * `noiseIntensity`, `baseColor.r`) the user is currently hovering on
+   * a ParameterBank row. Modulator plates read this + the binding list
+   * to subtly accent themselves when they drive the hovered parameter,
+   * closing the loop on the v1.0 "what drives this slider?" affordance.
+   *
+   * `null` when no parameter is hovered. Symmetric with
+   * `hoveredModulatorId` (plate → params); together the two fields
+   * form the bidirectional v1.1 hover-wire feedback.
+   */
+  hoveredParameterPath: string | null;
+
+  /**
    * Click-to-route "armed" modulator — v1.0 modulation Preview.
    *
    * When a user clicks a modulator plate, it gets "armed": the next
@@ -225,6 +238,7 @@ export interface UIStore {
   toggleEditMode: () => void;
   setEditTarget: (target: 'lockup' | 'blast') => void;
   setHoveredModulator: (id: string | null) => void;
+  setHoveredParameterPath: (path: string | null) => void;
   setArmedModulatorId: (id: string | null) => void;
   toggleStateGrid: () => void;
   setShowStateGrid: (on: boolean) => void;
@@ -429,6 +443,7 @@ export const useUIStore = create<UIStore>((set) => ({
   editMode: false,
   editTarget: 'lockup',
   hoveredModulatorId: null,
+  hoveredParameterPath: null,
   armedModulatorId: null,
   showStateGrid: false,
   expandedAnalysisLayerId: 'rgb-luma',
@@ -512,6 +527,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
   setEditTarget: (editTarget) => set({ editTarget }),
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
+  setHoveredParameterPath: (hoveredParameterPath) => set({ hoveredParameterPath }),
   setArmedModulatorId: (armedModulatorId) => set({ armedModulatorId }),
   toggleStateGrid: () => set((state) => ({ showStateGrid: !state.showStateGrid })),
   setShowStateGrid: (showStateGrid) => set({ showStateGrid }),
