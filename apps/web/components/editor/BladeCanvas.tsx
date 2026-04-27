@@ -34,7 +34,13 @@ const DESIGN_H = 600;
 const BLADE_START = 274; // hilt area ends here
 const BLADE_LEN = 830;
 const BLADE_Y = DESIGN_H / 2;
-const BLADE_CORE_H = 26;
+// Blade body height in design space. Sized to the BLADE itself (~1" real
+// neopixel diameter), not relative to the hilt graphic — the hilt is a
+// visual placeholder and can render at varying sizes. Reduced from 26 →
+// 24 in the 2026-04-27 rebalance — paired with the feathered α curve in
+// `rasterizeCapsuleToOffscreen` to give a clearly-defined bright tube +
+// soft fade into the bloom halo without the prior wide-plateau silhouette.
+const BLADE_CORE_H = 32;
 
 // W6 (2026-04-22): default auto-fit pan pulls the whole composition
 // left so the hilt's left half slips off the left edge. Imported from
@@ -363,8 +369,17 @@ function rasterizeCapsuleToOffscreen(
   // anchored at bladeStartPx so the leftward-extended pixels read the
   // first LED's color (and the LED strip itself still spans bladeStartPx
   // → bladeStartPx+bladeLenPx exactly).
+  //
+  // `tipExtension` shifts the geometric tip rightward by 0.15 × radius
+  // past the LED endpoint. The α curve below feathers to 0 at the rim,
+  // so visible-bright pixels (α above the perception threshold) end ~15%
+  // of the radius before the geometric rim. The extension positions the
+  // rim such that visible-bright reaches EXACTLY the configured blade
+  // length (the 40" mark for a 40" blade). Bloom past the rim continues
+  // beyond the configured length as the natural surrounding halo.
+  const tipExtension = radius * 0.15;
   const emitterX = bladeStartPx - hiltTuck;
-  const tipX = bladeStartPx + bladeLenPx;
+  const tipX = bladeStartPx + bladeLenPx + tipExtension;
   const leftCapAxisX = emitterX + radius;
   const rightCapAxisX = tipX - radius;
 
@@ -459,18 +474,24 @@ function rasterizeCapsuleToOffscreen(
       const dist = Math.sqrt(distSq);
       const nr = dist * radiusInv; // ∈ [0, 1]
 
-      // Tightened α profile for clear blade definition + body extending to
-      // the configured blade length. Wider full-α plateau (0→0.6) gives a
-      // defined body shape; sharp drop in the outer 25% (0.75→1.0) extends
-      // bright pixels close to the rim so the visible silhouette ends at
-      // exactly tipX (matching the 40" grid mark for max-length blades).
-      // α=0 at rim is preserved so bloom halo still wraps past the body.
-      // Anchors: (0.0, 1.0) → (0.6, 1.0) → (0.75, 0.92) → (0.9, 0.40) → (1.0, 0.00).
+      // Feathered Gaussian-shape α profile. Replaces the prior wide-
+      // plateau-then-sharp-drop curve. With the additive Pass 12 blend
+      // mode, a hard α=1.0 plateau created a visible "body sitting on
+      // top of halo" seam at the α-decay boundary; this smoother curve
+      // has no plateau — α descends gently from peak to 0 — so the body
+      // and the bloom halo are continuous expressions of the same
+      // emission.
+      //
+      // Anchors: (0.0, 1.0) → (0.25, 0.95) → (0.5, 0.70) → (0.7, 0.35)
+      //          → (0.85, 0.10) → (1.0, 0.00). Visible-bright (α > ~0.5)
+      // ends around radial 0.6; combined with the tip-axial extension,
+      // visible-bright reaches the LED endpoint position exactly.
       let alpha: number;
-      if (nr <= 0.6) alpha = 1.0;                                // full plateau
-      else if (nr <= 0.75) alpha = 1.0 - (nr - 0.6) * (0.08 / 0.15); // → 0.92
-      else if (nr <= 0.9) alpha = 0.92 - (nr - 0.75) * (0.52 / 0.15); // → 0.40
-      else alpha = 0.40 - (nr - 0.9) * (0.40 / 0.10);            // → 0.00 at rim
+      if (nr <= 0.25) alpha = 1.00 - nr * 0.20;                       // → (0.25, 0.95)
+      else if (nr <= 0.50) alpha = 0.95 - (nr - 0.25) * 1.00;          // → (0.50, 0.70)
+      else if (nr <= 0.70) alpha = 0.70 - (nr - 0.50) * 1.75;          // → (0.70, 0.35)
+      else if (nr <= 0.85) alpha = 0.35 - (nr - 0.70) * (5 / 3);       // → (0.85, 0.10)
+      else alpha = 0.10 - (nr - 0.85) * (2 / 3);                       // → (1.00, 0.00)
 
       // Color: pure white-shifted plateau in the inner 16%, raw LED color
       // past the 40% mark, smooth lerp in between. Mirrors the body's
@@ -1467,20 +1488,33 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // v0.14.x per-LED redraw + separate tip cap (which had to be matched
     // to the body's vertical Gaussian, and which never could quite agree
     // with the offscreen + bloom mips because they were separate paths).
-    // Pass 12 body composite is CLIPPED to the right of the hilt edge so
-    // the offscreen's leftward-extended cap region doesn't paint over the
-    // hilt's metallic surface. Bloom mips above sampled the full extended
-    // offscreen (cap region included), so the halo on the hilt is intact.
-    // Result: hilt stays metallic with bloom glow on it; visible body
-    // emerges from the hilt with flat parallel sides; rounded cap is
-    // invisible (clipped + tucked behind hilt edge).
+    // Pass 12 body composite — ADDITIVE (`lighter`) blend.
+    //
+    // The body adds its brightness to the bloom underneath rather than
+    // replacing it. This is the physically-correct compositing model for
+    // emissive surfaces: real light from emitters adds to the ambient
+    // halo, it doesn't occlude it. With the prior normal-blend the body's
+    // α=1.0 plateau (inner 60% of radius) completely hid the bloom
+    // there, creating a visible "body sitting on top of halo" seam where
+    // the α-decay zone meets the surrounding bloom. Additive blend
+    // eliminates that seam — the body's white-hot center stays white
+    // (already at 255, can't go higher), the colored mid-region pops
+    // slightly more vividly, and the edge transition into halo is
+    // continuous because both pieces are summing rather than masking.
+    //
+    // Clipped to x ≥ bladeStartPx so the body doesn't add brightness on
+    // top of the hilt's metallic surface (the bloom already does that
+    // additively for the hilt-glow effect; doubling it via the body
+    // would over-bright the hilt edge). The capsule's leftward-extended
+    // cap region (in the hilt-tuck zone) is invisible thanks to the clip.
     ctx.save();
     ctx.beginPath();
     ctx.rect(bladeStartPx, 0, cw - bladeStartPx, ch);
     ctx.clip();
+    ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(offscreen, 0, 0);
     ctx.restore();
-    captureDeltaAsLayer(ctx, '12. Capsule body composited from offscreen', `The offscreen capsule (Pass 01) drawn to the visible canvas via drawImage, clipped to x ≥ bladeStartPx so it doesn't paint over the hilt. Bloom mips above already sampled the full extended capsule (including its leftward cap region in the hilt area), so halo on the hilt is preserved. Body emerges with flat parallel sides at the hilt boundary — rounded cap is hidden by the clip + tucked behind hilt edge.`, cw, ch);
+    captureDeltaAsLayer(ctx, '12. Capsule body composited (additive) from offscreen', `The offscreen capsule (Pass 01) added on top of the bloom via 'lighter' blend, clipped to x ≥ bladeStartPx so it doesn't paint over the hilt. Body brightness ADDS to bloom rather than replacing it — natural HDR-style compositing, no visible seam between body silhouette and surrounding halo. Bloom mips above already sampled the full extended capsule, so halo on the hilt is preserved by the bloom's own additive composite (Passes 08/09/10).`, cw, ch);
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
