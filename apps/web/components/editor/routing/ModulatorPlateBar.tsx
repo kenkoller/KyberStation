@@ -33,10 +33,18 @@ import { useEffect } from 'react';
 import {
   BUILT_IN_MODULATORS,
   type ModulatorDescriptor,
+  type SerializedBinding,
 } from '@kyberstation/engine';
 import { useUIStore } from '@/stores/uiStore';
+import { useBladeStore } from '@/stores/bladeStore';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
+import { getParameter } from '@/lib/parameterGroups';
+
+// Stable empty array reference — passing `[]` as a Zustand selector
+// fallback creates a new reference every render and triggers an
+// infinite-rerender loop. Mirrors the BindingList pattern (dcd4dd4).
+const EMPTY_BINDINGS: readonly SerializedBinding[] = [];
 
 export function ModulatorPlateBar() {
   const boardId = useBoardProfile().boardId;
@@ -127,6 +135,27 @@ function ModulatorPlate({ descriptor, armed, onClick }: ModulatorPlateProps) {
   const id = descriptor.id as string;
   const setHoveredModulator = useUIStore((s) => s.setHoveredModulator);
 
+  // Reciprocal hover (Wave 2): when the user hovers a parameter row in
+  // ParameterBank, every plate that drives that param subtly accents
+  // itself. Symmetric with the existing plate→params direction.
+  const hoveredParameterPath = useUIStore((s) => s.hoveredParameterPath);
+  const bindings = useBladeStore((s) => s.config.modulation?.bindings ?? EMPTY_BINDINGS);
+
+  const isDrivenByThis =
+    hoveredParameterPath !== null &&
+    bindings.some(
+      (b) => b.source === id && b.target === hoveredParameterPath && !b.bypassed,
+    );
+
+  // Armed state's full-strength outline is more emphatic; reciprocal
+  // hover stays subtle so the two are visually distinct.
+  const showReciprocal = isDrivenByThis && !armed;
+
+  const reciprocalParamLabel = showReciprocal
+    ? (getParameter(hoveredParameterPath as string)?.displayName ??
+        hoveredParameterPath)
+    : null;
+
   return (
     <button
       type="button"
@@ -148,11 +177,20 @@ function ModulatorPlate({ descriptor, armed, onClick }: ModulatorPlateProps) {
         ['--mod-color' as string]: color,
         background: 'rgb(var(--bg-surface))',
         borderColor: armed ? color : 'rgb(var(--border-subtle))',
+        // Layered box-shadow priority: armed > reciprocal hover > base.
+        // Reciprocal applies a 1.5px outer ring (subtler than armed's
+        // full 1px solid + scale combo) preserving the inset stripe.
         boxShadow: armed
           ? `inset 3px 0 0 ${color}, 0 0 0 1px ${color}`
-          : `inset 3px 0 0 ${color}`,
+          : showReciprocal
+            ? `inset 3px 0 0 ${color}, 0 0 0 1.5px ${color}`
+            : `inset 3px 0 0 ${color}`,
       }}
-      title={`${name} modulator · range ${descriptor.range[0]}..${descriptor.range[1]}${descriptor.unit ? ' ' + descriptor.unit : ''}`}
+      title={
+        showReciprocal && reciprocalParamLabel
+          ? `${name} modulator · drives ${reciprocalParamLabel}`
+          : `${name} modulator · range ${descriptor.range[0]}..${descriptor.range[1]}${descriptor.unit ? ' ' + descriptor.unit : ''}`
+      }
       aria-pressed={armed}
       aria-label={`${armed ? 'Disarm' : 'Arm'} ${name} modulator`}
     >
@@ -164,8 +202,8 @@ function ModulatorPlate({ descriptor, armed, onClick }: ModulatorPlateProps) {
           {name}
         </span>
         <span
-          className="text-[9px] font-mono uppercase tracking-wider opacity-70"
-          style={{ color }}
+          className="text-[9px] font-mono uppercase tracking-wider"
+          style={{ color, opacity: showReciprocal ? 1 : 0.7 }}
           aria-hidden="true"
         >
           {id}
