@@ -296,6 +296,62 @@ export function encodeGlyph(payload: GlyphPayload): string {
   return `${prefix}.${coded}`;
 }
 
+// ─── Multi-version decoder dispatch ───
+//
+// Every payload version has its own decoder function. `decodeGlyph`
+// parses the version byte first, then dispatches to the matching
+// entry in VERSION_DECODERS. Unknown versions throw
+// `KyberGlyphVersionError` WITHOUT attempting to unpack the body —
+// the version byte is load-bearing and we refuse to guess.
+//
+// Adding a new version (future modulation-routing session):
+//   1. Implement `decodeV2Body(body, visualVersion): GlyphPayload`
+//      alongside `decodeV1Body`. Older v1 decoder stays untouched —
+//      it's frozen forever per `docs/KYBER_CRYSTAL_VERSIONING.md §2`.
+//   2. Add the entry `[2]: decodeV2Body` to VERSION_DECODERS below.
+//   3. Ship fixtures at `apps/web/tests/fixtures/kyberGlyphs/v2/`.
+//   4. Bump `KYBER_GLYPH_VERSION` to 2 and update `encodeGlyph`.
+//
+// This file must remain the ONLY place where payload-version routing
+// lives. Do not re-parse the version byte elsewhere.
+
+type VersionDecoder = (body: Record<string, unknown>, visualVersion: number) => GlyphPayload;
+
+/** v1 body → GlyphPayload. Delta-applies against CANONICAL_DEFAULT_CONFIG.
+ *  Frozen contract per `docs/KYBER_CRYSTAL_VERSIONING.md §2`. */
+function decodeV1Body(body: Record<string, unknown>, visualVersion: number): GlyphPayload {
+  const bladeDeltas = Array.isArray(body.b) ? (body.b as Record<string, unknown>[]) : [];
+  const blades = bladeDeltas.map(
+    (d) => applyDelta(CANONICAL_DEFAULT_CONFIG as unknown as Record<string, unknown>, d) as unknown as BladeConfig,
+  );
+
+  if (blades.length === 0) {
+    // Missing required data — fall back to a single default blade so
+    // the caller still gets a renderable config (graceful degradation).
+    blades.push({ ...CANONICAL_DEFAULT_CONFIG });
+  }
+
+  return {
+    payloadVersion: 1,
+    visualVersion,
+    saberType: (body.t as SaberType) ?? 'single',
+    blades,
+    hiltModel: typeof body.h === 'string' || body.h === null ? (body.h as string | null) : null,
+    soundFontRef: typeof body.s === 'string' || body.s === null ? (body.s as string | null) : null,
+    oledBitmapRef: typeof body.o === 'string' || body.o === null ? (body.o as string | null) : null,
+    propFileId: (body.p as PropFileId) ?? 'default',
+    publicName: typeof body.n === 'string' || body.n === null ? (body.n as string | null) : null,
+    createdAt: typeof body.c === 'number' ? body.c : 0,
+    kyberstationVersion: typeof body.v === 'string' ? body.v : '',
+    extras: isPlainObject(body.x) ? (body.x as Record<string, unknown>) : {},
+  };
+}
+
+const VERSION_DECODERS: Readonly<Record<number, VersionDecoder>> = Object.freeze({
+  1: decodeV1Body,
+  // 2: decodeV2Body,   ← added by modulation-routing session when glyph v2 ships
+});
+
 export function decodeGlyph(glyph: string): GlyphPayload {
   if (typeof glyph !== 'string' || !glyph.includes('.')) {
     throw new KyberGlyphParseError('Glyph missing archetype prefix separator', glyph?.length ?? 0);
@@ -324,7 +380,10 @@ export function decodeGlyph(glyph: string): GlyphPayload {
   const payloadVersion = framed[0];
   const visualVersion = framed[1];
 
-  if (payloadVersion !== KYBER_GLYPH_VERSION) {
+  // Version dispatch — fail fast on unknown versions BEFORE unpacking
+  // the body. This avoids wasting work on a payload we can't route.
+  const decoder = VERSION_DECODERS[payloadVersion];
+  if (!decoder) {
     throw new KyberGlyphVersionError(payloadVersion);
   }
 
@@ -342,31 +401,7 @@ export function decodeGlyph(glyph: string): GlyphPayload {
     throw new KyberGlyphParseError('Decoded body is not an object', glyph.length);
   }
 
-  const bladeDeltas = Array.isArray(body.b) ? (body.b as Record<string, unknown>[]) : [];
-  const blades = bladeDeltas.map(
-    (d) => applyDelta(CANONICAL_DEFAULT_CONFIG as unknown as Record<string, unknown>, d) as unknown as BladeConfig,
-  );
-
-  if (blades.length === 0) {
-    // Missing required data — fall back to a single default blade so
-    // the caller still gets a renderable config (graceful degradation).
-    blades.push({ ...CANONICAL_DEFAULT_CONFIG });
-  }
-
-  return {
-    payloadVersion,
-    visualVersion,
-    saberType: (body.t as SaberType) ?? 'single',
-    blades,
-    hiltModel: typeof body.h === 'string' || body.h === null ? (body.h as string | null) : null,
-    soundFontRef: typeof body.s === 'string' || body.s === null ? (body.s as string | null) : null,
-    oledBitmapRef: typeof body.o === 'string' || body.o === null ? (body.o as string | null) : null,
-    propFileId: (body.p as PropFileId) ?? 'default',
-    publicName: typeof body.n === 'string' || body.n === null ? (body.n as string | null) : null,
-    createdAt: typeof body.c === 'number' ? body.c : 0,
-    kyberstationVersion: typeof body.v === 'string' ? body.v : '',
-    extras: isPlainObject(body.x) ? (body.x as Record<string, unknown>) : {},
-  };
+  return decoder(body, visualVersion);
 }
 
 // ─── Convenience wrappers for the single-blade common case ───
