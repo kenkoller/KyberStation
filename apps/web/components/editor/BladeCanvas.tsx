@@ -1412,9 +1412,19 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       ctx.fillRect(x, bladeYPx - whiteH / 2, segW, whiteH);
     }
 
-    // Tip whiteout cap — semicircle extending past the last LED so the
-    // rounded blade tip carries the same HDR overexposure band as the
-    // body. Color borrowed from the last lit LED.
+    // Tip whiteout cap — semicircle matching the FULL colored tip cap
+    // radius (coreH/2), not the narrower body whiteout band radius
+    // (whiteH/2 = 22% of coreH). Real saber tips emit light in all
+    // directions (not just radially through the tube), so the rounded
+    // tip end is uniformly bright/over-exposed — not just a small
+    // white dot in the middle of the rounded cap. Matching the colored
+    // cap radius makes the entire rounded tip read as "bright glowing
+    // hemisphere" instead of "small white center inside colored ring."
+    //
+    // The slight discontinuity where the whiteout balloons out from
+    // the body band (whiteH wide) to the tip cap (coreH/2 = 2.2× wider
+    // radius) is physically reasonable — the tip really is brighter
+    // than the body's edges, and bloom softens any visible seam.
     if (actualVisibleLen > 1) {
       const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
       let tipR: number, tipG: number, tipB: number;
@@ -1431,10 +1441,10 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const wb = lerpToWhite(tipB, coreWhiteout);
       ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
       ctx.beginPath();
-      ctx.arc(actualVisibleEnd, bladeYPx, whiteH / 2, -Math.PI / 2, Math.PI / 2);
+      ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
       ctx.fill();
     }
-    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure + tip cap)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}). Body band + semicircular cap at the tip. Simulates the blinding overexposed center real cinematography sells, uniformly across the entire visible blade.`, cw, ch);
+    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure + full tip cap)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}) along the body. At the tip, the whiteout cap matches the FULL colored tip radius (coreH/2) so the entire rounded tip reads as bright glowing hemisphere — like real saber tips that emit in all directions.`, cw, ch);
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
