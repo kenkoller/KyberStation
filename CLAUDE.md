@@ -543,7 +543,31 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-04-27, Saber GIF Sprint 1)
+## Current State (2026-04-27, v0.15.0 cut — Modulation Routing v1.1 Core)
+
+**Active branch: `main` (post pre-launch cleanup pass).** Tag: **`v0.15.0`** (pending hardware validation on 89sabers Proffieboard V3.9). Codename: **Modulation Routing v1.1 Core**.
+
+This release bundles ~5 weeks of work since `v0.14.0` (2026-04-23):
+
+- **Modulation Routing v1.1 Core** (PRs #57-#65, overnight 2026-04-27) — all 11 modulators surface as plates, AST-level template injection (live `Mix<Scale<SwingSpeed<...>, ...>>` instead of snapshot values), per-binding expression editing via `fx` button, reciprocal hover highlighting, true HTML5 drag-to-route, 5 new starter recipes (heartbeat / battery-saver / idle-hue-drift / sound-driven-hue / twist-driven-saturation), 7 new user-guide pages, the `composeBindings` test suite, and the full `[Unreleased]` recap on CHANGELOG.
+- **Saber GIF Sprint 1** (PR #67, 2026-04-27) — animated GIF export from My Crystal panel via the new `captureSequence` engine helper + `gif.js` Promise wrapper + headless workbench renderer port. Two variants ship: Idle 1s shimmer loop, Ignition 2.5s state-machine arc. Both stay under the brief's ≤2 MB / ≤5 MB targets.
+- **Vertical Saber Card layout** (PR #36, 2026-04-23) — portrait 675×1200 layout adds to the four existing OG layouts; rounded blade tip + flush emitter polish on all card variants.
+- **Left-rail overhaul** (PRs #47-#53, 2026-04-25) — Sidebar + MainContent shell replaces the multi-tab + multi-column workbench; Inspector becomes the always-visible Quick Controls surface; tablet adopts the same shape at 240px sidebar width. Three panel merges: Color, Hardware, Routing. SettingsModal reorganized to 3 tabs.
+- **v0.14.0 Visualization Polish + Workbench Chrome** (PR #46, 2026-04-24) — bloom rewrite (3-mip downsampled bright-pass chain), rim glow, motion blur, ambient wash, and 24 chrome-alignment passes against Ken's walkthrough.
+- **Preset Accuracy Audit + Pop-Culture Expansion** (PR #39, 2026-04-22) — full canonical sweep of 216 presets + 89 net-new pop-culture entries (LOTR, Marvel/DC, Zelda, FF/KH, anime, kids' cartoons, Power Rangers, mascots) + new `DarkSaberStyle` engine class with codegen parity + `continuity` field on presets + the `HARDWARE_FIDELITY_PRINCIPLE.md` architectural doc.
+- **Modulation v1.0 Preview BETA + Polish** (PRs #35-#42, 2026-04-23) — the original v1.0 routing surface plus the post-merge polish that cleared the P29 axe-core launch blocker (zero WCAG 2 AA violations on /editor desktop + mobile).
+- **Saber Wizard hardware step** (2026-04-22) — first-step blade-length + board picker with 3-tier compatibility chips on the StatusBar's BoardPicker primitive.
+- **Pre-launch cleanup pass** (PRs #36, #56, #67, #68, #69, #70, 2026-04-27 evening) — merge of in-flight feature branches, salvage of the left-rail overhaul recap docs, SEO infrastructure (`robots.txt` / `sitemap.xml` / `siteConfig.ts`), and the new `docs/POST_LAUNCH_BACKLOG.md` single-source backlog index.
+
+Hardware validation status: ✅ macOS + 89sabers V3.9 + Brave (Chromium WebUSB). Cross-OS (Windows / Linux) + cross-board (V2, V3-OLED, CFX, Golden Harvest, Xenopixel) sweeps are post-launch per `docs/POST_LAUNCH_BACKLOG.md`. Public launch communication acknowledges this honestly.
+
+Test count at tag: **3,168** workspace-wide (60 web suites at 1,064 tests + 740 engine + 1,859 codegen + 47 presets + 260 boards + 40 sound + 158 in flight). Typecheck clean across all 10 packages.
+
+Single source of truth for the backlog: [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md). Hardware validator handoff: [`docs/NEXT_HARDWARE_MODULATION_SESSION.md`](docs/NEXT_HARDWARE_MODULATION_SESSION.md).
+
+---
+
+### Earlier 2026-04-27 — Saber GIF Sprint 1
 
 **Active branch: `feat/saber-gif-sprint-1` — PR [#67](https://github.com/kenkoller/KyberStation/pull/67), 4 commits, rebased onto `origin/main` at `ed7e5d8`. Open, pending review.** Sprint 1 of the saber-GIF roadmap (`docs/SABER_GIF_ROADMAP.md` on PR [#56](https://github.com/kenkoller/KyberStation/pull/56), still open). Ships animated GIF export from the My Crystal panel with two variants (Idle 1 s loop / Ignition cycle 2.5 s arc), driven by the v0.14 workbench blade renderer ported into a parallel headless module.
 
@@ -598,7 +622,7 @@ Workspace-wide typecheck clean. `pnpm test` green across all 10 tasks.
 
 ### Pre-sprint state (kept for history)
 
-## Current State (2026-04-27 overnight, Modulation Routing v1.1 Core)
+### Earlier 2026-04-27 overnight — Modulation Routing v1.1 Core
 
 **Active branch: `main` (tip `ddaa3b6`).** Eight PRs landed overnight on top of v0.14.0, completing the v1.1 Core scope from `docs/MODULATION_ROUTING_ROADMAP.md`. Last tag is still `v0.14.0` — pending hardware-gated v0.15.0 tag. Tonight's run was Phase 1 (4 parallel agents in worktrees) + Phase 2a (3 parallel agents) + Phase 2b (Wave 5, salvaged after agent stalled pre-commit).
 
