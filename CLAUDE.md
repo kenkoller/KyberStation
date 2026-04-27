@@ -599,6 +599,10 @@ Handoff doc for the next session: [`docs/NEXT_INTERFACE_SESSION.md`](docs/NEXT_I
 
 **Plan file:** `~/.claude/plans/i-would-like-to-starry-moon.md` (the original 4-phase bloom rewrite plan approved earlier; Phases 1–4 all shipped; module extraction + golden-hash tests remain open).
 
+### Next sprint queued — Saber GIF infrastructure
+
+With the workbench blade renderer now in good shape, the next workstream is **animated GIF capture**: idle hum loop, full ignition cycle, clash, and per-variant ignition/retraction picker thumbnails. Full scope + handoff prompt in [`docs/SABER_GIF_ROADMAP.md`](docs/SABER_GIF_ROADMAP.md). Sprint 1 is engine `captureSequence` helper + `gif.js` encoder + idle-hum + ignition-cycle as a separate PR off `origin/main` (NOT against the v0.14 branch). Sprints 2-4 ship the per-variant pickers, marketing-grade showcases, and non-blade UI walkthroughs.
+
 ### What shipped on this branch (chronological)
 
 | Phase | Commit | Scope |
