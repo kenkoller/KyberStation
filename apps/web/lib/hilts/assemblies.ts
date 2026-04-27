@@ -526,7 +526,7 @@ export const leiaRebelsAssembly: HiltAssembly = {
     { partId: 'leia-rebels-emitter' },
     { partId: 'leia-rebels-switch' },
     { partId: 'leia-rebels-grip' },
-    { partId: 'pointed-pommel' },
+    { partId: 'classic-pommel' },
   ],
 };
 
