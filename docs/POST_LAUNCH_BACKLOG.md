@@ -12,8 +12,12 @@ Tracks small-to-medium items that should land soon after launch, scoped to one o
 
 | Item | Source | Scope | Notes |
 |---|---|---|---|
-| **Wave 7 — Kyber Glyph v2 modulation round-trip encoder body** | [`MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](MODULATION_ROUTING_v1.1_IMPL_PLAN.md) | M (3-5 h) | PR #38 dispatcher merged; v2 encoder for the `modulation` payload field still outstanding. Multiplies value of v1.1 modulation features for community sharing. **Highest-leverage post-launch item.** |
-| **Marketing site re-implementation** | [`POST_LAUNCH_BACKLOG.md`](POST_LAUNCH_BACKLOG.md) (this file, was PR #32) | L | Original PR #32 deferred — branch was 153 commits behind main and largely subsumed. Clean v0.15.x re-implementation: `/features` `/showcase` `/changelog` `/faq` `/community` pages, ScrollReveal component, inline code peek, `pageMetadata.ts` helper. SEO infra (`robots.txt` / `sitemap.xml` / `siteConfig.ts`) shipped pre-launch in PR #69. |
+| ~~Wave 7 — Kyber Glyph v2 modulation round-trip encoder body~~ | ~~MODULATION_ROUTING_v1.1_IMPL_PLAN.md~~ | ~~M~~ | **✅ Done — landed via [PR #72](https://github.com/kenkoller/KyberStation/pull/72) on 2026-04-27.** Auto-bumps glyph version byte 1 → 2 when modulation present; old clients see version error vs silent strip. +16 round-trip tests. |
+| **Marketing site re-implementation** | (was PR #32, now closed-and-deferred) | L | Original PR #32 was 153 commits behind main and largely subsumed. Clean v0.15.x re-implementation: `/features` `/showcase` `/changelog` `/faq` `/community` pages, ScrollReveal component, inline code peek, `pageMetadata.ts` helper. SEO infra (`robots.txt` / `sitemap.xml` / `siteConfig.ts`) shipped pre-launch in PR #69. |
+| **Sidebar IA reorganization** (per audit) | [`docs/SIDEBAR_IA_AUDIT_2026-04-27.md`](SIDEBAR_IA_AUDIT_2026-04-27.md) | M | 13 distinct duplicates / fragmented surfaces identified. Top fixes: triple-mounted ignition+retraction pickers, 3-way color editing overlap, Saber Profile buried in collapsed Output accordion (per Ken's brief: should be 1st sidebar entry as a SETUP step), 4 redundant Board picker triggers. Recommends SETUP / DESIGN / REACTIVITY / OUTPUT regrouping. |
+| **Sidebar A/B Column Layout v2** | [`docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md`](SIDEBAR_AB_LAYOUT_v2_DESIGN.md) | L | New MainContent shape: Sidebar → Column A list → Column B controls (macOS Settings / VS Code analogy). Migration plan recommends `blade-style` (29 styles) as the first prototype section. Mobile fallback: A/B collapses to stacked cards with back-arrow. |
+| **`useSharedConfig` URL handler test** | [`docs/SABER_CARD_AUDIT_2026-04-27.md`](SABER_CARD_AUDIT_2026-04-27.md) P1 | S | Add `apps/web/tests/useSharedConfig.test.ts` covering `?s=<glyph>` decode, `loadPreset` invocation, URL strip-after-decode, malformed glyph error path, version error path, hash-fallback. Requires adding `@testing-library/react` to the web package (small dep). |
+| **Hilt Library Stage 2 — 7 canon-character assemblies** | [`docs/HILT_STAGE_2_BRIEFING.md`](HILT_STAGE_2_BRIEFING.md) | L | Plan saved at `~/.claude/plans/i-would-like-to-woolly-turtle-agent-a7508824b8adc4c43.md` with all 29 SVG path strings pre-authored. Adds `anakin-rots`, `ahsoka-clone-wars`, `dooku-canon`, `ventress-pair`, `rey-tros`, `plo-koon`, `leia-rebels` assemblies + 7 emitters / 7 switches / 7 grips / 6 pommels / 2 accents (`bronze-band`, `chrome-trim`). Append-only — Stage 1 untouched. Extraction is mechanical from the plan file. |
 | **Module extraction `lib/blade/*` from `BladeCanvas.tsx`** | `CLAUDE.md` v0.14.0 entry | M | BladeCanvas.tsx is ~2800 lines with the bloom / rim-glow / motion-blur / ambient pipeline inline. Extract to `lib/blade/pipeline.ts` + `lib/blade/bloom.ts` + etc. so `MiniSaber` / `FullscreenPreview` / `SaberCard` can adopt the same pipeline. Phase 4 of the v0.14.0 plan. |
 | **Golden-hash blade-render regression tests** | `CLAUDE.md` v0.14.0 entry | M | Render 8 canonical configs to a buffer, hash, diff against a checked-in golden set. Catches accidental visual drift. Designed in the v0.14.0 plan; not built. |
 | **Card snapshot golden-hash tests (20 layout × theme combos)** | `CLAUDE.md` Share Card v2 entry | M | Same harness shape as the blade-render tests, applied to the saber card pipeline (4 layouts × 5 themes = 20 combos). Lock down regressions in `cardSnapshot.ts`. |
@@ -22,7 +26,8 @@ Tracks small-to-medium items that should land soon after launch, scoped to one o
 | **MGP thumbnail crispness** | `CLAUDE.md` left-rail overhaul entry | S | 24×24 ignition/retraction triggers are scaled-down 100×60 SVGs via `transform: scale(0.24)`. Add `compactThumbnail` field on `transitionCatalogs.ts` entries so authors can ship optimised small-size SVGs. |
 | **Cross-OS hardware sweep — Windows / Linux + V2 / V3-OLED** | [`HARDWARE_VALIDATION_TODO.md`](HARDWARE_VALIDATION_TODO.md) | M | Phase A/B/C ✅ on macOS + V3.9 + Brave (Chromium). Windows WebUSB driver (WinUSB) historically fragile; Linux udev rules common sharp edge. Community-driven post-launch — invite reports via the launch Reddit post per `LAUNCH_PLAN.md`. |
 | **Code-level TODOs sweep** | grep results | S each | `WorkbenchLayout.tsx:669` (theme-row cap) · `DeliveryRail.tsx:210` + `StatusBar.tsx:170,238` (global WebUSB store) · `BladeHardwarePanel.tsx` / `PowerDrawPanel.tsx` / `GradientBuilder.tsx` (left-rail-overhaul consumer migration) · `useClickToRoute.ts` (bladeStore-modulation-patch cleanup) · `packages/engine/src/modulation/sampler.ts` (v1.1 preon/ignition/retraction progress, `BladeConfig.clashDecay`). One PR per cluster. |
-| **Dead-code cleanup** | `CLAUDE.md` 1.5x entry | S | `canvasMode` field in uiStore (kept after 1.5x for persistence safety). `BladeCanvas3DWrapper.tsx` (no import path). Safe to delete after verification sweep confirms no test/storybook references. |
+| ~~Dead-code cleanup (BladeCanvas3DWrapper + canvasMode)~~ | ~~CLAUDE.md 1.5x entry~~ | ~~S~~ | **✅ Done — landed via [PR #75](https://github.com/kenkoller/KyberStation/pull/75) on 2026-04-27.** Removed `BladeCanvas3DWrapper.tsx` (orphan) + `CanvasMode` type / `canvasMode` field / `setCanvasMode` setter from `uiStore.ts`. Persisted state from older sessions silently no-ops on next load (no migration shim needed since nothing reads). |
+| **Dead-code cleanup — consumer-migration stubs** | grep results | S each | The 3 stubs `BladeHardwarePanel.tsx`, `PowerDrawPanel.tsx`, `GradientBuilder.tsx` carry "left-rail-overhaul: consumer migration in progress" TODOs but still have ACTIVE imports from `DesignPanel.tsx`, `HardwarePanel.tsx`, `ColorPanel.tsx`, `StylePanel.tsx`, `TabColumnContent.tsx`, `lib/powerDraw.ts`. Refactor the import sites to reference the new replacement components, then delete the stubs. |
 | **`BladeConfig.hiltId` type declaration** | `CLAUDE.md` Share Card v2 follow-ups | S | Currently read via `(config as unknown as { hiltId?: string }).hiltId` in `card/drawHilt.ts`. Add to `BladeConfig` in `packages/engine/src/types.ts` and drop the cast. |
 | **Faction heuristic refactor in `chips.ts`** | `CLAUDE.md` Share Card v2 follow-ups | S | `card/chips.ts` uses ad-hoc green/blue hue predicates. Cleaner: add `isGreenHue` / `isBlueHue` siblings to `isRedHue` in `lib/crystal/types.ts` so chip + crystal-form selection share one detection pass. |
 | **`CardTheme` token expansion** | `CLAUDE.md` Share Card v2 follow-ups | S | Vignette color, watermark glyph, hilt accent are hardcoded in drawers. Add `vignetteColor` / `watermarkGlyph` / `hiltAccent` tokens so themes can vary (cream vignette on Jedi, ✦ on Imperial, amber hilt tint). |
@@ -69,16 +74,35 @@ Track here when surfaced; promote to a versioned sprint when bundled with relate
 - **Aurebesh font variants beyond Canon** — CanonTech / Legends / LegendsTech `.otf` files are bundled, no UI uses them. Future immersion-mode toggle. Source: `CLAUDE.md` v0.14.0 entry.
 - **`BladeCanvas3DWrapper` deletion** — file exists in `apps/web/components/editor/` with no import path. Safe to delete after sweep. Source: `CLAUDE.md` 1.5x entry.
 
-## Launch-night work (pre-launch — tonight, 2026-04-27 evening)
+## Launch-night progress recap (2026-04-27 evening)
 
-Tracked here so it doesn't get lost in the pre-launch shuffle. Items here either ship before launch or get explicitly punted to v0.15.x.
+What shipped in the pre-launch sprint (10 PRs in ~5 hours):
 
-| Item | Status |
-|---|---|
-| **Wave 10 — Hardware validation on V3.9** | Planned for tonight. Handoff doc: [`NEXT_HARDWARE_MODULATION_SESSION.md`](NEXT_HARDWARE_MODULATION_SESSION.md). |
-| **Cut `v0.15.0` tag** | Conditional on Wave 10 success. CHANGELOG + CLAUDE.md staged. |
-| **Manual visual verification of overnight modulation PRs** | Pre-launch QA task. Browser-driven walkthrough of 11 plates, drag-to-route, fx-edit, reciprocal hover, generated config.h v1.1 comment block. |
-| **Pre-launch verification battery** | Axe-core re-run + Lighthouse perf + asset inventory cross-check + smoke test the editor / gallery / share flow. |
+| PR | Title | Status |
+|---|---|---|
+| [#56](https://github.com/kenkoller/KyberStation/pull/56) | docs(gif-sprint): saber GIF roadmap | ✅ Merged |
+| [#36](https://github.com/kenkoller/KyberStation/pull/36) | feat(share-card): vertical-saber layout + rounded tip / flush emitter | ✅ Merged |
+| [#67](https://github.com/kenkoller/KyberStation/pull/67) | feat(gif-sprint-1): saber GIF infrastructure + idle hum + ignition cycle | ✅ Merged |
+| [#68](https://github.com/kenkoller/KyberStation/pull/68) | docs: salvage v0.14.0 left-rail overhaul recap (supersedes #54) | ✅ Merged |
+| [#69](https://github.com/kenkoller/KyberStation/pull/69) | feat(launch): SEO infrastructure — robots.txt, sitemap.xml, siteConfig | ✅ Merged |
+| [#70](https://github.com/kenkoller/KyberStation/pull/70) | docs(launch): post-launch backlog index + hardware handoff refresh | ✅ Merged |
+| [#71](https://github.com/kenkoller/KyberStation/pull/71) | chore(release): stage v0.15.0 — Modulation Routing v1.1 Core | ✅ Merged + tagged |
+| [#72](https://github.com/kenkoller/KyberStation/pull/72) | feat(modulation): Wave 7 — Kyber Glyph v2 modulation round-trip | ✅ Merged |
+| [#73](https://github.com/kenkoller/KyberStation/pull/73) | docs(launch): launch-prep pack (Saber Card audit + Sidebar IA + marketing copy) | ✅ Merged |
+| [#74](https://github.com/kenkoller/KyberStation/pull/74) | fix(launch): correct 700+ → 305+ preset count in LAUNCH_ASSETS | ✅ Merged |
+| [#75](https://github.com/kenkoller/KyberStation/pull/75) | chore: dead code cleanup — BladeCanvas3DWrapper + canvasMode | ⏳ CI / merging |
+
+**`v0.15.0` tagged at commit `42b3d2b`** with full release notes. Codename: Modulation Routing v1.1 Core. Hardware-gated work (V3.9 flash test) deferred per Ken's call — if blocking issue surfaces, ship v0.15.1 patch.
+
+## Open follow-ups deferred from tonight
+
+| Item | Why deferred | Where to resume |
+|---|---|---|
+| Wave 10 — Hardware validation on V3.9 | Ken's hands on hardware required | [`NEXT_HARDWARE_MODULATION_SESSION.md`](NEXT_HARDWARE_MODULATION_SESSION.md) — paste-ready prompt for the validator session |
+| Hilt Library Stage 2 (29 parts + 7 assemblies) | Plan-mode forced agent into plan-only output; extraction is mechanical but takes time | Plan with full SVG content at `~/.claude/plans/i-would-like-to-woolly-turtle-agent-a7508824b8adc4c43.md` |
+| `useSharedConfig` URL handler test | Requires adding `@testing-library/react` dep | Backlog v0.15.x small item |
+| Sidebar A/B layout build-out | Design spec done in [`SIDEBAR_AB_LAYOUT_v2_DESIGN.md`](SIDEBAR_AB_LAYOUT_v2_DESIGN.md); first prototype = `blade-style` section | v0.15.x or v0.16.0 sprint |
+| Marketing copy ship | Drafts done in [`docs/launch/`](launch/); FILL-IN placeholders for Fett263 contact + YouTuber names | Ken sends manually pre-launch / on launch day |
 
 ---
 
