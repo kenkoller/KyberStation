@@ -6,6 +6,8 @@
 
 **Visual blade style editor, real-time simulator, and config generator for custom lightsabers.**
 
+**Free, browser-based, MIT licensed, no accounts, no backend. Hobby project.**
+
 ![KyberStation landing page — live blade render behind the wordmark](docs/images/landing-hero.png)
 
 Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device — phone, tablet, laptop, or desktop. Installable as a PWA.
@@ -119,6 +121,19 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - Undo/redo with 50-entry history and human-readable labels
 
 ## Status
+
+### v0.15.0 — Launch (2026-04-28)
+
+The first publicly-released version. Includes:
+- Full **Modulation Routing v1.1 Core** — 11 modulators (swing/sound/angle/twist/time/clash/battery/lockup/preon/ignition/retraction), click-to-route + true HTML5 drag-to-route, per-binding expression editing via `fx` button popover, reciprocal hover highlighting, AST-level template injection in codegen so the generated `config.h` flashes LIVE ProffieOS templates instead of snapshot values
+- **Vertical Saber Card layout** + 4 layouts × 5 themes (20 combos) for share-card export
+- **Animated saber GIF export** — idle hum loop + ignition cycle from the My Crystal panel, headless workbench renderer port
+- **305+ character presets** across canon, Legends, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots) — every preset is `continuity`-tagged so you can filter to just canon
+- **AST-based ProffieOS code generator** — emits balanced templates that compile against ProffieOS 7.x without modification
+- **WebUSB flashing** — validated on Proffieboard V3.9 + macOS + Brave (Chromium-based browsers should behave identically)
+- **Kyber Glyph v2 sharing** — `?s=<glyph>` URL handler round-trips full configs including modulation bindings; v1 / v2 backward compatible
+
+See the [CHANGELOG](CHANGELOG.md) for the full Added / Changed / Fixed list and the prior version entries.
 
 ### Phase 1 Bug Fixes (Complete)
 - Stutter ignition timing corrected
