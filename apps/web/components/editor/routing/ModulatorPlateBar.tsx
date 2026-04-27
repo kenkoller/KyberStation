@@ -4,11 +4,25 @@
 //
 // Renders all 11 built-in modulators as clickable "plates".
 //
-// Interaction (click-to-route):
-//   1. User clicks a plate → arms it (sets uiStore.armedModulatorId)
-//   2. User clicks any numeric scrub field → binding created via
-//      useClickToRoute hook
-//   3. Clicking the armed plate again, or pressing Escape, disarms
+// Interaction (two parallel paths, both supported):
+//
+//   A. Click-to-route (keyboard / accessibility-friendly path):
+//     1. User clicks a plate → arms it (sets uiStore.armedModulatorId)
+//     2. User clicks any numeric scrub field → binding created via
+//        useClickToRoute hook
+//     3. Clicking the armed plate again, or pressing Escape, disarms
+//
+//   B. Drag-to-route (Wave 5 — primary mouse/trackpad path,
+//      Vital / Bitwig pattern):
+//     1. User drags a plate (HTML5 drag-and-drop)
+//     2. dragstart writes the modulator id under the
+//        MODULATOR_DRAG_MIME_TYPE key on the dataTransfer
+//     3. ParameterBank slider rows accept the drop and create the
+//        binding via useClickToRoute().dragBind(...)
+//     4. The armed-plate state is NOT touched during drag — the two
+//        flows are deliberately independent. Browsers separate
+//        click-vs-drag automatically when a drag actually starts;
+//        the plate's onClick still fires for non-drag clicks.
 //
 // Plates hidden entirely when the current board doesn't support
 // modulation (CFX / Xenopixel / Verso / Proffie V2.2 for v1.0).
@@ -40,6 +54,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
 import { getParameter } from '@/lib/parameterGroups';
+import { MODULATOR_DRAG_MIME_TYPE } from '@/hooks/useClickToRoute';
 
 // Stable empty array reference — passing `[]` as a Zustand selector
 // fallback creates a new reference every render and triggers an
@@ -77,8 +92,8 @@ export function ModulatorPlateBar() {
   return (
     <div className="space-y-2">
       <p className="text-ui-xs text-text-muted/80 leading-snug">
-        Click a modulator to arm it, then click any numeric parameter to
-        wire it up. Press <kbd className="font-mono text-[10px] px-1 rounded bg-bg-deep border border-border-subtle">Esc</kbd> to cancel.
+        Drag a modulator onto any numeric parameter to wire it up — or
+        click to arm, then click the parameter. Press <kbd className="font-mono text-[10px] px-1 rounded bg-bg-deep border border-border-subtle">Esc</kbd> to cancel.
       </p>
       <div
         role="toolbar"
@@ -164,6 +179,19 @@ function ModulatorPlate({ descriptor, armed, onClick }: ModulatorPlateProps) {
       onPointerLeave={() => setHoveredModulator(null)}
       onFocus={() => setHoveredModulator(id)}
       onBlur={() => setHoveredModulator(null)}
+      // ── Wave 5 drag-to-route ──
+      // Plate is a drag source. The drop target (slider rows in
+      // ParameterBank) reads the modulator id under the specific
+      // MIME type and calls `useClickToRoute().dragBind(...)`.
+      // We don't set a custom drag image — the default browser
+      // drag image (the plate ghosted under the cursor) is good
+      // enough for v1.1 Core. A future polish pass can add a
+      // portaled "wire from plate to cursor" if Ken wants it.
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(MODULATOR_DRAG_MIME_TYPE, id);
+        e.dataTransfer.effectAllowed = 'link';
+      }}
       className={[
         'relative group flex flex-col gap-1 px-2 py-2 rounded border transition-all text-left',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent',
