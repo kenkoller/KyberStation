@@ -1312,18 +1312,28 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       const grad = ctx.createLinearGradient(x, bladeYPx - coreH / 2, x, bladeYPx + coreH / 2);
       // Gentle edge dimming — smoother transition into bloom halo
       const edgeDim = 0.82;
-      // Center: slightly boosted for depth
-      const centerBoost = 1.12;
-      const rW = clamp(r * centerBoost + 35, 0, 255);
-      const gW = clamp(g * centerBoost + 35, 0, 255);
-      const bW = clamp(b * centerBoost + 35, 0, 255);
+      // Center: lerp toward white using the per-color glow profile's
+      // coreWhiteout factor. This is the HDR overexposure effect that
+      // used to be a separate pass (Layer 13). Integrating it into the
+      // body gradient guarantees the whiteout silhouette matches the
+      // body silhouette EXACTLY — no possible discontinuity at any
+      // boundary. The "mid" stops add an intermediate transition so
+      // the white core fades smoothly through pure-color into edge dim.
+      const cR = lerpToWhite(r, glow.coreWhiteout);
+      const cG = lerpToWhite(g, glow.coreWhiteout);
+      const cB = lerpToWhite(b, glow.coreWhiteout);
+      const mR = lerpToWhite(r, glow.coreWhiteout * 0.4);
+      const mG = lerpToWhite(g, glow.coreWhiteout * 0.4);
+      const mB = lerpToWhite(b, glow.coreWhiteout * 0.4);
 
       grad.addColorStop(0, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
       grad.addColorStop(0.08, rgbStr(r * 0.88, g * 0.88, b * 0.88));
       grad.addColorStop(0.2, rgbStr(r * 0.95, g * 0.95, b * 0.95));
-      grad.addColorStop(0.4, rgbStr(r, g, b));
-      grad.addColorStop(0.5, rgbStr(rW, gW, bW));
-      grad.addColorStop(0.6, rgbStr(r, g, b));
+      grad.addColorStop(0.35, rgbStr(r, g, b));
+      grad.addColorStop(0.42, rgbStr(mR, mG, mB));
+      grad.addColorStop(0.5, rgbStr(cR, cG, cB));
+      grad.addColorStop(0.58, rgbStr(mR, mG, mB));
+      grad.addColorStop(0.65, rgbStr(r, g, b));
       grad.addColorStop(0.8, rgbStr(r * 0.95, g * 0.95, b * 0.95));
       grad.addColorStop(0.92, rgbStr(r * 0.88, g * 0.88, b * 0.88));
       grad.addColorStop(1, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
@@ -1365,21 +1375,25 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         tipB = leds.getB(tipIdx) * effectiveBri * shimmer;
       }
       if (tipR + tipG + tipB > 0.5) {
-        // Same 9-stop vertical gradient as the body LED loop, applied to
-        // the cap fill so the cap profile matches the body profile at
-        // every horizontal slice.
+        // Same vertical gradient as the body LED loop above, with the
+        // same white-cored center, so the cap silhouette IS the
+        // whiteout silhouette at the tip — no possible mismatch.
         const tipEdgeDim = 0.82;
-        const tipCenterBoost = 1.12;
-        const tipRW = clamp(tipR * tipCenterBoost + 35, 0, 255);
-        const tipGW = clamp(tipG * tipCenterBoost + 35, 0, 255);
-        const tipBW = clamp(tipB * tipCenterBoost + 35, 0, 255);
+        const tipCR = lerpToWhite(tipR, glow.coreWhiteout);
+        const tipCG = lerpToWhite(tipG, glow.coreWhiteout);
+        const tipCB = lerpToWhite(tipB, glow.coreWhiteout);
+        const tipMR = lerpToWhite(tipR, glow.coreWhiteout * 0.4);
+        const tipMG = lerpToWhite(tipG, glow.coreWhiteout * 0.4);
+        const tipMB = lerpToWhite(tipB, glow.coreWhiteout * 0.4);
         const capGrad = ctx.createLinearGradient(actualVisibleEnd, bladeYPx - coreH / 2, actualVisibleEnd, bladeYPx + coreH / 2);
         capGrad.addColorStop(0, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
         capGrad.addColorStop(0.08, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
         capGrad.addColorStop(0.2, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
-        capGrad.addColorStop(0.4, rgbStr(tipR, tipG, tipB));
-        capGrad.addColorStop(0.5, rgbStr(tipRW, tipGW, tipBW));
-        capGrad.addColorStop(0.6, rgbStr(tipR, tipG, tipB));
+        capGrad.addColorStop(0.35, rgbStr(tipR, tipG, tipB));
+        capGrad.addColorStop(0.42, rgbStr(tipMR, tipMG, tipMB));
+        capGrad.addColorStop(0.5, rgbStr(tipCR, tipCG, tipCB));
+        capGrad.addColorStop(0.58, rgbStr(tipMR, tipMG, tipMB));
+        capGrad.addColorStop(0.65, rgbStr(tipR, tipG, tipB));
         capGrad.addColorStop(0.8, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
         capGrad.addColorStop(0.92, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
         capGrad.addColorStop(1, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
@@ -1389,65 +1403,13 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         ctx.fill();
       }
     }
-    captureDeltaAsLayer(ctx, '12. LED body segments + tip cap (visible canvas)', 'Per-LED filled rectangles with 4-stop vertical gradient (edge dim → mid → bright center → mid → edge dim), capped with a colored semicircle at the tip using the last lit LED color. Plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).', cw, ch);
+    captureDeltaAsLayer(ctx, '12. LED body + tip cap with white-cored gradient (whiteout integrated)', `Per-LED filled rectangles + colored tip cap, both painted with the same vertical gradient: edge dim (×0.82, α 0.92) → mid → full color → mid (lerped toward white) → CENTER (lerped to white by glow.coreWhiteout=${glow.coreWhiteout}) → mid → full color → mid → edge dim. The HDR-overexposure whiteout effect is built into the body gradient so its silhouette ALWAYS matches the body silhouette — no possible discontinuity between body, tip cap, and whiteout. Plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).`, cw, ch);
 
-    // Pass 7: Core whiteout (HDR overexposed center — fills middle of
-    // blade body AND extends past the last LED with a semicircular cap
-    // at the tip so the rounded end matches the body's whiteout band.
-    // The tip whiteout used to live in the dedicated Tip Corona pass,
-    // which has been folded in here so the entire blade has consistent
-    // HDR treatment in one pass.
-    const whiteH = coreH * 0.45; // wider hot core reduces dark banding
-    const coreWhiteout = glow.coreWhiteout;
-    for (let i = 0; i < ledCount; i++) {
-      const t = i / (ledCount - 1);
-      const x = bladeStartPx + t * bladeLenPx;
-
-      let r: number, g: number, b: number;
-      if (isInHilt) {
-        const falloff = Math.pow(1 - t, 1.8);
-        r = avgR * falloff; g = avgG * falloff; b = avgB * falloff;
-      } else {
-        r = leds.getR(i) * effectiveBri;
-        g = leds.getG(i) * effectiveBri;
-        b = leds.getB(i) * effectiveBri;
-      }
-      if (r + g + b < 0.5) continue; // skip unlit LEDs
-
-      // Blow out to near-white: real sabers are blinding at the core
-      const wr = lerpToWhite(r, coreWhiteout);
-      const wg = lerpToWhite(g, coreWhiteout);
-      const wb = lerpToWhite(b, coreWhiteout);
-      ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
-      ctx.fillRect(x, bladeYPx - whiteH / 2, segW, whiteH);
-    }
-
-    // Tip whiteout cap — semicircle matching the body's whiteout BAND
-    // radius (whiteH/2). Keeping the whiteout cap and body band the same
-    // size means the bright HDR overexposure region is uniform end-to-
-    // end. The colored tip cap (Layer 12) handles the rounded silhouette
-    // with body-matching edge alpha so the visible tip width matches
-    // the visible body width.
-    if (actualVisibleLen > 1) {
-      const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
-      let tipR: number, tipG: number, tipB: number;
-      if (isInHilt) {
-        const falloff = Math.pow(1 - maxLitT, 1.8);
-        tipR = avgR * falloff; tipG = avgG * falloff; tipB = avgB * falloff;
-      } else {
-        tipR = leds.getR(tipIdx) * effectiveBri;
-        tipG = leds.getG(tipIdx) * effectiveBri;
-        tipB = leds.getB(tipIdx) * effectiveBri;
-      }
-      const wr = lerpToWhite(tipR, coreWhiteout);
-      const wg = lerpToWhite(tipG, coreWhiteout);
-      const wb = lerpToWhite(tipB, coreWhiteout);
-      ctx.fillStyle = rgbStr(wr, wg, wb, 0.90 * shimmer);
-      ctx.beginPath();
-      ctx.arc(actualVisibleEnd, bladeYPx, whiteH / 2, -Math.PI / 2, Math.PI / 2);
-      ctx.fill();
-    }
-    captureDeltaAsLayer(ctx, '13. Core whiteout (HDR overexposure + tip cap)', `Narrower (45% of coreH) stripe of LED color lerped toward white by glow.coreWhiteout (${glow.coreWhiteout}). Body band + matching whiteH-radius semicircle at the tip — uniform width end to end so the tip whiteout does not bulge wider than the body.`, cw, ch);
+    // Pass 7 (former Layer 13 — Core whiteout) removed; the whiteout is
+    // now integrated into the body gradient above. The body LED loop
+    // and tip cap both lerp their CENTER stops toward white using
+    // glow.coreWhiteout, achieving the same HDR overexposure effect
+    // with guaranteed silhouette consistency.
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
