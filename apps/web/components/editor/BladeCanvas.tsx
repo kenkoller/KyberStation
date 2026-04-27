@@ -275,8 +275,227 @@ function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
+// Linear lerp from `channel` toward 255 by `t` ∈ [0,1]. Used by the
+// Angle View cross-section's hand-tuned core gradient (constants 0.5/0.6
+// are visual choices for that uniform tube-end view, not data-driven).
+// The blade-body path uses `ledCoreWhiteAmount` instead — see below.
 function lerpToWhite(channel: number, t: number): number {
   return clamp(channel + (255 - channel) * t, 0, 255);
+}
+
+// Per-LED data-driven white-core amount.
+//
+// Replaces the v0.14.x `lerpToWhite(channel, glow.coreWhiteout)` formula
+// which applied a fixed plateau (e.g. 0.95 for white blades) to every lit
+// LED — so a barely-lit LED got the same white core as a max-bright one,
+// producing a uniform white slab regardless of per-pixel brightness.
+//
+// peak = max RGB channel ∈ [0,1]. Below ~0.35 the LED stays purely
+// colored; above ~0.85 the core is fully blown out toward white. The
+// per-color `coreWhiteout` knob still scales the asymptote (white blades
+// reach white faster than orange/red), but it no longer controls plateau
+// width — luma does.
+function ledCoreWhiteAmount(r: number, g: number, b: number, coreWhiteout: number): number {
+  const peak = Math.max(r, g, b) / 255;
+  // Threshold band: dim LEDs (peak < 0.20) stay pure colored; mid-bright
+  // LEDs (peak ≥ 0.55) reach the per-color asymptote. Tightened from the
+  // initial 0.35→0.85 range, which left mid-bright pulses at only ~22%
+  // white-shift — visibly tinted but not the iconic blown-out tube.
+  // Real polycarbonate diffusers saturate fast; anything past half-bright
+  // should already read white-hot at the core.
+  //
+  // 1.25× exposure boost (clamped to 1.0): pushes mid-bright LEDs harder
+  // into the white plateau and lets the asymptote reach pure white instead
+  // of stopping at coreWhiteout (≈0.82-0.95 per color profile). Ken-tuned.
+  const t = clamp((peak - 0.20) / 0.35, 0, 1);
+  return Math.min(1.0, t * t * (3 - 2 * t) * coreWhiteout * 1.25);
+}
+
+// Capsule-shape blade rasterizer. Replaces the v0.14.x stack of
+// (per-LED rectangle body) + (separate radial tip cap) with a single
+// per-pixel walker over the capsule's bounding box. The capsule is
+// fixed at the FULL configured blade length — it does not shrink during
+// retraction. Pixels sample the LED color at their axial position and
+// the alpha+core treatment from their radial offset to the central axis.
+// Unlit LED pixels paint transparent, so retraction reads as the lit
+// portion shrinking inside a fixed-length tube (matching how a real
+// polycarbonate diffuser behaves — the tube doesn't physically retract).
+//
+// Per-row work is hoisted out of the per-pixel loop:
+//   - LED color + white-shift amount are looked up once per column (each
+//     column maps to exactly one LED index via axial t).
+//   - radial alpha + color blend (white-shifted plateau ↔ raw color) are
+//     computed per pixel from |dy|/radius (or Euclidean distance in the
+//     end caps). Profile mirrors what the body+cap gradients used to
+//     produce — a 16% white plateau, then a Gaussian-shape α falloff
+//     to the rim. See the body-vs-cap notes in earlier commit history
+//     for the derivation.
+//
+// Output is the OFFSCREEN buffer. The bloom mips sample this same
+// offscreen, AND it gets composited directly to the visible canvas as
+// the body (replacing Pass 12). One source of truth for the blade
+// silhouette → no body/cap matching games, no shape discontinuity at
+// the tip, bloom inherits whatever the rasterizer paints.
+function rasterizeCapsuleToOffscreen(
+  offCtx: CanvasRenderingContext2D,
+  leds: { getR: (i: number) => number; getG: (i: number) => number; getB: (i: number) => number; count: number },
+  bladeStartPx: number,
+  bladeLenPx: number,
+  bladeYPx: number,
+  coreH: number,
+  effectiveBri: number,
+  shimmer: number,
+  coreWhiteout: number,
+  cw: number,
+  ch: number,
+  hiltTuck: number = 0,
+): void {
+  const radius = coreH * 0.5;
+  if (radius < 1 || bladeLenPx < 1) return;
+  const ledCount = leds.count;
+  if (ledCount < 1) return;
+
+  // Capsule axes: rectangle middle spans [emitterX + r, tipX - r]; the
+  // left + right end caps are half-disks centered at those axis endpoints.
+  // `hiltTuck` shifts emitterX leftward so the rounded LEFT cap sits
+  // behind the hilt (invisible to the user but bloom mips still see it
+  // and produce halo into the hilt area). LED axial mapping stays
+  // anchored at bladeStartPx so the leftward-extended pixels read the
+  // first LED's color (and the LED strip itself still spans bladeStartPx
+  // → bladeStartPx+bladeLenPx exactly).
+  const emitterX = bladeStartPx - hiltTuck;
+  const tipX = bladeStartPx + bladeLenPx;
+  const leftCapAxisX = emitterX + radius;
+  const rightCapAxisX = tipX - radius;
+
+  // Bounding box clamped to the offscreen extent.
+  const minX = Math.max(0, Math.floor(emitterX));
+  const maxX = Math.min(cw, Math.ceil(tipX));
+  const minY = Math.max(0, Math.floor(bladeYPx - radius));
+  const maxY = Math.min(ch, Math.ceil(bladeYPx + radius));
+  const width = maxX - minX;
+  const height = maxY - minY;
+  if (width < 1 || height < 1) return;
+
+  // Per-LED color + white-shift cache. Function-call overhead inside the
+  // pixel loop is meaningful at 60 FPS; precomputing once per LED collapses
+  // ~4×ledCount × pixelCount calls down to 4×ledCount.
+  const ledR = new Float32Array(ledCount);
+  const ledG = new Float32Array(ledCount);
+  const ledB = new Float32Array(ledCount);
+  const ledWhite = new Float32Array(ledCount);
+  for (let i = 0; i < ledCount; i++) {
+    const r = leds.getR(i) * effectiveBri * shimmer;
+    const g = leds.getG(i) * effectiveBri * shimmer;
+    const b = leds.getB(i) * effectiveBri * shimmer;
+    ledR[i] = r;
+    ledG[i] = g;
+    ledB[i] = b;
+    ledWhite[i] = ledCoreWhiteAmount(r, g, b, coreWhiteout);
+  }
+
+  const imgData = offCtx.getImageData(minX, minY, width, height);
+  const data = imgData.data;
+
+  // Plateau / color-transition constants — match the body's earlier
+  // GAUSS_BAND_STOPS profile so the visual envelope is preserved.
+  const PLATEAU_END = 0.16;
+  const COLOR_END = 0.40;
+  const COLOR_LERP_DENOM = COLOR_END - PLATEAU_END;
+  const radiusInv = 1 / radius;
+  const bladeLenInv = 1 / bladeLenPx;
+
+  const ledSpan = ledCount - 1;
+  for (let px = minX; px < maxX; px++) {
+    // Axial t → fractional LED position. Anchored at bladeStartPx so the
+    // LED strip spans bladeStartPx → bladeStartPx+bladeLenPx exactly. Pixels
+    // in the hilt-tuck region (px < bladeStartPx) clamp to t=0 (first LED).
+    //
+    // LINEAR INTERPOLATION between adjacent LEDs replaces the prior hard
+    // `floor(t * ledCount)` quantization. Without this, all ~6 pixels
+    // within one LED's column share identical color and the next LED's
+    // column snaps to a different color — visible as hard vertical seams
+    // wherever adjacent LEDs differ in brightness (Stripes, Pulse, Clash
+    // hot spots, retraction frontiers). With interp, each pixel samples a
+    // weighted blend of its two nearest LEDs proportional to its position
+    // — a bright→dim transition spans the full LED-width as a smooth
+    // ramp instead of a step. This is the axial component of polycarbonate
+    // diffusion: light from each LED bleeds into its neighbors along the
+    // tube length (the radial component is already handled by Gaussian-α).
+    let t = (px - bladeStartPx) * bladeLenInv;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const f = t * ledSpan; // 0..(ledCount-1)
+    let i0 = f | 0;
+    if (i0 >= ledSpan) i0 = ledSpan;
+    const i1 = i0 < ledSpan ? i0 + 1 : ledSpan;
+    const wHi = f - i0;
+    const wLo = 1 - wHi;
+
+    const r = ledR[i0] * wLo + ledR[i1] * wHi;
+    const g = ledG[i0] * wLo + ledG[i1] * wHi;
+    const b = ledB[i0] * wLo + ledB[i1] * wHi;
+    if (r + g + b < 0.5) continue; // unlit column → transparent
+
+    const wWhite = ledWhite[i0] * wLo + ledWhite[i1] * wHi;
+    const cR = r + (255 - r) * wWhite;
+    const cG = g + (255 - g) * wWhite;
+    const cB = b + (255 - b) * wWhite;
+
+    // Compute the x-component of the distance-from-axis squared once per
+    // column. In the rectangle middle this is 0; in the end caps it's the
+    // squared horizontal offset from the cap's axis center.
+    let dxAxis: number;
+    if (px < leftCapAxisX) dxAxis = px - leftCapAxisX;
+    else if (px > rightCapAxisX) dxAxis = px - rightCapAxisX;
+    else dxAxis = 0;
+    const dxSq = dxAxis * dxAxis;
+
+    for (let py = minY; py < maxY; py++) {
+      const dy = py - bladeYPx;
+      const distSq = dxSq + dy * dy;
+      // Skip pixels outside the capsule shape.
+      if (distSq > radius * radius) continue;
+
+      const dist = Math.sqrt(distSq);
+      const nr = dist * radiusInv; // ∈ [0, 1]
+
+      // Tightened α profile for clear blade definition + body extending to
+      // the configured blade length. Wider full-α plateau (0→0.6) gives a
+      // defined body shape; sharp drop in the outer 25% (0.75→1.0) extends
+      // bright pixels close to the rim so the visible silhouette ends at
+      // exactly tipX (matching the 40" grid mark for max-length blades).
+      // α=0 at rim is preserved so bloom halo still wraps past the body.
+      // Anchors: (0.0, 1.0) → (0.6, 1.0) → (0.75, 0.92) → (0.9, 0.40) → (1.0, 0.00).
+      let alpha: number;
+      if (nr <= 0.6) alpha = 1.0;                                // full plateau
+      else if (nr <= 0.75) alpha = 1.0 - (nr - 0.6) * (0.08 / 0.15); // → 0.92
+      else if (nr <= 0.9) alpha = 0.92 - (nr - 0.75) * (0.52 / 0.15); // → 0.40
+      else alpha = 0.40 - (nr - 0.9) * (0.40 / 0.10);            // → 0.00 at rim
+
+      // Color: pure white-shifted plateau in the inner 16%, raw LED color
+      // past the 40% mark, smooth lerp in between. Mirrors the body's
+      // 3-stop white plateau + 25%-wide color transition.
+      let outR: number, outG: number, outB: number;
+      if (nr <= PLATEAU_END) {
+        outR = cR; outG = cG; outB = cB;
+      } else if (nr >= COLOR_END) {
+        outR = r; outG = g; outB = b;
+      } else {
+        const lt = (nr - PLATEAU_END) / COLOR_LERP_DENOM;
+        outR = cR + (r - cR) * lt;
+        outG = cG + (g - cG) * lt;
+        outB = cB + (b - cB) * lt;
+      }
+
+      const idx = ((py - minY) * width + (px - minX)) * 4;
+      data[idx] = outR;
+      data[idx + 1] = outG;
+      data[idx + 2] = outB;
+      data[idx + 3] = (alpha * 255) | 0;
+    }
+  }
+
+  offCtx.putImageData(imgData, minX, minY);
 }
 
 /** Boost saturation of an RGB color */
@@ -301,13 +520,18 @@ const VIEW_MODE_LABELS: Record<string, string> = {
 export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = false, renderMode = 'photorealistic', compact = false, panelMode = false }: BladeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // SHARP offscreen — the rasterizer writes the capsule here. Used as
+  // the visible body source (clipped to right of hilt). NO diffusion
+  // blur is applied — the body stays crisp so it reads as a clearly
+  // defined blade silhouette ending exactly at bladeStartPx + bladeLenPx.
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
-  // Scratch canvas reused by the diffusion-blur pass. Allocated lazily
-  // and resized in-place whenever the main canvas resizes (mirrors the
-  // offscreenRef resize path at line ~437). Previously we allocated a
-  // fresh <canvas> every frame, which caused GC churn (see the
-  // 2026-04-19 perf audit P0).
-  const diffusionTempRef = useRef<HTMLCanvasElement | null>(null);
+  // SOFT offscreen — sharp offscreen copied here with the diffusion
+  // blur filter applied (when diffusion.blurKernel > 0). Used as the
+  // bloom-mip source so the halo stays diffuse. Splitting "sharp body
+  // source" from "soft bloom source" lets us crank diffusion without
+  // softening the body silhouette (which would shorten the visible
+  // blade past the configured length and dilute the white-hot core).
+  const softOffscreenRef = useRef<HTMLCanvasElement | null>(null);
 
   // Phase 2 bloom: 3-mip downsampled bright-pass chain. Lazily
   // allocated + reused across frames (HMR-safe since they're
@@ -549,9 +773,9 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         offscreenRef.current.width = w * dpr;
         offscreenRef.current.height = h * dpr;
       }
-      if (diffusionTempRef.current) {
-        diffusionTempRef.current.width = w * dpr;
-        diffusionTempRef.current.height = h * dpr;
+      if (softOffscreenRef.current) {
+        softOffscreenRef.current.width = w * dpr;
+        softOffscreenRef.current.height = h * dpr;
       }
     };
 
@@ -635,6 +859,18 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       offscreenRef.current = c;
     }
     return offscreenRef.current;
+  }, []);
+
+  // ─── Soft offscreen canvas (lazy, matches main size) — bloom-source ───
+  const getSoftOffscreen = useCallback((): HTMLCanvasElement => {
+    const { w, h, dpr } = sizeRef.current;
+    if (!softOffscreenRef.current) {
+      const c = document.createElement('canvas');
+      c.width = w * dpr;
+      c.height = h * dpr;
+      softOffscreenRef.current = c;
+    }
+    return softOffscreenRef.current;
   }, []);
 
   // ─── Scale factors: maps design-space → actual canvas pixels ───
@@ -954,7 +1190,6 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const coreH = baseCoreH;
 
     const visibleLen = bladeLenPx * extendProgress;
-    const segW = bladeLenPx / ledCount + 0.5 * scale;
 
     // Multi-strip brightness boost (non-linear due to diffusion overlap)
     const stripBrightness = isInHilt
@@ -979,20 +1214,19 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       return;
     }
 
-    // ── Compute average blade color + find farthest lit LED ──
+    // ── Compute average blade color ──
     // Read all LEDs — the engine mask already zeroed unlit pixels,
     // so we don't clip to extendProgress (which breaks non-linear
-    // retraction types like shatter).
+    // retraction types like shatter). Used by glow profile lookup,
+    // ignition flash, ambient tint — NOT for blade geometry, which
+    // is now fixed at full length per the capsule rasterizer.
     let avgR = 0, avgG = 0, avgB = 0, activeCount = 0;
-    let maxLitT = 0;
     for (let i = 0; i < ledCount; i++) {
-      const t = i / (ledCount - 1);
       const r = leds.getR(i) * effectiveBri;
       const g = leds.getG(i) * effectiveBri;
       const b = leds.getB(i) * effectiveBri;
       if (r + g + b > 1) {
         avgR += r; avgG += g; avgB += b; activeCount++;
-        maxLitT = t;
       }
     }
     if (activeCount > 0) { avgR /= activeCount; avgG /= activeCount; avgB /= activeCount; }
@@ -1008,111 +1242,52 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const offCtx = offscreen.getContext('2d')!;
     offCtx.clearRect(0, 0, cw, ch);
 
-    if (isInHilt) {
-      // In-hilt LEDs: single color, brightness falloff from emitter to tip
-      for (let i = 0; i < ledCount; i++) {
-        const t = i / (ledCount - 1);
-        const x = bladeStartPx + t * bladeLenPx;
-        const falloff = Math.pow(1 - t, 1.8);
-        const r = avgR * falloff * shimmer;
-        const g = avgG * falloff * shimmer;
-        const b = avgB * falloff * shimmer;
-        if (r + g + b < 0.5) continue; // skip unlit LEDs
-        offCtx.fillStyle = rgbStr(r, g, b);
-        offCtx.fillRect(x, bladeYPx - coreH / 2, segW, coreH);
-      }
-    } else {
-      // Neopixel: per-LED color segments — engine mask already handles visibility
-      for (let i = 0; i < ledCount; i++) {
-        const t = i / (ledCount - 1);
-        const x = bladeStartPx + t * bladeLenPx;
-        const r = leds.getR(i) * effectiveBri * shimmer;
-        const g = leds.getG(i) * effectiveBri * shimmer;
-        const b = leds.getB(i) * effectiveBri * shimmer;
-        if (r + g + b < 0.5) continue; // skip unlit LEDs
-        offCtx.fillStyle = rgbStr(r, g, b);
-        offCtx.fillRect(x, bladeYPx - coreH / 2, segW, coreH);
-      }
-    }
+    // ── Capsule rasterizer: single source of truth for the blade ──
+    // One per-pixel walker fills a capsule shape (rectangle + rounded
+    // ends) covering the FULL blade extent. Each pixel samples its
+    // LED color along the axis and gets Gaussian-α + data-driven
+    // white-core treatment from its radial offset. Replaces the
+    // v0.14.x stack of (per-LED rectangles) + (separate radial tip
+    // cap) + (parallel in-hilt branch). Capsule shape is fixed at the
+    // full configured blade length — retraction is rendered via the
+    // engine's per-LED brightness, not via geometry truncation, so the
+    // tube shape stays put while the lit portion shrinks.
+    // hiltTuck = coreH (= 2× radius) extends the capsule's left cap fully
+    // behind the hilt's right edge with margin. The cap is invisible on
+    // the visible canvas (hilt is drawn over Pass 12 below) but the bloom
+    // mips still sample it so the halo glows naturally into the hilt area.
+    const hiltTuck = coreH;
+    rasterizeCapsuleToOffscreen(
+      offCtx, leds,
+      bladeStartPx, bladeLenPx, bladeYPx, coreH,
+      effectiveBri, shimmer, glow.coreWhiteout,
+      cw, ch,
+      hiltTuck,
+    );
+    captureBufferAsLayer(offscreen, '01. Offscreen — capsule rasterizer', `Per-pixel capsule rasterized over the full blade extent. Each pixel samples its LED color (via axial position), applies Gaussian-α from radial offset, and lerps toward white-shifted plateau in the inner 16% of radius. Replaces the body+cap stack from earlier passes. Bloom mips sample THIS, AND it composites to the visible canvas as the body — one source of truth.`, cw, ch);
 
-    captureBufferAsLayer(offscreen, '01. Offscreen — LED segments', 'Per-LED rectangles drawn to the offscreen buffer. Raw pixel-strip data, before tip caps, blur, or bloom.', cw, ch);
-
-    // ── Draw rounded tip cap on offscreen buffer ──
-    // Ensures bloom passes wrap glow around the tip naturally
-    // instead of producing a flat rectangular cutoff.
-    if (activeCount > 0 && maxLitT > 0) {
-      const tipEndX = bladeStartPx + maxLitT * bladeLenPx;
-      const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
-      let capR: number, capG: number, capB: number;
-      if (isInHilt) {
-        const falloff = Math.pow(1 - maxLitT, 1.8);
-        capR = avgR * falloff * shimmer;
-        capG = avgG * falloff * shimmer;
-        capB = avgB * falloff * shimmer;
-      } else {
-        capR = leds.getR(tipIdx) * effectiveBri * shimmer;
-        capG = leds.getG(tipIdx) * effectiveBri * shimmer;
-        capB = leds.getB(tipIdx) * effectiveBri * shimmer;
-      }
-      if (capR + capG + capB > 0.5) {
-        // Semicircular cap matching blade core height. This is the ONLY
-        // tip-specific bright pixel in the offscreen now — no wider soft
-        // seed extending past the cap. The cap shape alone gives the
-        // bloom kernel enough geometry to wrap the tip smoothly with
-        // the softened bright-pass threshold (contrast 1.15).
-        //
-        // Earlier the offscreen also drew a coreH * 4.0 radius radial
-        // gradient seed at the tip to "help" the bloom wrap. Result:
-        // bloom around the tip ended up ~2x wider than bloom around
-        // the body, producing a visible bulge that did not match the
-        // body width. Dropping the seed makes the bloom contribution
-        // at the tip match the bloom around the rest of the blade.
-        offCtx.fillStyle = rgbStr(capR, capG, capB);
-        offCtx.beginPath();
-        offCtx.arc(tipEndX, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
-        offCtx.fill();
-      }
-      // Emitter end intentionally left flat — the hilt covers the visible
-      // portion, and any rectangular bloom artifact peeking past the hilt
-      // edges is acceptable per the v0.14.x pipeline-cleanup pass. If the
-      // boxy artifact ever becomes visible in practice, escalate to a soft
-      // alpha falloff at x=bladeStartPx (or mask the offscreen behind the
-      // hilt outline).
-    }
-
-    captureBufferAsLayer(offscreen, '02. Offscreen — tip rounded cap + glow seed', 'LED strip + rounded semicircular cap at the TIP only (color borrowed from the last lit LED) + soft radial gradient seed extending beyond the bloom kernel. Emitter end stays flat — the hilt covers it, so no seed work needed there.', cw, ch);
-
-    // ── Apply diffusion blur to offscreen if needed ──
+    // ── Build SOFT offscreen as bloom-mip source ──
+    // Sharp offscreen (Pass 01) → soft offscreen via diffusion blur. The
+    // sharp offscreen stays untouched so the visible body composite below
+    // (Pass 12) reads a crisp blade silhouette ending exactly at tipX.
+    // The soft offscreen feeds the bloom mips below so the halo stays
+    // diffuse. When blurKernel = 0 (no diffusion), the soft buffer is
+    // just a copy of the sharp one — bloom still works correctly.
+    const softOffscreen = getSoftOffscreen();
+    const softCtx = softOffscreen.getContext('2d')!;
+    softCtx.clearRect(0, 0, cw, ch);
+    softCtx.save();
     if (diffusion.blurKernel > 0) {
-      offCtx.save();
-      offCtx.filter = `blur(${diffusion.blurKernel * scale}px)`;
-      // Reuse a single scratch canvas across frames — allocating a
-      // fresh <canvas> every frame was a GC-churn source per the
-      // 2026-04-19 perf audit P0. Size is kept in sync with the main
-      // canvas via the ResizeObserver callback above.
-      let tempCanvas = diffusionTempRef.current;
-      if (!tempCanvas) {
-        tempCanvas = document.createElement('canvas');
-        tempCanvas.width = cw;
-        tempCanvas.height = ch;
-        diffusionTempRef.current = tempCanvas;
-      } else if (tempCanvas.width !== cw || tempCanvas.height !== ch) {
-        tempCanvas.width = cw;
-        tempCanvas.height = ch;
-      }
-      const tempCtx = tempCanvas.getContext('2d')!;
-      tempCtx.clearRect(0, 0, cw, ch);
-      tempCtx.drawImage(offscreen, 0, 0);
-      offCtx.clearRect(0, 0, cw, ch);
-      offCtx.drawImage(tempCanvas, 0, 0);
-      offCtx.restore();
-      captureBufferAsLayer(offscreen, '03. Offscreen — diffusion blur', `CSS blur filter (kernel ${diffusion.blurKernel}px × scale) applied to the offscreen buffer. Simulates the polycarbonate diffusion tube. Only present when the selected diffusion type has blurKernel > 0.`, cw, ch);
+      softCtx.filter = `blur(${diffusion.blurKernel * scale}px)`;
     }
+    softCtx.drawImage(offscreen, 0, 0);
+    softCtx.restore();
+    captureBufferAsLayer(softOffscreen, '03. Soft offscreen — diffusion blur', `Sharp offscreen (Pass 01) copied into a separate soft buffer with the diffusion blur filter applied (kernel ${diffusion.blurKernel}px × scale). Bloom mips below sample from THIS soft copy, so the halo stays diffuse without softening the visible body. The sharp offscreen is preserved for the body composite (Pass 12).`, cw, ch);
 
     // ── Draw hilt BEFORE bloom so glow overlaps it naturally ──
     const bladeColor = activeCount > 0 ? { r: satR, g: satG, b: satB } : null;
     drawHilt(ctx, bladeColor, scale);
-    captureDeltaAsLayer(ctx, '04. Hilt', 'Procedural metallic hilt drawn on the visible canvas (pommel, grip ribs, shroud, emitter). Drawn BEFORE the bloom so the halo can spill over it naturally.', cw, ch);
+    captureDeltaAsLayer(ctx, '04. Hilt', 'Procedural metallic hilt drawn on the visible canvas (pommel, grip ribs, shroud, emitter). Drawn BEFORE the bloom so the halo can spill onto its metallic surface (additive `lighter` blend). The capsule body composite below is clipped to the right of the hilt edge so the body itself doesn\'t paint over the hilt.', cw, ch);
 
     // ══════════════════════════════════════════════════
     // ── PHASE 2 BLOOM PIPELINE ──
@@ -1190,7 +1365,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
         //  - bloom looks less "snappy" / more diffuse. Closer to what
         //    real cameras + real eyes produce.
         mCtx.filter = `contrast(1.15) brightness(1.05) blur(${def.blurPx}px)`;
-        mCtx.drawImage(offscreen, 0, 0, cw, ch, 0, 0, def.w, def.h);
+        mCtx.drawImage(softOffscreen, 0, 0, cw, ch, 0, 0, def.w, def.h);
         mCtx.restore();
       }
 
@@ -1285,133 +1460,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       }
     }
 
-    // Compute actual visible end from LED data (matches engine mask,
-    // not the linear extendProgress which diverges for shatter/fadeout).
-    // Used by both Pass 6 (tip cap) + Pass 7 (whiteout cap) below.
-    const actualVisibleEnd = bladeStartPx + maxLitT * bladeLenPx;
-    const actualVisibleLen = maxLitT * bladeLenPx;
-
-    // Pass 6: Blade body (the solid LED segments with vertical gradient for depth)
-    for (let i = 0; i < ledCount; i++) {
-      const t = i / (ledCount - 1);
-      const x = bladeStartPx + t * bladeLenPx;
-
-      let r: number, g: number, b: number;
-      if (isInHilt) {
-        const falloff = Math.pow(1 - t, 1.8);
-        r = avgR * falloff * shimmer;
-        g = avgG * falloff * shimmer;
-        b = avgB * falloff * shimmer;
-      } else {
-        r = leds.getR(i) * effectiveBri * shimmer;
-        g = leds.getG(i) * effectiveBri * shimmer;
-        b = leds.getB(i) * effectiveBri * shimmer;
-      }
-      if (r + g + b < 0.5) continue; // skip unlit LEDs
-
-      const grad = ctx.createLinearGradient(x, bladeYPx - coreH / 2, x, bladeYPx + coreH / 2);
-      // Gentle edge dimming — smoother transition into bloom halo
-      const edgeDim = 0.82;
-      // Center: lerp toward white using the per-color glow profile's
-      // coreWhiteout factor. White plateau widened from ~16% (mid stops
-      // at 0.42/0.58) to ~30% (full plateau between 0.35 and 0.65) so
-      // the bright/white core reads as a thick "white-hot tube" instead
-      // of a thin stripe. mid-lerp transitions on either side smooth
-      // the falloff back into pure color, then the existing edge-dim
-      // stops carry the body into the bloom halo.
-      const cR = lerpToWhite(r, glow.coreWhiteout);
-      const cG = lerpToWhite(g, glow.coreWhiteout);
-      const cB = lerpToWhite(b, glow.coreWhiteout);
-      const mR = lerpToWhite(r, glow.coreWhiteout * 0.4);
-      const mG = lerpToWhite(g, glow.coreWhiteout * 0.4);
-      const mB = lerpToWhite(b, glow.coreWhiteout * 0.4);
-
-      grad.addColorStop(0, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
-      grad.addColorStop(0.08, rgbStr(r * 0.88, g * 0.88, b * 0.88));
-      grad.addColorStop(0.18, rgbStr(r * 0.95, g * 0.95, b * 0.95));
-      grad.addColorStop(0.25, rgbStr(r, g, b));
-      grad.addColorStop(0.30, rgbStr(mR, mG, mB));
-      grad.addColorStop(0.35, rgbStr(cR, cG, cB));
-      grad.addColorStop(0.65, rgbStr(cR, cG, cB));
-      grad.addColorStop(0.70, rgbStr(mR, mG, mB));
-      grad.addColorStop(0.75, rgbStr(r, g, b));
-      grad.addColorStop(0.82, rgbStr(r * 0.95, g * 0.95, b * 0.95));
-      grad.addColorStop(0.92, rgbStr(r * 0.88, g * 0.88, b * 0.88));
-      grad.addColorStop(1, rgbStr(r * edgeDim, g * edgeDim, b * edgeDim, 0.92));
-
-      ctx.fillStyle = grad;
-      ctx.fillRect(x, bladeYPx - coreH / 2, segW, coreH);
-
-      // LED hotspot dots (visible on trans-white / light diffusion)
-      if (diffusion.hotspotVisibility > 0 && !isInHilt) {
-        const hotR = clamp(r * 1.3, 0, 255);
-        const hotG = clamp(g * 1.3, 0, 255);
-        const hotB = clamp(b * 1.3, 0, 255);
-        ctx.fillStyle = rgbStr(hotR, hotG, hotB, diffusion.hotspotVisibility * 0.6);
-        const dotRadius = 1.2 * scale;
-        ctx.beginPath();
-        ctx.arc(x + segW / 2, bladeYPx, dotRadius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Colored tip cap on the visible blade body — semicircle of the tip
-    // LED's color extending past the last rectangular segment. Painted
-    // with the SAME vertical gradient as the body so its edges fade at
-    // the same alpha (0.92) and dimming (×0.82) as the body edges.
-    // Without matching the body's gradient, the cap reads ~2× wider than
-    // the body at any brightness threshold (cap is fully opaque to its
-    // edges; body edges fade transparent).
-    if (actualVisibleLen > 1) {
-      const tipIdx = Math.min(Math.floor(maxLitT * (ledCount - 1)), ledCount - 1);
-      let tipR: number, tipG: number, tipB: number;
-      if (isInHilt) {
-        const falloff = Math.pow(1 - maxLitT, 1.8);
-        tipR = avgR * falloff * shimmer;
-        tipG = avgG * falloff * shimmer;
-        tipB = avgB * falloff * shimmer;
-      } else {
-        tipR = leds.getR(tipIdx) * effectiveBri * shimmer;
-        tipG = leds.getG(tipIdx) * effectiveBri * shimmer;
-        tipB = leds.getB(tipIdx) * effectiveBri * shimmer;
-      }
-      if (tipR + tipG + tipB > 0.5) {
-        // Same vertical gradient as the body LED loop above (with the
-        // widened white plateau) so the cap silhouette IS the whiteout
-        // silhouette at the tip — no possible mismatch.
-        const tipEdgeDim = 0.82;
-        const tipCR = lerpToWhite(tipR, glow.coreWhiteout);
-        const tipCG = lerpToWhite(tipG, glow.coreWhiteout);
-        const tipCB = lerpToWhite(tipB, glow.coreWhiteout);
-        const tipMR = lerpToWhite(tipR, glow.coreWhiteout * 0.4);
-        const tipMG = lerpToWhite(tipG, glow.coreWhiteout * 0.4);
-        const tipMB = lerpToWhite(tipB, glow.coreWhiteout * 0.4);
-        const capGrad = ctx.createLinearGradient(actualVisibleEnd, bladeYPx - coreH / 2, actualVisibleEnd, bladeYPx + coreH / 2);
-        capGrad.addColorStop(0, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
-        capGrad.addColorStop(0.08, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
-        capGrad.addColorStop(0.18, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
-        capGrad.addColorStop(0.25, rgbStr(tipR, tipG, tipB));
-        capGrad.addColorStop(0.30, rgbStr(tipMR, tipMG, tipMB));
-        capGrad.addColorStop(0.35, rgbStr(tipCR, tipCG, tipCB));
-        capGrad.addColorStop(0.65, rgbStr(tipCR, tipCG, tipCB));
-        capGrad.addColorStop(0.70, rgbStr(tipMR, tipMG, tipMB));
-        capGrad.addColorStop(0.75, rgbStr(tipR, tipG, tipB));
-        capGrad.addColorStop(0.82, rgbStr(tipR * 0.95, tipG * 0.95, tipB * 0.95));
-        capGrad.addColorStop(0.92, rgbStr(tipR * 0.88, tipG * 0.88, tipB * 0.88));
-        capGrad.addColorStop(1, rgbStr(tipR * tipEdgeDim, tipG * tipEdgeDim, tipB * tipEdgeDim, 0.92));
-        ctx.fillStyle = capGrad;
-        ctx.beginPath();
-        ctx.arc(actualVisibleEnd, bladeYPx, coreH / 2, -Math.PI / 2, Math.PI / 2);
-        ctx.fill();
-      }
-    }
-    captureDeltaAsLayer(ctx, '12. LED body + tip cap with white-cored gradient (whiteout integrated)', `Per-LED filled rectangles + colored tip cap, both painted with the same vertical gradient: edge dim (×0.82, α 0.92) → mid → full color → mid (lerped toward white) → CENTER (lerped to white by glow.coreWhiteout=${glow.coreWhiteout}) → mid → full color → mid → edge dim. The HDR-overexposure whiteout effect is built into the body gradient so its silhouette ALWAYS matches the body silhouette — no possible discontinuity between body, tip cap, and whiteout. Plus optional hotspot dots when diffusion.hotspotVisibility > 0 (trans-white tubes).`, cw, ch);
-
-    // Pass 7 (former Layer 13 — Core whiteout) removed; the whiteout is
-    // now integrated into the body gradient above. The body LED loop
-    // and tip cap both lerp their CENTER stops toward white using
-    // glow.coreWhiteout, achieving the same HDR overexposure effect
-    // with guaranteed silhouette consistency.
+    // Pass 12: Composite the offscreen capsule onto the visible canvas as
+    // the blade body. The offscreen IS the body now — same shape that
+    // fed the bloom mips above. Drawn AFTER the bloom so the body's α-1.0
+    // plateau reads crisply over the soft additive halo. Replaces the
+    // v0.14.x per-LED redraw + separate tip cap (which had to be matched
+    // to the body's vertical Gaussian, and which never could quite agree
+    // with the offscreen + bloom mips because they were separate paths).
+    // Pass 12 body composite is CLIPPED to the right of the hilt edge so
+    // the offscreen's leftward-extended cap region doesn't paint over the
+    // hilt's metallic surface. Bloom mips above sampled the full extended
+    // offscreen (cap region included), so the halo on the hilt is intact.
+    // Result: hilt stays metallic with bloom glow on it; visible body
+    // emerges from the hilt with flat parallel sides; rounded cap is
+    // invisible (clipped + tucked behind hilt edge).
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bladeStartPx, 0, cw - bladeStartPx, ch);
+    ctx.clip();
+    ctx.drawImage(offscreen, 0, 0);
+    ctx.restore();
+    captureDeltaAsLayer(ctx, '12. Capsule body composited from offscreen', `The offscreen capsule (Pass 01) drawn to the visible canvas via drawImage, clipped to x ≥ bladeStartPx so it doesn't paint over the hilt. Bloom mips above already sampled the full extended capsule (including its leftward cap region in the hilt area), so halo on the hilt is preserved. Body emerges with flat parallel sides at the hilt boundary — rounded cap is hidden by the clip + tucked behind hilt edge.`, cw, ch);
 
     // ── Ignition flash burst ──
     if (ignitionFlashRef.current > 0.01) {
@@ -1485,7 +1554,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // directional wash. Keeps `bladeColor` available for any future
     // hilt-coupled effect without a stale `unused-var` warning.
     void bladeColor;
-  }, [brightness, drawHilt, getOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion, captureBufferAsLayer, captureDeltaAsLayer]);
+  }, [brightness, drawHilt, getOffscreen, getSoftOffscreen, getScale, getBladeStartPx, getBladeCenterY, stripType, diffusionType, bladeDiameter, bladeLength, theme, reduceBloom, reducedMotion, captureBufferAsLayer, captureDeltaAsLayer]);
 
   // ─── Pixel Visualizer Mode ───
   // Shows individual LED pixels as distinct segments for debugging/tuning
