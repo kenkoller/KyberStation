@@ -10,8 +10,10 @@
 //
 // Per docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md §3.1, the Friday v1.0
 // Preview supports bare-source bindings only (no math expressions).
-// v1.1 adds Cmd+click → expression editor on parameter scrub fields.
+// v1.1 adds Cmd+click → expression editor on parameter scrub fields,
+// plus (Wave 3) per-binding-row `fx` editing for expression bindings.
 
+import { useState } from 'react';
 import {
   BUILT_IN_MODULATORS,
   type BindingCombinator,
@@ -23,6 +25,7 @@ import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
 import { AddBindingForm } from './AddBindingForm';
 import { RecipePicker } from './RecipePicker';
+import { ExpressionEditor } from './ExpressionEditor';
 
 // Stable empty array reference — passing `[]` as a Zustand selector
 // fallback creates a new reference every render and triggers an
@@ -102,6 +105,7 @@ function BindingRow({ binding }: BindingRowProps) {
   const removeBinding = useBladeStore((s) => s.removeBinding);
   const updateBinding = useBladeStore((s) => s.updateBinding);
   const toggleBindingBypass = useBladeStore((s) => s.toggleBindingBypass);
+  const [isEditing, setIsEditing] = useState(false);
 
   const modulatorDesc = BUILT_IN_MODULATORS.find(
     (m) => (m.id as string) === binding.source,
@@ -124,9 +128,14 @@ function BindingRow({ binding }: BindingRowProps) {
 
   return (
     <div
-      className="grid gap-2 items-center px-2 py-1.5 rounded border text-ui-xs"
+      className="relative grid gap-2 items-center px-2 py-1.5 rounded border text-ui-xs"
       style={{
-        gridTemplateColumns: 'minmax(80px, 120px) 10px minmax(80px, 1fr) 70px 1fr 24px 20px',
+        // Columns: source · arrow · target · fx-slot · combinator · amount · bypass · remove
+        // The fx-slot is a fixed 28 px column that only renders content
+        // for expression-based bindings — bare-source rows leave it empty
+        // so column alignment stays consistent across rows.
+        gridTemplateColumns:
+          'minmax(80px, 120px) 10px minmax(80px, 1fr) 28px 70px 1fr 24px 20px',
         background: isBypassed ? 'rgba(var(--bg-deep), 0.4)' : 'rgb(var(--bg-surface))',
         borderColor: isBypassed
           ? 'rgb(var(--border-subtle))'
@@ -160,6 +169,37 @@ function BindingRow({ binding }: BindingRowProps) {
       >
         {paramLabel}
       </span>
+
+      {/* fx edit button — only for expression bindings. Bare-source
+          rows have nothing to edit here (their source is the modulator
+          identity itself), so the slot stays empty. */}
+      {isExpression ? (
+        <button
+          type="button"
+          onClick={() => setIsEditing((v) => !v)}
+          className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors"
+          style={
+            isEditing
+              ? {
+                  color: 'rgb(var(--status-magenta))',
+                  background: 'rgba(var(--status-magenta), 0.15)',
+                  borderColor: 'rgb(var(--status-magenta))',
+                }
+              : {
+                  color: 'rgb(var(--status-magenta))',
+                  background: 'transparent',
+                  borderColor: 'rgba(var(--status-magenta), 0.5)',
+                }
+          }
+          title={isEditing ? 'Close editor' : 'Edit expression'}
+          aria-pressed={isEditing}
+          aria-label={`${isEditing ? 'Close' : 'Edit'} expression for ${paramLabel}`}
+        >
+          fx
+        </button>
+      ) : (
+        <span aria-hidden="true" />
+      )}
 
       {/* Combinator dropdown */}
       <select
@@ -229,6 +269,28 @@ function BindingRow({ binding }: BindingRowProps) {
       >
         ×
       </button>
+
+      {/* Expression editor popover — appears below the row when fx is
+          active. The wrapper is a 0-height absolute strip pinned to
+          the row's bottom edge; ExpressionEditor itself is `absolute`
+          internally, so it lands at the top-left of this wrapper plus
+          its own `mt-1` gap. updateBinding is wired through the
+          editor's `existingBindingId` path so combinator/amount/bypass
+          stay intact across edits. */}
+      {isEditing && isExpression && (
+        <div
+          className="absolute left-0 right-0"
+          style={{ top: '100%', zIndex: 50 }}
+        >
+          <ExpressionEditor
+            targetPath={binding.target}
+            targetLabel={paramLabel}
+            initialSource={binding.expression?.source ?? ''}
+            existingBindingId={binding.id}
+            onClose={() => setIsEditing(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }
