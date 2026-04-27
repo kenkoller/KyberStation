@@ -239,31 +239,46 @@ visible to everyone who views a Saber Card of an archived preset.
 
 Use case: "Here's my blade" in a Discord / reddit / forum post.
 
-### 2. Animated GIF — hum loop (showcase)
+### 2. Animated GIF — idle hum loop (✅ shipped, Sprint 1, PR [#67](https://github.com/kenkoller/KyberStation/pull/67))
 
-- 1200×675, 24 fps, 3-second loop, dithered palette
-- Blade in its resting idle state with natural flicker
-- Target file size: **≤ 1.5 MB** (GIF is verbose — we'll aim for an
-  early cap and negotiate down by dropping fps / reducing palette if
-  needed)
-- File name: `<preset-slug>-<seed>.gif`
+- 640×360, 18 fps, 1-second loop (down from the original 1200×675 / 24
+  fps / 3 s spec — gif.js's 256-colour palette quantization fights the
+  workbench renderer's per-pixel colour harder than the static-card
+  gradient, so the per-frame size is bigger than a naive estimate;
+  640-wide / 18 fps lands the file under cap with comfortable headroom)
+- Driven by the **v0.14 workbench renderer** (capsule rasterizer +
+  3-mip bloom) ported into `apps/web/lib/sharePack/bladeRenderHeadless.ts`,
+  not the static gradient that the still-PNG card uses
+- Actual file size at default settings: **~1.7 MB** (under the 2 MB
+  target)
+- File name: `kyberstation-card-idle-<presetSlug>-<timestamp>.gif`
+- Caller-overridable via explicit `width` / `fps` / `quality` for
+  hosted-use higher-fidelity renders
 
 Use case: Twitter / X, Discord, animated preview in chat.
 
-### 3. Animated GIF — state cycle (showcase pro)
+### 3. Animated GIF — ignition cycle (✅ shipped, Sprint 1, PR [#67](https://github.com/kenkoller/KyberStation/pull/67))
 
-Same format as (2), but 6-second loop showing:
-- 0.0–1.0s: ignition
-- 1.0–2.5s: idle hum
-- 2.5–3.0s: clash (or other user-picked effect)
-- 3.0–4.5s: idle hum
-- 4.5–5.0s: blast / lockup / force (user-picked)
-- 5.0–6.0s: retraction → black
+Sprint 1 scope-reduced from the original "user-pickable state-cycle"
+spec — the canonical PREON → IGNITING → ON-hold → RETRACTING → OFF
+arc covers the most common showcase need without the UI for picking
+two effects. Same 640×360 / 18 fps / workbench-renderer pipeline as
+the idle loop.
 
-User picks which two effects to showcase (or we pick based on what the
-blade has configured). Caps at ~2.5 MB.
+- 2.5-second arc:
+  - 0.0–0.3s: PREON (if `preonEnabled`; skipped otherwise)
+  - 0.3–0.6s: IGNITING (extends from emitter to tip per the configured
+    `ignitionMs` + ignition style)
+  - 0.6–2.0s: ON hold (steady-state shimmer)
+  - 2.0–2.5s: RETRACTING + OFF tail
+- Actual file size at default settings: **~4.3 MB** (under the 5 MB
+  cap)
+- File name: `kyberstation-card-ignition-<presetSlug>-<timestamp>.gif`
 
-Use case: Showing off a preset's effect work, not just its idle colour.
+Use case: Showing off a preset's full lifecycle, not just the idle
+colour. The user-pickable two-effect "state cycle" remains queued
+under Sprint 3 (Tier 2 marketing showcases) per
+`docs/SABER_GIF_ROADMAP.md`.
 
 ### 4. Kyber Glyph — full-encoding seed + QR dual form
 
@@ -456,35 +471,45 @@ Share Pack.
 
 ## Technical sketch
 
-**New files:**
+**Shipped files (v0.12 + v0.14 + Sprint 1):**
 ```
 apps/web/lib/sharePack/
-├── card-renderer.ts         # Offscreen canvas → PNG / GIF frames
+├── cardSnapshot.ts          # static PNG (renderCardSnapshot) + animated GIF (renderCardGif)
 ├── kyberGlyph.ts            # full-encoding seed (text ↔ config)
-├── qr-renderer.ts           # glyph string → QR PNG / SVG
-├── gif-encoder.ts           # omggif wrapper with palette + dithering
-└── templates.ts             # THE ONE template layout (x/y/w/h/font tables)
+├── gifEncoder.ts            # gif.js Promise wrapper (Sprint 1)
+├── bladeRenderHeadless.ts   # v0.14 workbench renderer port — Sprint 1
+└── card/                    # per-region drawers (drawBlade, drawHilt, drawHeader, …)
 
-apps/web/components/share/
-├── ShareCardModal.tsx       # "Save Saber Card" modal with format picker
-├── CardPreview.tsx          # live preview of the card being generated
-└── GlyphDisplay.tsx         # styled glyph text + QR with copy button
+apps/web/lib/crystal/
+├── qrSurface.ts             # glyph string → QR canvas / texture
+└── …                        # 3D Kyber Crystal pipeline (v0.12.0)
+
+apps/web/components/editor/
+├── CrystalPanel.tsx         # "My Crystal" panel — hosts Save crystal PNG / Save share card / Save share GIF
+└── CrystalRevealScene.tsx   # Fullscreen camera-zoom reveal
 ```
 
-**Dependencies to add:**
+**Dependencies in use:**
 - `msgpackr` (~25 kB) — compact config serialisation
 - `pako` (~45 kB) — zlib deflate/inflate for the glyph payload
 - `bs58` (~4 kB) — base58 encoding
 - `qrcode` (~55 kB) — QR generation for canvas / SVG
-- `omggif` (~12 kB) — GIF encoder
-- Total ≈ 140 kB gzipped. Acceptable.
+- `gif.js` (~100 kB) + `gif.worker.js` (16 kB static asset) — GIF
+  encoder (web-worker-based; replaced the originally-planned `omggif`
+  for worker support and palette quantisation maturity)
+- Total ≈ 240 kB gzipped (gif.worker.js loaded on demand, not in the
+  initial bundle).
 
 **Reuse:**
-- `BladeCanvas` rendering path → captured frame-by-frame to the offscreen
-  canvas for the GIF variants
+- **Workbench blade pipeline** — Sprint 1 ported the v0.14
+  `BladeCanvas.tsx` capsule rasterizer + 3-mip bloom into
+  `bladeRenderHeadless.ts` (parallel module, paired-but-separate from
+  the live workbench until the deferred Phase 4 module-extraction
+  collapses them). `renderCardGif` reads the engine LED buffer per
+  frame and feeds the same renderer that paints the live preview.
 - `factionStyles.ts` → affiliation badge colours + glyph accent hairline
-- `configUrl.ts` → deprecated in favour of `kyberGlyph.ts` (keep for
-  backward-compat with existing share links for at least one release)
+- `configUrl.ts` → deprecated in favour of `kyberGlyph.ts` (kept for
+  backward-compat with existing share links)
 - `themeDefinitions.ts` → canvas theme → card background
 
 **URL shape update:**
@@ -505,15 +530,30 @@ so the card is self-contained by virtue of the QR alone — no tEXt-chunk
 embedding needed. Optional PNG tEXt chunk as a *convenience* for
 drag-drop into the app, but not load-bearing.
 
-**Phase 3 — Hum GIF.** omggif integration, palette quantisation, 3s
-loop at 24 fps, file-size guardrails.
+**Phase 3 — Hum GIF.** ✅ shipped (Sprint 1, PR [#67](https://github.com/kenkoller/KyberStation/pull/67)).
+gif.js integration (replaced the originally-planned omggif), palette
+quantisation handled by gif.js, 1 s loop at 18 fps / 640×360 (down
+from 3 s / 24 fps / 1200×675 once the workbench renderer's per-pixel
+colour fought the 256-colour palette harder than expected). Driven by
+the v0.14 workbench renderer port at `bladeRenderHeadless.ts`, not
+the static gradient.
 
-**Phase 4 — State-cycle GIF.** User picks two effects, renderer
-sequences them, 6s loop.
+**Phase 4 — State-cycle GIF.** Sprint 1 shipped the canonical
+**Ignition cycle** variant (PREON → IGNITING → ON → RETRACTING → OFF,
+2.5 s arc) — same renderer + same per-frame pipeline as the hum loop.
+The **user-pickable two-effect state-cycle** (the original Phase 4
+spec) remains queued under Sprint 3 of the GIF roadmap (Tier 2
+marketing showcases).
 
 **Phase 5 — Polish.** Aurebesh option for the header text, hilt
 silhouette rendering, theme-aware accent, Discord OG meta tags so the
 card auto-unfurls when pasted.
+
+**Phase 6 — Workbench renderer canonicalisation** (deferred from
+PR #46's Phase 4). Collapse `bladeRenderHeadless.ts` ↔ `BladeCanvas.tsx`'s
+inline pipeline into one shared module under `lib/blade/*`; migrate
+`MiniSaber`, `card/drawBlade.ts`, etc. to call into it. Closes the
+parallel-port loop opened in Sprint 1.
 
 Each phase is independently shippable and independently valuable.
 Phase 1 alone delivers the "fun, easy, in-universe sharing" promise.
@@ -531,8 +571,15 @@ Phase 1 alone delivers the "fun, easy, in-universe sharing" promise.
       not generic
 - [ ] Preset name, glyph prefix, and key blade spec are baked into
       the card
-- [ ] Animated GIF variants stay under 2.5 MB for the state-cycle
-      version and 1.5 MB for the hum version
+- [x] Animated GIF variants stay under cap. Sprint 1 actuals at
+      default 640×360 / 18 fps: idle hum **~1.7 MB** (target ≤ 2 MB),
+      ignition cycle **~4.3 MB** (target ≤ 5 MB). The original
+      "≤ 1.5 MB hum / ≤ 2.5 MB state-cycle" targets at 1200×675 / 24 fps
+      were retired once the workbench renderer's per-pixel colour
+      proved heavier on gif.js's 256-colour palette than the static
+      gradient — smaller default dims are the right tradeoff for
+      sharing artifacts; hosted-use callers can opt into higher
+      fidelity via explicit `width` / `fps`.
 - [ ] Glyph prefix is recognisable (`JED.` / `SIT.` / `GRY.` / `CNO.`
       / `SPC.`)
 - [ ] There is exactly one template layout; theme / affiliation /
@@ -555,9 +602,12 @@ Phase 1 alone delivers the "fun, easy, in-universe sharing" promise.
 
 - **Aurebesh font licensing?** A few Aurebesh fonts are free-for-use,
   some aren't. Need a free-tier one before we ship.
-- **GIF file-size at 24 fps?** The 1.5 MB budget assumes aggressive
-  palette quantisation. If we can't hit it, fall back to 15 fps (still
-  looks OK for a hum loop).
+- ~~**GIF file-size at 24 fps?**~~ **Resolved (Sprint 1).** Workbench
+  renderer's per-pixel colour produces a richer palette than the
+  static gradient and gif.js's 256-colour quantisation has more work
+  to do; landed defaults at 640×360 / 18 fps for idle 1.7 MB /
+  ignition 4.3 MB. Higher-fidelity renders available via explicit
+  `width` / `fps` overrides in `renderCardGif` for hosted use.
 - **Glyph format versioning.** The encoding needs a 1-byte version
   prefix (inside the packed payload, not the string) so we can evolve
   the format without breaking old glyphs. v1 ships day one;

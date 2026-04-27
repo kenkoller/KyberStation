@@ -11,6 +11,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tracking work on the v1.0 path.
 
+### Saber GIF Sprint 1 — animated share-card export (2026-04-27)
+
+First cut of animated saber GIF infrastructure per `docs/SABER_GIF_ROADMAP.md`. Sprint 1 ships two GIF variants from the My Crystal panel: **Idle** (1 s steady-state shimmer loop) and **Ignition cycle** (2.5 s PREON → IGNITING → ON-hold → RETRACTING → OFF arc). Output uses the **v0.14 workbench renderer** (capsule rasterizer + 3-mip bloom), not the simplified gradient that the static Saber Card uses, so the GIF visually matches the live editor preview. Open as PR [#67](https://github.com/kenkoller/KyberStation/pull/67).
+
+#### Added
+
+- **`captureSequence` engine helper** at `packages/engine/src/captureSequence.ts` — pure-data multi-frame capture returning `Uint8Array[]` of LED buffers across N frames. Two modes for Sprint 1: `'idle-loop'` (settle to ON, then capture a 1 s window of the steady-state shimmer) and `'ignition-cycle'` (full PREON → IGNITING → ON-hold → RETRACTING → OFF, default 2.5 s). Built on the public `ignite() / retract() / update()` API — no private state poking — so the engine package stays headless. Sibling `captureSequenceWithStates` returns frames + per-frame `BladeState` for callers that want to surface state transitions.
+- **`gif.js` Promise wrapper** at `apps/web/lib/sharePack/gifEncoder.ts` — wraps the callback-based `gif.js` encoder in an async API. Exports `encodeGif(canvases, options)` (array → Blob), `encodeGifStreamed(options, callback)` (caller pushes frames to reuse one canvas across the sequence), and `setGifEncoderFactory()` test seam. Default factory dynamic-imports `gif.js` so node tests don't try to load the browser-only module.
+- **Workbench renderer headless port** at `apps/web/lib/sharePack/bladeRenderHeadless.ts` — 1:1 port of the v0.14 capsule rasterizer + 3-mip bloom chain that lives inline in `BladeCanvas.tsx`. Exports `drawWorkbenchBlade()` + `getGlowProfile()` + `ledBufferFrom()`. Same plateau / α-feather curve, same mip alphas / blur radii, same per-color glow tuning. Per-color `getGlowProfile` (red / blue / green / amber / amethyst / cyan / orange / pink / fallback). **Leaves `BladeCanvas.tsx` untouched** — workbench risk = zero. Paired-but-parallel until the deferred Phase 4 module-extraction collapses them.
+- **`renderCardGif(options)` orchestrator** in `apps/web/lib/sharePack/cardSnapshot.ts` (additive — `renderCardSnapshot` for static PNGs is unchanged). Per-frame: clear canvas → repaint chrome (backdrop / header / hilt / metadata / qr / footer) → call `drawWorkbenchBlade` reading the engine LED buffer directly → `gif.addFrame(canvas, copy: true)`. Reuses one `<canvas>` across the sequence for bounded memory. Test seams: `__setCardFrameRendererForTesting` + `__setCreateQrSurfaceForTesting`.
+- **"Save share GIF" button + variant select** on `CrystalPanel.tsx` next to the existing "Save share card" button. Filename pattern: `kyberstation-card-<variant>-<presetSlug>-<timestamp>.gif`. Disabled state during the 1.5–4 s encode; status line reports final size in KB.
+- **`gif.worker.js`** committed at `apps/web/public/gif.worker.js` (16 KB, copied from `node_modules/gif.js/dist/`) so the encoder's web worker resolves at `/gif.worker.js` under Next.js's static asset path.
+
+#### Defaults
+
+- `DEFAULT_GIF_OUTPUT_WIDTH = 640` (down from layout default 1200) — the workbench renderer produces far more colors per frame than the static gradient (bloom + plateau core + per-LED interpolation), so gif.js's 256-color palette quantization fights harder; the smaller default lands both variants under cap.
+- 18 fps for both variants. Tuning lands idle ≈1.7 MB / ignition ≈4.3 MB at default settings — under the brief's `< 2 MB idle / < 5 MB ignition` targets. Callers can override `width` / `fps` / `quality` for hosted-use higher-fidelity renders.
+
+#### Dependencies
+
+- Adds `gif.js@^0.2.0` + `@types/gif.js` to `apps/web/package.json`.
+
+#### Tests
+
+- **engine**: 722 → 740 (+18 new `captureSequence.test.ts` covering frame-count math, deterministic buffers across calls, idle-loop steady-state lit-ness, ignition-cycle state-machine arc with PREON enabled / skipped, and full validation surface).
+- **web**: 1,041 → 1,069 (+28 across `gifEncoder.test.ts` (15) and `renderCardGif.test.ts` (13) — Promise contract, frame count = fps × duration_seconds, abort rejection, console-clean orchestration, QR texture disposal on encoder abort).
+
+#### Hard constraints honoured
+
+- `apps/web/lib/sharePack/card/*` — untouched (PR #36 turf).
+- `apps/web/components/editor/BladeCanvas.tsx` — untouched (workbench risk zero).
+- `apps/web/components/editor/routing/*`, `BoardPicker`, `useBoardProfile`, `useClickToRoute` — untouched (modulation turf).
+- `packages/engine/src/modulation/*` — untouched (locked types).
+- Engine package stays headless — `captureSequence` is pure data, no DOM.
+- Worker-encoded GIFs — `gif.js` spawns 2 web workers; main thread doesn't block during encode.
+
+#### Open / pending
+
+- Sprint 2 — per-variant ignition / retraction picker GIFs (19 + 13 thumbnails) + build script + `MiniGalleryPicker` wiring.
+- Sprint 3 — Tier 2 marketing showcases (style grid, colour cycle, lockup loop).
+- Sprint 4 — Tier 3 effect-specific + hilt-only + UI walkthrough GIFs.
+- **Phase 4 module extraction** (separate, lower-risk PR): collapse `bladeRenderHeadless.ts` ↔ `BladeCanvas.tsx` inline pipeline into one shared module under `lib/blade/*`; migrate `MiniSaber`, `card/drawBlade.ts`, etc. to call it.
+- The roadmap doc itself (`docs/SABER_GIF_ROADMAP.md`) lives on the still-open PR [#56](https://github.com/kenkoller/KyberStation/pull/56) — Sprint 1 status flip should land there once it merges, or via a follow-up doc commit on main.
+
 ### Modulation Routing v1.1 Core — overnight wave (2026-04-27)
 
 Eight PRs landed overnight on top of v0.14.0, completing the v1.1 Core scope from `docs/MODULATION_ROUTING_ROADMAP.md`. Three parallel-agent phases (Phase 1: 4 worktree agents, Phase 2a: 3 worktree agents, Phase 2b: Wave 5 salvaged after agent stalled). All CI-green, all merged. **No tag cut yet — pending hardware validation. Candidate `v0.15.0`.**

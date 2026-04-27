@@ -543,6 +543,61 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-27, Saber GIF Sprint 1)
+
+**Active branch: `feat/saber-gif-sprint-1` — PR [#67](https://github.com/kenkoller/KyberStation/pull/67), 4 commits, rebased onto `origin/main` at `ed7e5d8`. Open, pending review.** Sprint 1 of the saber-GIF roadmap (`docs/SABER_GIF_ROADMAP.md` on PR [#56](https://github.com/kenkoller/KyberStation/pull/56), still open). Ships animated GIF export from the My Crystal panel with two variants (Idle 1 s loop / Ignition cycle 2.5 s arc), driven by the v0.14 workbench blade renderer ported into a parallel headless module.
+
+### What shipped (4 commits, oldest → newest)
+
+| # | Commit | File | Scope |
+|---|---|---|---|
+| 1 | `63f9f20` | `packages/engine/src/captureSequence.ts` (+ tests) | **`captureSequence` engine helper** — pure-data multi-frame capture returning `Uint8Array[]` of LED buffers. Modes: `'idle-loop'` (settles to ON, captures 1 s of steady-state shimmer) / `'ignition-cycle'` (full PREON → IGNITING → ON → RETRACTING → OFF arc). Built on the public `ignite() / retract() / update()` API; no private state poking. Sibling `captureSequenceWithStates` returns frames + per-frame `BladeState`. +18 engine tests. |
+| 2 | `5ac398e` | `apps/web/lib/sharePack/gifEncoder.ts` + `apps/web/public/gif.worker.js` (+ tests) | **`gif.js` Promise wrapper.** Exports `encodeGif(canvases, options)` (array → Blob), `encodeGifStreamed(options, callback)` (streaming variant — caller pushes frames into the encoder for memory-bounded loops), and `setGifEncoderFactory()` test seam. Default factory dynamic-imports `gif.js` so node tests don't load the browser-only module. Worker script lives at `/gif.worker.js` (committed under `apps/web/public/`, 16 KB from `node_modules/gif.js/dist/`). +15 web tests. Adds `gif.js@^0.2.0` + `@types/gif.js` to `apps/web/package.json`. |
+| 3 | `08760ce` | `apps/web/lib/sharePack/bladeRenderHeadless.ts` | **Workbench renderer headless port.** 1:1 port of the v0.14 capsule rasterizer + 3-mip bloom chain from `BladeCanvas.tsx`. Same plateau (`PLATEAU_END=0.16` / `COLOR_END=0.40`) + α-feather anchors + mip alphas (`0.65 / 0.52 / 0.45`) + blur radii (`6/10/14 × bloomRadius`) + additive `lighter` body composite + per-color `getGlowProfile`. Skips rim glow, motion blur, ignition flash burst, and ambient mip-2 wash (visual icing — needs swing/effect-state refs we don't track per captureSequence frame). **Leaves `BladeCanvas.tsx` untouched** — workbench risk zero. Paired-but-parallel until the deferred Phase 4 extraction collapses them. |
+| 4 | `994ad42` | `apps/web/lib/sharePack/cardSnapshot.ts` (+231 lines) + `apps/web/components/editor/CrystalPanel.tsx` (+80) (+ tests) | **`renderCardGif` orchestrator + UI button.** Additive sibling of `renderCardSnapshot` — static PNG path stays untouched. Per-frame: clear canvas → repaint chrome (backdrop / header / hilt / metadata / qr / footer) → call `drawWorkbenchBlade` reading the engine LED buffer directly → `gif.addFrame(canvas, copy: true)`. Reuses one `<canvas>` across the sequence (gif.js's `copy:true` snapshots pixel data immediately, freeing the canvas for the next frame). Test seams: `__setCardFrameRendererForTesting` + `__setCreateQrSurfaceForTesting`. UI: "Save share GIF" button + variant select on CrystalPanel. Filename: `kyberstation-card-<variant>-<presetSlug>-<timestamp>.gif`. +13 web tests. |
+
+### Defaults + size budgets (verified via dev-server smoke test)
+
+| Variant | fps | Frames | Output | File size | Encode time |
+|---|---|---|---|---|---|
+| Idle | 18 | 18 | 640 × 360 | 1.66 MB | 1.95 s |
+| Ignition | 18 | 45 | 640 × 360 | 4.32 MB | 4.28 s |
+
+Hits the brief's `< 2 MB idle / < 5 MB ignition` targets at default settings. Callers can override `width / fps / quality / workerScript` for hosted-use higher-fidelity renders. Visual: GIF shows the workbench-quality blade (capsule + bloom + plateau core), not the simplified gradient that `card/drawBlade.ts` paints for the static PNG.
+
+### Architectural decisions worth carrying forward
+
+- **`bladeRenderHeadless.ts` is a parallel port, not a shared extraction.** The deferred Phase 4 module-extraction (per CLAUDE.md "Still open" on the v0.14.0 entry below — collapse `BladeCanvas.tsx`'s inline pipeline into `lib/blade/*`) is the right long-term home for this code. Doing it inside a GIF feature PR would refactor the live workbench inline rendering — high blast radius. The parallel port:
+  - leaves `BladeCanvas.tsx` unchanged (zero workbench risk),
+  - gives `renderCardGif` workbench-quality output today,
+  - sets up the canonical headless module that the deferred Phase 4 can adopt by migrating `BladeCanvas` (and `MiniSaber` and `card/drawBlade.ts`) to call into it.
+  Drift is contained — both files document the invariants they share at the top.
+- **GIF output canvas dispatch differs from PNG.** `gif.js`'s `addFrame` detects an HTMLCanvasElement via `image.childNodes !== undefined` and rejects `OffscreenCanvas` with "Invalid image". So `renderCardGif` always uses `document.createElement('canvas')`; the static-PNG `renderCardSnapshot` keeps using `OffscreenCanvas` via `convertToBlob`. Both paths documented inline.
+- **Per-frame blade modulation comes from the engine, not from analyzing the LED buffer.** First-pass implementation derived an `extentFraction` + `meanColor` from each buffer to scale `bladeEndX` / override `config.baseColor`. After porting the workbench renderer, the rasterizer reads each LED's color directly — partial-ignition states render as partial brightness along the strip without us scaling the layout. The engine's per-LED state IS the truth.
+- **Output canvas is reused across frames.** gif.js's `copy: true` snapshots pixel data per `addFrame` call, so the loop holds at most one full-size canvas in memory regardless of frame count. Streaming `encodeGifStreamed` exposes this pattern as a public API.
+
+### Test deltas
+
+| Package | Pre-sprint | Post-sprint | Δ |
+|---|---:|---:|---:|
+| engine | 722 | 740 | +18 |
+| web | 1,041 | 1,069 | +28 |
+
+Workspace-wide typecheck clean. `pnpm test` green across all 10 tasks.
+
+### Still open
+
+- **PR #67 review + merge.** Branch is rebased onto `origin/main` at `ed7e5d8`; CI run pending.
+- **PR #56 (`docs/saber-gif-roadmap`) merge.** The roadmap doc itself lives on a sibling open PR. Once merged, the Sprint 1 status flip on `docs/SABER_GIF_ROADMAP.md` (mark Sprint 1 ✅, link PR #67) should land — either as a follow-up commit on PR #56 before merge, or as a separate docs commit on main after both merge.
+- **Sprint 2** — per-variant ignition / retraction picker GIFs (19 + 13 thumbnails) + build script + `MiniGalleryPicker` wiring. Roadmap doc has the spec.
+- **Sprint 3** — Tier 2 marketing showcases (style grid, colour cycle, lockup loop).
+- **Sprint 4** — Tier 3 effect-specific + hilt-only + UI walkthrough GIFs.
+- **Phase 4 module extraction** (separate, lower-risk PR): collapse `bladeRenderHeadless.ts` ↔ `BladeCanvas.tsx`'s inline pipeline into one shared module under `lib/blade/*`; migrate `MiniSaber`, `card/drawBlade.ts`, etc. to call it. This is the natural follow-up that closes the parallel-port loop.
+- **`docs/SHARE_PACK.md` GIF sections** — pre-Sprint-1 spec language ("Phase 3 — Hum GIF" / `omggif` dep / 1200×675 / 24 fps) is now stale relative to what shipped (gif.js, 640×360, 18 fps). Will refresh in this same docs commit.
+- **Manual share-target verification** — open the GIF in Discord / Twitter / iMessage to confirm preview thumbnails play. Not yet done; suggested for the morning walkthrough.
+
+### Pre-sprint state (kept for history)
+
 ## Current State (2026-04-27 overnight, Modulation Routing v1.1 Core)
 
 **Active branch: `main` (tip `ddaa3b6`).** Eight PRs landed overnight on top of v0.14.0, completing the v1.1 Core scope from `docs/MODULATION_ROUTING_ROADMAP.md`. Last tag is still `v0.14.0` — pending hardware-gated v0.15.0 tag. Tonight's run was Phase 1 (4 parallel agents in worktrees) + Phase 2a (3 parallel agents) + Phase 2b (Wave 5, salvaged after agent stalled pre-commit).

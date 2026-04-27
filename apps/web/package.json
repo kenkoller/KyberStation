@@ -21,6 +21,7 @@
     "@react-three/fiber": "^8.18.0",
     "bs58": "^6.0.0",
     "dexie": "^4.4.2",
+    "gif.js": "^0.2.0",
     "jszip": "^3.10.1",
     "msgpackr": "^1.11.9",
     "next": "^14.2.0",
@@ -32,6 +33,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@types/gif.js": "^0.2.5",
     "@types/jszip": "^3.4.1",
     "@types/node": "^22.0.0",
     "@types/pako": "^2.0.4",
