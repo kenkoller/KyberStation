@@ -211,11 +211,13 @@ describe('Kyber Glyph v1 — deterministic encoding', () => {
 
 describe('Kyber Glyph v1 — version routing', () => {
   it('throws KyberGlyphVersionError on unknown payload version byte', () => {
-    // Synthesise a v2 glyph with a valid MessagePack body.
+    // Synthesise a v99 glyph (clearly future) with a valid MessagePack body.
+    // v2 is now registered (modulation routing), so the rejection floor
+    // moves to anything not in VERSION_DECODERS.
     const packr = new Packr({ useRecords: false });
     const body = packr.pack({ t: 'single', b: [] }) as Uint8Array;
     const framed = new Uint8Array(body.length + 2);
-    framed[0] = 2; // future payload version
+    framed[0] = 99; // future payload version
     framed[1] = 1;
     framed.set(body, 2);
     const glyph = `JED.${bs58.encode(deflateRaw(framed, { level: 9 }))}`;
@@ -225,7 +227,7 @@ describe('Kyber Glyph v1 — version routing', () => {
       decodeGlyph(glyph);
     } catch (err) {
       expect(err).toBeInstanceOf(KyberGlyphVersionError);
-      expect((err as KyberGlyphVersionError).version).toBe(2);
+      expect((err as KyberGlyphVersionError).version).toBe(99);
     }
   });
 

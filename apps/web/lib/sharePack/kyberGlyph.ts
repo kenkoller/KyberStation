@@ -24,7 +24,15 @@ import bs58 from 'bs58';
 
 // ─── Version constants (BINDING — do not change) ───
 
+/** Default emission version. v1 = no modulation present (pre-v1.1 Core
+ *  payload shape). The encoder bumps to V2 automatically when any blade
+ *  carries a non-empty `modulation` payload (see `encodeGlyph`).
+ *  Decoders for v1 and v2 are functionally equivalent — `applyDelta`
+ *  handles the optional `modulation` field generically — but the version
+ *  byte is a SIGNAL to old clients that they may be missing data they
+ *  should ask the user to upgrade for. */
 export const KYBER_GLYPH_VERSION = 1;
+export const KYBER_GLYPH_VERSION_V2 = 2;
 export const VISUAL_SYSTEM_VERSION = 1;
 
 // ─── Types ───
@@ -257,16 +265,37 @@ const unpackr = new Unpackr({ useRecords: false });
 
 // ─── Public API ───
 
+/** True when any blade carries at least one modulation binding. Drives
+ *  the auto-bump from v1 → v2 inside `encodeGlyph`. */
+function hasModulationBindings(payload: GlyphPayload): boolean {
+  return payload.blades.some((b) => {
+    const mod = (b as { modulation?: { bindings?: readonly unknown[] } }).modulation;
+    return Array.isArray(mod?.bindings) && mod.bindings.length > 0;
+  });
+}
+
 export function encodeGlyph(payload: GlyphPayload): string {
-  if (payload.payloadVersion !== KYBER_GLYPH_VERSION) {
+  if (payload.payloadVersion !== KYBER_GLYPH_VERSION && payload.payloadVersion !== KYBER_GLYPH_VERSION_V2) {
     throw new Error(
-      `encodeGlyph only emits v${KYBER_GLYPH_VERSION} glyphs; received payloadVersion=${payload.payloadVersion}`,
+      `encodeGlyph only emits v${KYBER_GLYPH_VERSION} or v${KYBER_GLYPH_VERSION_V2} glyphs; received payloadVersion=${payload.payloadVersion}`,
     );
   }
 
+  // v1 → v2 auto-bump: if the caller passed payloadVersion=1 but the
+  // payload actually carries modulation, bump the emitted version byte
+  // to 2 so old clients KNOW they're missing data and prompt for an
+  // upgrade. The body shape stays identical — the version byte is a
+  // signal, not a format change.
+  const emittedVersion =
+    payload.payloadVersion === KYBER_GLYPH_VERSION_V2 || hasModulationBindings(payload)
+      ? KYBER_GLYPH_VERSION_V2
+      : KYBER_GLYPH_VERSION;
+
   const prefix = payload.blades[0] ? detectArchetype(payload.blades[0]) : 'SPC';
 
-  // Delta-encode each blade against the canonical default.
+  // Delta-encode each blade against the canonical default. The diff()
+  // function handles the optional `modulation` field generically — no
+  // special-casing needed.
   const bladeDeltas = payload.blades.map((b) =>
     diff(b as unknown as Record<string, unknown>, CANONICAL_DEFAULT_CONFIG as unknown as Record<string, unknown>),
   );
@@ -287,7 +316,7 @@ export function encodeGlyph(payload: GlyphPayload): string {
 
   const packed = packr.pack(body) as Uint8Array;
   const framed = new Uint8Array(packed.length + 2);
-  framed[0] = payload.payloadVersion & 0xff;
+  framed[0] = emittedVersion & 0xff;
   framed[1] = payload.visualVersion & 0xff;
   framed.set(packed, 2);
 
@@ -347,9 +376,22 @@ function decodeV1Body(body: Record<string, unknown>, visualVersion: number): Gly
   };
 }
 
+/** v2 body → GlyphPayload. Structurally identical to v1 — the body
+ *  schema didn't change. v2 is a version-byte SIGNAL that the payload
+ *  may carry modulation data. `applyDelta` restores the optional
+ *  `modulation` field generically, so v1 decoders that load a v2 body
+ *  on accident wouldn't break (they'd see a phantom field they ignore).
+ *  The version byte exists to let old clients warn the user that they
+ *  may be missing data they should upgrade for.
+ *  Frozen contract per `docs/KYBER_CRYSTAL_VERSIONING.md §2`. */
+function decodeV2Body(body: Record<string, unknown>, visualVersion: number): GlyphPayload {
+  const payload = decodeV1Body(body, visualVersion);
+  return { ...payload, payloadVersion: 2 };
+}
+
 const VERSION_DECODERS: Readonly<Record<number, VersionDecoder>> = Object.freeze({
   1: decodeV1Body,
-  // 2: decodeV2Body,   ← added by modulation-routing session when glyph v2 ships
+  2: decodeV2Body,
 });
 
 export function decodeGlyph(glyph: string): GlyphPayload {
