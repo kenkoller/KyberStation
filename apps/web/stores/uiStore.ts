@@ -184,6 +184,20 @@ export interface UIStore {
   section2Height: number;
   /** PerformanceBar total height in CSS pixels. Default 158. */
   performanceBarHeight: number;
+  // ── Sidebar A/B v2 (Phase 1 — feature-flagged) ──
+  /**
+   * Column A width in CSS pixels for the Sidebar A/B layout. Default 280.
+   * Only consulted when `useABLayout` is true AND the active section
+   * provides a Column A list. See `docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md`.
+   */
+  columnAWidth: number;
+  /**
+   * Master flag for the Sidebar A/B v2 layout. Default false (Phase 1
+   * ships behind the flag; Phase 2+ flip the default once the
+   * `blade-style` migration validates). Toggled via Settings →
+   * Advanced or directly in the store for tests / debug URLs.
+   */
+  useABLayout: boolean;
   // ── Left-rail overhaul (v0.14.0) ──
   /** Which sidebar section is selected. Default 'blade-style'. */
   activeSection: SectionId;
@@ -249,6 +263,8 @@ export interface UIStore {
   setInspectorWidth: (w: number) => void;
   setSection2Height: (h: number) => void;
   setPerformanceBarHeight: (h: number) => void;
+  setColumnAWidth: (w: number) => void;
+  setUseABLayout: (enabled: boolean) => void;
   setPixelStripHeight: (h: number) => void;
   setExpandedSlotHeight: (h: number) => void;
   setBladeStartFrac: (n: number) => void;
@@ -275,6 +291,15 @@ export const REGION_LIMITS = {
   pixelStripHeight:  { min: 24, max: 300, default: 36 },
   expandedSlotHeight:{ min: 40, max: 400, default: 110 },
   /**
+   * Sidebar A/B v2 Phase 1: width of Column A inside MainContentABLayout.
+   * Column A holds the list of items (styles, colors, ignitions, etc.);
+   * Column B fills the remaining width with the deep editor for the
+   * active A item. Only consulted when the section opts into the A/B
+   * pattern AND `useABLayout` is true. See
+   * `docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md` §3 for the layout spec.
+   */
+  columnAWidth:      { min: 220, max: 400, default: 280 },
+  /**
    * Phase 1.5f: user-draggable Point A — the vertical divider inside
    * the BLADE PREVIEW panel that defines where the blade, pixel strip
    * and analysis-rail content all start. Expressed as a FRACTION of
@@ -296,6 +321,8 @@ interface PersistedLayout {
   pixelStripHeight: number;
   expandedSlotHeight: number;
   bladeStartFrac: number;
+  columnAWidth: number;
+  useABLayout: boolean;
 }
 
 function clampRegion(
@@ -474,6 +501,11 @@ export const useUIStore = create<UIStore>((set) => ({
     'bladeStartFrac',
     storedLayout.bladeStartFrac ?? REGION_LIMITS.bladeStartFrac.default,
   ),
+  columnAWidth: clampRegion(
+    'columnAWidth',
+    storedLayout.columnAWidth ?? REGION_LIMITS.columnAWidth.default,
+  ),
+  useABLayout: storedLayout.useABLayout === true,
   pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
 
   // ── Left-rail overhaul defaults ──
@@ -573,6 +605,18 @@ export const useUIStore = create<UIStore>((set) => ({
       savePersistedLayout({ ...snapshotLayout(s), bladeStartFrac });
       return { bladeStartFrac };
     }),
+  setColumnAWidth: (w) =>
+    set((s) => {
+      const columnAWidth = clampRegion('columnAWidth', w);
+      savePersistedLayout({ ...snapshotLayout(s), columnAWidth });
+      return { columnAWidth };
+    }),
+  setUseABLayout: (enabled) =>
+    set((s) => {
+      const useABLayout = enabled === true;
+      savePersistedLayout({ ...snapshotLayout(s), useABLayout });
+      return { useABLayout };
+    }),
   setPinnedEffects: (effects) => {
     savePinnedEffects(effects);
     set({ pinnedEffects: effects });
@@ -610,5 +654,7 @@ function snapshotLayout(s: UIStore): PersistedLayout {
     pixelStripHeight: s.pixelStripHeight,
     expandedSlotHeight: s.expandedSlotHeight,
     bladeStartFrac: s.bladeStartFrac,
+    columnAWidth: s.columnAWidth,
+    useABLayout: s.useABLayout,
   };
 }
