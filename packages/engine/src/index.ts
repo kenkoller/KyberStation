@@ -1,5 +1,14 @@
 // ─── Core engine ───
 export { BladeEngine } from './BladeEngine.js';
+export {
+  captureSequence,
+  captureSequenceWithStates,
+  computeFrameCount,
+} from './captureSequence.js';
+export type {
+  CaptureSequenceMode,
+  CaptureSequenceOptions,
+} from './captureSequence.js';
 export { LEDArray, lerpColor, scaleColor, hslToRgb, blendAdd, blendScreen, blendMultiply, clampColor } from './LEDArray.js';
 export { MotionSimulator } from './motion/MotionSimulator.js';
 export { createEasingFunction, getEasingPresetNames, EASING_PRESETS } from './easing.js';
