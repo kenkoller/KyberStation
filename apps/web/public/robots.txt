@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://kyberstation.com/sitemap.xml
+Host: https://kyberstation.com
