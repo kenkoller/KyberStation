@@ -22,7 +22,13 @@ export type {
   AppliedBinding,
   SkippedBinding,
   ApplySnapshotOptions,
+  CommentBlockExtras,
+  MappedBindingSummary,
+  DeferredMappingSummary,
 } from './applyModulationSnapshot.js';
+
+export { composeBindings } from './composeBindings.js';
+export type { ComposeBindingsResult } from './composeBindings.js';
 export type {
   MapBindingsResult,
   MappedBinding,
