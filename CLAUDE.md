@@ -545,7 +545,7 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ## Current State (2026-04-27, v0.15.0 cut — Modulation Routing v1.1 Core)
 
-**Active branch: `main` (post pre-launch cleanup pass).** Tag: **`v0.15.0`** (pending hardware validation on 89sabers Proffieboard V3.9). Codename: **Modulation Routing v1.1 Core**.
+**Active branch: `main` (post pre-launch cleanup pass).** Tag: **`v0.15.0`** — hardware-validated on 89sabers Proffieboard V3.9 (2026-04-27 evening). Codename: **Modulation Routing v1.1 Core**.
 
 This release bundles ~5 weeks of work since `v0.14.0` (2026-04-23):
 
@@ -559,7 +559,7 @@ This release bundles ~5 weeks of work since `v0.14.0` (2026-04-23):
 - **Saber Wizard hardware step** (2026-04-22) — first-step blade-length + board picker with 3-tier compatibility chips on the StatusBar's BoardPicker primitive.
 - **Pre-launch cleanup pass** (PRs #36, #56, #67, #68, #69, #70, 2026-04-27 evening) — merge of in-flight feature branches, salvage of the left-rail overhaul recap docs, SEO infrastructure (`robots.txt` / `sitemap.xml` / `siteConfig.ts`), and the new `docs/POST_LAUNCH_BACKLOG.md` single-source backlog index.
 
-Hardware validation status: ✅ macOS + 89sabers V3.9 + Brave (Chromium WebUSB). Cross-OS (Windows / Linux) + cross-board (V2, V3-OLED, CFX, Golden Harvest, Xenopixel) sweeps are post-launch per `docs/POST_LAUNCH_BACKLOG.md`. Public launch communication acknowledges this honestly.
+Hardware validation status: ✅ macOS + 89sabers V3.9 + Brave (Chromium WebUSB). Confirmed live `Mix<Scale<SwingSpeed<400>, ...>, ...>` driver evaluation on hardware via a swing→hue test on 2026-04-27 evening: a hand-patched config emitting `Mix<Scale<SwingSpeed<400>, Int<0>, Int<32768>>, Rgb<0,140,255>, Rgb<255,40,40>>` as the blade's primary color produced visible blue↔red gradient that tracked swing speed in real time. AudioFlicker wrapper masks the live shimmer when no audio font is loaded — flag for users who flash without a font. Build/flash pipeline used: codegen via `scripts/hardware-test/build-modulation-test-config.mjs` → `arduino-cli compile` (Proffieboard V3 fqbn) → `stm32l4-upload 0x1209 0x6668 ProffieOS.ino.dfu`. Preserved test config at `ProffieOS/config/v3-modulation-test.h` for future re-flash. Cross-OS (Windows / Linux) + cross-board (V2, V3-OLED, CFX, Golden Harvest, Xenopixel) sweeps are post-launch per `docs/POST_LAUNCH_BACKLOG.md`.
 
 Test count at tag: **3,168** workspace-wide (60 web suites at 1,064 tests + 740 engine + 1,859 codegen + 47 presets + 260 boards + 40 sound + 158 in flight). Typecheck clean across all 10 packages.
 
