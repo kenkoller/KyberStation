@@ -2,7 +2,7 @@
 
 **Purpose:** Paste the prompt block below into a fresh Claude Code session to finish the modulation v1.1 Core release: hardware validation on Proffieboard V3.9, optional Wave 7/8 follow-on, then cut the `v0.15.0` tag.
 
-**This session ended at:** main `9e22f5e` (PR #65 merged 2026-04-27). All code-side v1.1 Core scope is done. Only hardware-gated work remains for the tag.
+**This session ended at:** main `b4a73c9` (post pre-launch cleanup, 2026-04-27 evening). PR #65 merged the overnight modulation v1.1 Core recap, then the pre-launch cleanup pass landed PR #67 (saber GIF Sprint 1), PR #36 (vertical Saber Card), PR #56 (saber GIF roadmap docs), PR #68 (left-rail overhaul recap), and PR #69 (SEO infrastructure). All code-side v1.1 Core scope is done. Only hardware-gated work remains for the tag.
 
 ---
 
@@ -26,11 +26,14 @@ LIVE ProffieOS templates (not just snapshots).
 
 WHERE WE ARE
 ------------
-- Branch: `main`, commit `9e22f5e`. Local working tree should be clean.
+- Branch: `main`, commit `b4a73c9` (or later, depending on whether PR #69 SEO
+  infrastructure has merged when you start — check `git log -1 origin/main`).
+  Local working tree should be clean.
 - Last tag: `v0.14.0` (Modulation Routing v1.0 Preview BETA).
-- Untagged work since v0.14.0: PRs #41-#65 — full v1.1 Core scope from
-  `docs/MODULATION_ROUTING_ROADMAP.md`. Recommended tag: `v0.15.0`
-  post-hardware-validation.
+- Untagged work since v0.14.0: PRs #41-#65 (modulation v1.1 Core wave) plus
+  the 2026-04-27 evening cleanup PRs (#36, #56, #67, #68, #69). Recommended
+  tag: `v0.15.0` post-hardware-validation. The `[Unreleased]` section of
+  `CHANGELOG.md` lifts cleanly into a `[0.15.0]` block.
 - CI green on every push. axe-core WCAG 2 AA: 0 violations
   (desktop + mobile viewports of /editor).
 
@@ -158,13 +161,18 @@ WHAT'S DONE — DON'T REDO
 
 COORDINATION NOTES
 ------------------
-- Other parallel sessions still active on origin: `feat/glyph-multi-version-decoder`
-  (precursor merged via PR #38; encoder body is Wave 7 above),
-  `feat/saber-card-vertical` (#36 OPEN), `feat/marketing-site-expansion`
-  (#32 OPEN), `feat/saber-gif-sprint-1`, `feat/share-glyph-route`. Don't
-  edit their files. Footprints are disjoint from modulation work.
-- Worktrees from the overnight run (`/Users/KK/Development/KyberStation/.claude/worktrees/agent-*`)
-  were force-cleaned at session end. Branches deleted (merged).
+- All overnight worktrees + sibling feature branches were cleaned up in
+  the 2026-04-27 evening pass. Local + origin state at hardware-session
+  start: only `main` plus `feat/marketing-site-expansion` (PR #32 — OPEN
+  but deferred to v0.15.x re-implementation per
+  `docs/POST_LAUNCH_BACKLOG.md`; do not touch).
+- `feat/saber-card-vertical` (#36), `feat/saber-gif-sprint-1` (#67),
+  `feat/share-glyph-route`, `feat/glyph-multi-version-decoder` (Wave 7
+  precursor), `feat/v0.14.0-blade-polish` (PR #46) — all already merged
+  + branches deleted. Don't try to fetch them.
+- The Wave 7 (Glyph v2 modulation encoder body) implementation lives
+  in `apps/web/lib/sharePack/kyberGlyph.ts`'s v2 path on main. PR #38
+  shipped the dispatcher; encoder body is the next session's call.
 - Don't auto-force-push main. Don't skip CI. Don't bump to v1.0.0 — KyberStation hasn't hit "1.0 launch" itself per the
   release posture in CLAUDE.md.
 
