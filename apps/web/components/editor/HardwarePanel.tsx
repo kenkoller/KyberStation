@@ -55,7 +55,7 @@ const BLADE_LENGTHS = [
   { label: 'Short (24")', inches: 24, ledCount: 88 },
   { label: 'Medium (28")', inches: 28, ledCount: 103 },
   { label: 'Standard (32")', inches: 32, ledCount: 117 },
-  { label: 'Long (36")', inches: 36, ledCount: 144 },
+  { label: 'Long (36")', inches: 36, ledCount: 132 },
   { label: 'Extra Long (40")', inches: 40, ledCount: 147 },
 ];
 
@@ -81,7 +81,7 @@ function inferBladeInches(ledCount: number): number {
   if (ledCount <= 88) return 24;
   if (ledCount <= 103) return 28;
   if (ledCount <= 117) return 32;
-  if (ledCount <= 144) return 36;
+  if (ledCount <= 132) return 36;
   return 40;
 }
 
@@ -188,8 +188,15 @@ export function HardwarePanel(): JSX.Element {
       <div>
         <label className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Topology
+          <span
+            className="text-[8px] tracking-wider"
+            style={{ color: 'rgb(var(--badge-creative))' }}
+            title="Topology selection is partial — only Single / Staff / Crossguard render correctly today. Triple / Inquisitor are placeholders pending multi-segment renderer."
+          >
+            WIP
+          </span>
           <HelpTooltip
-            text="Physical blade layout. Single = standard saber, Staff = double-ended, Crossguard = main blade + quillons (Kylo Ren style)."
+            text="Physical blade layout. Single = standard saber, Staff = double-ended, Crossguard = main blade + quillons (Kylo Ren style). Triple / Inquisitor are placeholders — multi-segment renderer is in flight."
             proffie="BladeConfig blades[]"
           />
         </label>
@@ -269,8 +276,15 @@ export function HardwarePanel(): JSX.Element {
       <div>
         <label className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1">
           Strip Configuration
+          <span
+            className="text-[8px] tracking-wider"
+            style={{ color: 'rgb(var(--badge-creative))' }}
+            title="Strip count selection is partial — feeds the power-draw math but doesn't yet change the rendered blade thickness. Multi-strip rendering pipeline is in flight."
+          >
+            WIP
+          </span>
           <HelpTooltip
-            text="Number of neopixel LED strips inside the blade tube. More strips = brighter and more even illumination, but draw more power."
+            text="Number of neopixel LED strips inside the blade tube. More strips = brighter and more even illumination, but draw more power. Power math wired today; visual blade thickness change is in flight."
             proffie="WS281XBladePtr<ledCount, bladePin, Color8::GRB, PowerPINS<...>>"
           />
         </label>
