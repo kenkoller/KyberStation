@@ -59,19 +59,14 @@ export const AUTO_FIT_LEFT_PULL_DS = 0;
 
 /**
  * Map an LED count to the blade length in inches that BladeCanvas would
- * render it as. Mirrors the piecewise ladder in `BladeCanvas.tsx:352` and
- * the `BLADE_LENGTH_PRESETS` ranges in `packages/engine/src/types.ts`.
+ * render it as. Re-exports the canonical implementation in
+ * `lib/bladeLengths.ts` (which derives from `BLADE_LENGTH_PRESETS` in the
+ * engine package) so the piecewise ladder has exactly one source of truth.
  *
- * Any LED count ≥ 133 falls in the 40" bucket (the maximum-length preset).
+ * @see {@link ./bladeLengths.ts} for the canonical implementation.
  */
-export function inferBladeInches(ledCount: number): number {
-  if (ledCount <= 73) return 20;
-  if (ledCount <= 88) return 24;
-  if (ledCount <= 103) return 28;
-  if (ledCount <= 117) return 32;
-  if (ledCount <= 132) return 36;
-  return 40;
-}
+import { inferBladeInches } from './bladeLengths';
+export { inferBladeInches };
 
 export interface BladeRenderMetrics {
   /** Pixel X where the blade (not the hilt) begins within the container. */

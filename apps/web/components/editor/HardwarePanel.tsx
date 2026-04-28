@@ -42,22 +42,34 @@ import {
   BATTERY_PRESETS,
   BOARD_MAX_MA,
 } from '@/lib/powerDraw';
+import {
+  BLADE_LENGTHS as BLADE_LENGTH_OPTIONS,
+  inferBladeInches,
+} from '@/lib/bladeLengths';
 
 // ─── Local hardware-input constants ───
 //
-// Sourced directly from the legacy BladeHardwarePanel. Re-stated here
-// (rather than re-exported across modules) because they're presentation
-// strings, not load-bearing engine config — moving them to a shared lib
-// would only spawn an extra file.
+// BLADE_LENGTHS are derived from the engine's canonical BLADE_LENGTH_PRESETS
+// via lib/bladeLengths.ts so the table only ever lives in one place. STRIP
+// and TOPOLOGY tables stay local because they're UI-presentation enums with
+// no engine-side counterpart.
 
-const BLADE_LENGTHS = [
-  { label: 'Yoda (20")', inches: 20, ledCount: 73 },
-  { label: 'Short (24")', inches: 24, ledCount: 88 },
-  { label: 'Medium (28")', inches: 28, ledCount: 103 },
-  { label: 'Standard (32")', inches: 32, ledCount: 117 },
-  { label: 'Long (36")', inches: 36, ledCount: 144 },
-  { label: 'Extra Long (40")', inches: 40, ledCount: 147 },
-];
+// Decorate the canonical option shape with the human-friendly captions this
+// panel rendered before the lift (so the radiogroup labels stay familiar).
+const BLADE_LENGTH_LABELS: Record<number, string> = {
+  20: 'Yoda (20")',
+  24: 'Short (24")',
+  28: 'Medium (28")',
+  32: 'Standard (32")',
+  36: 'Long (36")',
+  40: 'Extra Long (40")',
+};
+
+const BLADE_LENGTHS = BLADE_LENGTH_OPTIONS.map((b) => ({
+  label: BLADE_LENGTH_LABELS[b.inches] ?? b.label,
+  inches: b.inches,
+  ledCount: b.ledCount,
+}));
 
 const STRIP_TYPES = [
   { id: 'single', label: '1 Strip', icon: '│', desc: 'Single neopixel strip' },
@@ -74,16 +86,6 @@ const TOPOLOGY_OPTIONS = [
   { id: 'triple', label: 'Triple', icon: '╲│╱', desc: 'Three blades' },
   { id: 'inquisitor', label: 'Inquisitor', icon: '◎', desc: 'Spinning double ring' },
 ];
-
-/** Reverse-map ledCount → inches preset. Mirrors the piecewise ladder used elsewhere. */
-function inferBladeInches(ledCount: number): number {
-  if (ledCount <= 73) return 20;
-  if (ledCount <= 88) return 24;
-  if (ledCount <= 103) return 28;
-  if (ledCount <= 117) return 32;
-  if (ledCount <= 144) return 36;
-  return 40;
-}
 
 // ─── Component ───────────────────────────────────────────────────────
 

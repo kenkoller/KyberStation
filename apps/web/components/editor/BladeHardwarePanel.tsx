@@ -3,15 +3,27 @@
 import { useBladeStore } from '@/stores/bladeStore';
 import { TOPOLOGY_PRESETS, type BladeConfig } from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import {
+  BLADE_LENGTHS as BLADE_LENGTH_OPTIONS,
+  inferBladeInches,
+} from '@/lib/bladeLengths';
 
-const BLADE_LENGTHS = [
-  { label: 'Yoda (20")', inches: 20, ledCount: 73 },
-  { label: 'Short (24")', inches: 24, ledCount: 88 },
-  { label: 'Medium (28")', inches: 28, ledCount: 103 },
-  { label: 'Standard (32")', inches: 32, ledCount: 117 },
-  { label: 'Long (36")', inches: 36, ledCount: 144 },
-  { label: 'Extra Long (40")', inches: 40, ledCount: 147 },
-];
+// BLADE_LENGTHS now derives from lib/bladeLengths.ts (single source of truth).
+// Decorated with the legacy human-friendly captions this stub used.
+const BLADE_LENGTH_LABELS: Record<number, string> = {
+  20: 'Yoda (20")',
+  24: 'Short (24")',
+  28: 'Medium (28")',
+  32: 'Standard (32")',
+  36: 'Long (36")',
+  40: 'Extra Long (40")',
+};
+
+const BLADE_LENGTHS = BLADE_LENGTH_OPTIONS.map((b) => ({
+  label: BLADE_LENGTH_LABELS[b.inches] ?? b.label,
+  inches: b.inches,
+  ledCount: b.ledCount,
+}));
 
 const STRIP_TYPES = [
   { id: 'single', label: '1 Strip', icon: '│', desc: 'Single neopixel strip' },
@@ -35,7 +47,7 @@ export function BladeHardwarePanel() {
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const setTopology = useBladeStore((s) => s.setTopology);
 
-  const currentLength = config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 144 ? 36 : 40;
+  const currentLength = inferBladeInches(config.ledCount);
 
   const handleLengthChange = (inches: number) => {
     const preset = BLADE_LENGTHS.find(b => b.inches === inches);
