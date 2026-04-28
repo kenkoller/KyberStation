@@ -3,6 +3,8 @@ import {
   selectForm,
   geometryParamsForConfig,
   isRedHue,
+  isGreenHue,
+  isBlueHue,
   CRYSTAL_FORMS,
 } from '@/lib/crystal/types';
 import type { BladeConfig } from '@kyberstation/engine';
@@ -40,6 +42,107 @@ describe('isRedHue', () => {
   it('rejects warm yellow', () => {
     // red > g by 40? 220 vs 200 = 20 diff. Not red-enough.
     expect(isRedHue({ r: 220, g: 200, b: 80 })).toBe(false);
+  });
+});
+
+describe('isGreenHue', () => {
+  it('matches pure green', () => {
+    expect(isGreenHue({ r: 0, g: 255, b: 0 })).toBe(true);
+  });
+  it('matches Yoda green (saturated)', () => {
+    expect(isGreenHue({ r: 30, g: 220, b: 40 })).toBe(true);
+  });
+  it('rejects pure red', () => {
+    expect(isGreenHue({ r: 255, g: 0, b: 0 })).toBe(false);
+  });
+  it('rejects pure blue', () => {
+    expect(isGreenHue({ r: 0, g: 0, b: 255 })).toBe(false);
+  });
+  it('rejects white (no dominant channel)', () => {
+    expect(isGreenHue({ r: 255, g: 255, b: 255 })).toBe(false);
+  });
+  it('rejects black (luma guard)', () => {
+    expect(isGreenHue({ r: 0, g: 0, b: 0 })).toBe(false);
+  });
+  it('rejects dim green (below luma threshold)', () => {
+    // g=100 fails the g < 120 guard.
+    expect(isGreenHue({ r: 20, g: 100, b: 30 })).toBe(false);
+  });
+  it('rejects yellow (warm — not green-enough margin over red)', () => {
+    // g=220, r=200 → diff 20 < 40. Not green-enough.
+    expect(isGreenHue({ r: 200, g: 220, b: 80 })).toBe(false);
+  });
+  it('rejects ambiguous cyan (not enough margin over blue)', () => {
+    // g=220, b=240 → b-g=20, neither is green-dominant nor blue-dominant.
+    expect(isGreenHue({ r: 0, g: 220, b: 240 })).toBe(false);
+  });
+});
+
+describe('isBlueHue', () => {
+  it('matches pure blue', () => {
+    expect(isBlueHue({ r: 0, g: 0, b: 255 })).toBe(true);
+  });
+  it('matches Obi-Wan blue (cool)', () => {
+    expect(isBlueHue({ r: 0, g: 140, b: 255 })).toBe(true);
+  });
+  it('rejects pure red', () => {
+    expect(isBlueHue({ r: 255, g: 0, b: 0 })).toBe(false);
+  });
+  it('rejects pure green', () => {
+    expect(isBlueHue({ r: 0, g: 255, b: 0 })).toBe(false);
+  });
+  it('rejects white (no dominant channel)', () => {
+    expect(isBlueHue({ r: 255, g: 255, b: 255 })).toBe(false);
+  });
+  it('rejects black (luma guard)', () => {
+    expect(isBlueHue({ r: 0, g: 0, b: 0 })).toBe(false);
+  });
+  it('rejects dim blue (below luma threshold)', () => {
+    // b=100 fails the b < 120 guard.
+    expect(isBlueHue({ r: 30, g: 20, b: 100 })).toBe(false);
+  });
+  it('rejects ambiguous cyan (not enough margin over green)', () => {
+    // b=240, g=220 → b-g=20, neither blue-dominant nor green-dominant.
+    expect(isBlueHue({ r: 0, g: 220, b: 240 })).toBe(false);
+  });
+  it('matches amethyst — note: chip faction-detection layers an r<80 gate', () => {
+    // {r:170, g:60, b:240} satisfies isBlueHue (b dominant by >40 over r and g),
+    // but chips.ts adds `r < 80` so this purple is correctly classified as Grey.
+    // This test documents the predicate's surface, not the chip-level outcome.
+    expect(isBlueHue({ r: 170, g: 60, b: 240 })).toBe(true);
+  });
+});
+
+describe('hue predicates — mutual exclusion guarantees', () => {
+  it('pure red passes only isRedHue', () => {
+    const c = { r: 255, g: 0, b: 0 };
+    expect(isRedHue(c)).toBe(true);
+    expect(isGreenHue(c)).toBe(false);
+    expect(isBlueHue(c)).toBe(false);
+  });
+  it('pure green passes only isGreenHue', () => {
+    const c = { r: 0, g: 255, b: 0 };
+    expect(isRedHue(c)).toBe(false);
+    expect(isGreenHue(c)).toBe(true);
+    expect(isBlueHue(c)).toBe(false);
+  });
+  it('pure blue passes only isBlueHue', () => {
+    const c = { r: 0, g: 0, b: 255 };
+    expect(isRedHue(c)).toBe(false);
+    expect(isGreenHue(c)).toBe(false);
+    expect(isBlueHue(c)).toBe(true);
+  });
+  it('white passes none (no dominant channel)', () => {
+    const c = { r: 255, g: 255, b: 255 };
+    expect(isRedHue(c)).toBe(false);
+    expect(isGreenHue(c)).toBe(false);
+    expect(isBlueHue(c)).toBe(false);
+  });
+  it('black passes none (luma guard)', () => {
+    const c = { r: 0, g: 0, b: 0 };
+    expect(isRedHue(c)).toBe(false);
+    expect(isGreenHue(c)).toBe(false);
+    expect(isBlueHue(c)).toBe(false);
   });
 });
 
