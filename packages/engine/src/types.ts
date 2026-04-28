@@ -240,6 +240,13 @@ export interface BladeConfig {
   shimmer: number; // 0-1
   ledCount: number; // typically 144
 
+  /**
+   * Optional hilt assembly id (graflex / mpp / dooku / etc.). Read by the
+   * Saber Card renderer + MiniSaber gallery cards. Not consumed by the
+   * BladeEngine itself — it's purely a display-side hint.
+   */
+  hiltId?: string;
+
   // ── Spatial Lockup (Edit Mode) ──
   /** Lockup centre position along the blade, 0..1. 0 = hilt, 1 = tip. Undefined = non-positional (runtime default). */
   lockupPosition?: number;

@@ -58,7 +58,7 @@ export function drawBackdrop(card: CardContext): void {
   ctx.restore();
 
   // 5. Edge vignette — tightens the corners.
-  drawEdgeVignette(ctx, width, height);
+  drawEdgeVignette(ctx, width, height, theme.vignetteColor);
 
   // 6. Corner HUD brackets — L-shapes inside the safe zone.
   drawCornerBrackets(ctx, width, height, layout.headerH, layout.footerH, theme.hudBracketColor);
@@ -190,18 +190,46 @@ function drawBlueprintDetails(
   ctx.restore();
 }
 
-function drawEdgeVignette(ctx: Ctx, width: number, height: number): void {
+function drawEdgeVignette(
+  ctx: Ctx,
+  width: number,
+  height: number,
+  outerColor: string,
+): void {
   const cx = width / 2;
   const cy = height / 2;
   const inner = Math.min(width, height) * 0.45;
   const outer = Math.hypot(cx, cy);
   const vignette = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
-  vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
+  // Inner stop derives from the outer color but at 0 alpha — works for
+  // any rgba/hsla value the theme passes; the radial fade reads cleanly
+  // across all five themes.
+  vignette.addColorStop(0, transparentize(outerColor));
+  vignette.addColorStop(1, outerColor);
   ctx.save();
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
+}
+
+/** Replace the alpha component of an `rgba(...)` / `hsla(...)` color
+ *  with 0. Used by the vignette inner stop so the radial fade always
+ *  starts fully transparent regardless of theme. Falls back to the
+ *  input string for non-rgba/hsla colors (the gradient still works
+ *  but the inner stop won't necessarily be transparent — author the
+ *  theme value with rgba). */
+function transparentize(color: string): string {
+  // Match rgba(r,g,b,a) and hsla(h,s%,l%,a)
+  return color.replace(/(rgba?|hsla?)\(([^)]+)\)/, (_, fn, args) => {
+    const parts = args.split(',').map((p: string) => p.trim());
+    if (parts.length === 4) {
+      parts[3] = '0';
+    } else if (parts.length === 3) {
+      parts.push('0');
+    }
+    const fnWithAlpha = fn.endsWith('a') ? fn : `${fn}a`;
+    return `${fnWithAlpha}(${parts.join(', ')})`;
+  });
 }
 
 function drawCornerBrackets(

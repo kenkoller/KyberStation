@@ -13,6 +13,8 @@ export {
   selectForm,
   geometryParamsForConfig,
   isRedHue,
+  isGreenHue,
+  isBlueHue,
   IDLE_ANIMATION_STATE,
 } from './types';
 

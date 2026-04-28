@@ -166,6 +166,28 @@ export function isRedHue(color: RGB): boolean {
   return true;
 }
 
+/** Green-hue predicate — symmetric to isRedHue, used by chip faction
+ *  classification on Saber Cards. */
+export function isGreenHue(color: RGB): boolean {
+  const { r, g, b } = color;
+  if (g < 120) return false;
+  if (g < r + 40) return false;
+  if (g < b + 40) return false;
+  return true;
+}
+
+/** Blue-hue predicate — symmetric to isRedHue, used by chip faction
+ *  classification on Saber Cards. Note: amethyst / Mace-purple satisfies
+ *  this predicate (blue dominates) — chip-level Jedi detection layers
+ *  an additional `r < 80` check to exclude purples / pinks / magentas. */
+export function isBlueHue(color: RGB): boolean {
+  const { r, g, b } = color;
+  if (b < 120) return false;
+  if (b < r + 40) return false;
+  if (b < g + 40) return false;
+  return true;
+}
+
 /**
  * Select the Form silhouette for a given config. Decision rules,
  * in priority order:

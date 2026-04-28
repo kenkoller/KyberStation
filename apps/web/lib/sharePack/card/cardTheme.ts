@@ -24,6 +24,9 @@ export const DEFAULT_THEME: CardTheme = {
   watermarkColor: 'rgba(168, 198, 255, 0.06)',
   archiveStampBg: 'rgba(168, 198, 255, 0.08)',
   archiveStampText: 'rgba(168, 198, 255, 0.55)',
+  vignetteColor: 'rgba(0, 0, 0, 0.15)',
+
+  hiltAccent: 'rgb(178, 182, 192)',
 
   headerBand: 'rgba(255, 255, 255, 0.035)',
   headerText: '#a8c6ff',
@@ -67,6 +70,9 @@ export const LIGHT_THEME: CardTheme = {
   watermarkColor: 'rgba(42, 53, 72, 0.07)',
   archiveStampBg: 'rgba(42, 53, 72, 0.08)',
   archiveStampText: 'rgba(42, 53, 72, 0.7)',
+  vignetteColor: 'rgba(60, 70, 90, 0.18)',
+
+  hiltAccent: 'rgb(120, 128, 144)',
 
   headerBand: 'rgba(255, 255, 255, 0.35)',
   headerText: '#1a2130',
@@ -110,6 +116,9 @@ export const IMPERIAL_THEME: CardTheme = {
   watermarkColor: 'rgba(255, 90, 90, 0.07)',
   archiveStampBg: 'rgba(255, 90, 90, 0.1)',
   archiveStampText: 'rgba(255, 160, 160, 0.7)',
+  vignetteColor: 'rgba(40, 0, 0, 0.22)',
+
+  hiltAccent: 'rgb(168, 132, 132)',
 
   headerBand: 'rgba(255, 90, 90, 0.05)',
   headerText: '#ffb0b0',
@@ -153,6 +162,9 @@ export const JEDI_THEME: CardTheme = {
   watermarkColor: 'rgba(246, 229, 184, 0.07)',
   archiveStampBg: 'rgba(246, 229, 184, 0.08)',
   archiveStampText: 'rgba(246, 229, 184, 0.7)',
+  vignetteColor: 'rgba(40, 24, 4, 0.25)',
+
+  hiltAccent: 'rgb(196, 168, 124)',
 
   headerBand: 'rgba(246, 229, 184, 0.04)',
   headerText: '#f6e5b8',
@@ -196,6 +208,9 @@ export const SPACE_THEME: CardTheme = {
   watermarkColor: 'rgba(255, 255, 255, 0.04)',
   archiveStampBg: 'rgba(255, 255, 255, 0.05)',
   archiveStampText: 'rgba(255, 255, 255, 0.55)',
+  vignetteColor: 'rgba(0, 0, 0, 0.22)',
+
+  hiltAccent: 'rgb(168, 172, 184)',
 
   headerBand: 'rgba(255, 255, 255, 0.025)',
   headerText: '#f5f5f5',

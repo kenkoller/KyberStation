@@ -126,6 +126,16 @@ export interface CardTheme {
   watermarkColor: string;
   archiveStampBg: string;
   archiveStampText: string;
+  /** Edge-vignette gradient outer color. Default themes use translucent
+   *  black for darkening corners; light themes can use translucent white
+   *  or warm cream for a paper-grain feel. */
+  vignetteColor: string;
+
+  // ─── Hilt ───
+  /** Accent color override applied to the SVG hilt assembly. Default
+   *  themes use a neutral chrome silver; faction themes can override
+   *  (warm gold for Jedi parchment, crimson for Imperial, etc.). */
+  hiltAccent: string;
 
   // ─── Header ───
   headerBand: string;
