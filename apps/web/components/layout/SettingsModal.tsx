@@ -3,12 +3,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { playUISound } from '@/lib/uiSounds';
 import { useModalDialog } from '@/hooks/useModalDialog';
-import {
-  getPerformanceTier,
-  setPerformanceTier,
-  applyPerformanceTier,
-  type PerformanceTier,
-} from '@/lib/performanceTier';
 import { useAurebesh } from '@/hooks/useAurebesh';
 import { type AurebeshMode } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
@@ -159,12 +153,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     display: false,
     density: false,
     // Behavior
-    sounds: false,
     effects: false,
-    shortcuts: false,
     feedback: false,
     // Advanced
-    performance: true,
     layout: false,
   });
 
@@ -190,31 +181,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     [],
   );
 
-  // ── Performance tier ──
-  const [perfTier, setPerfTierState] = useState<PerformanceTier>('medium');
-  const [perfIsAuto, setPerfIsAuto] = useState(true);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const { tier, isAutoDetected } = getPerformanceTier();
-    setPerfTierState(tier);
-    setPerfIsAuto(isAutoDetected);
-  }, [isOpen]);
-
-  const handlePerfTierChange = useCallback((tier: PerformanceTier) => {
-    setPerfTierState(tier);
-    setPerfIsAuto(false);
-    setPerformanceTier(tier);
-    applyPerformanceTier(tier);
-  }, []);
-
-  const handlePerfTierAuto = useCallback(() => {
-    setPerformanceTier(null); // clear override
-    const { tier } = getPerformanceTier();
-    setPerfTierState(tier);
-    setPerfIsAuto(true);
-    applyPerformanceTier(tier);
-  }, []);
+  // Performance tier surface deleted from Settings per IA audit §6 (the
+  // AppPerfStrip already covers HIGH/MED/LOW). The auto-detect "Reset"
+  // affordance was deferred to a follow-up that adds a small button on
+  // AppPerfStrip itself.
 
   // ── Row density — §6 North Star. Flips data-density on <html> via
   //    useAccessibilityApplier; no layout shift today (components opt in later). ──
@@ -521,23 +491,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </section>
   );
 
-  const renderSounds = (): ReactNode => (
-    <section className="py-4">
-      <SectionToggle
-        label="UI Sounds"
-        open={sections.sounds}
-        onToggle={() => toggleSection('sounds')}
-      />
-      {sections.sounds && (
-        <div className="mt-3">
-          <p className="text-ui-sm text-text-muted">
-            UI sound effects are coming in a future update.
-          </p>
-        </div>
-      )}
-    </section>
-  );
-
   const renderEffectAutoRelease = (): ReactNode => (
     <section className="py-4">
       <SectionToggle
@@ -617,80 +570,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             />
             <div className="text-ui-xs text-text-muted mt-1">
               Range: 1–15 seconds. Default: 4s.
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-
-  const renderShortcuts = (): ReactNode => (
-    <section className="py-4">
-      <SectionToggle
-        label="Keyboard Shortcuts"
-        open={sections.shortcuts}
-        onToggle={() => toggleSection('shortcuts')}
-      />
-      {sections.shortcuts && (
-        <div className="mt-3 space-y-3">
-          <p className="text-ui-xs text-text-muted">
-            Keyboard shortcuts for blade simulation and editor controls.
-          </p>
-
-          {/* Blade effect shortcuts */}
-          <div className="space-y-1.5">
-            <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-              Blade Effects
-            </p>
-            <div className="space-y-1">
-              {([
-                { key: 'Space', action: 'Ignite / Retract' },
-                { key: 'C', action: 'Clash' },
-                { key: 'B', action: 'Blast' },
-                { key: 'S', action: 'Stab' },
-                { key: 'L', action: 'Lockup (toggle)' },
-                { key: 'N', action: 'Lightning (toggle)' },
-                { key: 'D', action: 'Drag (toggle)' },
-                { key: 'M', action: 'Melt (toggle)' },
-                { key: 'F', action: 'Force' },
-                { key: 'W', action: 'Shockwave' },
-                { key: 'R', action: 'Fragment' },
-                { key: 'V', action: 'Bifurcate' },
-                { key: 'G', action: 'Ghost Echo' },
-                { key: 'P', action: 'Splinter' },
-                { key: 'E', action: 'Coronary' },
-                { key: 'X', action: 'Glitch Matrix' },
-                { key: 'H', action: 'Siphon' },
-              ] as const).map(({ key, action }) => (
-                <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
-                  <span className="text-ui-sm text-text-secondary">{action}</span>
-                  <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
-                    {key}
-                  </kbd>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Editor shortcuts */}
-          <div className="space-y-1.5">
-            <p className="text-ui-xs font-medium text-text-secondary uppercase tracking-wider">
-              Editor
-            </p>
-            <div className="space-y-1">
-              {([
-                { key: 'Escape', action: 'Exit fullscreen' },
-                { key: 'O', action: 'Toggle blade orientation' },
-                { key: '⌘Z', action: 'Undo' },
-                { key: '⌘⇧Z', action: 'Redo' },
-              ] as const).map(({ key, action }) => (
-                <div key={key} className="flex items-center justify-between px-3 py-1.5 rounded bg-bg-deep/50 border border-border-subtle">
-                  <span className="text-ui-sm text-text-secondary">{action}</span>
-                  <kbd className="px-2 py-0.5 rounded bg-bg-surface border border-border-light text-ui-xs text-text-primary font-mono">
-                    {key}
-                  </kbd>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -780,79 +659,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </a>
             <span className="text-ui-xs text-text-muted">MIT licensed</span>
           </div>
-        </div>
-      )}
-    </section>
-  );
-
-  const renderPerformanceTier = (): ReactNode => (
-    <section className="py-4">
-      <SectionToggle
-        label="Performance Tier"
-        open={sections.performance}
-        onToggle={() => toggleSection('performance')}
-      />
-      {sections.performance && (
-        <div className="mt-3 space-y-3">
-          <p className="text-ui-xs text-text-muted">
-            Controls visual complexity. Auto-detects based on your device.
-          </p>
-
-          <div className="space-y-2">
-            {(
-              [
-                {
-                  value: 'full',
-                  label: 'Full',
-                  desc: 'All animations, particles, and ambient effects',
-                },
-                {
-                  value: 'medium',
-                  label: 'Medium',
-                  desc: 'Reduced particles and simpler animations',
-                },
-                {
-                  value: 'lite',
-                  label: 'Lite',
-                  desc: 'Minimal animations, static decorations',
-                },
-              ] as Array<{ value: PerformanceTier; label: string; desc: string }>
-            ).map(({ value, label, desc }) => (
-              <label
-                key={value}
-                className={`flex items-start gap-3 px-3 py-2.5 rounded border cursor-pointer transition-colors ${
-                  perfTier === value && !perfIsAuto
-                    ? 'border-accent/50 bg-accent/5 text-text-primary'
-                    : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="perf-tier"
-                  value={value}
-                  checked={perfTier === value && !perfIsAuto}
-                  onChange={() => handlePerfTierChange(value)}
-                  className="mt-0.5 accent-[rgb(var(--accent))]"
-                />
-                <div className="min-w-0">
-                  <div className="text-ui-sm font-medium">{label}</div>
-                  <div className="text-ui-xs text-text-muted mt-0.5">{desc}</div>
-                </div>
-              </label>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={handlePerfTierAuto}
-            className={`text-ui-xs px-3 py-1.5 rounded border transition-colors ${
-              perfIsAuto
-                ? 'border-accent/40 text-accent bg-accent/5'
-                : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light'
-            }`}
-          >
-            {perfIsAuto ? `Auto-detected: ${perfTier}` : 'Reset to auto-detect'}
-          </button>
         </div>
       )}
     </section>
@@ -1040,7 +846,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div>{renderDensity()}</div>
           </div>
 
-          {/* Behavior: UI Sounds → Effect auto-release → Keyboard Shortcuts → Feedback */}
+          {/* Behavior: Effect auto-release → Feedback */}
           <div
             role="tabpanel"
             id="settings-tabpanel-behavior"
@@ -1049,13 +855,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             hidden={activeTab !== 'behavior'}
             className="divide-y divide-border-subtle"
           >
-            <div className="first:[&>section]:pt-0">{renderSounds()}</div>
-            <div>{renderEffectAutoRelease()}</div>
-            <div>{renderShortcuts()}</div>
+            <div className="first:[&>section]:pt-0">{renderEffectAutoRelease()}</div>
             <div>{renderFeedback()}</div>
           </div>
 
-          {/* Advanced: Performance Tier → Layout */}
+          {/* Advanced: Layout */}
           <div
             role="tabpanel"
             id="settings-tabpanel-advanced"
@@ -1064,8 +868,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             hidden={activeTab !== 'advanced'}
             className="divide-y divide-border-subtle"
           >
-            <div className="first:[&>section]:pt-0">{renderPerformanceTier()}</div>
-            <div>{renderLayout()}</div>
+            <div className="first:[&>section]:pt-0">{renderLayout()}</div>
           </div>
         </div>
 
