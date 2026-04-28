@@ -9,11 +9,10 @@
 // server snapshot to `getInitialState()` (see
 // node_modules/zustand/react.js); browser walkthrough covers those.
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import type { SerializedBinding } from '@kyberstation/engine';
-import { useBladeStore } from '../stores/bladeStore';
 import { RoutingColumnA } from '../components/editor/routing/RoutingColumnA';
 import { RoutingColumnB } from '../components/editor/routing/RoutingColumnB';
 
@@ -64,18 +63,15 @@ const FIXTURE_BYPASSED_LOCKUP: SerializedBinding = {
 // pass it explicitly because Zustand's React binding pins the SSR
 // snapshot to `getInitialState()` (see node_modules/zustand/react.js)
 // — store mutations before renderToStaticMarkup aren't visible.
-function clearStore() {
-  // Reset the store anyway for any non-bindings selectors (e.g.
-  // bypass/remove handlers) that read from the live store at SSR time.
-  useBladeStore.setState((s) => ({
-    config: { ...s.config, modulation: { bindings: [] } },
-  }));
-}
+//
+// No need to reset the store between tests: every test below passes
+// `bindings:` to the component under test, so the live store value is
+// shadowed by the prop. The store's runtime action setters (read-only
+// closures via the hook selector) are still available for SSR render
+// without changes.
 
 describe('RoutingColumnA — empty state', () => {
-  beforeEach(clearStore);
-
-  it('renders the "+ New Binding" button + RecipePicker + ModulatorPlateBar at the top', () => {
+it('renders the "+ New Binding" button + RecipePicker + ModulatorPlateBar at the top', () => {
     const html = renderToStaticMarkup(
       createElement(RoutingColumnA, {
         selectedBindingId: null,
@@ -117,9 +113,7 @@ describe('RoutingColumnA — empty state', () => {
 });
 
 describe('RoutingColumnA — populated', () => {
-  beforeEach(clearStore);
-
-  const TWO_BINDINGS = [FIXTURE_SWING_TO_SHIMMER, FIXTURE_EXPRESSION_BREATHING];
+const TWO_BINDINGS = [FIXTURE_SWING_TO_SHIMMER, FIXTURE_EXPRESSION_BREATHING];
 
   it('renders one row per binding with source-name + target-label + amount %', () => {
     const html = renderToStaticMarkup(
@@ -189,9 +183,7 @@ describe('RoutingColumnA — populated', () => {
 });
 
 describe('RoutingColumnB — no selection', () => {
-  beforeEach(clearStore);
-
-  it('renders the "New Binding" header + AddBindingForm + creation-paths hint', () => {
+it('renders the "New Binding" header + AddBindingForm + creation-paths hint', () => {
     const html = renderToStaticMarkup(
       createElement(RoutingColumnB, {
         selectedBindingId: null,
@@ -221,9 +213,7 @@ describe('RoutingColumnB — no selection', () => {
 });
 
 describe('RoutingColumnB — editing a bare-source binding', () => {
-  beforeEach(clearStore);
-
-  it('renders source dropdown (editable) + target dropdown + combinator + amount slider', () => {
+it('renders source dropdown (editable) + target dropdown + combinator + amount slider', () => {
     const html = renderToStaticMarkup(
       createElement(RoutingColumnB, {
         selectedBindingId: FIXTURE_SWING_TO_SHIMMER.id,
@@ -269,9 +259,7 @@ describe('RoutingColumnB — editing a bare-source binding', () => {
 });
 
 describe('RoutingColumnB — editing an expression binding', () => {
-  beforeEach(clearStore);
-
-  it('shows the expression source code + Edit Expression button instead of a source dropdown', () => {
+it('shows the expression source code + Edit Expression button instead of a source dropdown', () => {
     const html = renderToStaticMarkup(
       createElement(RoutingColumnB, {
         selectedBindingId: FIXTURE_EXPRESSION_BREATHING.id,
@@ -305,9 +293,7 @@ describe('RoutingColumnB — editing an expression binding', () => {
 });
 
 describe('RoutingColumnB — editing a bypassed binding', () => {
-  beforeEach(clearStore);
-
-  it('shows the "bypassed" header pill and "Unbypass" action', () => {
+it('shows the "bypassed" header pill and "Unbypass" action', () => {
     const html = renderToStaticMarkup(
       createElement(RoutingColumnB, {
         selectedBindingId: FIXTURE_BYPASSED_LOCKUP.id,
