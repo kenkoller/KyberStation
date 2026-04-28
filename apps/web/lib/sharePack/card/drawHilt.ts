@@ -36,7 +36,9 @@ const EMITTER_OVERLAP = 4;
 const DEFAULT_ASSEMBLY_ID = 'graflex';
 
 /** Accent color for the hilt SVG — neutral chrome (vertical fallback only). */
-const HILT_ACCENT = 'rgb(178,182,192)';
+// Default hilt accent — used as a fallback if the theme doesn't override.
+// Most themes do override via theme.hiltAccent.
+const HILT_ACCENT_DEFAULT = 'rgb(178,182,192)';
 
 /** Default canvas hilt style for share artifacts. Matches the editor. */
 const DEFAULT_HILT_STYLE_ID = DEFAULT_CANVAS_HILT_STYLE_ID;
@@ -110,7 +112,7 @@ function resolveCanvasHiltStyle(hiltId: string | undefined): string {
 // ─── Vertical hilt ───────────────────────────────────────────
 
 async function drawHiltVertical(card: CardContext): Promise<void> {
-  const { ctx, layout, options } = card;
+  const { ctx, layout, options, theme } = card;
   const { config } = options;
 
   // For vertical, hiltW is the long-axis dimension (top-to-bottom of
@@ -129,7 +131,7 @@ async function drawHiltVertical(card: CardContext): Promise<void> {
         assemblyId: hiltId,
         orientation: 'vertical',
         longAxisSize,
-        accentOverride: HILT_ACCENT,
+        accentOverride: theme.hiltAccent ?? HILT_ACCENT_DEFAULT,
       }),
     );
 
