@@ -2,10 +2,16 @@
 //
 // The same blade-length table was previously inlined in five places
 // (HardwarePanel, BladeHardwarePanel, BladeCanvas, SaberWizard,
-// bladeRenderMetrics). In two of those (HardwarePanel + BladeHardwarePanel)
-// the 36" entry claimed 144 LEDs while the engine's BLADE_LENGTH_PRESETS
-// said 132 — a documented drift that bit twice (PR #96 first, this lift
-// second).
+// bladeRenderMetrics). The 36" entry's LED count drifted between the
+// strict-math 132 (engine BLADE_LENGTH_PRESETS pre-lift) and the
+// community-standard 144 (web-side inline arrays) — documented in
+// PR #96's reverse-direction commit.
+//
+// Resolution: the canonical 36" value is **144 LEDs**, matching the
+// WS2812B "1m strip = 144 LEDs" community convention that vendor
+// blades labelled "Standard 36-inch" actually ship with. Picking 132
+// (strict 3.66 LEDs/inch math) would mean the visualizer disagrees
+// with what users flashed.
 //
 // This file pins the post-lift invariant: `BLADE_LENGTH_PRESETS` is the
 // single canonical source, `BLADE_LENGTHS` (web side) is a derived view
@@ -30,12 +36,14 @@ describe('BLADE_LENGTH_PRESETS (canonical engine table)', () => {
     expect(BLADE_LENGTH_PRESETS['20"']?.ledCount).toBe(73);
   });
 
-  it('36" entry resolves to 132 LEDs (engine truth — NOT the historical 144 drift)', () => {
-    // PR #96 fixed engine drift here. Two web-side inline arrays
-    // (HardwarePanel + BladeHardwarePanel) still claimed 144 until this
-    // lift. If a future change reintroduces 144, the visualizer will
-    // disagree with real hardware again — this assertion catches it.
-    expect(BLADE_LENGTH_PRESETS['36"']?.ledCount).toBe(132);
+  it('36" entry resolves to 144 LEDs (community 1m-strip convention — NOT the strict-math 132)', () => {
+    // The WS2812B community ships "Standard 36-inch" blades with full
+    // 1m strips at 144 LEDs/m density. Strict math (36 × 3.66 = 132)
+    // disagrees with that hardware reality. PR #96's reverse-direction
+    // commit explicitly chose the community standard so the visualizer
+    // matches what users actually flashed. This assertion catches any
+    // future regression back to 132.
+    expect(BLADE_LENGTH_PRESETS['36"']?.ledCount).toBe(144);
   });
 
   it('covers exactly the canonical 20"/24"/28"/32"/36"/40" presets', () => {
@@ -75,12 +83,12 @@ describe('BLADE_LENGTHS (derived web-side view)', () => {
     expect(yoda?.ledCount).toBe(73);
   });
 
-  it('36" entry resolves to 132 LEDs (NOT the historical 144 drift)', () => {
-    // Mirror of the engine-side assertion at the web layer. This is the
-    // load-bearing user-visible behavior — the visualizer renders 132
-    // LEDs for a 36" blade, matching what real hardware does.
+  it('36" entry resolves to 144 LEDs (community 1m-strip convention)', () => {
+    // Mirror of the engine-side assertion at the web layer. 144 is what
+    // a "Standard 36-inch" vendor blade actually ships with (full 1m
+    // strip at 144 LEDs/m density), not the 132 strict math suggests.
     const long = BLADE_LENGTHS.find((b) => b.inches === 36);
-    expect(long?.ledCount).toBe(132);
+    expect(long?.ledCount).toBe(144);
   });
 });
 
@@ -93,17 +101,20 @@ describe('inferBladeInches (reverse mapping)', () => {
     }
   });
 
-  it('132 LEDs maps to 36" (the drift case)', () => {
+  it('144 LEDs maps to 36" (post-lift community-standard mapping)', () => {
     // Pre-lift, HardwarePanel's local inferBladeInches said 144 -> 36
-    // and bladeRenderMetrics's said 132 -> 36. These disagreed silently.
-    // Post-lift there's exactly one implementation; both pre-lift call
-    // sites now agree on the engine truth.
-    expect(inferBladeInches(132)).toBe(36);
+    // (community standard) and bladeRenderMetrics's said 132 -> 36
+    // (strict math). They disagreed silently. Post-lift there's exactly
+    // one implementation, derived from BLADE_LENGTH_PRESETS where 36"
+    // is now canonically 144 LEDs. Any 36"-blade flashed with the full
+    // 1m strip lands here.
+    expect(inferBladeInches(144)).toBe(36);
   });
 
-  it('133 LEDs and above maps to 40"', () => {
-    expect(inferBladeInches(133)).toBe(40);
-    expect(inferBladeInches(144)).toBe(40);
+  it('145 LEDs and above maps to 40"', () => {
+    // 36" caps at 144; 40" caps at 147. The narrow band 145-147 is the
+    // 40" bucket because the piecewise ladder walks ascending.
+    expect(inferBladeInches(145)).toBe(40);
     expect(inferBladeInches(147)).toBe(40);
     expect(inferBladeInches(10000)).toBe(40);
   });
@@ -123,7 +134,8 @@ describe('inferBladeInches (reverse mapping)', () => {
     expect(inferBladeInches(104)).toBe(32);
     expect(inferBladeInches(117)).toBe(32);
     expect(inferBladeInches(118)).toBe(36);
-    expect(inferBladeInches(132)).toBe(36);
+    expect(inferBladeInches(132)).toBe(36); // 132 still inside the 36" bucket — boundary moved up to 144
+    expect(inferBladeInches(144)).toBe(36);
   });
 });
 

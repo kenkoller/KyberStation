@@ -206,12 +206,17 @@ export interface BladeLengthConfig {
 // 24"-40"); 73 / 20 = 3.65. Slot kept at 73 LEDs because it was the existing
 // boundary in the inferBladeInches piecewise ladder and matches Yoda-class
 // shoto presets in the wizard.
+// 36" entry uses the WS2812B "1m strip = 144 LEDs" community convention
+// rather than strict 3.66 LEDs/inch math (which would give 132). Vendor
+// blades labelled "Standard 36-inch" ship with the full 1m / 144-LED
+// strip — see PR #96's reverse-direction commit. Picking 132 would mean
+// the visualizer disagrees with what users actually flashed.
 export const BLADE_LENGTH_PRESETS: Record<string, BladeLengthConfig> = {
-  '20"': { inches: 20, ledCount: 73, ledsPerInch: 3.65 },
-  '24"': { inches: 24, ledCount: 88, ledsPerInch: 3.66 },
+  '20"': { inches: 20, ledCount: 73,  ledsPerInch: 3.65 },
+  '24"': { inches: 24, ledCount: 88,  ledsPerInch: 3.66 },
   '28"': { inches: 28, ledCount: 103, ledsPerInch: 3.66 },
   '32"': { inches: 32, ledCount: 117, ledsPerInch: 3.66 },
-  '36"': { inches: 36, ledCount: 132, ledsPerInch: 3.66 },
+  '36"': { inches: 36, ledCount: 144, ledsPerInch: 4.00 },
   '40"': { inches: 40, ledCount: 147, ledsPerInch: 3.66 },
 };
 

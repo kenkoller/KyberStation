@@ -41,8 +41,8 @@ describe('SaberWizard BLADE_LENGTHS', () => {
     // Post-lift drift sentinel: the wizard derives BLADE_LENGTHS from
     // `lib/bladeLengths.ts`, which in turn derives from the engine's
     // BLADE_LENGTH_PRESETS. If a future edit ever reintroduces an
-    // inline drift here (e.g. the historical 36"=144 mistake), this
-    // test fails immediately.
+    // inline drift here (e.g. flipping 36" back to strict-math 132),
+    // this test fails immediately.
     for (const b of BLADE_LENGTHS) {
       const canonical = Object.values(BLADE_LENGTH_PRESETS).find(
         (p) => p.inches === b.inches,
