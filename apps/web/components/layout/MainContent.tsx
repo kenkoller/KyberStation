@@ -27,6 +27,11 @@ import {
   BladeStyleColumnA,
   BladeStyleColumnB,
 } from '@/components/editor/blade-style';
+import {
+  ColorColumnA,
+  ColorColumnB,
+} from '@/components/editor/color';
+import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
 
 interface MainContentProps {
   className?: string;
@@ -72,15 +77,39 @@ export function MainContent({ className, style }: MainContentProps) {
   const useABLayout = useUIStore((s) => s.useABLayout);
   const label = SECTION_LABELS[activeSection];
 
-  // Sidebar A/B v2 Phase 2 — `blade-style` is the first section to
-  // consume the MainContentABLayout wrapper. The wrapper renders its
-  // own section-internal chrome (Column A list / Column B header), so
-  // the outer panel-header is suppressed when A/B is active for the
-  // section. Other sections still render the legacy single-panel
-  // shell with the SECTION_LABELS header above the body.
-  const useABForBladeStyle = useABLayout && activeSection === 'blade-style';
+  // Sidebar A/B v2 — sections that consume the MainContentABLayout
+  // wrapper render their own section-internal chrome (Column A list /
+  // Column B header), so the outer panel-header is suppressed when A/B
+  // is active for the section. Phase 2 added `blade-style`; Phase 3
+  // adds `color` + `ignition-retraction`. Other sections still render
+  // the legacy single-panel shell with the SECTION_LABELS header above
+  // the body.
+  let abContent: React.ReactNode = null;
+  if (useABLayout) {
+    if (activeSection === 'blade-style') {
+      abContent = (
+        <MainContentABLayout
+          columnA={<BladeStyleColumnA />}
+          columnB={<BladeStyleColumnB />}
+          resizeLabel="Style list width"
+        />
+      );
+    } else if (activeSection === 'color') {
+      abContent = (
+        <MainContentABLayout
+          columnA={<ColorColumnA />}
+          columnB={<ColorColumnB />}
+          resizeLabel="Color preset list width"
+        />
+      );
+    } else if (activeSection === 'ignition-retraction') {
+      // The ignition-retraction wrapper owns its own MainContentABLayout
+      // mount because it threads transient tab state into both columns.
+      abContent = <IgnitionRetractionAB />;
+    }
+  }
 
-  if (useABForBladeStyle) {
+  if (abContent) {
     return (
       <main
         className={[
@@ -91,11 +120,7 @@ export function MainContent({ className, style }: MainContentProps) {
         aria-label={label}
         style={style}
       >
-        <MainContentABLayout
-          columnA={<BladeStyleColumnA />}
-          columnB={<BladeStyleColumnB />}
-          resizeLabel="Style list width"
-        />
+        {abContent}
       </main>
     );
   }
