@@ -63,7 +63,7 @@ function drawHiltHorizontal(card: CardContext): void {
   // hilts (e.g. 'graflex-svg', 'mpp-svg') are resolved to their
   // closest canvas equivalent for the share artifact — full SVG
   // hilt parity on the card is a deferred enhancement.
-  const hiltId = (config as unknown as { hiltId?: string }).hiltId;
+  const hiltId = config.hiltId;
   const styleId = resolveCanvasHiltStyle(hiltId);
 
   // Render at workbench's natural 1.0× scale so the hilt the recipient
@@ -122,7 +122,7 @@ async function drawHiltVertical(card: CardContext): Promise<void> {
   const hiltCenterX = layout.hiltX + layout.hiltH / 2;
 
   try {
-    const hiltId = (config as unknown as { hiltId?: string }).hiltId ?? DEFAULT_ASSEMBLY_ID;
+    const hiltId = config.hiltId ?? DEFAULT_ASSEMBLY_ID;
 
     const svgMarkup = renderToStaticMarkup(
       createElement(HiltRenderer, {

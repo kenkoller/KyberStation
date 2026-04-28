@@ -5,7 +5,7 @@
 // "144 LEDs", "300ms ignite".
 
 import type { BladeConfig } from '@kyberstation/engine';
-import { selectForm, isRedHue } from '@/lib/crystal';
+import { selectForm, isRedHue, isGreenHue, isBlueHue } from '@/lib/crystal';
 
 import type { CardContext, Chip, Ctx } from './cardTypes';
 import { fillRoundRect, strokeRoundRect } from './canvasUtils';
@@ -176,8 +176,6 @@ interface FactionInfo {
 }
 
 function factionForConfig(config: BladeConfig): FactionInfo {
-  const { r, g, b } = config.baseColor;
-
   if (isRedHue(config.baseColor)) {
     return {
       label: 'Sith',
@@ -186,9 +184,14 @@ function factionForConfig(config: BladeConfig): FactionInfo {
     };
   }
 
-  const isGreenish = r < 80 && g > 130 && b < 160;
-  const isBlueish = b > 180 && r < 80;
-  if (isGreenish || isBlueish) {
+  // Jedi-coded: green or blue dominant, AND with low red. The `r < 80`
+  // gate excludes amethyst / Mace purple (blue-dominant but red-rich),
+  // magenta, hot pink — colors that satisfy isBlueHue / isGreenHue
+  // generally but read as Grey on canon sabers.
+  const baseHueIsJediCoded =
+    (isGreenHue(config.baseColor) || isBlueHue(config.baseColor)) &&
+    config.baseColor.r < 80;
+  if (baseHueIsJediCoded) {
     return {
       label: 'Jedi',
       glyph: '☉',
