@@ -397,7 +397,16 @@ export function MiniSaber({
         style={{
           width: isVertical ? `${bladeThickness}px` : `${bladeLength}px`,
           height: isVertical ? `${bladeLength}px` : `${bladeThickness}px`,
-          filter: `drop-shadow(0 0 6px ${accentCss}) drop-shadow(0 0 18px ${accentCss})`,
+          // Safari/WebKit shows visible step-edge banding on chained
+          // `drop-shadow(...)` filters when the source is a static canvas
+          // with steep gradients. We tried GPU compositing hints first
+          // (`will-change: filter` + `translateZ(0)`); that didn't clear
+          // the banding. Switched to `box-shadow` — the canvas IS
+          // rectangular (LED draws fill the box), so a chained
+          // box-shadow produces an identical-looking glow halo via
+          // Safari's stable rendering path. Visually equivalent on
+          // Chromium; eliminates the precision-loss banding on Safari.
+          boxShadow: `0 0 6px ${accentCss}, 0 0 18px ${accentCss}`,
           // Round only the tip end so the hilt end sits flush against
           // the emitter. border-radius order is top-left top-right
           // bottom-right bottom-left.
