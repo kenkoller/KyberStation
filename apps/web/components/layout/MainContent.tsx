@@ -21,6 +21,11 @@ import { CrystalPanel } from '@/components/editor/CrystalPanel';
 import { RoutingPanel } from '@/components/editor/routing/RoutingPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
+import { MainContentABLayout } from '@/components/layout/MainContentABLayout';
+import {
+  BladeStyleColumnA,
+  BladeStyleColumnB,
+} from '@/components/editor/blade-style';
 
 interface MainContentProps {
   className?: string;
@@ -42,7 +47,7 @@ const SECTION_LABELS: Record<SectionId, string> = {
   'output':              'Output',
 };
 
-function renderSection(activeSection: SectionId): React.ReactNode {
+function renderLegacySection(activeSection: SectionId): React.ReactNode {
   switch (activeSection) {
     case 'blade-style':         return <StylePanel />;
     case 'color':               return <ColorPanel />;
@@ -61,7 +66,36 @@ function renderSection(activeSection: SectionId): React.ReactNode {
 
 export function MainContent({ className, style }: MainContentProps) {
   const activeSection = useUIStore((s) => s.activeSection);
+  const useABLayout = useUIStore((s) => s.useABLayout);
   const label = SECTION_LABELS[activeSection];
+
+  // Sidebar A/B v2 Phase 2 — `blade-style` is the first section to
+  // consume the MainContentABLayout wrapper. The wrapper renders its
+  // own section-internal chrome (Column A list / Column B header), so
+  // the outer panel-header is suppressed when A/B is active for the
+  // section. Other sections still render the legacy single-panel
+  // shell with the SECTION_LABELS header above the body.
+  const useABForBladeStyle = useABLayout && activeSection === 'blade-style';
+
+  if (useABForBladeStyle) {
+    return (
+      <main
+        className={[
+          'flex-1 min-w-0 min-h-0 flex flex-col bg-bg-deep overflow-hidden',
+          className ?? '',
+        ].join(' ')}
+        role="main"
+        aria-label={label}
+        style={style}
+      >
+        <MainContentABLayout
+          columnA={<BladeStyleColumnA />}
+          columnB={<BladeStyleColumnB />}
+          resizeLabel="Style list width"
+        />
+      </main>
+    );
+  }
 
   return (
     <main
@@ -79,7 +113,7 @@ export function MainContent({ className, style }: MainContentProps) {
         </h2>
       </header>
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
-        {renderSection(activeSection)}
+        {renderLegacySection(activeSection)}
       </div>
     </main>
   );

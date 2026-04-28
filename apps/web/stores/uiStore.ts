@@ -192,10 +192,14 @@ export interface UIStore {
    */
   columnAWidth: number;
   /**
-   * Master flag for the Sidebar A/B v2 layout. Default false (Phase 1
-   * ships behind the flag; Phase 2+ flip the default once the
-   * `blade-style` migration validates). Toggled via Settings →
-   * Advanced or directly in the store for tests / debug URLs.
+   * Master flag for the Sidebar A/B v2 layout.
+   *
+   * Phase 2: blade-style is the first migrated section; default flipped
+   * to `true` so the new layout is the default for users on launch.
+   * Other sections still render legacy single-panel until later phases
+   * migrate them. Users can toggle this off via Settings → Advanced (or
+   * tests / debug URLs) to fall back to the legacy StylePanel for
+   * blade-style.
    */
   useABLayout: boolean;
   // ── Left-rail overhaul (v0.14.0) ──
@@ -505,7 +509,10 @@ export const useUIStore = create<UIStore>((set) => ({
     'columnAWidth',
     storedLayout.columnAWidth ?? REGION_LIMITS.columnAWidth.default,
   ),
-  useABLayout: storedLayout.useABLayout === true,
+  // Phase 2: default flipped to true. Honor explicit-false in persisted
+  // localStorage (a user who toggled OFF stays off), but undefined →
+  // true so fresh visitors see the new A/B layout immediately.
+  useABLayout: storedLayout.useABLayout !== false,
   pinnedEffects: loadPinnedEffects() ?? ['clash', 'blast', 'lockup', 'stab'],
 
   // ── Left-rail overhaul defaults ──
