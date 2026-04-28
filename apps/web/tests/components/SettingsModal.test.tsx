@@ -140,12 +140,18 @@ describe('SettingsModal — tab panels', () => {
   });
 });
 
-// ─── Section grouping (per the locked v0.14.0 mapping) ───────────────
+// ─── Section grouping (per docs/SIDEBAR_IA_AUDIT_2026-04-27.md §6) ───
 //
 // Appearance: Aurebesh Mode, Display, Row density
-// Behavior:   UI Sounds, Effect auto-release, Keyboard Shortcuts, Feedback
-// Advanced:   Performance Tier, Layout
-// DELETED:    Performance Bar (entire section gone)
+// Behavior:   Effect auto-release, Feedback
+// Advanced:   Layout
+// DELETED v0.15.0: Performance Bar (entire section gone),
+//                  UI Sounds (placeholder copy only — never functional),
+//                  Keyboard Shortcuts (KeyboardShortcutsModal already shows
+//                    the same list, opened via `?` or Help),
+//                  Performance Tier (AppPerfStrip at app bottom already
+//                    has the same HIGH/MED/LOW segmented control —
+//                    duplicate control surface).
 
 /**
  * Extract the markup substring belonging to a specific tabpanel so
@@ -179,23 +185,29 @@ describe('SettingsModal — Appearance tab sections', () => {
   it('does not contain Behavior- or Advanced-tab section labels', () => {
     const markup = renderModal();
     const panel = panelMarkup(markup, 'appearance');
-    expect(panel).not.toContain('UI Sounds');
     expect(panel).not.toContain('Effect auto-release');
-    expect(panel).not.toContain('Keyboard Shortcuts');
     expect(panel).not.toContain('Feedback');
-    expect(panel).not.toContain('Performance Tier');
     expect(panel).not.toContain('Layout');
+    // Deleted in v0.15.0 — assert they're gone everywhere now.
+    expect(panel).not.toContain('UI Sounds');
+    expect(panel).not.toContain('Keyboard Shortcuts');
+    expect(panel).not.toContain('Performance Tier');
   });
 });
 
 describe('SettingsModal — Behavior tab sections', () => {
-  it('contains UI Sounds, Effect auto-release, Keyboard Shortcuts, and Feedback', () => {
+  it('contains Effect auto-release and Feedback', () => {
     const markup = renderModal();
     const panel = panelMarkup(markup, 'behavior');
-    expect(panel).toContain('UI Sounds');
     expect(panel).toContain('Effect auto-release');
-    expect(panel).toContain('Keyboard Shortcuts');
     expect(panel).toContain('Feedback');
+  });
+
+  it('does not contain deleted-in-v0.15 sections (UI Sounds / Keyboard Shortcuts)', () => {
+    const markup = renderModal();
+    const panel = panelMarkup(markup, 'behavior');
+    expect(panel).not.toContain('UI Sounds');
+    expect(panel).not.toContain('Keyboard Shortcuts');
   });
 
   it('does not contain Appearance- or Advanced-tab section labels', () => {
@@ -205,17 +217,20 @@ describe('SettingsModal — Behavior tab sections', () => {
     expect(panel).not.toContain('Row density');
     expect(panel).not.toContain('Performance Tier');
     expect(panel).not.toContain('>Layout<');
-    // Display is a common-enough word we don't assert its absence
-    // textually here — its SectionToggle is what we'd care about.
   });
 });
 
 describe('SettingsModal — Advanced tab sections', () => {
-  it('contains Performance Tier and Layout', () => {
+  it('contains Layout', () => {
     const markup = renderModal();
     const panel = panelMarkup(markup, 'advanced');
-    expect(panel).toContain('Performance Tier');
     expect(panel).toContain('Layout');
+  });
+
+  it('does not contain deleted-in-v0.15 sections (Performance Tier)', () => {
+    const markup = renderModal();
+    const panel = panelMarkup(markup, 'advanced');
+    expect(panel).not.toContain('Performance Tier');
   });
 
   it('does not contain Appearance- or Behavior-tab section labels', () => {
@@ -223,9 +238,7 @@ describe('SettingsModal — Advanced tab sections', () => {
     const panel = panelMarkup(markup, 'advanced');
     expect(panel).not.toContain('Aurebesh Mode');
     expect(panel).not.toContain('Row density');
-    expect(panel).not.toContain('UI Sounds');
     expect(panel).not.toContain('Effect auto-release');
-    expect(panel).not.toContain('Keyboard Shortcuts');
     expect(panel).not.toContain('Feedback');
   });
 });
