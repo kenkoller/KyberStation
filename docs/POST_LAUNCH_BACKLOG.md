@@ -92,13 +92,13 @@ What shipped in the pre-launch sprint (10 PRs in ~5 hours):
 | [#74](https://github.com/kenkoller/KyberStation/pull/74) | fix(launch): correct 700+ → 305+ preset count in LAUNCH_ASSETS | ✅ Merged |
 | [#75](https://github.com/kenkoller/KyberStation/pull/75) | chore: dead code cleanup — BladeCanvas3DWrapper + canvasMode | ⏳ CI / merging |
 
-**`v0.15.0` tagged at commit `42b3d2b`** with full release notes. Codename: Modulation Routing v1.1 Core. Hardware-gated work (V3.9 flash test) deferred per Ken's call — if blocking issue surfaces, ship v0.15.1 patch.
+**`v0.15.0` tagged at commit `42b3d2b`** with full release notes. Codename: Modulation Routing v1.1 Core. **Hardware-validated 2026-04-27 evening on 89sabers V3.9 + macOS + Brave** — live `Mix<Scale<SwingSpeed<400>, ...>, ...>` driver confirmed via swing→hue test. No blocking issues; v0.15.1 patch not needed.
 
 ## Open follow-ups deferred from tonight
 
 | Item | Why deferred | Where to resume |
 |---|---|---|
-| Wave 10 — Hardware validation on V3.9 | Ken's hands on hardware required | [`NEXT_HARDWARE_MODULATION_SESSION.md`](NEXT_HARDWARE_MODULATION_SESSION.md) — paste-ready prompt for the validator session |
+| ~~Wave 10 — Hardware validation on V3.9~~ | ✅ **Done 2026-04-27 evening** — live driver confirmed on 89sabers V3.9 via swing→hue test | n/a |
 | Hilt Library Stage 2 (29 parts + 7 assemblies) | Plan-mode forced agent into plan-only output; extraction is mechanical but takes time | Plan with full SVG content at `~/.claude/plans/i-would-like-to-woolly-turtle-agent-a7508824b8adc4c43.md` |
 | `useSharedConfig` URL handler test | Requires adding `@testing-library/react` dep | Backlog v0.15.x small item |
 | Sidebar A/B layout build-out | Design spec done in [`SIDEBAR_AB_LAYOUT_v2_DESIGN.md`](SIDEBAR_AB_LAYOUT_v2_DESIGN.md); first prototype = `blade-style` section | v0.15.x or v0.16.0 sprint |
