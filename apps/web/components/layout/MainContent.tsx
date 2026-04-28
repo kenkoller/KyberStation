@@ -32,6 +32,7 @@ import {
   ColorColumnB,
 } from '@/components/editor/color';
 import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
+import { MySaberAB } from '@/components/editor/my-saber';
 
 interface MainContentProps {
   className?: string;
@@ -106,6 +107,12 @@ export function MainContent({ className, style }: MainContentProps) {
       // The ignition-retraction wrapper owns its own MainContentABLayout
       // mount because it threads transient tab state into both columns.
       abContent = <IgnitionRetractionAB />;
+    } else if (activeSection === 'my-saber') {
+      // my-saber owns its own MainContentABLayout mount inside MySaberAB
+      // — Column A is the saved-profile list, Column B is the existing
+      // SaberProfileManager character sheet. State flows entirely
+      // through saberProfileStore (profiles + activeProfileId).
+      abContent = <MySaberAB />;
     }
   }
 
