@@ -32,6 +32,7 @@ import {
   ColorColumnB,
 } from '@/components/editor/color';
 import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
+import { AudioAB } from '@/components/editor/audio';
 
 interface MainContentProps {
   className?: string;
@@ -106,6 +107,11 @@ export function MainContent({ className, style }: MainContentProps) {
       // The ignition-retraction wrapper owns its own MainContentABLayout
       // mount because it threads transient tab state into both columns.
       abContent = <IgnitionRetractionAB />;
+    } else if (activeSection === 'audio') {
+      // The audio wrapper owns its own MainContentABLayout mount; it
+      // pulls Column A/B state straight from audioFontStore so no prop
+      // threading is needed.
+      abContent = <AudioAB />;
     }
   }
 
