@@ -508,9 +508,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
   color: #ffd700;
 }
 
-/* Aurebesh decorative text */
+/* Aurebesh decorative text — picks up the user's chosen variant via
+   the same `--aurebesh-family` indirection the immersion-mode classes
+   use. Default 'Aurebesh AF' (Canon) when no variant has been set. */
 .sw-aurebesh {
-  font-family: 'Aurebesh AF', 'FT Aurebesh', monospace;
+  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', monospace;
   letter-spacing: 0.05em;
 }
 
