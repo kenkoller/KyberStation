@@ -543,6 +543,76 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-28, Sidebar A/B Phase 4 + BLADE_LENGTHS lift)
+
+**Active branch: `main` (tip `86f9a69`).** Last tag still **`v0.15.0`** — today's 5 PRs are post-tag follow-ups, no hardware change. This session bundled 4 lanes of parallel work via the worktree-isolated agent dispatch pattern:
+
+- **PR [#98](https://github.com/kenkoller/KyberStation/pull/98) — Sidebar A/B Phase 4a (combat-effects)** — `apps/web/components/editor/combat-effects/` with `CombatEffectsAB` wrapper + `CombatEffectsColumnA` (22 rows: pinned GENERAL row + 21 effects, glyph thumbnails tinted by category, hold-pill on sustained, kbd shortcut badge, held-state pulse dot from `activeEffectsStore`) + `CombatEffectsColumnB` (per-effect Trigger button using `toggleOrTriggerEffect`, Color/Position/Parameters slots, filtered Recent-triggers log). The GENERAL row absorbs the legacy EffectPanel's globally-scoped concerns: Preon flash, Dual-Mode Ignition, full effect log. `triggerEffect` / `releaseEffect` thread from WorkbenchLayout's `useBladeEngine()` instance through MainContent props down into Column B (deliberately NOT calling `useBladeEngine()` inside Column B — its `useRef` initializer would spawn a second engine + RAF tick). 17 new tests; ~1480 lines.
+- **PR [#99](https://github.com/kenkoller/KyberStation/pull/99) — `BLADE_LENGTHS` source-of-truth lift** — supersedes the original PR #96 (closed). Same blade-length table was inlined in **5 places** (`HardwarePanel.tsx`, `BladeHardwarePanel.tsx`, `BladeCanvas.tsx`, `SaberWizard.tsx`, `bladeRenderMetrics.ts`). New `apps/web/lib/bladeLengths.ts` derives `BLADE_LENGTHS` array + `inferBladeInches` reverse mapping from the engine's `BLADE_LENGTH_PRESETS` (now canonical for the web app too). Engine table flipped: **`'36"': 144 LEDs`** with `ledsPerInch: 4.00` (community 1m WS2812B-strip standard) — overrides the strict-math 132 and matches what vendor "Standard 36-inch" blades actually ship with. New 20" preset entry (73 LEDs at 3.65/inch) for shoto / Yoda configs. Pretty captions ("Yoda (20\")", "Long (36\")") preserved per-consumer via small `Record<number, string>` decorators over the canonical shape. New `bladeLengths.test.ts` drift sentinel (15 cases); existing `bladeRenderMetrics.test.ts` + `saberWizardOptions.test.ts` updated to reflect bucket boundaries (the 36" bucket extends through 144; 40" bucket starts at 145 since 147 is the 40" canonical). +276 LOC, 9 files.
+- **PR [#100](https://github.com/kenkoller/KyberStation/pull/100) — Sidebar A/B Phase 4c (my-saber)** — `apps/web/components/editor/my-saber/` with `MySaberAB` + `MySaberColumnA` (saved-profile list with mini blade swatches, "+ New Profile" button, active row from `saberProfileStore.activeProfileId`) + `MySaberColumnB` (mounts the existing `<SaberProfileManager />` whole, keeping all character-sheet logic intact). Static SVG swatches in Column A rather than mounting per-row `<MiniSaber>` engine ticks (cheap to render dozens). 11 new tests; +712 lines, 6 files. Known cosmetic redundancy: `ProfileTabStrip` inside `SaberProfileManager` + Column A list both surface profile selection — flagged for follow-up cleanup, harmless.
+- **PR [#101](https://github.com/kenkoller/KyberStation/pull/101) — Sidebar A/B Phase 4d (audio)** — `apps/web/components/editor/audio/` with `AudioAB` (thin pass-through; `audioFontStore.fontName` is both selection and engine state, so threading a separate cursor would create a divergence bug) + `AudioColumnA` (font library list with empty-state pointer to Column B for first-run users) + `AudioColumnB` (4 sub-tabs: Events / EQ / Effects / Effect Presets / Sequencer; folder-picker bootstrap kept here so users without a configured library can land somewhere actionable). 17 new tests; +1688 lines, 7 files.
+
+### Test deltas
+
+| Package | Pre-session | Post-session | Δ |
+|---|---:|---:|---:|
+| web | 1,114 | ~1,194 | +80 (combat-effects 17 / my-saber 11 / audio 17 / bladeLengths 15 + sundry) |
+| engine | 740 | 740 | unchanged |
+| codegen | 1,859 | 1,859 | unchanged |
+| presets | 47 | 47 | unchanged |
+| boards | 260 | 260 | unchanged |
+| sound | 40 | 40 | unchanged |
+
+Workspace typecheck clean across all 10 packages. End-to-end browser-verified each new A/B section live at desktop 1600×1000.
+
+### Architectural decisions worth carrying forward
+
+1. **Phase 4 A/B sections own their own `<MainContentABLayout>` mount** when they need transient state (combat-effects' `selectedEffectId`, ignition-retraction's `activeTab`) or when they pass-through props to Column B (combat-effects' triggerEffect/releaseEffect). Phase 2/3 sections that don't (blade-style, color) let `MainContent.tsx` mount the wrapper directly.
+2. **Engine handlers thread by props, not by re-acquiring.** `useBladeEngine()` instantiates a fresh `BladeEngine` per call (its `useRef` initializer creates one if `engineRef.current` is null). Calling it again inside any deep editor would spawn a second engine + RAF loop. Phase 4 combat-effects uses the same threading pattern as `CanvasLayout` and `RightRail`: handlers come from `WorkbenchLayout` → `MainContent` props → AB wrapper → Column B.
+3. **Zustand SSR snapshot pinning is real.** `node_modules/zustand/react.js`'s `useSyncExternalStore` server snapshot is `selector(api.getInitialState())` — post-init `setState` mutations don't reach `renderToStaticMarkup`. Tests that need non-default store state must seed via the hoisted-mock pattern (see `mySaberAB.test.tsx` header comment); SSR-only tests skip held-state branches and rely on browser walkthrough for those (combat-effects "Release Lockup" assertion was dropped this way).
+4. **Engine canonical for `BLADE_LENGTH_PRESETS` follows vendor reality, not strict math.** The 36"=144 community standard wins over 36"=132 strict-math because real "Standard 36-inch" blades ship with the full 1m WS2812B strip at 144 LEDs/m density. Documented inline in `packages/engine/src/types.ts` so the next person doing the math doesn't "fix" it back to 132. The drift bit twice (PR #96 first, this lift second); centralizing through `lib/bladeLengths.ts` plus the `bladeLengths.test.ts` drift sentinel kills the class of bug.
+5. **Worktree path discipline + force-unlock works.** All 3 agent worktrees this session committed cleanly into their own paths (no leaked writes into the main repo). Post-merge cleanup needs `git worktree remove -f -f` (single `-f` errors on the lock; double `-f` overrides). Local branches with worktrees can't be deleted until the worktree is gone — same as overnight session pattern.
+
+### Sidebar A/B v2 — Phase 4 status
+
+| Section | Status |
+|---|---|
+| `blade-style` | ✅ Phase 2 (PR #91) |
+| `color` | ✅ Phase 3 (PR #94) |
+| `ignition-retraction` | ✅ Phase 3 (PR #94) |
+| `combat-effects` | ✅ Phase 4a (PR #98) |
+| `my-saber` | ✅ Phase 4c (PR #100) |
+| `audio` | ✅ Phase 4d (PR #101) |
+| `routing` | ⏳ open — has ExpressionEditor integration, deserves solo session |
+| `gallery` (top-level `/gallery` route) | ⏳ open — different shape from sidebar sections; refactor of existing `GalleryPage.tsx` |
+| `output` (multi-step pipeline) | ⏳ open — spec §4.9 says it doesn't fit A/B cleanly; needs UX call |
+
+### Cleanup done
+
+- 3 session worktrees removed (`agent-abf01153e…`, `agent-abc311b4f…`, `agent-a84be4a2e…`).
+- 4 local branches deleted (`fix/blade-lengths-source-of-truth`, `feat/sidebar-ab-phase-4-{combat-effects,my-saber,audio}`).
+- 5 older `agent-*` worktrees from prior sessions still locked under `.claude/worktrees/`. Not from this session — left alone per cross-session coordination rules.
+
+### Still open from `docs/NEXT_SESSION_HANDOFF.md`
+
+- **B.** Safari BladeCanvas bloom (architectural, hands-on Safari debug needed)
+- **C.** ✅ shipped today (PR #99)
+- **D.** Strip Configuration → wire visual blade thickness
+- **E.** Topology multi-segment renderer (Triple / Inquisitor)
+- **F.** WebUSB global connection store (StatusBar / DeliveryRail "IDLE" placeholders)
+- **G.** ⛔ BLOCKED on Item H — 3 consumer-migration stub deletions (`BladeHardwarePanel.tsx` / `PowerDrawPanel.tsx` / `GradientBuilder.tsx`). 2026-04-28 parallel-agent attempt verified all 3 stubs have ACTIVE consumers requiring non-mechanical reshaping: `BladeHardware` + `PowerDraw` are mounted as separate sibling sections in `DesignPanel.tsx` (mobile shell) — swap to `<HardwarePanel />` would duplicate content; `GradientBuilder` is consumed by A/B-section files (`ColorColumnB.tsx`, `BladeStyleColumnB.tsx`) AND `ColorPanel.tsx`'s `GradientRegion` is private (not exported). Sequence: ship Item H → DesignPanel + TabColumnContent retire → BladeHardware/PowerDraw delete → extract `GradientRegion` to shared `lib/gradient/` → GradientBuilder delete. Full reasoning in `docs/POST_LAUNCH_BACKLOG.md`.
+- **H.** Mobile shell migration to Sidebar + MainContent
+- **I.** Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates
+- **J.** UX item #16 — Figma color model (opacity + blend modes)
+- **K.** Module extraction `lib/blade/*` from `BladeCanvas.tsx`
+
+### Sibling / follow-on branches still open
+
+- **`feat/marketing-site-expansion`** (worktree at `../KyberStation-mkt`) — disjoint footprint, no overlap.
+- **PR #83** (`docs/session-archive`) and **PR #32** (marketing pages) — both pre-existing, unaffected by today's work.
+
+---
+
 ## Current State (2026-04-27, v0.15.0 cut — Modulation Routing v1.1 Core)
 
 **Active branch: `main` (post pre-launch cleanup pass).** Tag: **`v0.15.0`** — hardware-validated on 89sabers Proffieboard V3.9 (2026-04-27 evening). Codename: **Modulation Routing v1.1 Core**.
