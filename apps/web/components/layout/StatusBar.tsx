@@ -6,6 +6,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useHistoryStore } from '@/stores/historyStore';
+import { useWebusbStore, type WebUSBConnectionStatus } from '@/stores/webusbStore';
 import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSignal';
 import { BoardPicker } from '@/components/shared/BoardPicker';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
@@ -104,29 +105,59 @@ function SegmentDivider({ wideOnly = false }: { wideOnly?: boolean }) {
 
 // ─── Connection-display helper ──────────────────────────────────────────────
 //
-// Tiny pure function keeping the WebUSB-status rendering branchy but
-// outside the component body so TypeScript doesn't narrow the single
-// hardcoded `'idle'` argument into an impossibly-tight union at the call
-// site. Once a real WebUSB store lands, this becomes the mapping from
-// `{ kind: 'connected' | 'idle' | 'error' | … }` to display props.
-
-type ConnStatus = 'connected' | 'idle' | 'error';
+// Pure function mapping the global `webusbStore` status (six-state enum)
+// into the StatusBar's three-channel render: a `StatusSignal` variant,
+// a display string, and a color class. Lives outside the component so
+// TypeScript can exhaustively check the union and the test file can
+// import it directly.
 
 interface ConnDisplay {
-  status: ConnStatus;
+  status: WebUSBConnectionStatus;
   variant: StatusVariant;
   text: string;
   colorClass: string;
 }
 
-function getConnectionDisplay(status: ConnStatus): ConnDisplay {
+/** Truncate an arbitrary device name to fit alongside CONN. */
+function truncateDeviceName(name: string, max = 24): string {
+  if (name.length <= max) return name;
+  return name.slice(0, max - 1) + '…';
+}
+
+function getConnectionDisplay(
+  status: WebUSBConnectionStatus,
+  deviceName: string | null,
+): ConnDisplay {
   switch (status) {
-    case 'connected':
+    case 'connecting':
+      return {
+        status,
+        variant: 'alert',
+        text: 'CONNECTING…',
+        colorClass: 'text-[rgb(var(--status-warn))]',
+      };
+    case 'connected': {
+      const suffix = deviceName ? ` · ${truncateDeviceName(deviceName)}` : '';
       return {
         status,
         variant: 'success',
-        text: 'USB · READY',
+        text: `CONNECTED${suffix}`,
         colorClass: 'text-[rgb(var(--status-ok))]',
+      };
+    }
+    case 'flashing':
+      return {
+        status,
+        variant: 'alert',
+        text: 'FLASHING…',
+        colorClass: 'text-[rgb(var(--status-warn))]',
+      };
+    case 'verifying':
+      return {
+        status,
+        variant: 'alert',
+        text: 'VERIFYING…',
+        colorClass: 'text-[rgb(var(--status-warn))]',
       };
     case 'error':
       return {
@@ -145,6 +176,9 @@ function getConnectionDisplay(status: ConnStatus): ConnDisplay {
       };
   }
 }
+
+// Exported for the unit tests in `apps/web/tests/webusbStore.test.ts`.
+export { getConnectionDisplay as getStatusBarConnectionDisplay };
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -234,19 +268,19 @@ export function StatusBar() {
   // savepoint-aware dirty flag is a future follow-up.
   const isDirty = pastLength > 1;
 
-  // ── WebUSB connection (placeholder) ──────────────────────────────────────
-  // TODO(W3 follow-up): wire this to a global WebUSB connection store.
-  // The live state currently lives inside FlashPanel's local `useState`
-  // machine (`apps/web/components/editor/FlashPanel.tsx`), so StatusBar has
-  // no cross-component source of truth to read from yet. Render a neutral
-  // "IDLE" placeholder until that store exists. Typed helper so the
-  // ternary scaffolding survives once a real signal is wired in.
+  // ── WebUSB connection (live from webusbStore) ───────────────────────────
+  // FlashPanel publishes its local state machine into `useWebusbStore` at
+  // every transition, so StatusBar can render the same status without
+  // having a direct reference into FlashPanel. Reload-safe — the store is
+  // pure-runtime; on page reload we fall back to 'idle'.
+  const webusbStatus = useWebusbStore((s) => s.status);
+  const webusbDeviceName = useWebusbStore((s) => s.deviceName);
   const {
     variant: connVariant,
     text: connText,
     colorClass: connColorClass,
     status: connStatus,
-  } = getConnectionDisplay('idle');
+  } = getConnectionDisplay(webusbStatus, webusbDeviceName);
 
   // ── Power / Storage color escalation ─────────────────────────────────────
   const powerVariant: StatusVariant =

@@ -32,6 +32,7 @@ import {
   STORAGE_WARN_FRACTION,
   STORAGE_ERROR_FRACTION,
 } from '@/lib/storageBudget';
+import { useWebusbStore, type WebUSBConnectionStatus } from '@/stores/webusbStore';
 import { formatBytes } from '@kyberstation/engine';
 
 // ─── Tier → CSS color token mapping ──────────────────────────────────────────
@@ -185,19 +186,57 @@ function ActionSegment({
   );
 }
 
-// ─── CONN segment (passive, mirrors StatusBar CONN) ──────────────────────────
+// ─── CONN segment (live from webusbStore, mirrors StatusBar CONN) ───────────
 //
-// No global WebUSB store exists yet (FlashPanel holds its state locally),
-// so this mirrors the StatusBar's placeholder "IDLE" readout. When the
-// global store lands, swap the hardcoded 'idle' for the actual hook —
-// same swap the StatusBar docs in getConnectionDisplay() call out.
+// Reads from the same global `useWebusbStore` the StatusBar consumes, so
+// the rail + the bar are always in sync. FlashPanel is the publisher;
+// this surface is purely a read-only mirror.
+//
+// The ≤16-char `deviceName` budget in compact mode keeps the label from
+// shoving the spacer + the SegmentDivider at narrow viewports.
 
-type ConnStatus = 'connected' | 'idle' | 'error';
+interface ConnDisplay {
+  text: string;
+  color: string;
+}
 
-function connDisplay(status: ConnStatus): { text: string; color: string } {
+/** Truncate to fit the compact-mode budget. Pure helper, exported for tests. */
+export function compactDeviceName(name: string, max = 16): string {
+  if (name.length <= max) return name;
+  return name.slice(0, max - 1) + '…';
+}
+
+export function deliveryRailConnDisplay(
+  status: WebUSBConnectionStatus,
+  deviceName: string | null,
+  compact: boolean,
+): ConnDisplay {
   switch (status) {
-    case 'connected':
-      return { text: 'READY', color: 'rgb(var(--status-ok) / 1)' };
+    case 'connecting':
+      return {
+        text: compact ? 'CONN…' : 'CONNECTING…',
+        color: 'rgb(var(--status-warn) / 1)',
+      };
+    case 'connected': {
+      if (!deviceName) {
+        return { text: 'READY', color: 'rgb(var(--status-ok) / 1)' };
+      }
+      const name = compact ? compactDeviceName(deviceName) : deviceName;
+      return {
+        text: compact ? name : `READY · ${name}`,
+        color: 'rgb(var(--status-ok) / 1)',
+      };
+    }
+    case 'flashing':
+      return {
+        text: compact ? 'FLASH…' : 'FLASHING…',
+        color: 'rgb(var(--status-warn) / 1)',
+      };
+    case 'verifying':
+      return {
+        text: compact ? 'VERIFY…' : 'VERIFYING…',
+        color: 'rgb(var(--status-warn) / 1)',
+      };
     case 'error':
       return { text: 'ERROR', color: 'rgb(var(--status-error) / 1)' };
     case 'idle':
@@ -207,11 +246,9 @@ function connDisplay(status: ConnStatus): { text: string; color: string } {
 }
 
 function ConnSegment({ compact }: { compact: boolean }) {
-  // TODO(OV5.follow-up): swap this for a global WebUSB connection
-  // signal once the FlashPanel's internal state machine is lifted into
-  // a store. Rail + StatusBar should both read from the same source.
-  const status: ConnStatus = 'idle';
-  const { text, color } = connDisplay(status);
+  const status = useWebusbStore((s) => s.status);
+  const deviceName = useWebusbStore((s) => s.deviceName);
+  const { text, color } = deliveryRailConnDisplay(status, deviceName, compact);
   return (
     <SegmentWrapper ariaLabel="WebUSB connection status">
       <span
@@ -228,8 +265,9 @@ function ConnSegment({ compact }: { compact: boolean }) {
       <span
         className="font-mono tabular-nums text-ui-xs whitespace-nowrap"
         style={{ color }}
+        title={deviceName ?? undefined}
       >
-        {compact ? '·' : text}
+        {text}
       </span>
     </SegmentWrapper>
   );

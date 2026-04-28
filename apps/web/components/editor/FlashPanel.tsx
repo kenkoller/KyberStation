@@ -14,6 +14,7 @@ import {
   type FlashPhase,
 } from '@/lib/webusb';
 import { playUISound } from '@/lib/uiSounds';
+import { useWebusbStore } from '@/stores/webusbStore';
 
 // ─── Pre-built firmware variants ─────────────────────────────────────────────
 //
@@ -104,6 +105,55 @@ export function FlashPanel() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Publish the panel's local state machine into the global webusb store
+  // so StatusBar + DeliveryRail (and any future read-only consumer) can
+  // mirror live connection state. The local PanelState remains the
+  // canonical source of truth — this effect only side-effects writes
+  // into the store at every transition. The phase dependency picks up
+  // the 'verifying' substate that only surfaces inside FlashProgress.
+  const flashPhase: FlashPhase | null =
+    state.kind === 'flashing' ? state.progress.phase : null;
+  useEffect(() => {
+    const store = useWebusbStore.getState();
+    switch (state.kind) {
+      case 'needs-ack':
+      case 'ready':
+      case 'done':
+        // Pre-connection or post-flash-disconnect — board is no longer
+        // claimed by us, so reset to idle.
+        store.reset();
+        return;
+      case 'connecting':
+        store.setDevice(null, null);
+        store.setError(null);
+        store.setStatus('connecting');
+        return;
+      case 'connected': {
+        const dev = state.board.device;
+        const name = dev.productName ?? dev.manufacturerName ?? 'STM32 DFU Device';
+        store.setDevice(name, dev.vendorId);
+        store.setError(null);
+        store.setStatus('connected');
+        return;
+      }
+      case 'flashing': {
+        const dev = state.board.device;
+        const name = dev.productName ?? dev.manufacturerName ?? 'STM32 DFU Device';
+        store.setDevice(name, dev.vendorId);
+        store.setError(null);
+        // 'verifying' only surfaces during the UPLOAD-compare phase.
+        // Every other phase (connecting/erasing/writing/manifesting/done)
+        // reads as 'flashing' globally — finer detail is FlashPanel-local.
+        store.setStatus(flashPhase === 'verifying' ? 'verifying' : 'flashing');
+        return;
+      }
+      case 'error':
+        store.setError(state.message);
+        store.setStatus('error');
+        return;
+    }
+  }, [state, flashPhase]);
 
   const webUsbSupported = isWebUsbSupported();
 
