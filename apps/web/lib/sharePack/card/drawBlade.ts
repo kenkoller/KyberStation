@@ -25,7 +25,7 @@ import { BladeEngine, BladeState } from '@kyberstation/engine';
 import { drawWorkbenchBlade, ledBufferFrom } from '../bladeRenderHeadless';
 
 export function drawBlade(card: CardContext): void {
-  const { ctx, options, layout } = card;
+  const { ctx, options, layout, theme } = card;
 
   if (layout.saberOrientation === 'vertical') {
     const bladeY1 = layout.bladeY1 ?? layout.heroY;
@@ -55,6 +55,7 @@ export function drawBlade(card: CardContext): void {
     length,
     layout.bladeThickness,
     options.config,
+    theme.id === 'light',
   );
 }
 
@@ -76,6 +77,7 @@ function drawBladeHorizontalWorkbench(
   length: number,
   thickness: number,
   config: import('@kyberstation/engine').BladeConfig,
+  lightBackdrop: boolean,
 ): void {
   const engine = new BladeEngine();
   const ledRgb = engine.captureStateFrame(BladeState.ON, config);
@@ -95,6 +97,10 @@ function drawBladeHorizontalWorkbench(
     coreH,
     cw: canvasW,
     ch: canvasH,
+    // LIGHT_THEME has a paper-white backdrop — additive `lighter`
+    // blends saturate to pure white. `screen` clips at 1.0 and
+    // preserves the blade's color identity over the bright bg.
+    lightBackdrop,
   });
 }
 

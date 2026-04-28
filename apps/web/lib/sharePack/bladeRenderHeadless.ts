@@ -94,6 +94,19 @@ export interface BladeRenderOptions {
    * the a11y `reduceBloom` flag in the workbench. Defaults to false.
    */
   reduceBloom?: boolean;
+  /**
+   * When true, the bloom + body composite passes use `'screen'` blend
+   * mode instead of `'lighter'`. `'lighter'` is additive (a + b) which
+   * saturates to pure white when the backdrop is already bright —
+   * looks great on dark themes but blows out on Saber Card's
+   * `LIGHT_THEME` (paper-white backdrop). `'screen'` (1 − (1−a)(1−b))
+   * is the natural light-backdrop sibling: same "additively brighten"
+   * intent, soft-clipped at 1.0, no white-out. Defaults to false (dark
+   * theme — keep additive behavior). Source:
+   * `docs/POST_LAUNCH_BACKLOG.md` v0.15.x "Light-theme blade bloom
+   * theme-gating".
+   */
+  lightBackdrop?: boolean;
 }
 
 // ─── Per-color glow profile ───────────────────────────────────────────
@@ -381,6 +394,10 @@ export function drawWorkbenchBlade(
   const shimmer = options.shimmer ?? 1.0;
   const hiltTuck = options.hiltTuck ?? coreH;
   const reduceBloom = options.reduceBloom ?? false;
+  const lightBackdrop = options.lightBackdrop ?? false;
+  const additiveComposite: GlobalCompositeOperation = lightBackdrop
+    ? 'screen'
+    : 'lighter';
 
   if (bladeLenPx < 1 || coreH < 1) return;
 
@@ -453,9 +470,11 @@ export function drawWorkbenchBlade(
       mipCanvases.push(mip);
     }
 
-    // Composite mips additively onto the main canvas.
+    // Composite mips additively onto the main canvas. `lighter` is the
+    // dark-backdrop default; `screen` is the light-backdrop sibling per
+    // the lightBackdrop option.
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = additiveComposite;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     for (let i = 0; i < mipCanvases.length; i++) {
@@ -481,7 +500,7 @@ export function drawWorkbenchBlade(
   ctx.beginPath();
   ctx.rect(bladeStartPx, 0, cw - bladeStartPx, ch);
   ctx.clip();
-  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalCompositeOperation = additiveComposite;
   ctx.drawImage(offscreen as unknown as CanvasImageSource, 0, 0);
   ctx.restore();
 }
