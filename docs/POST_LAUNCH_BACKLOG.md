@@ -60,6 +60,17 @@ Multi-week / cross-package work.
 | **Multi-Blade Workbench** | [`MODULATION_ROUTING_ROADMAP.md`](MODULATION_ROUTING_ROADMAP.md) | XL | Channel-strip UI for dual-blade / saberstaff / crossguard. Target ~2026-08-08. |
 | **Preset Cartography sprint** | `CLAUDE.md` upcoming sprints table | L-XL | Parallel-agent preset library expansion: deep-cut Jedi/Sith lanes, Legends/KOTOR/SWTOR, animated series, sequel/Mando/Ahsoka/Acolyte, space-combat games, cross-franchise. Could 4-5× the preset library in one session. |
 
+## Safari rendering follow-ups (P31 cross-browser sweep, 2026-04-27)
+
+P31 cross-browser walkthrough on 2026-04-27 found two Safari-specific cosmetic regressions vs Brave/Chrome (Chromium). Functionally everything works (incl. graceful "browser not supported" messages on FlashPanel for Safari + Firefox); these are visual bugs only. Mac Safari only — no equivalent issues observed in Chrome on the same machine.
+
+| Issue | Surface | Likely cause | Fix candidate |
+|---|---|---|---|
+| **Banding artifacts in MiniSaber halo above blade tip** — visible step-edges in the chained drop-shadow blur. Static state shows the bug; hover-driven engine repaints clear it (Safari re-rasterizes the filter). Most visible on saturated colors (Cade blue, Visas red). | Gallery cards (SaberMarqueeArray + LandingSaberArray), Landing hero sabers | Safari WebKit's chained-`drop-shadow` filter has known precision artifacts on canvas sources with steep gradient transitions. The MiniSaber renders LEDs against transparent background → drop-shadow extracts shape → banding in the gradient blur. | `apps/web/components/shared/MiniSaber.tsx:400` — try (a) replacing `drop-shadow` with `box-shadow` (canvas is rectangular, should match visually), or (b) adding `transform: translateZ(0)` + `will-change: filter` to force GPU compositing, or (c) collapsing the chain to a single softer drop-shadow. Verify Chrome appearance unchanged after fix. |
+| **BladeCanvas editor preview "looks different / slightly incorrect"** in Safari vs Brave/Chrome — characterization pending (no screenshot taken). | `/editor` workbench blade preview | Likely the v0.14.0 bloom pipeline (3-mip downsampled bright-pass with `globalCompositeOperation = 'lighter'`) — Safari's compositing of `lighter` over chained mip canvases differs subtly from Chromium's. Or a `filter: blur()` precision issue on the bloom mips. | Inspect side-by-side in Safari + Chrome at 1280×800, characterize the divergence first (color cast? bloom intensity? halo cutoff?), THEN decide whether to gate compositing strategy on UA or accept the difference. |
+
+**Fix priority:** post-launch v0.15.1 patch sprint, not launch-blocking. Brave/Chrome/Edge users see the correct rendering; Safari users see a slight visual regression but everything is functional. Recommended browser is documented as Brave / Chrome / Edge in launch communication per `LAUNCH_PLAN.md`.
+
 ## Parking lot — small polish items
 
 Track here when surfaced; promote to a versioned sprint when bundled with related work.
