@@ -1,8 +1,35 @@
 # KyberStation — Post-Launch Backlog
 
-Single index of deferred work as of **2026-04-27 evening** (pre-public-launch). The detail for each item lives in its linked source doc — edit the source for spec changes, edit this file when status / priority / target version changes.
+Single index of deferred work as of **2026-04-27 overnight** (post-overnight UI/UX sweep, pre-public-launch). The detail for each item lives in its linked source doc — edit the source for spec changes, edit this file when status / priority / target version changes.
 
 **Update cadence:** review at the start of every multi-PR sprint. Move items to ✅ when they ship; promote items between target versions as priorities shift.
+
+---
+
+## 2026-04-27 overnight session — what shipped (14 PRs)
+
+Full archive at [`docs/SESSION_2026-04-27_OVERNIGHT.md`](SESSION_2026-04-27_OVERNIGHT.md). Handoff for next session at [`docs/NEXT_SESSION_HANDOFF.md`](NEXT_SESSION_HANDOFF.md).
+
+✅ **Closed by overnight session:**
+- Sidebar IA reorganization (PR #89) → SETUP / DESIGN / REACTIVITY / OUTPUT
+- Sidebar A/B Column Layout v2 — Phases 2 + 3 (PRs #91 + #94) → blade-style + color + ignition-retraction migrated; Phase 4+ remains open
+- Settings consolidation (PR #90) → 3 dup sections deleted
+- Light-theme blade bloom theme-gating (PR #88)
+- Safari MiniSaber halo banding (PR #92, box-shadow swap)
+- Aurebesh font variants (PR #93, 4-variant picker)
+- Surprise Me preserves user's ledCount (PR #95)
+- Hardware blade-length tables aligned to community-standard 144 LEDs/m density (PR #96) + Strip Config + Topology marked WIP
+- BladeConfig.hiltId typing + faction predicates + CardTheme tokens (PR #86, all bundled earlier in night)
+- P29 axe-core a11y violations (PR #84)
+- Hardware validation v0.15.0 close-out (PR #85, `scripts/hardware-test/build-modulation-test-config.mjs`)
+
+🔴 **New items added by the overnight session:**
+- **Safari BladeCanvas bloom** — bloom renders dramatically narrower than Chromium. Padding-mip approach attempted; didn't fully resolve. Defer to focused future session with proper Safari debugging. Recommend Brave/Chrome/Edge in launch comms.
+- **BLADE_LENGTHS source-of-truth lift** — duplicated across `lib/bladeRenderMetrics.ts`, `components/editor/HardwarePanel.tsx`, `components/editor/BladeHardwarePanel.tsx`, `packages/engine/src/types.ts`. Tonight's "36"=144 vs 132" mismatch was the second time this drift bit. Lift to one shared module.
+- **Strip Configuration — wire visual blade thickness** — selection feeds power-draw math + ledCount but doesn't yet change rendered capsule thickness. Currently WIP-marked.
+- **Topology — multi-segment renderer for Triple / Inquisitor** — Single / Staff / Crossguard work. Triple + Inquisitor are visual placeholders. Currently WIP-marked.
+- **Community Gallery — connect to real data source** — `CommunityGallery.tsx` renders hardcoded placeholder styles. Production fetch from GitHub Pages is unimplemented.
+- **Sidebar A/B Phase 4+** — extend pattern to remaining sections (combat-effects, routing, audio, gallery in editor, my-saber, output preset list). Pattern is well-established after Phases 2+3.
 
 ---
 
