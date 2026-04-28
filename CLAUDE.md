@@ -600,7 +600,7 @@ Workspace typecheck clean across all 10 packages. End-to-end browser-verified ea
 - **D.** Strip Configuration → wire visual blade thickness
 - **E.** Topology multi-segment renderer (Triple / Inquisitor)
 - **F.** WebUSB global connection store (StatusBar / DeliveryRail "IDLE" placeholders)
-- **G.** 3 consumer-migration stub deletions (`BladeHardwarePanel.tsx` / `PowerDrawPanel.tsx` / `GradientBuilder.tsx`)
+- **G.** ⛔ BLOCKED on Item H — 3 consumer-migration stub deletions (`BladeHardwarePanel.tsx` / `PowerDrawPanel.tsx` / `GradientBuilder.tsx`). 2026-04-28 parallel-agent attempt verified all 3 stubs have ACTIVE consumers requiring non-mechanical reshaping: `BladeHardware` + `PowerDraw` are mounted as separate sibling sections in `DesignPanel.tsx` (mobile shell) — swap to `<HardwarePanel />` would duplicate content; `GradientBuilder` is consumed by A/B-section files (`ColorColumnB.tsx`, `BladeStyleColumnB.tsx`) AND `ColorPanel.tsx`'s `GradientRegion` is private (not exported). Sequence: ship Item H → DesignPanel + TabColumnContent retire → BladeHardware/PowerDraw delete → extract `GradientRegion` to shared `lib/gradient/` → GradientBuilder delete. Full reasoning in `docs/POST_LAUNCH_BACKLOG.md`.
 - **H.** Mobile shell migration to Sidebar + MainContent
 - **I.** Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates
 - **J.** UX item #16 — Figma color model (opacity + blend modes)
