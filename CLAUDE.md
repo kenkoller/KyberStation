@@ -543,6 +543,79 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-28 PM, full-day session wrap)
+
+Long-session day. **8 PRs landed across two parallel-agent waves + one focused solo PR**, plus 1 PR closed as superseded:
+
+| PR | Status | Scope |
+|---|---|---|
+| **#98** | ✅ merged | Sidebar A/B Phase 4a — combat-effects (~1480 LOC, 17 tests) |
+| **#99** | ✅ merged | BLADE_LENGTHS source-of-truth lift; engine canonical flipped to **36"=144 LEDs** community standard; supersedes #96 |
+| **#100** | ✅ merged | Sidebar A/B Phase 4c — my-saber (mounts existing SaberProfileManager whole; +11 tests) |
+| **#101** | ✅ merged | Sidebar A/B Phase 4d — audio (font list + 4 sub-tabs incl. Sequencer; +17 tests) |
+| **#102** | ✅ merged | CLAUDE.md archive of morning session + Item G ⛔ BLOCKED note |
+| **#103** | ✅ merged | Lane D test backfill — `isGreenHue` / `isBlueHue` (+24 tests). Source-side already shipped 2026-04-27 in `0a1a54e`; agent ground-truth-checked before doing redundant work. Also adds Item G blocker note to `POST_LAUNCH_BACKLOG.md`. |
+| **#104** | ✅ merged | WebUSB connection store (Item F) — 6-status enum + FlashPanel publishes via single useEffect, StatusBar + DeliveryRail subscribe (+27 tests) |
+| **#105** | ⏳ open / CI in flight | Sidebar A/B Phase 4e — routing (1128 LOC, 16 tests, browser-verified) |
+| ~~#96~~ | closed superseded | Original 36"=144 panel-side fix; #99 absorbed it |
+
+**Sidebar A/B Phase 4 status: 4/6 sections done** (combat-effects + my-saber + audio + routing). Gallery (top-level `/gallery` route, different shape) + output (multi-step pipeline, doesn't fit A/B per spec §4.9) remain.
+
+### Architectural decisions worth carrying forward
+
+1. **Test seam pattern for Zustand-store-reading components.** Zustand 4's React binding pins `useSyncExternalStore`'s server snapshot to `getInitialState()` (`node_modules/zustand/react.js`), so `setState(...)` before `renderToStaticMarkup` is invisible to SSR tests. The pattern that works without `vi.mock`: add an optional prop to the component (e.g. `bindings?: SerializedBinding[]`), default to the store read for production, pass explicit data in tests. RoutingColumnA + RoutingColumnB use this. Lower-overhead than full module mocking; production code unchanged.
+
+2. **ExpressionEditor reuse strategy in routing A/B.** Rather than reshape the existing ~300-line absolute-positioned popover for inline mounting, Column B mounts it via the same proven anchor pattern that legacy `BindingList` uses (anchored beneath the source-display row when "Edit Expression" is pressed). UX equivalent to inline; saves a refactor whose blast radius would dwarf the migration.
+
+3. **Re-targeting via Column B Target dropdown is a real UX win** unlocked by the A/B migration. The store's `updateBinding(id, partial)` already accepted `target` / `source` / `combinator` / `amount` / `bypassed` updates — the new UI surface is purely additive. Previously users had to delete + recreate to change a binding's target.
+
+4. **Lane A meta-finding (carried forward from earlier in the day):** the "delete 3 consumer-migration stubs" item was incorrectly listed as shippable in the prior handoff. Empirically verified blocked on Item H (mobile shell migration to Sidebar + MainContent). Sequence: Item H ships → DesignPanel + TabColumnContent retire → BladeHardware/PowerDraw stubs delete → extract `GradientRegion` from `ColorPanel.tsx` (private) into `lib/gradient/` → GradientBuilder stub deletes. Documented inline at the corresponding `POST_LAUNCH_BACKLOG.md` row + this CLAUDE.md's still-open list.
+
+5. **Lane D meta-finding:** small-cleanups bundle agent ground-truth-checked the codebase first and discovered both source-side cleanups (`hiltId` cast removal + `isGreenHue`/`isBlueHue` predicates) had already shipped in `0a1a54e` on 2026-04-27, before today's session started. Agent shipped what was actually missing — test backfill + backlog status updates. Pattern worth keeping: agent prompts that spec the work also explicitly direct the agent to verify-first.
+
+### Test deltas across the day
+
+| Package | Pre-day | Post-day | Δ |
+|---|---:|---:|---:|
+| web | 1,114 | ~1,257 (+16 from #105 still gated on merge) | +127–143 |
+| engine | 740 | 740 | 0 |
+| codegen | 1,859 | 1,859 | 0 |
+
+All 10 workspace packages typecheck-clean. Browser-verified each new A/B section live at desktop 1600×1000 throughout.
+
+### Worktree cleanup status
+
+All this session's worktrees removed cleanly via `git worktree remove -f -f` (single `-f` errors on the lock; double overrides). Local feature branches deleted post-merge. 5 older `agent-*` worktrees from prior sessions remain locked under `.claude/worktrees/` — not touched per cross-session coordination rules.
+
+### Still open from the original `docs/NEXT_SESSION_HANDOFF.md`
+
+| Item | Status as of 2026-04-28 PM |
+|---|---|
+| **A.** Sidebar A/B Phase 4 — extend pattern | ✅ 4 of 6 done (combat-effects + my-saber + audio + routing). Gallery + output remain. |
+| **B.** Safari BladeCanvas bloom | ⏳ open — needs hands-on Safari debug, not delegable |
+| **C.** `BLADE_LENGTHS` source-of-truth lift | ✅ shipped via #99 |
+| **D.** Strip Configuration → wire visual blade thickness | ⏳ open — engine + UI work, ~M scope |
+| **E.** Topology multi-segment renderer | ⏳ open — engine work, ~M-L scope, real architectural change |
+| **F.** WebUSB global connection store | ✅ shipped via #104 |
+| **G.** 3 consumer-migration stub deletions | ⛔ BLOCKED on Item H — empirically verified, see above |
+| **H.** Mobile shell migration | ⏳ open — UX call needed (drawer vs bottom-sheet at 375px) |
+| **I.** Wave 8 — Button routing sub-tab | ⏳ open — ~6-8h scope, modulation v1.1 follow-on |
+| **J.** UX item #16 — Figma color model | ⏳ open — last UX North Star item; needs Kyber Glyph version bump + engine compositor changes |
+| **K.** Module extraction `lib/blade/*` | ⏳ open — high-risk; needs golden-hash regression tests in place first |
+
+### Next-session candidates (rough priority)
+
+- **Phase 4 gallery A/B** (top-level `/gallery` route refactor; bigger than a sidebar section but established A/B pattern)
+- **Phase 4 output** (needs UX call from Ken on multi-step-pipeline shape)
+- **Item D + E engine work** (Strip Config thickness + Topology multi-segment renderer — closes WIP markers users see today)
+- **Item J Figma color model** (last UX North Star item — but architectural with glyph version bump)
+- **Item I Wave 8 button routing** (modulation v1.1 follow-on)
+- **Item B Safari bloom** (hands-on; can't delegate)
+
+Handoff prompt for next session at [`docs/NEXT_SESSION_HANDOFF.md`](docs/NEXT_SESSION_HANDOFF.md) (refreshed 2026-04-28 PM).
+
+---
+
 ## Current State (2026-04-28, Sidebar A/B Phase 4 + BLADE_LENGTHS lift)
 
 **Active branch: `main` (tip `86f9a69`).** Last tag still **`v0.15.0`** — today's 5 PRs are post-tag follow-ups, no hardware change. This session bundled 4 lanes of parallel work via the worktree-isolated agent dispatch pattern:
