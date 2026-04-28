@@ -508,9 +508,11 @@ html.perf-lite [style*="skeleton-shimmer"] {
   color: #ffd700;
 }
 
-/* Aurebesh decorative text */
+/* Aurebesh decorative text — picks up the user's chosen variant via
+   the same `--aurebesh-family` indirection the immersion-mode classes
+   use. Default 'Aurebesh AF' (Canon) when no variant has been set. */
 .sw-aurebesh {
-  font-family: 'Aurebesh AF', 'FT Aurebesh', monospace;
+  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', monospace;
   letter-spacing: 0.05em;
 }
 
@@ -1083,17 +1085,25 @@ html.aurebesh-labels .section-header,
 html.aurebesh-labels .tab-label,
 html.aurebesh-labels .sidebar-label,
 html.aurebesh-labels [data-aurebesh] {
-  font-family: 'Aurebesh AF', 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
+  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
   letter-spacing: 0.06em;
 }
 
 /* Full mode: everything renders in Aurebesh */
 html.aurebesh-full body {
-  font-family: 'Aurebesh AF', 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
+  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
 }
 html.aurebesh-full .font-cinematic {
-  font-family: 'Aurebesh AF', 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
+  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
 }
+
+/* Variant selection — defines `--aurebesh-family` per the user's
+   chosen variant. Always applied (even when mode === 'off') so any
+   `.sw-aurebesh` decoratives also pick up the preferred variant. */
+html.aurebesh-variant-canon         { --aurebesh-family: 'Aurebesh AF'; }
+html.aurebesh-variant-canon-tech    { --aurebesh-family: 'Aurebesh AF Tech'; }
+html.aurebesh-variant-legends       { --aurebesh-family: 'Aurebesh AF Legends'; }
+html.aurebesh-variant-legends-tech  { --aurebesh-family: 'Aurebesh AF Legends Tech'; }
 
 /* Exclusions — never render in Aurebesh regardless of mode */
 html.aurebesh-labels .no-aurebesh,

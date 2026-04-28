@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { playUISound } from '@/lib/uiSounds';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useAurebesh } from '@/hooks/useAurebesh';
-import { type AurebeshMode } from '@/lib/aurebesh';
+import { type AurebeshMode, type AurebeshVariant } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useAccessibilityStore, type DensityMode } from '@/stores/accessibilityStore';
 
@@ -203,8 +203,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
   const setReduceBloom = useAccessibilityStore((s) => s.setReduceBloom);
 
-  // ── Aurebesh mode — real hook: reads/writes localStorage and applies CSS class to <html> ──
-  const { mode: aurebeshMode, setMode: setAurebeshMode } = useAurebesh();
+  // ── Aurebesh mode + variant — real hook: reads/writes localStorage and applies CSS classes to <html> ──
+  const { mode: aurebeshMode, setMode: setAurebeshMode, variant: aurebeshVariant, setVariant: setAurebeshVariant } = useAurebesh();
 
   // ── Layout presets — wired to layoutStore ──
   const layoutSavedPresets = useLayoutStore((s) => s.savedPresets);
@@ -317,6 +317,35 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               </label>
             ))}
+          </div>
+
+          {/* Variant picker — which Aurebesh font-face to render. Always
+              available (even when mode === 'off') so the user's preferred
+              variant is also picked up by decorative .sw-aurebesh elements. */}
+          <div className="pt-3 border-t border-border-subtle/40">
+            <label
+              htmlFor="aurebesh-variant"
+              className="block text-ui-xs text-text-muted mb-1.5"
+            >
+              Variant
+            </label>
+            <select
+              id="aurebesh-variant"
+              value={aurebeshVariant}
+              onChange={(e) => {
+                playUISound('toggle-on');
+                setAurebeshVariant(e.target.value as AurebeshVariant);
+              }}
+              className="w-full bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-sm text-text-primary focus:outline-none focus:border-accent/50 transition-colors"
+            >
+              <option value="canon">Canon (default)</option>
+              <option value="canon-tech">Canon Tech</option>
+              <option value="legends">Legends</option>
+              <option value="legends-tech">Legends Tech</option>
+            </select>
+            <p className="text-ui-xs text-text-muted mt-1.5">
+              Switches the Aurebesh font-face. Canon is the standard letterforms; Tech variants emphasize numerics and machine-readability; Legends variants use expanded-universe forms.
+            </p>
           </div>
         </div>
       )}
