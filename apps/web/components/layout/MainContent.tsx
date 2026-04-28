@@ -33,6 +33,7 @@ import {
 } from '@/components/editor/color';
 import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
 import { CombatEffectsAB } from '@/components/editor/combat-effects';
+import { MySaberAB } from '@/components/editor/my-saber';
 import { AudioAB } from '@/components/editor/audio';
 
 interface MainContentProps {
@@ -136,6 +137,12 @@ export function MainContent({
           releaseEffect={releaseEffect}
         />
       );
+    } else if (activeSection === 'my-saber') {
+      // my-saber owns its own MainContentABLayout mount inside MySaberAB
+      // — Column A is the saved-profile list, Column B is the existing
+      // SaberProfileManager character sheet. State flows entirely
+      // through saberProfileStore (profiles + activeProfileId).
+      abContent = <MySaberAB />;
     } else if (activeSection === 'audio') {
       // The audio wrapper owns its own MainContentABLayout mount; it
       // pulls Column A/B state straight from audioFontStore so no prop
