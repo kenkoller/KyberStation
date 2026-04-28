@@ -103,7 +103,12 @@ describe('uiStore — Sidebar A/B Phase 1 fields', () => {
     expect(typeof state.setColumnAWidth).toBe('function');
   });
 
-  it('exposes useABLayout + setUseABLayout, default false', () => {
+  it('exposes useABLayout + setUseABLayout (resetStore forces false)', () => {
+    // Phase 2 flipped the on-disk default to true (so fresh visitors
+    // see the A/B layout immediately). The `resetStore` helper above
+    // still explicitly sets the field to false at the start of every
+    // test in this file so legacy assertions about the wrapper's
+    // single-panel fallback continue to hold.
     const state = useUIStore.getState();
     expect(state.useABLayout).toBe(false);
     expect(typeof state.setUseABLayout).toBe('function');
