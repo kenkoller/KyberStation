@@ -1,12 +1,15 @@
 'use client';
+// Note: color editing (4 channels + HSL/RGB/hex picker + harmony +
+// GradientBuilder + GradientMixer) lives in ColorPanel (sidebar →
+// Design → Color). ParameterBank (7 quick + 7 grouped sliders)
+// lives in Inspector → TUNE tab. StylePanel is purely the 29-style
+// picker + style-specific UI per docs/SIDEBAR_IA_AUDIT_2026-04-27.md
+// §6 dedup.
 import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { playUISound } from '@/lib/uiSounds';
-import { ParameterBank } from './ParameterBank';
 import { Randomizer } from './Randomizer';
-import { GradientBuilder } from './GradientBuilder';
-import { GradientMixer } from './GradientMixer';
 import { BladePainter } from './BladePainter';
 import { ImageScrollPanel } from './ImageScrollPanel';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
@@ -37,7 +40,7 @@ const BLADE_STYLES = [
   { id: 'shatter', label: 'Shatter', desc: 'Independent shard pulses' },
   { id: 'neutron', label: 'Neutron', desc: 'Bouncing particle with trail' },
   { id: 'torrent', label: 'Torrent', desc: 'Rushing energy torrent' },
-  { id: 'moire', label: 'Moir\u00e9', desc: 'Moir\u00e9 interference pattern' },
+  { id: 'moire', label: 'Moiré', desc: 'Moiré interference pattern' },
   { id: 'cascade', label: 'Cascade', desc: 'Cascading energy waves' },
   { id: 'vortex', label: 'Vortex', desc: 'Swirling vortex effect' },
   { id: 'nebula', label: 'Nebula', desc: 'Cosmic nebula clouds' },
@@ -46,55 +49,6 @@ const BLADE_STYLES = [
   { id: 'painted', label: 'Painted', desc: 'Hand-painted blade colors' },
   { id: 'imageScroll', label: 'Image Scroll', desc: 'Scroll an image for light painting' },
 ];
-
-function rgbToHex(r: number, g: number, b: number): string {
-  return (
-    '#' +
-    [r, g, b].map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('')
-  );
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : { r: 0, g: 0, b: 0 };
-}
-
-interface ColorPickerRowProps {
-  label: string;
-  colorKey: string;
-  color: { r: number; g: number; b: number };
-}
-
-function ColorPickerRow({ label, colorKey, color }: ColorPickerRowProps) {
-  const setColor = useBladeStore((s) => s.setColor);
-
-  const inputId = `color-${colorKey}`;
-
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <label htmlFor={inputId} className="text-ui-xs text-text-secondary whitespace-nowrap">{label}</label>
-      <div className="flex items-center gap-2">
-        <input
-          id={inputId}
-          type="color"
-          value={rgbToHex(color.r, color.g, color.b)}
-          onChange={(e) => setColor(colorKey, hexToRgb(e.target.value))}
-          className="w-8 h-6 rounded cursor-pointer border border-border-subtle bg-transparent"
-          style={{ width: '32px', height: '24px' }}
-        />
-        <span className="text-ui-sm text-text-muted font-mono w-[120px]">
-          Rgb&lt;{color.r},{color.g},{color.b}&gt;
-        </span>
-      </div>
-    </div>
-  );
-}
 
 // ─── Style-Specific Parameter Definitions ───
 
@@ -175,9 +129,6 @@ export function StylePanel() {
   const brightness = useUIStore((s) => s.brightness);
   const setBrightness = useUIStore((s) => s.setBrightness);
 
-  const showGradientEnd = config.style === 'gradient';
-  const showEdgeColor = config.style === 'plasma';
-
   // Build MiniGalleryPicker items from BLADE_STYLES + static thumbnails.
   // Memoized on the shipped catalog (stable identity), so the grid's
   // active-id + click path is the only churn when the user flips styles.
@@ -247,48 +198,11 @@ export function StylePanel() {
                 onChange={(val) => updateConfig({ [param.key]: val })}
               />
             ))}
-            {config.style === 'gradient' && (
-              <>
-                <GradientBuilder />
-                <GradientMixer />
-              </>
-            )}
             {config.style === 'painted' && <BladePainter />}
             {config.style === 'imageScroll' && <ImageScrollPanel />}
           </div>
         </CollapsibleSection>
       )}
-
-      {/* Colors */}
-      <CollapsibleSection
-        title="Colors"
-        defaultOpen={true}
-        persistKey="StylePanel.colors"
-        headerAccessory={
-          <HelpTooltip text="Quick color pickers for base blade and effect trigger colors. For advanced color editing with HSL sliders, harmony wheels, and canon presets, use the full Color Panel." proffie="Rgb<r,g,b>" />
-        }
-      >
-        <div className="space-y-2 bg-bg-surface rounded-panel p-3 border border-border-subtle">
-          <ColorPickerRow label="Base" colorKey="baseColor" color={config.baseColor} />
-          <ColorPickerRow label="Clash" colorKey="clashColor" color={config.clashColor} />
-          <ColorPickerRow label="Lockup" colorKey="lockupColor" color={config.lockupColor} />
-          <ColorPickerRow label="Blast" colorKey="blastColor" color={config.blastColor} />
-          {showGradientEnd && (
-            <ColorPickerRow
-              label="Gradient End"
-              colorKey="gradientEnd"
-              color={config.gradientEnd ?? { r: 0, g: 255, b: 100 }}
-            />
-          )}
-          {showEdgeColor && (
-            <ColorPickerRow
-              label="Edge"
-              colorKey="edgeColor"
-              color={config.edgeColor ?? { r: 255, g: 255, b: 255 }}
-            />
-          )}
-        </div>
-      </CollapsibleSection>
 
       {/* Core Parameters (brightness, LED count) */}
       <CollapsibleSection
@@ -321,9 +235,6 @@ export function StylePanel() {
           />
         </div>
       </CollapsibleSection>
-
-      {/* Parameter Bank (quick-access + advanced accordion groups) */}
-      <ParameterBank />
 
       {/* Randomizer / Style Generator */}
       <Randomizer />
