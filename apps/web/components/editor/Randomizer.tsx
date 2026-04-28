@@ -197,7 +197,10 @@ function generateConfig(theme: ThemeDef): BladeConfig {
     ignitionMs: randInt(150, 800),
     retractionMs: randInt(200, 900),
     shimmer: Math.round(randRange(0, 0.6) * 100) / 100,
-    ledCount: pick([72, 96, 120, 132, 144, 264]),
+    // Placeholder ledCount — overridden by applyLocks() with the user's
+    // current saber's actual ledCount. Hardware properties don't get
+    // randomized; the user picked this in Saber Wizard / My Saber.
+    ledCount: 144,
   };
 
   // Style-specific extras
@@ -211,13 +214,18 @@ function generateConfig(theme: ThemeDef): BladeConfig {
   return config;
 }
 
-/** Apply locks: keep locked fields from the current config. */
+/** Apply locks: keep locked fields from the current config.
+ *
+ * `ledCount` is ALWAYS preserved from the current config regardless of
+ * lock state — it's a hardware property tied to the user's actual
+ * saber, not a creative parameter. Randomizing it would invalidate
+ * blade-length / power-draw math the user already configured. */
 function applyLocks(
   generated: BladeConfig,
   current: BladeConfig,
   locks: Set<LockKey>,
 ): BladeConfig {
-  const merged = { ...generated };
+  const merged = { ...generated, ledCount: current.ledCount };
 
   if (locks.has('colors')) {
     merged.baseColor = current.baseColor;
