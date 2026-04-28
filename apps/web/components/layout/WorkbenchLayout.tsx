@@ -1065,7 +1065,10 @@ export function WorkbenchLayout() {
         aria-label="Section navigation and content"
       >
         <Sidebar style={{ width: 280 }} />
-        <MainContent />
+        <MainContent
+          triggerEffect={triggerEffectWithAudio}
+          releaseEffect={releaseEffect}
+        />
       </div>
 
       {/* ════════════════════════════════════════════════════

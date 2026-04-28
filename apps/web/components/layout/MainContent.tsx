@@ -32,10 +32,24 @@ import {
   ColorColumnB,
 } from '@/components/editor/color';
 import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
+import { CombatEffectsAB } from '@/components/editor/combat-effects';
 
 interface MainContentProps {
   className?: string;
   style?: React.CSSProperties;
+  /**
+   * Engine effect handlers, sourced from WorkbenchLayout's
+   * `useBladeEngine()` instance. Threaded as props rather than
+   * re-acquired here because `useBladeEngine` instantiates a fresh
+   * BladeEngine per call (its useRef initializer); calling it again
+   * would spawn a second engine + RAF tick.
+   *
+   * Optional so MainContent stays usable in tests / off-flag paths
+   * where no engine is mounted; consumers (currently CombatEffectsAB)
+   * gate their trigger UI on the handlers being present.
+   */
+  triggerEffect?: (type: string) => void;
+  releaseEffect?: (type: string) => void;
 }
 
 const SECTION_LABELS: Record<SectionId, string> = {
@@ -72,7 +86,12 @@ function renderLegacySection(activeSection: SectionId): React.ReactNode {
   }
 }
 
-export function MainContent({ className, style }: MainContentProps) {
+export function MainContent({
+  className,
+  style,
+  triggerEffect,
+  releaseEffect,
+}: MainContentProps) {
   const activeSection = useUIStore((s) => s.activeSection);
   const useABLayout = useUIStore((s) => s.useABLayout);
   const label = SECTION_LABELS[activeSection];
@@ -106,6 +125,16 @@ export function MainContent({ className, style }: MainContentProps) {
       // The ignition-retraction wrapper owns its own MainContentABLayout
       // mount because it threads transient tab state into both columns.
       abContent = <IgnitionRetractionAB />;
+    } else if (activeSection === 'combat-effects') {
+      // Phase 4: the combat-effects wrapper threads selection state
+      // into both columns AND forwards the engine effect handlers from
+      // MainContent's props down into Column B's Trigger button.
+      abContent = (
+        <CombatEffectsAB
+          triggerEffect={triggerEffect}
+          releaseEffect={releaseEffect}
+        />
+      );
     }
   }
 
