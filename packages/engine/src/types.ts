@@ -195,7 +195,19 @@ export interface BladeLengthConfig {
   ledsPerInch: number;
 }
 
+// CANONICAL SOURCE OF TRUTH for blade length presets across the entire app.
+// All web-side consumers (HardwarePanel, BladeHardwarePanel, BladeCanvas,
+// SaberWizard, bladeRenderMetrics) derive their tables from this map via
+// `apps/web/lib/bladeLengths.ts`. Editing this map is the only sanctioned
+// way to change the LED-count <-> inches mapping; do not introduce new
+// inline duplicates.
+//
+// 20" entry uses 3.65 LEDs/inch (rounding tolerance vs the 3.66 used by
+// 24"-40"); 73 / 20 = 3.65. Slot kept at 73 LEDs because it was the existing
+// boundary in the inferBladeInches piecewise ladder and matches Yoda-class
+// shoto presets in the wizard.
 export const BLADE_LENGTH_PRESETS: Record<string, BladeLengthConfig> = {
+  '20"': { inches: 20, ledCount: 73, ledsPerInch: 3.65 },
   '24"': { inches: 24, ledCount: 88, ledsPerInch: 3.66 },
   '28"': { inches: 28, ledCount: 103, ledsPerInch: 3.66 },
   '32"': { inches: 32, ledCount: 117, ledsPerInch: 3.66 },

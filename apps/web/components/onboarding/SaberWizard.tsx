@@ -12,6 +12,10 @@ import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { playUISound } from '@/lib/uiSounds';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { inferBladeInches } from '@/lib/bladeRenderMetrics';
+import {
+  BLADE_LENGTHS as CANONICAL_BLADE_LENGTHS,
+  type BladeLengthOption as CanonicalBladeLengthOption,
+} from '@/lib/bladeLengths';
 import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSignal';
 import type { BladeConfig } from '@kyberstation/engine';
 
@@ -28,16 +32,17 @@ export interface BladeLengthOption {
   label: string;
 }
 
-// LED counts mirror BLADE_LENGTH_PRESETS in packages/engine/src/types.ts
-// (3.66 LEDs/inch). 20" entry slots into the inferBladeInches ≤73 bucket.
-export const BLADE_LENGTHS: BladeLengthOption[] = [
-  { inches: 20, ledCount: 73, label: '20"' },
-  { inches: 24, ledCount: 88, label: '24"' },
-  { inches: 28, ledCount: 103, label: '28"' },
-  { inches: 32, ledCount: 117, label: '32"' },
-  { inches: 36, ledCount: 132, label: '36"' },
-  { inches: 40, ledCount: 147, label: '40"' },
-];
+// Derived from `lib/bladeLengths.ts` (which sources `BLADE_LENGTH_PRESETS`
+// from the engine package — the single canonical source of truth).
+// Re-exported as a mutable array shape for back-compat with the existing
+// `saberWizardOptions.test.ts` import + the wizard's local find/index calls.
+export const BLADE_LENGTHS: BladeLengthOption[] = CANONICAL_BLADE_LENGTHS.map(
+  (b: CanonicalBladeLengthOption): BladeLengthOption => ({
+    inches: b.inches,
+    ledCount: b.ledCount,
+    label: b.label,
+  }),
+);
 
 export type BoardId = 'proffie-v3' | 'proffie-v2' | 'cfx' | 'gh-v4' | 'gh-v3';
 

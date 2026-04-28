@@ -8,6 +8,7 @@
 // SaberProfile import validation or breaks CodeOutput's mapping.
 
 import { describe, it, expect } from 'vitest';
+import { BLADE_LENGTH_PRESETS } from '@kyberstation/engine';
 import {
   BLADE_LENGTHS,
   BOARDS,
@@ -33,6 +34,21 @@ describe('SaberWizard BLADE_LENGTHS', () => {
     // length on the canvas.
     for (const b of BLADE_LENGTHS) {
       expect(inferBladeInches(b.ledCount)).toBe(b.inches);
+    }
+  });
+
+  it('agrees with the canonical BLADE_LENGTH_PRESETS in the engine package', () => {
+    // Post-lift drift sentinel: the wizard derives BLADE_LENGTHS from
+    // `lib/bladeLengths.ts`, which in turn derives from the engine's
+    // BLADE_LENGTH_PRESETS. If a future edit ever reintroduces an
+    // inline drift here (e.g. the historical 36"=144 mistake), this
+    // test fails immediately.
+    for (const b of BLADE_LENGTHS) {
+      const canonical = Object.values(BLADE_LENGTH_PRESETS).find(
+        (p) => p.inches === b.inches,
+      );
+      expect(canonical).toBeDefined();
+      expect(canonical?.ledCount).toBe(b.ledCount);
     }
   });
 });
