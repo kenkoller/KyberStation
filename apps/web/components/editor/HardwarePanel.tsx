@@ -55,7 +55,7 @@ const BLADE_LENGTHS = [
   { label: 'Short (24")', inches: 24, ledCount: 88 },
   { label: 'Medium (28")', inches: 28, ledCount: 103 },
   { label: 'Standard (32")', inches: 32, ledCount: 117 },
-  { label: 'Long (36")', inches: 36, ledCount: 132 },
+  { label: 'Long (36")', inches: 36, ledCount: 144 },
   { label: 'Extra Long (40")', inches: 40, ledCount: 147 },
 ];
 
@@ -81,7 +81,7 @@ function inferBladeInches(ledCount: number): number {
   if (ledCount <= 88) return 24;
   if (ledCount <= 103) return 28;
   if (ledCount <= 117) return 32;
-  if (ledCount <= 132) return 36;
+  if (ledCount <= 144) return 36;
   return 40;
 }
 

@@ -62,14 +62,22 @@ export const AUTO_FIT_LEFT_PULL_DS = 0;
  * render it as. Mirrors the piecewise ladder in `BladeCanvas.tsx:352` and
  * the `BLADE_LENGTH_PRESETS` ranges in `packages/engine/src/types.ts`.
  *
- * Any LED count ≥ 133 falls in the 40" bucket (the maximum-length preset).
+ * Density note: the Neopixel-blade community standard is "144 LEDs/meter"
+ * strip, and "1 meter ≈ 36 inches" by convention — so a "Standard 36-inch
+ * blade" is sold with 144 LEDs even though strict math (144/m × 0.914m)
+ * would give 132. We follow the community standard here so a user picking
+ * the saber they actually own sees the right LED count + the renderer
+ * draws at the right length. Confirmed with vendor data: Damien, JQ,
+ * Saber Bay, etc.
+ *
+ * Any LED count ≥ 145 falls in the 40" bucket (the maximum-length preset).
  */
 export function inferBladeInches(ledCount: number): number {
   if (ledCount <= 73) return 20;
   if (ledCount <= 88) return 24;
   if (ledCount <= 103) return 28;
   if (ledCount <= 117) return 32;
-  if (ledCount <= 132) return 36;
+  if (ledCount <= 144) return 36;
   return 40;
 }
 
