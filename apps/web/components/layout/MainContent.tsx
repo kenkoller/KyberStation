@@ -33,6 +33,7 @@ import {
 } from '@/components/editor/color';
 import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
 import { CombatEffectsAB } from '@/components/editor/combat-effects';
+import { MySaberAB } from '@/components/editor/my-saber';
 
 interface MainContentProps {
   className?: string;
@@ -135,6 +136,12 @@ export function MainContent({
           releaseEffect={releaseEffect}
         />
       );
+    } else if (activeSection === 'my-saber') {
+      // my-saber owns its own MainContentABLayout mount inside MySaberAB
+      // — Column A is the saved-profile list, Column B is the existing
+      // SaberProfileManager character sheet. State flows entirely
+      // through saberProfileStore (profiles + activeProfileId).
+      abContent = <MySaberAB />;
     }
   }
 
