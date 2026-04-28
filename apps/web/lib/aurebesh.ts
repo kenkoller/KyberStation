@@ -5,22 +5,31 @@
  * Underlying text remains English for accessibility and screen readers —
  * only the visual font-face changes.
  *
- * Modes:
+ * Modes (which UI surfaces switch to Aurebesh):
  *   'off'    — Standard fonts everywhere
  *   'labels' — Panel titles, nav, headers in Aurebesh; values/body in standard
  *   'full'   — Everything in Aurebesh except code, shortcuts, errors, inputs
+ *
+ * Variants (which Aurebesh font-face is used when the mode is on):
+ *   'canon'        — AurebeshAF Canon (default — clean letterforms, broadest coverage)
+ *   'canon-tech'   — AurebeshAF CanonTech (techy / numeric-emphasis variant)
+ *   'legends'      — AurebeshAF Legends (expanded-universe letterforms)
+ *   'legends-tech' — AurebeshAF Legends Tech (legends + tech)
  */
 
 export type AurebeshMode = 'off' | 'labels' | 'full';
 
-const STORAGE_KEY = 'kyberstation-aurebesh-mode';
+export type AurebeshVariant = 'canon' | 'canon-tech' | 'legends' | 'legends-tech';
+
+const MODE_STORAGE_KEY = 'kyberstation-aurebesh-mode';
+const VARIANT_STORAGE_KEY = 'kyberstation-aurebesh-variant';
 
 /**
  * Get the saved Aurebesh mode from localStorage.
  */
 export function getAurebeshMode(): AurebeshMode {
   if (typeof window === 'undefined') return 'off';
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = localStorage.getItem(MODE_STORAGE_KEY);
   if (stored === 'labels' || stored === 'full') return stored;
   return 'off';
 }
@@ -29,14 +38,46 @@ export function getAurebeshMode(): AurebeshMode {
  * Save the Aurebesh mode to localStorage.
  */
 export function setAurebeshMode(mode: AurebeshMode): void {
-  localStorage.setItem(STORAGE_KEY, mode);
+  localStorage.setItem(MODE_STORAGE_KEY, mode);
 }
 
 /**
- * Apply the Aurebesh CSS class to <html>.
- * Removes any previous Aurebesh class before applying the new one.
+ * Get the saved Aurebesh variant from localStorage. Defaults to 'canon'.
  */
-export function applyAurebeshMode(mode: AurebeshMode): void {
+export function getAurebeshVariant(): AurebeshVariant {
+  if (typeof window === 'undefined') return 'canon';
+  const stored = localStorage.getItem(VARIANT_STORAGE_KEY);
+  if (stored === 'canon-tech' || stored === 'legends' || stored === 'legends-tech') return stored;
+  return 'canon';
+}
+
+/**
+ * Save the Aurebesh variant to localStorage.
+ */
+export function setAurebeshVariant(variant: AurebeshVariant): void {
+  localStorage.setItem(VARIANT_STORAGE_KEY, variant);
+}
+
+/**
+ * Apply the Aurebesh CSS classes to <html>. Composes:
+ *   - mode class: aurebesh-labels | aurebesh-full | (none for 'off')
+ *   - variant class: aurebesh-variant-canon | aurebesh-variant-canon-tech
+ *                    | aurebesh-variant-legends | aurebesh-variant-legends-tech
+ *
+ * The variant class is always applied (even when mode is 'off') so any
+ * decorative `.sw-aurebesh` element on the page picks up the user's
+ * preferred variant immediately — without waiting for a mode flip.
+ *
+ * Removes any previous mode + variant class before applying the new one.
+ */
+const ALL_VARIANT_CLASSES = [
+  'aurebesh-variant-canon',
+  'aurebesh-variant-canon-tech',
+  'aurebesh-variant-legends',
+  'aurebesh-variant-legends-tech',
+];
+
+export function applyAurebeshMode(mode: AurebeshMode, variant?: AurebeshVariant): void {
   const html = document.documentElement;
   html.classList.remove('aurebesh-labels', 'aurebesh-full');
   if (mode === 'labels') {
@@ -44,6 +85,15 @@ export function applyAurebeshMode(mode: AurebeshMode): void {
   } else if (mode === 'full') {
     html.classList.add('aurebesh-full');
   }
+  if (variant !== undefined) {
+    applyAurebeshVariant(variant);
+  }
+}
+
+export function applyAurebeshVariant(variant: AurebeshVariant): void {
+  const html = document.documentElement;
+  for (const cls of ALL_VARIANT_CLASSES) html.classList.remove(cls);
+  html.classList.add(`aurebesh-variant-${variant}`);
 }
 
 /**

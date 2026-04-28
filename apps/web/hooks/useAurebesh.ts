@@ -3,27 +3,34 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   type AurebeshMode,
+  type AurebeshVariant,
   getAurebeshMode,
   setAurebeshMode,
+  getAurebeshVariant,
+  setAurebeshVariant,
   applyAurebeshMode,
+  applyAurebeshVariant,
 } from '../lib/aurebesh';
 
 /**
- * Hook for managing the Aurebesh font toggle.
+ * Hook for managing the Aurebesh font toggle + variant selection.
  *
- * On mount, loads the saved mode and applies the CSS class to <html>.
- * Returns the current mode and a setter.
+ * On mount, loads the saved mode + variant and applies the CSS classes
+ * to <html>. Returns the current mode/variant + setters.
  *
  * Usage:
- *   const { mode, setMode } = useAurebesh();
+ *   const { mode, setMode, variant, setVariant } = useAurebesh();
  */
 export function useAurebesh() {
   const [mode, setModeState] = useState<AurebeshMode>('off');
+  const [variant, setVariantState] = useState<AurebeshVariant>('canon');
 
   useEffect(() => {
-    const saved = getAurebeshMode();
-    setModeState(saved);
-    applyAurebeshMode(saved);
+    const savedMode = getAurebeshMode();
+    const savedVariant = getAurebeshVariant();
+    setModeState(savedMode);
+    setVariantState(savedVariant);
+    applyAurebeshMode(savedMode, savedVariant);
   }, []);
 
   const setMode = useCallback((newMode: AurebeshMode) => {
@@ -32,5 +39,11 @@ export function useAurebesh() {
     applyAurebeshMode(newMode);
   }, []);
 
-  return { mode, setMode };
+  const setVariant = useCallback((newVariant: AurebeshVariant) => {
+    setAurebeshVariant(newVariant);
+    setVariantState(newVariant);
+    applyAurebeshVariant(newVariant);
+  }, []);
+
+  return { mode, setMode, variant, setVariant };
 }
