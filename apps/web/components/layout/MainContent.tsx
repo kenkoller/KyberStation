@@ -19,7 +19,7 @@ import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { HardwarePanel } from '@/components/editor/HardwarePanel';
 import { CrystalPanel } from '@/components/editor/CrystalPanel';
 import { MySaberPanel } from '@/components/editor/MySaberPanel';
-import { RoutingPanel } from '@/components/editor/routing/RoutingPanel';
+import { RoutingPanel, RoutingAB } from '@/components/editor/routing';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
 import { MainContentABLayout } from '@/components/layout/MainContentABLayout';
@@ -148,6 +148,14 @@ export function MainContent({
       // pulls Column A/B state straight from audioFontStore so no prop
       // threading is needed.
       abContent = <AudioAB />;
+    } else if (activeSection === 'routing') {
+      // Phase 4e: routing's wrapper owns the local selectedBindingId
+      // state — Column A is the binding list + creation surfaces
+      // (ModulatorPlateBar + RecipePicker + "+ New Binding"), Column B
+      // is the deep editor or AddBindingForm fallback. Re-targeting
+      // (source + target dropdowns in B) is a real UX win unlocked by
+      // the migration. Board-gating happens at the Sidebar level.
+      abContent = <RoutingAB />;
     }
   }
 
