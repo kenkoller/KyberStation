@@ -19,30 +19,31 @@ export type FullscreenOrientation = 'horizontal' | 'vertical';
 // `activeTab` survives only for the mobile/tablet shells until PR 5.
 
 export type SectionId =
-  // Design — Appearance
+  // SETUP — what saber are you designing for?
+  | 'my-saber'
+  | 'hardware'
+  // DESIGN — how does it look?
   | 'blade-style'
   | 'color'
-  // Design — Behavior
   | 'ignition-retraction'
   | 'combat-effects'
-  | 'gesture-controls'
-  // Design — Advanced
   | 'layer-compositor'
-  | 'motion-simulation'
-  | 'hardware'
-  | 'my-crystal'
-  // Design — Routing (BETA, board-gated at the sidebar level)
+  // REACTIVITY — how does it respond?
   | 'routing'
-  // Top-level destinations
+  | 'motion-simulation'
+  | 'gesture-controls'
+  // OUTPUT — how do you ship it?
   | 'audio'
-  | 'output';
+  | 'output'
+  // Cross-group surface (Saber Card / Crystal export — kept under DESIGN/OUTPUT
+  // for now per the audit's "Saber Card / Crystal" entry; section ID retained
+  // so persisted state from earlier sessions stays valid).
+  | 'my-crystal';
 
 export type SidebarGroupId =
-  | 'appearance'
-  | 'behavior'
-  | 'advanced'
-  | 'routing'
-  | 'audio'
+  | 'setup'
+  | 'design'
+  | 'reactivity'
   | 'output';
 
 export interface UIStore {
@@ -386,20 +387,23 @@ const ACTIVE_SECTION_STORAGE_KEY = 'kyberstation-active-section';
 const SIDEBAR_COLLAPSE_STORAGE_KEY = 'kyberstation-sidebar-collapse';
 
 const VALID_SECTION_IDS: ReadonlyArray<SectionId> = [
-  'blade-style', 'color',
-  'ignition-retraction', 'combat-effects', 'gesture-controls',
-  'layer-compositor', 'motion-simulation', 'hardware', 'my-crystal',
-  'routing',
+  // SETUP
+  'my-saber', 'hardware',
+  // DESIGN
+  'blade-style', 'color', 'ignition-retraction', 'combat-effects', 'layer-compositor',
+  // REACTIVITY
+  'routing', 'motion-simulation', 'gesture-controls',
+  // OUTPUT
   'audio', 'output',
+  // Cross-group / legacy
+  'my-crystal',
 ];
 
 const DEFAULT_SIDEBAR_COLLAPSE: Record<SidebarGroupId, boolean> = {
-  appearance: false,
-  behavior: false,
-  advanced: false,
-  routing: false,
-  audio: true,
-  output: true,
+  setup: false,
+  design: false,
+  reactivity: false,
+  output: false,
 };
 
 function loadActiveSection(): SectionId {
@@ -425,8 +429,19 @@ function loadSidebarCollapse(): Record<SidebarGroupId, boolean> {
     if (typeof localStorage === 'undefined') return { ...DEFAULT_SIDEBAR_COLLAPSE };
     const raw = localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
     if (!raw) return { ...DEFAULT_SIDEBAR_COLLAPSE };
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULT_SIDEBAR_COLLAPSE, ...parsed };
+    const parsed = JSON.parse(raw) as Partial<Record<string, unknown>>;
+    // Filter to only the current group taxonomy; ignore stale keys
+    // (`appearance` / `behavior` / `advanced` / `routing` / `audio`) from
+    // the pre-2026-04-27 sidebar IA. This prevents persisted state from
+    // older sessions silently injecting unknown keys after the SETUP /
+    // DESIGN / REACTIVITY / OUTPUT regrouping.
+    const valid: SidebarGroupId[] = ['setup', 'design', 'reactivity', 'output'];
+    const result: Record<SidebarGroupId, boolean> = { ...DEFAULT_SIDEBAR_COLLAPSE };
+    for (const key of valid) {
+      const v = parsed?.[key];
+      if (typeof v === 'boolean') result[key] = v;
+    }
+    return result;
   } catch {
     return { ...DEFAULT_SIDEBAR_COLLAPSE };
   }

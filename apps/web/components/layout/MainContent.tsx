@@ -18,6 +18,7 @@ import { LayerStack } from '@/components/editor/LayerStack';
 import { MotionSimPanel } from '@/components/editor/MotionSimPanel';
 import { HardwarePanel } from '@/components/editor/HardwarePanel';
 import { CrystalPanel } from '@/components/editor/CrystalPanel';
+import { MySaberPanel } from '@/components/editor/MySaberPanel';
 import { RoutingPanel } from '@/components/editor/routing/RoutingPanel';
 import { AudioPanel } from '@/components/editor/AudioPanel';
 import { OutputPanel } from '@/components/editor/OutputPanel';
@@ -28,34 +29,36 @@ interface MainContentProps {
 }
 
 const SECTION_LABELS: Record<SectionId, string> = {
+  'my-saber':            'My Saber',
+  'hardware':            'Hardware',
   'blade-style':         'Blade Style',
   'color':               'Color',
   'ignition-retraction': 'Ignition & Retraction',
   'combat-effects':      'Combat Effects',
-  'gesture-controls':    'Gesture Controls',
-  'layer-compositor':    'Layer Compositor',
-  'motion-simulation':   'Motion Simulation',
-  'hardware':            'Hardware',
-  'my-crystal':          'My Crystal',
+  'layer-compositor':    'Layers',
   'routing':             'Routing',
+  'motion-simulation':   'Motion Simulation',
+  'gesture-controls':    'Gesture Controls',
   'audio':               'Audio',
   'output':              'Output',
+  'my-crystal':          'My Crystal',
 };
 
 function renderSection(activeSection: SectionId): React.ReactNode {
   switch (activeSection) {
+    case 'my-saber':            return <MySaberPanel />;
+    case 'hardware':            return <HardwarePanel />;
     case 'blade-style':         return <StylePanel />;
     case 'color':               return <ColorPanel />;
     case 'ignition-retraction': return <IgnitionRetractionPanel />;
     case 'combat-effects':      return <EffectPanel />;
-    case 'gesture-controls':    return <GestureControlPanel />;
     case 'layer-compositor':    return <LayerStack />;
-    case 'motion-simulation':   return <MotionSimPanel />;
-    case 'hardware':            return <HardwarePanel />;
-    case 'my-crystal':          return <CrystalPanel />;
     case 'routing':             return <RoutingPanel />;
+    case 'motion-simulation':   return <MotionSimPanel />;
+    case 'gesture-controls':    return <GestureControlPanel />;
     case 'audio':               return <AudioPanel />;
     case 'output':              return <OutputPanel />;
+    case 'my-crystal':          return <CrystalPanel />;
   }
 }
 
