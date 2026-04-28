@@ -1,12 +1,18 @@
 'use client';
-import { useMemo } from 'react';
+// Note: ignition + retraction MGPs + ms timing sliders are owned by
+// IgnitionRetractionPanel (sidebar → Design → Ignition & Retraction).
+// Per docs/SIDEBAR_IA_AUDIT_2026-04-27.md §6 dedup, EffectPanel was the
+// duplicate mount point and dropped them. The unique-to-this-panel
+// concerns (Preon, Easing Curves, Dual-Mode Ignition, Custom Curve
+// scrubs) STAY here for now — they'll move to IgnitionRetractionPanel
+// in a follow-up PR once the deeper concerns there are reorganized.
 import { useBladeStore } from '@/stores/bladeStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { ScrubField } from '@/components/shared/ScrubField';
-import { MiniGalleryPicker } from '@/components/shared/MiniGalleryPicker';
-import { getIgnitionThumbnail } from '@/lib/ignitionThumbnails';
-import { getRetractionThumbnail } from '@/lib/retractionThumbnails';
+// IGNITION_STYLES + RETRACTION_STYLES still needed for the Dual-Mode
+// Ignition / Custom Curve dropdowns below — those are unique to this
+// panel and not duplicated in IgnitionRetractionPanel.
 import {
   IGNITION_STYLES,
   RETRACTION_STYLES,
@@ -30,250 +36,13 @@ const EASING_PRESETS = [
   { id: 'snap', label: 'Snap' },
 ];
 
-// IGNITION_STYLES + RETRACTION_STYLES now imported from
-// `lib/transitionCatalogs.ts` so this surface, IgnitionRetractionPanel,
-// and the Inspector quick pickers all share one source. The catalog
-// also carries optional `pickerGifPath` per entry (Saber GIF Sprint 2)
-// — we forward that through to MiniGalleryPicker below.
-
 export function EffectPanel() {
   const config = useBladeStore((s) => s.config);
-  const setIgnition = useBladeStore((s) => s.setIgnition);
-  const setRetraction = useBladeStore((s) => s.setRetraction);
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const effectLog = useBladeStore((s) => s.effectLog);
 
-  // OV9: MiniGalleryPicker items for ignition + retraction pickers.
-  // Stable — computed once from shipped catalogs. Thumbnails resolve
-  // via getIgnitionThumbnail / getRetractionThumbnail, falling back
-  // to a default arrow for any id not in the thumbnail registry.
-  const ignitionItems = useMemo(
-    () =>
-      IGNITION_STYLES.map((style) => {
-        const entry = getIgnitionThumbnail(style.id);
-        return {
-          id: style.id,
-          label: style.label,
-          thumbnail: entry.thumbnail,
-          description: style.desc,
-          gifPath: style.pickerGifPath,
-        };
-      }),
-    [],
-  );
-
-  const retractionItems = useMemo(
-    () =>
-      RETRACTION_STYLES.map((style) => {
-        const entry = getRetractionThumbnail(style.id);
-        return {
-          id: style.id,
-          label: style.label,
-          thumbnail: entry.thumbnail,
-          description: style.desc,
-          gifPath: style.pickerGifPath,
-        };
-      }),
-    [],
-  );
-
   return (
     <div className="space-y-2">
-      {/* Ignition */}
-      <CollapsibleSection
-        title="Ignition Style"
-        defaultOpen={true}
-        persistKey="EffectPanel.ignition"
-        headerAccessory={
-          <HelpTooltip text="How the blade extends when activated. Controls the visual transition from off to on." proffie="InOutTrL<TrWipe<300>>" />
-        }
-      >
-        {/* OV9: MiniGalleryPicker replaces the button grid. Each
-            ignition gets a signature SVG (directional fill, spark,
-            gradient, etc.). */}
-        <MiniGalleryPicker
-          items={ignitionItems}
-          activeId={config.ignition}
-          onSelect={setIgnition}
-          columns={3}
-          ariaLabel="Ignition style picker"
-        />
-        {/* Stutter parameters */}
-        {config.ignition === 'stutter' && (
-          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <label className="flex items-center gap-2 text-ui-xs text-text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={(config.stutterFullExtend as boolean | undefined) ?? true}
-                onChange={(e) => updateConfig({ stutterFullExtend: e.target.checked })}
-                className="accent-accent"
-              />
-              Full extend (blade always reaches full length)
-            </label>
-            <ScrubField
-              label="Flicker Count"
-              min={5} max={60} step={1}
-              value={(config.stutterCount as number | undefined) ?? 30}
-              onChange={(v) => updateConfig({ stutterCount: v })}
-              ariaLabel="Stutter flicker count"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-            <ScrubField
-              label="Amplitude"
-              min={1} max={30} step={1}
-              value={(config.stutterAmplitude as number | undefined) ?? 10}
-              onChange={(v) => updateConfig({ stutterAmplitude: v })}
-              ariaLabel="Stutter amplitude"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-          </div>
-        )}
-        {/* Glitch parameters */}
-        {config.ignition === 'glitch' && (
-          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <ScrubField
-              label="Density"
-              min={1} max={20} step={1}
-              value={(config.glitchDensity as number | undefined) ?? 3}
-              onChange={(v) => updateConfig({ glitchDensity: v })}
-              ariaLabel="Glitch pixel density"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-            <ScrubField
-              label="Intensity"
-              min={10} max={100} step={5}
-              value={(config.glitchIntensity as number | undefined) ?? 100}
-              onChange={(v) => updateConfig({ glitchIntensity: v })}
-              ariaLabel="Glitch intensity"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-          </div>
-        )}
-        {/* Spark parameters */}
-        {config.ignition === 'spark' && (
-          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <ScrubField
-              label="Spark Size"
-              min={1} max={15} step={1}
-              value={(config.sparkSize as number | undefined) ?? 5}
-              onChange={(v) => updateConfig({ sparkSize: v })}
-              ariaLabel="Spark tip size"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-            <ScrubField
-              label="Trail"
-              min={1} max={20} step={1}
-              value={(config.sparkTrail as number | undefined) ?? 5}
-              onChange={(v) => updateConfig({ sparkTrail: v })}
-              ariaLabel="Spark trail length"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-          </div>
-        )}
-        {/* Wipe parameters */}
-        {config.ignition === 'wipe' && (
-          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <ScrubField
-              label="Softness"
-              min={1} max={20} step={1}
-              value={(config.wipeSoftness as number | undefined) ?? 3}
-              onChange={(v) => updateConfig({ wipeSoftness: v })}
-              ariaLabel="Wipe edge softness"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-          </div>
-        )}
-      </CollapsibleSection>
-
-      {/* Retraction */}
-      <CollapsibleSection
-        title="Retraction Style"
-        defaultOpen={true}
-        persistKey="EffectPanel.retraction"
-        headerAccessory={
-          <HelpTooltip text="How the blade retracts when deactivated. Controls the visual transition from on to off." proffie="InOutTrL<..., TrWipeIn<300>>" />
-        }
-      >
-        {/* OV9: MiniGalleryPicker replaces the button grid. Each
-            retraction gets a signature SVG keyed to its direction /
-            decay character. */}
-        <MiniGalleryPicker
-          items={retractionItems}
-          activeId={config.retraction}
-          onSelect={setRetraction}
-          columns={3}
-          ariaLabel="Retraction style picker"
-        />
-        {/* Shatter retraction parameters */}
-        {config.retraction === 'shatter' && (
-          <div className="mt-2 bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-            <ScrubField
-              label="Fragment Size"
-              min={5} max={50} step={1}
-              value={(config.shatterScale as number | undefined) ?? 20}
-              onChange={(v) => updateConfig({ shatterScale: v })}
-              ariaLabel="Shatter fragment scale"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-            <ScrubField
-              label="Fade Speed"
-              min={10} max={100} step={5}
-              value={(config.shatterDimSpeed as number | undefined) ?? 100}
-              onChange={(v) => updateConfig({ shatterDimSpeed: v })}
-              ariaLabel="Shatter fade speed"
-              unit="%"
-              className="gap-2"
-              readoutClassName="w-7"
-            />
-          </div>
-        )}
-      </CollapsibleSection>
-
-      {/* Duration sliders */}
-      <CollapsibleSection
-        title="Timing"
-        defaultOpen={true}
-        persistKey="EffectPanel.timing"
-        headerAccessory={
-          <HelpTooltip text="Duration in milliseconds for ignition and retraction animations. Lower = faster, higher = more dramatic. Typical range: 200-800ms." />
-        }
-      >
-        <div className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2">
-          <ScrubField
-            id="timing-ignition"
-            label="Ignition"
-            min={100} max={1500} step={50}
-            value={config.ignitionMs}
-            onChange={(v) => updateConfig({ ignitionMs: v })}
-            unit="ms"
-            readoutClassName="w-14"
-          />
-          <ScrubField
-            id="timing-retraction"
-            label="Retraction"
-            min={100} max={1500} step={50}
-            value={config.retractionMs}
-            onChange={(v) => updateConfig({ retractionMs: v })}
-            unit="ms"
-            readoutClassName="w-14"
-          />
-        </div>
-      </CollapsibleSection>
-
       {/* Spatial effects — fine-tune the positions set via canvas Edit Mode */}
       <CollapsibleSection
         title="Spatial Effects"

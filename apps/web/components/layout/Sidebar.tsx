@@ -88,8 +88,9 @@ const GROUPS: GroupDef[] = [
     id: 'output',
     label: 'Output',
     sections: [
-      { id: 'audio',  label: 'Audio' },
-      { id: 'output', label: 'Output' },
+      { id: 'audio',      label: 'Audio' },
+      { id: 'output',     label: 'Output' },
+      { id: 'my-crystal', label: 'Saber Card / Crystal' },
     ],
   },
 ];
