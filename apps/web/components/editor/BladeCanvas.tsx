@@ -9,6 +9,7 @@ import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
 import { AUTO_FIT_FILL } from '@/lib/bladeRenderMetrics';
+import { BLADE_LENGTHS as BLADE_LENGTH_OPTIONS } from '@/lib/bladeLengths';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 import { BladeLayersDebugOverlay, type DebugLayerCapture } from './BladeLayersDebugOverlay';
 
@@ -88,15 +89,25 @@ const STRIP_TYPES: StripType[] = [
 ];
 
 // ─── Blade length options ───
+//
+// Decorate the canonical engine-derived options with the human-friendly
+// captions this configBar select used before the lift. Source of truth:
+// `lib/bladeLengths.ts` (which derives from `BLADE_LENGTH_PRESETS`).
 
-const BLADE_LENGTHS = [
-  { label: 'Yoda (20")', inches: 20, ledCount: 73 },
-  { label: 'Short (24")', inches: 24, ledCount: 88 },
-  { label: 'Medium (28")', inches: 28, ledCount: 103 },
-  { label: 'Standard (32")', inches: 32, ledCount: 117 },
-  { label: 'Long (36")', inches: 36, ledCount: 132 },
-  { label: 'Extra Long (40")', inches: 40, ledCount: 147 },
-];
+const BLADE_LENGTH_LABELS: Record<number, string> = {
+  20: 'Yoda (20")',
+  24: 'Short (24")',
+  28: 'Medium (28")',
+  32: 'Standard (32")',
+  36: 'Long (36")',
+  40: 'Extra Long (40")',
+};
+
+const BLADE_LENGTHS = BLADE_LENGTH_OPTIONS.map((b) => ({
+  label: BLADE_LENGTH_LABELS[b.inches] ?? b.label,
+  inches: b.inches,
+  ledCount: b.ledCount,
+}));
 
 // ─── Topology options (for the selector) ───
 

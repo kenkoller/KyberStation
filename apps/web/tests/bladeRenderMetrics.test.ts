@@ -49,21 +49,25 @@ describe('inferBladeInches', () => {
     expect(inferBladeInches(117)).toBe(32);
   });
 
-  it('118..132 → 36"', () => {
+  it('118..144 → 36"', () => {
+    // 36" bucket extends through 144 LEDs (community 1m-strip standard).
     expect(inferBladeInches(118)).toBe(36);
-    expect(inferBladeInches(132)).toBe(36);
+    expect(inferBladeInches(132)).toBe(36); // strict-math 36" still inside the bucket
+    expect(inferBladeInches(144)).toBe(36); // community-standard 36" — the canonical value
   });
 
-  it('133 and above → 40"', () => {
-    expect(inferBladeInches(133)).toBe(40);
-    expect(inferBladeInches(144)).toBe(40);
+  it('145 and above → 40"', () => {
+    expect(inferBladeInches(145)).toBe(40);
+    expect(inferBladeInches(147)).toBe(40);
     expect(inferBladeInches(288)).toBe(40);
     expect(inferBladeInches(10000)).toBe(40);
   });
 
-  it('default 144 LED config maps to 40"', () => {
-    // bladeStore DEFAULT_CONFIG.ledCount = 144 → 40" preset
-    expect(inferBladeInches(144)).toBe(40);
+  it('default 144 LED config maps to 36" (community-standard 1m strip)', () => {
+    // bladeStore DEFAULT_CONFIG.ledCount = 144 → 36" preset post-lift.
+    // The default config represents a "Standard 36-inch blade" with the
+    // full 1m WS2812B strip, not the 40" preset (which is 147 LEDs).
+    expect(inferBladeInches(144)).toBe(36);
   });
 });
 
@@ -82,17 +86,23 @@ describe('computeBladeRenderMetrics', () => {
 
   it('infers blade inches from ledCount', () => {
     expect(computeBladeRenderMetrics({ containerWidthPx: 1000, ledCount: 88 }).bladeInches).toBe(24);
-    expect(computeBladeRenderMetrics({ containerWidthPx: 1000, ledCount: 144 }).bladeInches).toBe(40);
+    // 144 LEDs is the canonical 36" value post-lift (1m WS2812B strip).
+    // 147 LEDs is the canonical 40" value.
+    expect(computeBladeRenderMetrics({ containerWidthPx: 1000, ledCount: 144 }).bladeInches).toBe(36);
+    expect(computeBladeRenderMetrics({ containerWidthPx: 1000, ledCount: 147 }).bladeInches).toBe(40);
   });
 
   it('40" blade occupies the largest width; 20" the smallest (monotonic)', () => {
+    // Use canonical preset ledCounts so each m_N ladder rung is its own
+    // distinct preset bucket; otherwise multiple rungs would land in the
+    // same 36" bucket (e.g. 132 + 144 are both 36").
     const cw = 1000;
     const m20 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 73 });
     const m24 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 88 });
     const m28 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 103 });
     const m32 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 117 });
-    const m36 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 132 });
-    const m40 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 144 });
+    const m36 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 144 }); // 36" canonical (community 1m strip)
+    const m40 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 147 });
     expect(m20.bladeWidthPx).toBeLessThan(m24.bladeWidthPx);
     expect(m24.bladeWidthPx).toBeLessThan(m28.bladeWidthPx);
     expect(m28.bladeWidthPx).toBeLessThan(m32.bladeWidthPx);
@@ -108,7 +118,7 @@ describe('computeBladeRenderMetrics', () => {
     // width + bladeStartFrac.
     const cw = 1000;
     const m24 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 88 });
-    const m40 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 144 });
+    const m40 = computeBladeRenderMetrics({ containerWidthPx: cw, ledCount: 147 });
     const actualRatio = m24.bladeWidthPx / m40.bladeWidthPx;
     expect(actualRatio).toBeCloseTo(24 / 40, 10);
     expect(actualRatio).toBeLessThan(1);
@@ -146,14 +156,17 @@ describe('computeBladeRenderMetrics', () => {
 
   it('bladeStartFrac shifts bladeLeftPx; 40" width fills post-divider space', () => {
     const cw = 1000;
+    // 147 LEDs is the canonical 40" preset post-lift; 144 now buckets
+    // to 36". Use 147 so the "fills post-divider space" expected-width
+    // formula (which assumes inches/MAX_INCHES = 40/40 = 1.0) holds.
     const m180 = computeBladeRenderMetrics({
       containerWidthPx: cw,
-      ledCount: 144,
+      ledCount: 147,
       bladeStartFrac: 180,
     });
     const m250 = computeBladeRenderMetrics({
       containerWidthPx: cw,
-      ledCount: 144,
+      ledCount: 147,
       bladeStartFrac: 250,
     });
     // 250 - 180 = 70 → 70/1000 * cw = 70 px rightward shift.
