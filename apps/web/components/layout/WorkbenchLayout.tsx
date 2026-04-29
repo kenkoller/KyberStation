@@ -664,15 +664,15 @@ export function WorkbenchLayout() {
 
     // ── THEME ──────────────────────────────────────────────────────
     // Emit commands for the base 9 + extended locations + factions.
-    // Capped at 8 entries for this wave — the palette is searchable, so
-    // users can type the theme name even if it's not in the top 8.
-    // TODO: remove the cap once theme rows land their own section.
-    const THEME_CAP = 8;
+    // Surfaces all ~30 themes in the palette — the previous 8-entry
+    // cap left two-thirds of the catalog discoverable only through the
+    // Settings modal. Palette filtering by typed query keeps the
+    // default view scannable; no separate "themes" section needed.
     const themeEntries: Array<{ id: string; label: string }> = [
       ...CANVAS_THEMES.map((t) => ({ id: t.id, label: t.label })),
       ...EXTENDED_LOCATION_THEMES.map((t) => ({ id: t.id, label: t.label })),
       ...EXTENDED_FACTION_THEMES.map((t) => ({ id: t.id, label: t.label })),
-    ].slice(0, THEME_CAP);
+    ];
     for (const t of themeEntries) {
       out.push({
         id: `theme:${t.id}`,
