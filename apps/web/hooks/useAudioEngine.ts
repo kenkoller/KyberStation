@@ -6,8 +6,10 @@ import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { useAudioMuteStore } from '@/stores/audioMuteStore';
 import { useAudioPlaybackStore } from '@/stores/audioPlaybackStore';
+import { useAudioAnalyserStore } from '@/stores/audioAnalyserStore';
 import { useUIStore } from '@/stores/uiStore';
 import { saveFontToDB, loadFontFromDB, getLastUsedFontName } from '@/lib/fontDB';
+import { DEFAULT_ANALYSER_FFT_SIZE, DEFAULT_ANALYSER_SMOOTHING } from '@/hooks/useAudioAnalyser';
 
 /**
  * Synthetic sound generator — creates AudioBuffers programmatically
@@ -128,6 +130,12 @@ export function useAudioEngine() {
   const filterChainRef = useRef<AudioFilterChain | null>(null);
   const soundsRef = useRef<SoundBuffers | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
+  // Analyser node for the AnalysisRail audio-waveform layer. Inserted
+  // between masterGain and ctx.destination as a transparent tap (it
+  // passes audio through unchanged), so adding it costs no fidelity
+  // and respects mute (mute zeroes the master gain BEFORE the
+  // analyser, so the waveform correctly reads as silence when muted).
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const initializedRef = useRef(false);
 
 
@@ -158,7 +166,32 @@ export function useAudioEngine() {
       // even if the store changed between render and ensureInit firing.
       const masterGain = ctx.createGain();
       masterGain.gain.value = useAudioMuteStore.getState().muted ? 0 : 1;
-      masterGain.connect(ctx.destination);
+
+      // Analyser tap for the AnalysisRail audio-waveform layer. The
+      // graph becomes:
+      //
+      //   player → filterChain → masterGain → analyser → ctx.destination
+      //                                                  ↑
+      //                                          (transparent — passes
+      //                                           audio unchanged)
+      //
+      // AnalyserNode IS the canonical Web Audio "tap" — it has unity
+      // gain on its output and exposes time/frequency-domain readers.
+      // Putting it AFTER masterGain means muting silences both audio
+      // output and the waveform reading; putting it BEFORE would make
+      // the waveform render even while muted, which is the wrong UX
+      // (mute should fully freeze the rail).
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = DEFAULT_ANALYSER_FFT_SIZE;
+      analyser.smoothingTimeConstant = DEFAULT_ANALYSER_SMOOTHING;
+      masterGain.connect(analyser);
+      analyser.connect(ctx.destination);
+      analyserRef.current = analyser;
+
+      // Publish to the global store so the AnalysisRail's audio-waveform
+      // layer can read time-domain frames without prop-drilling. First
+      // publisher wins — see audioAnalyserStore for the contract.
+      useAudioAnalyserStore.getState().setAnalyser(analyser);
 
       // Insert filter chain: player -> filterChain -> masterGain
       const initialConfig = useAudioMixerStore.getState().buildFilterChainConfig();
@@ -548,6 +581,21 @@ export function useAudioEngine() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // If this instance was the published analyser source, clear the
+      // store so the next instance to init can publish fresh.
+      // First-published-wins means this instance MIGHT not own the
+      // global publication; the store comparison guards against
+      // clearing somebody else's node.
+      const analyser = analyserRef.current;
+      if (analyser) {
+        const current = useAudioAnalyserStore.getState().analyser;
+        if (current === analyser) {
+          useAudioAnalyserStore.getState().setAnalyser(null);
+        }
+        try {
+          analyser.disconnect();
+        } catch { /* already disconnected */ }
+      }
       smoothSwingRef.current?.dispose();
       filterChainRef.current?.dispose();
       playerRef.current?.dispose();

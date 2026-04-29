@@ -12,6 +12,7 @@ export type VisualizationLayerId =
   | 'effect-overlay'      // Active effect highlight regions
   | 'swing-response'      // Swing speed response curve
   | 'transition-progress' // Ignition/retraction mask position
+  | 'audio-waveform'      // Time-domain audio waveform (master output tap)
   | 'storage-budget';     // Storage budget indicator
 
 // ─── Layer Shape ───
@@ -184,6 +185,23 @@ export const VISUALIZATION_LAYERS: VisualizationLayer[] = [
     defaultVisible: true,
     color: '#88aaff',
     height: 32,
+    shape: 'line-graph',
+  },
+  {
+    // Time-domain audio waveform — taps the master output via an
+    // AnalyserNode (see `hooks/useAudioAnalyser.ts` +
+    // `stores/audioAnalyserStore.ts`). Off by default since it requires
+    // an active AudioContext (Web Audio autoplay policy), so users
+    // opt-in to enable. When enabled but no audio is playing yet, the
+    // canvas reads as a flat zero line — that's correct, not broken.
+    id: 'audio-waveform',
+    label: 'AUDIO WAVEFORM',
+    shortLabel: 'AUDIO',
+    description: 'Live time-domain waveform of the master audio output — captures hum, swing, and combat-effect samples as they play.',
+    category: 'extended',
+    defaultVisible: false,
+    color: '#67e8f9',
+    height: 40,
     shape: 'line-graph',
   },
   {
