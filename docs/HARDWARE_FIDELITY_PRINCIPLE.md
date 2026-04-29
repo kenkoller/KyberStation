@@ -148,6 +148,40 @@ dial back the visualizer to match.
   Multi-blade support is planned v0.15+. Until then, multi-blade presets
   represent one blade; the description should note the real hilt has more.
 
+## Audit history
+
+### 2026-04-29 — Layer blend modes tightened to `'normal'` only
+
+The application engine previously implemented 5 layer blend modes (`normal /
+add / multiply / screen / overlay`); the LayerStack UI surfaced 4 of them
+via dropdown; ParameterBank surfaced 5 via a `blendMode` select. **None of
+these except `'normal'` round-tripped to a ProffieOS template** — the
+codegen emits `Mix<>` / `AlphaL<>` chains regardless of mode, and ProffieOS
+has no native `Add` / `Multiply` / `Screen` / `Overlay` color-blend
+primitives. Users setting `'multiply'` got a multiply-look in the visualizer
++ a regular-lerp-look on real hardware.
+
+Tighten (PR landing 2026-04-29):
+- `BlendMode` union narrowed to `'normal'` (single literal) in both
+  `packages/engine/src/types.ts` and `apps/web/stores/layerStore.ts`.
+- `applyBlendMode` in `BladeEngine.ts` collapses to alpha-over via lerp
+  unconditionally.
+- `LayerRow` blend-mode dropdown removed; `setBlendMode` action retired
+  from `useLayerStore`.
+- `ParameterBank` `blendMode` select removed.
+- `BladeConfig.blendMode` field retired (was a dead field — never
+  consumed by codegen, never read by the engine compositor).
+- New `migrateBlendMode(value)` helper in `packages/engine/src/types.ts`
+  is the single coerce-to-normal choke-point for legacy persisted state
+  + glyph round-trip.
+- 5 new tests in `packages/engine/tests/migrateBlendMode.test.ts` lock
+  the migration contract (every input → `'normal'`).
+
+The 4 dropped modes were a Hardware Fidelity violation that shipped before
+this principle was written down. Going forward, any new layer-compositor
+mode MUST have a corresponding ProffieOS template emission path before it
+ships in the UI.
+
 ## When to update this doc
 
 - A new style is added to the engine.
@@ -156,6 +190,8 @@ dial back the visualizer to match.
 - A new blade hardware target is added (non-Neopixel, different pixel
   density, different color space).
 - The audit queue above gets worked through (mark verified or flag issues).
+- A previously-shipped feature is revisited under this principle (add to
+  the Audit history section).
 
 ## Related docs
 

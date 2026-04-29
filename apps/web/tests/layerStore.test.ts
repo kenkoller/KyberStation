@@ -38,7 +38,7 @@ function addLayer(overrides: Partial<Omit<BladeLayer, 'id'>> = {}): string {
     name: overrides.name ?? 'Effect Layer',
     visible: true,
     opacity: 1,
-    blendMode: 'add',
+    blendMode: 'normal',
     config: { effectType: 'clash', color: { r: 255, g: 255, b: 255 }, size: 50 },
     ...overrides,
   });

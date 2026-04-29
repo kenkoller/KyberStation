@@ -15,7 +15,19 @@ import { create } from 'zustand';
  * the same way they isolate a visual layer.
  */
 export type LayerType = 'base' | 'effect' | 'accent' | 'mix' | 'smoothswing';
-export type BlendMode = 'normal' | 'add' | 'multiply' | 'screen';
+
+/**
+ * Layer blend mode. Per `docs/HARDWARE_FIDELITY_PRINCIPLE.md`, only
+ * `'normal'` (alpha-over via lerp) round-trips to a ProffieOS template.
+ * The 4 legacy values (`add` / `multiply` / `screen` / `overlay`) were
+ * dropped 2026-04-29 — the codegen never emitted them anyway, so users
+ * setting them got a different look in the visualizer than on real
+ * hardware. Persisted state with legacy values silently coerces to
+ * `'normal'` on load via `migrateLegacyLayer` below; any layer-shaped
+ * payload from network/IndexedDB/glyph should funnel through that
+ * helper. Mirrors `BlendMode` in `packages/engine/src/types.ts`.
+ */
+export type BlendMode = 'normal';
 
 /**
  * Algorithm version for the SmoothSwing crossfade engine. V2 is the
@@ -103,7 +115,9 @@ export interface LayerStore {
   moveLayer: (id: string, direction: 'up' | 'down') => void;
   toggleVisibility: (id: string) => void;
   setOpacity: (id: string, opacity: number) => void;
-  setBlendMode: (id: string, blendMode: BlendMode) => void;
+  // 2026-04-29: setBlendMode retired with the Hardware Fidelity tighten —
+  // BlendMode is a single literal ('normal') so the setter has no
+  // useful range. See docs/HARDWARE_FIDELITY_PRINCIPLE.md.
   updateLayerConfig: (id: string, config: Record<string, unknown>) => void;
   updateLayerName: (id: string, name: string) => void;
   duplicateLayer: (id: string) => void;
@@ -205,13 +219,6 @@ export const useLayerStore = create<LayerStore>((set, get) => ({
     set((state) => ({
       layers: state.layers.map((l) =>
         l.id === id ? { ...l, opacity: Math.max(0, Math.min(1, opacity)) } : l
-      ),
-    })),
-
-  setBlendMode: (id, blendMode) =>
-    set((state) => ({
-      layers: state.layers.map((l) =>
-        l.id === id ? { ...l, blendMode } : l
       ),
     })),
 

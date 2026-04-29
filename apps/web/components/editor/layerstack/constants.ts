@@ -1,4 +1,4 @@
-import type { BlendMode, LayerType } from '@/stores/layerStore';
+import type { LayerType } from '@/stores/layerStore';
 
 export const BLADE_STYLES = [
   { id: 'stable', label: 'Stable' },
@@ -54,12 +54,11 @@ export const EFFECT_TYPES = [
   { id: 'fire', label: 'Fire Distortion' },
 ];
 
-export const BLEND_MODES: Array<{ id: BlendMode; label: string }> = [
-  { id: 'normal', label: 'Normal' },
-  { id: 'add', label: 'Add' },
-  { id: 'multiply', label: 'Multiply' },
-  { id: 'screen', label: 'Screen' },
-];
+// 2026-04-29 (Hardware Fidelity tighten): BLEND_MODES export retired.
+// Of the 4 modes previously exposed in the LayerRow dropdown, only
+// `'normal'` (alpha-over via lerp) round-trips to a ProffieOS template;
+// the other 3 (add / multiply / screen) were visualizer-only fakes.
+// See docs/HARDWARE_FIDELITY_PRINCIPLE.md.
 
 export const TYPE_BADGES: Record<LayerType, { color: string; label: string }> = {
   base: { color: 'bg-blue-500', label: 'B' },

@@ -135,13 +135,14 @@ const PARAM_GROUPS: ParamGroup[] = [
     icon: '///',
     description: 'Layer blending and style mixing',
     params: [
-      { key: 'blendMode', label: 'Blend Mode', type: 'select', default: 'normal', options: [
-        { value: 'normal', label: 'Normal' },
-        { value: 'add', label: 'Additive' },
-        { value: 'multiply', label: 'Multiply' },
-        { value: 'screen', label: 'Screen' },
-        { value: 'overlay', label: 'Overlay' },
-      ]},
+      // 2026-04-29 (Hardware Fidelity tighten): the blendMode select
+      // previously offered 'normal' / 'add' / 'multiply' / 'screen' /
+      // 'overlay'. Only 'normal' round-trips to a ProffieOS template
+      // (Mix<> / AlphaL<>); the other 4 looked different in the
+      // visualizer than on real hardware. Surface dropped; the
+      // remaining 'normal' is the only valid value, so the explicit
+      // control is redundant and removed. See
+      // docs/HARDWARE_FIDELITY_PRINCIPLE.md.
       { key: 'blendSecondaryStyle', label: 'Secondary Style', type: 'select', default: '', options: [
         { value: '', label: 'None' },
         { value: 'stable', label: 'Stable' },
