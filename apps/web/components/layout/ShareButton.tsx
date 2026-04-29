@@ -36,7 +36,8 @@ export function ShareButton() {
       title="Share Kyber Code — copies a shareable URL for this blade configuration"
       aria-label="Share Kyber Code"
       className={[
-        'flex items-center gap-1 px-2 py-1 rounded text-ui-xs font-medium border transition-colors',
+        'inline-flex items-center gap-1 h-7 px-2 rounded-interactive text-ui-xs font-medium border transition-colors select-none',
+        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/60 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary',
         copied
           ? 'border-accent-border/60 text-accent bg-accent-dim/40'
           : error
