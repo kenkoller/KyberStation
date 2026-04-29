@@ -55,7 +55,7 @@ export function drawBlade(card: CardContext): void {
     length,
     layout.bladeThickness,
     options.config,
-    theme.id === 'light',
+    theme.bladeComposite,
   );
 }
 
@@ -77,7 +77,7 @@ function drawBladeHorizontalWorkbench(
   length: number,
   thickness: number,
   config: import('@kyberstation/engine').BladeConfig,
-  lightBackdrop: boolean,
+  bladeComposite: GlobalCompositeOperation,
 ): void {
   const engine = new BladeEngine();
   const ledRgb = engine.captureStateFrame(BladeState.ON, config);
@@ -97,10 +97,11 @@ function drawBladeHorizontalWorkbench(
     coreH,
     cw: canvasW,
     ch: canvasH,
-    // LIGHT_THEME has a paper-white backdrop — additive `lighter`
-    // blends saturate to pure white. `screen` clips at 1.0 and
-    // preserves the blade's color identity over the bright bg.
-    lightBackdrop,
+    // Theme declares its own preference — `'lighter'` for dark
+    // backdrops (additive halo), `'source-over'` for paper-white
+    // backdrops (no white-out), `'screen'` for soft-additive. See
+    // `CardTheme.bladeComposite` doc in cardTypes.ts.
+    bladeComposite,
   });
 }
 

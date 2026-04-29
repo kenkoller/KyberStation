@@ -259,7 +259,7 @@ function drawWorkbenchBladeOntoCard(
   ledBuffer: Uint8Array,
   scale: number,
 ): void {
-  const { ctx, layout } = card;
+  const { ctx, layout, theme } = card;
   // Layout-space dims for the renderer. The capsule rasterizer reads
   // canvas-px values, but `ctx` is already scaled to layout-units, so
   // we keep everything in layout coords. The bloom mip canvases are
@@ -280,6 +280,9 @@ function drawWorkbenchBladeOntoCard(
       coreH,
       cw: layout.width,
       ch: layout.height,
+      // Theme declares the composite — keeps GIF + PNG visually
+      // identical for any given theme.
+      bladeComposite: theme.bladeComposite,
     },
   );
   // `scale` is forwarded so future passes (rim glow / motion blur)

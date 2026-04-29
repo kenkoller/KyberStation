@@ -22,7 +22,9 @@
 //     extension + axial linear interpolation between adjacent LEDs
 //   • 3-mip downsampled bright-pass bloom chain (1/2 + 1/4 + 1/8 of
 //     canvas dims), each with `contrast(1.15) brightness(1.05) blur(N)`
-//   • additive `lighter` body composite over the bloom
+//   • theme-driven body composite over the bloom (`'lighter'` for
+//     dark themes, `'source-over'` / `'screen'` for light themes —
+//     see the `bladeComposite` option doc-comment below)
 //   • per-color `getGlowProfile` tuning (red / blue / green / amber /
 //     amethyst / cyan / orange / pink / fallback)
 //
@@ -95,18 +97,18 @@ export interface BladeRenderOptions {
    */
   reduceBloom?: boolean;
   /**
-   * When true, the bloom + body composite passes use `'screen'` blend
-   * mode instead of `'lighter'`. `'lighter'` is additive (a + b) which
-   * saturates to pure white when the backdrop is already bright —
-   * looks great on dark themes but blows out on Saber Card's
-   * `LIGHT_THEME` (paper-white backdrop). `'screen'` (1 − (1−a)(1−b))
-   * is the natural light-backdrop sibling: same "additively brighten"
-   * intent, soft-clipped at 1.0, no white-out. Defaults to false (dark
-   * theme — keep additive behavior). Source:
+   * Compositing mode for the bloom + body passes. Themed backdrops
+   * declare their own preference via `CardTheme.bladeComposite`:
+   * `'lighter'` (additive a + b, saturated halo) is the dark-theme
+   * default; `'source-over'` is the safe light-theme choice (no
+   * white-out on a paper-white backdrop); `'screen'` (1 − (1−a)(1−b))
+   * is the soft-additive middle ground. Defaults to `'lighter'` for
+   * backwards compatibility with callers that don't yet pass a theme
+   * (e.g. animated GIF renderer running off the workbench). Source:
    * `docs/POST_LAUNCH_BACKLOG.md` v0.15.x "Light-theme blade bloom
    * theme-gating".
    */
-  lightBackdrop?: boolean;
+  bladeComposite?: GlobalCompositeOperation;
 }
 
 // ─── Per-color glow profile ───────────────────────────────────────────
@@ -396,10 +398,7 @@ export function drawWorkbenchBlade(
   const shimmer = options.shimmer ?? 1.0;
   const hiltTuck = options.hiltTuck ?? coreH;
   const reduceBloom = options.reduceBloom ?? false;
-  const lightBackdrop = options.lightBackdrop ?? false;
-  const additiveComposite: GlobalCompositeOperation = lightBackdrop
-    ? 'screen'
-    : 'lighter';
+  const additiveComposite: GlobalCompositeOperation = options.bladeComposite ?? 'lighter';
 
   if (bladeLenPx < 1 || coreH < 1) return;
 
@@ -472,9 +471,10 @@ export function drawWorkbenchBlade(
       mipCanvases.push(mip);
     }
 
-    // Composite mips additively onto the main canvas. `lighter` is the
-    // dark-backdrop default; `screen` is the light-backdrop sibling per
-    // the lightBackdrop option.
+    // Composite mips onto the main canvas using the theme-declared op.
+    // `lighter` is the dark-backdrop default; `source-over` is the safe
+    // choice for light backdrops; `screen` for soft-additive — see the
+    // `bladeComposite` option doc-comment above.
     ctx.save();
     ctx.globalCompositeOperation = additiveComposite;
     ctx.imageSmoothingEnabled = true;
