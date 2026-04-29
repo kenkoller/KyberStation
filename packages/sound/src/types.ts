@@ -17,7 +17,22 @@ export type SoundCategory =
   | 'ccbegin'
   | 'ccend'
   | 'swingl'
-  | 'swingh';
+  | 'swingh'
+  // Modern Proffie / Kyberphonic transition + alert categories. Detected by
+  // the parser so files surface in the manifest instead of the warnings list;
+  // playback wiring into BladeEngine state changes is deferred to v0.16+.
+  | 'bgndrag'
+  | 'enddrag'
+  | 'bgnlock'
+  | 'endlock'
+  | 'bgnlb'
+  | 'endlb'
+  | 'bgnmelt'
+  | 'endmelt'
+  | 'lb'
+  | 'lowbatt'
+  | 'color'
+  | 'ccchange';
 
 export type FontFormat = 'proffie' | 'cfx' | 'plecter' | 'generic';
 

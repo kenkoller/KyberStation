@@ -7,7 +7,22 @@
 
 import type { SoundCategory, SoundFile, SmoothSwingPair, FontManifest, FontFormat } from './types.js';
 
-/** Pattern map: regex to SoundCategory */
+/**
+ * Pattern map: regex → SoundCategory.
+ *
+ * Order matters. The first matching regex wins (see `detectCategory`), so
+ * narrower patterns must come before broader ones. In particular, every
+ * `bgn*` / `end*` transition variant has its bare-category sibling
+ * immediately below, e.g. `bgnlock` / `endlock` precede `lockup` (whose
+ * regex is `^(lock)\d*` and would otherwise short-circuit). Same shape for
+ * drag, melt, lb, and the smooth-swing pair already at the top of the list.
+ *
+ * Modern Proffie / Kyberphonic / BK Saber Sounds fonts ship the bgn/end
+ * transitions, lightning-block, low-battery alert, and color-change
+ * categories that older flat-layout fonts didn't surface. Detection here is
+ * parser-only — the manifest reports the files; playback wiring into engine
+ * state changes (TODO v0.16+) is a follow-on feature.
+ */
 const CATEGORY_PATTERNS: Array<[RegExp, SoundCategory]> = [
   [/^hum\d*/i, 'hum'],
   [/^swingl\d*/i, 'swingl'],
@@ -15,9 +30,22 @@ const CATEGORY_PATTERNS: Array<[RegExp, SoundCategory]> = [
   [/^(swng|swing)\d*/i, 'swing'],
   [/^(clsh|clash)\d*/i, 'clash'],
   [/^(blst|blast)\d*/i, 'blast'],
+  // Lockup transitions — must precede the bare lockup pattern below.
+  [/^bgnlock\d*/i, 'bgnlock'],
+  [/^endlock\d*/i, 'endlock'],
   [/^(lock)\d*/i, 'lockup'],
+  // Drag transitions — must precede the bare drag pattern below.
+  [/^bgndrag\d*/i, 'bgndrag'],
+  [/^enddrag\d*/i, 'enddrag'],
   [/^drag\d*/i, 'drag'],
+  // Melt transitions — must precede the bare melt pattern below.
+  [/^bgnmelt\d*/i, 'bgnmelt'],
+  [/^endmelt\d*/i, 'endmelt'],
   [/^melt\d*/i, 'melt'],
+  // Lightning block transitions — must precede the bare lb pattern below.
+  [/^bgnlb\d*/i, 'bgnlb'],
+  [/^endlb\d*/i, 'endlb'],
+  [/^lb\d*/i, 'lb'],
   [/^(in\d|poweron)/i, 'in'],
   [/^(out\d|poweroff)/i, 'out'],
   [/^force\d*/i, 'force'],
@@ -26,6 +54,12 @@ const CATEGORY_PATTERNS: Array<[RegExp, SoundCategory]> = [
   [/^font\d*/i, 'font'],
   [/^(track|bgm)\d*/i, 'track'],
   [/^quote\d*/i, 'quote'],
+  [/^lowbatt\d*/i, 'lowbatt'],
+  [/^color\d*/i, 'color'],
+  // ccchange before ccbegin/ccend — all start with `cc` so any of the three
+  // non-overlapping patterns could be first, but grouping them here keeps
+  // the color-change family adjacent.
+  [/^ccchange/i, 'ccchange'],
   [/^ccbegin/i, 'ccbegin'],
   [/^ccend/i, 'ccend'],
 ];
@@ -92,6 +126,9 @@ export function parseFileList(files: FileList | File[]): FontManifest {
     'hum', 'swing', 'clash', 'blast', 'lockup', 'drag', 'melt',
     'in', 'out', 'force', 'stab', 'quote', 'boot', 'font', 'track',
     'ccbegin', 'ccend', 'swingl', 'swingh',
+    // Modern Proffie / Kyberphonic categories.
+    'bgndrag', 'enddrag', 'bgnlock', 'endlock', 'bgnlb', 'endlb',
+    'bgnmelt', 'endmelt', 'lb', 'lowbatt', 'color', 'ccchange',
   ];
   for (const cat of allCategories) {
     categories[cat] = soundFiles.filter((f) => f.category === cat).length;
