@@ -33,6 +33,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { useAudioMuteStore } from '../../stores/audioMuteStore';
+import { useUIStore } from '../../stores/uiStore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +44,7 @@ const HOOK_SOURCE = readFileSync(
 
 beforeEach(() => {
   useAudioMuteStore.getState().setMuted(true);
+  useUIStore.getState().setPaused(false);
 });
 
 describe('useAudioEngine — store-binding regression sentinel', () => {
@@ -134,5 +136,102 @@ describe('useAudioEngine — multi-instance mute contract (the bug fix sentinel)
       () => useAudioMuteStore.getState().muted,
     );
     expect(consumerReads.every((v) => v === after)).toBe(true);
+  });
+});
+
+// ─── Pause → AudioContext suspend/resume ────────────────────────────────────
+//
+// When the global simulation is paused (via PauseButton / usePauseSystem),
+// all audio should freeze — the hum loop, swing crossfade, any in-flight
+// one-shot sounds. AudioContext.suspend() does exactly this: it freezes the
+// entire audio graph in place and resume() restores it.
+//
+// This is intentionally SEPARATE from mute. Mute is a persistent user
+// preference (audioMuteStore); pause is a transient simulation freeze that
+// should also freeze audio. Unpausing restores sound at whatever gain level
+// was active before the pause (muted or not).
+//
+// These tests use the same source-reading sentinel pattern as the mute tests
+// above: we read the hook source code and verify the wiring pattern is present.
+// Full React-mounted behavior can't be tested here because the vitest env is
+// node-only (no AudioContext).
+
+describe('useAudioEngine — pause suspends audio (source sentinel)', () => {
+  it('imports useUIStore for isPaused subscription', () => {
+    expect(HOOK_SOURCE).toMatch(
+      /from\s+['"]@\/stores\/uiStore['"]/,
+    );
+  });
+
+  it('subscribes to isPaused from the UI store', () => {
+    // The hook reads isPaused via the standard Zustand selector pattern:
+    //   const isPaused = useUIStore((s) => s.isPaused);
+    expect(HOOK_SOURCE).toMatch(
+      /useUIStore\s*\(\s*\(\s*s\s*\)\s*=>\s*s\.isPaused\s*\)/,
+    );
+  });
+
+  it('calls ctx.suspend() when isPaused is true', () => {
+    // The useEffect body must call suspend() on the AudioContext when
+    // isPaused transitions to true.
+    expect(HOOK_SOURCE).toMatch(/ctx\.suspend\s*\(\s*\)/);
+  });
+
+  it('calls ctx.resume() when isPaused is false', () => {
+    // The useEffect body must call resume() on the AudioContext when
+    // isPaused transitions to false.
+    expect(HOOK_SOURCE).toMatch(/ctx\.resume\s*\(\s*\)/);
+  });
+
+  it('has a useEffect with [isPaused] dependency (reactive to pause changes)', () => {
+    // The suspend/resume logic must live in a useEffect whose dependency
+    // array contains isPaused, so it fires on every pause/unpause toggle.
+    expect(HOOK_SOURCE).toMatch(
+      /useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?ctx\.suspend[\s\S]*?\}\s*,\s*\[\s*isPaused\s*\]\s*\)/,
+    );
+  });
+});
+
+describe('useAudioEngine — pause vs mute independence', () => {
+  it('pause and mute are read from different stores', () => {
+    // Mute comes from audioMuteStore, pause comes from uiStore.
+    // They must not share a store — they are orthogonal concerns.
+    expect(HOOK_SOURCE).toMatch(/useAudioMuteStore\s*\(\s*\(\s*s\s*\)\s*=>\s*s\.muted/);
+    expect(HOOK_SOURCE).toMatch(/useUIStore\s*\(\s*\(\s*s\s*\)\s*=>\s*s\.isPaused/);
+  });
+
+  it('mute state is independent of pause state at the store level', () => {
+    // Toggling pause should not affect mute, and vice versa.
+    useAudioMuteStore.getState().setMuted(false);
+    useUIStore.getState().setPaused(true);
+    expect(useAudioMuteStore.getState().muted).toBe(false);
+
+    useUIStore.getState().setPaused(false);
+    expect(useAudioMuteStore.getState().muted).toBe(false);
+
+    useAudioMuteStore.getState().setMuted(true);
+    expect(useUIStore.getState().isPaused).toBe(false);
+  });
+
+  it('pause does not use masterGain (it uses AudioContext suspend/resume instead)', () => {
+    // The suspend/resume effect must NOT manipulate masterGain — that is
+    // the mute effect's job. Pause freezes the entire audio graph via the
+    // AudioContext state machine, which is a fundamentally different mechanism.
+    // We verify by checking the isPaused useEffect does not reference masterGain.
+
+    // Extract the isPaused useEffect block. Use a tighter pattern that
+    // anchors on `ctxRef.current` to avoid greedily capturing the earlier
+    // mute useEffect (which DOES reference masterGainRef).
+    const pauseEffectMatch = HOOK_SOURCE.match(
+      /useEffect\s*\(\s*\(\s*\)\s*=>\s*\{\s*\n\s*const ctx = ctxRef\.current;([\s\S]*?)\}\s*,\s*\[\s*isPaused\s*\]\s*\)/,
+    );
+    expect(pauseEffectMatch).not.toBeNull();
+    const pauseEffectBody = pauseEffectMatch![1];
+    expect(pauseEffectBody).not.toMatch(/masterGainRef/);
+    // ctxRef is captured via the `const ctx = ctxRef.current` at the
+    // opening of the effect (in the regex anchor above), so we verify
+    // the body uses `ctx.suspend` / `ctx.resume` (local alias of ctxRef).
+    expect(pauseEffectBody).toMatch(/ctx\.suspend/);
+    expect(pauseEffectBody).toMatch(/ctx\.resume/);
   });
 });
