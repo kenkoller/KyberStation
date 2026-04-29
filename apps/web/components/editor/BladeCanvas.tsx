@@ -9,7 +9,7 @@ import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
 import { AUTO_FIT_FILL } from '@/lib/bladeRenderMetrics';
-import { BLADE_LENGTHS as BLADE_LENGTH_OPTIONS } from '@/lib/bladeLengths';
+import { BLADE_LENGTHS as BLADE_LENGTH_OPTIONS, inferBladeInches } from '@/lib/bladeLengths';
 import { getStripCoreScale } from '@/lib/blade/stripConfiguration';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 import { BladeLayersDebugOverlay, type DebugLayerCapture } from './BladeLayersDebugOverlay';
@@ -382,14 +382,16 @@ function rasterizeCapsuleToOffscreen(
   // first LED's color (and the LED strip itself still spans bladeStartPx
   // → bladeStartPx+bladeLenPx exactly).
   //
-  // `tipExtension` shifts the geometric tip rightward by 0.15 × radius
-  // past the LED endpoint. The α curve below feathers to 0 at the rim,
-  // so visible-bright pixels (α above the perception threshold) end ~15%
-  // of the radius before the geometric rim. The extension positions the
-  // rim such that visible-bright reaches EXACTLY the configured blade
-  // length (the 40" mark for a 40" blade). Bloom past the rim continues
-  // beyond the configured length as the natural surrounding halo.
-  const tipExtension = radius * 0.15;
+  // Tip extension removed — the capsule end cap is now a true semicircle
+  // ending exactly at the configured blade length. The prior 0.15×radius
+  // extension was meant to compensate for the α feather, but in practice
+  // it produced a visibly pointed tip shape (the extension shifted the
+  // geometry past the LED endpoint, and the feather tapered it to a
+  // narrow point rather than a round cap). With tipExtension = 0 the
+  // capsule's rightCapAxisX = tipX - radius creates a clean semicircular
+  // end cap. Bloom past the rim still extends naturally beyond the
+  // configured length as halo.
+  const tipExtension = 0;
   const emitterX = bladeStartPx - hiltTuck;
   const tipX = bladeStartPx + bladeLenPx + tipExtension;
   const leftCapAxisX = emitterX + radius;
@@ -639,7 +641,12 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   // Strip type from store (persisted via BladeConfig)
   const stripType = config.stripType ?? 'single';
   const setStripType = useCallback((v: string) => updateConfig({ stripType: v as BladeConfig['stripType'] }), [updateConfig]);
-  const [bladeLength, setBladeLength] = useState<number>(config.ledCount <= 73 ? 20 : config.ledCount <= 88 ? 24 : config.ledCount <= 103 ? 28 : config.ledCount <= 117 ? 32 : config.ledCount <= 132 ? 36 : 40);
+  // Blade length in inches — derived from `inferBladeInches` so it
+  // shares the exact same piecewise ladder as `computeBladeRenderMetrics`
+  // (which PixelStripPanel + VisualizationStack use). This prevents
+  // drift between the blade preview and the sibling per-LED surfaces.
+  // Local state so the user-facing blade-length picker can override.
+  const [bladeLength, setBladeLength] = useState<number>(() => inferBladeInches(config.ledCount));
   // v0.14.0 Phase 1.5: showGrid lifted to uiStore so the BLADE PREVIEW
   // toolbar in CanvasLayout can toggle it alongside Pause/Hilt.
   const showGrid = useUIStore((s) => s.showGrid);
@@ -763,6 +770,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
   const [panX] = useState<number>(0);
   const hasAutoFitRef = useRef(false);
+
+  // Re-sync blade length when config.ledCount changes from outside
+  // (preset load, wizard apply, etc.). Uses the canonical
+  // `inferBladeInches` so the bucket boundaries match
+  // `computeBladeRenderMetrics` exactly.
+  useEffect(() => {
+    setBladeLength(inferBladeInches(config.ledCount));
+  }, [config.ledCount]);
 
   // Re-run layout when blade length changes
   useEffect(() => {
@@ -1319,7 +1334,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     captureBufferAsLayer(softOffscreen, '03. Soft offscreen — diffusion blur', `Sharp offscreen (Pass 01) copied into a separate soft buffer with the diffusion blur filter applied (kernel ${diffusion.blurKernel}px × scale). Bloom mips below sample from THIS soft copy, so the halo stays diffuse without softening the visible body. The sharp offscreen is preserved for the body composite (Pass 12).`, cw, ch);
 
     // ── Draw hilt BEFORE bloom so glow overlaps it naturally ──
-    const bladeColor = activeCount > 0 ? { r: satR, g: satG, b: satB } : null;
+    // Gate bore glow on a meaningful extension threshold (5%) so the
+    // emitter radial gradient doesn't flash before the blade body is
+    // perceptible. During early ignition frames extendProgress can be
+    // tiny but > 0, causing activeCount > 0 from barely-lit emitter-end
+    // LEDs — without this gate those frames would show a visible bore
+    // glow with no blade.
+    const bladeColor = activeCount > 0 && extendProgress > 0.05
+      ? { r: satR, g: satG, b: satB }
+      : null;
     drawHilt(ctx, bladeColor, scale);
     captureDeltaAsLayer(ctx, '04. Hilt', 'Procedural metallic hilt drawn on the visible canvas (pommel, grip ribs, shroud, emitter). Drawn BEFORE the bloom so the halo can spill onto its metallic surface (additive `lighter` blend). The capsule body composite below is clipped to the right of the hilt edge so the body itself doesn\'t paint over the hilt.', cw, ch);
 
