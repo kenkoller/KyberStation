@@ -192,9 +192,18 @@ export async function scanDirectoryHandle(
   const entries: LibraryFontEntry[] = [];
   let scanned = 0;
 
-  // Cast: TS DOM lib lacks the async iterable on FileSystemDirectoryHandle
-  const rootEntries = (rootHandle as unknown as AsyncIterable<FileSystemHandle>);
-  for await (const entry of rootEntries) {
+  // Cast: TS DOM lib lacks .values() on FileSystemDirectoryHandle.
+  //
+  // Use .values() — the default async iterator (Symbol.asyncIterator on the
+  // handle) yields [name, handle] tuples per the FSA spec, not raw handles.
+  // Casting it as AsyncIterable<FileSystemHandle> made `entry.kind` undefined
+  // for every iteration → silent 0-entry scans for every input. .values()
+  // yields handles directly. Pinned by `fontParser.dirHandle.test.ts`.
+  type DirHandleWithIter = FileSystemDirectoryHandle & {
+    values: () => AsyncIterable<FileSystemHandle>;
+  };
+
+  for await (const entry of (rootHandle as DirHandleWithIter).values()) {
     if (entry.kind !== 'directory') continue;
 
     const fontHandle = await rootHandle.getDirectoryHandle(entry.name);
@@ -203,28 +212,62 @@ export async function scanDirectoryHandle(
     let totalSizeBytes = 0;
     const fileNames: string[] = [];
 
-    const fontEntries = (fontHandle as unknown as AsyncIterable<FileSystemHandle>);
-    for await (const fileEntry of fontEntries) {
-      if (fileEntry.kind !== 'file') continue;
-      const name = fileEntry.name.toLowerCase();
-      if (!name.endsWith('.wav')) continue;
-
-      fileCount++;
-      fileNames.push(fileEntry.name);
-
-      // Get file size without reading content
-      try {
-        const file = await (fileEntry as FileSystemFileHandle).getFile();
-        totalSizeBytes += file.size;
-      } catch {
-        // Permission issue — skip size
+    // Walk a font folder, counting top-level .wav files AND recursing one
+    // level into category-named subfolders (modern Proffie nested layout —
+    // e.g. clsh/clsh01.wav, swingl/swingl01.wav). Bounded to depth 1 so it
+    // stays cheap on large libraries (32-font Kyberphonic install scans in
+    // ~4s on a developer machine).
+    const walk = async (
+      dirHandle: FileSystemDirectoryHandle,
+      depth: number,
+    ): Promise<void> => {
+      for await (const child of (dirHandle as DirHandleWithIter).values()) {
+        if (child.kind === 'file') {
+          const lower = child.name.toLowerCase();
+          if (!lower.endsWith('.wav')) continue;
+          if (child.name.startsWith('._')) continue; // macOS Finder sidecars
+          fileCount++;
+          fileNames.push(child.name);
+          try {
+            const file = await (child as FileSystemFileHandle).getFile();
+            totalSizeBytes += file.size;
+          } catch {
+            // Permission issue — skip size
+          }
+          const category = detectCategory(child.name);
+          if (category) {
+            cats[category] = (cats[category] ?? 0) + 1;
+          }
+        } else if (child.kind === 'directory' && depth === 0) {
+          // Subfolder name itself often signals the category (e.g. "clsh",
+          // "swingl"). Use that as a fallback when individual files inside
+          // lack a numbered suffix that the file-name patterns expect.
+          const subCategory = detectCategory(child.name + '01.wav');
+          const subHandle = await dirHandle.getDirectoryHandle(child.name);
+          for await (const grand of (subHandle as DirHandleWithIter).values()) {
+            if (grand.kind !== 'file') continue;
+            const lower = grand.name.toLowerCase();
+            if (!lower.endsWith('.wav')) continue;
+            if (grand.name.startsWith('._')) continue;
+            fileCount++;
+            fileNames.push(grand.name);
+            try {
+              const file = await (grand as FileSystemFileHandle).getFile();
+              totalSizeBytes += file.size;
+            } catch {
+              // Permission issue — skip size
+            }
+            const category =
+              detectCategory(grand.name) ?? subCategory ?? null;
+            if (category) {
+              cats[category] = (cats[category] ?? 0) + 1;
+            }
+          }
+        }
       }
+    };
 
-      const category = detectCategory(fileEntry.name);
-      if (category) {
-        cats[category] = (cats[category] ?? 0) + 1;
-      }
-    }
+    await walk(fontHandle, 0);
 
     if (fileCount === 0) continue; // Skip empty directories
 
@@ -271,18 +314,43 @@ export async function loadFontFromDirectoryHandle(
   const fontHandle = await rootHandle.getDirectoryHandle(fontName);
   const files: File[] = [];
 
-  const loadEntries = (fontHandle as unknown as AsyncIterable<FileSystemHandle>);
-  for await (const entry of loadEntries) {
-    if (entry.kind !== 'file') continue;
-    if (!entry.name.toLowerCase().endsWith('.wav')) continue;
-    const file = await (entry as FileSystemFileHandle).getFile();
-    // Attach a fake webkitRelativePath for compatibility with parseFileList
-    Object.defineProperty(file, 'webkitRelativePath', {
-      value: `${fontName}/${entry.name}`,
-      writable: false,
-    });
-    files.push(file);
-  }
+  // Cast: TS DOM lib lacks .values() on FileSystemDirectoryHandle. Same
+  // iterator-yields-tuples pitfall as scanDirectoryHandle — see that
+  // function's comment for the full explanation. Pinned by
+  // `fontParser.dirHandle.test.ts`.
+  type DirHandleWithIter = FileSystemDirectoryHandle & {
+    values: () => AsyncIterable<FileSystemHandle>;
+  };
+
+  // Walk one level deep so we pick up modern Proffie nested-layout fonts
+  // (e.g. clsh/clsh01.wav, swingl/swingl01.wav) in addition to flat-layout
+  // top-level files (e.g. clsh01.wav). webkitRelativePath preserves the
+  // subfolder so parseFileList categorises by file basename correctly.
+  const walk = async (
+    dirHandle: FileSystemDirectoryHandle,
+    relPath: string,
+    depth: number,
+  ): Promise<void> => {
+    for await (const child of (dirHandle as DirHandleWithIter).values()) {
+      if (child.kind === 'file') {
+        const lower = child.name.toLowerCase();
+        if (!lower.endsWith('.wav')) continue;
+        if (child.name.startsWith('._')) continue; // macOS Finder sidecars
+        const file = await (child as FileSystemFileHandle).getFile();
+        const path = relPath ? `${relPath}/${child.name}` : child.name;
+        Object.defineProperty(file, 'webkitRelativePath', {
+          value: `${fontName}/${path}`,
+          writable: false,
+        });
+        files.push(file);
+      } else if (child.kind === 'directory' && depth === 0) {
+        const subHandle = await dirHandle.getDirectoryHandle(child.name);
+        await walk(subHandle, child.name, depth + 1);
+      }
+    }
+  };
+
+  await walk(fontHandle, '', 0);
 
   return files;
 }
