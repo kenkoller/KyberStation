@@ -10,6 +10,7 @@ import { getThemeById } from '@/lib/canvasThemes';
 import { playUISound } from '@/lib/uiSounds';
 import { AUTO_FIT_FILL } from '@/lib/bladeRenderMetrics';
 import { BLADE_LENGTHS as BLADE_LENGTH_OPTIONS } from '@/lib/bladeLengths';
+import { getStripCoreScale } from '@/lib/blade/stripConfiguration';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 import { BladeLayersDebugOverlay, type DebugLayerCapture } from './BladeLayersDebugOverlay';
 
@@ -1212,13 +1213,14 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const currentStrip = STRIP_TYPES.find(s => s.id === stripType) ?? STRIP_TYPES[0];
     const diffusion = DIFFUSION_TYPES.find(d => d.id === diffusionType) ?? DIFFUSION_TYPES[2];
     const diameterConfig = BLADE_DIAMETERS.find(d => d.inches === bladeDiameter) ?? BLADE_DIAMETERS[1];
+    const stripCoreScale = getStripCoreScale(stripType);
 
     // Scale blade length proportionally to inches (shorter blades = shorter visual)
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
     const bladeStartPx = getBladeStartPx();
     const bladeYPx = getBladeCenterY();
-    const baseCoreH = BLADE_CORE_H * scale * diameterConfig.coreScale;
+    const baseCoreH = BLADE_CORE_H * scale * diameterConfig.coreScale * stripCoreScale;
     const coreH = baseCoreH;
 
     const visibleLen = bladeLenPx * extendProgress;
@@ -1614,6 +1616,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const ledCount = leds.count;
     const currentStrip = STRIP_TYPES.find(s => s.id === stripType) ?? STRIP_TYPES[0];
     const isInHilt = currentStrip.ledsPerInch === 0;
+    const stripCoreScale = getStripCoreScale(stripType);
 
     // Background (uses theme)
     ctx.fillStyle = theme.bgColor;
@@ -1624,7 +1627,7 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     const scaledBladeLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
     const bladeLenPx = scaledBladeLenDS * scale;
     const bladeYPx = getBladeCenterY();
-    const bladeH = BLADE_CORE_H * scale;
+    const bladeH = BLADE_CORE_H * scale * stripCoreScale;
     const pixelGap = 1 * scale; // gap between LED pixels
 
     // Draw hilt (simplified)
