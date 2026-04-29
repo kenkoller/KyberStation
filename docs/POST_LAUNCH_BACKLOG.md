@@ -4,6 +4,8 @@ Single index of deferred work as of **2026-04-27 overnight** (post-overnight UI/
 
 **Update cadence:** review at the start of every multi-PR sprint. Move items to ✅ when they ship; promote items between target versions as priorities shift.
 
+> **Last audited: 2026-04-30** — ground-truth sweep against `git log --grep` + `git grep`. Findings: Saber GIF Sprint 2 was shipped (PR #80, stale-bit confirmed); UX item #16 (Figma color model) removed as superseded by PR #116 audit-and-tighten path; several parking-lot items already shipped; 2026-04-30 session recap (PRs #127-#138) added.
+
 ---
 
 ## 2026-04-27 overnight session — what shipped (14 PRs)
@@ -59,7 +61,7 @@ Tracks small-to-medium items that should land soon after launch, scoped to one o
 | ~~Faction heuristic refactor in `chips.ts`~~ | ~~`CLAUDE.md` Share Card v2 follow-ups~~ | ~~S~~ | **✅ Done** — landed in commit `0a1a54e` on 2026-04-27. `isGreenHue` / `isBlueHue` siblings added to `lib/crystal/types.ts`; `chips.ts` `factionForConfig()` now composes them with an explicit `r < 80` gate (preserves amethyst → Grey). +14 test cases for the new predicates in `tests/crystalTypes.test.ts` shipped 2026-04-28. |
 | ~~**`CardTheme` token expansion**~~ | ~~`CLAUDE.md` Share Card v2 follow-ups~~ | ~~S~~ | **✅ Done** — `vignetteColor` + `watermarkColor` + `hiltAccent` tokens already on `CardTheme` in `apps/web/lib/sharePack/card/cardTypes.ts` (lines 126/132/138) and populated per-theme in `cardTheme.ts`. The big `◈` watermark glyph was retired during the same pass per the comment at `drawBackdrop.ts:96`. |
 | ~~**Light-theme blade bloom theme-gating**~~ | ~~`CLAUDE.md` Share Card v2 follow-ups~~ | ~~S~~ | **✅ Done — landed via [PR #88](https://github.com/kenkoller/KyberStation/pull/88) on 2026-04-27.** `drawBlade` consumes a `lightBackdrop` flag derived from `theme.id === 'light'` and switches `lighter` → `screen` composite over the paper-white backdrop to prevent saturation clipping. |
-| **Saber GIF Sprint 2** | [`SABER_GIF_ROADMAP.md`](SABER_GIF_ROADMAP.md) | M | Per-variant ignition / retraction picker GIFs (19 + 13 thumbnails) + build script + `MiniGalleryPicker` wiring. |
+| ~~**Saber GIF Sprint 2**~~ | ~~[`SABER_GIF_ROADMAP.md`](SABER_GIF_ROADMAP.md)~~ | ~~M~~ | **✅ Done — landed via [PR #80](https://github.com/kenkoller/KyberStation/pull/80) on 2026-04-27** (`e55da9a feat(gif-sprint-2): per-variant ignition + retraction picker GIFs`). 19 ignition + 13 retraction animated GIFs, build script, and `MiniGalleryPicker` wiring all shipped. The 2026-04-29 late session stuck agent had the same assignment — written off cleanly per 2026-04-30 session (worktree removed, branch deleted). |
 | **`useAudioEngine` singleton consolidation** | [PR #124](https://github.com/kenkoller/KyberStation/pull/124) follow-up | M | PR #124 lifted `muted` to a shared store but preserved the multi-instance pattern: each of the 6 `useAudioEngine()` consumers (`WorkbenchLayout`, `AppShell`, `SoundFontPanel`, `AudioColumnA`, `AudioColumnB`, `useAudioSync`) still creates its own `AudioContext` + `FontPlayer` + `AudioFilterChain` + `masterGain` + `SmoothSwingEngine` at first user gesture. Wasteful: Chrome caps `AudioContext` per origin at ~6 (we're at the limit), and decoded audio buffers are re-decoded per instance. Refactor to a singleton engine — either module-scope or React-context provider mounted at app root, with consumers reading the shared instance via a thin hook. Lower risk now that mute state is already lifted. |
 
 ## v0.16.0 — feature sprint
@@ -70,7 +72,7 @@ Multi-day work or architecturally heavier items.
 |---|---|---|---|
 | **Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates** | [`MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](MODULATION_ROUTING_v1.1_IMPL_PLAN.md) | L (~6-8 h) | New ROUTING sub-tab inside Inspector. Maps button events (aux click/hold/gesture) to actions per prop file; adds 8 new modulator plates. |
 | **Wave 6 follow-on — composer slot expansion** | `CLAUDE.md` overnight recap | L | v1.1 Core ships shimmer-Mix only. Per-channel RGB (`Mix<driver, ColorLow, ColorHigh>` restructuring) + timing scalars. Deeper AST work per the PR #60 body. |
-| **UX item #16 — Figma color model (opacity + blend modes)** | [`NEXT_SESSIONS.md`](NEXT_SESSIONS.md) | M | Add `opacity + blendMode` to `BladeColor`; ColorPanel UI; engine compositor; codegen warnings for unsupported modes; Kyber Glyph v2 migration. Architectural — needs glyph version bump. **Last UX North Star deferred item.** |
+| ~~**UX item #16 — Figma color model (opacity + blend modes)**~~ | ~~[`NEXT_SESSIONS.md`](NEXT_SESSIONS.md)~~ | ~~M~~ | **Superseded / dropped** — Per Ken's 2026-04-29 decision invoking the Hardware Fidelity Principle: non-emittable blend modes (`add`, `multiply`, `screen`, `overlay`) violate the principle because the codegen never emitted them. The correct path was audit-and-tighten, not expansion. PR #116 closed the existing violation (5-mode `BlendMode` union → `'normal'` literal) and documented the principle. Going forward any blend mode MUST have a verified ProffieOS emission path before shipping. This item will not be revisited as originally specified. |
 | ~~**Hilt Library Stage 2 — 29 new parts across 7 assemblies**~~ | ~~[`HILT_STAGE_2_BRIEFING.md`](HILT_STAGE_2_BRIEFING.md)~~ | ~~L~~ | **✅ Done — landed via [PR #79](https://github.com/kenkoller/KyberStation/pull/79) on 2026-04-27** (duplicate of v0.15.x row). |
 | **Saber GIF Sprint 3** | [`SABER_GIF_ROADMAP.md`](SABER_GIF_ROADMAP.md) | M | Tier 2 marketing showcases (style grid, colour cycle, lockup loop). |
 
@@ -94,7 +96,7 @@ P31 cross-browser walkthrough on 2026-04-27 found two Safari-specific cosmetic r
 
 | Issue | Surface | Likely cause | Fix candidate |
 |---|---|---|---|
-| **Banding artifacts in MiniSaber halo above blade tip** — visible step-edges in the chained drop-shadow blur. Static state shows the bug; hover-driven engine repaints clear it (Safari re-rasterizes the filter). Most visible on saturated colors (Cade blue, Visas red). | Gallery cards (SaberMarqueeArray + LandingSaberArray), Landing hero sabers | Safari WebKit's chained-`drop-shadow` filter has known precision artifacts on canvas sources with steep gradient transitions. The MiniSaber renders LEDs against transparent background → drop-shadow extracts shape → banding in the gradient blur. | `apps/web/components/shared/MiniSaber.tsx:400` — try (a) replacing `drop-shadow` with `box-shadow` (canvas is rectangular, should match visually), or (b) adding `transform: translateZ(0)` + `will-change: filter` to force GPU compositing, or (c) collapsing the chain to a single softer drop-shadow. Verify Chrome appearance unchanged after fix. |
+| ~~**Banding artifacts in MiniSaber halo above blade tip**~~ | ~~Gallery cards, Landing hero~~ | ~~Safari WebKit chained-`drop-shadow` precision~~ | **✅ Fixed — [PR #92](https://github.com/kenkoller/KyberStation/pull/92) on 2026-04-27.** `drop-shadow` filter chain swapped for `box-shadow` on the canvas element. |
 | **BladeCanvas editor preview "looks different / slightly incorrect"** in Safari vs Brave/Chrome — characterization pending (no screenshot taken). | `/editor` workbench blade preview | Likely the v0.14.0 bloom pipeline (3-mip downsampled bright-pass with `globalCompositeOperation = 'lighter'`) — Safari's compositing of `lighter` over chained mip canvases differs subtly from Chromium's. Or a `filter: blur()` precision issue on the bloom mips. | Inspect side-by-side in Safari + Chrome at 1280×800, characterize the divergence first (color cast? bloom intensity? halo cutoff?), THEN decide whether to gate compositing strategy on UA or accept the difference. |
 
 **Fix priority:** post-launch v0.15.1 patch sprint, not launch-blocking. Brave/Chrome/Edge users see the correct rendering; Safari users see a slight visual regression but everything is functional. Recommended browser is documented as Brave / Chrome / Edge in launch communication per `LAUNCH_PLAN.md`.
@@ -110,8 +112,8 @@ Track here when surfaced; promote to a versioned sprint when bundled with relate
 - **Favicon replacement with crystal-themed image** — current is the app icon. Source: `CLAUDE.md` v0.12.0 deferred items.
 - **Phone-camera QR scan validation** — confirm Saber Card QRs scan reliably on real phones at typical viewing distances. Source: `CLAUDE.md` v0.12.0 deferred items.
 - **`<HiltMesh>` extraction** from `BladeCanvas3D.tsx` (now dead). Source: `CLAUDE.md` v0.12.0 deferred items.
-- **Aurebesh font variants beyond Canon** — CanonTech / Legends / LegendsTech `.otf` files are bundled, no UI uses them. Future immersion-mode toggle. Source: `CLAUDE.md` v0.14.0 entry.
-- **`BladeCanvas3DWrapper` deletion** — file exists in `apps/web/components/editor/` with no import path. Safe to delete after sweep. Source: `CLAUDE.md` 1.5x entry.
+- ~~**Aurebesh font variants beyond Canon**~~ — ✅ Shipped via [PR #93](https://github.com/kenkoller/KyberStation/pull/93) on 2026-04-27. 4-variant picker (Canon / CanonTech / Legends / LegendsTech) in Settings. `lib/aurebesh.ts` variant type + helpers + localStorage persistence.
+- ~~**`BladeCanvas3DWrapper` deletion**~~ — ✅ Shipped via [PR #75](https://github.com/kenkoller/KyberStation/pull/75) on 2026-04-27. Orphan file removed alongside dead `CanvasMode` type / `canvasMode` field.
 
 ## 2026-04-29 session — what shipped (15 PRs by Claude + 3 by Ken = 18 total)
 
@@ -153,14 +155,11 @@ Marathon session. Closed all user-visible WIP markers, the major Hardware Fideli
 - **2 user-visible WIP markers closed** (Item D strip-count thickness PR #108 + Item E Triple/Inquisitor topology PR #109).
 - **Engine-level golden-hash tests** (PR #112, 33 cases) — ground truth for engine drift; renderer-level tests still TBD per `docs/HARDWARE_FIDELITY_PRINCIPLE.md` audit-history.
 
-### Stuck agents (2026-04-29 late dispatch)
+### Stuck agents (2026-04-29 late dispatch) — **resolved 2026-04-30**
 
-Two background agents from the late-session push ran ~2.5h without pushing branches. Recovery is the next session's first priority — see `docs/NEXT_SESSION_HANDOFF.md`.
-
-| Agent | Branch (intended) | Status |
-|---|---|---|
-| `agent-a077c8445fc8384d1` | `feat/marketing-site-v0.15.x` | locked, no push |
-| `agent-af446b7e1bb77edd2` | `feat/saber-gif-sprint-2` | locked, no push |
+Both background agents from the late-session push wrote zero commits. Clean writeoff per 2026-04-30 session — worktrees removed, branches deleted:
+- `agent-a077c8445fc8384d1` (`feat/marketing-site-v0.15.x`) — no code produced; marketing re-impl remains open in v0.15.x table above
+- `agent-af446b7e1bb77edd2` (`feat/saber-gif-sprint-2`) — no code produced; Sprint 2 was already shipped via PR #80 (stale-bit — see v0.15.x table above)
 
 ### Stale-backlog audit (carried over from PR #111)
 
@@ -170,14 +169,18 @@ Multiple v0.15.x sprint table items had already shipped at session start (CardTh
 
 8 of 14 ✅ closed, 1 🟡 partial, 5 ⏳ deferred. Of deferred: 2 environmental (Safari hands-on, cross-OS hardware), 2 gated on canvas dep, 1 large architectural (Wave 8). See full table in `CLAUDE.md` "Current State (2026-04-29 late)" entry.
 
-### Recommended next path
+### Recommended next path (updated 2026-04-30)
 
-1. Recover or write off the 2 stuck agents
+~~Recover or write off the 2 stuck agents~~ — ✅ done (both written off cleanly)
+
+1. Browser verification of 2026-04-30 session (retraction + save/queue + surprise-me + pause-audio in live preview)
 2. Add `canvas` dep + build T2.10 renderer-level golden-hash harness
 3. Item K module extraction (now safe with renderer-level coverage)
 4. Cut **v0.15.1** patch tag — clean release between architectural sprints
 5. Then: Wave 8 button routing (its own focused multi-day session)
 6. Then: Item H mobile shell migration (Ken's UX call needed)
+
+See `CLAUDE.md` "Current State (2026-04-30)" entry and `docs/NEXT_SESSION_HANDOFF.md` for the full updated handoff.
 
 ## Launch-night progress recap (2026-04-27 evening)
 
@@ -208,6 +211,58 @@ What shipped in the pre-launch sprint (10 PRs in ~5 hours):
 | ~~`useSharedConfig` URL handler test~~ | ~~Requires adding `@testing-library/react` dep~~ | ✅ shipped — `apps/web/tests/useSharedConfig.test.ts` exists with 8 cases; `@testing-library/react` already in deps |
 | Sidebar A/B layout build-out | Design spec done in [`SIDEBAR_AB_LAYOUT_v2_DESIGN.md`](SIDEBAR_AB_LAYOUT_v2_DESIGN.md); first prototype = `blade-style` section | v0.15.x or v0.16.0 sprint |
 | Marketing copy ship | Drafts done in [`docs/launch/`](launch/); FILL-IN placeholders for Fett263 contact + YouTuber names | Ken sends manually pre-launch / on launch day |
+
+---
+
+## 2026-04-30 session — what shipped (14 PRs)
+
+Focus: Ken's audio-engine improvements from parallel session + critical bugs from Ken's field testing + v1 launch features.
+
+| PR | Title | Source | Status |
+|---|---|---|---|
+| [#118](https://github.com/kenkoller/KyberStation/pull/118) | fix(audio): tell Brave users about the FSA flag | Ken | ✅ Merged |
+| [#122](https://github.com/kenkoller/KyberStation/pull/122) | feat(sound): recognize 12 modern Proffie sound categories | Ken | ✅ Merged |
+| [#124](https://github.com/kenkoller/KyberStation/pull/124) | fix(audio): lift mute state to shared Zustand store | Ken | ✅ Merged |
+| [#126](https://github.com/kenkoller/KyberStation/pull/126) | docs(session-archive): 2026-04-29 late session wrap | Claude | ✅ Merged |
+| [#127](https://github.com/kenkoller/KyberStation/pull/127) | fix(audio): swap ignition/retraction sound dispatch (ProffieOS convention) | Ken (rebase) | ✅ Merged |
+| [#128](https://github.com/kenkoller/KyberStation/pull/128) | fix(audio): broadcast SmoothSwing speed + hot-swap hum on font change | Ken (rebase) | ✅ Merged |
+| [#130](https://github.com/kenkoller/KyberStation/pull/130) | fix(audio): suspend AudioContext on global pause | Agent 1C | ✅ Merged |
+| [#131](https://github.com/kenkoller/KyberStation/pull/131) | fix(header): standardize buttons to consistent height/radius/focus ring | Agent 1D | ✅ Merged |
+| [#132](https://github.com/kenkoller/KyberStation/pull/132) | fix(engine): correct retraction animation progress | Agent 1A | ✅ Merged |
+| [#133](https://github.com/kenkoller/KyberStation/pull/133) | fix(blade): alignment drift, pointed tip, emitter glow | Agent 1B | ✅ Merged |
+| [#134](https://github.com/kenkoller/KyberStation/pull/134) | feat(presets): v1 save state — save, load, delete user presets | Agent 4A | ✅ Merged |
+| [#135](https://github.com/kenkoller/KyberStation/pull/135) | feat(randomizer): extend Surprise Me to full catalogs + modulation | Agent 3C | ✅ Merged |
+| [#136](https://github.com/kenkoller/KyberStation/pull/136) | feat(queue): one-click Add to Queue action bar button | Agent 4B | ✅ Merged |
+| [#137](https://github.com/kenkoller/KyberStation/pull/137) | fix(wizard): audit polish — stale defaults, a11y, tests | Agent 3B | ✅ Merged |
+
+### Critical bugs fixed (Ken's field notes)
+
+| Bug | Fix | PR |
+|---|---|---|
+| Retraction animation appeared as ignition | FadeoutRetraction + ImplodeRetraction had inverted progress (double-inversion with engine's 1→0 convention) | #132 |
+| Pixel strip / analysis rail width misaligned | `BladeCanvas` switched from stale piecewise ternary to `inferBladeInches()` from shared `bladeLengths.ts` | #133 |
+| Blade tip too pointed | Removed `tipExtension = radius * 0.15` in BladeCanvas + headless renderer | #133 |
+| Emitter glow visible when blade is OFF | Gated bore glow on `extendProgress > 0.05` | #133 |
+| Pause didn't pause audio | `useAudioEngine` now watches `isPaused` from uiStore → `ctx.suspend()`/`ctx.resume()` | #130 |
+| Header buttons inconsistent | Extracted `<HeaderButton>` primitive, normalized 5 buttons to h-7/rounded-interactive/focus-visible ring | #131 |
+| Wizard stale defaults + a11y | Fixed 132→144 LED default, `aria-pressed`/`aria-label` on color + vibe buttons, +7 tests | #137 |
+| Surprise Me didn't use new features | Randomizer now picks from full 18-ignition + 12-retraction catalogs, generates 1-2 modulation bindings | #135 |
+
+### v1 launch features shipped
+
+- **Save-state v1** (PR #134): `⭐ Save` button in action bar + "My Presets" section in gallery sidebar with click-to-load, delete, color swatches, persistence via `userPresetStore` + IndexedDB
+- **Add-to-queue v1** (PR #136): `📌 Queue` button in action bar; one-click adds current config to active saber profile's card queue with auto-generated name + toast
+- **Audio engine improvements** (Ken's PRs #118, #122, #124, #127, #128): shared mute store, SmoothSwing speed broadcasting, hum hot-swap on font change, ProffieOS in/out convention fix, modern sound category recognition, Brave FSA flag warning
+
+### Test deltas
+
+| Package | Pre-session | Post-session | Δ |
+|---|---:|---:|---:|
+| web | 1327 | 1822 | +495 |
+| engine | 753 | 796 | +43 |
+| sound | 43 | 62 | +19 |
+| codegen | 1859 | 1859 | 0 |
+| **Total** | **4289** | **4846** | **+557** |
 
 ---
 
