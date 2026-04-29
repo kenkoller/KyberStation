@@ -231,6 +231,62 @@ describe('clash latch + decay', () => {
     state = sampleModulators(ctx, state, CLASH_ACTIVE);
     expect(state.clashIntensity).toBe(1);
   });
+
+  // ─── BladeConfig.clashDecay override ─────────────────────────────
+  //
+  // The optional 4th parameter overrides the per-frame decay
+  // coefficient. BladeEngine threads this from `config.clashDecay`.
+  // Out-of-band values (negative, > 1, NaN, undefined) all fall back
+  // to the `DEFAULT_CLASH_DECAY_PER_FRAME` constant so the sampler
+  // stays robust against legacy configs + glyph round-trip.
+
+  it('honors a caller-provided clashDecayPerFrame override', () => {
+    const ctx = makeContext();
+    let state: SamplerState = sampleModulators(ctx, null, CLASH_ACTIVE);
+    expect(state.clashIntensity).toBe(1);
+
+    // Faster decay than default — 0.5 means the clash modulator
+    // halves every frame instead of multiplying by 0.92.
+    state = sampleModulators(ctx, state, NO_EFFECTS, 0.5);
+    expect(state.clashIntensity).toBeCloseTo(0.5, 6);
+    state = sampleModulators(ctx, state, NO_EFFECTS, 0.5);
+    expect(state.clashIntensity).toBeCloseTo(0.25, 6);
+  });
+
+  it('clashDecayPerFrame=0 makes clash one-frame-only', () => {
+    const ctx = makeContext();
+    let state: SamplerState = sampleModulators(ctx, null, CLASH_ACTIVE);
+    expect(state.clashIntensity).toBe(1);
+
+    // Zero coefficient — next frame after release is fully off.
+    state = sampleModulators(ctx, state, NO_EFFECTS, 0);
+    expect(state.clashIntensity).toBe(0);
+  });
+
+  it('falls back to DEFAULT_CLASH_DECAY_PER_FRAME when override is undefined', () => {
+    const ctx = makeContext();
+    let state: SamplerState = sampleModulators(ctx, null, CLASH_ACTIVE);
+    state = sampleModulators(ctx, state, NO_EFFECTS, undefined);
+    expect(state.clashIntensity).toBeCloseTo(
+      _internal.DEFAULT_CLASH_DECAY_PER_FRAME,
+      6,
+    );
+  });
+
+  it('rejects out-of-band overrides (< 0, > 1, NaN) and falls back to default', () => {
+    const ctx = makeContext();
+    const baseline = (() => {
+      let s: SamplerState = sampleModulators(ctx, null, CLASH_ACTIVE);
+      s = sampleModulators(ctx, s, NO_EFFECTS); // default decay
+      return s.clashIntensity;
+    })();
+
+    for (const bad of [-0.5, 1.5, Number.NaN]) {
+      let s: SamplerState = sampleModulators(ctx, null, CLASH_ACTIVE);
+      s = sampleModulators(ctx, s, NO_EFFECTS, bad);
+      expect(s.clashIntensity).toBeCloseTo(baseline, 6);
+    }
+  });
 });
 
 // ─── Determinism ────────────────────────────────────────────────────

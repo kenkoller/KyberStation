@@ -319,6 +319,7 @@ export class BladeEngine {
       styleContext,
       this._samplerState,
       this._activeEffectTypes,
+      config.clashDecay,
     );
 
     // Convert SerializedBinding (wire form) → ModulationBinding (runtime).

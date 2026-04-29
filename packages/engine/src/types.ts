@@ -377,6 +377,17 @@ export interface BladeConfig {
   // ── Effect Customization ──
   clashLocation?: number;         // Where on blade the clash hits (0-100, default 50)
   clashIntensity?: number;        // How bright/large the flash is (0-100, default 75)
+  /**
+   * Per-frame decay coefficient for the modulation `clash` modulator
+   * after a clash event latches it to 1.0. 0–1, where 0 = instant
+   * decay (clash modulator is one-frame-only), 0.92 = the established
+   * default that matches the ClashEffect's brightness falloff, and
+   * 1.0 = never decays (clash latches forever, which is wrong but
+   * documented). When `undefined`, the sampler falls back to its
+   * `DEFAULT_CLASH_DECAY_PER_FRAME` constant. Modulation routing v1.1
+   * UI can surface this as a per-saber tunable.
+   */
+  clashDecay?: number;
   blastCount?: number;            // How many blast marks appear (1-5, default 1)
   blastSpread?: number;           // How spread out along the blade (0-100, default 50)
   stabDepth?: number;             // How far the stab effect extends (0-100, default 80)
