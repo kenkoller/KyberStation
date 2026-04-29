@@ -1,17 +1,17 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`renderer golden hash — Saber Card > default × default 1`] = `"ab81cfc5"`;
+exports[`renderer golden hash — Saber Card > default × default 1`] = `"38be82da"`;
 
-exports[`renderer golden hash — Saber Card > default × imperial 1`] = `"3ad1cdee"`;
+exports[`renderer golden hash — Saber Card > default × imperial 1`] = `"2bc19e28"`;
 
-exports[`renderer golden hash — Saber Card > default × jedi 1`] = `"e13f9e85"`;
+exports[`renderer golden hash — Saber Card > default × jedi 1`] = `"33165fb2"`;
 
-exports[`renderer golden hash — Saber Card > default × light 1`] = `"87549282"`;
+exports[`renderer golden hash — Saber Card > default × light 1`] = `"a6191d5d"`;
 
-exports[`renderer golden hash — Saber Card > default × space 1`] = `"c14a65c6"`;
+exports[`renderer golden hash — Saber Card > default × space 1`] = `"4997b5f9"`;
 
-exports[`renderer golden hash — Saber Card > instagram × default 1`] = `"ebb433bb"`;
+exports[`renderer golden hash — Saber Card > instagram × default 1`] = `"50e7a0ba"`;
 
-exports[`renderer golden hash — Saber Card > og × default 1`] = `"3274b02d"`;
+exports[`renderer golden hash — Saber Card > og × default 1`] = `"78d89eb1"`;
 
-exports[`renderer golden hash — Saber Card > story × space 1`] = `"708ecbd2"`;
+exports[`renderer golden hash — Saber Card > story × space 1`] = `"4b87da02"`;

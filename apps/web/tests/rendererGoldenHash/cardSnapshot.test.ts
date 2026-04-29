@@ -56,7 +56,15 @@ import type {
 } from '@/lib/sharePack/card/cardTypes';
 import type { BladeConfig } from '@kyberstation/engine';
 import { createTestCanvas, installCanvasGlobals } from './setup';
-import { hashCanvas } from './hash';
+// Card snapshot tests use the coarse hash because card compositing (drawBackdrop
+// vignette, drawBlade additive bloom, drawMetadata text antialiasing) is sensitive
+// to the host's font hinting + Cairo rasterization. macOS-recorded snapshots
+// drift from Linux CI hashes by 8-byte FNV deltas even though the visual output
+// is identical to the eye. The coarse hash downsamples to 4x4 tiles + quantizes
+// luma to 16 levels, smoothing over platform AA without losing regression
+// coverage of layout/color/composite changes. The blade-renderer test stays on
+// full-fidelity hashCanvas because its output is pixel-aligned capsule math.
+import { hashCanvasCoarse } from './hash';
 
 // ─── Canvas globals ─────────────────────────────────────────────────
 
@@ -190,7 +198,7 @@ describe('renderer golden hash — Saber Card', () => {
 
       expect(canvas.width).toBe(c.layout.width);
       expect(canvas.height).toBe(c.layout.height);
-      expect(hashCanvas(canvas)).toMatchSnapshot();
+      expect(hashCanvasCoarse(canvas)).toMatchSnapshot();
     });
   }
 });
