@@ -81,7 +81,7 @@ export function FPSCounter({ visible = true }: FPSCounterProps) {
   if (isPaused) {
     return (
       <span
-        className="inline-flex items-center px-1.5 py-0.5 rounded bg-bg-surface/40 font-mono text-ui-xs text-text-muted tabular-nums select-none"
+        className="inline-flex items-center h-7 px-1.5 rounded-interactive bg-bg-surface/40 font-mono text-ui-xs text-text-muted tabular-nums select-none"
         aria-label="Animation paused"
         title="Animation paused"
       >
@@ -101,7 +101,7 @@ export function FPSCounter({ visible = true }: FPSCounterProps) {
 
   return (
     <span
-      className="inline-flex items-center px-1.5 py-0.5 rounded bg-bg-surface/40 font-mono text-ui-xs tabular-nums select-none"
+      className="inline-flex items-center h-7 px-1.5 rounded-interactive bg-bg-surface/40 font-mono text-ui-xs tabular-nums select-none"
       style={{ color: statusColor }}
       aria-label={`${displayFPS} frames per second`}
       title="Canvas render FPS"

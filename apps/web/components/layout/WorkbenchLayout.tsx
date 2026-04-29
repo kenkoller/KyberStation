@@ -19,6 +19,7 @@ import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { useHistoryTracking } from '@/hooks/useHistoryTracking';
 import { ShareButton } from '@/components/layout/ShareButton';
 import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
+import { HeaderButton } from '@/components/layout/HeaderButton';
 // W11: StatusBar retired — all its segments folded into AppPerfStrip.
 import { FPSCounter } from '@/components/layout/FPSCounter';
 import { SettingsModal } from '@/components/layout/SettingsModal';
@@ -771,23 +772,20 @@ export function WorkbenchLayout() {
               blade transport controls are co-located. */}
 
           {/* Audio mute — controls both font audio engine and UI sounds */}
-          <button
+          <HeaderButton
             onClick={toggleSoundMute}
-            className={`px-2 py-1 rounded text-ui-xs font-medium border transition-colors ${
-              audio.muted
-                ? 'border-border-subtle text-text-muted hover:text-text-secondary'
-                : 'border-accent-border/40 text-accent bg-accent-dim/30'
-            }`}
+            variant={audio.muted ? 'default' : 'accent'}
+            className={audio.muted ? undefined : 'bg-accent-dim/30'}
             title={audio.muted ? 'Unmute all audio (font sounds + UI sounds)' : 'Mute all audio'}
           >
             {audio.muted ? 'Sound OFF' : 'Sound ON'}
-          </button>
+          </HeaderButton>
 
           {/* Docs */}
           <Link
             href="/docs"
             target="_blank"
-            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+            className="inline-flex items-center justify-center h-7 px-2 rounded-interactive text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/60 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary hidden desktop:inline-flex"
           >
             Docs
           </Link>
@@ -795,26 +793,18 @@ export function WorkbenchLayout() {
           {/* ⌘K Command palette chip — reference `title-strip .cmd-hint`.
               Hidden on tablet; the palette hotkey still works at every
               width via useCommandPalette. */}
-          <button
+          <HeaderButton
             onClick={() => useCommandStore.getState().open()}
-            className="hidden desktop:inline-flex items-center gap-1.5 font-mono text-text-muted hover:text-text-secondary hover:border-border-light transition-colors"
-            style={{
-              fontSize: 11,
-              padding: '2px 8px',
-              border: '1px solid rgb(var(--border-subtle) / 1)',
-              borderRadius: 'var(--r-chrome, 2px)',
-              background: 'rgb(var(--bg-deep) / 0.4)',
-              letterSpacing: '0.04em',
-            }}
+            className="hidden desktop:inline-flex gap-1.5 font-mono bg-bg-deep/40 tracking-wider"
             title={`Open command palette (${kbdFor('K')})`}
             aria-label="Open command palette"
           >
             Command <kbd className="font-mono text-text-muted/80">{kbdFor('K')}</kbd>
-          </button>
+          </HeaderButton>
 
-          <button
+          <HeaderButton
             onClick={() => setShowWizard(true)}
-            className="px-2 py-1 rounded text-ui-xs font-medium border border-accent/40 text-accent hover:bg-accent/10 transition-colors inline-flex items-center gap-1"
+            variant="accent"
             title="Launch the guided Saber Wizard — 3 steps to a complete preset"
             aria-label="Open Saber Wizard"
             style={{
@@ -825,25 +815,27 @@ export function WorkbenchLayout() {
           >
             <span aria-hidden="true">✦</span>
             <span className="hidden tablet:inline">Wizard</span>
-          </button>
+          </HeaderButton>
 
-          <button
+          <HeaderButton
             onClick={openShortcutsHelp}
-            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+            iconOnly
+            className="hidden desktop:inline-flex"
             title="Keyboard shortcuts (?)"
             aria-label="Keyboard shortcuts"
           >
             ?
-          </button>
+          </HeaderButton>
 
-          <button
+          <HeaderButton
             onClick={() => setShowSettings(true)}
-            className="px-2 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light transition-colors hidden desktop:inline-flex"
+            iconOnly
+            className="hidden desktop:inline-flex"
             title="Settings"
             aria-label="Open settings"
           >
             ⚙
-          </button>
+          </HeaderButton>
         </div>
       </header>
 

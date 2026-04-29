@@ -83,7 +83,7 @@ export function UndoRedoButtons() {
 
   // ── Shared button styles ────────────────────────────────────────────────
   const baseClass =
-    'flex items-center justify-center w-7 h-6 rounded text-ui-xs font-medium border transition-colors select-none';
+    'flex items-center justify-center w-7 h-7 rounded-interactive text-ui-xs font-medium border transition-colors select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/60 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary';
   const activeClass =
     'border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light';
   const disabledClass =
