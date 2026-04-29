@@ -219,7 +219,7 @@ const COLOR_SWATCHES: Record<Archetype, Array<{ id: string; label: string; color
 
 // ─── Step 4: Vibe presets (apply effect parameters) ──────────────────
 
-interface VibeOption {
+export interface VibeOption {
   id: string;
   label: string;
   desc: string;
@@ -230,7 +230,7 @@ interface VibeOption {
   retraction: string;
 }
 
-const VIBES: VibeOption[] = [
+export const VIBES: VibeOption[] = [
   {
     id: 'classic',
     label: 'Classic',
@@ -287,9 +287,9 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
 
   // Pre-select hardware defaults from current config + active profile so
   // a user with existing setup sees their values reflected, and a fresh
-  // user sees sensible canon defaults (132 LEDs / 36" / Proffie V3).
+  // user sees sensible canon defaults (144 LEDs / 36" / Proffie V3).
   const initialBladeLength = (() => {
-    const ledCount = currentConfig.ledCount ?? 132;
+    const ledCount = currentConfig.ledCount ?? 144;
     const exact = BLADE_LENGTHS.find((b) => b.ledCount === ledCount);
     if (exact) return exact;
     const inches = inferBladeInches(ledCount);
@@ -701,6 +701,8 @@ function Step3Color({
             <button
               key={s.id}
               onClick={() => onSelect(s.color)}
+              aria-pressed={!!isSelected}
+              aria-label={`${s.label} — rgb(${s.color.r}, ${s.color.g}, ${s.color.b})`}
               className={`flex items-center gap-2 p-2 rounded-panel border transition-colors ${
                 isSelected
                   ? 'bg-accent-dim border-accent'
@@ -747,6 +749,8 @@ function Step4Vibe({
           <button
             key={v.id}
             onClick={() => onSelect(v)}
+            aria-pressed={selected?.id === v.id}
+            aria-label={`${v.label} — ${v.desc}`}
             className={`text-left p-3 rounded-panel border transition-colors ${
               selected?.id === v.id
                 ? 'bg-accent-dim border-accent text-accent'

@@ -805,7 +805,7 @@ export function WorkbenchLayout() {
           <HeaderButton
             onClick={() => setShowWizard(true)}
             variant="accent"
-            title="Launch the guided Saber Wizard — 3 steps to a complete preset"
+            title="Launch the guided Saber Wizard — 4 steps to a complete preset"
             aria-label="Open Saber Wizard"
             style={{
               // Subtle crystal-colour glow on hover — the var is set by
