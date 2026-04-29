@@ -53,6 +53,26 @@ function Svg({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * 24×24 wrapper for `compactThumbnail`. Authored at native scale so
+ * strokes/fills land on whole pixels — no CSS scale-down blur. The
+ * picker trigger renders these directly when supplied; the 100×60
+ * version remains the authoritative shape for the expanded MGP grid.
+ */
+function CompactSvg({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
 /** Plain accent arrow pointing right. Fallback for unregistered ids. */
 export const DEFAULT_IGNITION_THUMBNAIL: IgnitionThumbnailEntry = {
   label: 'Ignition',
@@ -73,6 +93,13 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="8" y1={BLADE_Y} x2="60" y2={BLADE_Y} stroke={ACCENT} strokeWidth="6" strokeLinecap="round" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="15" y2="12" stroke={ACCENT_FAINT} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="3" y1="12" x2="11" y2="12" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M 14 8 L 20 12 L 14 16 Z" fill={ACCENT} />
+      </CompactSvg>
+    ),
   },
 
   scroll: {
@@ -88,6 +115,17 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke="url(#ign-scroll-grad)" strokeWidth="6" strokeLinecap="round" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <defs>
+          <linearGradient id="ign-scroll-grad-c" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stopColor={ACCENT} />
+            <stop offset="1" stopColor={ACCENT_FAINT} />
+          </linearGradient>
+        </defs>
+        <line x1="3" y1="12" x2="21" y2="12" stroke="url(#ign-scroll-grad-c)" strokeWidth="2.5" strokeLinecap="round" />
+      </CompactSvg>
+    ),
   },
 
   spark: {
@@ -101,6 +139,14 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <circle cx="72" cy="28" r="1" fill={ACCENT} />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="12" y2="12" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="14" cy="12" r="2" fill={ACCENT} />
+        <circle cx="18" cy="8" r="1" fill={ACCENT} />
+        <circle cx="20" cy="15" r="1" fill={ACCENT} />
+      </CompactSvg>
+    ),
   },
 
   center: {
@@ -112,6 +158,14 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <path d="M 24 20 L 32 30 L 24 40 Z" fill={ACCENT_DIM} />
         <path d="M 76 20 L 68 30 L 76 40 Z" fill={ACCENT_DIM} />
       </Svg>
+    ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT_FAINT} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="9" y1="12" x2="15" y2="12" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M 6 9 L 9 12 L 6 15 Z" fill={ACCENT_DIM} />
+        <path d="M 18 9 L 15 12 L 18 15 Z" fill={ACCENT_DIM} />
+      </CompactSvg>
     ),
   },
 
@@ -130,6 +184,18 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke="url(#ign-wipe-grad)" strokeWidth="6" strokeLinecap="round" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <defs>
+          <linearGradient id="ign-wipe-grad-c" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stopColor={ACCENT} stopOpacity="1" />
+            <stop offset="0.6" stopColor={ACCENT} stopOpacity="1" />
+            <stop offset="1" stopColor={ACCENT} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line x1="3" y1="12" x2="21" y2="12" stroke="url(#ign-wipe-grad-c)" strokeWidth="2.5" strokeLinecap="round" />
+      </CompactSvg>
+    ),
   },
 
   stutter: {
@@ -141,6 +207,14 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="44" y1={BLADE_Y} x2="58" y2={BLADE_Y} stroke={ACCENT} strokeWidth="6" strokeLinecap="round" />
         <line x1="66" y1={BLADE_Y} x2="72" y2={BLADE_Y} stroke={ACCENT_FAINT} strokeWidth="6" strokeLinecap="round" />
       </Svg>
+    ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="6" y2="12" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="8" y1="12" x2="11" y2="12" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" opacity="0.5" />
+        <line x1="13" y1="12" x2="17" y2="12" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="19" y1="12" x2="21" y2="12" stroke={ACCENT_FAINT} strokeWidth="2.5" strokeLinecap="round" />
+      </CompactSvg>
     ),
   },
 
@@ -155,6 +229,14 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="66" y1="28" x2="86" y2="28" stroke={ACCENT} strokeWidth="3" opacity="0.4" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="10" x2="11" y2="10" stroke={ACCENT} strokeWidth="1.5" />
+        <line x1="7" y1="13" x2="17" y2="13" stroke={ACCENT} strokeWidth="1.5" />
+        <line x1="13" y1="9" x2="21" y2="9" stroke={ACCENT} strokeWidth="1.5" opacity="0.6" />
+        <line x1="9" y1="16" x2="20" y2="16" stroke={ACCENT} strokeWidth="1.5" opacity="0.4" />
+      </CompactSvg>
+    ),
   },
 
   twist: {
@@ -164,6 +246,12 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT_FAINT} strokeWidth="2" />
         <path d="M 10 30 Q 25 16, 40 30 T 70 30 T 92 30" stroke={ACCENT} strokeWidth="3" fill="none" strokeLinecap="round" />
       </Svg>
+    ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT_FAINT} strokeWidth="1" />
+        <path d="M 3 12 Q 7 7, 11 12 T 19 12" stroke={ACCENT} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </CompactSvg>
     ),
   },
 
@@ -175,6 +263,12 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <path d="M 8 42 Q 50 12 92 42" stroke={ACCENT_DIM} strokeWidth="8" fill="none" strokeLinecap="round" opacity="0.4" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <path d="M 3 18 Q 12 4 21 18" stroke={ACCENT_DIM} strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.4" />
+        <path d="M 3 18 Q 12 4 21 18" stroke={ACCENT} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </CompactSvg>
+    ),
   },
 
   stab: {
@@ -185,6 +279,13 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <circle cx="50" cy={BLADE_Y} r="10" fill={ACCENT} />
         <circle cx="50" cy={BLADE_Y} r="16" fill="none" stroke={ACCENT_DIM} strokeWidth="2" />
       </Svg>
+    ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT_FAINT} strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="3" fill={ACCENT} />
+        <circle cx="12" cy="12" r="6" fill="none" stroke={ACCENT_DIM} strokeWidth="1" />
+      </CompactSvg>
     ),
   },
 
@@ -200,6 +301,15 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="82" y1={BLADE_Y} x2="88" y2={BLADE_Y} stroke={ACCENT} strokeWidth="6" opacity="0.5" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="5" y2="12" stroke={ACCENT} strokeWidth="2.5" />
+        <line x1="7" y1="12" x2="9" y2="12" stroke={ACCENT} strokeWidth="2.5" opacity="0.5" />
+        <line x1="11" y1="12" x2="14" y2="12" stroke={ACCENT} strokeWidth="2.5" />
+        <line x1="16" y1="12" x2="18" y2="12" stroke={ACCENT} strokeWidth="2.5" opacity="0.7" />
+        <line x1="20" y1="12" x2="21" y2="12" stroke={ACCENT} strokeWidth="2.5" opacity="0.4" />
+      </CompactSvg>
+    ),
   },
 
   fracture: {
@@ -211,6 +321,13 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <path d="M 56 30 L 64 16 M 56 30 L 64 44" stroke={ACCENT} strokeWidth="1.5" fill="none" />
         <path d="M 78 30 L 72 20 M 78 30 L 72 40" stroke={ACCENT} strokeWidth="1.5" fill="none" />
       </Svg>
+    ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT_DIM} strokeWidth="1.5" />
+        <path d="M 8 12 L 6 6 M 8 12 L 6 18" stroke={ACCENT} strokeWidth="1" fill="none" />
+        <path d="M 14 12 L 17 5 M 14 12 L 17 19" stroke={ACCENT} strokeWidth="1" fill="none" />
+      </CompactSvg>
     ),
   },
 
@@ -259,6 +376,15 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="12" y1="38" x2="88" y2="38" stroke={ACCENT} strokeWidth="1" opacity="0.6" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="4" y1="8" x2="20" y2="8" stroke={ACCENT} strokeWidth="1" opacity="0.6" />
+        <line x1="3" y1="10" x2="21" y2="10" stroke={ACCENT} strokeWidth="1" opacity="0.8" />
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT} strokeWidth="1.5" />
+        <line x1="3" y1="14" x2="21" y2="14" stroke={ACCENT} strokeWidth="1" opacity="0.8" />
+        <line x1="4" y1="16" x2="20" y2="16" stroke={ACCENT} strokeWidth="1" opacity="0.6" />
+      </CompactSvg>
+    ),
   },
 
   summon: {
@@ -271,6 +397,14 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <circle cx="30" cy={BLADE_Y} r="2.5" fill={ACCENT} opacity="0.6" />
       </Svg>
     ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT_FAINT} strokeWidth="1" />
+        <circle cx="7" cy="12" r="1.2" fill={ACCENT} opacity="0.6" />
+        <circle cx="13" cy="12" r="2" fill={ACCENT} />
+        <path d="M 21 12 L 18 9 M 21 12 L 18 15" stroke={ACCENT} strokeWidth="1.2" fill="none" />
+      </CompactSvg>
+    ),
   },
 
   seismic: {
@@ -280,6 +414,12 @@ export const IGNITION_THUMBNAILS: Record<string, IgnitionThumbnailEntry> = {
         <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT_FAINT} strokeWidth="2" />
         <path d="M 8 30 L 18 22 L 26 38 L 36 20 L 46 40 L 56 24 L 66 36 L 76 26 L 86 32 L 92 30" stroke={ACCENT} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </Svg>
+    ),
+    compactThumbnail: (
+      <CompactSvg>
+        <line x1="3" y1="12" x2="21" y2="12" stroke={ACCENT_FAINT} strokeWidth="1" />
+        <path d="M 3 12 L 6 7 L 9 17 L 12 5 L 15 18 L 18 8 L 21 12" stroke={ACCENT} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </CompactSvg>
     ),
   },
 
