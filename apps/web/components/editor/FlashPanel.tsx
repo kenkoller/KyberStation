@@ -85,7 +85,19 @@ export function FlashPanel() {
   const [state, setState] = useState<PanelState>(
     hasAckedDisclaimer() ? { kind: 'ready' } : { kind: 'needs-ack' },
   );
-  const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  // Three independent acknowledgements. All three must be checked before the
+  // user can proceed. Required because the WebUSB FlashPanel is shipped as
+  // EXPERIMENTAL in v1.0 — see docs/FLASH_GUIDE.md for the recommended
+  // dfu-util workflow which has the mandatory backup step built in.
+  const [disclaimerAcks, setDisclaimerAcks] = useState({
+    responsibility: false,
+    backup: false,
+    recovery: false,
+  });
+  const allAcksChecked =
+    disclaimerAcks.responsibility &&
+    disclaimerAcks.backup &&
+    disclaimerAcks.recovery;
   const [selectedVariant, setSelectedVariant] = useState<string>(FIRMWARE_VARIANTS[0].id);
   const [customFirmware, setCustomFirmware] = useState<Uint8Array | null>(null);
   const [customFirmwareName, setCustomFirmwareName] = useState<string | null>(null);
@@ -160,10 +172,10 @@ export function FlashPanel() {
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
   const handleAckDisclaimer = useCallback(() => {
-    if (!disclaimerChecked) return;
+    if (!allAcksChecked) return;
     storeDisclaimerAck();
     setState({ kind: 'ready' });
-  }, [disclaimerChecked]);
+  }, [allAcksChecked]);
 
   const handleConnect = useCallback(async () => {
     setState({ kind: 'connecting' });
@@ -296,21 +308,47 @@ export function FlashPanel() {
 
   return (
     <div className="p-4">
-      <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1">
-        Flash to Saber
-      </h3>
+      <div className="flex items-center gap-2 mb-1">
+        <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
+          Flash to Saber
+        </h3>
+        <span
+          className="text-ui-xs uppercase tracking-wider px-1.5 py-0.5 rounded font-semibold"
+          style={{
+            background: 'rgb(var(--status-warn) / 0.15)',
+            color: 'rgb(var(--status-warn))',
+            border: '1px solid rgb(var(--status-warn) / 0.45)',
+          }}
+        >
+          Experimental
+        </span>
+      </div>
       <p className="text-ui-xs text-text-muted mb-4 leading-relaxed">
         One-click firmware flash over WebUSB. The <strong>config.h</strong> you build in
         KyberStation still lives on the SD card — this panel only writes the ProffieOS
-        firmware itself.
+        firmware itself.{' '}
+        <strong>For v1.0 the recommended path is the dfu-util CLI workflow</strong> —
+        see the{' '}
+        <a
+          href="https://github.com/kenkoller/KyberStation/blob/main/docs/FLASH_GUIDE.md"
+          target="_blank"
+          rel="noreferrer"
+          className="text-accent underline hover:no-underline"
+        >
+          FLASH_GUIDE
+        </a>
+        .
       </p>
 
       {!webUsbSupported && <UnsupportedNotice />}
 
       {webUsbSupported && state.kind === 'needs-ack' && (
         <DisclaimerCard
-          checked={disclaimerChecked}
-          onToggle={setDisclaimerChecked}
+          acks={disclaimerAcks}
+          onToggle={(key, value) =>
+            setDisclaimerAcks((prev) => ({ ...prev, [key]: value }))
+          }
+          allChecked={allAcksChecked}
           onAck={handleAckDisclaimer}
         />
       )}
@@ -381,13 +419,21 @@ function UnsupportedNotice() {
   );
 }
 
+interface DisclaimerAcks {
+  responsibility: boolean;
+  backup: boolean;
+  recovery: boolean;
+}
+
 function DisclaimerCard({
-  checked,
+  acks,
   onToggle,
+  allChecked,
   onAck,
 }: {
-  checked: boolean;
-  onToggle: (value: boolean) => void;
+  acks: DisclaimerAcks;
+  onToggle: (key: keyof DisclaimerAcks, value: boolean) => void;
+  allChecked: boolean;
   onAck: () => void;
 }) {
   return (
@@ -398,36 +444,113 @@ function DisclaimerCard({
         borderColor: 'rgb(var(--status-warn) / 0.45)',
       }}
     >
-      <h4
-        className="text-ui-sm font-semibold uppercase tracking-wider mb-2"
-        style={{ color: 'rgb(var(--status-warn))' }}
-      >
-        Use at your own risk
-      </h4>
+      <div className="flex items-center gap-2 mb-2">
+        <h4
+          className="text-ui-sm font-semibold uppercase tracking-wider"
+          style={{ color: 'rgb(var(--status-warn))' }}
+        >
+          Experimental — read before proceeding
+        </h4>
+      </div>
+
       <div className="text-ui-xs text-text-primary leading-relaxed space-y-2 mb-3">
         <p>
-          Flashing firmware to your Proffieboard via WebUSB is provided as a convenience.
-          KyberStation cannot recover a bricked board.
+          KyberStation v1.0 is a <strong>design tool first</strong>. The recommended path
+          for flashing is the documented <code className="text-ui-xs">dfu-util</code>{' '}
+          CLI workflow in{' '}
+          <a
+            href="https://github.com/kenkoller/KyberStation/blob/main/docs/FLASH_GUIDE.md"
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent underline hover:no-underline"
+          >
+            FLASH_GUIDE.md
+          </a>{' '}
+          — it includes a <strong>mandatory backup step</strong> that turns a bad flash
+          into a 30-second recovery.
+        </p>
+        <p>
+          The in-browser WebUSB FlashPanel is shipped as <strong>experimental</strong> in
+          v1.0. The protocol is implemented and verified against a comprehensive mock test
+          suite, but on real hardware the manifest phase has a known issue that can leave
+          the chip stuck in DFU mode after a successful write — particularly on
+          vendor-customized boards (89sabers, KR Sabers, Saberbay, Vader's Vault).
         </p>
         <p>
           STM32 boards have a hardware DFU recovery mode. If a flash fails, hold the{' '}
-          <strong>BOOT</strong> button while plugging in USB to re-enter DFU mode and retry.
+          <strong>BOOT</strong> button while tapping <strong>RESET</strong> to re-enter
+          DFU mode, then restore from your backup via the FLASH_GUIDE.
         </p>
-        <p>By proceeding, you accept responsibility for the flash operation.</p>
       </div>
-      <label className="flex items-start gap-2 text-ui-xs text-text-primary cursor-pointer mb-3">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onToggle(e.target.checked)}
-          className="mt-0.5 accent-accent"
-        />
-        <span>I understand and accept responsibility for the flash operation.</span>
-      </label>
+
+      <div
+        className="rounded p-3 mb-3"
+        style={{
+          background: 'rgb(var(--status-warn) / 0.10)',
+          border: '1px solid rgb(var(--status-warn) / 0.30)',
+        }}
+      >
+        <p
+          className="text-ui-xs font-semibold mb-2"
+          style={{ color: 'rgb(var(--status-warn))' }}
+        >
+          Vendor-customized board warning
+        </p>
+        <p className="text-ui-xs text-text-primary leading-relaxed">
+          If your saber came pre-flashed by 89sabers, KR Sabers, Saberbay, Vader's Vault,
+          or any other vendor: those boards may have custom Option Bytes (notably 89sabers
+          uses <code>BFB2=1</code>, "boot from Bank 2"). Read the FLASH_GUIDE's
+          vendor-board section before proceeding. <strong>Do not</strong> let any tool
+          modify Option Bytes (alt=1) without an ST-Link recovery path ready.
+        </p>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <label className="flex items-start gap-2 text-ui-xs text-text-primary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acks.responsibility}
+            onChange={(e) => onToggle('responsibility', e.target.checked)}
+            className="mt-0.5 accent-accent shrink-0"
+          />
+          <span>
+            I understand the WebUSB FlashPanel is experimental and I accept responsibility
+            for the flash operation.
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2 text-ui-xs text-text-primary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acks.backup}
+            onChange={(e) => onToggle('backup', e.target.checked)}
+            className="mt-0.5 accent-accent shrink-0"
+          />
+          <span>
+            I have backed up my saber's existing firmware to a file (
+            <code className="text-ui-xs">dfu-util ... -U backup.bin</code> per FLASH_GUIDE
+            §7).
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2 text-ui-xs text-text-primary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acks.recovery}
+            onChange={(e) => onToggle('recovery', e.target.checked)}
+            className="mt-0.5 accent-accent shrink-0"
+          />
+          <span>
+            I understand my saber may need recovery via the dfu-util CLI workflow if my
+            custom config has issues, and I know how to re-enter DFU mode.
+          </span>
+        </label>
+      </div>
+
       <button
         type="button"
         onClick={onAck}
-        disabled={!checked}
+        disabled={!allChecked}
         className="px-4 py-2 rounded text-ui-sm font-medium transition-colors
           bg-accent text-white hover:bg-accent/90
           disabled:bg-bg-surface disabled:text-text-muted disabled:cursor-not-allowed"

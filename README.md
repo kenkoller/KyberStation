@@ -4,15 +4,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Feedback Welcome](https://img.shields.io/badge/feedback-welcome-brightgreen.svg)](https://github.com/kenkoller/KyberStation/issues/new/choose)
 
-**Visual blade style editor, real-time simulator, and config generator for custom lightsabers.**
+**Visual blade style editor, real-time simulator, and ProffieOS config generator for custom lightsabers.**
 
-**Free, browser-based, MIT licensed, no accounts, no backend. Hobby project.**
+**Free, browser-based, MIT licensed, no accounts, no backend. Hobby project. Beta.**
 
 ![KyberStation landing page — live blade render behind the wordmark](docs/images/landing-hero.png)
 
 Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device — phone, tablet, laptop, or desktop. Installable as a PWA.
 
 > Think "DAW for lightsabers" — if GarageBand let you design blade animations instead of music tracks.
+
+> **Beta posture:** This is the first public release. KyberStation v1.0 is a **design tool first** — visual editor + simulator + ProffieOS code generator. To flash a generated config to a real Proffieboard, use the documented `dfu-util` workflow in [`docs/FLASH_GUIDE.md`](docs/FLASH_GUIDE.md). The in-browser WebUSB FlashPanel is shipped as experimental in v1.0; see the Flash section below.
 
 ## Features
 
@@ -35,24 +37,24 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - Xenopixel V2/V3, LGT, Asteria, Darkwolf, DamienSaber
 - Board capability matrices with compatibility scoring per preset
 
-### Flash your saber (WebUSB)
-- One-click firmware flash straight from the browser — no Arduino IDE, no driver dance.
-- Disclaimer-gated on first use; **Dry run** mode walks the protocol without writing a byte.
-- Post-write readback verification catches silent flash corruption.
+### Flashing your saber
 
-**Validated hardware / OS / browser combinations:**
+> **The recommended path for v1.0 is the `dfu-util` command-line workflow** documented in [`docs/FLASH_GUIDE.md`](docs/FLASH_GUIDE.md). It includes a mandatory backup step that turns "I just bricked my saber" into "I just lost 30 seconds." Most Proffieboard owners already have a terminal and `arduino-cli` installed; this workflow takes about 10 minutes the first time and two commands every time after.
 
-| Board | OS | Browser | Status | Notes |
-|---|---|---|---|---|
-| Proffieboard V3.9 (89sabers) | macOS 15 | Brave | ✅ 2026-04-20 | Connect, dry-run, real flash, recovery re-flash all green. |
-| Proffieboard V3.9 | macOS | Chrome / Edge / Arc | 🟡 likely | Same Chromium WebUSB implementation as Brave. Untested but expected to behave identically. |
-| Proffieboard V3.9 | Windows | Chrome / Edge / Brave | 🟡 unverified | Protocol is identical; different WebUSB driver path (WinUSB). |
-| Proffieboard V3.9 | Linux | Chrome / Brave | 🟡 unverified | Requires a one-off udev rule ([docs/WEBUSB_FLASH.md](docs/WEBUSB_FLASH.md#linux-udev-rule)). |
-| Proffieboard V2.2 | any | any Chromium | 🟡 unverified | Different STM32 (L433CC, 256 KiB). Memory-layout parser handles both sizes; not yet hardware-confirmed. |
-| Proffieboard V3 + OLED | any | any Chromium | 🟡 unverified | Same STM32 as V3 standard; firmware bundles differ. |
-| Safari / Firefox | any | — | ❌ unsupported | Neither browser ships WebUSB. Users on those browsers fall back to Arduino IDE + `config.h` export. |
+**Quick overview of the dfu-util path:**
+1. Design your saber in KyberStation, export `config.h` from the OUTPUT panel.
+2. Drop it into a ProffieOS source tree, point `ProffieOS.ino` at it, compile with `arduino-cli`.
+3. Strip the `.iap` DFU suffix, enter DFU mode, **back up your existing firmware**, flash with `dfu-util`.
 
-**Help us validate more combinations.** If you flash your saber from KyberStation on hardware / OS / browser we haven't confirmed yet, please file a [hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) — one pass through Connect → Dry-run → Flash is enough.
+Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, Saberbay), and recovery procedure live in [FLASH_GUIDE.md](docs/FLASH_GUIDE.md).
+
+**WebUSB FlashPanel (experimental, v1.0):**
+- KyberStation also includes a one-click in-browser WebUSB FlashPanel.
+- The protocol is implemented and verified against a comprehensive mock test suite, but on real hardware the manifest phase has a known issue that can leave the chip stuck in DFU mode after a successful write — particularly on vendor-customized boards (89sabers, KR, Saberbay).
+- For v1.0, the FlashPanel is shipped behind an EXPERIMENTAL disclaimer with mandatory backup acknowledgement. **Use the dfu-util workflow as your reliable path; treat the FlashPanel as an experiment.**
+- The manifest-phase fix is planned for v0.16+.
+
+**Help us improve hardware coverage.** If you flash your saber and hit anything unexpected, please file a [hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) with your saber vendor, board variant, OS, and what happened.
 
 ### Blade Topologies (8 configurations)
 - Single, Staff, Crossguard, Triple, Quad-Star, Inquisitor Ring, Split Blade, Accent LEDs
@@ -286,8 +288,14 @@ if you can't submit a PR yet. This project follows a [Code of Conduct](CODE_OF_C
   see that folder's `README.md` for the contribution policy. The rest of
   KyberStation remains MIT.
 
-### Credits
+### Credits & Thanks
 
-- [ProffieOS](https://github.com/profezzorn/ProffieOS) by Fredrik Hübinette
-- [Fett263's Style Library](https://fett263.com/) — community configs and
-  the dual-mode ignition / edit-mode conventions this tool targets
+KyberStation stands on the shoulders of years of saber-community work. Massive thanks to:
+
+- **[Fredrik Hübinette](https://fredrik.hubbe.net/)** — creator of ProffieOS and the Proffieboard hardware. Without ProffieOS, this tool wouldn't exist. The whole Neopixel saber community owes him.
+- **[Fett263](https://fett263.com/)** — the Style Library, edit-mode conventions, dual-mode ignition pattern, and prop file work that KyberStation's codegen targets. Most of what KyberStation generates is a visual editor for things Fett263 figured out.
+- **The [Crucible](https://crucible.hubbe.net/) and Proffieboard communities** — the Q&A archive, the troubleshooting threads, the patient answers to beginner questions. Real reference material.
+- **The saber vendors** (89sabers, KR Sabers, Saberbay, Vader's Vault, and others) — for shipping the hardware that makes this hobby possible.
+- **The font makers** (Kyberphonic, Greyscale, and the many ProffieOS-format font authors) — the audio half of every saber.
+
+KyberStation is a hobby project. It exists because of the work above.
