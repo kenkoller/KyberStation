@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderer golden hash — drawWorkbenchBlade > FNV-1a hash function is stable for a known input 1`] = `"163e4e7b"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > darksaber :: on 1`] = `"0767f62b"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: igniting-50 1`] = `"ad34bb23"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: off 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: on 1`] = `"ad34bb23"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: retracting-50 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > rey-yellow-stable :: on 1`] = `"2fe2296e"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > vader-red-unstable :: on 1`] = `"60d3efef"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > yoda-green-stable :: on 1`] = `"b8a49961"`;
