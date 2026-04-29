@@ -5,6 +5,7 @@ import type { FontManifest } from '@kyberstation/sound';
 import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { useAudioMuteStore } from '@/stores/audioMuteStore';
+import { useAudioPlaybackStore } from '@/stores/audioPlaybackStore';
 import { saveFontToDB, loadFontFromDB, getLastUsedFontName } from '@/lib/fontDB';
 
 /**
@@ -120,12 +121,12 @@ export function useAudioEngine() {
   const masterGainRef = useRef<GainNode | null>(null);
   const initializedRef = useRef(false);
 
+
   // Mute state lives in a global store so every `useAudioEngine` instance
   // (header toggle, AudioColumnB preview buttons, SmoothSwing tick, mobile
-  // shell, etc.) reads the same value. Pre-fix, each instance owned its
-  // own useState/useRef + masterGain, so toggling from the header only
-  // silenced the instance the header read from — the others stayed muted.
+  // shell, etc.) reads the same value.
   const muted = useAudioMuteStore((s) => s.muted);
+  const humActiveRef = useRef(false);
 
   // Font store access
   const getBuffer = useAudioFontStore((s) => s.getBuffer);
@@ -299,6 +300,7 @@ export function useAudioEngine() {
 
       if (category === 'hum') {
         player.playHum(buf);
+        humActiveRef.current = true;
       } else {
         player.playOneShot(buf);
       }
@@ -310,6 +312,7 @@ export function useAudioEngine() {
   /** Stop the hum loop */
   const stopHum = useCallback(() => {
     playerRef.current?.stopHum();
+    humActiveRef.current = false;
   }, []);
 
   const playIgnition = useCallback(() => {
@@ -322,7 +325,10 @@ export function useAudioEngine() {
     // Start hum after ignition finishes
     setTimeout(() => {
       const humBuf = getBufferFor('hum');
-      if (humBuf) player.playHum(humBuf);
+      if (humBuf) {
+        player.playHum(humBuf);
+        humActiveRef.current = true;
+      }
     }, 500);
 
     // Start smooth-swing engine (plays silently until swing speed > threshold)
@@ -333,6 +339,7 @@ export function useAudioEngine() {
     if (!ensureInit()) return;
     const player = playerRef.current!;
     player.stopHum();
+    humActiveRef.current = false;
     smoothSwingRef.current?.stop();
     const outBuf = getBufferFor('retraction');
     if (outBuf) player.playOneShot(outBuf);
@@ -370,10 +377,19 @@ export function useAudioEngine() {
 
   /**
    * Update smooth-swing crossfade based on current swing speed.
+   *
+   * Writes to the shared `audioPlaybackStore` rather than touching this
+   * instance's smoothSwingRef directly. Every initialised useAudioEngine
+   * instance subscribes to the store via the useEffect below and pushes
+   * the value into its own SmoothSwingEngine — so the call reaches
+   * whichever instance actually had `loadPairs` called, regardless of
+   * which call site (`AppShell.useAudioSync`, MotionSimPanel, etc.)
+   * invoked `updateSwing`.
+   *
    * @param speed normalised swing speed (0-1)
    */
   const updateSwing = useCallback((speed: number) => {
-    smoothSwingRef.current?.update(speed);
+    useAudioPlaybackStore.getState().setSwingSpeed(speed);
   }, []);
 
   // Restore last-used font from IndexedDB on mount
@@ -434,6 +450,65 @@ export function useAudioEngine() {
     });
     return unsub;
   }, []);
+
+  // Subscribe to the playback bus — push swingSpeed into THIS instance's
+  // SmoothSwingEngine. Imperative subscribe (no React re-render); the
+  // listener fires only on store change. SmoothSwingEngine.update() is a
+  // no-op when `_isPlaying` is false, so subscribing on every instance is
+  // safe — only the instance whose `playIgnition` ran (which calls
+  // `smoothSwingRef.current?.start()`) actually outputs swing audio.
+  useEffect(() => {
+    const unsub = useAudioPlaybackStore.subscribe(() => {
+      const { swingSpeed } = useAudioPlaybackStore.getState();
+      smoothSwingRef.current?.update(swingSpeed);
+    });
+    return unsub;
+  }, []);
+
+  // Hot-swap on font change. When the user picks a different font in
+  // Column A's library list while the blade is ignited, the new buffers
+  // land in audioFontStore but the active hum source still points at the
+  // old buffer. This effect:
+  //   (a) restarts the hum on the new font's buffer if THIS instance has
+  //       hum active (humActiveRef tracks this locally, since multiple
+  //       instances might independently have hum playing — e.g. the
+  //       workbench-instance hum + a Column B preview-instance hum).
+  //   (b) reloads SmoothSwing low/high pairs into this instance's
+  //       SmoothSwingEngine. `loadFont()` only loads pairs into the
+  //       instance the file-drop UI ran through; this effect ensures
+  //       every initialised instance picks them up reactively, so a
+  //       broadcast updateSwing reaches a SmoothSwingEngine that
+  //       actually has buffers.
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    const buffers = useAudioFontStore.getState().buffers;
+
+    // (a) Hum hot-swap
+    if (humActiveRef.current && playerRef.current) {
+      const humBufs = buffers.get('hum');
+      let humBuf: AudioBuffer | null = null;
+      if (humBufs && humBufs.length > 0) {
+        humBuf = humBufs[Math.floor(Math.random() * humBufs.length)];
+      } else {
+        // Font has no hum — fall back to synthetic so the blade still hums.
+        humBuf = soundsRef.current?.hum ?? null;
+      }
+      if (humBuf) {
+        playerRef.current.playHum(humBuf);
+        // playHum calls stopHum() internally first, so the old source is
+        // already disconnected. humActiveRef stays true.
+      }
+    }
+
+    // (b) Reactive SmoothSwing pair load
+    if (smoothSwingRef.current) {
+      const lowBufs = buffers.get('swingl');
+      const highBufs = buffers.get('swingh');
+      if (lowBufs && highBufs && lowBufs.length > 0 && highBufs.length > 0) {
+        smoothSwingRef.current.loadPairs(lowBufs, highBufs);
+      }
+    }
+  }, [fontName]);
 
   // Cleanup on unmount
   useEffect(() => {
