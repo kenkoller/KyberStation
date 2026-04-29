@@ -224,7 +224,9 @@ function rasterizeCapsule(
   const ledCount = leds.count;
   if (ledCount < 1) return;
 
-  const tipExtension = radius * 0.15;
+  // Tip extension removed — true semicircular end cap. See BladeCanvas.tsx
+  // for the full rationale. Matches the workbench renderer 1:1.
+  const tipExtension = 0;
   const emitterX = bladeStartPx - hiltTuck;
   const tipX = bladeStartPx + bladeLenPx + tipExtension;
   const leftCapAxisX = emitterX + radius;
