@@ -132,6 +132,21 @@ const NESTED_FONT: MockTree = {
     'swingh01.wav': { __file: true, size: 60_000 },
     'swingh02.wav': { __file: true, size: 60_000 },
   },
+  // Modern Proffie / Kyberphonic transition + alert categories. Real fonts
+  // ship these in same-named subfolders; one file each is enough to pin
+  // the parser surfaces them in `result[0].categories`.
+  bgndrag: { 'bgndrag01.wav': { __file: true, size: 30_000 } },
+  enddrag: { 'enddrag01.wav': { __file: true, size: 30_000 } },
+  bgnlock: { 'bgnlock01.wav': { __file: true, size: 30_000 } },
+  endlock: { 'endlock01.wav': { __file: true, size: 30_000 } },
+  bgnlb: { 'bgnlb01.wav': { __file: true, size: 30_000 } },
+  endlb: { 'endlb01.wav': { __file: true, size: 30_000 } },
+  bgnmelt: { 'bgnmelt01.wav': { __file: true, size: 30_000 } },
+  endmelt: { 'endmelt01.wav': { __file: true, size: 30_000 } },
+  lb: { 'lb01.wav': { __file: true, size: 30_000 } },
+  lowbatt: { 'lowbatt01.wav': { __file: true, size: 20_000 } },
+  color: { 'color01.wav': { __file: true, size: 20_000 } },
+  ccchange: { 'ccchange.wav': { __file: true, size: 5_000 } },
   'smoothsw.ini': { __file: true, size: 200 },
 };
 
@@ -158,11 +173,34 @@ describe('scanDirectoryHandle', () => {
     const result = await scanDirectoryHandle(root);
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('NestedFont');
-    // 3 top-level wavs + 3 clsh + 2 blst + 1 in + 1 out + 2 swingl + 2 swingh = 14
-    expect(result[0].fileCount).toBe(14);
+    // 3 top-level wavs (hum/font/ccbegin) + 3 clsh + 2 blst + 1 in + 1 out
+    //   + 2 swingl + 2 swingh = 14 classic-category files.
+    // Plus 12 modern-category subfolders × 1 file each = 12 more. Total 26.
+    expect(result[0].fileCount).toBe(26);
     expect(result[0].hasSmoothSwing).toBe(true);
     expect(result[0].smoothSwingPairCount).toBe(2);
     expect(result[0].completeness).toBe('complete');
+    // Modern Proffie / Kyberphonic categories surface in the manifest with
+    // count = 1 each. Pins the bgn/end ordering against `lockup` / `lb` /
+    // `drag` / `melt` short-circuit, and confirms `lowbatt` / `color` /
+    // `ccchange` reach the manifest instead of dropping into warnings.
+    expect(result[0].categories.bgndrag).toBe(1);
+    expect(result[0].categories.enddrag).toBe(1);
+    expect(result[0].categories.bgnlock).toBe(1);
+    expect(result[0].categories.endlock).toBe(1);
+    expect(result[0].categories.bgnlb).toBe(1);
+    expect(result[0].categories.endlb).toBe(1);
+    expect(result[0].categories.bgnmelt).toBe(1);
+    expect(result[0].categories.endmelt).toBe(1);
+    expect(result[0].categories.lb).toBe(1);
+    expect(result[0].categories.lowbatt).toBe(1);
+    expect(result[0].categories.color).toBe(1);
+    expect(result[0].categories.ccchange).toBe(1);
+    // Bare `lockup` / `drag` / `melt` should NOT have absorbed the bgn/end
+    // siblings (regression sentinel for CATEGORY_PATTERNS ordering).
+    expect(result[0].categories.lockup).toBeFalsy();
+    expect(result[0].categories.drag).toBeFalsy();
+    expect(result[0].categories.melt).toBeFalsy();
   });
 
   it('handles a mixed library (flat + nested + empty)', async () => {
@@ -221,8 +259,8 @@ describe('loadFontFromDirectoryHandle', () => {
   it('loads all .wav files from a nested-layout font (recursive)', async () => {
     const root = makeDirHandle('Library', { NestedFont: NESTED_FONT });
     const files = await loadFontFromDirectoryHandle(root, 'NestedFont');
-    // 3 top-level + 3 clsh + 2 blst + 1 in + 1 out + 2 swingl + 2 swingh = 14
-    expect(files.length).toBe(14);
+    // 14 classic-category files + 12 modern-category subfolder files = 26.
+    expect(files.length).toBe(26);
   });
 
   it('attaches webkitRelativePath that includes subfolder for nested wavs', async () => {

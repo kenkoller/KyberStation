@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { parseFileList } from '../src/FontParser.js';
 import { ParameterResolver } from '../src/filters/ParameterResolver.js';
 import { FILTER_CHAIN_PRESETS } from '../src/filters/presets.js';
 import { FILTER_DEFINITIONS } from '../src/filters/definitions.js';
@@ -27,15 +28,18 @@ import type {
 // ---------------------------------------------------------------------------
 // FontParser-equivalent tests: font folder structure parsing
 // ---------------------------------------------------------------------------
-// Note: FontParser.ts does not exist yet in the codebase. These tests validate
-// the data structures (types) that would back a font parser, ensuring the
-// FontManifest / SoundFile shapes are correct and usable.
+// These tests cover the FontManifest / SoundFile shapes plus a parseFileList
+// regression for the 12 modern Proffie / Kyberphonic categories added in the
+// 2026-04-28 sweep — see FontParser.ts CATEGORY_PATTERNS for the full list.
 
 describe('Font manifest data structures', () => {
   const PROFFIE_CATEGORIES: SoundCategory[] = [
     'hum', 'swing', 'clash', 'blast', 'lockup', 'drag', 'melt',
     'in', 'out', 'force', 'stab', 'quote', 'boot', 'font', 'track',
     'ccbegin', 'ccend', 'swingl', 'swingh',
+    // Modern Proffie / Kyberphonic transition + alert categories.
+    'bgndrag', 'enddrag', 'bgnlock', 'endlock', 'bgnlb', 'endlb',
+    'bgnmelt', 'endmelt', 'lb', 'lowbatt', 'color', 'ccchange',
   ];
 
   it('correctly represents a Proffie font folder structure', () => {
@@ -144,6 +148,77 @@ describe('Font manifest data structures', () => {
 
     expect(withIndex.index).toBe(1);
     expect(withoutIndex.index).toBeUndefined();
+  });
+
+  it('parseFileList detects modern Proffie / Kyberphonic categories without warnings', () => {
+    // One representative filename for each of the 12 new categories. Mirrors
+    // what a real Vader_KP_ROTJ-style font ships at the top level. Pinning
+    // each through parseFileList is the regression sentinel for the
+    // CATEGORY_PATTERNS ordering — if `bgnlock` were ever moved below
+    // `lockup`, or `bgnlb` below `lb`, this test would surface the swap.
+    const filenames = [
+      'bgndrag01.wav',
+      'enddrag01.wav',
+      'bgnlock01.wav',
+      'endlock01.wav',
+      'bgnlb01.wav',
+      'endlb01.wav',
+      'bgnmelt01.wav',
+      'endmelt01.wav',
+      'lb01.wav',
+      'lowbatt01.wav',
+      'color01.wav',
+      'ccchange.wav',
+    ];
+    const files = filenames.map((name) => new File([new ArrayBuffer(0)], name));
+    const manifest = parseFileList(files);
+
+    // No "Unrecognized file" warning for any of the 12 — that was the live-
+    // confirmed user-facing bug.
+    const unrecognized = manifest.warnings.filter((w) => w.startsWith('Unrecognized file:'));
+    expect(unrecognized).toEqual([]);
+
+    // Each category surfaces in the manifest with count = 1.
+    expect(manifest.categories.bgndrag).toBe(1);
+    expect(manifest.categories.enddrag).toBe(1);
+    expect(manifest.categories.bgnlock).toBe(1);
+    expect(manifest.categories.endlock).toBe(1);
+    expect(manifest.categories.bgnlb).toBe(1);
+    expect(manifest.categories.endlb).toBe(1);
+    expect(manifest.categories.bgnmelt).toBe(1);
+    expect(manifest.categories.endmelt).toBe(1);
+    expect(manifest.categories.lb).toBe(1);
+    expect(manifest.categories.lowbatt).toBe(1);
+    expect(manifest.categories.color).toBe(1);
+    expect(manifest.categories.ccchange).toBe(1);
+  });
+
+  it('parseFileList ordering: bgnlock / endlock take priority over lockup', () => {
+    // `^(lock)\d*` would otherwise be tempted to short-circuit if it ever
+    // ran before the bgn/end siblings. The `^` anchor saves us today, but
+    // pinning the resolved category here protects against accidental anchor
+    // removal in a future regex tweak.
+    const files = [
+      new File([new ArrayBuffer(0)], 'bgnlock01.wav'),
+      new File([new ArrayBuffer(0)], 'endlock01.wav'),
+      new File([new ArrayBuffer(0)], 'lock01.wav'),
+    ];
+    const manifest = parseFileList(files);
+    expect(manifest.files.find((f) => f.name === 'bgnlock01.wav')?.category).toBe('bgnlock');
+    expect(manifest.files.find((f) => f.name === 'endlock01.wav')?.category).toBe('endlock');
+    expect(manifest.files.find((f) => f.name === 'lock01.wav')?.category).toBe('lockup');
+  });
+
+  it('parseFileList ordering: bgnlb / endlb take priority over lb', () => {
+    const files = [
+      new File([new ArrayBuffer(0)], 'bgnlb01.wav'),
+      new File([new ArrayBuffer(0)], 'endlb01.wav'),
+      new File([new ArrayBuffer(0)], 'lb01.wav'),
+    ];
+    const manifest = parseFileList(files);
+    expect(manifest.files.find((f) => f.name === 'bgnlb01.wav')?.category).toBe('bgnlb');
+    expect(manifest.files.find((f) => f.name === 'endlb01.wav')?.category).toBe('endlb');
+    expect(manifest.files.find((f) => f.name === 'lb01.wav')?.category).toBe('lb');
   });
 });
 
@@ -602,6 +677,8 @@ describe('Type exports', () => {
         hum: 1, swing: 0, clash: 0, blast: 0, lockup: 0, drag: 0, melt: 0,
         in: 0, out: 0, force: 0, stab: 0, quote: 0, boot: 0, font: 0,
         track: 0, ccbegin: 0, ccend: 0, swingl: 0, swingh: 0,
+        bgndrag: 0, enddrag: 0, bgnlock: 0, endlock: 0, bgnlb: 0, endlb: 0,
+        bgnmelt: 0, endmelt: 0, lb: 0, lowbatt: 0, color: 0, ccchange: 0,
       },
       warnings: [],
     };
