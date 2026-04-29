@@ -543,6 +543,135 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-29 late, big Hardware Fidelity + Phase 4 wrap)
+
+Marathon session. **15 PRs landed by Claude + 3 from Ken's parallel session — 18 total today**. Main outcomes:
+
+1. **Hardware Fidelity Principle gap closed.** PR #116 tightened `BlendMode` from a 5-mode union (`normal | add | multiply | screen | overlay`) to single literal `'normal'`. The codegen never emitted the 4 non-normal modes — they were visualizer-only fakes that misrepresented what users would see on real hardware. UI surfaces (LayerRow dropdown, ParameterBank select) removed; `BladeConfig.blendMode` dead field retired; `migrateBlendMode` helper coerces legacy state + glyph round-trip to `'normal'`; new audit-history section in `docs/HARDWARE_FIDELITY_PRINCIPLE.md` documents the tighten + sets the principle for future blend-mode additions.
+
+2. **Phase 4 Sidebar A/B v2 — 6/6 sections complete.** PR #121 shipped the final section (`output`, vertical-stepper Column A + active-step body in Column B) with full extraction of `ConfigSummary` from `OutputPanel.tsx` so legacy fallback + A/B path share one source of truth.
+
+3. **T1.2 MGP thumbnail crispness — both halves shipped.** PR #117 (infra) added optional `compactThumbnail` field on registry entries + threaded through MiniGalleryItem to QuickTransitionPicker. PR #125 authored 26 compact 24×24 SVGs + a `CompactSvg` wrapper.
+
+4. **T1.3 modulation sampler progress fields — closed long-standing v1.1 TODO.** PR #123 added `preonProgress` / `ignitionProgress` / `retractionProgress` to `StyleContext` + `BladeEngine.computeStateProgress()` derives them from current state + sampler reads them directly. Modulation routing v1.1 sampler TODOs are now closed (clashDecay shipped 2026-04-28 via PR #114).
+
+5. **Item D + Item E — both user-visible WIP markers closed.** Strip Configuration drives blade thickness (PR #108); Triple + Inquisitor topologies render their own silhouettes (PR #109). Plus 4 small cleanups (THEME_CAP removal #110, useClickToRoute stale TODOs #113, blade-effect chip overlap fix #119, golden-hash blade-engine tests #112).
+
+| PR | Status | Title |
+|---|---|---|
+| #107 | ✅ merged | feat(sidebar-ab): Phase 4f gallery A/B prototype |
+| #108 | ✅ merged | feat(blade-render): Item D — strip count drives blade thickness |
+| #109 | ✅ merged | feat(blade-render): Item E — Triple + Inquisitor topology visuals |
+| #110 | ✅ merged | chore(palette): remove THEME_CAP — surface all 30 themes |
+| #111 | ✅ merged | docs(backlog): mark stale entries shipped + add 2026-04-29 recap |
+| #112 | ✅ merged | test(engine): golden-hash regression tests (33 cases) |
+| #113 | ✅ merged | chore(modulation): remove stale useClickToRoute TODO markers |
+| #114 | ✅ merged | feat(modulation): wire BladeConfig.clashDecay through sampleModulators |
+| #115 | ✅ merged | **(Ken)** fix(sound): scan/load directory handle iterator yields tuples |
+| #116 | ✅ merged | feat(blend): tighten BlendMode to 'normal' (T2.2 Hardware Fidelity) |
+| #117 | ✅ merged | feat(mgp): compactThumbnail infrastructure for crisp picker triggers |
+| #118 | ✅ merged | **(Ken)** fix(audio): tell Brave users about the FSA flag |
+| #119 | ✅ merged | fix(workbench): action-bar effect chips icon-only below 1280px |
+| #121 | ✅ merged | feat(sidebar-ab): Phase 4f — output multi-step pipeline (6/6 done) |
+| #122 | ✅ merged | **(Ken)** feat(sound): recognize 12 modern Proffie sound categories |
+| #123 | ✅ merged | feat(modulation): wire preon/ignition/retraction progress to sampler |
+| #125 | ✅ merged | feat(mgp): 26 compact 24x24 thumbnails for crisp picker triggers |
+| ~~#120~~ | closed (auto) | superseded by #125 — base branch was deleted on #117 merge |
+
+**Test deltas across the day:**
+
+| Package | Pre-session | Post-session | Δ |
+|---|---:|---:|---:|
+| web | 1262 | 1327 | +65 (gallery A/B 21, strip thickness 12, output A/B 20, golden-hash 33 split, MGP infra 0…) |
+| engine | 740 | 753 | +13 (clashDecay 4, migrateBlendMode 5, sampler progress 4) |
+| sound | 40 | 43 | +3 (Ken's PR #122) |
+| codegen / boards / presets | unchanged | unchanged | 0 |
+
+Workspace typecheck clean across all 10 packages throughout.
+
+### Architectural decisions worth carrying forward
+
+1. **Hardware Fidelity Principle as UX-dispute arbiter.** When deciding whether to expand or tighten a feature whose codegen-emission gap was unclear (Item J Figma color model), Ken's instinct correctly invoked the principle: "if ProffieOS can't emit it, it shouldn't ship." The audit-and-tighten path (PR #116) closed an existing violation rather than expanding it. Going forward, ANY new layer/blend/compositor mode MUST have a verified ProffieOS template emission path before it surfaces in the UI. Documented in `docs/HARDWARE_FIDELITY_PRINCIPLE.md` audit history.
+
+2. **`migrateBlendMode` choke-point pattern.** When tightening a value union, expose a `migrateXxx(value: unknown): NewType` helper that always coerces to the safe default. Every persisted-state read + every network-payload decode funnels through it. Single grep-able choke-point + drift-sentinel test. The pattern works for any one-way migration where the old shape needs to be silently handled but the new shape is the only thing emitted forward.
+
+3. **Engine-level vs renderer-level golden-hash tests are different layers.** Engine golden-hash (PR #112) hashes `BladeEngine.captureStateFrame` LED buffers — protects engine state machine, style algos, topology routing. Doesn't catch renderer drift (bloom, tonemap, canvas pipeline). Renderer-level golden-hash needs node-canvas + is the explicit prerequisite for Item K (`lib/blade/*` module extraction). Don't conflate them; ship them as separate PRs.
+
+4. **Auto-closed PRs from base-branch deletion is a real workflow trap.** When merging a PR with `--delete-branch`, any open PRs targeting that branch auto-close. If a parallel agent's PR was based on the just-merged branch, it ends up CLOSED + DIRTY/CONFLICTING (can't reopen via API once base is gone). Workflow: `git checkout <agent-branch>` + `git rebase main` + `git push --force-with-lease` + `gh pr create` (new PR number). Happened today: PR #120 → #125 reborn after rebase.
+
+5. **Backlog stale-bit drains agent time.** Multiple agents this week independently rediscovered that "open" backlog items had already shipped (CardTheme tokens, useSharedConfig URL test, Light-theme bloom, Hilt Stage 2, WebUSB store consumers). PR #111 refreshed the backlog index 2026-04-29 morning. Going forward: `docs/POST_LAUNCH_BACKLOG.md` is the single source of truth + `git log --grep` is the authoritative ground-truth check before starting any "open" item.
+
+### Ken's pre-launch shortlist — Tier 1 + Tier 2 status delta
+
+Per Ken's 2026-04-29 morning prioritization:
+
+| Item | Pre-session | Post-session |
+|---|---|---|
+| T1.1 Custom color popover | open | ✅ explicitly dropped (existing pattern is sound) |
+| T1.2 MGP thumbnail crispness | open | ✅ infra (#117) + 26 SVGs (#125) |
+| T1.3 Modulation sampler progress | open | ✅ shipped (#123) |
+| T2.1 Wave 8 button routing | open | ⏳ deferred (sparse spec, large scope) |
+| T2.2 Item J Figma color model | open | ✅ pivoted to "audit-and-tighten" + shipped (#116) |
+| T2.3 Item K module extraction | open | ⏳ deferred (renderer-level golden-hash prereq) |
+| T2.4 Item H mobile + sub-1024px | open | 🟡 blade overlap shipped (#119); full mobile migration needs UX call |
+| T2.5 Item B Safari | open | ⏳ deferred (Ken's hands-on) |
+| T2.6 Saber GIF Sprint 2 | open | 🟡 agent stuck ~2.5h; recovery needed |
+| T2.7 Marketing site | open | 🟡 agent stuck ~2.5h; Ken explicitly deprioritized |
+| T2.8 Phase 4 output A/B | open | ✅ shipped (#121) |
+| T2.9 Card snapshot golden-hash | open | ⏳ deferred (canvas dep) |
+| T2.10 Renderer-level golden-hash | open | ⏳ deferred (canvas dep) |
+| T2.11 Cross-OS hardware sweep | open | ⏳ community |
+
+**8 of 14 ✅ closed, 1 🟡 partial, 5 ⏳ deferred.** Of the deferred items, 2 are environmental (Safari hands-on, cross-OS hardware), 2 are gated on canvas dep + renderer golden-hash, 1 is large architectural (Wave 8). Item H (mobile shell) needs Ken's drawer-vs-bottom-sheet UX call to unblock.
+
+### Stuck agents — handoff for next session
+
+Two background agents from this session ran ~2.5h without pushing their branches:
+
+| Agent | Branch (intended) | Worktree | Status |
+|---|---|---|---|
+| `agent-a077c8445fc8384d1` | `feat/marketing-site-v0.15.x` | `.claude/worktrees/agent-a077c8445fc8384d1/` | locked, no push |
+| `agent-af446b7e1bb77edd2` | `feat/saber-gif-sprint-2` | `.claude/worktrees/agent-af446b7e1bb77edd2/` | locked, no push |
+
+`docs/NEXT_SESSION_HANDOFF.md` covers the recovery options. Marketing is explicitly low-priority per Ken; Saber GIF Sprint 2 has the workbench renderer locked-in dependency satisfied so it should be reviveable.
+
+### Test count summary
+
+- **web**: 1327 tests across 74 suites
+- **engine**: 753 tests across 16 suites
+- **codegen**: 1859 tests
+- **boards**: 260 tests
+- **presets**: 47 tests
+- **sound**: 43 tests (Ken's PR #122 +3)
+- **Total workspace**: ~3300 tests passing across 10 packages, all green, all typecheck-clean
+
+### Cleanup status
+
+3 of today's agent worktrees were reaped post-merge. 5 older `agent-*` worktrees from prior sessions still locked under `.claude/worktrees/` — not touched per cross-session coordination rules. The 2 stuck agents above are still locked.
+
+### Still open from `docs/NEXT_SESSION_HANDOFF.md` (refreshed 2026-04-29 late)
+
+| Item | Status |
+|---|---|
+| **A.** Stuck-agent recovery (Marketing + Saber GIF) | next session priority |
+| **B.** T2.10 + T2.9 renderer-level + card-snapshot golden-hash | needs canvas dep |
+| **C.** Item K — `lib/blade/*` module extraction | after T2.10 |
+| **D.** Wave 8 button routing sub-tab | needs design pass |
+| **E.** Item H mobile shell migration | needs UX call (drawer vs bottom-sheet) |
+| **F.** Item B Safari BladeCanvas bloom | needs Ken's hands-on |
+| **G.** Sub-1024px responsive (beyond #119) | post-launch |
+
+### Recommended near-term path
+
+1. Next session: recover or write off the 2 stuck agents
+2. Add `canvas` dep + build T2.10 renderer-level golden-hash harness
+3. Item K module extraction (now safe with renderer-level coverage)
+4. Cut **v0.15.1** patch tag — clean release between architectural sprints
+5. Then: Wave 8 button routing (its own focused multi-day session)
+6. Then: Item H mobile shell migration (Ken's UX call)
+
+---
+
 ## Current State (2026-04-28 PM, full-day session wrap)
 
 Long-session day. **8 PRs landed across two parallel-agent waves + one focused solo PR**, plus 1 PR closed as superseded:
