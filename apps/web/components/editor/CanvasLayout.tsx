@@ -11,6 +11,7 @@ import { PauseButton } from '@/components/layout/PauseButton';
 import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/EffectsPinDropdown';
 import { SavePresetButton } from '@/components/editor/SavePresetButton';
 import { toggleOrTriggerEffect } from '@/lib/effectToggle';
+import { AddToQueueButton } from './AddToQueueButton';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
 import { StateGrid } from './StateGrid';
@@ -177,6 +178,7 @@ export function CanvasLayout({
               <EffectsPinDropdown />
               <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
               <SavePresetButton />
+              <AddToQueueButton />
             </div>
           )}
           <PanelHeader
