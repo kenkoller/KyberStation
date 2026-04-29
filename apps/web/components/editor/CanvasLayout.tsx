@@ -9,6 +9,7 @@ import { useAnimationFrame } from '@/hooks/useAnimationFrame';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { PauseButton } from '@/components/layout/PauseButton';
 import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/EffectsPinDropdown';
+import { SavePresetButton } from '@/components/editor/SavePresetButton';
 import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
@@ -174,6 +175,8 @@ export function CanvasLayout({
                 releaseHandler={onReleaseEffect!}
               />
               <EffectsPinDropdown />
+              <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
+              <SavePresetButton />
             </div>
           )}
           <PanelHeader
