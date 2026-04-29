@@ -127,6 +127,12 @@ function buildStyleContext(layer: BladeLayer, time: number): StyleContext {
     twistAngle: 0,
     soundLevel: 0,
     batteryLevel: 1,
+    // T1.3 (2026-04-29): state-progress fields default to 0 — these
+    // thumbnails render a steady-state preview, never an animated
+    // transition, so preon/ignition/retraction progress is irrelevant.
+    preonProgress: 0,
+    ignitionProgress: 0,
+    retractionProgress: 0,
     // Minimal BladeConfig — styles that read additional fields will
     // get sensible defaults. We only populate what's commonly read.
     config: {

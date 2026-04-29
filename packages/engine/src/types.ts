@@ -24,6 +24,25 @@ export interface StyleContext {
   twistAngle: number; // -1 to 1
   soundLevel: number; // 0-1 normalized
   batteryLevel: number; // 0-1
+  /**
+   * Pre-ignition flash progress, 0..1. `0` outside the PREON state.
+   * Smoothly counts up while PREON is active. The modulation sampler
+   * exposes this as the `preon` modulator's raw value (T1.3, 2026-04-29).
+   */
+  preonProgress: number;
+  /**
+   * Ignition extend progress, 0..1. `0` outside the IGNITING state.
+   * Mirrors `BladeEngine.extendProgress` while IGNITING — useful for
+   * effects that ramp during ignition. Modulator id: `ignition`.
+   */
+  ignitionProgress: number;
+  /**
+   * Retraction progress, 0..1. `0` outside the RETRACTING state. Counts
+   * UP while retracting (1 = fully retracted), so binding `target = X`
+   * to `source = retraction` ramps a parameter as the blade pulls back.
+   * Modulator id: `retraction`.
+   */
+  retractionProgress: number;
   config: BladeConfig;
 }
 
