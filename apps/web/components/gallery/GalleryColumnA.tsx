@@ -19,10 +19,13 @@
 // Filter + selection state is owned by the parent `GalleryAB` wrapper;
 // this component is a controlled view over that state.
 
-import { useId } from 'react';
+import { useCallback, useEffect, useId } from 'react';
 import type { Preset } from '@kyberstation/presets';
 import { ALL_PRESETS } from '@kyberstation/presets';
 import { EraBadge, FactionBadge } from '@/components/shared/StatusSignal';
+import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
+import { useBladeStore } from '@/stores/bladeStore';
+import { toast } from '@/lib/toastManager';
 import {
   type GalleryFilters,
   type EraFilter,
@@ -49,6 +52,38 @@ export function GalleryColumnA({
   onSelect,
 }: GalleryColumnAProps): JSX.Element {
   const searchInputId = useId();
+
+  // ── User presets (My Presets) ──
+  const userPresets = useUserPresetStore((s) => s.presets);
+  const isLoadingPresets = useUserPresetStore((s) => s.isLoading);
+  const hydratePresets = useUserPresetStore((s) => s.hydrate);
+  const deletePreset = useUserPresetStore((s) => s.deletePreset);
+  const loadPreset = useBladeStore((s) => s.loadPreset);
+
+  // Hydrate user presets from IndexedDB on mount
+  useEffect(() => {
+    hydratePresets();
+  }, [hydratePresets]);
+
+  const handleLoadUserPreset = useCallback(
+    (preset: UserPreset) => {
+      loadPreset(preset.config);
+      toast.success(`Loaded "${preset.name}"`);
+    },
+    [loadPreset],
+  );
+
+  const handleDeleteUserPreset = useCallback(
+    (preset: UserPreset) => {
+      const confirmed = window.confirm(
+        `Delete "${preset.name}"? This cannot be undone.`,
+      );
+      if (!confirmed) return;
+      deletePreset(preset.id);
+      toast.success(`Deleted "${preset.name}"`);
+    },
+    [deletePreset],
+  );
 
   const update = <K extends keyof GalleryFilters>(
     key: K,
@@ -189,6 +224,47 @@ export function GalleryColumnA({
 
       {/* Scrollable list body */}
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* ── My Presets section ── */}
+        <div
+          className="border-b border-border-subtle"
+          data-testid="my-presets-section"
+        >
+          <div className="px-3 py-2 flex items-center justify-between bg-bg-deep/30">
+            <span className="font-mono uppercase text-[10px] text-text-muted tracking-[0.10em]">
+              My Presets
+            </span>
+            <span className="text-[10px] font-mono text-text-muted tabular-nums">
+              {isLoadingPresets ? '...' : userPresets.length}
+            </span>
+          </div>
+          {isLoadingPresets ? (
+            <div className="px-3 py-3 text-ui-xs text-text-muted">
+              Loading...
+            </div>
+          ) : userPresets.length === 0 ? (
+            <div className="px-3 py-4 text-center" data-testid="my-presets-empty">
+              <span className="text-ui-xs text-text-muted leading-relaxed">
+                No saved presets yet. Use the Save button in the action bar to save your current design.
+              </span>
+            </div>
+          ) : (
+            <ul
+              aria-label="My saved presets"
+              className="divide-y divide-border-subtle/40"
+              data-testid="my-presets-list"
+            >
+              {userPresets.map((preset) => (
+                <UserPresetRow
+                  key={preset.id}
+                  preset={preset}
+                  onLoad={() => handleLoadUserPreset(preset)}
+                  onDelete={() => handleDeleteUserPreset(preset)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+
         {filtered.length === 0 ? (
           <div className="px-3 py-6 flex flex-col items-center justify-center gap-2 text-center">
             <span className="text-ui-sm text-text-secondary font-medium">
@@ -337,6 +413,70 @@ function PresetRow({
         <EraBadge era={preset.era} legends={isLegends} size="sm" />
         <FactionBadge faction={preset.affiliation} size="sm" />
       </div>
+    </li>
+  );
+}
+
+// ─── User preset row ─────────────────────────────────────────────────
+
+interface UserPresetRowProps {
+  preset: UserPreset;
+  onLoad: () => void;
+  onDelete: () => void;
+}
+
+function UserPresetRow({
+  preset,
+  onLoad,
+  onDelete,
+}: UserPresetRowProps): JSX.Element {
+  const { r, g, b } = preset.config.baseColor;
+  const swatchColor = `rgb(${r}, ${g}, ${b})`;
+
+  return (
+    <li
+      className="flex items-center gap-2 px-3 py-2 cursor-pointer outline-none border-l-2 border-l-transparent text-text-secondary hover:bg-bg-surface/50 hover:text-text-primary transition-colors focus-visible:bg-bg-surface/80"
+      tabIndex={0}
+      onClick={onLoad}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onLoad();
+        }
+      }}
+      style={{ boxShadow: `inset 3px 0 0 ${swatchColor}` }}
+      data-testid={`user-preset-row-${preset.id}`}
+    >
+      {/* Color swatch */}
+      <span
+        className="shrink-0 w-3 h-3 rounded-full border border-border-subtle"
+        style={{ backgroundColor: swatchColor }}
+        aria-hidden="true"
+      />
+
+      {/* Name */}
+      <div className="flex-1 min-w-0">
+        <div className="text-ui-xs font-medium truncate" title={preset.name}>
+          {preset.name}
+        </div>
+      </div>
+
+      {/* Delete button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="shrink-0 text-text-muted hover:text-red-400 transition-colors p-0.5"
+        title={`Delete "${preset.name}"`}
+        aria-label={`Delete "${preset.name}"`}
+        data-testid={`delete-user-preset-${preset.id}`}
+      >
+        <span aria-hidden="true" className="text-[10px]">
+          x
+        </span>
+      </button>
     </li>
   );
 }
