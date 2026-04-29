@@ -543,6 +543,89 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-30 evening, overnight refinement wave)
+
+Session focus: continue from 2026-04-30 morning session. Merged Ken's 6 in-flight audio PRs after rebase, dispatched Wave 1 (4 critical-bug agents in parallel), then dispatched a 5-agent overnight refinement wave while Ken slept. **14 PRs landed this session.**
+
+### PRs merged this session
+
+| PR | Status | Title | Source |
+|---|---|---|---|
+| #126 | ✅ merged | docs(session-archive): 2026-04-29 late session wrap | Claude (rebase) |
+| #118 | ✅ merged | fix(audio): tell Brave users about FSA flag | Ken |
+| #122 | ✅ merged | feat(sound): recognize 12 modern Proffie sound categories | Ken |
+| #124 | ✅ merged | fix(audio): lift mute state to shared Zustand store | Ken |
+| #127 | ✅ merged | fix(audio): swap ignition/retraction sound dispatch | Ken (rebase) |
+| #128 | ✅ merged | fix(audio): broadcast SmoothSwing speed + hot-swap hum | Ken (rebase) |
+| #130 | ✅ merged | fix(audio): suspend AudioContext on global pause | Agent 1C |
+| #131 | ✅ merged | fix(header): standardize buttons | Agent 1D |
+| #132 | ✅ merged | fix(engine): correct retraction animation progress | Agent 1A |
+| #133 | ✅ merged | fix(blade): alignment drift, pointed tip, emitter glow | Agent 1B |
+| #139 | ✅ merged | docs(user-guide): twist ignition + twist modulator behavior | Agent O2 |
+| #140 | ✅ merged | feat(analysis): audio-waveform layer in AnalysisRail | Agent O1 |
+| #141 | ✅ merged | feat(palette): 17 missing commands across NAVIGATE/EDIT/TOGGLE | Agent O5 |
+| #142 | ✅ merged | docs(backlog): ground-truth audit 2026-04-30 | Agent O3 |
+| #143 | ✅ merged | fix(card): theme-gate blade composite for LIGHT_THEME | Agent O4 |
+
+(Previous 2026-04-30 morning session also landed PRs #134, #135, #136, #137 — save-state v1, randomizer extension, add-to-queue, wizard audit. See entry below.)
+
+### Overnight refinement wave (5 parallel agents)
+
+After Wave 1 critical bugs cleared, Ken approved an overnight 5-agent dispatch. Each agent ran in an isolated worktree, opened its own PR, all CI-green by morning.
+
+- **PR #140 (Audio waveform rail, Ken's #12)** — new `audioAnalyserStore` (first-publisher-wins), `useAudioAnalyser` hook, `AnalyserNode` inserted between `masterGain` and `ctx.destination` as a transparent tap. New `audio-waveform` layer in `visualizationTypes.ts` (default off, opt-in). `VisualizationStack` paints the time-domain waveform along the blade Point A → Point B with reduced-motion fallback (static baseline). Tap is intentionally AFTER `masterGain` so muting silences both audio AND the waveform readout (correct UX). +26 web tests.
+- **PR #139 (Twist ignition docs)** — investigation finding: `TwistIgnition` consumes ONLY `twistAngle`, not `bladeAngle`. Twist does NOT trigger or speed up ignition — time-based `progress` still owns the wipe duration via `ignitionMs`. Twist only shapes visuals (spiral wobble phase). Pre-existing class JSDoc claimed "spiral direction" implying CW/CCW; corrected to "phase along the blade." New `docs/user-guide/ignitions.md` (63 lines, all 18 ignition styles + deeper "About `twist`" section), expanded `modulators.md` twist row, README link.
+- **PR #142 (Backlog audit)** — 18 backlog entries audited against `git log --grep` + `git grep` ground truth. **5 stale-bits cleared**: Saber GIF Sprint 2 was actually shipped via PR #80 (the 2026-04-29 stuck agent was re-dispatching to already-done work); Aurebesh font variants shipped via PR #93; BladeCanvas3DWrapper deletion shipped via PR #75; Safari MiniSaber halo banding fixed via PR #92; UX item #16 (Figma color model) explicitly dropped on Hardware Fidelity Principle grounds. POST_LAUNCH_BACKLOG.md gained `Last audited: 2026-04-30` header note. `NEXT_SESSION_HANDOFF.md` fully rewritten.
+- **PR #141 (CommandPalette audit)** — 17 new commands added across **NAVIGATE +9** (every `SectionId` now reachable from ⌘K: my-saber, hardware, ignition-retraction, combat-effects, layer-compositor, routing, motion-simulation, gesture-controls, my-crystal), **EDIT +3** (Save Preset, Add to Queue, Surprise Me — all wrapping existing helpers so palette + buttons share one path), **TOGGLE +3** (Pause, Reduce Bloom, Reduce Motion with dynamic title text). +18 tests; existing 28 still green. No stale commands found.
+- **PR #143 (Light-theme blade bloom)** — replaced ad-hoc `lightBackdrop` boolean (a shipped-but-leaky 2026-04-22 fix) with a proper `bladeComposite: GlobalCompositeOperation` field on `CardTheme`. Each theme declares its own preference; `drawBlade` reads it as a token like every other theme value. LIGHT_THEME = `'source-over'` (paper background); 4 dark themes = `'lighter'` (additive glow). +9 drift-sentinel tests.
+
+### Architectural decisions worth carrying forward
+
+1. **First-publisher-wins on shared engine taps.** The `audioAnalyserStore` from PR #140 demonstrates the pattern: when multiple `useAudioEngine` instances mount (header / preview buttons / SmoothSwing / mobile), the first instance to publish its `AnalyserNode` wins; cleanup only fires when that instance unmounts. Sibling instances don't churn the tap. Same pattern applies to other "shared engine resource" cases: AudioContext itself (Item G in NEXT_SESSION_HANDOFF — Chrome's ~6 AudioContext per-origin cap is now hit), GPU readback for golden-hash, etc.
+
+2. **AnalyserNode tap placement matters for UX.** Putting the analyser AFTER `masterGain` in the audio graph means muting silences both audio output AND the waveform readout (correct: user expects mute = silence everywhere). Putting it BEFORE would render a live waveform while the user thinks they've muted. Documented inline in `useAudioEngine.ts` so the next person tweaking the audio graph doesn't accidentally swap order.
+
+3. **Theme tokens beat string-comparison branching.** PR #143's audit-and-tighten pattern: replace `if (theme.id === 'light')` checks with a typed `bladeComposite` field on `CardTheme`. Each theme owns its idiom; `drawBlade` is theme-id-blind. The pattern scales — when a 6th theme arrives, no `drawBlade` change needed. Same shape used by `--text-muted` token migration earlier in the project.
+
+4. **Backlog audits are high-leverage when evidence-shape.** PR #142's protocol: for every "open" item, run `git log --grep="<keyword>"` + `git grep -l "<symbol>"` BEFORE drawing a verdict; cite specific commits + file paths. Found 5 false-open entries in 18 audited. Future agents avoid re-doing shipped work. Run quarterly minimum.
+
+5. **Pre-existing JSDoc can lie about behavior.** Twist ignition's class doc claimed "spiral direction" (implying CW/CCW rotation) but the code shifted spiral *phase* along the blade. Investigation found via reading the actual `getMask()` math, not trusting the docstring. Future docs PRs should sanity-check the doc against the code before quoting.
+
+### Wave 1 critical-bug findings (from morning session, kept here for completeness)
+
+- **PR #132 (Retraction bug, Ken's #18 top priority)** — `FadeoutRetraction` + `ImplodeRetraction` had inverted progress handling (used `(1 - progress)` when the engine already sends progress 1→0 during retraction, causing a double-inversion that made retractions look like ignitions). +43 retraction tests covering 9 retraction types.
+- **PR #133 (BladeCanvas alignment + tip + emitter glow)** — alignment drift fixed by replacing inline piecewise ternary with shared `inferBladeInches()`; tip pointed-ness fixed by removing `tipExtension = radius * 0.15` in BladeCanvas + headless renderer; emitter glow when off gated on `extendProgress > 0.05`. +379 alignment test cases.
+- **PR #130 (Pause pauses audio)** — `useAudioEngine` watches `isPaused` from uiStore → `ctx.suspend()`/`ctx.resume()`. Independent of mute state.
+- **PR #131 (Header standardization)** — extracted `<HeaderButton>` primitive, normalized 5 buttons + ShareButton + FPSCounter + UndoRedo to h-7/rounded-interactive/focus-visible ring.
+
+### Test deltas
+
+| Package | Pre-session | Post-session | Δ |
+|---|---:|---:|---:|
+| web | 1822 | ~1900 | +78 (audio-waveform 26, palette audit 18, card-theme 9, retraction 43→engine, alignment 379, header 10, others) |
+| engine | 753 | 796 | +43 (retraction-progress) |
+| sound | 43 | 62 | +19 (Ken's PR #122) |
+| codegen / boards / presets | unchanged | unchanged | 0 |
+| **Total** | **~4289** | **~4900+** | **+600+** |
+
+Workspace typecheck clean across all 10 packages.
+
+### Stuck-agent triage
+
+Both stuck agents from the 2026-04-29 late session (marketing site + saber GIF Sprint 2) confirmed clean writeoff:
+- Marketing agent — never pushed branch, zero commits, zero uncommitted changes. Worktree removed.
+- Saber GIF agent — same. Backlog audit (PR #142) discovered Sprint 2 was actually already shipped via PR #80, so the stuck agent was redoing already-done work.
+
+### Recommended next steps
+
+1. **Ken morning walkthrough**: verify all 14 merged PRs in live preview (especially retraction, save-preset, add-to-queue, audio-waveform, command palette, light-theme card export).
+2. **Cut v0.15.1 patch tag**: once browser-verified, this is the pre-launch stabilization release.
+3. **Sub-1024 layout pass** (Ken's #2): deferred from this session — needs Ken's eyes for breakpoint judgment. Not delegable cleanly.
+4. **Item B Safari BladeCanvas bloom**: Ken's hands-on, can't delegate.
+5. **Launch comms prep**: per `docs/LAUNCH_PLAN.md`.
+
+---
+
 ## Current State (2026-04-30, critical bugs + v1 launch features)
 
 Session focus: merge Ken's 6 audio-engine PRs from his parallel session, fix critical bugs from Ken's field testing, ship v1 launch features. **14 PRs merged this session** (6 from Ken's audio session + 8 from this session's agent dispatch).
