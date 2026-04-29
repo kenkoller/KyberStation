@@ -35,6 +35,7 @@ import { IgnitionRetractionAB } from '@/components/editor/ignition-retraction';
 import { CombatEffectsAB } from '@/components/editor/combat-effects';
 import { MySaberAB } from '@/components/editor/my-saber';
 import { AudioAB } from '@/components/editor/audio';
+import { OutputAB } from '@/components/editor/output';
 
 interface MainContentProps {
   className?: string;
@@ -156,6 +157,14 @@ export function MainContent({
       // (source + target dropdowns in B) is a real UX win unlocked by
       // the migration. Board-gating happens at the Sidebar level.
       abContent = <RoutingAB />;
+    } else if (activeSection === 'output') {
+      // Phase 4f: output is a multi-step pipeline (Generate Code →
+      // Configuration Summary → Preview OLED → Export to SD Card →
+      // Flash to Board) per spec §4.9. Column A is a vertical stepper
+      // with status glyphs; Column B mounts the active step's body
+      // (CodeOutput / ConfigSummary / OLEDPreview / CardWriter /
+      // FlashPanel). The wrapper owns the activeStep cursor.
+      abContent = <OutputAB />;
     }
   }
 

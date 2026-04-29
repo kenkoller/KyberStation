@@ -1,0 +1,105 @@
+'use client';
+
+// ─── ConfigSummary — Sidebar A/B v2 Phase 4f ───────────────────────────
+//
+// Extracted from `OutputPanel.tsx`'s previously-private `ExportSummary`
+// helper so the new A/B `OutputColumnB` can mount it for the
+// `config-summary` step without duplicating logic. The legacy
+// `OutputPanel.tsx` still consumes it via this same export so the
+// off-flag fallback renders byte-for-byte the same content.
+//
+// Plain summary table: style, topology, base/clash colors, ignition +
+// retraction with timings, LED count, and a static "Board: ProffieOS
+// 7.x" line. No store writes — pure presentation over `bladeStore`.
+
+import { useBladeStore } from '@/stores/bladeStore';
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return (
+    '#' +
+    [r, g, b]
+      .map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
+export function ConfigSummary(): JSX.Element {
+  const config = useBladeStore((s) => s.config);
+  const topology = useBladeStore((s) => s.topology);
+
+  const baseHex = rgbToHex(
+    config.baseColor.r,
+    config.baseColor.g,
+    config.baseColor.b,
+  );
+  const clashHex = rgbToHex(
+    config.clashColor.r,
+    config.clashColor.g,
+    config.clashColor.b,
+  );
+
+  return (
+    <div
+      className="bg-bg-surface rounded-panel border border-border-subtle p-3"
+      data-testid="output-config-summary"
+    >
+      <h4 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2">
+        Configuration Summary
+      </h4>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-ui-sm">
+        <div className="flex justify-between">
+          <span className="text-text-muted">Style</span>
+          <span className="text-text-secondary font-medium">{config.style}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-text-muted">Topology</span>
+          <span className="text-text-secondary font-medium">
+            {topology.presetId}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-text-muted">Base Color</span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-sm"
+              style={{ backgroundColor: baseHex }}
+            />
+            <span className="text-text-secondary font-mono">{baseHex}</span>
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-text-muted">Clash Color</span>
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-sm"
+              style={{ backgroundColor: clashHex }}
+            />
+            <span className="text-text-secondary font-mono">{clashHex}</span>
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-text-muted">Ignition</span>
+          <span className="text-text-secondary">
+            {config.ignition} ({config.ignitionMs}ms)
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-text-muted">Retraction</span>
+          <span className="text-text-secondary">
+            {config.retraction} ({config.retractionMs}ms)
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-text-muted">LEDs</span>
+          <span className="text-text-secondary tabular-nums">
+            {config.ledCount}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-text-muted">Board</span>
+          <span className="text-text-secondary">ProffieOS 7.x</span>
+        </div>
+      </div>
+    </div>
+  );
+}
