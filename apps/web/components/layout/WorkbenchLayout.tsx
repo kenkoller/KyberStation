@@ -8,6 +8,11 @@ import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useUIStore } from '@/stores/uiStore';
 import type { SectionId } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
+import { useUserPresetStore } from '@/stores/userPresetStore';
+import { addToQueueWithToast } from '@/lib/addToQueue';
+import { useSurpriseMe } from '@/components/editor/Randomizer';
+import { toast } from '@/lib/toastManager';
 import { playUISound, getUISoundEngine } from '@/lib/uiSounds';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
@@ -221,6 +226,27 @@ export function WorkbenchLayout() {
   // command list doesn't churn every time a theme command runs.
   const setCanvasTheme = useUIStore((s) => s.setCanvasTheme);
 
+  // Pause toggle — surfaced as a TOGGLE palette command. Mirrors the
+  // header PauseButton's behaviour (full-pause via the 'full' scope).
+  const togglePause = useUIStore((s) => s.togglePause);
+
+  // A11y toggles surfaced via the palette so users can flip them
+  // without opening Settings. Both setters write through the
+  // accessibility store, which also persists to localStorage and
+  // syncs the OS reduced-motion preference for `reducedMotion`.
+  const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
+  const setReduceBloom = useAccessibilityStore((s) => s.setReduceBloom);
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const setReducedMotion = useAccessibilityStore((s) => s.setReducedMotion);
+
+  // EDIT-group commands — Save Preset (window.prompt for v1, matches
+  // SavePresetButton), Add to Queue (uses the same toast pipeline as
+  // AddToQueueButton), Surprise Me (delegates to the standalone
+  // useSurpriseMe hook, which is what the Inspector + Gallery cards
+  // already call).
+  const savePreset = useUserPresetStore((s) => s.savePreset);
+  const { surprise: surpriseMe } = useSurpriseMe();
+
   // Build the HUD ticker content by interleaving the static lore pool
   // with live engine / UI readouts. The ticker is ambient decorative
   // chrome, so re-computing on tab / theme change is fine — it just
@@ -392,6 +418,31 @@ export function WorkbenchLayout() {
   // command set; owning panels may register more on mount in later waves.
   useCommandPalette();
 
+  // EDIT-group palette helpers. Each wraps a side-effecting action with
+  // a UI sound + the same toast / prompt UX the action-bar buttons use.
+  const handleSavePreset = useCallback(() => {
+    const current = useBladeStore.getState().config;
+    const defaultName =
+      (current as Record<string, unknown>).name
+        ? String((current as Record<string, unknown>).name)
+        : `My Preset ${new Date().toLocaleTimeString()}`;
+    const name = window.prompt('Name your preset:', defaultName);
+    if (!name || name.trim().length === 0) return;
+    savePreset(name.trim(), { ...current });
+    toast.success(`Saved "${name.trim()}"`);
+  }, [savePreset]);
+
+  const handleAddToQueue = useCallback(() => {
+    const current = useBladeStore.getState().config;
+    addToQueueWithToast(current);
+  }, []);
+
+  const handleSurpriseMe = useCallback(() => {
+    playUISound('button-click');
+    surpriseMe();
+    playUISound('success');
+  }, [surpriseMe]);
+
   const commands = useMemo<Command[]>(() => {
     const goToSection = (section: SectionId) => () => {
       playUISound('tab-switch');
@@ -427,6 +478,71 @@ export function WorkbenchLayout() {
         run: goToSection('color'),
       },
       {
+        id: 'nav:ignition-retraction',
+        group: 'NAVIGATE',
+        title: 'Go to Ignition & Retraction',
+        icon: '⚒',
+        run: goToSection('ignition-retraction'),
+      },
+      {
+        id: 'nav:combat-effects',
+        group: 'NAVIGATE',
+        title: 'Go to Combat Effects',
+        icon: '⚒',
+        run: goToSection('combat-effects'),
+      },
+      {
+        id: 'nav:layer-compositor',
+        group: 'NAVIGATE',
+        title: 'Go to Layers',
+        icon: '⚒',
+        run: goToSection('layer-compositor'),
+      },
+      {
+        id: 'nav:routing',
+        group: 'NAVIGATE',
+        title: 'Go to Routing',
+        icon: '⚒',
+        run: goToSection('routing'),
+      },
+      {
+        id: 'nav:motion-simulation',
+        group: 'NAVIGATE',
+        title: 'Go to Motion Simulation',
+        icon: '⚒',
+        run: goToSection('motion-simulation'),
+      },
+      {
+        id: 'nav:gesture-controls',
+        group: 'NAVIGATE',
+        title: 'Go to Gesture Controls',
+        icon: '⚒',
+        run: goToSection('gesture-controls'),
+      },
+      {
+        id: 'nav:my-saber',
+        group: 'NAVIGATE',
+        title: 'Go to My Saber',
+        subtitle: 'Saber profile manager',
+        icon: '⚒',
+        run: goToSection('my-saber'),
+      },
+      {
+        id: 'nav:hardware',
+        group: 'NAVIGATE',
+        title: 'Go to Hardware',
+        icon: '⚒',
+        run: goToSection('hardware'),
+      },
+      {
+        id: 'nav:my-crystal',
+        group: 'NAVIGATE',
+        title: 'Go to My Crystal',
+        subtitle: 'Saber Card / Kyber Crystal export',
+        icon: '⚒',
+        run: goToSection('my-crystal'),
+      },
+      {
         id: 'nav:audio',
         group: 'NAVIGATE',
         title: 'Go to Audio',
@@ -441,6 +557,61 @@ export function WorkbenchLayout() {
         kbd: kbdFor('4'),
         icon: '⚒',
         run: goToSection('output'),
+      },
+      // ── EDIT — current-config side-effects (save, queue, randomize) ──
+      // These actions read the live bladeStore inside their `run` so the
+      // palette doesn't need to re-render on every parameter tweak.
+      {
+        id: 'edit:save-preset',
+        group: 'EDIT',
+        title: 'Save current as preset',
+        subtitle: 'Snapshot current design into My Presets',
+        icon: '⭐',
+        run: handleSavePreset,
+      },
+      {
+        id: 'edit:add-to-queue',
+        group: 'EDIT',
+        title: 'Add to queue',
+        subtitle: 'Add current design to active saber profile card queue',
+        icon: '📌',
+        run: handleAddToQueue,
+      },
+      {
+        id: 'edit:surprise-me',
+        group: 'EDIT',
+        title: 'Surprise me',
+        subtitle: 'Randomize the current blade design',
+        icon: '✨',
+        run: handleSurpriseMe,
+      },
+      // ── TOGGLE — flip a binary state (pause / a11y) ─────────────────
+      // Single label rather than per-state ("Pause animation" / "Resume
+      // animation") so the palette stays predictable as state flips.
+      {
+        id: 'toggle:pause',
+        group: 'TOGGLE',
+        title: 'Toggle pause',
+        subtitle: 'Freeze blade engine + animations',
+        kbd: 'Esc',
+        icon: '⏸',
+        run: () => togglePause('full'),
+      },
+      {
+        id: 'toggle:reduce-bloom',
+        group: 'TOGGLE',
+        title: reduceBloom ? 'Disable Reduce Bloom' : 'Enable Reduce Bloom',
+        subtitle: 'Tone down blade glow + bloom intensity',
+        icon: '·',
+        run: () => setReduceBloom(!reduceBloom),
+      },
+      {
+        id: 'toggle:reduce-motion',
+        group: 'TOGGLE',
+        title: reducedMotion ? 'Disable Reduced Motion' : 'Enable Reduced Motion',
+        subtitle: 'Honour OS reduced-motion preference',
+        icon: '·',
+        run: () => setReducedMotion(!reducedMotion),
       },
       // ── AUDITION ──────────────────────────────────────────────────
       {
@@ -695,6 +866,14 @@ export function WorkbenchLayout() {
     setCanvasTheme,
     router,
     kbdFor,
+    handleSavePreset,
+    handleAddToQueue,
+    handleSurpriseMe,
+    togglePause,
+    reduceBloom,
+    setReduceBloom,
+    reducedMotion,
+    setReducedMotion,
   ]);
 
   useRegisterCommands(commands);
