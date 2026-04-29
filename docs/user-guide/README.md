@@ -23,6 +23,7 @@ Wire live signals — swing, sound, angle, time, clash — to any blade paramete
 
 ## Other topics
 
+- [Ignition Styles](./ignitions.md) — picking the visual choreography for blade-on
 - Landing Page Tour *(coming soon)*
 - Editor Tour *(coming soon)*
 - Flash to Saber *(coming soon)*

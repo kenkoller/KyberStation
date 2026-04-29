@@ -14,9 +14,20 @@ Here are the 11 KyberStation ships with.
 |---|---|---|---|---|
 | **`swing`** *(v1.0)* | Phone shake, mouse shake in the editor's motion sim | `0..1` | 0.35 (slow response) | `shimmer`, `colorHueShiftSpeed`, accent-color channels |
 | **`angle`** *(v1.0)* | Tilt your phone up/down, drag the angle slider in motion sim | `-1..1` (down to up) | 0.20 | `baseColor.r`, `baseColor.b`, brightness fields |
-| **`twist`** *(v1.1+)* | Wrist rotation around the blade's long axis | `-1..1` | 0.20 | `colorHueShiftSpeed`, accent positions |
+| **`twist`** *(v1.1+)* | Wrist rotation around the blade's long axis | `-1..1` | 0.20 | `colorHueShiftSpeed`, `colorSaturationPulse`, accent positions |
 
 These are your gesture-reactive primitives. Swing is the everyday workhorse — it's what makes a blade feel "alive" without you having to design anything fancy. Angle and twist are the ones that surprise people.
+
+### About `twist`
+
+`twist` reads the blade's rotation around its **long axis** — the saber pointing the same direction, with your wrist rolling. Think of revving a motorcycle throttle, or turning a key. It's a separate signal from `swing` (translation through space) and `angle` (tilt away from upright).
+
+- **Range:** `-1` (rolled fully one way) → `0` (neutral) → `+1` (rolled fully the other way).
+- **Real-saber gesture:** twist the hilt left or right while holding it roughly upright.
+- **Editor sim:** the twist slider in the motion-simulation panel.
+- **In presets:** the `twist-driven-saturation` [recipe](./recipes.md) wires `twist → colorSaturationPulse`, so rolling your wrist makes the blade bloom from desaturated to vivid. Pairs well with `replace` if you want twist to fully take over a parameter, or `add · 50%` for a subtle drift.
+
+Twist is the most "felt" of the gesture modulators — users notice it without being told, because it maps to a deliberate hand motion rather than incidental movement during a swing.
 
 ## Audio modulators
 
