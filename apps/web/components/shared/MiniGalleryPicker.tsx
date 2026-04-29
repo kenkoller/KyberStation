@@ -49,6 +49,15 @@ export interface MiniGalleryItem {
   label: string;
   /** Pre-rendered SVG thumbnail. 100×60 preferred; anything is allowed. */
   thumbnail: ReactNode;
+  /**
+   * Optional 24×24 SVG variant for compact-trigger surfaces (the
+   * Inspector's QuickIgnitionPicker / QuickRetractionPicker render
+   * the active item at native 24×24 — without this, they scale the
+   * 100×60 `thumbnail` down by `transform: scale(0.24)`, which can
+   * read fuzzy on hairline strokes). T1.2 (2026-04-29) — see
+   * `apps/web/lib/ignitionThumbnails.tsx` for authoring guidance.
+   */
+  compactThumbnail?: ReactNode;
   /** Optional hover tooltip / description text. */
   description?: string;
   /**

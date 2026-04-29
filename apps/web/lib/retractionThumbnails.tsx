@@ -3,11 +3,21 @@
 // Static SVG thumbnails keyed by retraction id. Mirrors ignitionThumbnails
 // shape; direction cues are reversed (hilt end bright, tip fading) to
 // signal "coming home" rather than "extending out."
+//
+// Optional `compactThumbnail` (2026-04-29 — T1.2 MGP crispness): mirrors
+// the same field on IgnitionThumbnailEntry. See ignitionThumbnails.tsx
+// for the rationale.
 
 import type { ReactNode } from 'react';
 
 export interface RetractionThumbnailEntry {
+  /** 100×60 SVG. Authoritative shape source. */
   thumbnail: ReactNode;
+  /**
+   * Optional 24×24 SVG. Picker falls back to scaled-down `thumbnail`
+   * when absent. See QuickTransitionPicker for the wiring.
+   */
+  compactThumbnail?: ReactNode;
   label: string;
 }
 
