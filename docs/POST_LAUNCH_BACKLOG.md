@@ -42,17 +42,17 @@ Tracks small-to-medium items that should land soon after launch, scoped to one o
 | ~~Wave 7 — Kyber Glyph v2 modulation round-trip encoder body~~ | ~~MODULATION_ROUTING_v1.1_IMPL_PLAN.md~~ | ~~M~~ | **✅ Done — landed via [PR #72](https://github.com/kenkoller/KyberStation/pull/72) on 2026-04-27.** Auto-bumps glyph version byte 1 → 2 when modulation present; old clients see version error vs silent strip. +16 round-trip tests. |
 | **Marketing site re-implementation** | (was PR #32, now closed-and-deferred) | L | Original PR #32 was 153 commits behind main and largely subsumed. Clean v0.15.x re-implementation: `/features` `/showcase` `/changelog` `/faq` `/community` pages, ScrollReveal component, inline code peek, `pageMetadata.ts` helper. SEO infra (`robots.txt` / `sitemap.xml` / `siteConfig.ts`) shipped pre-launch in PR #69. |
 | ~~**Sidebar IA reorganization**~~ | ~~[`docs/SIDEBAR_IA_AUDIT_2026-04-27.md`](SIDEBAR_IA_AUDIT_2026-04-27.md)~~ | ~~M~~ | **✅ Done — landed via [PR #89](https://github.com/kenkoller/KyberStation/pull/89) on 2026-04-27.** SETUP / DESIGN / REACTIVITY / OUTPUT regrouping shipped; duplicate ignition/retraction pickers + duplicate Board picker triggers consolidated. |
-| **Sidebar A/B Column Layout v2** | [`docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md`](SIDEBAR_AB_LAYOUT_v2_DESIGN.md) | L | New MainContent shape: Sidebar → Column A list → Column B controls (macOS Settings / VS Code analogy). **5/6 sections done** as of 2026-04-29: blade-style (PR #91), color + ignition-retraction (PR #94), combat-effects (PR #98), my-saber (PR #100), audio (PR #101), routing (PR #105), gallery (PR #107). Only `output` remains — needs UX call on multi-step pipeline shape per spec §4.9. |
+| ~~**Sidebar A/B Column Layout v2**~~ | ~~[`docs/SIDEBAR_AB_LAYOUT_v2_DESIGN.md`](SIDEBAR_AB_LAYOUT_v2_DESIGN.md)~~ | ~~L~~ | **✅ Done — 6/6 sections complete as of 2026-04-29 late.** blade-style (PR #91), color + ignition-retraction (PR #94), combat-effects (PR #98), my-saber (PR #100), audio (PR #101), routing (PR #105), gallery (PR #107), **output (PR #121)**. |
 | ~~**`useSharedConfig` URL handler test**~~ | ~~[`docs/SABER_CARD_AUDIT_2026-04-27.md`](SABER_CARD_AUDIT_2026-04-27.md) P1~~ | ~~S~~ | **✅ Done** — `apps/web/tests/useSharedConfig.test.ts` exists with 8 tests covering `?s=<glyph>` decode, `loadPreset` invocation, URL strip-after-decode, malformed glyph, version error, hash-fallback. `@testing-library/react` is in deps. |
 | ~~**Hilt Library Stage 2 — 7 canon-character assemblies**~~ | ~~[`docs/HILT_STAGE_2_BRIEFING.md`](HILT_STAGE_2_BRIEFING.md)~~ | ~~L~~ | **✅ Done — landed via [PR #79](https://github.com/kenkoller/KyberStation/pull/79) on 2026-04-27** + follow-up fix `a1ec4e3`. All 7 assemblies + 29 parts shipped. The `~/.claude/plans/i-would-like-to-woolly-turtle-agent-a7508824b8adc4c43.md` plan file is now superseded; can be archived. |
 | **Module extraction `lib/blade/*` from `BladeCanvas.tsx`** | `CLAUDE.md` v0.14.0 entry | M | BladeCanvas.tsx is ~2800 lines with the bloom / rim-glow / motion-blur / ambient pipeline inline. Extract to `lib/blade/pipeline.ts` + `lib/blade/bloom.ts` + etc. so `MiniSaber` / `FullscreenPreview` / `SaberCard` can adopt the same pipeline. Phase 4 of the v0.14.0 plan. |
-| **Golden-hash blade-render regression tests** | `CLAUDE.md` v0.14.0 entry | M | Render 8 canonical configs to a buffer, hash, diff against a checked-in golden set. Catches accidental visual drift. Designed in the v0.14.0 plan; not built. |
+| **Golden-hash blade-render regression tests** | `CLAUDE.md` v0.14.0 entry | M | **🟡 Engine-side done** via [PR #112](https://github.com/kenkoller/KyberStation/pull/112) on 2026-04-29 (33 cases hashing `captureStateFrame` LED buffers — protects engine drift). **Renderer-side still TBD** — needs `canvas` (npm) to capture rendered pixel buffers from the BladeCanvas pipeline. Renderer-level tests are the explicit prerequisite for Item K module extraction below. |
 | **Card snapshot golden-hash tests (20 layout × theme combos)** | `CLAUDE.md` Share Card v2 entry | M | Same harness shape as the blade-render tests, applied to the saber card pipeline (4 layouts × 5 themes = 20 combos). Lock down regressions in `cardSnapshot.ts`. |
 | **Mobile shell migration to Sidebar + MainContent** | `CLAUDE.md` left-rail overhaul entry | M | Mobile shell still uses 4-tab swipe UI + `MergedDesignPanel`. Once mobile migrates, `DesignPanel.tsx`, `DynamicsPanel.tsx`, `MergedDesignPanel`, and `uiStore.activeTab` can all leave together. **Needs UX judgment call** on drawer vs bottom-sheet pattern at 375px. |
-| **Custom color popover** | `CLAUDE.md` left-rail overhaul entry | S | Custom color chip currently jumps to deep Color section. Inline HSL popover is an alternative; small follow-up if preferred. |
-| **MGP thumbnail crispness** | `CLAUDE.md` left-rail overhaul entry | S | 24×24 ignition/retraction triggers are scaled-down 100×60 SVGs via `transform: scale(0.24)`. Add `compactThumbnail` field on `transitionCatalogs.ts` entries so authors can ship optimised small-size SVGs. |
+| ~~**Custom color popover**~~ | ~~`CLAUDE.md` left-rail overhaul entry~~ | ~~S~~ | **✅ Explicitly dropped 2026-04-29** per Ken — existing pattern (Custom chip jumps to deep Color section) has a documented intentional reason ("the deep panel already does the job; no benefit to maintaining two custom-color surfaces"). |
+| ~~**MGP thumbnail crispness**~~ | ~~`CLAUDE.md` left-rail overhaul entry~~ | ~~S~~ | **✅ Done — landed via [PR #117](https://github.com/kenkoller/KyberStation/pull/117) (infra) + [PR #125](https://github.com/kenkoller/KyberStation/pull/125) (26 compact 24×24 SVGs) on 2026-04-29.** Optional `compactThumbnail` field on registry entries; QuickTransitionPicker renders natively at 24×24 when present, falls back to scale-down when absent. |
 | **Cross-OS hardware sweep — Windows / Linux + V2 / V3-OLED** | [`HARDWARE_VALIDATION_TODO.md`](HARDWARE_VALIDATION_TODO.md) | M | Phase A/B/C ✅ on macOS + V3.9 + Brave (Chromium). Windows WebUSB driver (WinUSB) historically fragile; Linux udev rules common sharp edge. Community-driven post-launch — invite reports via the launch Reddit post per `LAUNCH_PLAN.md`. |
-| **Code-level TODOs sweep** | grep results | S each | ~~`WorkbenchLayout.tsx:669` (theme-row cap)~~ ✅ shipped via [PR #110](https://github.com/kenkoller/KyberStation/pull/110) on 2026-04-29 · ~~`DeliveryRail.tsx:210` + `StatusBar.tsx:170,238` (global WebUSB store)~~ ✅ shipped via PR #104 — both surfaces now consume `useWebusbStore` (live status / device name / 6-state enum) · `BladeHardwarePanel.tsx` / `PowerDrawPanel.tsx` / `GradientBuilder.tsx` (left-rail-overhaul consumer migration) ⛔ blocked on mobile shell migration · `useClickToRoute.ts` (bladeStore-modulation-patch cleanup) · `packages/engine/src/modulation/sampler.ts` (v1.1 preon/ignition/retraction progress, `BladeConfig.clashDecay`). One PR per remaining cluster. |
+| **Code-level TODOs sweep** | grep results | S each | ~~`WorkbenchLayout.tsx:669` (theme-row cap)~~ ✅ shipped via [PR #110](https://github.com/kenkoller/KyberStation/pull/110) · ~~`DeliveryRail.tsx:210` + `StatusBar.tsx:170,238` (global WebUSB store)~~ ✅ shipped via PR #104 · ~~`useClickToRoute.ts` (bladeStore-modulation-patch cleanup)~~ ✅ shipped via [PR #113](https://github.com/kenkoller/KyberStation/pull/113) on 2026-04-29 · ~~`packages/engine/src/modulation/sampler.ts` (v1.1 preon/ignition/retraction progress + `BladeConfig.clashDecay`)~~ ✅ shipped via [PR #114](https://github.com/kenkoller/KyberStation/pull/114) (clashDecay) + [PR #123](https://github.com/kenkoller/KyberStation/pull/123) (preon/ignition/retraction progress) on 2026-04-29 · `BladeHardwarePanel.tsx` / `PowerDrawPanel.tsx` / `GradientBuilder.tsx` (left-rail-overhaul consumer migration) ⛔ still blocked on mobile shell migration. **All sweep clusters except mobile-blocked stubs are now closed.** |
 | ~~Dead-code cleanup (BladeCanvas3DWrapper + canvasMode)~~ | ~~CLAUDE.md 1.5x entry~~ | ~~S~~ | **✅ Done — landed via [PR #75](https://github.com/kenkoller/KyberStation/pull/75) on 2026-04-27.** Removed `BladeCanvas3DWrapper.tsx` (orphan) + `CanvasMode` type / `canvasMode` field / `setCanvasMode` setter from `uiStore.ts`. Persisted state from older sessions silently no-ops on next load (no migration shim needed since nothing reads). |
 | **Dead-code cleanup — consumer-migration stubs** ⛔ BLOCKED on mobile migration | grep results | S each, post-mobile-migration | The 3 stubs `BladeHardwarePanel.tsx`, `PowerDrawPanel.tsx`, `GradientBuilder.tsx` carry "left-rail-overhaul: consumer migration in progress" TODOs. **Verified blocked 2026-04-28**: a parallel-agent attempt confirmed that all 3 stubs have ACTIVE consumers requiring **non-mechanical reshaping**, not just import rewrites. Specifically: (a) `BladeHardware` + `PowerDraw` are both still consumed by `DesignPanel.tsx` (mobile shell), which mounts them as **separate sibling sections** — swapping in `<HardwarePanel />` (which contains both) would either duplicate content or require restructuring DesignPanel's section list; (b) `PowerDrawPanel` is also routed from `TabColumnContent.tsx`'s `'power-draw'` panel-slot router; (c) `GradientBuilder` is consumed by A/B-section files (`ColorColumnB.tsx`, `BladeStyleColumnB.tsx`) AND `ColorPanel.tsx`'s gradient region is a private `function GradientRegion()` (not exported) — drop-in swap not possible without first extracting `GradientRegion` to a shared `lib/gradient/` module. **Sequence**: ship mobile migration → DesignPanel + TabColumnContent retire → BladeHardware/PowerDraw stubs delete cleanly → extract `GradientRegion` → GradientBuilder stub deletes. Don't re-attempt this PR until the mobile-migration row below ships. |
 | ~~`BladeConfig.hiltId` type declaration~~ | ~~`CLAUDE.md` Share Card v2 follow-ups~~ | ~~S~~ | **✅ Done** — landed in commit `0a1a54e` on 2026-04-27. `hiltId?: string` declared on `BladeConfig`; `(config as unknown as { hiltId?: string }).hiltId` cast dropped from `card/drawHilt.ts`. |
@@ -112,9 +112,11 @@ Track here when surfaced; promote to a versioned sprint when bundled with relate
 - **Aurebesh font variants beyond Canon** — CanonTech / Legends / LegendsTech `.otf` files are bundled, no UI uses them. Future immersion-mode toggle. Source: `CLAUDE.md` v0.14.0 entry.
 - **`BladeCanvas3DWrapper` deletion** — file exists in `apps/web/components/editor/` with no import path. Safe to delete after sweep. Source: `CLAUDE.md` 1.5x entry.
 
-## 2026-04-29 session — what shipped (4+ PRs)
+## 2026-04-29 session — what shipped (15 PRs by Claude + 3 by Ken = 18 total)
 
-Continuation session focused on closing user-visible WIP markers + the pre-public-launch backlog.
+Marathon session. Closed all user-visible WIP markers, the major Hardware Fidelity Principle gap, completed Phase 4 sidebar A/B (6/6 sections), and burned down most of Ken's pre-launch Tier 1 + Tier 2 shortlist.
+
+### Morning batch (Tier 1 + initial cleanups)
 
 | PR | Title | Status |
 |---|---|---|
@@ -122,10 +124,59 @@ Continuation session focused on closing user-visible WIP markers + the pre-publi
 | [#108](https://github.com/kenkoller/KyberStation/pull/108) | feat(blade-render): Item D — strip count drives blade thickness | ✅ Merged |
 | [#109](https://github.com/kenkoller/KyberStation/pull/109) | feat(blade-render): Item E — Triple + Inquisitor topology visuals | ✅ Merged |
 | [#110](https://github.com/kenkoller/KyberStation/pull/110) | chore(palette): remove THEME_CAP — surface all 30 themes | ✅ Merged |
+| [#111](https://github.com/kenkoller/KyberStation/pull/111) | docs(backlog): mark stale entries shipped + add 2026-04-29 recap | ✅ Merged |
+| [#112](https://github.com/kenkoller/KyberStation/pull/112) | test(engine): golden-hash regression tests (33 cases) | ✅ Merged |
+| [#113](https://github.com/kenkoller/KyberStation/pull/113) | chore(modulation): remove stale useClickToRoute TODO markers | ✅ Merged |
+| [#114](https://github.com/kenkoller/KyberStation/pull/114) | feat(modulation): wire BladeConfig.clashDecay through sampleModulators | ✅ Merged |
 
-**Two user-visible WIP markers closed** (Items D + E). **Phase 4 sidebar A/B at 5/6** — only `output` remains (deferred for UX call). **Stale-backlog audit:** discovered that `Sidebar IA reorganization` (PR #89), `Hilt Library Stage 2` (PR #79), `useSharedConfig URL handler test`, `CardTheme token expansion`, `Light-theme blade bloom theme-gating` (PR #88), and the `WebUSB store` consumer TODOs were all already shipped — backlog table refreshed in this PR to reflect actual state.
+### Afternoon batch (Tier 1 + Tier 2 priorities + Hardware Fidelity)
 
-**Attempted but reverted:** AppPerfStrip "KYBER → My Saber 1" hydration warning. The proper fix is `next/dynamic({ ssr: false })` at the WorkbenchLayout + GalleryPage call sites (text-node mismatches inside subtrees aren't reachable from `suppressHydrationWarning`); wider blast radius than a parallel-track cleanup should carry. Worth a focused future PR.
+| PR | Title | Status |
+|---|---|---|
+| [#115](https://github.com/kenkoller/KyberStation/pull/115) | **(Ken)** fix(sound): scan/load directory handle iterator yields tuples | ✅ Merged |
+| [#116](https://github.com/kenkoller/KyberStation/pull/116) | **feat(blend): tighten BlendMode to 'normal' (T2.2 Hardware Fidelity)** | ✅ Merged |
+| [#117](https://github.com/kenkoller/KyberStation/pull/117) | feat(mgp): compactThumbnail infrastructure for crisp 24x24 picker triggers | ✅ Merged |
+| [#118](https://github.com/kenkoller/KyberStation/pull/118) | **(Ken)** fix(audio): tell Brave users about the FSA flag in library warning copy | ✅ Merged |
+| [#119](https://github.com/kenkoller/KyberStation/pull/119) | fix(workbench): action-bar effect chips icon-only below 1280px | ✅ Merged |
+| [#121](https://github.com/kenkoller/KyberStation/pull/121) | **feat(sidebar-ab): Phase 4f — output multi-step pipeline (6/6 done)** | ✅ Merged |
+| [#122](https://github.com/kenkoller/KyberStation/pull/122) | **(Ken)** feat(sound): recognize 12 modern Proffie / Kyberphonic sound categories | ✅ Merged |
+| [#123](https://github.com/kenkoller/KyberStation/pull/123) | feat(modulation): wire preon/ignition/retraction progress to sampler | ✅ Merged |
+| [#125](https://github.com/kenkoller/KyberStation/pull/125) | feat(mgp): 26 compact 24x24 thumbnails for crisp picker triggers | ✅ Merged |
+| ~~#120~~ | superseded by #125 (auto-closed when #117's branch was deleted on merge) | closed |
+
+### Highlights
+
+- **Hardware Fidelity gap closed (PR #116).** The 5-mode `BlendMode` union (`normal | add | multiply | screen | overlay`) tightened to single literal `'normal'`. The codegen never emitted the 4 non-normal modes — they were visualizer-only fakes that misrepresented what users would see on real hardware. Audit-history section added to `docs/HARDWARE_FIDELITY_PRINCIPLE.md`.
+- **Phase 4 Sidebar A/B v2 — 6/6 sections complete** (PR #121 shipped the final `output` section with vertical-stepper Column A).
+- **All v1.1 modulation sampler TODOs closed** (PR #114 clashDecay + PR #123 preon/ignition/retraction progress).
+- **2 user-visible WIP markers closed** (Item D strip-count thickness PR #108 + Item E Triple/Inquisitor topology PR #109).
+- **Engine-level golden-hash tests** (PR #112, 33 cases) — ground truth for engine drift; renderer-level tests still TBD per `docs/HARDWARE_FIDELITY_PRINCIPLE.md` audit-history.
+
+### Stuck agents (2026-04-29 late dispatch)
+
+Two background agents from the late-session push ran ~2.5h without pushing branches. Recovery is the next session's first priority — see `docs/NEXT_SESSION_HANDOFF.md`.
+
+| Agent | Branch (intended) | Status |
+|---|---|---|
+| `agent-a077c8445fc8384d1` | `feat/marketing-site-v0.15.x` | locked, no push |
+| `agent-af446b7e1bb77edd2` | `feat/saber-gif-sprint-2` | locked, no push |
+
+### Stale-backlog audit (carried over from PR #111)
+
+Multiple v0.15.x sprint table items had already shipped at session start (CardTheme tokens, useSharedConfig URL test, Light-theme bloom, Hilt Stage 2, WebUSB store consumers). Backlog refreshed in PR #111. Going forward: ground-truth-check via `git log --grep` + `git grep` before touching any "open" item.
+
+### Ken's pre-launch shortlist — Tier 1 + Tier 2 status delta
+
+8 of 14 ✅ closed, 1 🟡 partial, 5 ⏳ deferred. Of deferred: 2 environmental (Safari hands-on, cross-OS hardware), 2 gated on canvas dep, 1 large architectural (Wave 8). See full table in `CLAUDE.md` "Current State (2026-04-29 late)" entry.
+
+### Recommended next path
+
+1. Recover or write off the 2 stuck agents
+2. Add `canvas` dep + build T2.10 renderer-level golden-hash harness
+3. Item K module extraction (now safe with renderer-level coverage)
+4. Cut **v0.15.1** patch tag — clean release between architectural sprints
+5. Then: Wave 8 button routing (its own focused multi-day session)
+6. Then: Item H mobile shell migration (Ken's UX call needed)
 
 ## Launch-night progress recap (2026-04-27 evening)
 
