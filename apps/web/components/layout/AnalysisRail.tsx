@@ -27,6 +27,7 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { LayerCanvas, computeLayerReadout } from '@/components/editor/VisualizationStack';
 import { useAnimationFrame } from '@/hooks/useAnimationFrame';
+import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
 import {
   getLayerById,
   LINE_GRAPH_SHAPED_LAYER_IDS,
@@ -297,6 +298,7 @@ function LayerReadout({
   const swing = useBladeStore((s) => s.motionSim.swing);
   const bladeState = useBladeStore((s) => s.bladeState);
   const rgbLumaChannels = useVisualizationStore((s) => s.rgbLumaChannels);
+  const audioAnalyser = useAudioAnalyser();
 
   const [readout, setReadout] = useState<string | null>(null);
 
@@ -307,6 +309,7 @@ function LayerReadout({
         swingSpeed: swing / 100,
         bladeState: bladeState as string,
         rgbLumaChannels,
+        audioWaveform: layerId === 'audio-waveform' ? audioAnalyser.getLatest() : null,
       });
       // Only trigger a render if the value changed — string compare is cheap.
       setReadout((prev) => (prev === next ? prev : next));

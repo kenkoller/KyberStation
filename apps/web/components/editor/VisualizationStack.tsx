@@ -13,6 +13,7 @@ import {
   type VisualizationLayerId,
 } from '@/lib/visualizationTypes';
 import { computeBladeRenderMetrics } from '@/lib/bladeRenderMetrics';
+import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
 
 // ─── Constants ───
 
@@ -118,6 +119,12 @@ export interface ReadoutContext {
   bladeState?: string;
   ledCount?: number;
   rgbLumaChannels?: { r: boolean; g: boolean; b: boolean; l: boolean };
+  /**
+   * Latest audio time-domain frame (Float32, [-1, 1]). Optional —
+   * `computeLayerReadout('audio-waveform', …)` returns 'OFF' / 'IDLE'
+   * appropriately when this is absent.
+   */
+  audioWaveform?: Float32Array | null;
 }
 
 export function computeLayerReadout(
@@ -208,6 +215,23 @@ export function computeLayerReadout(
         if (0.299 * r + 0.587 * g + 0.114 * b > 180) hot++;
       }
       return `${hot} hot px`;
+    }
+    case 'audio-waveform': {
+      // Computes peak amplitude (in dBFS) of the latest audio frame.
+      // Returns 'OFF' when no analyser is published yet (AudioContext
+      // hasn't been initialised) and 'SILENT' when the latest frame is
+      // below an audible-floor threshold. -∞ dBFS is conventional for
+      // a fully-silent buffer; we round up to '-∞' for display.
+      const buf = ctx.audioWaveform;
+      if (!buf || buf.length === 0) return 'OFF';
+      let peak = 0;
+      for (let i = 0; i < buf.length; i++) {
+        const a = Math.abs(buf[i]);
+        if (a > peak) peak = a;
+      }
+      if (peak < 1e-4) return 'SILENT';
+      const dbfs = 20 * Math.log10(peak);
+      return `${dbfs.toFixed(0)} dBFS`;
     }
     default:
       return null;
@@ -550,6 +574,83 @@ function renderTransitionProgressLayer(
   ctx.strokeRect(gx, gy, gw, gh);
 }
 
+/**
+ * Render the live audio waveform across the blade's Point A → Point B
+ * extent. Reads the latest time-domain frame from the AnalyserNode tap
+ * (see `hooks/useAudioAnalyser.ts`); when no analyser is published
+ * (AudioContext not yet initialised) renders a flat zero line + a
+ * subtle "no signal" hint via the empty waveform.
+ *
+ * Reduced-motion path: when `reducedMotion` is true, paints a flat
+ * baseline only (no live samples) — same approach as the swing-response
+ * + transition-progress rows when reduced motion is engaged via
+ * `useAnimationFrame`'s maxFps clamp. The clamp gives ~2fps; this
+ * static branch is the visible UX of that.
+ */
+function renderAudioWaveformLayer(
+  ctx: CanvasRenderingContext2D,
+  buffer: Float32Array | null,
+  cw: number,
+  ch: number,
+  ledCount: number,
+  dpr: number,
+  reducedMotion: boolean,
+) {
+  ctx.fillStyle = BG_COLOR;
+  ctx.fillRect(0, 0, cw, ch);
+
+  const padY = 3 * dpr;
+  const { gx, gw } = computeGraphBounds(cw, dpr, ledCount);
+  const gy = padY;
+  const gh = ch - padY * 2;
+  if (gw <= 0 || gh <= 0) return;
+
+  // Subtle top/bottom + center grid lines. Center is the zero baseline.
+  const midY = gy + gh / 2;
+  ctx.strokeStyle = GRID_COLOR;
+  ctx.lineWidth = 0.5 * dpr;
+  ctx.beginPath();
+  ctx.moveTo(gx, gy);
+  ctx.lineTo(gx + gw, gy);
+  ctx.moveTo(gx, gy + gh);
+  ctx.lineTo(gx + gw, gy + gh);
+  ctx.moveTo(gx, midY);
+  ctx.lineTo(gx + gw, midY);
+  ctx.stroke();
+
+  // Reduced motion or no buffer: leave the baseline visible only.
+  // Same UX intent as the existing layers' static-fallback paths.
+  if (reducedMotion || !buffer || buffer.length === 0) {
+    ctx.strokeStyle = '#67e8f9';
+    ctx.lineWidth = 1.25 * dpr;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(gx, midY);
+    ctx.lineTo(gx + gw, midY);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  // Live waveform — sample buffer at evenly-spaced x positions across
+  // the graph extent. Buffer values are in [-1, 1]; we map -1 → bottom,
+  // +1 → top so the waveform reads naturally (peaks above center,
+  // troughs below).
+  const n = buffer.length;
+  ctx.strokeStyle = '#67e8f9';
+  ctx.lineWidth = 1.25 * dpr;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = gx + (i / Math.max(n - 1, 1)) * gw;
+    // Map [-1, 1] to [gy + gh, gy] — flip so positive samples are up.
+    const sample = Math.max(-1, Math.min(1, buffer[i]));
+    const y = midY - sample * (gh / 2);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
 function renderStorageBudgetLayer(
   ctx: CanvasRenderingContext2D,
   cw: number,
@@ -612,6 +713,11 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
   const bladeState = useBladeStore((s) => s.bladeState);
   const ledCount = useBladeStore((s) => s.config.ledCount);
   const rgbLumaChannels = useVisualizationStore((s) => s.rgbLumaChannels);
+  // Subscribe only when this canvas is actually rendering the audio
+  // waveform — useAudioAnalyser is cheap (one zustand selector + a
+  // ref) but reading getLatest each frame allocates only when the
+  // tap has been published.
+  const audioAnalyser = useAudioAnalyser();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -676,13 +782,18 @@ export function LayerCanvas({ layerId, pixels, pixelCount, height, isPaused, red
       case 'transition-progress':
         renderTransitionProgressLayer(ctx, cw, ch, bladeState as string, dpr, ledCount);
         break;
+      case 'audio-waveform': {
+        const buf = audioAnalyser.getLatest();
+        renderAudioWaveformLayer(ctx, buf, cw, ch, ledCount, dpr, reducedMotion);
+        break;
+      }
       case 'storage-budget':
         renderStorageBudgetLayer(ctx, cw, ch, ledCount, dpr);
         break;
       default:
         break;
     }
-  }, [layerId, pixels, pixelCount, brightness, bladeStartFrac, motionSim.swing, bladeState, ledCount, rgbLumaChannels]);
+  }, [layerId, pixels, pixelCount, brightness, bladeStartFrac, motionSim.swing, bladeState, ledCount, rgbLumaChannels, audioAnalyser, reducedMotion]);
 
   useAnimationFrame(draw, {
     enabled: !isPaused,

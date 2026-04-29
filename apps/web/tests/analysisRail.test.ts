@@ -72,6 +72,9 @@ describe('visualizationTypes — shape classification', () => {
   });
 
   it('line-graph-shaped layers include the post-merge analytical waveforms', () => {
+    // audio-waveform was added in feat/audio-waveform-rail. It is
+    // opt-in (defaultVisible: false) but its shape is line-graph so
+    // it appears in the rail when toggled on.
     const expected: VisualizationLayerId[] = [
       'rgb-luma',
       'power-draw',
@@ -79,6 +82,7 @@ describe('visualizationTypes — shape classification', () => {
       'saturation',
       'swing-response',
       'transition-progress',
+      'audio-waveform',
     ];
     expect(LINE_GRAPH_SHAPED_LAYER_IDS.size).toBe(expected.length);
     for (const id of expected) {
@@ -98,10 +102,19 @@ describe('visualizationTypes — shape classification', () => {
 });
 
 describe('visualizationTypes — always-on analysis rail contract', () => {
-  it('every line-graph layer is default-visible', () => {
+  it('every line-graph layer except audio-waveform is default-visible', () => {
+    // audio-waveform is opt-in because it requires an active
+    // AudioContext (Web Audio autoplay policy). All other line-graph
+    // layers stay default-visible per the W1 always-on contract.
     for (const id of LINE_GRAPH_SHAPED_LAYER_IDS) {
+      if (id === 'audio-waveform') continue;
       expect(DEFAULT_VISIBLE_LAYER_IDS.has(id)).toBe(true);
     }
+  });
+
+  it('audio-waveform is line-graph-shaped but opt-in (defaultVisible: false)', () => {
+    expect(LINE_GRAPH_SHAPED_LAYER_IDS.has('audio-waveform')).toBe(true);
+    expect(DEFAULT_VISIBLE_LAYER_IDS.has('audio-waveform')).toBe(false);
   });
 });
 
@@ -147,13 +160,18 @@ describe('AnalysisRail — selectAnalysisRailLayerIds selector', () => {
     expect(out).toEqual([]);
   });
 
-  it('returns all six line-graph layers from a default store', () => {
+  it('returns all default-visible line-graph layers from a default store', () => {
+    // audio-waveform is opt-in so the default store excludes it from
+    // the rail; the count is `LINE_GRAPH_SHAPED_LAYER_IDS.size - 1`
+    // (every line-graph layer minus audio-waveform).
     const state = useVisualizationStore.getState();
     const out = selectAnalysisRailLayerIds(state.layerOrder, state.visibleLayers);
-    expect(out).toHaveLength(LINE_GRAPH_SHAPED_LAYER_IDS.size);
+    const optInLineGraphs = ['audio-waveform'];
+    expect(out).toHaveLength(LINE_GRAPH_SHAPED_LAYER_IDS.size - optInLineGraphs.length);
     for (const id of out) {
       expect(LINE_GRAPH_SHAPED_LAYER_IDS.has(id)).toBe(true);
       expect(state.visibleLayers.has(id)).toBe(true);
+      expect(optInLineGraphs).not.toContain(id);
     }
   });
 });
