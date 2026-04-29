@@ -16,9 +16,11 @@ import { BaseIgnition } from './BaseIgnition.js';
  *   A brief bright flash at the very center occurs right at the phase
  *   transition, then the whole blade goes dark.
  *
- * Progress semantics (matching the existing retraction convention):
- *   progress = 0 → start of retraction (fully lit)
- *   progress = 1 → end of retraction (fully off)
+ * Progress convention (engine sends):
+ *   progress = 1 → start of retraction (fully lit)
+ *   progress = 0 → end of retraction (fully off)
+ *
+ * Internally we work with retract = 1 - progress (0 → 1).
  */
 export class ImplodeRetraction extends BaseIgnition {
   readonly id = 'implode';
@@ -40,15 +42,17 @@ export class ImplodeRetraction extends BaseIgnition {
   }
 
   getMask(position: number, progress: number): number {
-    // progress 0 = fully lit, progress 1 = fully off
-    if (progress <= 0) return 1;
-    if (progress >= 1) return 0;
+    // Engine sends progress 1→0; convert to internal 0→1 "retract" amount
+    const retract = 1 - progress;
+    // retract 0 = fully lit, retract 1 = fully off
+    if (retract <= 0) return 1;
+    if (retract >= 1) return 0;
 
-    // ─── Phase 1: Both ends collapse toward center (progress 0 → 0.7) ───
+    // ─── Phase 1: Both ends collapse toward center (retract 0 → 0.7) ───
 
-    if (progress < this.PHASE_SPLIT) {
-      // Normalise phase-1 progress to [0, 1]
-      const p1 = progress / this.PHASE_SPLIT;
+    if (retract < this.PHASE_SPLIT) {
+      // Normalise phase-1 retract to [0, 1]
+      const p1 = retract / this.PHASE_SPLIT;
 
       // Eased collapse amount: how far each edge has moved inward
       const collapse = this.smoothStep(p1) * 0.5; // max 0.5 = edges meet at center
@@ -78,10 +82,10 @@ export class ImplodeRetraction extends BaseIgnition {
       return 1;
     }
 
-    // ─── Phase 2: Center band fades out with a flash (progress 0.7 → 1.0) ───
+    // ─── Phase 2: Center band fades out with a flash (retract 0.7 → 1.0) ───
 
-    // Normalise phase-2 progress to [0, 1]
-    const p2 = (progress - this.PHASE_SPLIT) / (1 - this.PHASE_SPLIT);
+    // Normalise phase-2 retract to [0, 1]
+    const p2 = (retract - this.PHASE_SPLIT) / (1 - this.PHASE_SPLIT);
 
     // The remaining band is narrow around center (half-width starts at ~0
     // from the end of phase 1 and we give it a small residual width)

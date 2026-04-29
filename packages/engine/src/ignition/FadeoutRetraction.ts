@@ -6,16 +6,19 @@ import { BaseIgnition } from './BaseIgnition.js';
  * Rather than retracting with a hard edge, the entire blade dims
  * progressively, with the tip fading faster than the hilt.
  *
- * Progress 0 = fully lit, progress 1 = fully off.
- * (In retraction mode, progress typically goes from 0 → 1.)
+ * Progress convention (engine sends):
+ *   progress = 1 → start of retraction (fully lit)
+ *   progress = 0 → end of retraction (fully off)
  */
 export class FadeoutRetraction extends BaseIgnition {
   readonly id = 'fadeout';
   readonly name = 'Fade Out';
 
   getMask(position: number, progress: number): number {
-    // As progress increases toward 1, brightness decreases.
+    // progress goes 1→0 during retraction.
+    // At progress=1 (start): mask ≈ 1 (fully lit)
+    // At progress=0 (end):   mask = 0 (fully off)
     // Tip (higher position) fades faster due to the position multiplier.
-    return (1 - progress) * (1 - position * 0.3);
+    return progress * (1 - position * 0.3);
   }
 }
