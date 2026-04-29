@@ -1816,11 +1816,170 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           ctx.fillRect(emitterX - 1 * scale, bladeY, 2 * scale, quillonLen * qProgress);
         }
       }
+    } else if (topoId === 'triple') {
+      // Triple: main blade extending forward + 2 secondary blades
+      // fanning forward at ±30° from the emitter, forming a trident
+      // silhouette. The engine's TRIPLE_TOPOLOGY uses ±120° angles
+      // (relative to the saber's "up" axis) which would extend the
+      // secondaries diagonally back-up and back-down. In the
+      // editor's wide-but-short canvas (~990 × 111 at 1600×1000), a
+      // 60°-above-horizontal secondary would shoot off-screen
+      // immediately. The renderer trades engine fidelity for visual
+      // legibility: a forward-fan reads instantly as "triple-blade"
+      // (Maul / Savage Opress trident lineage), while engine angle
+      // semantics still drive effect scoping + per-segment LED
+      // routing internally.
+      //
+      // Secondary blades use a schematic representation (average
+      // blade color + halo + bright core) similar to the crossguard
+      // quillons. Per-LED fidelity stays on the main blade only.
+      drawBlade(ctx, engine);
+
+      const scale = getScale();
+      const emitterX = getBladeStartPx();
+      const bladeY = getBladeCenterY();
+
+      // Secondary blade length — engine spec says 0.35 vs main 0.5,
+      // so 70% of the visible main blade length on screen. Capped to
+      // the diagonal that fits in canvas height so the tip never
+      // clips off the bottom.
+      const scaledMainLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
+      const mainLenPx = scaledMainLenDS * scale;
+      const desiredSecondaryLen = mainLenPx * 0.7;
+      const fanAngleRad = (30 * Math.PI) / 180;
+      const { h: canvasCssH, dpr } = sizeRef.current;
+      const canvasPxH = canvasCssH * dpr;
+      const verticalFitLen = (canvasPxH * 0.45) / Math.sin(fanAngleRad);
+      const secondaryLenPx = Math.min(desiredSecondaryLen, verticalFitLen);
+      const secondaryH = 7 * scale;
+
+      // Average blade color for halo
+      const leds = engine.leds;
+      const bri = brightness / 100;
+      let avgR = 0, avgG = 0, avgB = 0, count = 0;
+      for (let i = 0; i < Math.min(8, leds.count); i++) {
+        avgR += leds.getR(i); avgG += leds.getG(i); avgB += leds.getB(i); count++;
+      }
+      if (count > 0) { avgR = (avgR / count) * bri; avgG = (avgG / count) * bri; avgB = (avgB / count) * bri; }
+
+      if (engine.extendProgress > 0) {
+        const sProgress = Math.min(1, Math.max(0, (engine.extendProgress - 0.1) / 0.4));
+        if (sProgress > 0) {
+          // Forward-fan: blade-2 angled up-forward, blade-3 angled
+          // down-forward. Origin at emitter so the trident's three
+          // prongs all start at the same point.
+          const angles = [-fanAngleRad, fanAngleRad];
+
+          for (const a of angles) {
+            const len = secondaryLenPx * sProgress;
+            ctx.save();
+            ctx.translate(emitterX, bladeY);
+            ctx.rotate(a);
+
+            // Outer halo (blurred + additive)
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.filter = `blur(${10 * scale}px)`;
+            ctx.globalAlpha = 0.32;
+            ctx.fillStyle = `rgb(${Math.round(avgR)},${Math.round(avgG)},${Math.round(avgB)})`;
+            ctx.fillRect(0, -secondaryH / 2, len, secondaryH);
+            ctx.restore();
+
+            // Saturated core
+            ctx.fillStyle = `rgba(${Math.round(Math.min(255, avgR * 1.4))},${Math.round(Math.min(255, avgG * 1.4))},${Math.round(Math.min(255, avgB * 1.4))},0.9)`;
+            ctx.fillRect(0, -secondaryH / 3, len, (secondaryH * 2) / 3);
+
+            // White-hot center stripe
+            ctx.fillStyle = `rgba(255,255,255,0.55)`;
+            ctx.fillRect(0, -1 * scale, len, 2 * scale);
+
+            ctx.restore();
+          }
+        }
+      }
+    } else if (topoId === 'inquisitor') {
+      // Inquisitor: main blade + a spinning ring at the emitter. Per
+      // INQUISITOR_TOPOLOGY (`packages/engine/src/types.ts`), the ring
+      // is a separate segment animating at ~120 RPM. Visually we draw
+      // an annular halo at the hilt origin so users selecting this
+      // topology see the canonical Inquisitor double-bladed-ring
+      // silhouette instead of the single-blade fallback.
+      //
+      // Schematic only — per-segment LED fidelity for the ring isn't
+      // wired through the main capsule rasterizer. The ring "spins"
+      // by rotating its highlight gradient around the circumference.
+      drawBlade(ctx, engine);
+
+      const scale = getScale();
+      const emitterX = getBladeStartPx();
+      const bladeY = getBladeCenterY();
+
+      // Ring sits just inboard of the emitter, centered on the hilt
+      // origin. Radius ~26 design-units feels right for the typical
+      // hilt scale + canvas width.
+      const ringRadius = 28 * scale;
+      const ringThickness = 6 * scale;
+
+      // Average blade color (head LEDs) drives the ring color since
+      // the ring inherits the main-blade hue in canon Inquisitor
+      // sabers.
+      const leds = engine.leds;
+      const bri = brightness / 100;
+      let avgR = 0, avgG = 0, avgB = 0, count = 0;
+      for (let i = 0; i < Math.min(8, leds.count); i++) {
+        avgR += leds.getR(i); avgG += leds.getG(i); avgB += leds.getB(i); count++;
+      }
+      if (count > 0) { avgR = (avgR / count) * bri; avgG = (avgG / count) * bri; avgB = (avgB / count) * bri; }
+
+      if (engine.extendProgress > 0) {
+        const rProgress = Math.min(1, Math.max(0, (engine.extendProgress - 0.05) / 0.35));
+        if (rProgress > 0) {
+          // Spin angle progresses with engine.elapsedMs. We re-derive
+          // a phase from the engine state's clock so the spin reads as
+          // continuous without needing per-frame state of our own.
+          // ~120 RPM matches INQUISITOR_TOPOLOGY's animationConfig.
+          const elapsedMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+          const spinPhase = (elapsedMs * Math.PI / 250) % (Math.PI * 2);
+
+          ctx.save();
+          ctx.translate(emitterX, bladeY);
+
+          // Outer halo — additive blurred ring
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.filter = `blur(${10 * scale}px)`;
+          ctx.globalAlpha = 0.32 * rProgress;
+          ctx.strokeStyle = `rgb(${Math.round(avgR)},${Math.round(avgG)},${Math.round(avgB)})`;
+          ctx.lineWidth = ringThickness * 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // Saturated mid stroke — full ring
+          ctx.strokeStyle = `rgba(${Math.round(Math.min(255, avgR * 1.4))},${Math.round(Math.min(255, avgG * 1.4))},${Math.round(Math.min(255, avgB * 1.4))},${0.85 * rProgress})`;
+          ctx.lineWidth = ringThickness;
+          ctx.beginPath();
+          ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // White-hot moving highlight — short arc that rotates with
+          // the spin phase. Gives the ring its "this thing is moving"
+          // read at a glance.
+          ctx.strokeStyle = `rgba(255,255,255,${0.7 * rProgress})`;
+          ctx.lineWidth = ringThickness * 0.55;
+          ctx.beginPath();
+          ctx.arc(0, 0, ringRadius, spinPhase, spinPhase + Math.PI / 4);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+      }
     } else {
       // Single blade or other topologies — default rendering
       drawBlade(ctx, engine);
     }
-  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, getScale, getBladeStartPx, getBladeCenterY]);
+  }, [drawBladePhotorealistic, drawBladePixelView, renderMode, topology, brightness, bladeLength, getScale, getBladeStartPx, getBladeCenterY]);
 
   const drawAngleView = useCallback((ctx: CanvasRenderingContext2D, engine: BladeEngine) => {
     const { w, h, dpr } = sizeRef.current;
