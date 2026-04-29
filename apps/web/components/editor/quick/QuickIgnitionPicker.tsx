@@ -35,6 +35,10 @@ export function QuickIgnitionPicker() {
           id: style.id,
           label: style.label,
           thumbnail: entry.thumbnail,
+          // T1.2 (2026-04-29): pass through optional crisper 24×24
+          // variant when the registry author shipped one. The trigger
+          // box renders this directly; absent → fallback scale-down.
+          compactThumbnail: entry.compactThumbnail,
           description: style.desc,
         };
       }),

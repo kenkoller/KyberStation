@@ -6,14 +6,31 @@
 // gradients, partial blades, cracks, spark points.
 //
 // Constraints mirror styleThumbnails.tsx:
-//   - 100×60 viewBox, accent CSS tokens only
+//   - 100×60 viewBox for `thumbnail`, accent CSS tokens only
 //   - Each thumbnail < 30 lines
 //   - `DEFAULT_IGNITION_THUMBNAIL` fallback for unregistered ids
+//
+// Optional `compactThumbnail` (2026-04-29 — T1.2 MGP crispness)
+// supplies an author-optimised 24×24 version for the Inspector's
+// QuickIgnitionPicker trigger box. When present, the picker renders
+// it directly at the trigger's natural size instead of scaling the
+// 100×60 thumbnail down by 0.24× via CSS `transform: scale()`.
+// Strokes/fills tuned for legibility at the small scale read
+// crisper than the down-scaled version. Authors may omit it; the
+// picker falls back to the 100×60 scaled-down render.
 
 import type { ReactNode } from 'react';
 
 export interface IgnitionThumbnailEntry {
+  /** 100×60 SVG. Authoritative shape source. */
   thumbnail: ReactNode;
+  /**
+   * Optional 24×24 SVG. When present, the QuickIgnitionPicker trigger
+   * (24×24 native) renders this directly. When absent, the picker
+   * scales the 100×60 thumbnail down by `transform: scale(0.24)`.
+   * See `apps/web/components/editor/quick/QuickTransitionPicker.tsx`.
+   */
+  compactThumbnail?: ReactNode;
   label: string;
 }
 

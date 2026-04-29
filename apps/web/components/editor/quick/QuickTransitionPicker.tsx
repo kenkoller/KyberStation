@@ -93,6 +93,10 @@ export function QuickTransitionPicker({
   const active = findActiveItem(items, activeId);
   const activeLabel = active?.label ?? activeId;
   const activeThumbnail: ReactNode = active?.thumbnail ?? null;
+  // T1.2 (2026-04-29): when the registry ships an optimised 24×24
+  // SVG, render it natively instead of scaling the 100×60 down.
+  // Falls through to the scale-transform branch below when absent.
+  const activeCompactThumbnail: ReactNode = active?.compactThumbnail ?? null;
 
   const toggle = useCallback(() => setOpen((v) => !v), []);
 
@@ -163,20 +167,34 @@ export function QuickTransitionPicker({
               : 'border border-border-subtle hover:border-accent-border'
           }`}
         >
-          {/* The MGP thumbnails are 100×60 SVGs — shrink to fit the 24×24
-              trigger box via a scale transform on a sub-container. */}
-          <span
-            aria-hidden="true"
-            className="block pointer-events-none"
-            style={{
-              width: 100,
-              height: 60,
-              transform: 'scale(0.24)',
-              transformOrigin: 'center',
-            }}
-          >
-            {activeThumbnail}
-          </span>
+          {/* T1.2 (2026-04-29): two render paths depending on whether
+              the registry shipped an optimised 24×24 compactThumbnail.
+              When present, render it at native 24×24 — strokes/fills
+              authored at the small scale read crisper. When absent,
+              fall back to the legacy 100×60 down-scaled-by-0.24
+              transform that ships today. */}
+          {activeCompactThumbnail !== null ? (
+            <span
+              aria-hidden="true"
+              className="block pointer-events-none"
+              style={{ width: 24, height: 24 }}
+            >
+              {activeCompactThumbnail}
+            </span>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="block pointer-events-none"
+              style={{
+                width: 100,
+                height: 60,
+                transform: 'scale(0.24)',
+                transformOrigin: 'center',
+              }}
+            >
+              {activeThumbnail}
+            </span>
+          )}
         </button>
 
         {/* Name — flex-1 so long labels truncate rather than push the ms

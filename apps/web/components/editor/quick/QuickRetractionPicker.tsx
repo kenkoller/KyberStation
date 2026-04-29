@@ -30,6 +30,8 @@ export function QuickRetractionPicker() {
           id: style.id,
           label: style.label,
           thumbnail: entry.thumbnail,
+          // T1.2 (2026-04-29): see QuickIgnitionPicker for rationale.
+          compactThumbnail: entry.compactThumbnail,
           description: style.desc,
         };
       }),
