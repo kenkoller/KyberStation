@@ -1,0 +1,67 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`blade engine golden hashes > FNV-1a hash function is stable for a known input 1`] = `"2dbca23d"`;
+
+exports[`blade engine golden hashes > kit-fisto-cyan-pulse :: igniting-50 1`] = `"2a022fba"`;
+
+exports[`blade engine golden hashes > kit-fisto-cyan-pulse :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > kit-fisto-cyan-pulse :: on 1`] = `"2a022fba"`;
+
+exports[`blade engine golden hashes > kit-fisto-cyan-pulse :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > kylo-red-unstable :: igniting-50 1`] = `"2f06dbe7"`;
+
+exports[`blade engine golden hashes > kylo-red-unstable :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > kylo-red-unstable :: on 1`] = `"2f06dbe7"`;
+
+exports[`blade engine golden hashes > kylo-red-unstable :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > mace-purple-stable :: igniting-50 1`] = `"f7295805"`;
+
+exports[`blade engine golden hashes > mace-purple-stable :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > mace-purple-stable :: on 1`] = `"f7295805"`;
+
+exports[`blade engine golden hashes > mace-purple-stable :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > maul-red-fire :: igniting-50 1`] = `"e29c9d4b"`;
+
+exports[`blade engine golden hashes > maul-red-fire :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > maul-red-fire :: on 1`] = `"e29c9d4b"`;
+
+exports[`blade engine golden hashes > maul-red-fire :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > obi-wan-blue-stable :: igniting-50 1`] = `"8c052805"`;
+
+exports[`blade engine golden hashes > obi-wan-blue-stable :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > obi-wan-blue-stable :: on 1`] = `"8c052805"`;
+
+exports[`blade engine golden hashes > obi-wan-blue-stable :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > rey-yellow-stable :: igniting-50 1`] = `"2b44ffa5"`;
+
+exports[`blade engine golden hashes > rey-yellow-stable :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > rey-yellow-stable :: on 1`] = `"2b44ffa5"`;
+
+exports[`blade engine golden hashes > rey-yellow-stable :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > vader-red-stable :: igniting-50 1`] = `"d1cca7b4"`;
+
+exports[`blade engine golden hashes > vader-red-stable :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > vader-red-stable :: on 1`] = `"d1cca7b4"`;
+
+exports[`blade engine golden hashes > vader-red-stable :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > yoda-green-stable :: igniting-50 1`] = `"bf3b1a19"`;
+
+exports[`blade engine golden hashes > yoda-green-stable :: off 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes > yoda-green-stable :: on 1`] = `"bf3b1a19"`;
+
+exports[`blade engine golden hashes > yoda-green-stable :: retracting-50 1`] = `"9e38d0b5"`;
