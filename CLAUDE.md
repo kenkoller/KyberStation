@@ -543,7 +543,69 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-04-30, critical bugs + v1 launch features)
+## Current State (2026-04-30 PM, launch posture lock + FLASH_GUIDE)
+
+Continuation of `docs/SESSION_2026-04-30_LAUNCH_DAY.md`. Pure launch-prep session: locked the v1.0 launch posture, wrote the canonical user flash guide, strengthened the WebUSB disclaimer. **2 PRs merged this session.**
+
+### PRs merged this session
+
+| PR | Status | Title |
+|---|---|---|
+| #145 | ✅ merged | feat(launch): FLASH_GUIDE + README beta posture + FlashPanel experimental gate |
+| #146 | ✅ merged | docs(session): archive 2026-04-29 + 2026-04-30 session notes |
+
+### Launch posture (locked)
+
+**KyberStation v1.0 ships as a design tool first.** The pitch is now:
+
+> "KyberStation is a visual blade design tool. Generate your ProffieOS config, compile it with `arduino-cli`, flash it with `dfu-util`. Web-based flashing is experimental and coming in v0.16+."
+
+**Why:** The audience is Proffieboard hobbyists who already own `arduino-cli`. The codegen + compile pipeline is validated end-to-end (213 KB binary builds clean against ProffieOS 7.x from a KyberStation-generated config — verified 2026-04-29). The WebUSB FlashPanel has an unfixed manifest-phase bug where the chip stays in DFU mode after a successful write, particularly on vendor-customized boards. Honest "tool we shipped" beats "tool we claim works but doesn't."
+
+### What landed in #145
+
+- **`docs/FLASH_GUIDE.md`** — canonical end-user flash guide (~290 lines, 13 sections + TL;DR). Covers `dfu-util` install, ProffieOS source setup, KyberStation config export, `arduino-cli` compile (V3 + V2 fqbns), DFU mode entry (vendor combos + on-board BOOT/RESET), the **mandatory firmware backup step**, vendor-customized board warnings (89sabers BFB2=1, KR Sabers, Saberbay, Vader's Vault), recovery procedure, troubleshooting, FAQ. The mandatory backup is the single most important user-protection step — turns "I just bricked my saber" into "I just lost 30 seconds."
+- **README.md** rewrite of the Flash section. Replaced the misleading "validated WebUSB" hardware table with an honest "dfu-util first, WebUSB experimental" framing. Added "Beta" tag + posture callout linking to FLASH_GUIDE.md. Rewrote credits to thank Fredrik Hübinette, Fett263, Crucible community, saber vendors, and font makers per `LAUNCH_PLAN.md` humble-tone guidance.
+- **FlashPanel disclaimer rebuild.** EXPERIMENTAL badge in the panel header. Inline FLASH_GUIDE.md pointer in the description. Disclaimer state refactored from a single boolean to a 3-key object (`responsibility / backup / recovery`) — all three checkboxes must be checked before Proceed unblocks. Vendor-customized board warning section inside the disclaimer. The mandatory-backup checkbox aligns the in-browser path with the FLASH_GUIDE's safety net.
+
+### Architectural decision: strengthened-disclaimer over feature-flag-off
+
+The session doc offered two options for the WebUSB FlashPanel: (a) hide it behind `const SHOW_WEBUSB_FLASH = false`, or (b) ship with a strengthened disclaimer. **Picked (b).**
+
+- The mandatory-backup checkbox is a **stronger gate** than hiding the panel — anyone proceeding has acknowledged they have a backup, so worst case is a 30-second recovery.
+- Hiding the panel discards a feature that took weeks to build and works fine on stock boards.
+- Honest "this is experimental, here's the reliable path" beats either "broken but hidden" or "broken but no warning."
+- The 3-key disclaimer state (`responsibility / backup / recovery`) is the choke-point for any future tightening — adding a 4th ack key is one line in the type + one checkbox in the JSX.
+
+### Test deltas
+
+| Package | Pre-session | Post-session | Δ |
+|---|---:|---:|---:|
+| All | unchanged | unchanged | 0 |
+
+No new tests added. The disclaimer state refactor (single boolean → 3-key object) didn't break any existing tests because nothing in `apps/web/tests/` currently asserts against `DisclaimerCard`. **Manual smoke test still pending** — open editor → OUTPUT → FLASH and verify the EXPERIMENTAL badge + 3-checkbox gate UI flows correctly. Workspace typecheck clean across all 10 packages.
+
+### What's next (launch-day decision tree)
+
+Per `docs/SESSION_2026-04-30_LAUNCH_DAY.md`'s end-of-day tree:
+
+| Outcome | Action |
+|---|---|
+| All P0 done + smoke test green + recovery state OK | ✅ **Launch tomorrow Friday May 1.** Cut `v0.16.0` tag, post launch announcement per `LAUNCH_ASSETS.md`. |
+| 89sabers email arrives with factory firmware | Attempt saber recovery → validate one full design → compile → flash → ignite cycle on real hardware → much higher launch confidence |
+| ST-Link V2 arrives | Set aside for post-launch — don't disassemble saber today under launch pressure |
+| Significant work remains | ❌ **Slip 1–2 days, ship Saturday or Sunday.** May 4 runway still gives 5–6 days for amplification |
+
+### Things to NOT do today
+
+- ❌ Don't touch Option Bytes again unless ST-Link is connected with STM32CubeProgrammer ready as recovery
+- ❌ Don't keep flashing custom configs to the test saber hoping they'll boot
+- ❌ Don't rebuild WebUSB FlashPanel today — it's broken in a way we don't fully understand
+- ❌ Don't disassemble the saber under launch pressure to access SWD pads
+
+---
+
+## Current State (2026-04-30 morning, critical bugs + v1 launch features)
 
 Session focus: merge Ken's 6 audio-engine PRs from his parallel session, fix critical bugs from Ken's field testing, ship v1 launch features. **14 PRs merged this session** (6 from Ken's audio session + 8 from this session's agent dispatch).
 
