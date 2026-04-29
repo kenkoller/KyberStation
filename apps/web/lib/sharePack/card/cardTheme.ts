@@ -28,6 +28,8 @@ export const DEFAULT_THEME: CardTheme = {
 
   hiltAccent: 'rgb(178, 182, 192)',
 
+  bladeComposite: 'lighter',
+
   headerBand: 'rgba(255, 255, 255, 0.035)',
   headerText: '#a8c6ff',
   headerAccent: 'rgba(168, 198, 255, 0.6)',
@@ -73,6 +75,12 @@ export const LIGHT_THEME: CardTheme = {
   vignetteColor: 'rgba(60, 70, 90, 0.18)',
 
   hiltAccent: 'rgb(120, 128, 144)',
+
+  // Paper-white backdrop — additive `'lighter'` over-brightens to
+  // pure white and washes out blade color identity. `'source-over'`
+  // (default canvas op) lets the blade composite normally over the
+  // light field, preserving hue. See cardTypes.ts CardTheme docs.
+  bladeComposite: 'source-over',
 
   headerBand: 'rgba(255, 255, 255, 0.35)',
   headerText: '#1a2130',
@@ -120,6 +128,8 @@ export const IMPERIAL_THEME: CardTheme = {
 
   hiltAccent: 'rgb(168, 132, 132)',
 
+  bladeComposite: 'lighter',
+
   headerBand: 'rgba(255, 90, 90, 0.05)',
   headerText: '#ffb0b0',
   headerAccent: 'rgba(255, 140, 140, 0.7)',
@@ -166,6 +176,8 @@ export const JEDI_THEME: CardTheme = {
 
   hiltAccent: 'rgb(196, 168, 124)',
 
+  bladeComposite: 'lighter',
+
   headerBand: 'rgba(246, 229, 184, 0.04)',
   headerText: '#f6e5b8',
   headerAccent: 'rgba(246, 229, 184, 0.7)',
@@ -211,6 +223,8 @@ export const SPACE_THEME: CardTheme = {
   vignetteColor: 'rgba(0, 0, 0, 0.22)',
 
   hiltAccent: 'rgb(168, 172, 184)',
+
+  bladeComposite: 'lighter',
 
   headerBand: 'rgba(255, 255, 255, 0.025)',
   headerText: '#f5f5f5',

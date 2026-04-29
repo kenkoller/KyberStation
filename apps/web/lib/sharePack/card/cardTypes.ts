@@ -137,6 +137,21 @@ export interface CardTheme {
    *  (warm gold for Jedi parchment, crimson for Imperial, etc.). */
   hiltAccent: string;
 
+  // ─── Blade ───
+  /**
+   * Compositing mode used when the blade renderer paints its bloom
+   * mips + body capsule onto the card. Dark themes use `'lighter'`
+   * (additive a + b) for a saturated halo against deep-space chrome.
+   * Light themes that paint over a near-white backdrop must use
+   * `'source-over'` (the default canvas op) — additive blending on a
+   * paper-white field over-brightens to pure white and the blade
+   * loses its color identity. `'screen'` (1 − (1−a)(1−b)) is also
+   * valid for "soft additive" treatments. Each theme declares its
+   * own preference here so `drawBlade` doesn't special-case theme
+   * ids.
+   */
+  bladeComposite: GlobalCompositeOperation;
+
   // ─── Header ───
   headerBand: string;
   headerText: string;
