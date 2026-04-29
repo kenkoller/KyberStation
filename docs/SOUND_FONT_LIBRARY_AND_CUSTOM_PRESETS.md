@@ -134,11 +134,22 @@ const hasFileSystemAccess = 'showDirectoryPicker' in window;
 
 If unsupported:
 - Hide the "Set Library Folder" button
-- Show a note: "Font library browsing requires Chrome, Edge, or Arc. You can still
-  import individual fonts via drag-and-drop."
+- Show a note: "Font library browsing requires the File System Access API.
+  Supported in Chrome, Edge, Arc, and Brave (Brave users: enable
+  `brave://flags/#file-system-access-api`). Not yet supported in Safari or
+  Firefox."
 - The existing drag-drop + IndexedDB cache flow continues to work
 - Show a "Previously Imported" section listing fonts cached in IndexedDB (from
   `getStoredFontNames()` in `fontDB.ts`) as a lightweight library substitute
+
+**Brave-specific note**: Brave is Chromium-based and ships with the File System
+Access API, but disables it by default for fingerprinting-prevention reasons.
+Brave users see the unsupported-browser warning on first visit. The fix is one
+flag flip: navigate to `brave://flags/#file-system-access-api` and set it to
+**Enabled**, then relaunch the browser. Confirmed live 2026-04-28 — without the
+flag the warning correctly fires; with the flag enabled the directory picker
+works identically to Chrome. The warning copy in `AudioColumnB.tsx` calls this
+out inline so users don't assume Brave is unsupported.
 
 ---
 

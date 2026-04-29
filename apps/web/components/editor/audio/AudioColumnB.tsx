@@ -303,25 +303,39 @@ export function AudioColumnB(): JSX.Element {
                   for an instant searchable library.
                   <HelpTooltip text="Select the top-level folder containing your sound font subfolders. KyberStation scans each subfolder for audio files, detects formats (Proffie/CFX), and shows completeness." />
                 </div>
-                <button
-                  onClick={handlePickLibrary}
-                  className="px-3 py-1.5 rounded border border-accent bg-accent-dim/20 text-accent text-ui-xs font-medium hover:bg-accent-dim/40 transition-colors"
-                >
-                  Set Font Library Folder
-                </button>
+                <div className="inline-flex items-center gap-1.5">
+                  <button
+                    onClick={handlePickLibrary}
+                    className="px-3 py-1.5 rounded border border-accent bg-accent-dim/20 text-accent text-ui-xs font-medium hover:bg-accent-dim/40 transition-colors"
+                  >
+                    Set Font Library Folder
+                  </button>
+                  <HelpTooltip text="Picks the parent folder containing your sound font subfolders. KyberStation scans each subfolder, detects format (Proffie/CFX) and SmoothSwing v2 pairs, and shows completeness. Settings persist via browser storage — you only set this once." />
+                </div>
               </div>
             )}
             {!hasFileSystemAccess && !libraryHandle && (
               <div
-                className="rounded-panel p-3 text-ui-sm border"
+                className="rounded-panel p-3 text-ui-sm border space-y-1.5"
                 style={{
                   background: 'rgb(var(--status-warn) / 0.1)',
                   borderColor: 'rgb(var(--status-warn) / 0.3)',
                   color: 'rgb(var(--status-warn) / 0.85)',
                 }}
               >
-                Font library browsing requires Chrome, Edge, or Arc. You can
-                still import individual fonts via drag-and-drop above.
+                <p>
+                  Font library browsing requires the File System Access API.
+                  Supported in Chrome, Edge, Arc, and Brave (Brave users:
+                  enable{' '}
+                  <code className="font-mono px-1 py-0.5 rounded bg-bg-deep/60 text-ui-xs">
+                    brave://flags/#file-system-access-api
+                  </code>
+                  ). Not yet supported in Safari or Firefox.
+                </p>
+                <p>
+                  You can still import individual fonts via drag-and-drop
+                  above.
+                </p>
               </div>
             )}
 

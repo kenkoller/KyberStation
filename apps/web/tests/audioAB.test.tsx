@@ -458,7 +458,7 @@ describe('AudioColumnB — render contract', () => {
     const markup = htmlB();
     const hasPicker = markup.includes('Set Font Library Folder');
     const hasWarn = markup.includes(
-      'Font library browsing requires Chrome',
+      'Font library browsing requires the File System Access API',
     );
     expect(hasPicker || hasWarn).toBe(true);
   });
