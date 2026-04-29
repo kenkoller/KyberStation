@@ -96,10 +96,18 @@ function createSyntheticSounds(ctx: AudioContext) {
 
 type SoundBuffers = ReturnType<typeof createSyntheticSounds>;
 
-/** Map from sound event → font category names to try */
-const CATEGORY_MAP: Record<string, string[]> = {
-  ignition: ['in'],
-  retraction: ['out'],
+/**
+ * Map from sound event → font category names to try.
+ *
+ * ProffieOS naming convention (sound/hybrid_font.h):
+ *   - `out.wav` plays during IGNITION (saber blade goes OUT, power-on)
+ *   - `in.wav`  plays during RETRACTION (saber blade goes IN, power-off)
+ * `pstoff` ("post-off") is the optional follow-up clip ProffieOS plays
+ * after `in.wav` during retraction; we treat it as the same category.
+ */
+export const CATEGORY_MAP: Record<string, string[]> = {
+  ignition: ['out'],
+  retraction: ['in'],
   hum: ['hum'],
   clash: ['clash'],
   blast: ['blast'],

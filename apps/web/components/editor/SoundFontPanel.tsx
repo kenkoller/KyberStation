@@ -21,8 +21,8 @@ const SOUND_EVENTS = [
   { id: 'lockup', label: 'Lockup', description: 'Blade lock sustained', loop: false },
   { id: 'drag', label: 'Drag', description: 'Blade tip drag', loop: false },
   { id: 'melt', label: 'Melt', description: 'Blade melt effect', loop: false },
-  { id: 'in', label: 'Ignition', description: 'Ignition sound', loop: false },
-  { id: 'out', label: 'Retraction', description: 'Retraction sound', loop: false },
+  { id: 'out', label: 'Ignition', description: 'Ignition sound (out.wav)', loop: false },
+  { id: 'in', label: 'Retraction', description: 'Retraction sound (in.wav)', loop: false },
   { id: 'force', label: 'Force', description: 'Force effect', loop: false },
   { id: 'stab', label: 'Stab', description: 'Stab thrust', loop: false },
 ];

@@ -309,8 +309,12 @@ describe('audio catalog drift sentinels', () => {
       'lockup',
       'drag',
       'melt',
-      'in',
+      // 'out' (Ignition) comes before 'in' (Retraction) per ProffieOS
+      // naming convention — saber turns ON via out.wav, OFF via in.wav.
+      // Pre-fix this list had 'in' first because the codebase had the
+      // labels inverted; the new order matches the corrected SOUND_EVENTS.
       'out',
+      'in',
       'force',
       'stab',
     ]);
