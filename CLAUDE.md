@@ -543,6 +543,101 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-30, critical bugs + v1 launch features)
+
+Session focus: merge Ken's 6 audio-engine PRs from his parallel session, fix critical bugs from Ken's field testing, ship v1 launch features. **14 PRs merged this session** (6 from Ken's audio session + 8 from this session's agent dispatch).
+
+### PRs merged this session
+
+| PR | Status | Title | Source |
+|---|---|---|---|
+| #118 | ✅ merged | fix(audio): tell Brave users about FSA flag | Ken |
+| #122 | ✅ merged | feat(sound): recognize 12 modern Proffie sound categories | Ken |
+| #124 | ✅ merged | fix(audio): lift mute state to shared Zustand store | Ken |
+| #126 | ✅ merged | docs(session-archive): 2026-04-29 late session wrap | Claude |
+| #127 | ✅ merged | fix(audio): swap ignition/retraction sound dispatch | Ken (rebase) |
+| #128 | ✅ merged | fix(audio): broadcast SmoothSwing speed + hot-swap hum | Ken (rebase) |
+| #130 | ✅ merged | fix(audio): suspend AudioContext on global pause | Agent 1C |
+| #131 | ✅ merged | fix(header): standardize buttons to consistent height/radius/focus | Agent 1D |
+| #132 | ✅ merged | fix(engine): correct retraction animation progress | Agent 1A |
+| #133 | ✅ merged | fix(blade): alignment drift, pointed tip, emitter glow | Agent 1B |
+| #134 | ✅ merged | feat(presets): v1 save state — save, load, delete user presets | Agent 4A |
+| #135 | ✅ merged | feat(randomizer): full catalog + modulation coverage | Agent 3C |
+| #136 | ✅ merged | feat(queue): one-click Add to Queue action bar button | Agent 4B |
+| #137 | ✅ merged | fix(wizard): audit polish — stale defaults, a11y, tests | Agent 3B |
+
+### Critical bugs fixed (Ken's field notes)
+
+| Ken's # | Issue | Fix | PR |
+|---|---|---|---|
+| #18 | Retraction appears as ignition in blade preview | FadeoutRetraction + ImplodeRetraction had inverted progress (double-inversion with engine's 1→0 convention) | #132 |
+| #8 | Pixel strip / analysis rail width doesn't match blade | BladeCanvas used stale piecewise ternary for blade inches; switched to `inferBladeInches()` from shared `bladeLengths.ts` | #133 |
+| #3 | Tip too pointed on blade + saber cards | Removed `tipExtension = radius * 0.15` in BladeCanvas + headless renderer | #133 |
+| #13 | Emitter glow when blade is OFF | Gated bore glow on `extendProgress > 0.05` | #133 |
+| #11 | Pause animation doesn't pause audio | `useAudioEngine` now watches `isPaused` from uiStore → `ctx.suspend()`/`ctx.resume()` | #130 |
+| #6 | Header buttons inconsistent | Extracted `<HeaderButton>` primitive; normalized 5 buttons + ShareButton + FPSCounter + UndoRedo to h-7/rounded-interactive/focus-visible ring | #131 |
+| #10 | Audit launch wizard | Fixed stale 132→144 LED default, stale "3 steps" tooltip, added `aria-pressed`/`aria-label` on color + vibe buttons, +7 tests | #137 |
+| #9 | Surprise-me doesn't use new features | Randomizer now picks from full 18-ignition + 12-retraction catalogs, generates 1-2 modulation bindings, adds clashDecay, theme-aware HSL colors | #135 |
+
+### v1 launch features shipped
+
+- **Save-state v1** (#134): `⭐ Save` button in action bar + "My Presets" section in gallery sidebar with click-to-load, delete, color swatches, persistence via `userPresetStore` + IndexedDB
+- **Add-to-queue v1** (#136): `📌 Queue` button in action bar; one-click adds current config to active saber profile's card queue with auto-generated name + toast feedback
+- **Audio engine improvements** (Ken's PRs #118, #122, #124, #127, #128): shared mute store, SmoothSwing speed broadcasting, hum hot-swap on font change, ProffieOS in/out convention fix, modern sound category recognition, Brave FSA flag warning
+
+### Stuck agent triage
+
+Both agents from the 2026-04-29 late session (marketing + saber GIF Sprint 2) wrote zero commits. Clean writeoff — worktrees removed, branches deleted. Marketing is deprioritized per Ken. Saber GIF Sprint 2 is revisitable post-launch.
+
+### Test deltas
+
+| Package | Pre-session | Post-session | Δ |
+|---|---:|---:|---:|
+| web | 1327 | 1822 | +495 |
+| engine | 753 | 796 | +43 |
+| sound | 43 | 62 | +19 |
+| codegen | 1859 | 1859 | 0 |
+| boards | 260 | 260 | 0 |
+| presets | 47 | 47 | 0 |
+| **Total** | **4289** | **4846** | **+557** |
+
+Workspace typecheck clean across all 10 packages.
+
+### Ken's field notes — status delta
+
+| Ken's # | Topic | Status |
+|---|---|---|
+| #1 | Zoom controls | ✅ already removed v0.14.0 (stale note) |
+| #2 | Sub-1024 layout | ⏳ deferred (Ken confirmed ≥1024 + 375px for v1) |
+| #3 | Tip too pointed | ✅ fixed (#133) |
+| #4 | Kyber Code sharing | ✅ already shipped — confirmed as launch scope |
+| #5 | Blade length audit | ✅ already shipped via PR #99 (stale note) |
+| #6 | Header standardization | ✅ fixed (#131) |
+| #7 | Node-based editor | ⏳ post-launch per Ken |
+| #8 | Alignment drift | ✅ fixed (#133) |
+| #9 | Surprise-me extension | ✅ fixed (#135) |
+| #10 | Wizard audit | ✅ fixed (#137) |
+| #11 | Pause pauses audio | ✅ fixed (#130) |
+| #12 | Audio waveform rail | ⏳ deferred (larger scope, post-launch) |
+| #13 | Emitter glow when off | ✅ fixed (#133) |
+| #14 | Twist ignition docs | ⏳ small docs task, not blocking |
+| #15 | Save state | ✅ v1 shipped (#134) |
+| #16 | Quick save to queue | ✅ v1 shipped (#136) |
+| #17 | Surprise-me sound font | ⏳ post-launch per Ken |
+| #18 | Retraction bug | ✅ fixed (#132) |
+
+**12 of 18 resolved, 6 deferred** (2 post-launch per Ken, 2 larger scope, 1 sub-1024 layout, 1 small docs).
+
+### Recommended next steps
+
+1. **Browser verification**: start dev server, verify retraction + save/queue + surprise-me + pause-audio in live preview
+2. **Sub-1024 layout pass** (Ken's #2): dispatch agent for breakpoint cleanup (≥1024 + 375px confirmed)
+3. **Audio waveform rail** (Ken's #12): AnalyserNode + VisualizationStack layer
+4. **v0.15.1 tag cut**: once browser-verified, cut tag as the pre-launch stabilization release
+5. **Launch comms prep**: per `docs/LAUNCH_PLAN.md`
+
+---
+
 ## Current State (2026-04-29 late, big Hardware Fidelity + Phase 4 wrap)
 
 Marathon session. **15 PRs landed by Claude + 3 from Ken's parallel session — 18 total today**. Main outcomes:
