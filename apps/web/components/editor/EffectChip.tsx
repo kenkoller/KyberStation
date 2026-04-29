@@ -67,9 +67,22 @@ export function EffectChip({
       title={activeTitle}
       aria-pressed={isSustained ? isActive : undefined}
     >
-      <span className="hidden desktop:inline">{label}</span>
-      <span className="desktop:hidden">{hotkey}</span>
-      <kbd className="hidden desktop:inline ml-1 text-ui-xs text-text-muted/50">{hotkey}</kbd>
+      {/*
+        2026-04-28: bumped the label-vs-hotkey breakpoint from `desktop:`
+        (≥1024) to `xl:` (≥1280) so chips render icon-only between
+        1024–1279px. The CanvasLayout action bar competes with the
+        Inspector (~400px) and AnalysisRail (~200px) for horizontal
+        space; at 1024px the canvas column is ~424px, while a full
+        label+kbd chip set is ~340px alone. Showing labels at
+        ≥1280px gives the row enough breathing room to stay on a
+        single line and avoid wrapping into the PanelHeader below.
+        The hotkey letter is always visible — keyboard discoverability
+        is preserved — and full names remain reachable via the
+        button title (tooltip).
+      */}
+      <span className="hidden xl:inline">{label}</span>
+      <span className="xl:hidden">{hotkey}</span>
+      <kbd className="hidden xl:inline ml-1 text-ui-xs text-text-muted/50">{hotkey}</kbd>
     </button>
   );
 }
