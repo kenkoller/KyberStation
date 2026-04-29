@@ -276,6 +276,40 @@ export class BladeEngine {
   }
 
   /**
+   * Derive the 3 state-progress values that go into `StyleContext`:
+   *
+   * - `preonProgress` — `_preonElapsed / preonMs` while in PREON, else 0
+   * - `ignitionProgress` — `_extendProgress` while IGNITING, else 0
+   * - `retractionProgress` — `1 - _extendProgress` while RETRACTING,
+   *   else 0 (retract counts DOWN from 1 → 0 in the engine's
+   *   `_extendProgress` field; we surface a 0 → 1 climb-toward-fully-
+   *   retracted view to modulator consumers since "the more retracted,
+   *   the more this ramps up" matches user expectations of a
+   *   `retraction` binding source)
+   *
+   * T1.3 (2026-04-29) — closes the v1.1 TODO at
+   * `packages/engine/src/modulation/sampler.ts:104`.
+   */
+  private computeStateProgress(config: BladeConfig): {
+    preonProgress: number;
+    ignitionProgress: number;
+    retractionProgress: number;
+  } {
+    const preonMs = Math.max(1, config.preonMs ?? 300);
+    let preonProgress = 0;
+    let ignitionProgress = 0;
+    let retractionProgress = 0;
+    if (this._state === BladeState.PREON) {
+      preonProgress = Math.max(0, Math.min(1, this._preonElapsed / preonMs));
+    } else if (this._state === BladeState.IGNITING) {
+      ignitionProgress = Math.max(0, Math.min(1, this._extendProgress));
+    } else if (this._state === BladeState.RETRACTING) {
+      retractionProgress = Math.max(0, Math.min(1, 1 - this._extendProgress));
+    }
+    return { preonProgress, ignitionProgress, retractionProgress };
+  }
+
+  /**
    * Sample modulators and apply bindings for the current frame. Returns
    * either the modulated BladeConfig or the original config unchanged if
    * no bindings exist. Pure in the sense that `config` is not mutated;
@@ -296,6 +330,12 @@ export class BladeEngine {
 
     // Build an eval context once. Sampler first; it returns a frozen
     // values map that applyBindings consumes.
+    //
+    // T1.3 (2026-04-29): preon / ignition / retraction progress fields
+    // are derived from the current state machine. Outside the relevant
+    // state, the field reads `0` so binding `target = X` to e.g.
+    // `source = ignition` cleanly does nothing while the blade is OFF.
+    const progressFields = this.computeStateProgress(config);
     const styleContext: StyleContext = {
       time: this._elapsedTime,
       swingSpeed: this.motion.swingSpeed,
@@ -303,6 +343,7 @@ export class BladeEngine {
       twistAngle: this.motion.twistAngle,
       soundLevel: this.motion.soundLevel,
       batteryLevel: 1.0,
+      ...progressFields,
       config,
     };
 
@@ -430,6 +471,11 @@ export class BladeEngine {
     const modulatedConfig = this.applyModulation(config);
 
     // (e) Build the StyleContext shared by all style/effect evaluations
+    // T1.3 (2026-04-29): same state-progress fields as the sampler-side
+    // styleContext above. Derived from `modulatedConfig` so binding
+    // `preonMs` to a modulator (rare but legal) produces a coherent
+    // progress denominator.
+    const progressFields = this.computeStateProgress(modulatedConfig);
     const styleContext: StyleContext = {
       time: this._elapsedTime,
       swingSpeed: this.motion.swingSpeed,
@@ -437,6 +483,7 @@ export class BladeEngine {
       twistAngle: this.motion.twistAngle,
       soundLevel: this.motion.soundLevel,
       batteryLevel: 1.0, // simulated — always full
+      ...progressFields,
       config: modulatedConfig,
     };
 

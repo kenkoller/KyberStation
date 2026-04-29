@@ -34,6 +34,12 @@ function makeContext(overrides: Partial<StyleContext> = {}): StyleContext {
     twistAngle: 0,
     soundLevel: 0,
     batteryLevel: 1,
+    // T1.3 (2026-04-29): state-progress fields. Default 0; tests can
+    // override via the partial argument when exercising preon /
+    // ignition / retraction modulator branches.
+    preonProgress: 0,
+    ignitionProgress: 0,
+    retractionProgress: 0,
     config: makeTestConfig(),
     ...overrides,
   };
@@ -97,12 +103,50 @@ describe('sampleModulators', () => {
     expect(on.values.get('lockup')).toBe(1);
   });
 
-  it('leaves preon/ignition/retraction as 0 per v1.0 TODO', () => {
+  // T1.3 (2026-04-29): preon / ignition / retraction progress fields
+  // are now first-class on StyleContext + read by the sampler. Each
+  // climbs 0→1 only while its corresponding state is active.
+
+  it('reads preon/ignition/retraction from StyleContext (default zeros)', () => {
     const ctx = makeContext();
     const state = sampleModulators(ctx, null, NO_EFFECTS);
     expect(state.values.get('preon')).toBe(0);
     expect(state.values.get('ignition')).toBe(0);
     expect(state.values.get('retraction')).toBe(0);
+  });
+
+  it('preon modulator picks up StyleContext.preonProgress', () => {
+    const ctx = makeContext({ preonProgress: 0.4 });
+    const state = sampleModulators(ctx, null, NO_EFFECTS);
+    expect(state.values.get('preon')).toBeCloseTo(0.4, 6);
+  });
+
+  it('ignition modulator picks up StyleContext.ignitionProgress', () => {
+    const ctx = makeContext({ ignitionProgress: 0.75 });
+    const state = sampleModulators(ctx, null, NO_EFFECTS);
+    expect(state.values.get('ignition')).toBeCloseTo(0.75, 6);
+  });
+
+  it('retraction modulator picks up StyleContext.retractionProgress', () => {
+    const ctx = makeContext({ retractionProgress: 0.6 });
+    const state = sampleModulators(ctx, null, NO_EFFECTS);
+    expect(state.values.get('retraction')).toBeCloseTo(0.6, 6);
+  });
+
+  it('progress fields are mutually exclusive in practice (engine guarantees one-state-at-a-time)', () => {
+    // The BladeEngine populates only the one matching the current
+    // state — verify the sampler stays sane if the caller violates
+    // that invariant by setting multiple non-zero values: each one
+    // is read independently, no cross-talk.
+    const ctx = makeContext({
+      preonProgress: 0.3,
+      ignitionProgress: 0.5,
+      retractionProgress: 0.7,
+    });
+    const state = sampleModulators(ctx, null, NO_EFFECTS);
+    expect(state.values.get('preon')).toBeCloseTo(0.3, 6);
+    expect(state.values.get('ignition')).toBeCloseTo(0.5, 6);
+    expect(state.values.get('retraction')).toBeCloseTo(0.7, 6);
   });
 });
 

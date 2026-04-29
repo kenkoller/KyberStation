@@ -101,14 +101,17 @@ function readRawModulator(
       return clashJustTriggered ? 1 : prevClashIntensity;
     case 'lockup':
       return effectsActive.has('lockup') ? 1 : 0;
-    // TODO(v1.1): `preon` / `ignition` / `retraction` progress are not
-    // on the current StyleContext shape. They live on BladeEngine
-    // internal state today. For Friday v1.0 preview we return 0 and
-    // leave the UI-level bindings with a "coming soon" affordance.
+    // T1.3 (2026-04-29): `preon` / `ignition` / `retraction` progress
+    // are now first-class fields on `StyleContext` (populated by
+    // BladeEngine.computeStateProgress). Each climbs 0→1 only while
+    // its corresponding state is active and reads 0 otherwise. See
+    // `packages/engine/src/types.ts` for the field docstrings.
     case 'preon':
+      return ctx.preonProgress;
     case 'ignition':
+      return ctx.ignitionProgress;
     case 'retraction':
-      return 0;
+      return ctx.retractionProgress;
     default:
       // Unknown ID — per design doc §4.4, this evaluates to 0.
       return 0;
