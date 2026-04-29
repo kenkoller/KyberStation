@@ -6,6 +6,7 @@ import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { useAudioMuteStore } from '@/stores/audioMuteStore';
 import { useAudioPlaybackStore } from '@/stores/audioPlaybackStore';
+import { useUIStore } from '@/stores/uiStore';
 import { saveFontToDB, loadFontFromDB, getLastUsedFontName } from '@/lib/fontDB';
 
 /**
@@ -197,6 +198,32 @@ export function useAudioEngine() {
       masterGainRef.current.gain.value = muted ? 0 : 1;
     }
   }, [muted]);
+
+  // ── Pause → AudioContext suspend/resume ──────────────────────────────
+  // When the global simulation pause fires (PauseButton / usePauseSystem),
+  // freeze ALL audio processing by suspending the AudioContext. This stops
+  // the hum loop, swing crossfade, and any one-shot sounds mid-playback.
+  // Resuming restores audio exactly where it left off.
+  //
+  // This is distinct from MUTE (audioMuteStore): mute is a persistent user
+  // preference that zeroes the master gain. Pause is transient — it freezes
+  // the entire simulation, and unfreezing restores sound at whatever gain
+  // (muted or not) was active before the pause.
+  const isPaused = useUIStore((s) => s.isPaused);
+
+  useEffect(() => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    if (isPaused) {
+      // suspend() returns a Promise; fire-and-forget is fine — the
+      // AudioContext transitions to 'suspended' state asynchronously
+      // and all scheduled audio nodes freeze in place.
+      ctx.suspend();
+    } else {
+      ctx.resume();
+    }
+  }, [isPaused]);
 
   // Wraps the store's toggle with ensureInit so the AudioContext is
   // created in the user-gesture frame even if no audio has played yet.
