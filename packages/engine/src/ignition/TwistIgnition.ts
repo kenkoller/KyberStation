@@ -4,8 +4,13 @@ import type { IgnitionContext } from '../types.js';
 /**
  * TwistIgnition — spiral ignition pattern.
  *
- * Pixels illuminate in a rotational sweep pattern. The twist angle
- * from the motion context drives the spiral direction.
+ * Hilt-to-tip wipe shaped by a sinusoidal spiral wobble. The blade's
+ * `twistAngle` (rotation around the long axis, -1..1) shifts the
+ * spiral phase along the blade — twisting the saber moves where the
+ * wobble peaks fall during ignition. Does NOT consume `bladeAngle`;
+ * the saber's tilt-off-vertical doesn't affect the pattern. Ignition
+ * still completes on its own time per `ignitionMs` — twist only
+ * shapes visuals, it doesn't trigger or speed up the wipe.
  */
 export class TwistIgnition extends BaseIgnition {
   readonly id = 'twist';
