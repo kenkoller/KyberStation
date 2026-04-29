@@ -120,7 +120,12 @@ export function AddLayerDropdown({ anchorRef, onClose }: AddLayerDropdownProps) 
         name: preset.name,
         visible: true,
         opacity: 1,
-        blendMode: type === 'effect' ? 'add' : 'normal',
+        // 2026-04-29 (Hardware Fidelity tighten): all new layers
+        // default to 'normal'. The 'add' default for effect layers
+        // was visualizer-only — codegen always emitted lerp regardless,
+        // so users got a different look in the visualizer than on
+        // hardware. See docs/HARDWARE_FIDELITY_PRINCIPLE.md.
+        blendMode: 'normal',
         config: preset.config,
       });
       onClose();

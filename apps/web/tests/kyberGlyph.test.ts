@@ -118,7 +118,9 @@ describe('Kyber Glyph v1 — round-trip integrity', () => {
       spatialSpread: 60,
       spatialPhase: 45,
       // Blend/layer
-      blendMode: 'screen',
+      // (top-level blendMode field was retired 2026-04-29 per
+      // Hardware Fidelity tighten — see types.ts; secondary-style
+      // blending stays as it's a config knob, not a compositor mode)
       blendSecondaryStyle: 'fire',
       blendSecondaryAmount: 30,
       blendMaskType: 'gradient',

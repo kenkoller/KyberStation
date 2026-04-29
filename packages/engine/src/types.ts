@@ -106,7 +106,42 @@ export interface IgnitionAnimation {
 // ─── Layer System ───
 
 export type LayerDirection = 'hilt-to-tip' | 'tip-to-hilt' | 'center-out' | 'edges-in';
-export type BlendMode = 'normal' | 'add' | 'multiply' | 'screen' | 'overlay';
+/**
+ * Layer blend mode. Per `docs/HARDWARE_FIDELITY_PRINCIPLE.md`, the
+ * KyberStation visualizer must not show effects the real Proffieboard
+ * can't produce. Of the 5 blend modes the engine compositor previously
+ * implemented (normal / add / multiply / screen / overlay), only
+ * `'normal'` (alpha-over via lerp) round-trips to a ProffieOS template
+ * — the codegen always emits `Mix<>` / `AlphaL<>` chains regardless of
+ * mode, and ProffieOS has no native `Add` / `Multiply` / `Screen` /
+ * `Overlay` color-blend primitives.
+ *
+ * 2026-04-29: `BlendMode` was tightened to a single literal so the
+ * visualizer matches what users actually flash. Persisted layer state
+ * with legacy values silently migrates to `'normal'` on load (see
+ * `apps/web/stores/layerStore.ts`); glyph decoders coerce too.
+ */
+export type BlendMode = 'normal';
+
+/** Legacy blend mode union — accepted on read for migration. */
+export type LegacyBlendMode = 'normal' | 'add' | 'multiply' | 'screen' | 'overlay';
+
+/**
+ * Coerce a legacy blend-mode string into the current single-literal
+ * `BlendMode`. Callers reading persisted state / network payloads
+ * should funnel through this helper so the migration is consistent.
+ *
+ * Today this collapses every input to `'normal'` (the only emittable
+ * mode). The signature accepts `unknown` so it stays robust against
+ * `undefined`, garbage strings, or whatever a future legacy format
+ * throws at it. The eslint-disable below intentionally documents that
+ * the input is ignored — this function exists for the call-site
+ * grep-ability + a single migration choke-point, not for branching.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function migrateBlendMode(_value: unknown): BlendMode {
+  return 'normal';
+}
 
 export interface LayerConfig {
   style: string; // style ID
@@ -334,7 +369,14 @@ export interface BladeConfig {
   spatialPhase?: number;            // Phase offset for multi-blade sync (0-360, default 0)
 
   // ── Blend & Layer ──
-  blendMode?: BlendMode;            // Primary blend mode
+  // 2026-04-29 (Hardware Fidelity tighten): the top-level
+  // `blendMode` field on BladeConfig was retired. It was a dead
+  // field — never consumed by the codegen, never read by the engine
+  // compositor (LayerConfig.blendMode is the live one), only
+  // surfaced through ParameterBank's UI. Of the 4 legacy values
+  // ('add' / 'multiply' / 'screen' / 'overlay'), none round-tripped
+  // to a ProffieOS template. Glyph decoders strip legacy
+  // blendMode values silently. See docs/HARDWARE_FIDELITY_PRINCIPLE.md.
   blendSecondaryStyle?: string;     // Optional second style to blend with
   blendSecondaryAmount?: number;    // Mix amount for secondary (0-100, default 0)
   blendMaskType?: 'none' | 'gradient' | 'noise' | 'wave'; // Mask pattern between layers

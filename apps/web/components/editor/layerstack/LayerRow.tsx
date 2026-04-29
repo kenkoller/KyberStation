@@ -1,11 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useLayerStore } from '@/stores/layerStore';
-import type { BlendMode, LayerRenderState } from '@/stores/layerStore';
+import type { LayerRenderState } from '@/stores/layerStore';
 import { useUIStore } from '@/stores/uiStore';
 import { ScrubField } from '@/components/shared/ScrubField';
 import { HIGH_DENSITY_THRESHOLD, LayerThumbnail } from '../LayerThumbnail';
-import { BLEND_MODES, TYPE_BADGES } from './constants';
+import { TYPE_BADGES } from './constants';
 import { ModulatorRow } from './ModulatorRow';
 
 /**
@@ -108,7 +108,6 @@ export function LayerRow({
   const selectLayer = useLayerStore((s) => s.selectLayer);
   const toggleVisibility = useLayerStore((s) => s.toggleVisibility);
   const setOpacity = useLayerStore((s) => s.setOpacity);
-  const setBlendMode = useLayerStore((s) => s.setBlendMode);
   const moveLayer = useLayerStore((s) => s.moveLayer);
   const removeLayer = useLayerStore((s) => s.removeLayer);
   const duplicateLayer = useLayerStore((s) => s.duplicateLayer);
@@ -338,21 +337,17 @@ export function LayerRow({
           {Math.round(layer.opacity * 100)}%
         </button>
 
-        {/* Blend mode dropdown */}
-        <select
-          value={layer.blendMode}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => setBlendMode(layer.id, e.target.value as BlendMode)}
-          className="text-ui-xs bg-transparent border-none text-text-muted cursor-pointer shrink-0 w-12 p-0"
-          title="Blend mode"
-          aria-label="Blend mode"
-        >
-          {BLEND_MODES.map((bm) => (
-            <option key={bm.id} value={bm.id}>
-              {bm.label}
-            </option>
-          ))}
-        </select>
+        {/*
+          2026-04-29 (Hardware Fidelity tighten): the blend-mode
+          dropdown was retired. Of the 4 modes it offered (normal /
+          add / multiply / screen), only `'normal'` (alpha-over via
+          lerp) round-trips to a ProffieOS template. The codegen
+          ignored the other 3 — users got a different look in the
+          visualizer than on real hardware. With one valid mode the
+          control is redundant; layers always composite via lerp,
+          which is what ProffieOS's `Mix<>` / `AlphaL<>` chain emits.
+          Spec: docs/HARDWARE_FIDELITY_PRINCIPLE.md.
+        */}
 
         {/* Duplicate */}
         <button

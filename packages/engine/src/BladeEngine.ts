@@ -17,7 +17,7 @@ import type {
   EffectScoping,
 } from './types.js';
 import { BladeState, DEFAULT_TOPOLOGY } from './types.js';
-import { LEDArray, lerpColor, blendAdd, blendMultiply, blendScreen, scaleColor, clampColor } from './LEDArray.js';
+import { LEDArray, lerpColor, scaleColor, clampColor } from './LEDArray.js';
 import { MotionSimulator } from './motion/MotionSimulator.js';
 import { createEasingFunction } from './easing.js';
 import { createStyle } from './styles/index.js';
@@ -54,30 +54,21 @@ function transformPosition(pos: number, direction: LayerDirection): number {
 }
 
 /**
- * Blend an overlay color onto a base color using the specified blend mode.
+ * Blend an overlay color onto a base color. Only the `'normal'` mode
+ * is supported per `docs/HARDWARE_FIDELITY_PRINCIPLE.md` — the visualizer
+ * must match what ProffieOS actually emits, which is alpha-over via
+ * `Mix<>` / `AlphaL<>` (a linear interpolation between base + overlay
+ * weighted by opacity). Legacy `add` / `multiply` / `screen` / `overlay`
+ * modes were dropped 2026-04-29; persisted state coerces to `'normal'`
+ * on load via `migrateBlendMode` in `packages/engine/src/types.ts`.
+ *
+ * The `_mode` parameter is retained on the signature for migration
+ * safety — callers may still pass `BlendMode` values in flight; the
+ * implementation collapses to lerp regardless.
  */
-function applyBlendMode(base: RGB, overlay: RGB, opacity: number, mode: BlendMode): RGB {
+function applyBlendMode(base: RGB, overlay: RGB, opacity: number, _mode: BlendMode): RGB {
   if (opacity <= 0) return base;
-
-  let blended: RGB;
-  switch (mode) {
-    case 'add':
-      blended = blendAdd(base, overlay, opacity);
-      break;
-    case 'multiply':
-      blended = blendMultiply(base, overlay);
-      if (opacity < 1) blended = lerpColor(base, blended, opacity);
-      break;
-    case 'screen':
-      blended = blendScreen(base, overlay);
-      if (opacity < 1) blended = lerpColor(base, blended, opacity);
-      break;
-    case 'normal':
-    default:
-      blended = lerpColor(base, overlay, opacity);
-      break;
-  }
-  return blended;
+  return lerpColor(base, overlay, opacity);
 }
 
 /**
