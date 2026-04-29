@@ -4,6 +4,8 @@ import { useState, useCallback, useRef } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
+import { IGNITION_STYLES, RETRACTION_STYLES } from '@/lib/transitionCatalogs';
+import { MODULATION_RECIPES } from '@kyberstation/presets';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -17,13 +19,32 @@ const ALL_STYLES = [
   'nebula', 'tidal', 'mirage',
 ] as const;
 
-const ALL_IGNITIONS = [
-  'standard', 'scroll', 'spark', 'center', 'wipe', 'stutter', 'glitch',
-] as const;
+/**
+ * Ignition IDs derived from the canonical transition catalog
+ * (`lib/transitionCatalogs.ts`). Excludes `custom-curve` since it
+ * requires user-defined Bezier data the randomizer can't generate.
+ */
+const ALL_IGNITIONS = IGNITION_STYLES
+  .map((s) => s.id)
+  .filter((id) => id !== 'custom-curve');
 
-const ALL_RETRACTIONS = [
-  'standard', 'scroll', 'center', 'fadeout', 'shatter',
-] as const;
+/**
+ * Retraction IDs derived from the canonical transition catalog.
+ * Same `custom-curve` exclusion as ignitions.
+ */
+const ALL_RETRACTIONS = RETRACTION_STYLES
+  .map((s) => s.id)
+  .filter((id) => id !== 'custom-curve');
+
+/**
+ * Bare-source modulation recipes suitable for randomization. Expression-
+ * based recipes (breathing, heartbeat, battery-saver) require the peggy
+ * AST infrastructure and are less intuitive as random additions, so only
+ * the 8 bare-source recipes are included.
+ */
+const BARE_SOURCE_RECIPES = MODULATION_RECIPES.filter(
+  (r) => r.bindings.every((b) => b.source !== null),
+);
 
 const STYLE_LABELS: Record<string, string> = {
   stable: 'Stable',
@@ -38,6 +59,21 @@ const STYLE_LABELS: Record<string, string> = {
   aurora: 'Aurora',
   cinder: 'Cinder',
   prism: 'Prism',
+  dataStream: 'Data Stream',
+  gravity: 'Gravity',
+  ember: 'Ember',
+  automata: 'Automata',
+  helix: 'Helix',
+  candle: 'Candle',
+  shatter: 'Shatter',
+  neutron: 'Neutron',
+  torrent: 'Torrent',
+  moire: 'Moire',
+  cascade: 'Cascade',
+  vortex: 'Vortex',
+  nebula: 'Nebula',
+  tidal: 'Tidal',
+  mirage: 'Mirage',
 };
 
 // ---------------------------------------------------------------------------
@@ -108,13 +144,14 @@ const THEMES: Record<string, ThemeDef> = {
 // Lock options
 // ---------------------------------------------------------------------------
 
-type LockKey = 'colors' | 'style' | 'effects' | 'timing';
+type LockKey = 'colors' | 'style' | 'effects' | 'timing' | 'modulation';
 
 const LOCK_OPTIONS: { key: LockKey; label: string }[] = [
   { key: 'colors', label: 'Lock Colors' },
   { key: 'style', label: 'Lock Style' },
   { key: 'effects', label: 'Lock Effects' },
   { key: 'timing', label: 'Lock Timing' },
+  { key: 'modulation', label: 'Lock Routing' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -194,9 +231,10 @@ function generateConfig(theme: ThemeDef): BladeConfig {
     style,
     ignition: pick(ALL_IGNITIONS),
     retraction: pick(ALL_RETRACTIONS),
-    ignitionMs: randInt(150, 800),
-    retractionMs: randInt(200, 900),
+    ignitionMs: randInt(200, 800),
+    retractionMs: randInt(200, 600),
     shimmer: Math.round(randRange(0, 0.6) * 100) / 100,
+    clashDecay: randInt(150, 500),
     // Placeholder ledCount — overridden by applyLocks() with the user's
     // current saber's actual ledCount. Hardware properties don't get
     // randomized; the user picked this in Saber Wizard / My Saber.
@@ -212,6 +250,30 @@ function generateConfig(theme: ThemeDef): BladeConfig {
   }
 
   return config;
+}
+
+/**
+ * Pick 1-2 random bare-source modulation recipes and return their
+ * bindings with fresh IDs. Skips expression-based recipes since those
+ * require peggy AST understanding the randomizer can't generate.
+ */
+function randomModulationBindings(): import('@kyberstation/engine').SerializedBinding[] {
+  if (BARE_SOURCE_RECIPES.length === 0) return [];
+
+  const count = Math.random() < 0.5 ? 1 : 2;
+  // Shuffle + take first `count` to avoid duplicates
+  const shuffled = [...BARE_SOURCE_RECIPES].sort(() => Math.random() - 0.5);
+  const picked = shuffled.slice(0, count);
+
+  return picked.flatMap((recipe) =>
+    recipe.bindings.map((binding) => ({
+      ...binding,
+      id:
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${binding.id}-${Date.now().toString(36)}-${Math.floor(Math.random() * 1_000_000).toString(36)}`,
+    })),
+  );
 }
 
 /** Apply locks: keep locked fields from the current config.
@@ -245,6 +307,7 @@ function applyLocks(
     merged.clashColor = current.clashColor;
     merged.lockupColor = current.lockupColor;
     merged.blastColor = current.blastColor;
+    if (current.clashDecay != null) merged.clashDecay = current.clashDecay;
   }
 
   if (locks.has('timing')) {
@@ -281,6 +344,10 @@ function mutateConfig(config: BladeConfig): BladeConfig {
     () => { mutated.ignitionMs = clamp(config.ignitionMs + randInt(-100, 100), 100, 1000); },
     () => { mutated.retractionMs = clamp(config.retractionMs + randInt(-100, 100), 100, 1000); },
     () => {
+      const decay = (config.clashDecay ?? 300);
+      mutated.clashDecay = clamp(decay + randInt(-50, 50), 100, 600);
+    },
+    () => {
       const idx = ALL_STYLES.indexOf(config.style as typeof ALL_STYLES[number]);
       if (idx >= 0) {
         const offset = pick([-1, 1]);
@@ -300,6 +367,26 @@ function mutateConfig(config: BladeConfig): BladeConfig {
   mutated.name = 'Mutated';
   return mutated;
 }
+
+// ---------------------------------------------------------------------------
+// Test-only exports
+// ---------------------------------------------------------------------------
+
+/** @internal Exported for tests only. */
+export {
+  ALL_IGNITIONS as __ALL_IGNITIONS,
+  ALL_RETRACTIONS as __ALL_RETRACTIONS,
+  ALL_STYLES as __ALL_STYLES,
+  STYLE_LABELS as __STYLE_LABELS,
+  BARE_SOURCE_RECIPES as __BARE_SOURCE_RECIPES,
+};
+export {
+  generateConfig as __generateConfig,
+  randomModulationBindings as __randomModulationBindings,
+  applyLocks as __applyLocks,
+};
+export type { LockKey as __LockKey };
+export const __THEMES = THEMES;
 
 function rgbToHex(r: number, g: number, b: number): string {
   return (
@@ -387,14 +474,27 @@ export function Randomizer() {
     [],
   );
 
+  const clearAllBindings = useBladeStore((s) => s.clearAllBindings);
+  const addBinding = useBladeStore((s) => s.addBinding);
+
   const handleSurpriseMe = useCallback(() => {
     playUISound('button-click');
     pushHistory(config);
     const theme = THEMES[activeTheme] ?? THEMES.random;
     const newConfig = applyLocks(generateConfig(theme), config, locks);
     setConfig(newConfig);
+
+    // Apply random modulation bindings unless locked
+    if (!locks.has('modulation')) {
+      clearAllBindings();
+      const newBindings = randomModulationBindings();
+      for (const binding of newBindings) {
+        addBinding(binding);
+      }
+    }
+
     playUISound('success');
-  }, [config, activeTheme, locks, pushHistory, setConfig]);
+  }, [config, activeTheme, locks, pushHistory, setConfig, clearAllBindings, addBinding]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -425,11 +525,21 @@ export function Randomizer() {
     playUISound('button-click');
     pushHistory(config);
     setConfig(batchConfigs[selectedBatchIdx]);
+
+    // Apply random modulation bindings for batch selection unless locked
+    if (!locks.has('modulation')) {
+      clearAllBindings();
+      const newBindings = randomModulationBindings();
+      for (const binding of newBindings) {
+        addBinding(binding);
+      }
+    }
+
     setShowBatch(false);
     setBatchConfigs([]);
     setSelectedBatchIdx(null);
     playUISound('success');
-  }, [selectedBatchIdx, batchConfigs, config, pushHistory, setConfig]);
+  }, [selectedBatchIdx, batchConfigs, config, pushHistory, setConfig, locks, clearAllBindings, addBinding]);
 
   const toggleLock = useCallback((key: LockKey) => {
     setLocks((prev) => {
@@ -603,6 +713,8 @@ export function Randomizer() {
 export function useSurpriseMe() {
   const config = useBladeStore((s) => s.config);
   const setConfig = useBladeStore((s) => s.setConfig);
+  const clearAllBindings = useBladeStore((s) => s.clearAllBindings);
+  const addBinding = useBladeStore((s) => s.addBinding);
 
   // Keep a small undo stack local to this hook instance so the full
   // Randomizer panel undo still works independently.
@@ -612,7 +724,14 @@ export function useSurpriseMe() {
     historyRef.current = [config, ...historyRef.current].slice(0, 30);
     const theme = THEMES.random;
     setConfig(generateConfig(theme));
-  }, [config, setConfig]);
+
+    // Apply random modulation bindings
+    clearAllBindings();
+    const newBindings = randomModulationBindings();
+    for (const binding of newBindings) {
+      addBinding(binding);
+    }
+  }, [config, setConfig, clearAllBindings, addBinding]);
 
   const undo = useCallback(() => {
     if (historyRef.current.length === 0) return;
