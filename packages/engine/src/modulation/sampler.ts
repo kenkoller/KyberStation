@@ -20,15 +20,15 @@ import { BUILT_IN_MODULATORS } from './registry.js';
 // Design doc §3.1 reads: "Latched on clash trigger, decays per
 // `BladeConfig.clashIntensity`". The existing `BladeConfig.clashIntensity`
 // is a 0-100 *brightness* scalar consumed by `ClashEffect`, not a
-// per-frame decay coefficient. We therefore use a fixed default of
-// 0.92 per frame (design-doc-prescribed fallback) in v1.0. A future
-// BladeConfig field — e.g. `clashDecay` — can override this; tracking
-// in TODO below.
+// per-frame decay coefficient — using the same name for both would
+// have conflated brightness with temporal falloff.
 //
-// TODO(v1.1): plumb an authoritative `BladeConfig.clashDecay` field
-// from the UI and swap this constant out. Until then, 0.92 is a stable
-// "looks right" default that mirrors the clash-flash falloff the
-// ClashEffect produces on its own.
+// 2026-04-29: an authoritative `BladeConfig.clashDecay` field now
+// exists (`packages/engine/src/types.ts`); BladeEngine threads it
+// through to `sampleModulators` as the optional 4th parameter. When
+// the caller passes `undefined` (or the field is unset on the config),
+// we fall back to the established 0.92 — a stable "looks right"
+// default that mirrors the ClashEffect's brightness falloff.
 const DEFAULT_CLASH_DECAY_PER_FRAME = 0.92;
 
 // ─── Public state shape ─────────────────────────────────────────────
@@ -128,6 +128,11 @@ function readRawModulator(
  *                           drives `lockup` (and later `drag` / `melt`).
  *                           For Friday v1.0 only `clash` + `lockup` are
  *                           consumed; other entries are ignored.
+ * @param clashDecayPerFrame — optional override for the clash modulator's
+ *                           per-frame decay coefficient. Defaults to
+ *                           `DEFAULT_CLASH_DECAY_PER_FRAME` (0.92) when
+ *                           `undefined`. Threaded from
+ *                           `BladeConfig.clashDecay` by BladeEngine.
  *
  * Evaluation order matches §6.1 of the design doc:
  *
@@ -140,7 +145,19 @@ export function sampleModulators(
   ctx: StyleContext,
   prevSample: SamplerState | null,
   effectsActive: ReadonlySet<EffectType>,
+  clashDecayPerFrame?: number,
 ): SamplerState {
+  // Clamp the override into a sensible range. Undefined / out-of-band
+  // inputs fall back to the established 0.92 default — the modulation
+  // UI shouldn't surface negative or >1 values, but defending against
+  // them here keeps the sampler robust against legacy config files
+  // and adversarial inputs from glyph round-trip.
+  const decayCoefficient =
+    typeof clashDecayPerFrame === 'number' &&
+    clashDecayPerFrame >= 0 &&
+    clashDecayPerFrame <= 1
+      ? clashDecayPerFrame
+      : DEFAULT_CLASH_DECAY_PER_FRAME;
   // Decide whether this call represents a new clash trigger.
   // We look at:
   //   (a) clash membership in `effectsActive` (engine says it's active)
@@ -176,7 +193,8 @@ export function sampleModulators(
   // Compute the next latched clash intensity.
   //
   // - New trigger: snap to 1
-  // - Otherwise: decay prev by DEFAULT_CLASH_DECAY_PER_FRAME
+  // - Otherwise: decay prev by `decayCoefficient` (caller override
+  //   from BladeConfig.clashDecay, or DEFAULT_CLASH_DECAY_PER_FRAME)
   //
   // The decayed intensity is what we expose through `values.get('clash')`
   // for the next frame's read. We patch it in here after the smoothing
@@ -184,7 +202,7 @@ export function sampleModulators(
   // decayed state the evaluator should see this frame.
   const nextClashIntensity = clashJustTriggered
     ? 1
-    : prevClashIntensity * DEFAULT_CLASH_DECAY_PER_FRAME;
+    : prevClashIntensity * decayCoefficient;
   nextValues.set('clash', nextClashIntensity);
 
   return {
