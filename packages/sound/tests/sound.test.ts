@@ -96,7 +96,9 @@ describe('Font manifest data structures', () => {
   });
 
   it('handles missing optional sounds gracefully', () => {
-    // A minimal font with only hum and ignition -- no clash, blast, etc.
+    // A minimal font with only hum and retraction -- no clash, blast, etc.
+    // (in.wav is the retraction sound per ProffieOS convention; out.wav
+    // would be the ignition. Either alone is "minimal".)
     const files: SoundFile[] = [
       { name: 'hum.wav', category: 'hum', path: '/fonts/minimal/hum.wav' },
       { name: 'in.wav', category: 'in', path: '/fonts/minimal/in.wav' },

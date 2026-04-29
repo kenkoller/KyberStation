@@ -17,6 +17,11 @@ import type { SoundCategory, SoundFile, SmoothSwingPair, FontManifest, FontForma
  * regex is `^(lock)\d*` and would otherwise short-circuit). Same shape for
  * drag, melt, lb, and the smooth-swing pair already at the top of the list.
  *
+ * ProffieOS naming convention (sound/hybrid_font.h):
+ *   - `out.wav` / `poweron.wav` plays during IGNITION (blade goes OUT)
+ *   - `in.wav`  / `poweroff.wav` / `pstoff.wav` plays during RETRACTION
+ *     (blade goes IN; `pstoff` is the optional follow-up after `in`)
+ *
  * Modern Proffie / Kyberphonic / BK Saber Sounds fonts ship the bgn/end
  * transitions, lightning-block, low-battery alert, and color-change
  * categories that older flat-layout fonts didn't surface. Detection here is
@@ -46,8 +51,8 @@ const CATEGORY_PATTERNS: Array<[RegExp, SoundCategory]> = [
   [/^bgnlb\d*/i, 'bgnlb'],
   [/^endlb\d*/i, 'endlb'],
   [/^lb\d*/i, 'lb'],
-  [/^(in\d|poweron)/i, 'in'],
-  [/^(out\d|poweroff)/i, 'out'],
+  [/^(in\d|poweroff|pstoff)/i, 'in'],
+  [/^(out\d|poweron)/i, 'out'],
   [/^force\d*/i, 'force'],
   [/^stab\d*/i, 'stab'],
   [/^boot\d*/i, 'boot'],
