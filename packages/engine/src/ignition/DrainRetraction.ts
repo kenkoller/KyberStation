@@ -1,14 +1,21 @@
 import { BaseIgnition } from './BaseIgnition.js';
 
 /**
- * DrainRetraction — color drains downward from tip to base, like liquid flowing out.
+ * DrainRetraction — color drains upward from base to tip, like liquid being drawn out.
  *
- * The drain front travels from tip to hilt with slight acceleration (gravity feel).
+ * The drain front travels from hilt to tip with slight acceleration.
  * A soft meniscus at the receding edge adds a liquid surface appearance.
  * Small residual drips trail below the main drain line and gradually catch up,
  * simulating liquid droplets falling toward the hilt.
  *
- * Progress 0 = fully lit, progress 1 = fully off (tip drains first).
+ * Progress convention (engine sends):
+ *   progress = 1 → start of retraction (fully lit)
+ *   progress = 0 → end of retraction (fully off)
+ *
+ * Internally we use retract = progress directly (not 1 - progress).
+ * The drain-front spatial math is written so that retract=1 (progress=1,
+ * retraction start) yields a fully-lit blade, and retract=0 (progress=0,
+ * retraction end) yields a fully-dark blade.
  */
 export class DrainRetraction extends BaseIgnition {
   readonly id = 'drain';
@@ -22,8 +29,21 @@ export class DrainRetraction extends BaseIgnition {
 
   getMask(position: number, progress: number): number {
     // --- Drain front: tip (position=1) drains first, hilt (position=0) last ---
-    // "retract" is how far the drain has progressed (0 = nothing drained, 1 = all drained)
-    const retract = progress; // 0→1 as retraction advances
+    // Engine sends progress 1→0 during retraction.
+    // We use retract = progress directly (NOT 1 - progress).
+    //
+    // The drain front = 1 - easedRetract.
+    // Positions ABOVE the drain front are lit; positions below are dark.
+    //
+    // At progress=1 (retraction start): retract=1, easedRetract=1, front=0.
+    //   All positions > 0 are above the front → fully lit. ✓
+    // At progress=0 (retraction end):   retract=0, easedRetract=0, front=1.
+    //   No positions > 1 exist → fully dark. ✓
+    //
+    // This works because the spatial math (drainFront = 1 - eased) naturally
+    // inverts: high retract → low front → everything lit; low retract → high
+    // front → everything dark. No extra 1-progress conversion needed.
+    const retract = progress;
 
     // Acceleration: drain accelerates as more liquid weight pulls it
     // Ease-in: slow start, faster end
