@@ -1,9 +1,10 @@
 'use client';
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { FontPlayer, SmoothSwingEngine, AudioFilterChain, parseFileList, extractFontName, decodeFilesByCategory } from '@kyberstation/sound';
 import type { FontManifest } from '@kyberstation/sound';
 import { useAudioFontStore } from '@/stores/audioFontStore';
 import { useAudioMixerStore } from '@/stores/audioMixerStore';
+import { useAudioMuteStore } from '@/stores/audioMuteStore';
 import { saveFontToDB, loadFontFromDB, getLastUsedFontName } from '@/lib/fontDB';
 
 /**
@@ -118,8 +119,13 @@ export function useAudioEngine() {
   const soundsRef = useRef<SoundBuffers | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const initializedRef = useRef(false);
-  const [muted, setMutedState] = useState(true); // muted by default
-  const mutedRef = useRef(true);
+
+  // Mute state lives in a global store so every `useAudioEngine` instance
+  // (header toggle, AudioColumnB preview buttons, SmoothSwing tick, mobile
+  // shell, etc.) reads the same value. Pre-fix, each instance owned its
+  // own useState/useRef + masterGain, so toggling from the header only
+  // silenced the instance the header read from — the others stayed muted.
+  const muted = useAudioMuteStore((s) => s.muted);
 
   // Font store access
   const getBuffer = useAudioFontStore((s) => s.getBuffer);
@@ -127,14 +133,6 @@ export function useAudioEngine() {
   const setLoadProgress = useAudioFontStore((s) => s.setLoadProgress);
   const setIsLoading = useAudioFontStore((s) => s.setIsLoading);
   const fontName = useAudioFontStore((s) => s.fontName);
-
-  const setMuted = useCallback((m: boolean) => {
-    mutedRef.current = m;
-    setMutedState(m);
-    if (masterGainRef.current) {
-      masterGainRef.current.gain.value = m ? 0 : 1;
-    }
-  }, []);
 
   // Initialize on first user gesture (AudioContext requires it)
   const ensureInit = useCallback(() => {
@@ -144,9 +142,12 @@ export function useAudioEngine() {
       const ctx = new AudioContext();
       const player = new FontPlayer(ctx);
 
-      // Master gain for mute control
+      // Master gain for mute control. Initial value reads from the store
+      // directly (not via the closure-captured `muted` selector value)
+      // so a freshly-mounted instance picks up the latest store state
+      // even if the store changed between render and ensureInit firing.
       const masterGain = ctx.createGain();
-      masterGain.gain.value = mutedRef.current ? 0 : 1;
+      masterGain.gain.value = useAudioMuteStore.getState().muted ? 0 : 1;
       masterGain.connect(ctx.destination);
 
       // Insert filter chain: player -> filterChain -> masterGain
@@ -177,12 +178,25 @@ export function useAudioEngine() {
     }
   }, []);
 
+  // Push store changes into this instance's masterGain. Every `useAudioEngine`
+  // consumer runs this effect, so a single store flip silences/unsilences
+  // all of them. ensureInit() may not have run yet on freshly-mounted
+  // instances (AudioContext needs a user gesture); the gain push there
+  // covers that case.
+  useEffect(() => {
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = muted ? 0 : 1;
+    }
+  }, [muted]);
+
+  // Wraps the store's toggle with ensureInit so the AudioContext is
+  // created in the user-gesture frame even if no audio has played yet.
+  // Without this, a user who toggles "Sound ON" without first triggering
+  // a sound would have to click again to hear anything (Chrome autoplay).
   const toggleMute = useCallback(() => {
-    const newMuted = !mutedRef.current;
-    // Ensure the AudioContext exists so the gain node can be set
     ensureInit();
-    setMuted(newMuted);
-  }, [setMuted, ensureInit]);
+    useAudioMuteStore.getState().toggleMute();
+  }, [ensureInit]);
 
   /**
    * Get a buffer for a sound event — prefers real font buffers, falls back to synthetic.
