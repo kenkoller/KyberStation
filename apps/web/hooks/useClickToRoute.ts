@@ -29,9 +29,9 @@
 // Agent P4 (this file) does NOT edit those stores. Parallel sprint
 // agents landed the fields on `feat/modulation-routing` before this
 // hook was written; the patch spec is archived in
-// `./useClickToRoute.patches.md`. `// TODO(bladeStore-modulation-patch)`
-// markers remain at the two selector sites for a future cleanup pass
-// described in the patches doc §3.
+// `./useClickToRoute.patches.md`. The transitional `// TODO
+// (bladeStore-modulation-patch)` markers were removed in 2026-04-29
+// after the audit confirmed no store-adapter shims remain.
 
 import { useCallback, useEffect, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
@@ -204,25 +204,14 @@ export function useClickToRoute(
 
   // ── uiStore — armed plate state ──────────────────────────────────────
   //
-  // Parallel sprint agents landed the `armedModulatorId` + setter fields
-  // on uiStore ahead of this hook (see `./useClickToRoute.patches.md`
-  // §1 — the patch has shipped). Read them directly; the TODO marker
-  // below flags the fallback-friendly selector pattern that was
-  // originally defensive and can now be simplified further during
-  // cleanup.
-  // TODO(bladeStore-modulation-patch): simplify to
-  // `useUIStore((s) => s.armedModulatorId)` once no store adapter shims
-  // remain elsewhere in the UI integration layer.
+  // `armedModulatorId` + `setArmedModulatorId` ship on uiStore (see
+  // `./useClickToRoute.patches.md` §1).
   const armedModulatorId = useUIStore((s) => s.armedModulatorId);
   const setArmedModulatorId = useUIStore((s) => s.setArmedModulatorId);
 
   // ── bladeStore — addBinding action ───────────────────────────────────
   //
-  // Parallel sprint agents also landed `addBinding` on bladeStore.
-  // TODO(bladeStore-modulation-patch): drop this comment block once the
-  // Inspector ROUTING tab + FlashPanel mapping report converge on the
-  // same selector pattern (prevents drift in how the store slice is
-  // read across the new modulation surfaces).
+  // `addBinding` ships on bladeStore.
   const addBinding = useBladeStore((s) => s.addBinding);
 
   // ── Actions ──────────────────────────────────────────────────────────
