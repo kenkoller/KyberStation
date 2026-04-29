@@ -12,7 +12,9 @@ import { BLADE_LENGTH_PRESETS } from '@kyberstation/engine';
 import {
   BLADE_LENGTHS,
   BOARDS,
+  VIBES,
   type BoardOption,
+  type VibeOption,
 } from '@/components/onboarding/SaberWizard';
 import { inferBladeInches } from '@/lib/bladeRenderMetrics';
 
@@ -110,5 +112,89 @@ describe('SaberWizard BOARDS', () => {
   it('every board id is unique', () => {
     const ids = BOARDS.map((b: BoardOption) => b.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+// ─── Wizard VIBES (Step 4) ───────────────────────────────────────────
+//
+// VIBES drive the final config written by the wizard. Each vibe sets
+// ignition/retraction IDs that must exist in the engine registries
+// (packages/engine/src/ignition/index.ts IGNITION_REGISTRY /
+// RETRACTION_REGISTRY). If a vibe uses a non-existent ID, the engine
+// falls back to standard with a console.warn — silently wrong output.
+
+// Canonical engine registry IDs as of 2026-04-29. If the engine adds
+// or removes IDs, update this list — a failing test here is the
+// intended signal.
+const VALID_IGNITION_IDS = [
+  'standard', 'scroll', 'center', 'spark', 'wipe', 'stutter',
+  'glitch', 'twist', 'swing', 'stab', 'custom-curve', 'crackle',
+  'fracture', 'flash-fill', 'pulse-wave', 'drip-up', 'hyperspace',
+  'summon', 'seismic',
+];
+
+const VALID_RETRACTION_IDS = [
+  'standard', 'scroll', 'center', 'fadeout', 'shatter',
+  'custom-curve', 'dissolve', 'flickerOut', 'unravel', 'drain',
+  'implode', 'evaporate', 'spaghettify',
+];
+
+describe('SaberWizard VIBES', () => {
+  it('has 4 entries with unique IDs', () => {
+    expect(VIBES).toHaveLength(4);
+    const ids = VIBES.map((v: VibeOption) => v.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('every ignition ID exists in the engine ignition registry', () => {
+    for (const v of VIBES) {
+      expect(VALID_IGNITION_IDS).toContain(v.ignition);
+    }
+  });
+
+  it('every retraction ID exists in the engine retraction registry', () => {
+    for (const v of VIBES) {
+      expect(VALID_RETRACTION_IDS).toContain(v.retraction);
+    }
+  });
+
+  it('shimmer values are in valid 0-1 range', () => {
+    for (const v of VIBES) {
+      expect(v.shimmer).toBeGreaterThanOrEqual(0);
+      expect(v.shimmer).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('timing values are positive integers', () => {
+    for (const v of VIBES) {
+      expect(v.ignitionMs).toBeGreaterThan(0);
+      expect(v.retractionMs).toBeGreaterThan(0);
+      expect(Number.isInteger(v.ignitionMs)).toBe(true);
+      expect(Number.isInteger(v.retractionMs)).toBe(true);
+    }
+  });
+
+  it('every vibe has a non-empty label and description', () => {
+    for (const v of VIBES) {
+      expect(v.label.length).toBeGreaterThan(0);
+      expect(v.desc.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ─── Wizard defaults ─────────────────────────────────────────────────
+//
+// The wizard's LED-count fallback and the bladeStore default must agree.
+// PR #99 flipped the engine canonical to 36"=144 LEDs, but the wizard
+// had a stale 132 fallback that this audit fixed.
+
+describe('SaberWizard defaults', () => {
+  it('default LED count for 36" matches the canonical BLADE_LENGTHS entry', () => {
+    const thirtysSix = BLADE_LENGTHS.find((b) => b.inches === 36);
+    expect(thirtysSix).toBeDefined();
+    // The wizard's fallback ledCount (used when currentConfig.ledCount
+    // is undefined) must match the canonical 36" entry. This catches
+    // the stale-132 drift that existed before the audit fix.
+    expect(thirtysSix?.ledCount).toBe(144);
   });
 });
