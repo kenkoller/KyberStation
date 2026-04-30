@@ -52,6 +52,8 @@ import { MobileActionBar } from '@/components/layout/mobile/MobileActionBar';
 import { MobileSectionTabs } from '@/components/layout/mobile/MobileSectionTabs';
 import { MobileStatusBarStrip } from '@/components/layout/mobile/MobileStatusBarStrip';
 import { ParameterSheetHost } from '@/components/layout/mobile/ParameterSheetHost';
+import { MobileInspectHUD } from '@/components/layout/mobile/MobileInspectHUD';
+import { useInspectModeStore } from '@/stores/inspectModeStore';
 import { ColorRail } from '@/components/layout/mobile/ColorRail';
 import { ColorQuickControls } from '@/components/layout/mobile/QuickControls';
 import { playUISound } from '@/lib/uiSounds';
@@ -99,6 +101,125 @@ export function MobileShell({
   const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
+  // ── Phase 4.5 Inspect mode wiring ────────────────────────────────
+  const isInspecting = useInspectModeStore((s) => s.isInspecting);
+  const inspectZoom = useInspectModeStore((s) => s.zoom);
+  const inspectPanX = useInspectModeStore((s) => s.panX);
+  const inspectOriginXFraction = useInspectModeStore((s) => s.originXFraction);
+  const enterInspect = useInspectModeStore((s) => s.enter);
+  const exitInspect = useInspectModeStore((s) => s.exit);
+  const setPanX = useInspectModeStore((s) => s.setPanX);
+
+  // 500ms long-press detection on the blade canvas region. Movement
+  // beyond a small threshold cancels the press (treats it as the
+  // start of a tap-and-drag instead). Pointer-up before the timer
+  // also cancels.
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressDownRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
+  const bladeRegionRef = useRef<HTMLDivElement | null>(null);
+
+  function clearLongPress() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressDownRef.current = null;
+  }
+
+  function onBladePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    // Don't start a new long-press timer while already inspecting —
+    // those pointer events drive the pan instead, handled below.
+    if (isInspecting) return;
+    longPressDownRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      pointerId: e.pointerId,
+    };
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      const down = longPressDownRef.current;
+      if (!down) return;
+      const region = bladeRegionRef.current;
+      if (!region) return;
+      const rect = region.getBoundingClientRect();
+      const fraction =
+        rect.width > 0 ? Math.max(0, Math.min(1, (down.x - rect.left) / rect.width)) : 0.5;
+      enterInspect(fraction);
+      longPressDownRef.current = null;
+    }, 500);
+  }
+
+  function onBladePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (isInspecting) {
+      // Pan during inspect — drag updates panX with a clamp so the
+      // user can't drag past the visible blade range. Clamp uses the
+      // current zoom to compute max useful pan: at zoom Z the blade
+      // visually expands by factor Z, so half of (Z - 1) * width is
+      // the max one-side pan.
+      const region = bladeRegionRef.current;
+      if (!region) return;
+      const rect = region.getBoundingClientRect();
+      const maxPan = ((inspectZoom - 1) * rect.width) / 2;
+      // Track delta from the pointer-down point. Without a stored
+      // pointer-down, treat this move as a no-op (the pan starts on
+      // the next pointer-down).
+      const down = longPressDownRef.current;
+      if (!down) return;
+      const dx = e.clientX - down.x;
+      setPanX(Math.max(-maxPan, Math.min(maxPan, dx)));
+      return;
+    }
+    // Not inspecting — cancel long-press if pointer moved beyond a
+    // small slop threshold (5 device pixels).
+    const down = longPressDownRef.current;
+    if (!down) return;
+    const dx = e.clientX - down.x;
+    const dy = e.clientY - down.y;
+    if (dx * dx + dy * dy > 25) clearLongPress();
+  }
+
+  function onBladePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (isInspecting) {
+      // Pan-end: keep the pan offset where the user released so the
+      // visual position persists. Don't clear longPressDownRef yet —
+      // the next pointer-down on the canvas during inspect re-anchors
+      // the drag delta.
+      longPressDownRef.current = null;
+      return;
+    }
+    clearLongPress();
+    void e;
+  }
+
+  // Pan re-anchor — when the user starts a new drag during inspect,
+  // record the new pointer-down so subsequent moves measure delta
+  // from it.
+  function onBladePointerDownDuringInspect(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isInspecting) return;
+    longPressDownRef.current = {
+      x: e.clientX - inspectPanX,
+      y: e.clientY,
+      pointerId: e.pointerId,
+    };
+  }
+
+  // Escape key exits Inspect mode (iPad / external keyboard support).
+  useEffect(() => {
+    if (!isInspecting) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') exitInspect();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isInspecting, exitInspect]);
+
+  // Cleanup: clear any pending long-press timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
+  }, []);
+
   // Neutralize the global MobileTabBar bottom padding from layout.tsx —
   // the editor mobile shell uses its own status bar at the bottom, so
   // the 56px gutter is wasted space here.
@@ -126,7 +247,22 @@ export function MobileShell({
   }, [engineRef, toggleWithAudio]);
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
+    <div
+      className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden"
+      data-inspect-mode={isInspecting || undefined}
+      onPointerDown={(e) => {
+        // Tap-outside-blade-and-HUD exits Inspect mode. We let the
+        // blade region + the HUD intercept events via stopPropagation
+        // (HUD) or by being above this listener (blade). Anything
+        // else clicks through to here and ends the mode.
+        if (!isInspecting) return;
+        const target = e.target as HTMLElement;
+        // If click came from inside the blade region or the HUD, bail.
+        if (bladeRegionRef.current?.contains(target)) return;
+        if (target.closest('[data-mobile-inspect-hud]')) return;
+        exitInspect();
+      }}
+    >
 
       {/* ── 1. Header (44px) ────────────────────────────────────────────
           Hamburger MENU on the left, brand wordmark center, secondary
@@ -236,12 +372,45 @@ export function MobileShell({
           for Inspect mode (Phase 4.5 deferred). 64px = 1.78px / LED at
           144 LEDs; gestalt + motion remain readable. */}
       <div
-        className="w-full shrink-0 flex items-center justify-center bg-bg-primary border-b border-border-subtle"
-        style={{ height: 'var(--blade-rod-h)' }}
+        ref={bladeRegionRef}
+        className="relative w-full shrink-0 flex items-center justify-center bg-bg-primary border-b border-border-subtle blade-canvas overflow-hidden"
+        style={{ height: 'var(--blade-rod-h)', touchAction: 'none' }}
         role="region"
         aria-label="Blade preview"
+        data-inspecting={isInspecting || undefined}
+        onPointerDown={(e) => {
+          if (isInspecting) {
+            onBladePointerDownDuringInspect(e);
+          } else {
+            onBladePointerDown(e);
+          }
+        }}
+        onPointerMove={onBladePointerMove}
+        onPointerUp={onBladePointerUp}
+        onPointerCancel={onBladePointerUp}
       >
-        <BladeCanvas engineRef={engineRef} vertical={false} compact />
+        {/* Inner transform target — Inspect mode applies zoom + pan
+            here so the blade visually grows + slides under the
+            outer region's overflow:hidden clip. transform-origin
+            uses the long-press point so 2.4× / 4× zooms centered on
+            the LED the user pointed at. */}
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{
+            transform: isInspecting
+              ? `translateX(${inspectPanX}px) scale(${inspectZoom})`
+              : undefined,
+            transformOrigin: isInspecting
+              ? `${inspectOriginXFraction * 100}% 50%`
+              : undefined,
+            transition: 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+            willChange: isInspecting ? 'transform' : undefined,
+          }}
+        >
+          <BladeCanvas engineRef={engineRef} vertical={false} compact />
+        </div>
+        {/* Zoom HUD — only visible during Inspect mode. */}
+        {isInspecting && <MobileInspectHUD />}
       </div>
 
       {/* ── 3. Pixel Strip (36px) ──────────────────────────────────────
