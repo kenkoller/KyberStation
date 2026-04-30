@@ -109,12 +109,6 @@ function GalleryHeader() {
           <button type="button" onClick={goEditor('design')} className={headerNavLinkClass(false)}>
             Design
           </button>
-          <button type="button" onClick={goEditor('audio')} className={headerNavLinkClass(false)}>
-            Audio
-          </button>
-          <button type="button" onClick={goEditor('output')} className={headerNavLinkClass(false)}>
-            Output
-          </button>
           <Link
             href="/gallery"
             className={headerNavLinkClass(true)}

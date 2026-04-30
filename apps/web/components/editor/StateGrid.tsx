@@ -13,7 +13,7 @@
 // `captureStateFrame` API that powers Inspector's STATE tab, just with
 // a bigger canvas per row.
 
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { BladeEngine, EffectType } from '@kyberstation/engine';
 import { BladeState } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
@@ -49,6 +49,7 @@ export function StateGrid({ engineRef, className }: StateGridProps) {
   const config = useBladeStore((s) => s.config);
   const ledCount = config.ledCount;
   const bladeStartFrac = useUIStore((s) => s.bladeStartFrac);
+  const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
 
   const frames = useMemo(() => {
     const engine = engineRef.current;
@@ -64,6 +65,27 @@ export function StateGrid({ engineRef, className }: StateGridProps) {
     });
   }, [config, engineRef, ledCount]);
 
+  // Click a state row → set the live engine to that state (or trigger
+  // the analogous animation/effect) and switch back to single-blade
+  // view so the user sees the result in the main BLADE PREVIEW above.
+  const handleRowClick = useCallback(
+    (row: StateGridRow) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+      if (row.effect) {
+        engine.triggerEffect(row.effect);
+      } else if (row.state === BladeState.OFF || row.state === BladeState.RETRACTING) {
+        engine.retract();
+      } else {
+        // PREON / IGNITING / ON all enter via ignite() — preon plays
+        // first if configured, then the ignition animation, then ON.
+        engine.ignite();
+      }
+      toggleStateGrid();
+    },
+    [engineRef, toggleStateGrid],
+  );
+
   return (
     <div
       className={['flex flex-col h-full overflow-y-auto bg-bg-deep', className ?? ''].join(' ')}
@@ -78,6 +100,7 @@ export function StateGrid({ engineRef, className }: StateGridProps) {
             frame={frames?.[i] ?? null}
             ledCount={ledCount}
             bladeStartFrac={bladeStartFrac}
+            onClick={() => handleRowClick(row)}
           />
         ))}
       </div>
@@ -90,11 +113,12 @@ interface StateGridRowViewProps {
   frame: Uint8Array | null;
   ledCount: number;
   bladeStartFrac: number;
+  onClick: () => void;
 }
 
-function StateGridRowView({ label, frame, ledCount, bladeStartFrac }: StateGridRowViewProps) {
+function StateGridRowView({ label, frame, ledCount, bladeStartFrac, onClick }: StateGridRowViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -145,9 +169,13 @@ function StateGridRowView({ label, frame, ledCount, bladeStartFrac }: StateGridR
   }, [frame, ledCount, bladeStartFrac]);
 
   return (
-    <div
+    <button
       ref={containerRef}
-      className="relative shrink-0 rounded-sm border border-border-subtle overflow-hidden"
+      type="button"
+      onClick={onClick}
+      title={`Set blade preview to ${label}`}
+      aria-label={`Set blade preview to ${label}`}
+      className="relative shrink-0 rounded-sm border border-border-subtle overflow-hidden text-left hover:border-accent-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/60 transition-colors cursor-pointer"
       style={{ height: 28, minWidth: 0 }}
     >
       <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} className="absolute inset-0" />
@@ -160,6 +188,6 @@ function StateGridRowView({ label, frame, ledCount, bladeStartFrac }: StateGridR
       >
         {label}
       </span>
-    </div>
+    </button>
   );
 }
