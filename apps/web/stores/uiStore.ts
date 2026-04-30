@@ -90,8 +90,16 @@ export interface UIStore {
    * The field is only meaningful when `isPaused` is true.
    */
   pauseScope: 'full' | 'partial';
-  /** Battery preset index for power draw estimation */
+  /** Battery preset index for power draw estimation. @deprecated Use `batteryId` for warning math; this index drives the legacy mAh-only runtime estimator. */
   batteryPresetIdx: number;
+  /**
+   * Selected battery ID — drives the manufacturer-rated max-discharge
+   * warning math in `lib/batteryTypes.ts`. See `BATTERIES` for the list.
+   * Use `'custom'` paired with `customBattery` to specify an unlisted cell.
+   */
+  batteryId: string;
+  /** Custom-battery spec — only consulted when `batteryId === 'custom'`. */
+  customBattery: { capacityMah: number; maxDischargeA: number; voltageNominal: number } | null;
   /** Per-tab section ordering — maps tab → ordered array of section IDs */
   sectionOrder: Partial<Record<ActiveTab, string[]>>;
   /** Layout mode — sidebar (vertical blade, side tabs) or horizontal (blade on top, tabs below) */
@@ -248,6 +256,8 @@ export interface UIStore {
   togglePause: (scope?: 'full' | 'partial') => void;
   setPaused: (paused: boolean, scope?: 'full' | 'partial') => void;
   setBatteryPresetIdx: (idx: number) => void;
+  setBatteryId: (id: string) => void;
+  setCustomBattery: (spec: { capacityMah: number; maxDischargeA: number; voltageNominal: number } | null) => void;
   setSectionOrder: (tab: ActiveTab, order: string[]) => void;
   setLayoutMode: (mode: LayoutMode) => void;
   setTabOrder: (order: string[]) => void;
@@ -458,6 +468,60 @@ function saveSidebarCollapse(c: Record<SidebarGroupId, boolean>): void {
   } catch { /* ignore */ }
 }
 
+// ─── Battery selection persistence ────────────────────────────────────────────
+//
+// Battery is conceptually per-saber-chassis but for v1 we keep it on the
+// global UI store with localStorage persistence — same pattern as other
+// hardware-shaped global settings (brightness, layout). When/if multi-saber
+// profiles want per-profile battery, the move is a 2-line lift into
+// SaberProfile + thread the resolved battery through HardwarePanel props.
+
+const BATTERY_STORAGE_KEY = 'kyberstation-battery-selection';
+
+interface PersistedBatterySelection {
+  id: string;
+  custom: { capacityMah: number; maxDischargeA: number; voltageNominal: number } | null;
+}
+
+const DEFAULT_BATTERY_SELECTION: PersistedBatterySelection = {
+  // Mirrors `DEFAULT_BATTERY_ID` in `lib/batteryTypes.ts`. Hardcoded
+  // here to avoid an import cycle (uiStore is imported by the lib).
+  id: '18650-vtc6',
+  custom: null,
+};
+
+function loadBatterySelection(): PersistedBatterySelection {
+  try {
+    if (typeof localStorage === 'undefined') return { ...DEFAULT_BATTERY_SELECTION };
+    const raw = localStorage.getItem(BATTERY_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_BATTERY_SELECTION };
+    const parsed = JSON.parse(raw) as Partial<PersistedBatterySelection>;
+    const id = typeof parsed.id === 'string' && parsed.id.length > 0
+      ? parsed.id
+      : DEFAULT_BATTERY_SELECTION.id;
+    const c = parsed.custom;
+    const custom = c
+      && typeof c === 'object'
+      && typeof c.capacityMah === 'number'
+      && typeof c.maxDischargeA === 'number'
+      && typeof c.voltageNominal === 'number'
+        ? { capacityMah: c.capacityMah, maxDischargeA: c.maxDischargeA, voltageNominal: c.voltageNominal }
+        : null;
+    return { id, custom };
+  } catch {
+    return { ...DEFAULT_BATTERY_SELECTION };
+  }
+}
+
+function saveBatterySelection(sel: PersistedBatterySelection): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(BATTERY_STORAGE_KEY, JSON.stringify(sel));
+  } catch { /* ignore */ }
+}
+
+const initialBatterySelection = loadBatterySelection();
+
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
   renderMode: 'photorealistic',
@@ -480,6 +544,8 @@ export const useUIStore = create<UIStore>((set) => ({
   isPaused: false,
   pauseScope: 'full' as const,
   batteryPresetIdx: 0,
+  batteryId: initialBatterySelection.id,
+  customBattery: initialBatterySelection.custom,
   sectionOrder: {},
   layoutMode: 'sidebar',
   tabOrder: [],
@@ -568,6 +634,18 @@ export const useUIStore = create<UIStore>((set) => ({
       animationPaused: isPaused ? scope === 'full' : false,
     }),
   setBatteryPresetIdx: (batteryPresetIdx) => set({ batteryPresetIdx }),
+  setBatteryId: (batteryId) => {
+    set((state) => {
+      saveBatterySelection({ id: batteryId, custom: state.customBattery });
+      return { batteryId };
+    });
+  },
+  setCustomBattery: (customBattery) => {
+    set((state) => {
+      saveBatterySelection({ id: state.batteryId, custom: customBattery });
+      return { customBattery };
+    });
+  },
   setSectionOrder: (tab, order) => set((state) => ({
     sectionOrder: { ...state.sectionOrder, [tab]: order },
   })),
