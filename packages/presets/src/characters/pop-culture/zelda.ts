@@ -242,4 +242,35 @@ export const ZELDA_PRESETS: Preset[] = [
       noiseLevel: 0.1,
     },
   },
+
+  // ── Zora's Spear — Tidal Wave Edge ──────────────────────────────
+  {
+    id: 'pop-zelda-zora-spear',
+    name: "Zora's Tide-Spear",
+    character: 'Zora Champion',
+    era: 'expanded-universe',
+    continuity: 'pop-culture',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    screenAccurate: false,
+    author: 'KyberStation',
+    description:
+      "The ceremonial spear of the Zora champions of Hyrule, attuned to the tides. Sapphire-blue energy crests in waves along the shaft, pearl-white at the leading edge — the river running uphill.",
+    hiltNotes: 'Silver Zora-craft spear with pearl inlays and a fluke-shaped guard.',
+    config: {
+      name: 'ZoraTideSpear',
+      baseColor: { r: 30, g: 130, b: 230 },
+      clashColor: { r: 220, g: 250, b: 255 },
+      lockupColor: { r: 100, g: 190, b: 255 },
+      blastColor: { r: 230, g: 250, b: 255 },
+      style: 'tidal',
+      ignition: 'wipe',
+      retraction: 'drain',
+      ignitionMs: 400,
+      retractionMs: 600,
+      shimmer: 0.18,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
 ];
