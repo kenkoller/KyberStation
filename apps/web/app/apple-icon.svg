@@ -1,15 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-  <!-- KyberStation apple-touch-icon — Kyber Crystal bipyramid, padded for iOS mask. -->
+  <!-- KyberStation apple-touch-icon — Kyber Crystal hexagonal prism (Form 1: Natural).
+       Padded for iOS mask. Mirrors apps/web/app/icon.svg at 180×180. -->
+  <defs>
+    <linearGradient id="facetL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1a4a7a"/>
+      <stop offset="1" stop-color="#2e78c4"/>
+    </linearGradient>
+    <linearGradient id="facetR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3d8de0"/>
+      <stop offset="1" stop-color="#1a4a7a"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8d8ff" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#a8d8ff" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
   <rect width="180" height="180" rx="36" fill="#0a0a10"/>
-  <!-- Outer facets -->
-  <path d="M90 22 L140 78 L90 158 L40 78 Z" fill="#008CFF" fill-opacity="0.22"/>
-  <!-- Mid facets -->
-  <path d="M90 34 L128 82 L90 146 L52 82 Z" fill="#008CFF" fill-opacity="0.55"/>
-  <!-- Inner crystal body -->
-  <path d="M90 44 L118 84 L90 136 L62 84 Z" fill="#5EC3FF"/>
-  <!-- Centerline -->
-  <path d="M90 44 L90 136" stroke="#E6F6FF" stroke-width="5" stroke-linecap="round"/>
-  <!-- Core glow -->
-  <circle cx="90" cy="84" r="7" fill="#FFFFFF"/>
-  <circle cx="90" cy="84" r="13" fill="#FFFFFF" fill-opacity="0.28"/>
+  <!-- Outer halo glow -->
+  <path d="M90 28 L146 56 L146 132 L90 160 L34 132 L34 56 Z" fill="#4A9EFF" fill-opacity="0.12"/>
+  <!-- Left facet -->
+  <path d="M90 34 L90 156 L40 128 L40 62 Z" fill="url(#facetL)"/>
+  <!-- Right facet -->
+  <path d="M90 34 L140 62 L140 128 L90 156 Z" fill="url(#facetR)"/>
+  <!-- Top cap -->
+  <path d="M90 34 L140 62 L40 62 Z" fill="#5EC3FF" fill-opacity="0.75"/>
+  <!-- Bottom cap -->
+  <path d="M90 156 L140 128 L40 128 Z" fill="#1a4a7a" fill-opacity="0.85"/>
+  <!-- Facet edges -->
+  <path d="M90 34 L40 62 L40 128 L90 156 L140 128 L140 62 Z" fill="none" stroke="#5EC3FF" stroke-width="2" stroke-opacity="0.55" stroke-linejoin="round"/>
+  <!-- Glowing core column -->
+  <rect x="84" y="56" width="12" height="78" rx="6" fill="url(#core)"/>
+  <!-- Bright core spark -->
+  <circle cx="90" cy="95" r="9" fill="#ffffff"/>
+  <circle cx="90" cy="95" r="15" fill="#ffffff" fill-opacity="0.32"/>
 </svg>
