@@ -1,0 +1,54 @@
+name: CodeQL
+
+# Static analysis for JavaScript/TypeScript surfaces.
+# Free for public repos. Catches OWASP-style issues (XSS, prototype
+# pollution, regex DoS, unsafe deserialization) that the existing
+# `tsc --noEmit` + ESLint don't.
+#
+# Added 2026-04-30 per docs/SECURITY_AUDIT_2026-04-30.md L1.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly even on quiet weeks so a new CVE that lands in
+    # the GitHub Advisory Database is surfaced within ~7 days.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze JavaScript / TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # `security-and-quality` is the broader query suite — catches
+          # more issues than `security-extended`. Trade: more noise but
+          # better coverage for a one-time audit posture.
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
