@@ -204,6 +204,74 @@ function ProfileTabStrip({
 
 // ─── Character-Sheet Hero ───
 
+/**
+ * Inline-rename heading for the profile name. Click → input prefilled +
+ * select-all-on-focus; Enter or blur saves; Escape cancels. Preserves
+ * the JBM Bold ceremonial scale (`clamp(32px, 6.5vw, 64px)`) on both
+ * the display + edit surfaces so width doesn't pop on swap.
+ */
+function ProfileNameHeading({ profile }: { profile: SaberProfile }) {
+  const renameProfile = useSaberProfileStore((s) => s.renameProfile);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(profile.name);
+
+  // Keep draft in sync if the user switches profiles or another surface
+  // edits the name while we're not in edit mode (rare but cheap to do).
+  useEffect(() => {
+    if (!editing) setDraft(profile.name);
+  }, [profile.name, editing]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== profile.name) {
+      renameProfile(profile.id, trimmed);
+    } else {
+      // Revert draft to current name on empty / unchanged commit so the
+      // next edit-open shows the canonical value, not the user's blank.
+      setDraft(profile.name);
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          } else if (e.key === 'Escape') {
+            setDraft(profile.name);
+            setEditing(false);
+          }
+        }}
+        aria-label="Rename saber profile"
+        maxLength={100}
+        className="w-full font-mono font-bold text-text-primary leading-tight tracking-tight bg-bg-deep border border-accent-border rounded px-1 outline-none"
+        style={{ fontSize: 'clamp(32px, 6.5vw, 64px)', letterSpacing: '-0.02em' }}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      title={`${profile.name} — click to rename`}
+      aria-label={`Rename ${profile.name}`}
+      className="font-mono font-bold text-text-primary leading-tight tracking-tight break-words text-left w-full hover:text-accent transition-colors cursor-text bg-transparent border-0 p-0"
+      style={{ fontSize: 'clamp(32px, 6.5vw, 64px)', letterSpacing: '-0.02em' }}
+    >
+      {profile.name}
+    </button>
+  );
+}
+
 function ProfileHero({
   profile,
   representativeConfig,
@@ -219,13 +287,7 @@ function ProfileHero({
 
       {/* Profile identity block (right) */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <div
-          className="font-mono font-bold text-text-primary leading-tight tracking-tight break-words"
-          style={{ fontSize: 'clamp(32px, 6.5vw, 64px)', letterSpacing: '-0.02em' }}
-          title={profile.name}
-        >
-          {profile.name}
-        </div>
+        <ProfileNameHeading profile={profile} />
         {profile.chassisType && (
           <div className="text-ui-sm text-text-secondary font-mono mt-1 truncate">
             {profile.chassisType}
@@ -244,6 +306,113 @@ function ProfileHero({
             })()}
           </span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Workbench-Private Metadata (Notes + Description) ───
+
+/**
+ * Two collapsible textareas surfaced under the hero: a short `notes`
+ * field and a long-form `description`. Auto-saves on blur via
+ * `setProfileMeta`. Both are workbench-private — they NEVER ship in
+ * Kyber Code share URLs or generated config.h output, only in
+ * localStorage + JSON profile export/import.
+ */
+function ProfileMetaBlock({ profile }: { profile: SaberProfile }) {
+  const setProfileMeta = useSaberProfileStore((s) => s.setProfileMeta);
+  const [notesDraft, setNotesDraft] = useState(profile.notes);
+  const [descDraft, setDescDraft] = useState(profile.description);
+  const [savedHint, setSavedHint] = useState<'notes' | 'description' | null>(null);
+
+  // Re-sync drafts on profile switch — `profile.id` change means the
+  // user moved to a different saber and we should show its values.
+  useEffect(() => {
+    setNotesDraft(profile.notes);
+    setDescDraft(profile.description);
+    setSavedHint(null);
+  }, [profile.id, profile.notes, profile.description]);
+
+  const flashSaved = (which: 'notes' | 'description') => {
+    setSavedHint(which);
+    setTimeout(() => setSavedHint((cur) => (cur === which ? null : cur)), 1500);
+  };
+
+  const commitNotes = () => {
+    if (notesDraft !== profile.notes) {
+      setProfileMeta(profile.id, { notes: notesDraft });
+      flashSaved('notes');
+    }
+  };
+  const commitDescription = () => {
+    if (descDraft !== profile.description) {
+      setProfileMeta(profile.id, { description: descDraft });
+      flashSaved('description');
+    }
+  };
+
+  return (
+    <div className="space-y-3 mt-3 pt-3 border-t border-border-subtle/50">
+      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+        <h5 className="text-ui-xs text-text-muted uppercase tracking-wider section-header">
+          Workbench Notes
+        </h5>
+        <span className="text-ui-xs text-text-muted italic">
+          Private — only visible in your workbench
+        </span>
+      </div>
+
+      {/* Short notes (existing field, surfaced inline) */}
+      <div className="space-y-1">
+        <label
+          htmlFor={`profile-notes-${profile.id}`}
+          className="text-ui-xs text-text-muted flex items-center justify-between"
+        >
+          <span>Notes</span>
+          {savedHint === 'notes' && (
+            <span className="text-ui-xs text-accent" aria-live="polite">Saved</span>
+          )}
+          <span className="text-ui-xs text-text-muted font-mono tabular-nums">
+            {notesDraft.length}/2000
+          </span>
+        </label>
+        <textarea
+          id={`profile-notes-${profile.id}`}
+          value={notesDraft}
+          onChange={(e) => setNotesDraft(e.target.value.slice(0, 2000))}
+          onBlur={commitNotes}
+          rows={2}
+          maxLength={2000}
+          placeholder="Quick notes — bass speaker, crystal chamber wired, vendor info..."
+          className="w-full bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary placeholder:text-text-muted resize-y"
+        />
+      </div>
+
+      {/* Long-form description */}
+      <div className="space-y-1">
+        <label
+          htmlFor={`profile-description-${profile.id}`}
+          className="text-ui-xs text-text-muted flex items-center justify-between"
+        >
+          <span>Description</span>
+          {savedHint === 'description' && (
+            <span className="text-ui-xs text-accent" aria-live="polite">Saved</span>
+          )}
+          <span className="text-ui-xs text-text-muted font-mono tabular-nums">
+            {descDraft.length}/2000
+          </span>
+        </label>
+        <textarea
+          id={`profile-description-${profile.id}`}
+          value={descDraft}
+          onChange={(e) => setDescDraft(e.target.value.slice(0, 2000))}
+          onBlur={commitDescription}
+          rows={4}
+          maxLength={2000}
+          placeholder="Long-form description — character backstory, build details, custom font credits..."
+          className="w-full bg-bg-deep border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary placeholder:text-text-muted resize-y"
+        />
       </div>
     </div>
   );
@@ -357,13 +526,13 @@ function SmoothSwingBlock({ config }: { config: BladeConfig }) {
 
 function CharacterSheetActions({
   profile,
-  onEdit,
+  onCopyPresets,
   onDuplicate,
   onExport,
   onDelete,
 }: {
   profile: SaberProfile;
-  onEdit: () => void;
+  onCopyPresets: () => void;
   onDuplicate: () => void;
   onExport: () => void;
   onDelete: () => void;
@@ -371,11 +540,11 @@ function CharacterSheetActions({
   return (
     <div className="flex gap-1.5 flex-wrap">
       <button
-        onClick={onEdit}
+        onClick={onCopyPresets}
         className="px-2 py-1 rounded text-ui-xs border border-border-subtle text-text-muted hover:text-text-primary transition-colors"
-        aria-label={`Edit ${profile.name}`}
+        aria-label={`Copy presets from ${profile.name}`}
       >
-        Edit Notes
+        Copy Presets To...
       </button>
       <button
         onClick={onDuplicate}
@@ -589,33 +758,61 @@ function CardEntryRow({
       {/* Color swatch */}
       <span className="w-3 h-3 rounded-sm shrink-0 border border-white/10" style={{ backgroundColor: hex }} />
 
-      {/* Name + Font */}
+      {/* Name + Font — click name to rename (matches profile-rename pattern) */}
       <div className="flex-1 min-w-0">
         {editingName ? (
           <input
             autoFocus
             defaultValue={entry.presetName}
+            maxLength={100}
+            aria-label="Rename card preset"
             className="w-full bg-bg-deep text-ui-xs text-text-primary px-1 py-0.5 rounded border border-accent-border"
-            onBlur={(e) => { updateCardEntry(profileId, configId, entry.id, { presetName: e.target.value || entry.presetName }); setEditingName(false); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingName(false); }}
+            onFocus={(e) => e.currentTarget.select()}
+            onBlur={(e) => {
+              const trimmed = e.target.value.trim().slice(0, 100);
+              if (trimmed && trimmed !== entry.presetName) {
+                updateCardEntry(profileId, configId, entry.id, { presetName: trimmed });
+              }
+              setEditingName(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setEditingName(false);
+              }
+            }}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <div className="text-ui-xs text-text-primary truncate cursor-text" onDoubleClick={() => setEditingName(true)}>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setEditingName(true); }}
+            title={`${entry.presetName} — click to rename`}
+            aria-label={`Rename ${entry.presetName}`}
+            className="text-ui-xs text-text-primary truncate cursor-text bg-transparent border-0 p-0 text-left w-full hover:text-accent transition-colors"
+          >
             {entry.presetName}
-          </div>
+          </button>
         )}
         {editingFont ? (
           <input
             autoFocus
             defaultValue={entry.fontName}
             className="w-full bg-bg-deep text-ui-xs text-text-muted font-mono px-1 py-0.5 rounded border border-border-subtle"
+            onFocus={(e) => e.currentTarget.select()}
             onBlur={(e) => { updateCardEntry(profileId, configId, entry.id, { fontName: sanitizeFontName(e.target.value || entry.fontName) }); setEditingFont(false); }}
             onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingFont(false); }}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <div className="text-ui-xs text-text-muted font-mono truncate cursor-text" onDoubleClick={() => setEditingFont(true)}>
+          <div
+            className="text-ui-xs text-text-muted font-mono truncate cursor-text"
+            onDoubleClick={(e) => { e.stopPropagation(); setEditingFont(true); }}
+            title="Double-click to edit font"
+          >
             {entry.fontName}/
           </div>
         )}
@@ -788,7 +985,7 @@ function CardPresetComposer({ profile }: { profile: SaberProfile }) {
 
       {activeConfig.entries.length > 0 && (
         <div className="text-ui-xs text-text-muted text-center">
-          Alt+&uarr;/&darr; to reorder &bull; Double-click name or font to edit &bull; Order = saber preset order
+          Alt+&uarr;/&darr; to reorder &bull; Click name to rename &bull; Double-click font to edit &bull; Order = saber preset order
         </div>
       )}
     </div>
@@ -804,7 +1001,6 @@ export function SaberProfileManager() {
   const createProfile = useSaberProfileStore((s) => s.createProfile);
   const duplicateProfile = useSaberProfileStore((s) => s.duplicateProfile);
   const deleteProfile = useSaberProfileStore((s) => s.deleteProfile);
-  const updateProfile = useSaberProfileStore((s) => s.updateProfile);
   const exportProfile = useSaberProfileStore((s) => s.exportProfile);
   const importProfile = useSaberProfileStore((s) => s.importProfile);
   const copyPresetsToProfile = useSaberProfileStore((s) => s.copyPresetsToProfile);
@@ -815,8 +1011,6 @@ export function SaberProfileManager() {
   const [newChassis, setNewChassis] = useState('');
   const [newBoard, setNewBoard] = useState('Proffie V3');
   const [newCard, setNewCard] = useState('16GB');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editNotes, setEditNotes] = useState('');
   const [showCopyModal, setShowCopyModal] = useState<string | null>(null);
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
   const [copyTarget, setCopyTarget] = useState('');
@@ -884,14 +1078,6 @@ export function SaberProfileManager() {
     setShowCopyModal(null);
     setSelectedPresets(new Set());
     setCopyTarget('');
-  };
-
-  const handleEditSave = () => {
-    if (editingId) {
-      updateProfile(editingId, { notes: editNotes });
-      playUISound('success');
-      setEditingId(null);
-    }
   };
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
@@ -1000,7 +1186,7 @@ export function SaberProfileManager() {
             <div className="mt-3">
               <CharacterSheetActions
                 profile={activeProfile}
-                onEdit={() => { setEditingId(activeProfile.id); setEditNotes(activeProfile.notes); }}
+                onCopyPresets={() => setShowCopyModal(activeProfile.id)}
                 onDuplicate={() => duplicateProfile(activeProfile.id)}
                 onExport={() => handleExport(activeProfile.id)}
                 onDelete={() => handleDelete(activeProfile.id)}
@@ -1033,25 +1219,8 @@ export function SaberProfileManager() {
               </div>
             )}
 
-            {/* Edit notes */}
-            {editingId === activeProfile.id && (
-              <div className="mt-2 p-2 bg-bg-deep border border-border-subtle rounded space-y-1.5">
-                <label htmlFor={`notes-${activeProfile.id}`} className="text-ui-xs text-text-muted block">Notes</label>
-                <textarea id={`notes-${activeProfile.id}`} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} placeholder="e.g., Bass speaker, crystal chamber wired..." className="w-full bg-bg-surface border border-border-subtle rounded px-2 py-1.5 text-ui-xs text-text-secondary placeholder:text-text-muted resize-none" />
-                <div className="flex gap-1.5 flex-wrap">
-                  <button onClick={handleEditSave} className="px-2 py-1 rounded text-ui-xs font-medium bg-accent-dim border border-accent-border text-accent">Save</button>
-                  <button onClick={() => setEditingId(null)} className="px-2 py-1 rounded text-ui-xs text-text-muted border border-border-subtle">Cancel</button>
-                  <button onClick={() => { setShowCopyModal(activeProfile.id); setEditingId(null); }} className="px-2 py-1 rounded text-ui-xs text-accent border border-accent-border/40">Copy Presets To...</button>
-                </div>
-              </div>
-            )}
-
-            {/* Saved notes surfaced in hero (read-only) */}
-            {activeProfile.notes && editingId !== activeProfile.id && (
-              <p className="mt-2 text-ui-xs text-text-muted italic border-l-2 border-border-subtle/60 pl-2">
-                {activeProfile.notes}
-              </p>
-            )}
+            {/* Workbench-private notes + description (auto-save on blur) */}
+            <ProfileMetaBlock profile={activeProfile} />
           </div>
 
           {/* Category blocks — responsive: 1 col at narrow, 2 col at tablet+ */}
