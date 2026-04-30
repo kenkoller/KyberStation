@@ -184,7 +184,16 @@ function ParameterSheetContent({
 
   const onDragStart = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     dragStateRef.current = { pointerId: e.pointerId, startY: e.clientY };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    // setPointerCapture throws NotFoundError on synthetic-dispatched
+    // PointerEvents (test-driven paths) because the browser has no
+    // active pointer with that id. Real touch + mouse always succeed;
+    // we swallow the failure so test infra can drive the handle
+    // without surfacing a runtime error overlay.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore — capture is a perf hint, not load-bearing
+    }
   }, []);
 
   const onDragMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
@@ -200,8 +209,15 @@ function ParameterSheetContent({
       if (!state || state.pointerId !== e.pointerId) return;
       const delta = e.clientY - state.startY;
       dragStateRef.current = null;
-      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
+      // hasPointerCapture itself can throw on synthetic events; guard
+      // both the check + the release for the same reason as
+      // setPointerCapture above.
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch {
+        // ignore
       }
       setDragOffsetPx(0);
       const nextState = resolveDragSnap(snapState, delta);

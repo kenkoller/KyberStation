@@ -51,6 +51,7 @@ import { MobileSidebarDrawer } from '@/components/layout/MobileSidebarDrawer';
 import { MobileActionBar } from '@/components/layout/mobile/MobileActionBar';
 import { MobileSectionTabs } from '@/components/layout/mobile/MobileSectionTabs';
 import { MobileStatusBarStrip } from '@/components/layout/mobile/MobileStatusBarStrip';
+import { ParameterSheetHost } from '@/components/layout/mobile/ParameterSheetHost';
 import { ColorRail } from '@/components/layout/mobile/ColorRail';
 import { ColorQuickControls } from '@/components/layout/mobile/QuickControls';
 import { playUISound } from '@/lib/uiSounds';
@@ -342,6 +343,12 @@ export function MobileShell({
       {/* Modals + overlays */}
       {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
       <FullscreenPreview engineRef={engineRef} onTriggerEffect={triggerEffectWithAudio} />
+      {/* ParameterSheetHost — subscribes to parameterSheetStore. Any
+          slider's long-press dispatches `open(spec)` to the store; this
+          host mounts the ParameterSheet primitive against the active
+          spec. Rendered at the shell root so the portal escapes any
+          overflow contexts in the body. */}
+      <ParameterSheetHost />
     </div>
   );
 }
