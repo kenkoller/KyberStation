@@ -32,10 +32,13 @@ import { useEffect, useState, useRef, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore, type SectionId } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
 import { Inspector } from '@/components/editor/Inspector';
 import { MainContent } from '@/components/layout/MainContent';
+import { PixelStripPanel } from '@/components/editor/PixelStripPanel';
+import { LayerCanvas } from '@/components/editor/VisualizationStack';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { AccessibilityPanel } from '@/components/editor/AccessibilityPanel';
 import { FullscreenPreview, FullscreenButton } from '@/components/editor/FullscreenPreview';
@@ -109,6 +112,18 @@ export function MobileShell({
   // when it closes. Track the trigger ref for that.
   const hamburgerRef = useRef<HTMLButtonElement | null>(null);
 
+  // Pixel buffer for the analysis stack (PixelStripPanel + LayerCanvas).
+  // Same Phase pattern WorkbenchLayout uses: getPixels() returns a stable
+  // Uint8Array that the engine mutates in place each frame. LayerCanvas
+  // reads from it on its own RAF loop.
+  const pixelBufRef = useRef<Uint8Array | null>(null);
+  useEffect(() => {
+    pixelBufRef.current = engineRef.current?.getPixels() ?? null;
+  }, [engineRef]);
+  const ledCount = useBladeStore((s) => s.config.ledCount);
+  const isPaused = useUIStore((s) => s.isPaused);
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+
   // Keep the body padding off the global MobileTabBar from layout.tsx —
   // the editor mobile shell uses its own bottom-anchored chrome (the
   // pill nav indicator) so the 56px gutter the bar reserves is wasted
@@ -144,12 +159,15 @@ export function MobileShell({
   return (
     <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
 
-      {/* ── Mobile Header ─────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-2 h-12 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0 pt-[env(safe-area-inset-top)]">
-        {/* Hamburger menu trigger — 44x44 minimum, visible MENU label
-            for higher discoverability (Ken couldn't find the icon-only
-            version). Border + thicker bars give it button-affordance
-            instead of glyph-affordance. */}
+      {/* ── Mobile Header (h-10 / 40px tall, dense buttons ~30px) ──────
+          PR A2 density v2 (per Ken's "header buttons too tall vertically"
+          field-test feedback): drops below WCAG 44 floor on individual
+          chrome buttons in exchange for a viewport-frugal mobile shell
+          that matches DAW + iOS-app density. The Ignite action button
+          stays larger (primary) — secondary chrome shrinks. */}
+      <header className="flex items-center justify-between px-1.5 h-10 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0 pt-[env(safe-area-inset-top)]">
+        {/* Hamburger menu trigger — visible MENU label for discoverability,
+            shrunk to ~30px tall for density. */}
         <button
           ref={hamburgerRef}
           type="button"
@@ -160,12 +178,12 @@ export function MobileShell({
           aria-label="Open editor sections menu"
           aria-expanded={drawerOpen}
           aria-haspopup="dialog"
-          className="min-h-[44px] flex items-center gap-1.5 px-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
+          className="min-h-[30px] flex items-center gap-1.5 px-1.5 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
         >
-          <span aria-hidden="true" className="flex flex-col gap-[3px]">
-            <span className="block w-4 h-[2px] bg-current" />
-            <span className="block w-4 h-[2px] bg-current" />
-            <span className="block w-4 h-[2px] bg-current" />
+          <span aria-hidden="true" className="flex flex-col gap-[2px]">
+            <span className="block w-3.5 h-[2px] bg-current" />
+            <span className="block w-3.5 h-[2px] bg-current" />
+            <span className="block w-3.5 h-[2px] bg-current" />
           </span>
           <span className="text-ui-xs font-medium tracking-wider uppercase">Menu</span>
         </button>
@@ -176,15 +194,17 @@ export function MobileShell({
           <span className="text-accent">STATION</span>
         </h1>
 
-        {/* Right cluster — sound, settings, fullscreen, pause, ignite */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* Right cluster — sound, settings, fullscreen, pause, ignite.
+            Dense (~30px touch) for the secondary chrome; primary Ignite
+            button stays roomier. */}
+        <div className="flex items-center gap-0.5 shrink-0">
           {/* Sound mute */}
           <button
             type="button"
             onClick={audio.toggleMute}
             aria-label={audio.muted ? 'Unmute audio' : 'Mute audio'}
             className={[
-              'min-h-[44px] min-w-[44px] flex items-center justify-center rounded-interactive border transition-colors text-ui-xs',
+              'min-h-[30px] min-w-[30px] flex items-center justify-center rounded-interactive border transition-colors text-[10px]',
               audio.muted
                 ? 'border-border-subtle text-text-muted'
                 : 'border-accent-border/40 text-accent bg-accent-dim/30',
@@ -198,26 +218,27 @@ export function MobileShell({
             type="button"
             onClick={() => setShowA11yPanel(true)}
             aria-label="Accessibility settings"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-interactive border border-border-subtle text-text-muted hover:text-text-primary transition-colors"
+            className="min-h-[30px] min-w-[30px] flex items-center justify-center rounded-interactive border border-border-subtle text-text-muted hover:text-text-primary transition-colors text-ui-xs"
           >
             {'⚙'}
           </button>
 
           {/* Fullscreen */}
-          <FullscreenButton className="min-h-[44px] min-w-[44px] flex items-center justify-center" />
+          <FullscreenButton className="min-h-[30px] min-w-[30px] flex items-center justify-center text-ui-xs" />
 
-          {/* Pause — wrapper enforces touch-target floor */}
-          <div className="min-h-[44px] min-w-[44px] flex items-center justify-center">
+          {/* Pause — wrapper enforces minimum hit area */}
+          <div className="min-h-[30px] min-w-[30px] flex items-center justify-center">
             <PauseButton />
           </div>
 
-          {/* Ignite / Retract — primary action */}
+          {/* Ignite / Retract — primary action, stays roomier than the
+              secondary chrome chips so it visually leads. */}
           <button
             type="button"
             onClick={toggleWithAudio}
             aria-label={isOn ? 'Retract blade' : 'Ignite blade'}
             className={[
-              'min-h-[44px] px-3 rounded-interactive text-ui-xs font-bold uppercase tracking-wider transition-all border',
+              'min-h-[30px] px-2 rounded-interactive text-ui-xs font-bold uppercase tracking-wider transition-all border',
               isOn
                 ? 'bg-red-900/30 border-red-700/50 text-red-400 ignite-btn-on'
                 : 'bg-accent-dim border-accent-border text-accent ignite-btn-off',
@@ -259,14 +280,52 @@ export function MobileShell({
           </div>
         </div>
 
-        {/* ── Blade Canvas — sticky, ~22vh capped at 180px ───────────── */}
+        {/* ── Blade Canvas — clean preview, ~110px tall ─────────────────
+            Per Ken's "blade preview should take less vertical space"
+            (PR A2): trimmed from 178px → 110px. Analysis layers that
+            used to overlay on top of the canvas now live in their own
+            sticky regions BELOW (PixelStripPanel + LayerCanvas), in
+            the same order desktop CanvasLayout uses (blade →
+            pixel-strip → expanded-analysis). */}
         <div
           className="w-full shrink-0 flex items-center justify-center bg-bg-primary border-b border-border-subtle"
-          style={{ height: 'min(22vh, 180px)', minHeight: 140 }}
+          style={{ height: 'min(15vh, 120px)', minHeight: 96 }}
           role="region"
           aria-label="Blade preview"
         >
           <BladeCanvas engineRef={engineRef} vertical={false} compact />
+        </div>
+
+        {/* ── Pixel Strip — per-LED color row, full width ──────────────
+            Mirrors desktop CanvasLayout's PixelStripPanel mount; reads
+            the same engine pixel buffer. ~36px tall on mobile. */}
+        <div
+          className="w-full shrink-0 bg-bg-primary border-b border-border-subtle"
+          style={{ height: 36 }}
+          role="region"
+          aria-label="Pixel strip"
+        >
+          <PixelStripPanel engineRef={engineRef} />
+        </div>
+
+        {/* ── Analysis Layer (rgb-luma) — per-LED waveform graph ───────
+            Single line-graph layer below the pixel strip, matching
+            desktop's ExpandedAnalysisSlot shape (which defaults to
+            rgb-luma). ~64px tall on mobile — enough to read the
+            waveform without crowding the body area below. */}
+        <div
+          className="w-full shrink-0 bg-bg-primary border-b border-border-subtle"
+          style={{ height: 64 }}
+          role="region"
+          aria-label="Analysis rail"
+        >
+          <LayerCanvas
+            layerId="rgb-luma"
+            pixels={pixelBufRef.current}
+            pixelCount={ledCount}
+            isPaused={isPaused}
+            reducedMotion={reducedMotion}
+          />
         </div>
 
         {/* ── Body — Inspector on home, MainContent on drilled.
@@ -311,7 +370,7 @@ export function MobileShell({
       {!isHome ? (
         <div
           className="shrink-0 flex items-center justify-between gap-1 border-t border-border-subtle bg-bg-deep px-1 pb-[var(--mobile-safe-pb)]"
-          style={{ minHeight: 'var(--mobile-bottom-bar-h)' }}
+          style={{ minHeight: 36 }}
           role="region"
           aria-label="Editor navigation"
         >
@@ -322,14 +381,14 @@ export function MobileShell({
               setActiveSection(HOME_SECTION);
             }}
             aria-label="Return to canvas home view"
-            className="flex items-center gap-1 min-h-[44px] px-2 text-accent text-ui-xs font-medium tracking-wider uppercase rounded-interactive transition-colors hover:bg-bg-secondary/40"
+            className="flex items-center gap-1 min-h-[30px] px-1.5 text-accent text-ui-xs font-medium tracking-wider uppercase rounded-interactive transition-colors hover:bg-bg-secondary/40"
           >
             <span aria-hidden="true">{'←'}</span>
             <span>Back</span>
           </button>
 
           <span
-            className="flex-1 flex items-center justify-center gap-1.5 px-1 min-h-[44px] text-text-secondary text-ui-xs font-medium tracking-wider uppercase truncate"
+            className="flex-1 flex items-center justify-center gap-1.5 px-1 min-h-[30px] text-text-secondary text-ui-xs font-medium tracking-wider uppercase truncate"
             aria-live="polite"
           >
             <span aria-hidden="true" className="text-accent">{'◆'}</span>
@@ -347,12 +406,12 @@ export function MobileShell({
             }}
             aria-label="Open editor sections menu"
             aria-haspopup="dialog"
-            className="flex items-center gap-1.5 min-h-[44px] px-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
+            className="flex items-center gap-1.5 min-h-[30px] px-1.5 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
           >
-            <span aria-hidden="true" className="flex flex-col gap-[3px]">
-              <span className="block w-4 h-[2px] bg-current" />
-              <span className="block w-4 h-[2px] bg-current" />
-              <span className="block w-4 h-[2px] bg-current" />
+            <span aria-hidden="true" className="flex flex-col gap-[2px]">
+              <span className="block w-3.5 h-[2px] bg-current" />
+              <span className="block w-3.5 h-[2px] bg-current" />
+              <span className="block w-3.5 h-[2px] bg-current" />
             </span>
             <span className="text-ui-xs font-medium tracking-wider uppercase">Menu</span>
           </button>

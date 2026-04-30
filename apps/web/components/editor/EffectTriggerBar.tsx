@@ -28,13 +28,16 @@ export function EffectTriggerBar({ onTrigger, vertical, compact }: EffectTrigger
   const isOn = useBladeStore((s) => s.isOn);
 
   // Compact horizontal: slim single-row bar for the canvas strip header
+  // (and the mobile shell action bar — PR A2 density v2 tightened the
+  // chip padding from `px-1.5 py-0.5` to `px-1.5 py-0` so each chip is
+  // ~20px tall, single-word labels read cleanly without the kbd letter).
   if (compact) {
     return (
       <div className="flex items-center gap-0.5 px-1">
         {EFFECT_GROUPS.map((group, gi) => (
           <div key={gi} className="flex items-center gap-0.5">
             {gi > 0 && (
-              <span className="w-px h-4 bg-border-light mx-0.5" />
+              <span className="w-px h-3 bg-border-light mx-0.5" />
             )}
             {group.map((effect) => (
               <button
@@ -42,7 +45,7 @@ export function EffectTriggerBar({ onTrigger, vertical, compact }: EffectTrigger
                 onClick={() => onTrigger(effect.type)}
                 disabled={!isOn}
                 aria-label={`Trigger ${effect.label} effect (${effect.key})`}
-                className={`px-1.5 py-0.5 rounded text-ui-xs font-medium transition-all border ${
+                className={`px-1.5 py-0 rounded text-[11px] leading-tight font-medium transition-all border ${
                   isOn
                     ? 'bg-bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-accent-border hover:bg-accent-dim active:scale-95'
                     : 'bg-bg-deep border-border-subtle text-text-muted cursor-not-allowed opacity-50'
