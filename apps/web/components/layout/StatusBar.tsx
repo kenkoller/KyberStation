@@ -11,6 +11,7 @@ import { StatusSignal, type StatusVariant } from '@/components/shared/StatusSign
 import { BoardPicker } from '@/components/shared/BoardPicker';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { LATEST_VERSION } from '@/lib/version';
+import { resolveBattery } from '@/lib/batteryTypes';
 
 // ─── Power constants (mirrors PowerDrawPanel) ─────────────────────────────────
 const MA_PER_CHANNEL = 20;      // mA per WS2812B channel at full brightness
@@ -210,6 +211,15 @@ export function StatusBar() {
   const brightness = useUIStore((s) => s.brightness);
   const activeTab = useUIStore((s) => s.activeTab);
   const canvasTheme = useUIStore((s) => s.canvasTheme);
+  const batteryId = useUIStore((s) => s.batteryId);
+  const customBattery = useUIStore((s) => s.customBattery);
+
+  // Resolve the selected battery so the PWR denominator can show the
+  // user's actual cell rating, not just the Proffieboard board-level cap.
+  // The board cap is still respected — the smaller of the two is the
+  // load-bearing limit for the safety status. battery is per-call cheap.
+  const battery = resolveBattery(batteryId, customBattery);
+  const batteryMaxMA = battery.maxDischargeA * 1000;
 
   const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
   const profiles = useSaberProfileStore((s) => s.profiles);
@@ -226,6 +236,14 @@ export function StatusBar() {
   const briScale = brightness / 100;
 
   // ── Power draw estimate ──────────────────────────────────────────────────
+  // The denominator on the PWR readout is the SMALLER of:
+  //   - Proffieboard board-level cap (BOARD_MAX_MA = 5A)
+  //   - Battery's manufacturer-rated continuous discharge (×1000 → mA)
+  // Whichever is tighter is the actual safe limit. This makes the readout
+  // honest about which constraint will fail first. The proper warning
+  // (with the 90% margin) is in HardwarePanel; the StatusBar just needs
+  // a denominator that means something to the user.
+  const effectiveLimitMA = Math.min(BOARD_MAX_MA, batteryMaxMA);
   const { colorMA, powerFraction } = useMemo(() => {
     const rFrac = (baseColor.r / 255) * briScale;
     const gFrac = (baseColor.g / 255) * briScale;
@@ -234,9 +252,9 @@ export function StatusBar() {
     const draw = ledCount * maPerLed + BOARD_IDLE_MA;
     return {
       colorMA: draw,
-      powerFraction: Math.min(draw / BOARD_MAX_MA, 1),
+      powerFraction: Math.min(draw / effectiveLimitMA, 1),
     };
-  }, [ledCount, baseColor, briScale]);
+  }, [ledCount, baseColor, briScale, effectiveLimitMA]);
 
   // ── Storage budget estimate ──────────────────────────────────────────────
   // Baseline: one font + config overhead. Identical math to the previous
@@ -363,10 +381,10 @@ export function StatusBar() {
         <span aria-hidden="true" className="text-text-muted/60 mr-0.5">
           ⚡
         </span>
-        <span aria-label={`Power draw: ${formatAmps(colorMA)} of ${formatAmps(BOARD_MAX_MA)}`}>
+        <span aria-label={`Power draw: ${formatAmps(colorMA)} of ${formatAmps(effectiveLimitMA)} (limited by ${batteryMaxMA <= BOARD_MAX_MA ? 'battery' : 'board'})`}>
           {formatAmps(colorMA)}
           <span className="text-text-muted/40"> / </span>
-          <span className="text-text-muted">{formatAmps(BOARD_MAX_MA)}</span>
+          <span className="text-text-muted">{formatAmps(effectiveLimitMA)}</span>
         </span>
       </Segment>
       <SegmentDivider />
