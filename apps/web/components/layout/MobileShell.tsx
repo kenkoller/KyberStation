@@ -51,6 +51,26 @@ import { playUISound } from '@/lib/uiSounds';
 // already covers the most-common quick-tune flow on mobile.
 const HOME_SECTION: SectionId = 'my-saber';
 
+// Compact labels for the in-editor bottom bar's right-side section
+// pill. Mirrors the labels Sidebar / MobileSidebarDrawer use so the
+// drawer-pick → bottom-bar-display loop is consistent. Kept short
+// enough to fit alongside "← Back to Canvas" at 380px viewport.
+const SECTION_LABELS: Record<SectionId, string> = {
+  'my-saber': 'Saber Profiles',
+  'hardware': 'Hardware',
+  'blade-style': 'Blade Style',
+  'color': 'Color',
+  'ignition-retraction': 'Ignition & Retraction',
+  'combat-effects': 'Combat Effects',
+  'layer-compositor': 'Layers',
+  'routing': 'Routing',
+  'motion-simulation': 'Motion Sim',
+  'gesture-controls': 'Gestures',
+  'audio': 'Audio',
+  'output': 'Output',
+  'my-crystal': 'Saber Card',
+};
+
 interface MobileShellProps {
   showA11yPanel: boolean;
   setShowA11yPanel: (v: boolean) => void;
@@ -244,22 +264,41 @@ export function MobileShell({
       </div>
 
       {/* ── Bottom-anchored chrome ──────────────────────────────────── */}
-      {/* When in a drilled section, show a "← Home" pill so the user can
-          get back to canvas + Inspector with one tap. When on home, show
-          the StatusBar slim readout. */}
+      {/* When in a drilled section, show the combined in-editor bottom
+          bar — "← Back to Canvas" on the left, "◆ <section>" pill on
+          the right (per docs/mobile-design.md §2.2). The whole bar's
+          height + safe-area clearance come from the mobile tokens
+          installed in PR #1. When on home, fall back to the StatusBar
+          slim readout — "Back to Canvas" is meaningless when canvas
+          IS the current view. */}
       {!isHome ? (
-        <button
-          type="button"
-          onClick={() => {
-            playUISound('tab-switch');
-            setActiveSection(HOME_SECTION);
-          }}
-          aria-label="Return to canvas home view"
-          className="shrink-0 flex items-center justify-center gap-2 min-h-[44px] border-t border-border-subtle bg-bg-deep text-accent text-ui-xs font-medium tracking-wider uppercase pb-[env(safe-area-inset-bottom)]"
+        <div
+          className="shrink-0 flex items-center justify-between gap-2 border-t border-border-subtle bg-bg-deep px-2 pb-[var(--mobile-safe-pb)]"
+          style={{ minHeight: 'var(--mobile-bottom-bar-h)' }}
+          role="region"
+          aria-label="Editor navigation"
         >
-          <span aria-hidden="true">{'←'}</span>
-          <span>Back to Canvas</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              playUISound('tab-switch');
+              setActiveSection(HOME_SECTION);
+            }}
+            aria-label="Return to canvas home view"
+            className="flex items-center gap-1 min-h-[44px] px-2 text-accent text-ui-xs font-medium tracking-wider uppercase rounded-interactive transition-colors hover:bg-bg-secondary/40"
+          >
+            <span aria-hidden="true">{'←'}</span>
+            <span>Back to Canvas</span>
+          </button>
+
+          <span
+            className="flex items-center gap-1.5 px-2 min-h-[44px] text-text-secondary text-ui-xs font-medium tracking-wider uppercase"
+            aria-live="polite"
+          >
+            <span aria-hidden="true" className="text-accent">{'◆'}</span>
+            <span>{SECTION_LABELS[activeSection]}</span>
+          </span>
+        </div>
       ) : (
         <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
           <StatusBar />

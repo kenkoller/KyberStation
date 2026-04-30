@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
+import { useShouldShowMobileTabBar } from '@/hooks/useShouldShowMobileTabBar';
 
 /**
  * MobileTabBar — route-level navigation for phone viewport.
@@ -21,15 +22,19 @@ import { Suspense } from 'react';
  *  - Rendered only at phone breakpoint (< 600px) via `phone:flex
  *    hidden` Tailwind classes. Tablet + desktop already have richer
  *    navigation surfaces (TabletShell + WorkbenchLayout header).
- *  - Hidden on `/m` entirely — `/m` is the chrome-free mobile
- *    companion and a bottom bar would contradict its minimal intent.
+ *  - Hidden on `/m` (chrome-free mobile companion) and `/editor`
+ *    (per docs/mobile-design.md §2.2 — the editor's MobileShell owns
+ *    its own combined bottom bar). Both checks are owned by
+ *    `useShouldShowMobileTabBar` so visibility rules stay in one
+ *    place.
  */
 function MobileTabBarInner() {
   const pathname = usePathname();
+  const shouldShow = useShouldShowMobileTabBar();
 
-  // /m is intentionally chrome-free — preset browser + Ignite + swipe.
-  // Bottom nav would fight the minimalist mode per UX spec.
-  if (pathname === '/m') return null;
+  // /m and /editor (and sub-routes) are excluded by the hook. /editor
+  // hosts MobileShell's own combined Back-to-Canvas + section bar.
+  if (!shouldShow) return null;
 
   const TABS = [
     { href: '/m',       label: 'Saber',   icon: '✦', match: () => pathname === '/m' },
