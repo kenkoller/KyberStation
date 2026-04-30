@@ -44,16 +44,16 @@ designing, previewing, and exporting blade styles. It generates ProffieOS
 config code that compiles directly in Arduino IDE. Works on desktop and
 mobile (PWA installable).
 
-**Try it:** [URL]
+**Try it:** https://kenkoller.github.io/KyberStation/
 **Code:** https://github.com/kenkoller/KyberStation
 
 **What it does:**
 
 - Visual blade simulator — design a style and watch it animate in real time
-- 29 blade styles (Stable, Unstable, Fire, Plasma, Aurora, Crystal Shatter, and more)
-- 21 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
+- 33 blade styles (Stable, Unstable, Fire, Plasma, Aurora, Crystal Shatter, and more)
+- 22 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
 - 19 ignition + 13 retraction animations
-- ~305 character presets across canon, Legends, and pop-culture (LOTR, Marvel, mythology, etc.)
+- 336 character presets across canon, Legends, and pop-culture (LOTR, Marvel, mythology, etc.)
 - ProffieOS C++ code generator — output compiles in Arduino IDE
 - Sound font library with SmoothSwing pair simulation
 - Saber profile manager + SD card composer (export the whole card as a ZIP)
@@ -150,7 +150,7 @@ against a simulated motion model, and export ProffieOS code that
 compiles directly in Arduino IDE. The code generator is AST-based, so
 it's structurally impossible to emit unbalanced template brackets.
 
-**Try it:** [URL]
+**Try it:** https://kenkoller.github.io/KyberStation/
 **Code:** https://github.com/kenkoller/KyberStation
 
 A few things specifically aimed at power Proffie users:
@@ -213,7 +213,7 @@ May 4 is almost here. Wanted to re-share **KyberStation** for anyone who
 missed the original post a few weeks back. It's a free, browser-based
 blade style editor and ProffieOS code generator.
 
-**Try it:** [URL]
+**Try it:** https://kenkoller.github.io/KyberStation/
 **Code:** https://github.com/kenkoller/KyberStation
 
 **Since the original post:**

@@ -1,9 +1,11 @@
 # GitHub Announcement
 
-When the repo flips public, do these things in this order:
+*Note: as of 2026-04-30 the repo is already public, v0.16.0 is
+already tagged + deployed, and the URL works. Steps 1-2 are kept
+for reference but already complete. Focus on 3-4.*
 
-1. Push the `v0.15.0` tag (triggers release.yml → GitHub Release page)
-2. Verify GitHub Pages deploy succeeded → URL works
+1. ~~Push the `v0.16.0` tag (triggers release.yml → GitHub Release page)~~ ✓ done
+2. ~~Verify GitHub Pages deploy succeeded → URL works~~ ✓ done
 3. Pin the discussion below at the top of Discussions
 4. Update README per the diff suggestions at the end of this file
 
@@ -30,9 +32,9 @@ better.
 
 ## What's in here
 
-- **29 blade styles**, **21 effects**, **19 ignition + 13 retraction
+- **33 blade styles**, **22 effects**, **19 ignition + 13 retraction
   animations**
-- **~305 character presets** across canon, Legends, and pop-culture
+- **336 character presets** across canon, Legends, and pop-culture
   sources (LOTR, Marvel, mythology, anime, more)
 - **AST-based ProffieOS C++ code generator** — output compiles
   directly in Arduino IDE
@@ -199,37 +201,35 @@ the entire README during launch.
 
 **Current** (line ~739 in LAUNCH_ASSETS.md): "700+ character presets"
 
-**Reality** (per CHANGELOG and CLAUDE.md): ~305 presets total (216
-canonical + 89 pop-culture). The "700+" claim is from an older draft
-and is **incorrect**.
+**Reality** (verified 2026-04-30 from `packages/presets/src/` —
+counted 336 entries via `grep -rhE "^\s+id:\s*['\"]"`). The "700+"
+claim is from an older draft and is **incorrect**.
 
 **Action:** sweep the README + LAUNCH_ASSETS.md + every Reddit / social
 draft to use the accurate count. Suggested phrasing:
 
-> **300+ character presets** across canon, Legends, and pop-culture
+> **336 character presets** across canon, Legends, and pop-culture
 > sources (LOTR, Marvel, DC, mythology, anime, gaming, kids' cartoons,
 > Power Rangers, mascots, and more — every preset is `continuity`-
 > tagged so you can filter to just canon if that's your thing).
 
-`300+` is honest (305) without overcommitting if a couple get pruned
-later.
-
-### Edit 5: Status section — add v0.15.0 entry
+### Edit 5: Status section — add v0.16.0 entry
 
 The README's "Status" section currently ends at v0.11.2. Suggested
 addition near the top of that section:
 
 ```markdown
-### v0.15.0 — Launch (2026-04-28)
+### v0.16.0 — Public launch (2026-04-30)
 
 The first publicly-released version. Includes:
 - Full Modulation Routing v1.1 Core (11 modulators, click + drag-to-route,
   per-binding expression editing, AST-level template injection in codegen)
-- Vertical Saber Card layout
-- Animated saber GIF export (idle + ignition variants)
-- 305-preset gallery across canon, Legends, and pop-culture
-- AST-based ProffieOS code generator
-- WebUSB flashing (validated on Proffieboard V3.9 + macOS + Brave)
+- Vertical Saber Card layout + animated saber GIF export
+- 336-preset gallery across canon, Legends, and pop-culture
+- AST-based ProffieOS code generator targeting 16 boards
+- Save Preset v1 (IndexedDB-backed user presets) + Add to Queue v1
+- WebUSB flashing — experimental, validated on Proffieboard V3.9 + macOS + Brave
+- ~5,000 tests across 10 workspace packages
 
 See the [CHANGELOG](CHANGELOG.md) for the full list.
 ```
