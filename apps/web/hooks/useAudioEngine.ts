@@ -1,622 +1,103 @@
 'use client';
-import { useRef, useCallback, useEffect } from 'react';
-import { FontPlayer, SmoothSwingEngine, AudioFilterChain, parseFileList, extractFontName, decodeFilesByCategory } from '@kyberstation/sound';
+import { useEffect } from 'react';
 import type { FontManifest } from '@kyberstation/sound';
 import { useAudioFontStore } from '@/stores/audioFontStore';
-import { useAudioMixerStore } from '@/stores/audioMixerStore';
 import { useAudioMuteStore } from '@/stores/audioMuteStore';
-import { useAudioPlaybackStore } from '@/stores/audioPlaybackStore';
-import { useAudioAnalyserStore } from '@/stores/audioAnalyserStore';
-import { useUIStore } from '@/stores/uiStore';
-import { saveFontToDB, loadFontFromDB, getLastUsedFontName } from '@/lib/fontDB';
-import { DEFAULT_ANALYSER_FFT_SIZE, DEFAULT_ANALYSER_SMOOTHING } from '@/hooks/useAudioAnalyser';
+import {
+  loadFont as singletonLoadFont,
+  playBlast as singletonPlayBlast,
+  playClash as singletonPlayClash,
+  playEvent as singletonPlayEvent,
+  playIgnition as singletonPlayIgnition,
+  playLockup as singletonPlayLockup,
+  playRetraction as singletonPlayRetraction,
+  playStab as singletonPlayStab,
+  playSwing as singletonPlaySwing,
+  restoreLastFont,
+  stopHum as singletonStopHum,
+  toggleMute as singletonToggleMute,
+  updateSwing as singletonUpdateSwing,
+} from '@/lib/audioEngineSingleton';
+
+// Re-exported for any consumer that imported it from the hook module
+// pre-singleton. Now lives canonically in the singleton — the hook
+// re-export keeps existing imports working.
+export { CATEGORY_MAP } from '@/lib/audioEngineSingleton';
 
 /**
- * Synthetic sound generator — creates AudioBuffers programmatically
- * so the app has sound out of the box without requiring real .wav fonts.
- */
-function createSyntheticSounds(ctx: AudioContext) {
-  const sampleRate = ctx.sampleRate;
-
-  function makeBuffer(durationSec: number, fill: (i: number, t: number) => number): AudioBuffer {
-    const length = Math.floor(sampleRate * durationSec);
-    const buffer = ctx.createBuffer(1, length, sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) {
-      data[i] = fill(i, i / sampleRate);
-    }
-    return buffer;
-  }
-
-  // Ignition: rising frequency sweep with noise
-  const ignition = makeBuffer(0.6, (_i, t) => {
-    const freq = 180 + t * 1200;
-    const osc = Math.sin(2 * Math.PI * freq * t) * 0.4;
-    const noise = (Math.random() - 0.5) * 0.3 * Math.max(0, 1 - t * 2);
-    const env = Math.min(1, t * 8) * Math.max(0, 1 - (t - 0.4) * 5);
-    return (osc + noise) * env;
-  });
-
-  // Retraction: falling frequency sweep
-  const retraction = makeBuffer(0.6, (_i, t) => {
-    const freq = 800 - t * 1000;
-    const osc = Math.sin(2 * Math.PI * Math.max(80, freq) * t) * 0.4;
-    const noise = (Math.random() - 0.5) * 0.2 * t;
-    const env = Math.max(0, 1 - t * 1.8);
-    return (osc + noise) * env;
-  });
-
-  // Hum: low oscillator with vibrato (longer for looping)
-  const hum = makeBuffer(2.0, (_i, t) => {
-    const vibrato = Math.sin(2 * Math.PI * 5 * t) * 4;
-    const freq = 120 + vibrato;
-    const osc1 = Math.sin(2 * Math.PI * freq * t) * 0.25;
-    const osc2 = Math.sin(2 * Math.PI * freq * 2.01 * t) * 0.1;
-    const osc3 = Math.sin(2 * Math.PI * freq * 3.03 * t) * 0.05;
-    return osc1 + osc2 + osc3;
-  });
-
-  // Clash: sharp transient + noise burst
-  const clash = makeBuffer(0.3, (_i, t) => {
-    const noise = (Math.random() - 0.5) * 2;
-    const env = Math.exp(-t * 20);
-    const ring = Math.sin(2 * Math.PI * 2000 * t) * Math.exp(-t * 30) * 0.5;
-    return (noise * env * 0.6 + ring) * 0.8;
-  });
-
-  // Blast: slightly longer noise burst with lower ring
-  const blast = makeBuffer(0.25, (_i, t) => {
-    const noise = (Math.random() - 0.5) * 2;
-    const env = Math.exp(-t * 15);
-    const ring = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 10) * 0.3;
-    return (noise * env * 0.5 + ring) * 0.7;
-  });
-
-  // Swing: whoosh using filtered noise
-  const swing = makeBuffer(0.4, (_i, t) => {
-    const noise = (Math.random() - 0.5);
-    const env = Math.sin(Math.PI * t / 0.4); // bell curve
-    const freq = 300 + Math.sin(Math.PI * t / 0.4) * 400;
-    const filter = Math.sin(2 * Math.PI * freq * t) * 0.3;
-    return (noise * 0.2 + filter) * env * 0.5;
-  });
-
-  // Lockup: buzzing sustained sound
-  const lockup = makeBuffer(0.5, (_i, t) => {
-    const buzz = Math.sin(2 * Math.PI * 60 * t) * Math.sin(2 * Math.PI * 600 * t);
-    const env = Math.min(1, t * 10) * Math.max(0, 1 - (t - 0.3) * 5);
-    return buzz * env * 0.4;
-  });
-
-  // Stab: sharp piercing sound
-  const stab = makeBuffer(0.2, (_i, t) => {
-    const osc = Math.sin(2 * Math.PI * 1500 * t);
-    const env = Math.exp(-t * 15);
-    return osc * env * 0.5;
-  });
-
-  return { ignition, retraction, hum, clash, blast, swing, lockup, stab };
-}
-
-type SoundBuffers = ReturnType<typeof createSyntheticSounds>;
-
-/**
- * Map from sound event → font category names to try.
+ * React hook that exposes the singleton audio engine.
  *
- * ProffieOS naming convention (sound/hybrid_font.h):
- *   - `out.wav` plays during IGNITION (saber blade goes OUT, power-on)
- *   - `in.wav`  plays during RETRACTION (saber blade goes IN, power-off)
- * `pstoff` ("post-off") is the optional follow-up clip ProffieOS plays
- * after `in.wav` during retraction; we treat it as the same category.
+ * Pre-singleton (through PR #131), this hook spun up its own
+ * AudioContext, FontPlayer, AudioFilterChain, master gain, and
+ * SmoothSwingEngine on every call. With 6 known consumers
+ * (WorkbenchLayout / AppShell / SoundFontPanel / AudioColumnA /
+ * AudioColumnB / `/m`) plus the `useAudioSync` pass-through, that hit
+ * Chrome's per-origin AudioContext cap (~6) and re-decoded buffers per
+ * instance. PR #124 / #128 / #140 closed half the bug by lifting muted /
+ * swingSpeed / analyser into shared stores; the rest of the engine
+ * (AudioContext, FontPlayer, master gain, SmoothSwingEngine) lived on as
+ * a per-instance ref.
+ *
+ * The singleton in `lib/audioEngineSingleton.ts` finishes the job: ONE
+ * AudioContext, ONE FontPlayer, ONE master gain. This hook is now a
+ * thin React surface over the module-scope state — call it as many
+ * times as you like; only one engine is ever constructed.
+ *
+ * Subscribed to `audioMuteStore` + `audioFontStore` so the returned
+ * `muted` / `fontName` values track those stores. Pause/resume,
+ * filter-chain mirroring, font hot-swap, and SmoothSwing bus pumping
+ * are installed once at singleton init in `ensureAudioEngineInit()` —
+ * not here. This hook owns no `useEffect` for those concerns.
+ *
+ * The IDB font-restore is fired on the first mount per app lifetime
+ * (idempotent across calls). It can't live in module scope because
+ * importing it before any user gesture must not trigger an
+ * AudioContext construction.
  */
-export const CATEGORY_MAP: Record<string, string[]> = {
-  ignition: ['out'],
-  retraction: ['in'],
-  hum: ['hum'],
-  clash: ['clash'],
-  blast: ['blast'],
-  swing: ['swing', 'swingl'],
-  lockup: ['lockup'],
-  stab: ['stab'],
-  drag: ['drag'],
-  melt: ['melt'],
-  force: ['force'],
-};
-
 export function useAudioEngine() {
-  const ctxRef = useRef<AudioContext | null>(null);
-  const playerRef = useRef<FontPlayer | null>(null);
-  const smoothSwingRef = useRef<SmoothSwingEngine | null>(null);
-  const filterChainRef = useRef<AudioFilterChain | null>(null);
-  const soundsRef = useRef<SoundBuffers | null>(null);
-  const masterGainRef = useRef<GainNode | null>(null);
-  // Analyser node for the AnalysisRail audio-waveform layer. Inserted
-  // between masterGain and ctx.destination as a transparent tap (it
-  // passes audio through unchanged), so adding it costs no fidelity
-  // and respects mute (mute zeroes the master gain BEFORE the
-  // analyser, so the waveform correctly reads as silence when muted).
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const initializedRef = useRef(false);
-
-
-  // Mute state lives in a global store so every `useAudioEngine` instance
-  // (header toggle, AudioColumnB preview buttons, SmoothSwing tick, mobile
-  // shell, etc.) reads the same value.
+  // Subscribe to muted state so consumers re-render when mute toggles.
+  // The singleton itself maintains the masterGain side via a separate
+  // module-scope subscription, but consumers reading `audio.muted` need
+  // a React subscription path to re-render.
   const muted = useAudioMuteStore((s) => s.muted);
-  const humActiveRef = useRef(false);
 
-  // Font store access
-  const getBuffer = useAudioFontStore((s) => s.getBuffer);
-  const setFont = useAudioFontStore((s) => s.setFont);
-  const setLoadProgress = useAudioFontStore((s) => s.setLoadProgress);
-  const setIsLoading = useAudioFontStore((s) => s.setIsLoading);
+  // Subscribe to fontName so consumers re-render when the active font
+  // changes. The singleton's font hot-swap subscription handles the
+  // engine-side wiring (hum hot-swap + SmoothSwing reload); this
+  // subscription only feeds the React tree.
   const fontName = useAudioFontStore((s) => s.fontName);
 
-  // Initialize on first user gesture (AudioContext requires it)
-  const ensureInit = useCallback(() => {
-    if (initializedRef.current) return true;
-
-    try {
-      const ctx = new AudioContext();
-      const player = new FontPlayer(ctx);
-
-      // Master gain for mute control. Initial value reads from the store
-      // directly (not via the closure-captured `muted` selector value)
-      // so a freshly-mounted instance picks up the latest store state
-      // even if the store changed between render and ensureInit firing.
-      const masterGain = ctx.createGain();
-      masterGain.gain.value = useAudioMuteStore.getState().muted ? 0 : 1;
-
-      // Analyser tap for the AnalysisRail audio-waveform layer. The
-      // graph becomes:
-      //
-      //   player → filterChain → masterGain → analyser → ctx.destination
-      //                                                  ↑
-      //                                          (transparent — passes
-      //                                           audio unchanged)
-      //
-      // AnalyserNode IS the canonical Web Audio "tap" — it has unity
-      // gain on its output and exposes time/frequency-domain readers.
-      // Putting it AFTER masterGain means muting silences both audio
-      // output and the waveform reading; putting it BEFORE would make
-      // the waveform render even while muted, which is the wrong UX
-      // (mute should fully freeze the rail).
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = DEFAULT_ANALYSER_FFT_SIZE;
-      analyser.smoothingTimeConstant = DEFAULT_ANALYSER_SMOOTHING;
-      masterGain.connect(analyser);
-      analyser.connect(ctx.destination);
-      analyserRef.current = analyser;
-
-      // Publish to the global store so the AnalysisRail's audio-waveform
-      // layer can read time-domain frames without prop-drilling. First
-      // publisher wins — see audioAnalyserStore for the contract.
-      useAudioAnalyserStore.getState().setAnalyser(analyser);
-
-      // Insert filter chain: player -> filterChain -> masterGain
-      const initialConfig = useAudioMixerStore.getState().buildFilterChainConfig();
-      const filterChain = new AudioFilterChain(ctx, initialConfig);
-      player.getOutput().connect(filterChain.getInput());
-      filterChain.getOutput().connect(masterGain);
-      filterChainRef.current = filterChain;
-      masterGainRef.current = masterGain;
-
-      // SmoothSwing engine outputs through the same master gain
-      const smoothSwing = new SmoothSwingEngine(ctx, masterGain);
-      smoothSwingRef.current = smoothSwing;
-
-      ctxRef.current = ctx;
-      playerRef.current = player;
-      soundsRef.current = createSyntheticSounds(ctx);
-      initializedRef.current = true;
-
-      // Resume context if suspended (Chrome autoplay policy)
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  // Push store changes into this instance's masterGain. Every `useAudioEngine`
-  // consumer runs this effect, so a single store flip silences/unsilences
-  // all of them. ensureInit() may not have run yet on freshly-mounted
-  // instances (AudioContext needs a user gesture); the gain push there
-  // covers that case.
+  // Restore last-used font from IDB on first mount per app lifetime.
+  // `restoreLastFont` is internally idempotent — multiple consumers
+  // mounting at once still trigger only one read pass.
   useEffect(() => {
-    if (masterGainRef.current) {
-      masterGainRef.current.gain.value = muted ? 0 : 1;
-    }
-  }, [muted]);
-
-  // ── Pause → AudioContext suspend/resume ──────────────────────────────
-  // When the global simulation pause fires (PauseButton / usePauseSystem),
-  // freeze ALL audio processing by suspending the AudioContext. This stops
-  // the hum loop, swing crossfade, and any one-shot sounds mid-playback.
-  // Resuming restores audio exactly where it left off.
-  //
-  // This is distinct from MUTE (audioMuteStore): mute is a persistent user
-  // preference that zeroes the master gain. Pause is transient — it freezes
-  // the entire simulation, and unfreezing restores sound at whatever gain
-  // (muted or not) was active before the pause.
-  const isPaused = useUIStore((s) => s.isPaused);
-
-  useEffect(() => {
-    const ctx = ctxRef.current;
-    if (!ctx) return;
-
-    if (isPaused) {
-      // suspend() returns a Promise; fire-and-forget is fine — the
-      // AudioContext transitions to 'suspended' state asynchronously
-      // and all scheduled audio nodes freeze in place.
-      ctx.suspend();
-    } else {
-      ctx.resume();
-    }
-  }, [isPaused]);
-
-  // Wraps the store's toggle with ensureInit so the AudioContext is
-  // created in the user-gesture frame even if no audio has played yet.
-  // Without this, a user who toggles "Sound ON" without first triggering
-  // a sound would have to click again to hear anything (Chrome autoplay).
-  const toggleMute = useCallback(() => {
-    ensureInit();
-    useAudioMuteStore.getState().toggleMute();
-  }, [ensureInit]);
-
-  /**
-   * Get a buffer for a sound event — prefers real font buffers, falls back to synthetic.
-   */
-  const getBufferFor = useCallback(
-    (event: keyof SoundBuffers): AudioBuffer | null => {
-      // Try real font buffers first
-      const categories = CATEGORY_MAP[event];
-      if (categories) {
-        for (const cat of categories) {
-          const buf = getBuffer(cat);
-          if (buf) return buf;
-        }
-      }
-      // Fallback to synthetic
-      return soundsRef.current?.[event] ?? null;
-    },
-    [getBuffer],
-  );
-
-  /**
-   * Load a font from dropped files.
-   * Parses the file list, decodes .wav files, and stores buffers.
-   */
-  const loadFont = useCallback(
-    async (files: FileList | File[]): Promise<FontManifest | null> => {
-      if (!ensureInit()) return null;
-      const ctx = ctxRef.current!;
-
-      setIsLoading(true);
-      setLoadProgress(0);
-
-      try {
-        // Parse file list into manifest
-        const manifest = parseFileList(files);
-        const name = extractFontName(files);
-
-        // Decode audio files
-        const { buffers, warnings } = await decodeFilesByCategory(
-          files,
-          manifest,
-          ctx,
-          (loaded, total) => {
-            setLoadProgress(loaded / total);
-          },
-        );
-
-        // Combine warnings
-        const allWarnings = [...manifest.warnings, ...warnings];
-
-        // Store in Zustand
-        setFont(name, manifest, buffers, allWarnings);
-
-        // Persist raw audio data to IndexedDB for reload survival
-        // Group manifest files by category, read raw ArrayBuffers
-        const rawData = new Map<string, ArrayBuffer[]>();
-        const fileArray = Array.from(files);
-        for (const sf of manifest.files) {
-          const file = fileArray.find((f) => {
-            const fp = 'webkitRelativePath' in f ? (f as File).webkitRelativePath : '';
-            return fp === sf.path || (f as File).name === sf.name;
-          }) as File | undefined;
-          if (file) {
-            const existing = rawData.get(sf.category) ?? [];
-            existing.push(await file.arrayBuffer());
-            rawData.set(sf.category, existing);
-          }
-        }
-        saveFontToDB(name, manifest, rawData).catch(() => {
-          // Silent fail — IDB persistence is best-effort
-        });
-
-        // Load smooth-swing pairs into the engine
-        const lowBufs = buffers.get('swingl');
-        const highBufs = buffers.get('swingh');
-        if (lowBufs && highBufs && lowBufs.length > 0 && highBufs.length > 0) {
-          smoothSwingRef.current?.loadPairs(lowBufs, highBufs);
-        }
-
-        return manifest;
-      } catch {
-        setIsLoading(false);
-        return null;
-      }
-    },
-    [ensureInit, setFont, setLoadProgress, setIsLoading],
-  );
-
-  /**
-   * Play a specific sound event by category name (for SoundFontPanel buttons).
-   * Returns true if a sound was played.
-   */
-  const playEvent = useCallback(
-    (category: string): boolean => {
-      if (!ensureInit()) return false;
-      const player = playerRef.current!;
-
-      const buf = getBuffer(category);
-      if (!buf) return false;
-
-      if (category === 'hum') {
-        player.playHum(buf);
-        humActiveRef.current = true;
-      } else {
-        player.playOneShot(buf);
-      }
-      return true;
-    },
-    [ensureInit, getBuffer],
-  );
-
-  /** Stop the hum loop */
-  const stopHum = useCallback(() => {
-    playerRef.current?.stopHum();
-    humActiveRef.current = false;
-  }, []);
-
-  const playIgnition = useCallback(() => {
-    if (!ensureInit()) return;
-    const player = playerRef.current!;
-
-    const inBuf = getBufferFor('ignition');
-    if (inBuf) player.playOneShot(inBuf);
-
-    // Start hum after ignition finishes
-    setTimeout(() => {
-      const humBuf = getBufferFor('hum');
-      if (humBuf) {
-        player.playHum(humBuf);
-        humActiveRef.current = true;
-      }
-    }, 500);
-
-    // Start smooth-swing engine (plays silently until swing speed > threshold)
-    smoothSwingRef.current?.start();
-  }, [ensureInit, getBufferFor]);
-
-  const playRetraction = useCallback(() => {
-    if (!ensureInit()) return;
-    const player = playerRef.current!;
-    player.stopHum();
-    humActiveRef.current = false;
-    smoothSwingRef.current?.stop();
-    const outBuf = getBufferFor('retraction');
-    if (outBuf) player.playOneShot(outBuf);
-  }, [ensureInit, getBufferFor]);
-
-  const playClash = useCallback(() => {
-    if (!ensureInit()) return;
-    const buf = getBufferFor('clash');
-    if (buf) playerRef.current!.playOneShot(buf);
-  }, [ensureInit, getBufferFor]);
-
-  const playBlast = useCallback(() => {
-    if (!ensureInit()) return;
-    const buf = getBufferFor('blast');
-    if (buf) playerRef.current!.playOneShot(buf);
-  }, [ensureInit, getBufferFor]);
-
-  const playSwing = useCallback(() => {
-    if (!ensureInit()) return;
-    const buf = getBufferFor('swing');
-    if (buf) playerRef.current!.playOneShot(buf);
-  }, [ensureInit, getBufferFor]);
-
-  const playLockup = useCallback(() => {
-    if (!ensureInit()) return;
-    const buf = getBufferFor('lockup');
-    if (buf) playerRef.current!.playOneShot(buf);
-  }, [ensureInit, getBufferFor]);
-
-  const playStab = useCallback(() => {
-    if (!ensureInit()) return;
-    const buf = getBufferFor('stab');
-    if (buf) playerRef.current!.playOneShot(buf);
-  }, [ensureInit, getBufferFor]);
-
-  /**
-   * Update smooth-swing crossfade based on current swing speed.
-   *
-   * Writes to the shared `audioPlaybackStore` rather than touching this
-   * instance's smoothSwingRef directly. Every initialised useAudioEngine
-   * instance subscribes to the store via the useEffect below and pushes
-   * the value into its own SmoothSwingEngine — so the call reaches
-   * whichever instance actually had `loadPairs` called, regardless of
-   * which call site (`AppShell.useAudioSync`, MotionSimPanel, etc.)
-   * invoked `updateSwing`.
-   *
-   * @param speed normalised swing speed (0-1)
-   */
-  const updateSwing = useCallback((speed: number) => {
-    useAudioPlaybackStore.getState().setSwingSpeed(speed);
-  }, []);
-
-  // Restore last-used font from IndexedDB on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const lastName = await getLastUsedFontName();
-      if (!lastName || cancelled) return;
-      // Don't restore if a font is already loaded
-      if (useAudioFontStore.getState().fontName) return;
-
-      const stored = await loadFontFromDB(lastName);
-      if (!stored || cancelled) return;
-
-      if (!ensureInit()) return;
-      const ctx = ctxRef.current!;
-
-      // Decode stored ArrayBuffers back into AudioBuffers
-      const decodedBuffers = new Map<string, AudioBuffer[]>();
-      for (const [cat, rawArrays] of stored.audioData) {
-        const decoded: AudioBuffer[] = [];
-        for (const raw of rawArrays) {
-          try {
-            // ArrayBuffers become detached after decoding, so copy first
-            const copy = raw.slice(0);
-            const ab = await ctx.decodeAudioData(copy);
-            decoded.push(ab);
-          } catch {
-            // Skip corrupt or unsupported files
-          }
-        }
-        if (decoded.length > 0) {
-          decodedBuffers.set(cat, decoded);
-        }
-      }
-
-      if (cancelled) return;
-
-      setFont(lastName, stored.manifest, decodedBuffers, []);
-
-      // Load smooth-swing pairs
-      const lowBufs = decodedBuffers.get('swingl');
-      const highBufs = decodedBuffers.get('swingh');
-      if (lowBufs && highBufs && lowBufs.length > 0 && highBufs.length > 0) {
-        smoothSwingRef.current?.loadPairs(lowBufs, highBufs);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [ensureInit, setFont]);
-
-  // Subscribe to mixer store — rebuild filter chain when sliders change
-  useEffect(() => {
-    const unsub = useAudioMixerStore.subscribe(() => {
-      const chain = filterChainRef.current;
-      if (!chain) return;
-      const config = useAudioMixerStore.getState().buildFilterChainConfig();
-      chain.setConfig(config);
+    restoreLastFont().catch(() => {
+      // Best-effort — never throw out of the effect.
     });
-    return unsub;
   }, []);
 
-  // Subscribe to the playback bus — push swingSpeed into THIS instance's
-  // SmoothSwingEngine. Imperative subscribe (no React re-render); the
-  // listener fires only on store change. SmoothSwingEngine.update() is a
-  // no-op when `_isPlaying` is false, so subscribing on every instance is
-  // safe — only the instance whose `playIgnition` ran (which calls
-  // `smoothSwingRef.current?.start()`) actually outputs swing audio.
-  useEffect(() => {
-    const unsub = useAudioPlaybackStore.subscribe(() => {
-      const { swingSpeed } = useAudioPlaybackStore.getState();
-      smoothSwingRef.current?.update(swingSpeed);
-    });
-    return unsub;
-  }, []);
-
-  // Hot-swap on font change. When the user picks a different font in
-  // Column A's library list while the blade is ignited, the new buffers
-  // land in audioFontStore but the active hum source still points at the
-  // old buffer. This effect:
-  //   (a) restarts the hum on the new font's buffer if THIS instance has
-  //       hum active (humActiveRef tracks this locally, since multiple
-  //       instances might independently have hum playing — e.g. the
-  //       workbench-instance hum + a Column B preview-instance hum).
-  //   (b) reloads SmoothSwing low/high pairs into this instance's
-  //       SmoothSwingEngine. `loadFont()` only loads pairs into the
-  //       instance the file-drop UI ran through; this effect ensures
-  //       every initialised instance picks them up reactively, so a
-  //       broadcast updateSwing reaches a SmoothSwingEngine that
-  //       actually has buffers.
-  useEffect(() => {
-    if (!initializedRef.current) return;
-    const buffers = useAudioFontStore.getState().buffers;
-
-    // (a) Hum hot-swap
-    if (humActiveRef.current && playerRef.current) {
-      const humBufs = buffers.get('hum');
-      let humBuf: AudioBuffer | null = null;
-      if (humBufs && humBufs.length > 0) {
-        humBuf = humBufs[Math.floor(Math.random() * humBufs.length)];
-      } else {
-        // Font has no hum — fall back to synthetic so the blade still hums.
-        humBuf = soundsRef.current?.hum ?? null;
-      }
-      if (humBuf) {
-        playerRef.current.playHum(humBuf);
-        // playHum calls stopHum() internally first, so the old source is
-        // already disconnected. humActiveRef stays true.
-      }
-    }
-
-    // (b) Reactive SmoothSwing pair load
-    if (smoothSwingRef.current) {
-      const lowBufs = buffers.get('swingl');
-      const highBufs = buffers.get('swingh');
-      if (lowBufs && highBufs && lowBufs.length > 0 && highBufs.length > 0) {
-        smoothSwingRef.current.loadPairs(lowBufs, highBufs);
-      }
-    }
-  }, [fontName]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // If this instance was the published analyser source, clear the
-      // store so the next instance to init can publish fresh.
-      // First-published-wins means this instance MIGHT not own the
-      // global publication; the store comparison guards against
-      // clearing somebody else's node.
-      const analyser = analyserRef.current;
-      if (analyser) {
-        const current = useAudioAnalyserStore.getState().analyser;
-        if (current === analyser) {
-          useAudioAnalyserStore.getState().setAnalyser(null);
-        }
-        try {
-          analyser.disconnect();
-        } catch { /* already disconnected */ }
-      }
-      smoothSwingRef.current?.dispose();
-      filterChainRef.current?.dispose();
-      playerRef.current?.dispose();
-      ctxRef.current?.close();
-    };
-  }, []);
+  // Type-aligned wrapper for loadFont so the public hook signature
+  // matches the pre-singleton shape (`(files: FileList | File[]) =>
+  // Promise<FontManifest | null>`). The singleton implementation has
+  // the same shape; the wrapper is here for symmetry with the other
+  // re-exports and to keep the hook self-contained.
+  const loadFont = (files: FileList | File[]): Promise<FontManifest | null> =>
+    singletonLoadFont(files);
 
   return {
-    playIgnition,
-    playRetraction,
-    playClash,
-    playBlast,
-    playSwing,
-    playLockup,
-    playStab,
-    playEvent,
-    stopHum,
+    playIgnition: singletonPlayIgnition,
+    playRetraction: singletonPlayRetraction,
+    playClash: singletonPlayClash,
+    playBlast: singletonPlayBlast,
+    playSwing: singletonPlaySwing,
+    playLockup: singletonPlayLockup,
+    playStab: singletonPlayStab,
+    playEvent: singletonPlayEvent,
+    stopHum: singletonStopHum,
     loadFont,
-    updateSwing,
+    updateSwing: singletonUpdateSwing,
     muted,
-    toggleMute,
+    toggleMute: singletonToggleMute,
     fontName,
   };
 }
