@@ -4,26 +4,12 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { TOPOLOGY_PRESETS, type BladeConfig } from '@kyberstation/engine';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import {
-  BLADE_LENGTHS as BLADE_LENGTH_OPTIONS,
+  BLADE_LENGTHS,
   inferBladeInches,
 } from '@/lib/bladeLengths';
 
-// BLADE_LENGTHS now derives from lib/bladeLengths.ts (single source of truth).
-// Decorated with the legacy human-friendly captions this stub used.
-const BLADE_LENGTH_LABELS: Record<number, string> = {
-  20: 'Yoda (20")',
-  24: 'Short (24")',
-  28: 'Medium (28")',
-  32: 'Standard (32")',
-  36: 'Long (36")',
-  40: 'Extra Long (40")',
-};
-
-const BLADE_LENGTHS = BLADE_LENGTH_OPTIONS.map((b) => ({
-  label: BLADE_LENGTH_LABELS[b.inches] ?? b.label,
-  inches: b.inches,
-  ledCount: b.ledCount,
-}));
+// BLADE_LENGTHS now derives from lib/bladeLengths.ts (single source of truth)
+// including the vendor-reality human captions (`Standard (36")`, etc.).
 
 const STRIP_TYPES = [
   { id: 'single', label: '1 Strip', icon: '│', desc: 'Single neopixel strip' },

@@ -23,11 +23,30 @@ describe('SaberWizard BLADE_LENGTHS', () => {
     expect(BLADE_LENGTHS.map((b) => b.inches)).toEqual([20, 24, 28, 32, 36, 40]);
   });
 
-  it('every entry has a positive ledCount and matching label', () => {
+  it('every entry has a positive ledCount and a vendor-reality caption', () => {
+    // Labels were originally bare inches (`20"`, `24"`, ...). The
+    // 2026-04-29 hardware audit replaced them with vendor-reality
+    // captions (`Shoto / Yoda (20")`, `Combat (24")`, `Standard (36")`)
+    // sourced from `lib/bladeLengths.ts::BLADE_LENGTH_CAPTIONS` so the
+    // wizard's picker matches what real Neopixel saber vendors sell.
     for (const b of BLADE_LENGTHS) {
       expect(b.ledCount).toBeGreaterThan(0);
-      expect(b.label).toBe(`${b.inches}"`);
+      // Caption must contain the bare inches token (e.g. `(36")`) so
+      // a screen reader always announces the dimension.
+      expect(b.label).toContain(`${b.inches}"`);
     }
+  });
+
+  it('labels 36" as the Standard length (de-facto Neopixel standard)', () => {
+    const long = BLADE_LENGTHS.find((b) => b.inches === 36);
+    expect(long?.label).toBe('Standard (36")');
+  });
+
+  it('labels 32" as Medium, not Standard (vendor-reality fix)', () => {
+    // Pre-audit, 32" was mislabeled "Standard (32")" while 36" got
+    // "Long (36")", which inverted the actual vendor reality.
+    const medium = BLADE_LENGTHS.find((b) => b.inches === 32);
+    expect(medium?.label).toBe('Medium (32")');
   });
 
   it('every ledCount reverse-maps to its inches via inferBladeInches', () => {

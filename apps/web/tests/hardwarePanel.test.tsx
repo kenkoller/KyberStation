@@ -383,16 +383,77 @@ describe('HardwarePanel — SSR shape', () => {
     }
 
     // Blade lengths — quotes are HTML-escaped to &quot; in SSR output,
-    // so we match against the labels with that escape applied.
+    // so we match against the labels with that escape applied. Captions
+    // are sourced from `lib/bladeLengths.ts::BLADE_LENGTH_CAPTIONS` and
+    // reflect what real-world Neopixel saber vendors sell (36" = the
+    // Standard length, 24" = Combat-style, etc.).
     for (const len of [
-      'Yoda (20&quot;)',
-      'Short (24&quot;)',
-      'Medium (28&quot;)',
-      'Standard (32&quot;)',
-      'Long (36&quot;)',
+      'Shoto / Yoda (20&quot;)',
+      'Combat (24&quot;)',
+      'Uncommon (28&quot;)',
+      'Medium (32&quot;)',
+      'Standard (36&quot;)',
       'Extra Long (40&quot;)',
     ]) {
       expect(markup).toContain(len);
+    }
+  });
+
+  it('does NOT surface the LED-override warning when ledCount matches the canonical for the inferred length', async () => {
+    // Default bladeStore.config.ledCount is 144 (canonical for 36").
+    // The warning should be silent — typical install path.
+    const mod = await import('@/components/editor/HardwarePanel');
+    const markup = renderToStaticMarkup(createElement(mod.HardwarePanel));
+    expect(markup).not.toContain('data-testid="hw-led-override-warning"');
+    // The aria-invalid hint on the input should also be `false`.
+    expect(markup).toContain('aria-invalid="false"');
+    expect(markup).not.toContain('aria-invalid="true"');
+  });
+});
+
+// ─── Pure logic test for the LED-override divergence warning ──────────
+//
+// The HardwarePanel render-time test above can't easily flip the
+// bladeStore default — Zustand 4's React binding pins SSR to
+// `getInitialState()`. Test the warning's logic shape directly using
+// the same `canonicalLedCountForInches` + `inferBladeInches` lookups
+// the panel performs internally.
+
+describe('HardwarePanel — LED-count divergence sentinel logic', () => {
+  it('flags a manually-typed LED count that diverges from the inferred-bucket canonical', async () => {
+    const { canonicalLedCountForInches, inferBladeInches } = await import(
+      '@/lib/bladeLengths'
+    );
+
+    // 130 LEDs sits inside the 36" bucket (118..144) but doesn't match
+    // the 36" canonical (144). The panel infers length from ledCount,
+    // looks up the canonical for that bucket, and warns on mismatch.
+    const inferred = inferBladeInches(130);
+    expect(inferred).toBe(36);
+    const canonical = canonicalLedCountForInches(inferred);
+    expect(canonical).toBe(144);
+    // Divergence check: the panel's `ledCountIsUnusual` becomes true.
+    expect(canonical !== undefined && canonical !== 130).toBe(true);
+  });
+
+  it('does not flag 144 LEDs on the 36" canonical layout', async () => {
+    const { canonicalLedCountForInches, inferBladeInches } = await import(
+      '@/lib/bladeLengths'
+    );
+    const inferred = inferBladeInches(144);
+    expect(inferred).toBe(36);
+    expect(canonicalLedCountForInches(inferred)).toBe(144);
+  });
+
+  it('does not flag every canonical preset against itself (round-trip invariant)', async () => {
+    const { BLADE_LENGTHS, canonicalLedCountForInches, inferBladeInches } =
+      await import('@/lib/bladeLengths');
+
+    for (const opt of BLADE_LENGTHS) {
+      const inferred = inferBladeInches(opt.ledCount);
+      const canonical = canonicalLedCountForInches(inferred);
+      // Forward: ledCount → inferred inches → canonical ledCount; equal.
+      expect(canonical).toBe(opt.ledCount);
     }
   });
 });

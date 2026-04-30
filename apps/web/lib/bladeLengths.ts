@@ -31,18 +31,57 @@ export interface BladeLengthOption {
 }
 
 /**
+ * Vendor-reality captions for blade-length pickers across the app
+ * (SaberWizard, HardwarePanel, BladeHardwarePanel).
+ *
+ * Captions reflect what real-world Neopixel saber vendors (Saberbay,
+ * KR Sabers, 89sabers, Vader's Vault, Korbanth, etc.) actually sell:
+ *
+ *   - 20" — Shoto / Yoda — uncommon shoto-class blade for kid sabers,
+ *           Yoda builds, or short combat blades.
+ *   - 24" — Combat — short combat-style blade. Sold by most vendors.
+ *   - 28" — Uncommon — unusual length. Most vendors jump from 24" to 32"
+ *           directly. Listed for custom builds.
+ *   - 32" — Medium — common medium combat blade. Sold by most vendors.
+ *   - 36" — Standard — the de-facto standard Neopixel blade length and
+ *           the most widely-sold option. One full WS2812B 1m strip
+ *           ships at 144 LEDs/m, which is exactly this entry's count.
+ *           Use this length unless you have a specific reason not to.
+ *   - 40" — Extra Long — duelist / display preference. Sold by some
+ *           vendors as an extra-long option.
+ */
+export const BLADE_LENGTH_CAPTIONS: Record<number, string> = {
+  20: 'Shoto / Yoda (20")',
+  24: 'Combat (24")',
+  28: 'Uncommon (28")',
+  32: 'Medium (32")',
+  36: 'Standard (36")',
+  40: 'Extra Long (40")',
+};
+
+/**
+ * Vendor-reality boolean: is this blade length commonly sold by major
+ * Neopixel saber vendors? `true` for 24"/32"/36"/40"; `false` for 20"
+ * and 28" which exist but are niche. Used by the LED-count override
+ * warning + (if a future picker wants) to mark uncommon entries.
+ */
+export const COMMON_BLADE_INCHES: ReadonlySet<number> = new Set([24, 32, 36, 40]);
+
+/**
  * Derived array of blade-length options, sorted by inches.
  * Generated once at module load from `BLADE_LENGTH_PRESETS`.
  *
  * Add a new entry to `BLADE_LENGTH_PRESETS` and it shows up here
- * automatically — no new inline arrays.
+ * automatically — no new inline arrays. Labels come from
+ * `BLADE_LENGTH_CAPTIONS` (vendor-reality captions); falls back
+ * to the bare `id` (e.g. `'36"'`) if no caption is registered.
  */
 export const BLADE_LENGTHS: readonly BladeLengthOption[] = Object.entries(
   BLADE_LENGTH_PRESETS,
 )
   .map(([id, cfg]) => ({
     id,
-    label: id,
+    label: BLADE_LENGTH_CAPTIONS[cfg.inches] ?? id,
     inches: cfg.inches,
     ledCount: cfg.ledCount,
   }))
@@ -81,4 +120,16 @@ export function inferBladeInches(ledCount: number): number {
 export function bladeLengthLabel(inches: number): string {
   const exact = BLADE_LENGTHS.find((b) => b.inches === inches);
   return exact ? exact.label : `${inches}"`;
+}
+
+/**
+ * Look up the canonical LED count for a given blade-inches value
+ * by exact match. Returns `undefined` when the inches value isn't
+ * in the canonical preset set (e.g. an unusual user input).
+ *
+ * Callers that need the LED-override divergence warning use this
+ * to check `config.ledCount !== canonicalLedCountForInches(inferred)`.
+ */
+export function canonicalLedCountForInches(inches: number): number | undefined {
+  return BLADE_LENGTHS.find((b) => b.inches === inches)?.ledCount;
 }
