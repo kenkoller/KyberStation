@@ -43,6 +43,14 @@ import {
   BOARD_MAX_MA,
 } from '@/lib/powerDraw';
 import {
+  BATTERIES,
+  DEFAULT_CUSTOM_BATTERY,
+  resolveBattery,
+  exceedsBatteryMargin,
+  BATTERY_WARNING_THRESHOLD,
+  type BatteryType,
+} from '@/lib/batteryTypes';
+import {
   BLADE_LENGTHS,
   canonicalLedCountForInches,
   inferBladeInches,
@@ -89,6 +97,13 @@ export function HardwarePanel(): JSX.Element {
   const setBrightness = useUIStore((s) => s.setBrightness);
   const batteryIdx = useUIStore((s) => s.batteryPresetIdx ?? 0);
   const setBatteryIdx = useUIStore((s) => s.setBatteryPresetIdx);
+  const batteryId = useUIStore((s) => s.batteryId);
+  const setBatteryId = useUIStore((s) => s.setBatteryId);
+  const customBattery = useUIStore((s) => s.customBattery);
+  const setCustomBattery = useUIStore((s) => s.setCustomBattery);
+
+  // Resolved battery — full spec used for the warning math + display.
+  const battery: BatteryType = resolveBattery(batteryId, customBattery);
 
   const { boardId, setBoardId } = useBoardProfile();
 
@@ -160,6 +175,15 @@ export function HardwarePanel(): JSX.Element {
   const budgetAmps = BOARD_MAX_MA / 1000;
   const warnAmps = budgetAmps * 0.50;
   const criticalAmps = budgetAmps * 0.80;
+
+  // ── Battery margin check ──
+  // The warning fires ONLY when peak draw exceeds 90% of the selected
+  // battery's manufacturer-rated continuous discharge. No heuristics, no
+  // guesses — just the math: peakDrawA > maxDischargeA × 0.9 → warn.
+  const batteryWarning = exceedsBatteryMargin(peakAmps, battery.maxDischargeA);
+  const batteryWarningPct = battery.maxDischargeA > 0
+    ? Math.round((peakAmps / battery.maxDischargeA) * 100)
+    : 0;
 
   return (
     <div className="space-y-4" data-testid="hardware-panel">
@@ -488,16 +512,204 @@ export function HardwarePanel(): JSX.Element {
         })}
       </div>
 
-      {/* Battery selector */}
-      <div className="flex items-center gap-2">
-        <label htmlFor="hw-battery" className="text-ui-xs text-text-muted shrink-0">
-          Battery:
+      {/* ─── Battery (selector + spec readout + safety check) ─── */}
+      <div data-testid="hw-battery-section">
+        <label
+          htmlFor="hw-battery-id"
+          className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-2 flex items-center gap-1"
+        >
+          Battery
+          <HelpTooltip
+            text="The Li-ion cell in your saber chassis. Specs (capacity, max continuous discharge, voltage) come from manufacturer datasheets. The peak-draw warning fires when calculated peak amperage exceeds 90% of the cell's rated continuous discharge."
+            proffie="BATTERY_MONITOR_PIN — battery state monitoring"
+          />
         </label>
         <select
-          id="hw-battery"
+          id="hw-battery-id"
+          value={batteryId}
+          onChange={(e) => setBatteryId(e.target.value)}
+          aria-label="Battery type"
+          aria-describedby="hw-battery-spec"
+          className="w-full bg-bg-deep border border-border-subtle rounded-interactive px-2 py-1.5 text-ui-sm text-text-primary mb-2"
+          data-testid="hw-battery-select"
+        >
+          {BATTERIES.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.label}
+            </option>
+          ))}
+          <option value="custom">Custom (specify mAh + max discharge)</option>
+        </select>
+
+        {/* Custom battery editor — only shown for the 'custom' selection. */}
+        {batteryId === 'custom' && (
+          <div
+            className="bg-bg-surface rounded-panel p-2 border border-border-subtle space-y-2 mb-2"
+            data-testid="hw-battery-custom-editor"
+          >
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label
+                  htmlFor="hw-battery-custom-mah"
+                  className="text-ui-xs text-text-muted uppercase tracking-wider font-mono mb-1 block"
+                >
+                  mAh
+                </label>
+                <input
+                  id="hw-battery-custom-mah"
+                  type="number"
+                  min={100}
+                  max={20000}
+                  value={(customBattery ?? DEFAULT_CUSTOM_BATTERY).capacityMah}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    if (!Number.isFinite(n) || n <= 0) return;
+                    setCustomBattery({
+                      ...(customBattery ?? DEFAULT_CUSTOM_BATTERY),
+                      capacityMah: n,
+                    });
+                  }}
+                  className="w-full bg-bg-deep border border-border-subtle rounded-interactive px-2 py-1 text-ui-sm font-mono tabular-nums text-text-primary"
+                  data-testid="hw-battery-custom-mah"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="hw-battery-custom-amax"
+                  className="text-ui-xs text-text-muted uppercase tracking-wider font-mono mb-1 block"
+                >
+                  Max A
+                </label>
+                <input
+                  id="hw-battery-custom-amax"
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={0.5}
+                  value={(customBattery ?? DEFAULT_CUSTOM_BATTERY).maxDischargeA}
+                  onChange={(e) => {
+                    const n = parseFloat(e.target.value);
+                    if (!Number.isFinite(n) || n <= 0) return;
+                    setCustomBattery({
+                      ...(customBattery ?? DEFAULT_CUSTOM_BATTERY),
+                      maxDischargeA: n,
+                    });
+                  }}
+                  className="w-full bg-bg-deep border border-border-subtle rounded-interactive px-2 py-1 text-ui-sm font-mono tabular-nums text-text-primary"
+                  data-testid="hw-battery-custom-amax"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="hw-battery-custom-volt"
+                  className="text-ui-xs text-text-muted uppercase tracking-wider font-mono mb-1 block"
+                >
+                  Volts
+                </label>
+                <input
+                  id="hw-battery-custom-volt"
+                  type="number"
+                  min={2.5}
+                  max={4.5}
+                  step={0.1}
+                  value={(customBattery ?? DEFAULT_CUSTOM_BATTERY).voltageNominal}
+                  onChange={(e) => {
+                    const n = parseFloat(e.target.value);
+                    if (!Number.isFinite(n) || n <= 0) return;
+                    setCustomBattery({
+                      ...(customBattery ?? DEFAULT_CUSTOM_BATTERY),
+                      voltageNominal: n,
+                    });
+                  }}
+                  className="w-full bg-bg-deep border border-border-subtle rounded-interactive px-2 py-1 text-ui-sm font-mono tabular-nums text-text-primary"
+                  data-testid="hw-battery-custom-volt"
+                />
+              </div>
+            </div>
+            <div className="text-ui-xs text-text-muted leading-snug">
+              Use values from your cell&apos;s manufacturer datasheet. The
+              max-discharge value drives the safety warning below.
+            </div>
+          </div>
+        )}
+
+        {/* Spec readout — shows the resolved battery's specs for transparency. */}
+        <div
+          id="hw-battery-spec"
+          className="bg-bg-surface rounded-panel p-2 border border-border-subtle text-ui-xs text-text-muted grid grid-cols-3 gap-2"
+          data-testid="hw-battery-spec"
+        >
+          <div>
+            <div className="text-text-muted/60 uppercase tracking-wider font-mono mb-0.5">
+              Capacity
+            </div>
+            <div className="text-text-secondary font-mono tabular-nums">
+              {battery.capacityMah.toLocaleString()} mAh
+            </div>
+          </div>
+          <div>
+            <div className="text-text-muted/60 uppercase tracking-wider font-mono mb-0.5">
+              Max A
+            </div>
+            <div className="text-text-secondary font-mono tabular-nums">
+              {battery.maxDischargeA} A
+            </div>
+          </div>
+          <div>
+            <div className="text-text-muted/60 uppercase tracking-wider font-mono mb-0.5">
+              Voltage
+            </div>
+            <div className="text-text-secondary font-mono tabular-nums">
+              {battery.voltageNominal.toFixed(1)} V
+            </div>
+          </div>
+        </div>
+        {battery.notes && (
+          <div className="text-ui-xs text-text-muted/80 mt-1 leading-snug">
+            {battery.notes}
+          </div>
+        )}
+
+        {/* Battery margin warning — fires only when math justifies it. */}
+        {batteryWarning && (
+          <div
+            className="text-ui-xs p-2 mt-2 rounded-interactive border flex items-start gap-2"
+            style={{
+              background: 'rgb(var(--status-error) / 0.1)',
+              borderColor: 'rgb(var(--status-error) / 0.3)',
+              color: 'rgb(var(--status-error))',
+            }}
+            data-testid="hw-battery-warning"
+            role="alert"
+          >
+            <span aria-hidden="true">⚠</span>
+            <span>
+              Peak draw{' '}
+              <span className="font-mono tabular-nums">
+                {peakAmps.toFixed(1)}A
+              </span>{' '}
+              approaches the {battery.label.split(' (')[0]} rated max{' '}
+              <span className="font-mono tabular-nums">
+                {battery.maxDischargeA}A
+              </span>{' '}
+              ({batteryWarningPct}% of rating, threshold{' '}
+              {Math.round(BATTERY_WARNING_THRESHOLD * 100)}%). Consider a
+              higher-drain cell or reduce LED count / brightness.
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Legacy mAh-only runtime estimator (drives the runtime readout above). */}
+      <div className="flex items-center gap-2">
+        <label htmlFor="hw-battery-runtime" className="text-ui-xs text-text-muted shrink-0">
+          Runtime cell:
+        </label>
+        <select
+          id="hw-battery-runtime"
           value={batteryIdx}
           onChange={(e) => setBatteryIdx?.(Number(e.target.value))}
-          aria-label="Battery type"
+          aria-label="Battery type for runtime estimation"
           className="flex-1 bg-bg-deep border border-border-subtle rounded-interactive px-2 py-1 text-ui-xs text-text-secondary"
         >
           {BATTERY_PRESETS.map((bp, i) => (
