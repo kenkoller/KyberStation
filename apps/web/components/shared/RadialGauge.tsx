@@ -95,8 +95,14 @@ function buildTrackPath(): string {
   const start = polar(ARC_START_DEG, RADIUS);
   const end = polar(ARC_START_DEG - ARC_SWEEP_DEG, RADIUS);
   const largeArc = ARC_SWEEP_DEG > 180 ? 1 : 0;
-  // sweep-flag=0 → clockwise in SVG coords (y-axis flipped vs. math).
-  return `M ${start.x} ${start.y} A ${RADIUS} ${RADIUS} 0 ${largeArc} 0 ${end.x} ${end.y}`;
+  // sweep-flag=1 → arc traverses in SVG screen-space CW (positive direction).
+  // For our geometry — start at upper-left (135°), end at lower-left (-135°)
+  // — the 270° gauge arc must sweep CW through top → right → bottom to land
+  // at the end point. With sweep-flag=0 the renderer picks the LARGE arc
+  // going CCW (the long way around the LEFT side), which placed the entire
+  // arc OFF-CENTER to the left of the gauge container — the colored fill
+  // arc visibly drifted left of the tick scale (Bug fix 2026-04-30).
+  return `M ${start.x} ${start.y} A ${RADIUS} ${RADIUS} 0 ${largeArc} 1 ${end.x} ${end.y}`;
 }
 
 const TRACK_PATH = buildTrackPath();
