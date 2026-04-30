@@ -8,13 +8,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Feedback Welcome](https://img.shields.io/badge/feedback-welcome-brightgreen.svg)](https://github.com/kenkoller/KyberStation/issues/new/choose)
 
-**Explore:** [Features](https://kenkoller.github.io/KyberStation/features) · [Showcase](https://kenkoller.github.io/KyberStation/showcase) · [Changelog](https://kenkoller.github.io/KyberStation/changelog) · [FAQ](https://kenkoller.github.io/KyberStation/faq) · [Gallery](https://kenkoller.github.io/KyberStation/gallery)
+**Quick links:** [🚀 Try it](https://kenkoller.github.io/KyberStation/) · [Features](https://kenkoller.github.io/KyberStation/features) · [Showcase](https://kenkoller.github.io/KyberStation/showcase) · [Changelog](https://kenkoller.github.io/KyberStation/changelog) · [FAQ](https://kenkoller.github.io/KyberStation/faq) · [Gallery](https://kenkoller.github.io/KyberStation/gallery)
+
+![Twelve blade styles rendering live — Stable, Unstable, Fire, Pulse, Plasma, Aurora, and more](apps/web/public/marketing/style-grid.gif)
 
 **Visual blade style editor, real-time simulator, and ProffieOS config generator for custom lightsabers.**
 
-**Free, browser-based, MIT licensed, no accounts, no backend. Hobby project. Beta.**
+**Free · browser-based · MIT licensed · no accounts · no backend · hobby project · beta**
 
-![KyberStation landing page — live blade render behind the wordmark](docs/images/landing-hero.png)
+> **33** styles · **22** effects · **19+13** ignition/retraction animations · **336+** presets · **16** boards · **~5,000** tests
 
 Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device — phone, tablet, laptop, or desktop. Installable as a PWA.
 
@@ -25,11 +27,21 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 ## Features
 
 ### Blade Engine (150+ source files across packages, ~5,000 tests)
+
 - **33 blade styles** — Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage, Darksaber, Sith Flicker, Blade Charge, Tempo Lock
 - **22 effect types** — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon, Unstable Kylo
 - **19 ignition + 13 retraction animations** with 10 easing curves and custom easing support
 - Multi-directional layer compositing with per-segment effect scoping
 - Headless engine — zero DOM dependencies, runs in browser, tests, or Electron
+
+### Combat Effects (live-triggerable, sustained or one-shot)
+
+<img src="apps/web/public/marketing/lockup-loop.gif" alt="Lockup effect — sustained warm pulses where blades cross" width="600" />
+
+- **Click-to-trigger** any of 22 effects from the action bar (Clash, Lockup, Blast, Stab) or keyboard (`C`, `L`, `B`, `S`)
+- **Sustained effects** (Lockup, Drag, Melt) hold while the trigger is held — the visualizer shows the live held state
+- **Spatial placement** — blast position + radius, lockup pivot point, drag tail length all configurable
+- **Modulation routing v1.1** — wire any of 11 modulators (swing, sound, angle, twist, time, clash, battery, lockup, preon, ignition, retraction) to any blade parameter via click-to-route, drag-to-route, or `fx`-button math expressions
 
 ### Code Generation
 - AST-based ProffieOS C++ code emitter — balanced angle brackets, valid template nesting
@@ -100,6 +112,9 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 - SD Card Writer — generate a ZIP with config.h and font directories, ready to extract
 
 ### Gallery
+
+<img src="apps/web/public/marketing/color-cycle.gif" alt="A blade cycling through eight canonical saber colors" width="600" />
+
 - **336+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots)
 - **Grid view as default** with view toggle, color/style/era filter rail, click-to-open detail modal showing full config + load/share actions
 - Every preset is `continuity`-tagged so you can filter to just canon
@@ -155,6 +170,8 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 - Undo/redo with 50-entry history and human-readable labels
 
 ## Status
+
+![KyberStation editor — workbench with blade preview, sidebar, and analysis rail](apps/web/public/og-hero.png)
 
 ### v0.16.0 — Launch (2026-04-30)
 
