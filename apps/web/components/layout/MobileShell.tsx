@@ -31,6 +31,7 @@
 import { useEffect, useState, useRef, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore, type SectionId } from '@/stores/uiStore';
+import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
 import { Inspector } from '@/components/editor/Inspector';
@@ -122,12 +123,33 @@ export function MobileShell({
     };
   }, []);
 
+  // Auto-ignite the blade ~500ms after the engine mounts — same Phase
+  // 1.5h pattern WorkbenchLayout uses on desktop. Without this the
+  // mobile editor opens with a retracted blade (the engine starts at
+  // extendProgress=0 even when bladeStore.isOn is persisted true), so
+  // users see a hilt + faint capsule instead of a glowing blade. Reset
+  // first to force a clean off→on animation.
+  const autoIgnitedRef = useRef(false);
+  useEffect(() => {
+    if (autoIgnitedRef.current) return;
+    if (!engineRef.current) return;
+    useBladeStore.getState().setIsOn(false);
+    const timer = setTimeout(() => {
+      autoIgnitedRef.current = true;
+      toggleWithAudio();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [engineRef, toggleWithAudio]);
+
   return (
     <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
 
       {/* ── Mobile Header ─────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-2 h-14 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0 pt-[env(safe-area-inset-top)]">
-        {/* Hamburger menu trigger — 44x44 minimum */}
+      <header className="flex items-center justify-between px-2 h-12 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0 pt-[env(safe-area-inset-top)]">
+        {/* Hamburger menu trigger — 44x44 minimum, visible MENU label
+            for higher discoverability (Ken couldn't find the icon-only
+            version). Border + thicker bars give it button-affordance
+            instead of glyph-affordance. */}
         <button
           ref={hamburgerRef}
           type="button"
@@ -138,13 +160,14 @@ export function MobileShell({
           aria-label="Open editor sections menu"
           aria-expanded={drawerOpen}
           aria-haspopup="dialog"
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors rounded-interactive"
+          className="min-h-[44px] flex items-center gap-1.5 px-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
         >
-          <span aria-hidden="true" className="flex flex-col gap-1">
-            <span className="block w-5 h-0.5 bg-current" />
-            <span className="block w-5 h-0.5 bg-current" />
-            <span className="block w-5 h-0.5 bg-current" />
+          <span aria-hidden="true" className="flex flex-col gap-[3px]">
+            <span className="block w-4 h-[2px] bg-current" />
+            <span className="block w-4 h-[2px] bg-current" />
+            <span className="block w-4 h-[2px] bg-current" />
           </span>
+          <span className="text-ui-xs font-medium tracking-wider uppercase">Menu</span>
         </button>
 
         {/* Title — flex-1 / centered */}
@@ -215,33 +238,47 @@ export function MobileShell({
         }}
       />
 
-      {/* ── Main Content Area — single scrolling column ──────────────── */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+      {/* ── Main Content Area ────────────────────────────────────────────
+          Layout: effect bar + blade canvas are STICKY siblings (shrink-0
+          + outside any scroll container). Only the body region (Inspector
+          on home, MainContent on drilled) scrolls — so switching sections
+          never pushes the blade canvas off-screen. Pre-A1, the entire
+          column was `overflow-y-auto` which let tall section content
+          scroll the blade out of view, producing the "odd zoom levels"
+          UX Ken reported. */}
+      <div className="flex-1 min-h-0 flex flex-col min-w-0">
 
-        {/* ── Effect / Action Bar (touch-sized) ──────────────────────── */}
-        <div className="px-2 py-2 shrink-0 border-b border-border-subtle bg-bg-secondary/40 overflow-x-auto">
+        {/* ── Effect / Action Bar (single row, ~24px tall) ─────────────
+            Tightened for mobile (PR A1): wrapper `px-1 py-0.5` keeps
+            the chips on a single horizontal row at 375px viewport
+            (overflow-x-auto for narrower phones if needed). EffectTriggerBar
+            in compact mode strips the kbd letter underneath. */}
+        <div className="px-1 py-0.5 shrink-0 border-b border-border-subtle bg-bg-secondary/40 overflow-x-auto">
           <div className="flex items-center gap-1 min-w-fit">
-            <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
+            <EffectTriggerBar onTrigger={triggerEffectWithAudio} compact />
           </div>
         </div>
 
-        {/* ── Blade Canvas — always visible, ~25vh ───────────────────── */}
+        {/* ── Blade Canvas — sticky, ~22vh capped at 180px ───────────── */}
         <div
           className="w-full shrink-0 flex items-center justify-center bg-bg-primary border-b border-border-subtle"
-          style={{ height: 'min(28vh, 220px)', minHeight: 180 }}
+          style={{ height: 'min(22vh, 180px)', minHeight: 140 }}
           role="region"
           aria-label="Blade preview"
         >
           <BladeCanvas engineRef={engineRef} vertical={false} compact />
         </div>
 
-        {/* ── Body — Inspector on home, MainContent + Inspector elsewhere */}
+        {/* ── Body — Inspector on home, MainContent on drilled.
+            Wrapped in `overflow-y-auto` so this region (and only this
+            region) scrolls when content exceeds available height. The
+            blade canvas + effect bar above stay anchored. */}
         {isHome ? (
           // Home view: Inspector fills the remaining space directly. This
           // is the 80% path — Quick Controls (Surprise Me, color chips,
           // ignition picker, retraction picker, parameter bank) — and the
           // user navigates to deep tuning via the hamburger drawer.
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
             <Inspector
               className="flex-1 min-h-0 w-full"
               style={{ width: '100%' }}
@@ -252,7 +289,7 @@ export function MobileShell({
           // panel below the canvas anchor. The sidebar drawer is the
           // only way to navigate, and tapping the active-section pill
           // returns to home.
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
             <MainContent
               className="flex-1 min-h-0"
               style={{ width: '100%' }}
@@ -273,7 +310,7 @@ export function MobileShell({
           IS the current view. */}
       {!isHome ? (
         <div
-          className="shrink-0 flex items-center justify-between gap-2 border-t border-border-subtle bg-bg-deep px-2 pb-[var(--mobile-safe-pb)]"
+          className="shrink-0 flex items-center justify-between gap-1 border-t border-border-subtle bg-bg-deep px-1 pb-[var(--mobile-safe-pb)]"
           style={{ minHeight: 'var(--mobile-bottom-bar-h)' }}
           role="region"
           aria-label="Editor navigation"
@@ -288,16 +325,37 @@ export function MobileShell({
             className="flex items-center gap-1 min-h-[44px] px-2 text-accent text-ui-xs font-medium tracking-wider uppercase rounded-interactive transition-colors hover:bg-bg-secondary/40"
           >
             <span aria-hidden="true">{'←'}</span>
-            <span>Back to Canvas</span>
+            <span>Back</span>
           </button>
 
           <span
-            className="flex items-center gap-1.5 px-2 min-h-[44px] text-text-secondary text-ui-xs font-medium tracking-wider uppercase"
+            className="flex-1 flex items-center justify-center gap-1.5 px-1 min-h-[44px] text-text-secondary text-ui-xs font-medium tracking-wider uppercase truncate"
             aria-live="polite"
           >
             <span aria-hidden="true" className="text-accent">{'◆'}</span>
-            <span>{SECTION_LABELS[activeSection]}</span>
+            <span className="truncate">{SECTION_LABELS[activeSection]}</span>
           </span>
+
+          {/* Bottom-bar hamburger — second access point for the section
+              drawer so users don't have to scroll back to the header
+              after editing a long section. */}
+          <button
+            type="button"
+            onClick={() => {
+              playUISound('tab-switch');
+              setDrawerOpen(true);
+            }}
+            aria-label="Open editor sections menu"
+            aria-haspopup="dialog"
+            className="flex items-center gap-1.5 min-h-[44px] px-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
+          >
+            <span aria-hidden="true" className="flex flex-col gap-[3px]">
+              <span className="block w-4 h-[2px] bg-current" />
+              <span className="block w-4 h-[2px] bg-current" />
+              <span className="block w-4 h-[2px] bg-current" />
+            </span>
+            <span className="text-ui-xs font-medium tracking-wider uppercase">Menu</span>
+          </button>
         </div>
       ) : (
         <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">

@@ -63,8 +63,9 @@ export function Inspector({ className, style }: InspectorProps) {
           `gap-4` → `gap-3` and let ParameterBank flow inline (no card
           border, no "QUICK PARAMETERS" heading) so all four sections
           (COLOR · BASE / IGNITION / RETRACTION / quick parameters)
-          read as one dense parameter strip. */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
+          read as one dense parameter strip. Mobile (`phone:`) further
+          tightens to `p-2 gap-2` for the smaller viewport (PR A1). */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 phone:p-2 flex flex-col gap-3 phone:gap-2">
         <ActionRow />
         <QuickColorChips />
         <QuickIgnitionPicker />
