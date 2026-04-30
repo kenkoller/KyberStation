@@ -48,9 +48,11 @@ export function Inspector({ className, style }: InspectorProps) {
       aria-label="Quick Controls"
       style={style}
     >
-      {/* Header strip — reads as a section title + aligns visually with
-          the STATE/ANALYSIS tabs on the opposite side of the canvas. */}
-      <div className="flex items-center px-3 py-2 border-b border-border-subtle bg-bg-deep/40 shrink-0">
+      {/* Header strip — h-8 (32px) standardized across canvas-area
+          column headers (2026-04-29): matches the BLADE PREVIEW
+          PanelHeader + RightRail tab bar so the three column tops
+          align visually across the workbench. */}
+      <div className="flex items-center px-3 h-8 border-b border-border-subtle bg-bg-deep/40 shrink-0">
         <h2 className="font-mono uppercase text-ui-xs tracking-[0.12em] text-accent">
           Quick Controls
         </h2>

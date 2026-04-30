@@ -56,9 +56,11 @@ export function RightRail({
       className={`shrink-0 flex flex-col bg-bg-secondary/40 overflow-hidden ${className}`}
       style={style}
     >
-      {/* Tab bar */}
+      {/* Tab bar — h-8 (32px) standardized across canvas-area column
+          headers (2026-04-29): matches Inspector header + BLADE
+          PREVIEW PanelHeader so the three column tops align. */}
       <div
-        className="flex items-center border-b border-border-subtle bg-bg-deep/40 shrink-0"
+        className="flex items-center h-8 border-b border-border-subtle bg-bg-deep/40 shrink-0"
         role="tablist"
         aria-label="Right rail tabs"
       >
@@ -71,7 +73,7 @@ export function RightRail({
               aria-selected={active}
               onClick={() => setActiveTab(id)}
               className={[
-                'flex-1 min-w-0 px-2 py-1.5 font-mono uppercase text-ui-xs transition-colors whitespace-nowrap',
+                'flex-1 min-w-0 px-2 h-full font-mono uppercase text-ui-xs transition-colors whitespace-nowrap',
                 'tracking-[0.1em]',
                 active
                   ? 'text-accent border-b-2 border-accent'
