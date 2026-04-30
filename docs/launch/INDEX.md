@@ -1,6 +1,8 @@
 # Launch Copy Pack
 
-Polished, copy-paste-ship drafts for the 2026-04-28 public launch.
+Polished, copy-paste-ship drafts for the 2026-04-30 public launch
+(soft launch posture — share with the community while mobile UX
+work continues).
 
 Voice: humble, specific, honest. Don't rewrite — paste and tweak the
 brackets only (`[URL]`, `[Name]`, `[specific video]`).
@@ -26,8 +28,13 @@ brackets only (`[URL]`, `[Name]`, `[specific video]`).
 - DM 3-5 trusted saber friends with the soft-launch message from `LAUNCH_ASSETS.md`
 
 **T-0 — main event (weekday morning, 10am-1pm ET)**
-1. Push `v0.15.0` tag, deploy to GitHub Pages, verify URL works
-2. Flip GitHub repo public
+
+*Note: v0.16.0 already shipped 2026-04-30, repo is already public,
+GitHub Pages is already deployed. Steps 1-2 below are kept for
+reference but already complete.*
+
+1. ~~Push `v0.16.0` tag, deploy to GitHub Pages, verify URL works~~ ✓ done
+2. ~~Flip GitHub repo public~~ ✓ done
 3. Post pinned discussion (`GITHUB_ANNOUNCEMENT.md`)
 4. Post to **r/lightsabers** primary variant (`REDDIT_POSTS.md` Variant A)
 5. After 30 min, if green: cross-post to r/Proffieboard

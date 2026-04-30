@@ -50,10 +50,10 @@ mobile (PWA installable).
 **What it does:**
 
 - Visual blade simulator — design a style and watch it animate in real time
-- 29 blade styles (Stable, Unstable, Fire, Plasma, Aurora, Crystal Shatter, and more)
-- 21 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
+- 33 blade styles (Stable, Unstable, Fire, Plasma, Aurora, Crystal Shatter, and more)
+- 22 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
 - 19 ignition + 13 retraction animations
-- ~305 character presets across canon, Legends, and pop-culture (LOTR, Marvel, mythology, etc.)
+- 336 character presets across canon, Legends, and pop-culture (LOTR, Marvel, mythology, etc.)
 - ProffieOS C++ code generator — output compiles in Arduino IDE
 - Sound font library with SmoothSwing pair simulation
 - Saber profile manager + SD card composer (export the whole card as a ZIP)

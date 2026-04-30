@@ -17,7 +17,7 @@ audience + length limit + posting culture.
 Just shipped KyberStation — a free browser-based visual editor for
 designing custom lightsaber blade styles + exporting Proffie configs.
 
-29 styles, 21 effects, 305+ presets, all in your browser. MIT.
+33 styles, 22 effects, 336 presets, all in your browser. MIT.
 First public project. Feedback welcome.
 
 https://kenkoller.github.io/KyberStation/
@@ -271,7 +271,7 @@ one workstation)
 | Time (ET) | Action |
 |---|---|
 | 7:30 AM | Verify deployed URL, run a quick smoke test |
-| 8:00 AM | Push `v0.15.0` tag, flip repo public |
+| 8:00 AM | ~~Push `v0.16.0` tag, flip repo public~~ — already done 2026-04-30 |
 | 8:15 AM | Pin `GITHUB_ANNOUNCEMENT.md` body as a Discussion |
 | 8:30 AM | Apply README edits per `GITHUB_ANNOUNCEMENT.md` § "README updates needed" |
 | 9:30 AM | Soft-DM 3-5 trusted saber friends (you may have done this T-2 already) |
