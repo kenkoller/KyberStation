@@ -543,6 +543,78 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-04-30 night, v0.16.0 LAUNCH + post-launch sprint)
+
+KyberStation v1.0 launched tonight. Tag `v0.16.0` cut at commit `9e3d747` on main, pushed to origin. Live site: https://kenkoller.github.io/KyberStation/. Repo flipped public, GitHub Pages enabled, branch protection active (ruleset "Protect Main").
+
+**~30 PRs landed this session** across launch-prep, bug fixes, brought-back features, late-night strategic asks, post-launch parallel batch, and overnight Phase 4 mobile work. Tonight's session was a marathon — ~24 hours from launch-go decision to current state. The full session archive lives at `docs/SESSION_2026-04-30_NIGHT_v0.16.0_LAUNCH.md` (PR #178).
+
+### Key strategic decisions locked tonight
+
+1. **Launch posture: design tool first.** Generate config with KyberStation, compile with `arduino-cli`, flash with `dfu-util`. Web-based flashing remains experimental behind a 3-checkbox EXPERIMENTAL disclaimer.
+2. **Mobile UX overhaul phased per Ken's prompt.** Phase 1 audit (PR #172) → Phase 2 design (PR #182) → Phase 3 implementation plan (PR #187) → Phase 4 PR-by-PR coding (in flight).
+3. **Bluetooth wireless updates → defer to v0.17 minimum.** Research doc at `docs/research/BLUETOOTH_FEASIBILITY.md` (PR #166). ProffieOS author Fredrik already shipped a Web Bluetooth POC at `profezzorn/lightsaber-web-bluetooth` — port + integrate is the v0.17 path. iOS exclusion is permanent (Apple WebKit policy).
+4. **Next.js 14 → 15 upgrade → defer to v0.17 stabilization slot.** Research doc at `docs/research/NEXTJS_15_UPGRADE_PLAN.md` (PR #189). 3-5 hour mechanical upgrade, NOT launch-blocking. Forced React 18 → 19 jump is the main risk.
+5. **`useAudioEngine` consolidated to module-scope singleton** (PR #176). Chrome's per-origin AudioContext cap (~6) was hit; now bounded to 1.
+6. **`lib/blade/*` module extraction** (PR #177). BladeCanvas's bloom + tonemap + rim-glow + motion-blur pipeline extracted to 7 shared modules. Pixel-identical refactor (renderer golden-hash unchanged across all 9 cases). MiniSaber + SaberCard can now adopt the shared pipeline.
+
+### What shipped (chronological highlights)
+
+| Block | PRs | Notes |
+|---|---|---|
+| Launch-prep | #153 CHANGELOG, #154 basePath/.nojekyll, #155 CSP `unsafe-inline` | GitHub Pages deploy plumbing |
+| Tonight's bug-fix wave | #156-#162 | Wizard label, blade thumbnails, Lane A cleanup, hardware caption audit, UX polish, visual bugs, Save/Queue glyphs |
+| Brought-back features | #163-#165 | Battery selector, gallery grid view, profile rename + workbench notes |
+| Late-night strategic | #166 Bluetooth research, #167 landing one-page, #168 CHANGELOG/README refresh, #169 mobile shell overhaul (Item H), #170 27 kinetic presets |
+| Post-launch sprint | #171 stub deletion (1030 LOC), #172 mobile audit Phase 1, #173 doc archive (7 docs), #174 OG hero 1200×630, #175 priority-5 effects (Sith Flicker + Blade Charge + Tempo Lock + Unstable Kylo), #176 audio singleton, #177 lib/blade extraction, #178 session archive |
+| README + GIFs | #179 marketing pages, #180 mobile gallery link fix, #181 BladeCanvas3D orphan deletion, #182 mobile design Phase 2, #183 README post-launch refresh, #184 GIF Sprint 3, #185 GIF bloom fix, #186 security audit + CodeQL, #187 mobile Phase 3 plan |
+| Overnight Phase 4 | #188 crystal favicon, #189 Next.js 15 research, #190 Phase 4 PR #1 phone-sm breakpoint |
+| In flight at wrap | Phase 4 PR #2 Sheet primitive, PR #3 ChipStrip, PR #4 in-editor bottom bar, README visual refresh |
+
+### Process learnings worth carrying forward
+
+1. **Worktree path discipline still bites.** 3 agents leaked into the main repo path tonight (effects priority-5, mobile overhaul, Phase 4 PR #1). The salvage pattern is now well-rehearsed: parent session inspects working tree, runs typecheck/tests, commits + pushes + opens PR. Cost is ~10 min per salvage. Don't dispatch more than 4 concurrent agents — concurrent leak risk compounds.
+2. **Phased agent prompts work for human-gated tasks.** Ken's mobile UX prompt specified "Stop. Wait for review" between phases. Modified the dispatch to bound the agent at one phase per dispatch; Ken reviews on his own time. Phases 1, 2, 3 all shipped this way.
+3. **5-PR merge orderings matter.** Tonight's merge order (docs-only first → isolated additive → pure deletions → biggest-footprint last) produced zero conflicts across 12+ batched merges.
+4. **Flaky test recognition.** `hardwarePanel.test.tsx` + `webusb/DfuSeFlasher.test.ts` timeout under parallel-CPU pressure — pass cleanly when re-run in isolation. Not bugs.
+5. **Ken's review gating discipline pays off.** The mobile UX 4-phase audit → design → plan → code structure caught the mobile shell architectural issue (no-phone-fallback in MainContentABLayout) BEFORE any code changed. Phase 4 PRs are now landing one-at-a-time with the design as a stable contract.
+
+### Pre-launch action Ken completed tonight
+
+- ✅ Enabled GitHub Pages
+- ✅ Flipped repo to public
+- ✅ Enabled branch protection ruleset on `main` ("Protect Main", enforcement: active)
+- ✅ Set up 2FA on GitHub account
+- ⏸ One older legacy `main-protection` ruleset (2026-04-17) still exists — Ken to review/clean up if redundant
+
+### Test count snapshot at session wrap
+
+- Total: ~5,000 tests passing across 10 packages
+- Web: 1,952+ tests (after #176 singleton + #182 Phase 2 + Phase 4 #1 +2)
+- Engine: 876+ tests (after priority-5 effects +9 smoke tests)
+- Codegen / boards / sound / presets: unchanged from pre-session
+- Typecheck clean across all 10 workspace packages
+
+### What's next (post-overnight, awaiting Ken's morning review)
+
+1. **Mobile UX Phase 4 PRs #2-#4** — Sheet primitive, ChipStrip primitive, in-editor bottom bar (in flight at session wrap)
+2. **Mobile UX Phase 4 PRs #5-#11** — per-section pattern application + polish (sequential after #2-#4 land)
+3. **README visual refresh** — embed marketing GIFs + OG hero throughout, replace static landing-hero (in flight)
+4. **Manual screenshots** Ken needs to capture for `LAUNCH_ASSETS.md` Reddit post (8 of the listed 12)
+5. **Reddit / Twitter launch announcement** per `docs/LAUNCH_ASSETS.md` (Ken's own)
+
+### Open questions for Ken
+
+(From `docs/mobile-implementation-plan.md` §6 — needs answers before Phase 4 PRs #5+ start)
+
+1. Pattern A chip width on phone-sm (≤479px): 96px or 80px?
+2. Action bar 5-chip layout at phone-sm: icon-only or icon+letter?
+3. StatusBar phone shape: collapsed single-line, or horizontally scrollable preserving density?
+4. Pinch-zoom into BladeCanvas: in-scope or out?
+5. Phase 4 PR cadence: review one-at-a-time, or batch 2-3 per review session?
+
+---
+
 ## Current State (2026-04-30 PM, launch posture lock + FLASH_GUIDE)
 
 Continuation of `docs/SESSION_2026-04-30_LAUNCH_DAY.md`. Pure launch-prep session: locked the v1.0 launch posture, wrote the canonical user flash guide, strengthened the WebUSB disclaimer. **2 PRs merged this session.**
