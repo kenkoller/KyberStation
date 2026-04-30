@@ -1,5 +1,9 @@
 const REPO_URL = 'https://github.com/kenkoller/KyberStation';
 const ISSUES_URL = 'https://github.com/kenkoller/KyberStation/issues';
+const FLASH_GUIDE_URL =
+  'https://github.com/kenkoller/KyberStation/blob/main/docs/FLASH_GUIDE.md';
+const LICENSE_URL =
+  'https://github.com/kenkoller/KyberStation/blob/main/LICENSE';
 
 export function LandingFooter() {
   return (
@@ -29,6 +33,17 @@ export function LandingFooter() {
             ·
           </span>
           <a
+            href={FLASH_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-text-secondary transition-colors"
+          >
+            Flash Guide
+          </a>
+          <span aria-hidden="true" className="text-text-muted/50">
+            ·
+          </span>
+          <a
             href="/editor"
             className="hover:text-text-secondary transition-colors"
           >
@@ -42,6 +57,17 @@ export function LandingFooter() {
             className="hover:text-text-secondary transition-colors"
           >
             Docs
+          </a>
+          <span aria-hidden="true" className="text-text-muted/50">
+            ·
+          </span>
+          <a
+            href={LICENSE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-text-secondary transition-colors"
+          >
+            License
           </a>
         </div>
 
