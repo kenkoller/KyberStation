@@ -151,6 +151,34 @@
   --mobile-action-bar-h: 40px;     /* phone action-bar height (per design §3) */
   --mobile-bottom-bar-h: 44px;     /* in-editor bottom-bar height */
   --mobile-safe-pb: env(safe-area-inset-bottom);  /* iOS home-indicator clearance */
+
+  /* ─── Mobile v1 shell sizing — Phase 4.2 (2026-04-30) ───
+     From "Claude Design Mobile handoff/HANDOFF.md" §"Tokens we'd want
+     added to globals". Drives the StickyMiniShell layout: header +
+     mini-blade + pixel-strip + action-bar + section-tabs sticky top,
+     scrollable status-bar pinned bottom. --shell-h is the total
+     fixed-chrome height; section content sizes as
+     `calc(100vh - var(--shell-h) - var(--blade-rod-h) - var(--mobile-pixel-strip-h))`. */
+  --header-h: 44px;
+  --actionbar-h: 56px;
+  --statusbar-h: 36px;
+  --section-tabs-h: 32px;
+  --mobile-pixel-strip-h: 36px;
+  --blade-rod-h: 64px;
+  --blade-rod-h-inspect: 200px;
+  --shell-h: calc(var(--header-h) + var(--actionbar-h) + var(--statusbar-h) + var(--section-tabs-h));
+  --touch-target: 44px;
+  /* Sheet motion tokens (consumed by Sheet primitive in Phase 4.4) */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-sheet: 260ms;
+  --sheet-radius: 14px;
+  --sheet-shadow: 0 -8px 24px -8px rgba(0,0,0,0.5);
+  /* Blade glow halos (used by mini-blade + Inspect-mode HUD) */
+  --blade-glow-cool: 0 0 24px rgba(74, 158, 255, 0.6);
+  --blade-glow-warm: 0 0 24px rgba(255, 107, 53, 0.6);
+  /* Chip dimensions (Phase 4.3 ChipStrip — handoff Q1 verdict) */
+  --chip-w: 96px;
+  --chip-h: 64px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

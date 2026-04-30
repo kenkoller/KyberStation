@@ -56,10 +56,15 @@ interface SegmentProps {
   valueClassName?: string;
   /** Optional leading glyph/signal rendered before the label. */
   leading?: React.ReactNode;
-  /** Hide on narrower viewports (<1440px). */
+  /** Hide on narrower viewports (<1440px) — only respected when StatusBar
+   *  mode is 'default'. In 'scroll' mode (mobile) every segment renders
+   *  since the strip is horizontally scrollable. */
   wideOnly?: boolean;
   /** Extra classes for the wrapper (e.g. to align a `StatusSignal`). */
   className?: string;
+  /** Active StatusBar mode — propagated by the parent so wideOnly segments
+   *  stay visible on mobile-scroll. */
+  mode?: StatusBarMode;
 }
 
 function Segment({
@@ -69,12 +74,16 @@ function Segment({
   leading,
   wideOnly = false,
   className = '',
+  mode = 'default',
 }: SegmentProps) {
+  // wideOnly only hides on default mode. In scroll mode the strip is
+  // horizontally scrollable so every segment is visible.
+  const hideOnNarrow = wideOnly && mode === 'default';
   return (
     <span
       className={[
         'inline-flex items-center gap-1.5 text-ui-xs leading-none',
-        wideOnly ? 'hidden wide:inline-flex' : '',
+        hideOnNarrow ? 'hidden wide:inline-flex' : '',
         className,
       ]
         .filter(Boolean)
@@ -90,19 +99,35 @@ function Segment({
   );
 }
 
-function SegmentDivider({ wideOnly = false }: { wideOnly?: boolean }) {
+function SegmentDivider({
+  wideOnly = false,
+  mode = 'default',
+}: {
+  wideOnly?: boolean;
+  mode?: StatusBarMode;
+}) {
+  const hideOnNarrow = wideOnly && mode === 'default';
   return (
     <span
       aria-hidden="true"
       className={[
         'w-px h-3 bg-border-subtle shrink-0',
-        wideOnly ? 'hidden wide:inline-block' : '',
+        hideOnNarrow ? 'hidden wide:inline-block' : '',
       ]
         .filter(Boolean)
         .join(' ')}
     />
   );
 }
+
+/**
+ * StatusBar render mode.
+ *   - `default` — desktop / tablet workbench: fixed-width strip with
+ *     wideOnly segments hidden on narrower viewports.
+ *   - `scroll`  — mobile: horizontally scrollable strip with every
+ *     segment present; right-edge mask hints at scroll affordance.
+ */
+export type StatusBarMode = 'default' | 'scroll';
 
 // ─── Connection-display helper ──────────────────────────────────────────────
 //
@@ -206,7 +231,12 @@ export { getConnectionDisplay as getStatusBarConnectionDisplay };
  * is held inside FlashPanel's local state machine; global wiring is
  * a follow-up wave.
  */
-export function StatusBar() {
+interface StatusBarProps {
+  /** Render mode — see StatusBarMode JSDoc above. */
+  mode?: StatusBarMode;
+}
+
+export function StatusBar({ mode = 'default' }: StatusBarProps = {}) {
   const config = useBladeStore((s) => s.config);
   const brightness = useUIStore((s) => s.brightness);
   const activeTab = useUIStore((s) => s.activeTab);
@@ -361,12 +391,29 @@ export function StatusBar() {
       //   overflow-hidden   — never let content push the bar vertically
       //   whitespace-nowrap — keep segments on one line
       //   font-mono         — JetBrains Mono throughout per §4 StatusBar
-      className="shrink-0 px-3 py-1 border-b border-border-subtle bg-bg-secondary text-text-muted flex items-center gap-2 overflow-hidden whitespace-nowrap font-mono select-none"
-      style={{ height: '1.5rem' /* 24px — matches reference grid-template-rows 22–24px */ }}
+      className={[
+        'shrink-0 border-b border-border-subtle bg-bg-secondary text-text-muted flex items-center gap-2 whitespace-nowrap font-mono select-none',
+        mode === 'scroll'
+          ? 'mobile-statusbar-scroll px-3 py-1 overflow-x-auto overflow-y-hidden'
+          : 'px-3 py-1 overflow-hidden',
+      ].join(' ')}
+      style={
+        mode === 'scroll'
+          ? {
+              height: 'var(--statusbar-h, 36px)',
+              // Right-edge fade so users see the strip is scrollable.
+              WebkitMaskImage:
+                'linear-gradient(to right, black calc(100% - 24px), transparent)',
+              maskImage:
+                'linear-gradient(to right, black calc(100% - 24px), transparent)',
+            }
+          : { height: '1.5rem' /* 24px — matches reference grid-template-rows 22–24px */ }
+      }
     >
       {/* 1 — Power Draw ─────────────────────────────────────────────────────
           KEEP: unique-to-our-app telemetry. PFD-styled as k/v pair. */}
       <Segment
+        mode={mode}
         label="PWR"
         valueClassName={`${powerColorClass} tabular-nums`}
         leading={
@@ -387,21 +434,22 @@ export function StatusBar() {
           <span className="text-text-muted">{formatAmps(effectiveLimitMA)}</span>
         </span>
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 2 — Profile ────────────────────────────────────────────────────── */}
-      <Segment label="Profile">{profileName}</Segment>
-      <SegmentDivider />
+      <Segment mode={mode} label="Profile">{profileName}</Segment>
+      <SegmentDivider mode={mode} />
 
       {/* 2.5 — Board (Modulation Routing v1.0 Preview) ──────────────────── */}
       {/* Inline BoardPicker — shows the active board + opens the modal    */}
       {/* selector. Gates every capability-sensitive feature downstream    */}
       {/* (ROUTING pill visibility, Flash button enablement, etc.).         */}
       <BoardSegment />
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 3 — Conn (WebUSB) — TODO placeholder until global store exists */}
       <Segment
+        mode={mode}
         label="Conn"
         valueClassName={`${connColorClass} tabular-nums`}
         leading={
@@ -415,22 +463,23 @@ export function StatusBar() {
       >
         {connText}
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 4 — Page (active tab) — amber accent per reference */}
-      <Segment label="Page" valueClassName="tabular-nums">
+      <Segment mode={mode} label="Page" valueClassName="tabular-nums">
         <span style={{ color: 'rgb(var(--status-warn))' }}>{activeTabDisplay}</span>
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 5 — Layers (LED count) */}
-      <Segment label="LEDs" valueClassName="tabular-nums text-text-secondary">
+      <Segment mode={mode} label="LEDs" valueClassName="tabular-nums text-text-secondary">
         {ledCount}
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 6 — Modified (dirty flag) */}
       <Segment
+        mode={mode}
         label="Mod"
         valueClassName={
           isDirty
@@ -448,10 +497,11 @@ export function StatusBar() {
       >
         {isDirty ? '● UNSAVED' : '✓ SAVED'}
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 7 — Storage (magenta / amber / red escalation) */}
       <Segment
+        mode={mode}
         label="Stor"
         valueClassName="tabular-nums"
         leading={
@@ -465,16 +515,17 @@ export function StatusBar() {
       >
         <span style={storageColorStyle}>{storagePct}%</span>
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 8 — Theme */}
-      <Segment label="Theme" valueClassName="tabular-nums text-text-secondary">
+      <Segment mode={mode} label="Theme" valueClassName="tabular-nums text-text-secondary">
         {themeDisplay}
       </Segment>
-      <SegmentDivider />
+      <SegmentDivider mode={mode} />
 
       {/* 9 — Preset (index + name) — cyan-ish info tint when present */}
       <Segment
+        mode={mode}
         label="Preset"
         valueClassName={
           activePresetInfo
@@ -487,12 +538,15 @@ export function StatusBar() {
           : '—'}
       </Segment>
 
-      {/* ── Right-side spacer pushing UTC + Build to the right edge ────── */}
-      <span className="flex-1" />
+      {/* ── Right-side spacer pushing UTC + Build to the right edge ──────
+          Skipped in scroll mode — flex-1 would push UTC/Build off the
+          visible viewport before the user can scroll to them. */}
+      {mode === 'default' && <span className="flex-1" />}
 
-      {/* 10 — UTC clock (wide-only; hidden on tablet/narrow desktop) */}
-      <SegmentDivider wideOnly />
+      {/* 10 — UTC clock (wide-only on default; always-on in scroll mode) */}
+      <SegmentDivider wideOnly mode={mode} />
       <Segment
+        mode={mode}
         label="UTC"
         valueClassName="tabular-nums text-text-secondary"
         wideOnly
@@ -505,8 +559,8 @@ export function StatusBar() {
               header is deliberately left untouched — that removal is
               W4 (header trim). Duplicate display is intentional until
               then.) */}
-      <SegmentDivider />
-      <Segment label="Build" valueClassName="tabular-nums text-text-secondary">
+      <SegmentDivider mode={mode} />
+      <Segment mode={mode} label="Build" valueClassName="tabular-nums text-text-secondary">
         v{LATEST_VERSION}
       </Segment>
     </div>
