@@ -24,6 +24,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "b",
+      "canvas",
       "d",
       "e",
       "esbuild",
