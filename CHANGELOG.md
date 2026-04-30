@@ -7,21 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.16.0] — 2026-05-01
+## [0.16.0] — 2026-04-30
 
-**KyberStation v1.0 public launch.** Ships as a visual blade design tool first. Generate your ProffieOS config, compile with `arduino-cli`, flash with `dfu-util`. Web-based flashing is experimental. 30 PRs landed since v0.15.0 across 4 waves: critical bug fixes, v1 launch features, overnight refinement, and launch-posture lock.
+**KyberStation v1.0 public launch.** First publicly released version. Ships as a visual blade design tool first: generate your ProffieOS config in the browser, compile with `arduino-cli`, flash with `dfu-util`. Web-based flashing is shipped as experimental behind a 3-checkbox disclaimer with mandatory backup acknowledgement. 43 PRs landed since v0.15.0 across 5 waves: critical bug fixes, v1 launch features, overnight refinement, launch-posture lock, and pre-launch UX polish + hardware-fidelity tightening.
 
-**Test count at tag:** 4,908 workspace-wide (web 1,875 / engine 796 / codegen 1,859 / boards 260 / sound 62 / presets 47 + 9 renderer golden-hash). Typecheck clean across all 10 packages.
+**Test count at tag:** ~5,000 workspace-wide (web ~1,950 / engine 796 / codegen 1,859 / boards 260 / sound 62 / presets 47 + 9 renderer golden-hash). Typecheck clean across all 10 packages.
 
 ### Added
 
 - **Save Preset v1** (PR #134) — `SAVE` button in action bar prompts for a name, snapshots config to IndexedDB-backed `userPresetStore`. "My Presets" section in gallery sidebar with click-to-load, delete, color swatches.
 - **Add to Queue v1** (PR #136) — `Queue` button in action bar. One-click adds current config to the active saber profile's card queue with auto-generated name + toast feedback. Auto-creates "My Saber" profile if none exists.
+- **Battery selector with manufacturer-spec warnings** (PR #163) — battery catalog with manufacturer-rated discharge specs, dropdown picker in HardwarePanel, automatic safety warning banner when LED count exceeds the selected cell's continuous-discharge headroom. Covers common 18650 + 21700 cells used in Proffie sabers.
+- **Gallery grid view as default + detail modal** (PR #164) — `galleryView` field on uiStore (default `'grid'`), grid view component + view toggle in GalleryPage header, click-to-open detail modal. +12 contract tests.
+- **Profile rename + notes/description** (PR #165) — inline rename UI in workbench, optional `description` field per saber profile, notes panel for private workbench-only commentary, click-to-rename in card preset queue. New `renameProfile` + `setProfileMeta` store actions.
+- **Unique blade-style thumbnails** (PR #157) — gradient + 9 duplicate-thumbnail styles each got a unique hand-authored MiniGalleryPicker trigger. Closes the visual collision where multiple styles shared one thumbnail.
+- **Vendor-reality blade length captions + LED divergence warning** (PR #159) — Hardware panel callouts when configured LED count diverges from typical vendor practice for a given inch length. Captions match what saber vendors actually ship.
+- **Lane A UX cleanup** (PR #158) — All States row click-to-set state, gallery nav prune, sidebar group rename for clarity.
+- **UX polish batch** (PR #160) — density toggle threading, header standardization deltas, BETA badges on experimental surfaces, Crystal panel hidden by default behind opt-in setting (advanced/experimental surface; surfaceable from Settings).
+- **Batch preview MiniSaber + Save/Queue button polish** (PR #162) — saver/queue action-bar buttons get crisper visual states + the batch-preview thumbnail uses MiniSaber so saved presets render with engine accuracy in the gallery sidebar.
+- **CommandPalette audit — 17 new commands** (PR #141) — NAVIGATE +9 (every SectionId reachable from ⌘K), EDIT +3 (Save Preset, Add to Queue, Surprise Me), TOGGLE +3 (Pause, Reduce Bloom, Reduce Motion with dynamic title). +18 tests.
 - **Audio waveform analysis layer** (PR #140) — new `audio-waveform` layer in AnalysisRail. `audioAnalyserStore` with first-publisher-wins pattern. AnalyserNode tap after `masterGain` so mute silences both audio and waveform. Default off, opt-in. +26 tests.
-- **17 new CommandPalette commands** (PR #141) — NAVIGATE +9 (every SectionId reachable from ⌘K), EDIT +3 (Save Preset, Add to Queue, Surprise Me), TOGGLE +3 (Pause, Reduce Bloom, Reduce Motion with dynamic title). +18 tests.
 - **26 compact 24×24 SVG thumbnails** (PR #125) for crisp MiniGalleryPicker triggers, with `compactThumbnail` infrastructure (PR #117).
 - **Modulation sampler progress fields** (PR #123) — `preonProgress` / `ignitionProgress` / `retractionProgress` added to `StyleContext`. Closes v1.1 sampler TODOs.
-- **FLASH_GUIDE.md** (PR #145) — canonical end-user flash guide (~290 lines, 13 sections). Covers `dfu-util` install, ProffieOS setup, KyberStation config export, `arduino-cli` compile, DFU mode entry, mandatory firmware backup, vendor-customized board warnings, recovery, troubleshooting, FAQ.
+- **FLASH_GUIDE.md** (PR #145) — canonical end-user flash guide (~290 lines, 13 sections). Covers `dfu-util` install, ProffieOS setup, KyberStation config export, `arduino-cli` compile, DFU mode entry, mandatory firmware backup, vendor-customized board warnings (89sabers, KR Sabers, Saberbay, Vader's Vault), recovery, troubleshooting, FAQ.
 - **Renderer-level golden-hash harness** (PR #147) — 9 test cases hashing `drawWorkbenchBlade` output via FNV-1a. Complements engine-level golden-hash (PR #112). `canvas@^3.0.0` devDependency for Node 24+.
 - **Modern Proffie sound categories** (PR #122) — recognize 12 additional sound event categories in the font parser. +19 sound tests.
 - **Twist ignition user guide** (PR #139) — documents all 18 ignition styles + twist modulator behavior.
@@ -31,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Retraction animation progress** (PR #132) — `FadeoutRetraction` + `ImplodeRetraction` had inverted progress (double-inversion with engine's 1→0 convention, making retractions look like ignitions). +43 retraction tests covering 9 types.
 - **BladeCanvas alignment drift** (PR #133) — replaced inline piecewise ternary with shared `inferBladeInches()`. Pointed blade tip fixed by removing `tipExtension`. Emitter glow when OFF gated on `extendProgress > 0.05`. +379 alignment test cases.
+- **Visual bug batch** (PR #161) — RadialGauge arc geometry corrected; modulator plate grid no longer reflows on hover; gallery filter labels truncate cleanly at narrow widths.
+- **Wizard button label visibility at desktop** (PR #156) — Wizard label was being hidden by the responsive breakpoint cascade at certain desktop widths; surfaces correctly now.
 - **Header button standardization** (PR #131) — extracted `<HeaderButton>` primitive, normalized 5 buttons + ShareButton + FPSCounter + UndoRedo to h-7 / rounded-interactive / focus-visible ring.
 - **Pause suspends audio** (PR #130) — `useAudioEngine` watches `isPaused` from uiStore → `ctx.suspend()` / `ctx.resume()`. Independent of mute state.
 - **Light-theme card export** (PR #143) — replaced ad-hoc `lightBackdrop` boolean with `bladeComposite: GlobalCompositeOperation` field on `CardTheme`. LIGHT_THEME = `'source-over'`, dark themes = `'lighter'`. +9 drift-sentinel tests.
@@ -41,8 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **FlashPanel launch posture** (PR #145) — EXPERIMENTAL badge in header. Disclaimer refactored from single boolean to 3-key object (`responsibility` / `backup` / `recovery`). All three checkboxes must be checked before Proceed. Vendor-customized board warning section.
+- **FlashPanel launch posture** (PR #145) — EXPERIMENTAL badge in header. Disclaimer refactored from single boolean to 3-key object (`responsibility` / `backup` / `recovery`). All three checkboxes must be checked before Proceed. Vendor-customized board warning section inside the disclaimer.
 - **README beta posture** (PR #145) — replaced misleading "validated WebUSB" hardware table with honest "dfu-util first, WebUSB experimental" framing. Credits section rewritten per LAUNCH_PLAN humble-tone guidance.
+- **Crystal panel default visibility** (PR #160) — Crystal/Share panel hidden by default; surfaceable via Settings opt-in. Treats the Three.js renderer as a power-user feature for v1.0.
+- **Deploy plumbing** — GitHub Pages basePath + canonical URL + nojekyll wired correctly (PR #154); production CSP allows the inline scripts Next.js requires (PR #155); v0.16.0 release-notes scaffolding (PR #153).
 
 ---
 
