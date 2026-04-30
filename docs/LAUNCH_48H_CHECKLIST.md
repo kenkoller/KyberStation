@@ -204,15 +204,15 @@ GitHub Pages handles arbitrary traffic for free. Vercel/Netlify free tier should
 | Codegen + compile pipeline validated | ✅ done 2026-04-29 | 207 KB binaries built cleanly multiple times from KyberStation-generated configs |
 | dfu-util flash protocol validated | ✅ done 2026-04-29 | Bytes write, erase, verify all succeed |
 | Hardware flash boot-to-saber validated | ⏭️ blocked | Test saber stuck post-flash. Recovery via ST-Link (arriving 2026-04-30) OR 89sabers email response. |
-| FLASH_GUIDE.md | ⏭️ pending | Use validated dfu-util workflow from `reference_dfu_util_flash_workflow` memory + session archive doc |
-| README updated | ⏭️ pending | |
-| FlashPanel disclaimer | ⏭️ pending | Add note: WebUSB FlashPanel is experimental, dfu-util is the validated path |
-| PR #124 merged | ⏭️ ready to merge | Already done per body, just needs CI green |
-| PR #122 merged | ✅ done | Sound categories expansion landed during 2026-04-29 session |
-| PR #118 merged | ⏭️ pending | |
-| Smoke test (clean machine) | ⏭️ pending | |
-| Launch announcement drafted | ⏭️ pending | |
-| Pushed v0.16.0 release | ⏭️ pending | |
+| FLASH_GUIDE.md | ✅ done 2026-04-30 PM | PR [#145](https://github.com/kenkoller/KyberStation/pull/145). 13 sections + TL;DR. Mandatory backup workflow front-and-center per safety addition above. |
+| README updated | ✅ done 2026-04-30 PM | PR [#145](https://github.com/kenkoller/KyberStation/pull/145). Beta posture callout + dfu-util-first framing + humble credits rewrite. |
+| FlashPanel disclaimer | ✅ done 2026-04-30 PM | PR [#145](https://github.com/kenkoller/KyberStation/pull/145). EXPERIMENTAL badge + 3-checkbox gate (responsibility/backup/recovery) + vendor-customized board warning + FLASH_GUIDE.md link. |
+| PR #124 merged | ✅ done 2026-04-30 morning | Audio mute lifted to shared store. |
+| PR #122 merged | ✅ done | Sound categories expansion landed during 2026-04-29 session. |
+| PR #118 merged | ✅ done 2026-04-30 morning | Brave warning copy. |
+| Smoke test (clean machine) | ⏭️ pending | Next-session task. See `NEXT_SESSION_2026-05-01_LAUNCH_DECISION.md` for the walkthrough checklist. |
+| Launch announcement drafted | ⏭️ pending | Reuses `docs/LAUNCH_ASSETS.md`. Task for launch-go session. |
+| Pushed v0.16.0 release | ⏭️ pending | Tag cut is the launch trigger. |
 | **Hardware-side outstanding** | | |
 | Saber recovery from fault loop | ⏭️ blocked | Path A: 89sabers email response. Path B: ST-Link arrives + STM32CubeProgrammer Option Byte reset. |
-| KyberStation WebUSB FlashPanel bug | ⏭️ post-launch | Reports success but doesn't transition manifest. File as post-launch issue. |
+| KyberStation WebUSB FlashPanel bug | ⏭️ post-launch | Reports success but doesn't transition manifest. Shipped behind EXPERIMENTAL gate per PR #145; root-cause fix in v0.16+. |
