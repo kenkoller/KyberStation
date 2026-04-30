@@ -407,7 +407,7 @@ export function SaberWizard({ open, onClose }: SaberWizardProps) {
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
           <div>
             <h2 id="saber-wizard-title" className="text-ui-base font-semibold text-text-primary">
-              Saber Wizard
+              The Gathering
             </h2>
             <p id="saber-wizard-step-label" className="text-ui-xs text-text-muted">
               Step {step} of 4 ·{' '}

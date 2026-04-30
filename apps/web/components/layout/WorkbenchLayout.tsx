@@ -391,6 +391,22 @@ export function WorkbenchLayout() {
   const [showWizard, setShowWizard] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const openShortcutsHelp = useCallback(() => setShowShortcutsHelp(true), []);
+
+  // Auto-open the Gathering wizard when entering /editor with `?wizard=1`.
+  // Used by the landing page's "Begin the Gathering" CTA — gives users a
+  // one-click path from /  → guided onboarding without an extra click
+  // inside the editor. Reads the search param exactly once on mount;
+  // subsequent param changes don't re-trigger (avoids surprise re-opens
+  // when the user navigates around the editor).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('wizard') === '1') {
+      setShowWizard(true);
+    }
+    // Intentionally empty deps — fire once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // ── AnalysisRail expand slot (post-OV11 density pass) ──
   // State lives in `uiStore.expandedAnalysisLayerId`. The rail's ↗
   // button routes through the setter; CanvasLayout's ExpandedAnalysisSlot
@@ -827,7 +843,7 @@ export function WorkbenchLayout() {
       {
         id: 'wizard:open',
         group: 'WIZARD',
-        title: 'Open Saber Wizard',
+        title: 'Begin The Gathering',
         subtitle: '3-step guided preset — archetype / colour / vibe',
         icon: '✦',
         run: () => setShowWizard(true),
@@ -984,8 +1000,8 @@ export function WorkbenchLayout() {
           <HeaderButton
             onClick={() => setShowWizard(true)}
             variant="accent"
-            title="Launch the guided Saber Wizard — 4 steps to a complete preset"
-            aria-label="Open Saber Wizard"
+            title="Begin The Gathering — guided 4-step ritual to find your saber"
+            aria-label="Begin The Gathering"
             style={{
               // Subtle crystal-colour glow on hover — the var is set by
               // useCrystalAccent to match the current blade base colour.
@@ -993,7 +1009,7 @@ export function WorkbenchLayout() {
             }}
           >
             <span aria-hidden="true">✦</span>
-            <span className="hidden tablet:inline desktop:inline">Wizard</span>
+            <span className="hidden tablet:inline desktop:inline">The Gathering</span>
           </HeaderButton>
 
           <HeaderButton

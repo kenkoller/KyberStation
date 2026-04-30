@@ -38,7 +38,7 @@ export function NewSaberCard({ onClick, cardKey }: NewSaberCardProps) {
     <button
       type="button"
       onClick={onClick}
-      aria-label="Open Saber Wizard to build a new saber step-by-step"
+      aria-label="Begin The Gathering — guided saber design ritual"
       data-card-key={cardKey ?? 'new-saber'}
       className="relative shrink-0 flex flex-col gap-3 rounded-lg border-2 bg-bg-card/60 backdrop-blur-sm overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-accent text-left cursor-pointer"
       style={{

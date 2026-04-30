@@ -48,13 +48,13 @@ export function LandingHero() {
           </Link>
           <Link
             href="/editor?wizard=1"
-            aria-label="Launch the Saber Wizard onboarding"
+            aria-label="Begin The Gathering — guided saber design ritual"
             className="btn-hum inline-flex items-center justify-center w-full lg:w-auto lg:min-w-[220px] px-8 py-3.5 rounded-[2px] border border-border-light text-text-secondary hover:text-text-primary font-cinematic text-sm tracking-[0.22em] uppercase transition-colors hover:bg-bg-surface"
           >
-            Launch Wizard
+            The Gathering
           </Link>
           <Link
-            href="/editor?tab=gallery"
+            href="/gallery"
             aria-label="Browse the preset gallery"
             className="inline-flex items-center justify-center w-full lg:w-auto lg:min-w-[220px] px-8 py-3.5 rounded-[2px] border border-border-subtle text-text-secondary hover:text-text-primary font-cinematic text-sm tracking-[0.22em] uppercase transition-colors hover:bg-bg-surface"
           >
