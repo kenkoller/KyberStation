@@ -543,6 +543,55 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-01 morning, mobile sprint pivot to design handoff)
+
+Continuation of the 2026-04-30 night session. **Six PRs merged today** (#199, #200, #201, #202, #203, #205 with #204 auto-closed mid-stack and recovered as #205). The day's most significant move was a **mid-sprint pivot away from the original `docs/mobile-implementation-plan.md` chip-strip Pattern A** — replaced by the **Claude Design StickyMiniShell handoff** that arrived this morning at `Claude Design Mobile handoff/HANDOFF.md` (folder gitignored per #201; reference materials live next to the repo as a local-only design source).
+
+### Today's merge timeline
+
+| Time | PR | Branch | Scope |
+|---|---|---|---|
+| 16:23 | [#199](https://github.com/kenkoller/KyberStation/pull/199) | `mobile/shell-density-and-sticky-canvas` | **PR A1** — sticky blade canvas (fixes "odd zoom levels"), drawer discoverability via visible MENU label, header h-12, effect bar `compact` mode (drops kbd letter), blade canvas auto-ignite, bottom-bar hamburger trigger |
+| 17:31 | [#200](https://github.com/kenkoller/KyberStation/pull/200) | `mobile/density-v2-and-stacked-columns` | **PR A2** — header h-10 + 30px chrome buttons, single thin row effect bar, blade canvas 120px floor 96, **MainContentABLayout phone branch** (stacked vertical full-width Column A above Column B, no ResizeHandle), PixelStripPanel + LayerCanvas (rgb-luma) mounted directly below blade matching desktop CanvasLayout vertical order |
+| 18:56 | [#201](https://github.com/kenkoller/KyberStation/pull/201) | `chore/gitignore-design-handoff-folder` | Adds `Claude Design Mobile handoff/` to `.gitignore` so the downloaded design reference (HANDOFF.md, components/*.jsx, kyber-mobile.css, screenshots, original uploads) stays local without git noise |
+| 20:13 | [#202](https://github.com/kenkoller/KyberStation/pull/202) | `docs/launch-comms-prep` | Launch comms package finalised + audit fixes (stale numbers, version/date refs) |
+| 20:18 → merged | [#203](https://github.com/kenkoller/KyberStation/pull/203) | `feat/mobile-section-tabs` | **Phase 4.2** — sticky mini-shell anatomy from `Claude Design Mobile handoff/HANDOFF.md`. Header (44px) + mini blade canvas (64px, down from 96-120px in PR A2) + pixel strip (36px) + MobileActionBar (56px) + MobileSectionTabs (32px). Single overflow-y-auto body region. New components: `apps/web/components/layout/mobile/{MobileActionBar,MobileSectionTabs,MobileStatusBarStrip}.tsx` |
+| 21:xx → merged | [#205](https://github.com/kenkoller/KyberStation/pull/205) | `feat/mobile-quick-controls` | **Phase 4.3** — Color tab QuickControls + ColorRail. 8-swatch ColorRail + 6-slider 2-col QuickControls grid (HUE / SAT / BRIGHT / SHIMMER / TEMPO placeholder / DEPTH placeholder) on the mobile Color tab body. New components: `apps/web/components/layout/mobile/{ColorRail,MiniSlider,QuickControls}.tsx` + `apps/web/lib/colorHsl.ts`. Recovery PR for the auto-closed #204 (its base branch was deleted by #203's merge — same trap as PR #120 → #125 in the v0.15.0 entry below) |
+
+### Strategic pivot worth carrying forward
+
+The original `docs/mobile-implementation-plan.md` proposed a **chip-strip Pattern A** for the mobile A/B sections. PR A1 + PR A2 partially executed that plan (PR A2 added MainContentABLayout's mobile branch as a stacked-fallback) but **after Ken field-tested PR A1 mid-session and gave new direction**, the chip-strip plan was cancelled and PR A2 pivoted to stacked columns instead.
+
+**Then a cleaner answer arrived in the morning** when Ken downloaded the Claude Design **StickyMiniShell** spec at `Claude Design Mobile handoff/HANDOFF.md`. That doc resolved Q1–Q5 (chip width, action bar shape, status bar, blade Inspect mode, Sheet stops) with production-shape JSX in `Claude Design Mobile handoff/components/v1-synthesis.jsx` meant to be lifted verbatim. Phases 4.2 + 4.3 implement that spec faithfully.
+
+The new sequence (from HANDOFF §"Phased rollout"):
+
+| Phase | Status | Branch convention |
+|---|---|---|
+| 4.1 — Sticky shell foundation | ✅ done via PRs #199 + #200 (covered by A1 + A2's restructure) | `feat/mobile-shell-sticky` |
+| 4.2 — Section tabs + section content swap | ✅ #203 (named `feat/mobile-section-tabs`) | `feat/mobile-section-tabs` |
+| 4.3 — Quick-controls grid + color rail | ✅ #205 (named `feat/mobile-quick-controls`) | `feat/mobile-quick-controls` |
+| 4.4 — Sheet primitive (peek + full) on knobs | ⏳ next | `feat/mobile-sheet-primitive` |
+| 4.5 — Inspect mode + bottom diagnostic strip | ⏳ after 4.4 | `feat/mobile-blade-inspect` |
+
+### Process learnings worth keeping
+
+1. **Auto-closed PRs from base-branch deletion is a real workflow trap (recurring).** When merging `--delete-branch` on a PR whose child PRs target it, the children auto-close. Today: #204 → #205 reborn off main. Same trap previously hit PR #120 → #125 (v0.15.0 entry below). Pattern: merge with `--delete-branch`, child auto-closes, open replacement PR with same branch (no force-push needed if the branch's commits are already a fast-forward of new main). When the branch IS already a fast-forward (as today), no rebase is required — just `gh pr create --base main` against the same branch.
+
+2. **Cross-session coordination via the working tree is fragile.** Ken's parallel session was actively committing Phase 4.2 + 4.3 while this session was merging A1/A2. Detecting it required `git reflog` + `git status` checks and pausing before any destructive action. Documented push-to-origin discipline in CLAUDE.md (the "When parking WIP for another session, push the branch to origin" rule on line 540) was load-bearing today: Ken pushed `feat/mobile-section-tabs` to origin BEFORE I could clobber it. The two parallel streams ended up cooperating without collision.
+
+3. **Stacked PRs need recovery procedure documented inline.** PR #205's body now carries a `> Recovery PR.` callout at the top explaining why it exists. Future stacked-PR setups should expect this and include the recovery callout proactively so reviewers don't think the PR is duplicating work.
+
+4. **Design handoffs from external sources beat in-session design pivots.** Ken's "we should match desktop order" feedback during PR A2 was correct but underscoped — the Claude Design handoff resolved it cleanly with explicit token specs (`--header-h: 44px`, `--blade-rod-h: 12px`, `--actionbar-h: 56px`, `--statusbar-h: 36px`, `--shell-h` total 136px so scroll regions can size as `calc(100vh - var(--shell-h) - var(--blade-canvas-h))`). The pivot from "stacked columns + analysis stack" (PR A2) → "StickyMiniShell with section tabs" (#203) was net additive: A2's height/density wins carry over; #203 adds the section-tabs nav model on top.
+
+### Recommended next steps
+
+1. **Phase 4.4 — Sheet primitive (peek + full) wired to long-press on knobs.** Per HANDOFF §Q5, the 3-stop Sheet (closed / peek 168px / full 92vh) replaces the existing single-state `<Sheet>` primitive (the v1 from PR #195). Long-press on any QuickControls knob opens the Sheet for that parameter; tap inside the sheet flips knob → slider → modulation graph. Drag stops to nearest of 3, 48px threshold, `cubic-bezier(0.32, 0.72, 0, 1)` 260ms motion.
+2. **Phase 4.5 — Inspect mode + bottom diagnostic strip.** Long-press on `.blade-canvas` enters Inspect mode (1× / 2.4× / 4× / 🎯 zoom HUD). Bottom diagnostic strip is a horizontal-scroll segment list (BLADE 36" · 144 LED · NEOPIXEL · 3.88A · 41% CHARGE · 4.2V · BT ON · PROFILE 03) with critical pieces first.
+3. **Stale PR cleanup.** [#83](https://github.com/kenkoller/KyberStation/pull/83) (session archive 2026-04-27) — recommend close (historical, conflicts with newer state). [#32](https://github.com/kenkoller/KyberStation/pull/32) (marketing site expansion) — leave open, needs focused rebase session.
+
+---
+
 ## Current State (2026-04-30 night, v0.16.0 LAUNCH + post-launch sprint)
 
 KyberStation v1.0 launched tonight. Tag `v0.16.0` cut at commit `9e3d747` on main, pushed to origin. Live site: https://kenkoller.github.io/KyberStation/. Repo flipped public, GitHub Pages enabled, branch protection active (ruleset "Protect Main").
