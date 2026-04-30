@@ -22,7 +22,7 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 
 ## Features
 
-### Blade Engine (150+ source files across packages, 700+ tests)
+### Blade Engine (150+ source files across packages, 5,000+ tests)
 - **29 blade styles** — Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage
 - **21 effect types** — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon
 - **19 ignition + 13 retraction animations** with 10 easing curves and custom easing support
@@ -40,6 +40,8 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - CFX, Golden Harvest V3/V4, Verso
 - Xenopixel V2/V3, LGT, Asteria, Darkwolf, DamienSaber
 - Board capability matrices with compatibility scoring per preset
+- **Battery selector with manufacturer-spec discharge warnings** — pick from a catalog of common 18650 + 21700 cells; Hardware panel surfaces a safety warning when configured LED count exceeds the cell's continuous-discharge headroom
+- **Vendor-reality blade length captions** — Hardware panel flags when configured LED count diverges from typical vendor practice for a given inch length
 
 ### Flashing your saber
 
@@ -54,8 +56,9 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 
 **WebUSB FlashPanel (experimental, v1.0):**
 - KyberStation also includes a one-click in-browser WebUSB FlashPanel.
-- The protocol is implemented and verified against a comprehensive mock test suite, but on real hardware the manifest phase has a known issue that can leave the chip stuck in DFU mode after a successful write — particularly on vendor-customized boards (89sabers, KR, Saberbay).
-- For v1.0, the FlashPanel is shipped behind an EXPERIMENTAL disclaimer with mandatory backup acknowledgement. **Use the dfu-util workflow as your reliable path; treat the FlashPanel as an experiment.**
+- The protocol is implemented and verified against a comprehensive mock test suite, but on real hardware the manifest phase has a known issue that can leave the chip stuck in DFU mode after a successful write — particularly on vendor-customized boards (89sabers, KR, Saberbay, Vader's Vault).
+- For v1.0, the FlashPanel is shipped behind an **EXPERIMENTAL** badge with a 3-checkbox disclaimer gate: you must acknowledge **(1)** responsibility for the flash, **(2)** that you have backed up your existing firmware via `dfu-util`, and **(3)** that you have a recovery plan. Proceed remains disabled until all three are checked.
+- **Use the dfu-util workflow as your reliable path; treat the FlashPanel as an experiment.** The mandatory-backup acknowledgement turns "I just bricked my saber" into "I just lost 30 seconds."
 - The manifest-phase fix is planned for v0.16+.
 
 **Help us improve hardware coverage.** If you flash your saber and hit anything unexpected, please file a [hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) with your saber vendor, board variant, OS, and what happened.
@@ -72,10 +75,12 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 - 6 built-in filter chain presets
 
 ### User Presets & Collections
+- One-click **Save Preset** from the action bar — snapshots the current config to your local library with auto-named entries
+- "My Presets" sidebar section in the gallery with click-to-load, delete, and color swatches
 - Save any blade configuration as a reusable preset in your personal library
 - Tag, search, sort, duplicate, and organize presets
 - Export/import preset collections as `.kyberstation-collection.json` bundles
-- Thumbnail auto-capture from the blade canvas
+- Thumbnail auto-capture from the blade canvas (engine-rendered MiniSaber preview)
 
 ### Font Library
 - Directory picker scans your local sound font collection (Chromium browsers)
@@ -84,14 +89,23 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 
 ### Saber Profiles & Card Presets
 - Create named saber profiles with multiple card configs ("Dueling Set", "Display Set")
-- Card Preset Composer — add from Gallery, My Presets, or current editor state
+- **Inline rename + private workbench notes/description** per profile — keep build journals or vendor notes attached to a saber without exposing them in the generated config
+- One-click **Add to Queue** from the action bar — drops the current config into the active profile's card queue with auto-generated name
+- Card Preset Composer — add from Gallery, My Presets, or current editor state, with click-to-rename in the queue
 - 4 built-in starter templates (OT Essentials, Prequel Collection, Dark Side Pack, Dueling Minimalist)
 - Storage budget estimation per preset entry with real font sizes when library connected
 - SD Card Writer — generate a ZIP with config.h and font directories, ready to extract
 
+### Gallery
+- 305+ character presets across canon, Legends, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots)
+- **Grid view as default** with view toggle, color/style/era filter rail, click-to-open detail modal
+- Every preset is `continuity`-tagged so you can filter to just canon
+- Surprise Me randomizer pulls from the full ignition + retraction + modulation catalogs
+
 ### Sharing
 - Kyber Code system — compact config URLs with deflate compression + base64url encoding
 - Single config, preset collection, and card template import/export
+- Animated GIF export (idle hum loop + ignition cycle) and 1200×675 share-card PNG with QR scan-to-open
 
 ### Accessibility
 - Reduced motion auto-sync from OS `prefers-reduced-motion`
@@ -128,15 +142,19 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 
 ## Status
 
-### v0.15.0 — Launch (2026-04-28)
+### v0.16.0 — Launch (2026-04-30)
 
 The first publicly-released version. Includes:
+- **Save Preset + Add to Queue** action-bar buttons — one-click flow from "I built something" to "it's saved" or "it's on a card"
+- **Battery selector with manufacturer-spec power warnings** — pick from a catalog of common 18650 / 21700 cells; Hardware panel surfaces a safety banner when LED count outruns the cell's continuous-discharge headroom
+- **Profile rename + private workbench notes** — keep build journals attached to a saber without exposing them in the generated config
+- **Gallery grid view** as default, with click-to-open detail modal and color/style/era filter rail
 - Full **Modulation Routing v1.1 Core** — 11 modulators (swing/sound/angle/twist/time/clash/battery/lockup/preon/ignition/retraction), click-to-route + true HTML5 drag-to-route, per-binding expression editing via `fx` button popover, reciprocal hover highlighting, AST-level template injection in codegen so the generated `config.h` flashes LIVE ProffieOS templates instead of snapshot values
 - **Vertical Saber Card layout** + 4 layouts × 5 themes (20 combos) for share-card export
 - **Animated saber GIF export** — idle hum loop + ignition cycle from the My Crystal panel, headless workbench renderer port
 - **305+ character presets** across canon, Legends, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots) — every preset is `continuity`-tagged so you can filter to just canon
 - **AST-based ProffieOS code generator** — emits balanced templates that compile against ProffieOS 7.x without modification
-- **WebUSB flashing** — validated on Proffieboard V3.9 + macOS + Brave (Chromium-based browsers should behave identically)
+- **`dfu-util` workflow as the recommended flash path** ([docs/FLASH_GUIDE.md](docs/FLASH_GUIDE.md)) with mandatory firmware backup; in-browser **WebUSB FlashPanel as experimental** behind a 3-checkbox disclaimer gate
 - **Kyber Glyph v2 sharing** — `?s=<glyph>` URL handler round-trips full configs including modulation bindings; v1 / v2 backward compatible
 
 See the [CHANGELOG](CHANGELOG.md) for the full Added / Changed / Fixed list and the prior version entries.
