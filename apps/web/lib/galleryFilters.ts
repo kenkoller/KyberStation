@@ -94,23 +94,29 @@ const PARTICLE_STYLES = new Set([
   'crystalShatter',
   'shatter',
   'dataStream',
-  'helix',
-  'neutron',
   'automata',
   'cascade',
-  'tidal',
-  'torrent',
 ]);
 const COLOR_STYLES = new Set([
   'aurora',
   'prism',
   'moire',
-  'vortex',
   'nebula',
   'mirage',
 ]);
 const HAND_PAINTED_STYLES = new Set(['painted', 'imageScroll']);
-const KINETIC_STYLES = new Set(['gravity']);
+// Motion-reactive styles — respond to swing speed, tilt, twist, or simulated
+// gravity. These styles change behavior based on physical input rather than
+// pure time-based animation, so they bucket together under KINETIC for
+// users browsing for "feels alive when I move it" presets.
+const KINETIC_STYLES = new Set([
+  'gravity',
+  'tidal',
+  'torrent',
+  'vortex',
+  'helix',
+  'neutron',
+]);
 
 export function classifyStyleFamily(styleId: string): StyleFamily {
   if (STEADY_STYLES.has(styleId)) return 'steady';

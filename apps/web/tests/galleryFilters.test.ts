@@ -113,8 +113,14 @@ describe('classifyStyleFamily', () => {
     expect(classifyStyleFamily('imageScroll')).toBe('hand-painted');
   });
 
-  it('buckets gravity as kinetic', () => {
+  it('buckets motion-reactive styles as kinetic', () => {
+    // Genuinely motion-reactive — swing/tilt/twist/gravity drive visuals.
     expect(classifyStyleFamily('gravity')).toBe('kinetic');
+    expect(classifyStyleFamily('tidal')).toBe('kinetic');
+    expect(classifyStyleFamily('torrent')).toBe('kinetic');
+    expect(classifyStyleFamily('vortex')).toBe('kinetic');
+    expect(classifyStyleFamily('helix')).toBe('kinetic');
+    expect(classifyStyleFamily('neutron')).toBe('kinetic');
   });
 
   it('falls through to other for unknown style IDs', () => {

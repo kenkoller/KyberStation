@@ -2367,4 +2367,453 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
       noiseLevel: 0.06,
     },
   },
+
+  // ════════════════════════════════════════════
+  // KINETIC EXPANSION (2026-04-29)
+  // Creative motion-reactive blade designs that lean into the gravity /
+  // tidal / torrent / vortex / helix / neutron style families. Tied to
+  // physical themes (water, wind, gravity, twisting force) so the blade
+  // visually "feels alive" when the user swings or tilts the saber.
+  // ════════════════════════════════════════════
+
+  {
+    id: 'creative-tidal-force',
+    name: 'Tidal Force',
+    character: 'Wave-Caller',
+    era: 'expanded-universe',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'Cresting wavefronts of cyan and seafoam ride the blade in lockstep with motion — swing the saber and the tide rolls forward. Drip-up ignition mimics water rising through the channel; drain retraction lets it flow back to the hilt.',
+    hiltNotes:
+      'Polished chrome hilt with rippled grip texture, etched with breaking-wave glyphs.',
+    config: {
+      name: 'TidalForce',
+      baseColor: { r: 0, g: 130, b: 220 },
+      clashColor: { r: 220, g: 250, b: 255 },
+      lockupColor: { r: 100, g: 180, b: 255 },
+      blastColor: { r: 230, g: 250, b: 255 },
+      style: 'tidal',
+      ignition: 'drip-up',
+      retraction: 'drain',
+      ignitionMs: 800,
+      retractionMs: 1000,
+      shimmer: 0.2,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+    },
+  },
+
+  {
+    id: 'creative-vortex-of-korriban',
+    name: 'Vortex of Korriban',
+    character: 'Sith Acolyte',
+    era: 'expanded-universe',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'A tempest of crimson energy churning around the blade core. Built from a corrupted kyber forced to spin perpetually inside a Sith holocron during attunement. Each swing feeds the storm.',
+    hiltNotes:
+      'Black phrik hilt with gold filigree, twisted grooves matching the vortex pattern.',
+    config: {
+      name: 'VortexKorriban',
+      baseColor: { r: 200, g: 10, b: 30 },
+      clashColor: { r: 255, g: 200, b: 100 },
+      lockupColor: { r: 255, g: 60, b: 20 },
+      blastColor: { r: 255, g: 180, b: 150 },
+      dragColor: { r: 255, g: 80, b: 0 },
+      style: 'vortex',
+      ignition: 'crackle',
+      retraction: 'implode',
+      ignitionMs: 280,
+      retractionMs: 400,
+      shimmer: 0.3,
+      ledCount: 144,
+      swingFxIntensity: 0.6,
+      noiseLevel: 0.1,
+    },
+  },
+
+  {
+    id: 'creative-helix-resonance',
+    name: 'Helix Resonance',
+    character: 'Frequency Tuner',
+    era: 'expanded-universe',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'A pair of counter-rotating energy strands winding around the blade like the rungs of a luminous DNA ladder. The strands beat against each other when swung, producing a visible interference pattern.',
+    hiltNotes:
+      'Tuning-fork inspired hilt with twin parallel rails and a resonance chamber midshaft.',
+    config: {
+      name: 'HelixResonance',
+      baseColor: { r: 80, g: 200, b: 255 },
+      clashColor: { r: 220, g: 255, b: 255 },
+      lockupColor: { r: 150, g: 230, b: 255 },
+      blastColor: { r: 230, g: 250, b: 255 },
+      style: 'helix',
+      ignition: 'pulse-wave',
+      retraction: 'unravel',
+      ignitionMs: 500,
+      retractionMs: 700,
+      shimmer: 0.18,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+    },
+  },
+
+  {
+    id: 'creative-neutron-drift',
+    name: 'Neutron Drift',
+    character: 'Particle Wraith',
+    era: 'expanded-universe',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'A single particle of compressed light ricochets endlessly along the blade, leaving a fading trail. Tilt the hilt and the particle drifts with gravity. Swing fast and it accelerates, reflecting harder off the endpoints.',
+    hiltNotes:
+      'Bare brushed-titanium hilt with a single recessed activation toggle. The blade is the spectacle.',
+    config: {
+      name: 'NeutronDrift',
+      baseColor: { r: 180, g: 220, b: 255 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 200, g: 230, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'neutron',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 300,
+      retractionMs: 500,
+      shimmer: 0.1,
+      ledCount: 144,
+      swingFxIntensity: 0.65,
+    },
+  },
+
+  {
+    id: 'creative-torrent-of-stars',
+    name: 'Torrent of Stars',
+    character: 'Astral Pilgrim',
+    era: 'expanded-universe',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'Streams of starlight rush through the blade like a river of constellations. Each swing accelerates the flow, and the brighter knots of light cluster into traveling pulses you can almost recognize as stellar patterns.',
+    hiltNotes:
+      'Astrolabe-inspired hilt with engraved star charts and a sapphire activation crystal.',
+    config: {
+      name: 'TorrentOfStars',
+      baseColor: { r: 150, g: 180, b: 255 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 200, g: 220, b: 255 },
+      blastColor: { r: 240, g: 245, b: 255 },
+      style: 'torrent',
+      ignition: 'flash-fill',
+      retraction: 'unravel',
+      ignitionMs: 450,
+      retractionMs: 700,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  {
+    id: 'creative-gravity-well',
+    name: 'Gravity Well',
+    character: 'Singularity Mage',
+    era: 'expanded-universe',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Deep violet-black energy that pools toward the lowest point of the blade as the hilt tilts. The kyber inside is said to be pinched from a collapsed star — light bends into it before escaping.',
+    hiltNotes:
+      'Heavy obsidian hilt with concentric ring inlays. Has noticeable mass; the wielder feels every swing.',
+    config: {
+      name: 'GravityWell',
+      baseColor: { r: 80, g: 30, b: 160 },
+      clashColor: { r: 220, g: 180, b: 255 },
+      lockupColor: { r: 120, g: 60, b: 200 },
+      blastColor: { r: 200, g: 160, b: 255 },
+      dragColor: { r: 100, g: 40, b: 180 },
+      style: 'gravity',
+      ignition: 'drip-up',
+      retraction: 'drain',
+      ignitionMs: 1200,
+      retractionMs: 1500,
+      shimmer: 0.18,
+      ledCount: 144,
+      swingFxIntensity: 0.7,
+      noiseLevel: 0.06,
+    },
+  },
+
+  {
+    id: 'creative-cyclone-eye',
+    name: 'Cyclone Eye',
+    character: 'Stormrider',
+    era: 'expanded-universe',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'A spiraling vortex of teal-white wind energy with a calm bright center — the eye of the storm follows the swing direction. Hold still and the cyclone settles; move and it howls.',
+    hiltNotes:
+      'Wind-carved aluminum hilt with vented cooling ports along the grip.',
+    config: {
+      name: 'CycloneEye',
+      baseColor: { r: 80, g: 220, b: 220 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 180, g: 240, b: 240 },
+      blastColor: { r: 230, g: 255, b: 255 },
+      style: 'vortex',
+      ignition: 'wipe',
+      retraction: 'unravel',
+      ignitionMs: 380,
+      retractionMs: 550,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.65,
+    },
+  },
+
+  {
+    id: 'creative-pendulum-blade',
+    name: 'Pendulum Blade',
+    character: 'Time-Keeper',
+    era: 'expanded-universe',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'A weighty gold-amber blade where the energy hangs like syrup. Tilt the hilt and the light pools to the low end with deliberate momentum, swinging back like a metronome. A meditation tool for patient duelists.',
+    hiltNotes:
+      'Brass-finish hilt with a clockwork emitter ring that ticks softly during use.',
+    config: {
+      name: 'PendulumBlade',
+      baseColor: { r: 230, g: 160, b: 30 },
+      clashColor: { r: 255, g: 230, b: 150 },
+      lockupColor: { r: 240, g: 180, b: 60 },
+      blastColor: { r: 255, g: 220, b: 130 },
+      style: 'gravity',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 600,
+      retractionMs: 800,
+      shimmer: 0.12,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+    },
+  },
+
+  // ════════════════════════════════════════════
+  // CANONICAL CHARACTER — KINETIC INTERPRETATIONS
+  // Per the 2026-04-23 Phase 3b convention, non-screen-accurate
+  // interpretations of canonical Star Wars characters live here in
+  // creative-community.ts (not in the era files), flagged with
+  // screenAccurate: false. These are creative "what-if" reimaginings
+  // tuned to motion-reactive blade styles — never claimed as canon.
+  // ════════════════════════════════════════════
+
+  {
+    id: 'creative-aayla-secura-tidal',
+    name: 'Aayla Secura (Tidal Drift)',
+    character: 'Aayla Secura',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Aayla Secura\'s blade tuned to a tidal-wave style — ocean foam crests rolling along the cyan-blue blade, mirroring her Twi\'lek grace. Canonically she wielded a stable blue blade; this what-if version animates the energy as flowing water that responds to swing.',
+    hiltNotes:
+      'Slim curved hilt with leather-wrap grip (per canon). Speculative kinetic-style interpretation.',
+    config: {
+      name: 'AaylaTidal',
+      baseColor: { r: 0, g: 130, b: 240 },
+      clashColor: { r: 200, g: 240, b: 255 },
+      lockupColor: { r: 100, g: 180, b: 255 },
+      blastColor: { r: 220, g: 245, b: 255 },
+      style: 'tidal',
+      ignition: 'wipe',
+      retraction: 'drain',
+      ignitionMs: 400,
+      retractionMs: 600,
+      shimmer: 0.18,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+    },
+  },
+
+  {
+    id: 'creative-plo-koon-vortex',
+    name: 'Plo Koon (Stormcaller)',
+    character: 'Plo Koon',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Plo Koon\'s saber as a swirling vortex of azure energy — a nod to his Force-driven "Electric Judgment" technique. Canonically a stable blue blade; this version animates it as a controlled storm that intensifies with motion.',
+    hiltNotes:
+      'Squared-off Kel Dor hilt with broad pommel. Speculative kinetic-style interpretation.',
+    config: {
+      name: 'PloKoonVortex',
+      baseColor: { r: 30, g: 80, b: 220 },
+      clashColor: { r: 200, g: 220, b: 255 },
+      lockupColor: { r: 80, g: 140, b: 255 },
+      blastColor: { r: 220, g: 235, b: 255 },
+      style: 'vortex',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 350,
+      retractionMs: 400,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  {
+    id: 'creative-kit-fisto-torrent',
+    name: 'Kit Fisto (Deep Current)',
+    character: 'Kit Fisto',
+    era: 'prequel',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Kit Fisto\'s emerald blade as a torrent of underwater light — streams of green energy rushing from hilt to tip, a nod to his Nautolan aquatic heritage. Canonically a stable green blade; this version animates it as living water.',
+    hiltNotes:
+      'Sealed-emitter Nautolan hilt designed for underwater duels. Speculative kinetic-style interpretation.',
+    config: {
+      name: 'KitFistoTorrent',
+      baseColor: { r: 30, g: 220, b: 80 },
+      clashColor: { r: 200, g: 255, b: 220 },
+      lockupColor: { r: 100, g: 240, b: 140 },
+      blastColor: { r: 220, g: 255, b: 230 },
+      style: 'torrent',
+      ignition: 'wipe',
+      retraction: 'drain',
+      ignitionMs: 380,
+      retractionMs: 500,
+      shimmer: 0.16,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  {
+    id: 'creative-yoda-helix',
+    name: 'Yoda (Force Helix)',
+    character: 'Yoda',
+    era: 'original-trilogy',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Yoda\'s shoto blade as a double-helix of green Force energy — twin spirals winding together, evoking the eddies of midi-chlorian flow he describes to Luke. Canonically a stable green shoto; this version animates the blade as living current.',
+    hiltNotes:
+      'Compact shoto hilt sized for a Jedi Master less than a meter tall. Speculative kinetic-style interpretation.',
+    config: {
+      name: 'YodaHelix',
+      baseColor: { r: 50, g: 230, b: 70 },
+      clashColor: { r: 230, g: 255, b: 230 },
+      lockupColor: { r: 120, g: 250, b: 140 },
+      blastColor: { r: 240, g: 255, b: 240 },
+      style: 'helix',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 350,
+      retractionMs: 380,
+      shimmer: 0.14,
+      ledCount: 73,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  {
+    id: 'creative-vader-vortex',
+    name: 'Darth Vader (Choke Vortex)',
+    character: 'Darth Vader',
+    era: 'original-trilogy',
+    affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Vader\'s blade as a swirling vortex of crimson rage — energy churning around the core, intensifying with each swing. Canonically a stable red blade with cinder edge; this what-if treats it as a contained tempest fed by the dark side.',
+    hiltNotes:
+      'Anakin\'s ROTS hilt rebuilt with a black Sith pyramid emitter shroud. Speculative kinetic-style interpretation.',
+    config: {
+      name: 'VaderVortex',
+      baseColor: { r: 230, g: 20, b: 20 },
+      clashColor: { r: 255, g: 200, b: 100 },
+      lockupColor: { r: 255, g: 80, b: 30 },
+      blastColor: { r: 255, g: 180, b: 150 },
+      dragColor: { r: 255, g: 100, b: 0 },
+      style: 'vortex',
+      ignition: 'crackle',
+      retraction: 'drain',
+      ignitionMs: 250,
+      retractionMs: 350,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+    },
+  },
+
+  {
+    id: 'creative-rey-tidal-yellow',
+    name: 'Rey (Skywalker — Tidal Halo)',
+    character: 'Rey',
+    era: 'sequel',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Rey\'s constructed yellow blade as a tidal wash — golden waves rolling along the staff, evoking the desert pilgrim\'s journey through sand and sea. Canonically a stable yellow ceremonial blade; this version animates it as flowing light.',
+    hiltNotes:
+      'Self-built quarterstaff-derived hilt with sand-worn wrap. Speculative kinetic-style interpretation.',
+    config: {
+      name: 'ReyTidalYellow',
+      baseColor: { r: 255, g: 200, b: 30 },
+      clashColor: { r: 255, g: 255, b: 200 },
+      lockupColor: { r: 255, g: 220, b: 100 },
+      blastColor: { r: 255, g: 245, b: 220 },
+      style: 'tidal',
+      ignition: 'flash-fill',
+      retraction: 'unravel',
+      ignitionMs: 450,
+      retractionMs: 600,
+      shimmer: 0.16,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+    },
+  },
+
+  {
+    id: 'creative-ahsoka-helix',
+    name: 'Ahsoka Tano (Twin Helix)',
+    character: 'Ahsoka Tano',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: false,
+    description:
+      'A creative interpretation of Ahsoka\'s twin white blades as a unified double-helix — the two streams winding around each other like the path of her exile and return. Canonically two stable white blades; this version animates the energy as twin spirals.',
+    hiltNotes:
+      'Twin shoto-and-saber hilts in reverse Shien grip. Speculative kinetic-style interpretation.',
+    config: {
+      name: 'AhsokaHelix',
+      baseColor: { r: 240, g: 240, b: 250 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 220, g: 220, b: 240 },
+      blastColor: { r: 255, g: 255, b: 255 },
+      style: 'helix',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 320,
+      retractionMs: 380,
+      shimmer: 0.2,
+      ledCount: 120,
+      swingFxIntensity: 0.5,
+    },
+  },
 ];
