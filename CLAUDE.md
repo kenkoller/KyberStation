@@ -543,6 +543,76 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-01 afternoon, mobile sprint feature-complete)
+
+Continuation of the 2026-05-01 morning session. **Three more PRs opened this afternoon** (#207, #209, #210) plus a docs refresh (#208), bringing the mobile redesign through Phase 4.4 → 4.4.x → 4.5. **The mobile sprint is now feature-complete** per `Claude Design Mobile handoff/HANDOFF.md` — all 5 phases shipped, only the Q3 diagnostic-strip segment-set decision remains as an open UX call for Ken.
+
+### Today's afternoon PR stack
+
+| PR | Branch | Scope |
+|---|---|---|
+| [#207](https://github.com/kenkoller/KyberStation/pull/207) | `feat/mobile-parameter-sheet-primitive` | **Phase 4.4** — ParameterSheet 3-stop primitive (foundation only). New `ParameterSheet.tsx` + `ParameterSheetBody.tsx`. Closed/peek 168px/full min(92vh,720px) with drag-snap state machine. `transform: translateY()` animation per handoff §Q5 (not height — Chromium glitches on fixed-position height transitions). Sibling backdrop, not parent (avoids opacity-cascade trap). +38 tests |
+| [#208](https://github.com/kenkoller/KyberStation/pull/208) | `docs/handoff-refresh-phase-4.4-4.5` | **Docs** — refresh of `docs/NEXT_SESSION_HANDOFF.md` for Phase 4.4 + 4.5 with architectural decisions, EXISTING MOBILE PRIMITIVES list, TOKENS ALREADY ADDED list, and CROSS-SESSION COLLISION GUARDRAILS (stash → switch → pop pattern). Ken later reverted some of this back to the morning version mid-session — kept the docs branch separate so the merged version can be whichever Ken prefers |
+| [#209](https://github.com/kenkoller/KyberStation/pull/209) | `feat/mobile-parameter-sheet-integration` | **Phase 4.4.x** — wire ParameterSheet into ColorQuickControls via global `parameterSheetStore` (Zustand). New `ParameterSheetHost.tsx` mounts once at MobileShell root. ColorQuickControls' 4 wired sliders gain onLongPress callbacks dispatching to the store. Defensive try/catch around `setPointerCapture` — synthetic-dispatched PointerEvents threw `NotFoundError` on the Next.js dev overlay. +15 tests. Browser-verified: long-press → peek → drag-up → full → drag-down → close all working |
+| [#210](https://github.com/kenkoller/KyberStation/pull/210) | `feat/mobile-blade-inspect` | **Phase 4.5** — Inspect mode + zoom HUD. New `inspectModeStore.ts` + `MobileInspectHUD.tsx`. 500ms long-press on blade canvas enters Inspect (default 2.4× zoom centered on long-press point); HUD with 1× / 2.4× / 4× / 🎯 buttons; one-finger pan (clamped by zoom-derived maxPan); chrome dim to 40% via CSS rule on `[data-inspect-mode]`; Escape + tap-outside exit. +15 tests. Browser-verified end-to-end |
+
+### Architectural decisions worth carrying forward
+
+1. **`transform: translateY()` is the right animation primitive for the sheet, not `height`.** Discovered during Phase 4.4 build: inline `height: 720px` with a CSS height transition would set inline style correctly but compute to the prior value (168px) until forced reflow on fixed-positioned elements in Chromium. The handoff explicitly calls for translateY anyway, and it runs on the GPU compositor (better perf).
+
+2. **Backdrop must be a sibling of the sheet, not its parent.** First Phase 4.4 attempt nested the sheet inside the backdrop's div. The backdrop's `opacity: 0` at peek cascaded to the sheet (CSS opacity property cascades to children). Encode opacity in `background: rgba(0,0,0,0)` so children's opacity isn't tied; siblings keep them independent.
+
+3. **Global stores beat inline component state for shell-wide overlays.** Phase 4.4.x's `parameterSheetStore` decouples slider grids from sheet rendering. Future per-section variants (Style / Motion / FX / HW / Route QuickControls) just call `open(spec)` instead of re-implementing per-variant sheet state. Phase 4.5's `inspectModeStore` follows the same pattern. Single mount point + multiple publishers.
+
+4. **Defensive `setPointerCapture` for synthetic events.** Test paths and dev tooling that synthesize `PointerEvent`s via `dispatchEvent` will throw `NotFoundError` when `setPointerCapture` runs because the browser has no real active pointer with the dispatched id. Real touch + mouse interactions on devices always succeed. Wrap calls in try/catch — the capture is a perf optimization, not load-bearing. Caught the dev runtime overlay flashing "1 error" during browser-verify; fix shipped in PR #209.
+
+5. **Zustand SSR snapshot pinning continues to bite.** Tests that read store state via `useXxxStore(selector)` need a hoisted-mock pattern with mutable stub state — Zustand's React binding pins the SSR snapshot to `getInitialState()`, so any `setState` call before `renderToStaticMarkup` is invisible. Pattern works for `parameterSheetStore` + `inspectModeStore` tests (and the existing `useUIStore` mock pattern in `mobileShell.test.tsx`).
+
+### Cross-session collision recovery — happened twice today
+
+Two cross-session worktree collisions during the afternoon session, both recovered cleanly via the same pattern:
+
+1. Mid-Phase-4.2 wrap: `docs/launch-comms-prep` got checked out under the working tree by a parallel session. Working tree state preserved via `git stash push -u`, switched back to `feat/mobile-section-tabs`, `git stash pop`. Mobile work intact.
+
+2. Mid-Phase-4.4 wrap: similar pattern when the docs handoff branch was created. The `Claude Design Mobile handoff/` directory is gitignored (per #201) so it survives all branch switches without conflict.
+
+The `git stash push -u → branch switch → git stash pop` recovery is now well-tested. **Documented as the canonical pattern in `docs/NEXT_SESSION_HANDOFF.md` §"CROSS-SESSION COLLISION GUARDRAILS"** for future sessions.
+
+### What's actually next — the diagnostic-strip segment-set decision
+
+Per `docs/NEXT_SESSION_HANDOFF.md`, the only remaining mobile-handoff item is the **diagnostic strip segment-set review** (§Q3). The strip itself is shipped via Phase 4.2's `MobileStatusBarStrip`; the question is what segments to display:
+
+| Path | Segments | Tradeoff |
+|---|---|---|
+| (a) Keep current — desktop StatusBar mirror | PWR · PROFILE · BOARD · CONN · PAGE · LEDS · MOD · STOR · THEME · PRESET · UTC · BUILD | Tech-savvy users get full diagnostic richness; mobile = desktop |
+| (b) Mirror handoff §Q3 exactly | BLADE 36" · 144 LED · NEOPIXEL · 3.88A · 41% CHARGE · 4.2V · BT ON · PROFILE 03 | More user-facing; needs charge / voltage / BT data sources we haven't wired |
+| (c) Hybrid | Most desktop segments + add charge / BT when sources land | Best long-term; gated on battery + BT features (post-v0.17 per `BLUETOOTH_FEASIBILITY.md`) |
+
+Ken's call. Recommended path is (a) ship-as-is, revisit (c) when battery + BT land.
+
+### Recommended merge order for the afternoon stack
+
+1. **#207** Phase 4.4 ParameterSheet primitive — pure additive, 38 new tests, no API breakage
+2. **#208** Docs handoff refresh — independent of code stack, mergeable any time
+3. **#209** Phase 4.4.x integration — stacked on #207, +15 tests, browser-verified
+4. **#210** Phase 4.5 Inspect mode — stacked on #209, +15 tests, browser-verified
+
+After all merge, total apps/web test count hits **2191/2191 passing** (was 2123 at start of afternoon session — +68 across the 4 PRs).
+
+### Phase rollout — MOBILE SPRINT FEATURE-COMPLETE
+
+| Phase | Status | PR |
+|---|---|---|
+| 4.1 Sticky shell foundation | ✅ merged | #199 + #200 |
+| 4.2 Section tabs + status strip | ✅ merged | #203 |
+| 4.3 Color-tab QuickControls + ColorRail | ✅ merged | #205 |
+| 4.4 ParameterSheet primitive | ⏳ open | #207 |
+| 4.4.x ParameterSheet integration via store | ⏳ open | #209 |
+| 4.5 Inspect mode + zoom HUD | ⏳ open | #210 |
+| Diagnostic strip segment-set decision | ⏸ awaits Ken's UX call | — |
+
+---
+
 ## Current State (2026-05-01 morning, mobile sprint pivot to design handoff)
 
 Continuation of the 2026-04-30 night session. **Six PRs merged today** (#199, #200, #201, #202, #203, #205 with #204 auto-closed mid-stack and recovered as #205). The day's most significant move was a **mid-sprint pivot away from the original `docs/mobile-implementation-plan.md` chip-strip Pattern A** — replaced by the **Claude Design StickyMiniShell handoff** that arrived this morning at `Claude Design Mobile handoff/HANDOFF.md` (folder gitignored per #201; reference materials live next to the repo as a local-only design source).
