@@ -145,6 +145,12 @@
   --mod-retraction: rgb(251 113 133);
   /* ─── Font Scale ─── */
   --font-scale: 1;
+  /* ─── Mobile-shell sizing tokens — Phase 4 PR #1 (2026-04-30) ───
+     Consumed by Phase 4 PRs #4-#10 (in-editor bottom bar, action bar,
+     iOS safe-area handling). Per docs/mobile-design.md §1. */
+  --mobile-action-bar-h: 40px;     /* phone action-bar height (per design §3) */
+  --mobile-bottom-bar-h: 44px;     /* in-editor bottom-bar height */
+  --mobile-safe-pb: env(safe-area-inset-bottom);  /* iOS home-indicator clearance */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
