@@ -322,7 +322,10 @@ function FilterRow<T extends string>({
       role="group"
       aria-label={label}
     >
-      <span className="font-mono uppercase text-[9px] text-text-muted tracking-[0.10em] w-10 shrink-0">
+      {/* w-14 (56px) gives 5–6 char labels ("COLOR" / "STYLE" / "SOURCE") room
+          to breathe — w-10 (40px) was too tight for the 0.10em letter-spacing
+          and label text bled into the first toggle pill (Bug fix 2026-04-30). */}
+      <span className="font-mono uppercase text-[9px] text-text-muted tracking-[0.10em] w-14 shrink-0">
         {label}
       </span>
       {options.map((opt) => {

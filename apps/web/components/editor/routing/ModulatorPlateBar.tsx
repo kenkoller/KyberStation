@@ -98,7 +98,16 @@ export function ModulatorPlateBar() {
       <div
         role="toolbar"
         aria-label="Modulator plates"
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2"
+        // Column-width-aware grid. Tailwind responsive breakpoints (sm/lg/xl)
+        // respond to VIEWPORT width, not container width — when the plate bar
+        // is rendered inside a 220-400px sidebar A/B Column A, viewport-based
+        // `xl:grid-cols-6` activated and squished plates so badly that
+        // "RETRACTION" / "IGNITION" / "LOCKUP" labels overflowed and the live
+        // glyphs visibly overlapped each other (Bug fix 2026-04-30). Switch
+        // to `auto-fill` with a min-width floor so the grid sizes itself by
+        // available width regardless of where it's mounted.
+        className="grid gap-2"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))' }}
       >
         {plates.map((plate) => (
           <ModulatorPlate
