@@ -1,7 +1,7 @@
-// ─── MobileShell — PR A1 layout shape contract ────────────────────────
+// ─── MobileShell — PR A1 + A2 layout shape contract ───────────────────
 //
-// Pins the structural layout decisions from PR A1:
-//   - Header height is `h-12` (was `h-14`) — saves vertical space
+// Pins the structural layout decisions from PR A1 + A2:
+//   PR A1:
 //   - Hamburger button has a visible "Menu" text label + border for
 //     discoverability (Ken couldn't find the icon-only version)
 //   - Blade canvas + effect bar are sticky siblings of the scrollable
@@ -10,9 +10,18 @@
 //     pushed the blade canvas off-screen.
 //   - Effect bar passes `compact` to EffectTriggerBar (drops kbd letter
 //     display on mobile — wasted vertical space per Ken's feedback)
-//   - Effect bar wrapper uses `px-1 py-1` (was `px-2 py-2`)
 //   - Drilled-section bottom bar has a hamburger trigger so users can
 //     re-navigate without scrolling back to the header
+//
+//   PR A2 (density v2 + analysis stack):
+//   - Header height tightened to `h-10` (was `h-12`)
+//   - Header buttons go below WCAG 44px floor — 30px touch-target
+//     for chrome chips (DAW + iOS-app density)
+//   - Effect bar wrapper uses `px-1 py-0.5`
+//   - Blade canvas region trimmed to `min(15vh, 120px)` floor 96
+//   - PixelStripPanel mounted directly below blade canvas (matches
+//     desktop CanvasLayout vertical order)
+//   - LayerCanvas (rgb-luma analysis) mounted directly below pixel strip
 //
 // Pattern matches the AB section tests (`react-dom/server` +
 // `renderToStaticMarkup`, no jsdom dep). Heavy children (BladeCanvas,
@@ -28,6 +37,9 @@ import type { BladeEngine } from '@kyberstation/engine';
 
 const mockState = vi.hoisted(() => ({
   activeSection: 'my-saber' as string,
+  ledCount: 144,
+  isPaused: false,
+  reducedMotion: false,
 }));
 
 // ── Store mocks ────────────────────────────────────────────────────────
@@ -39,10 +51,37 @@ vi.mock('@/stores/uiStore', () => {
       setActiveSection: (s: string) => {
         mockState.activeSection = s;
       },
+      isPaused: mockState.isPaused,
     })) as unknown as {
     (selector: (s: unknown) => unknown): unknown;
   };
   return { useUIStore };
+});
+
+vi.mock('@/stores/bladeStore', () => {
+  const state = {
+    config: { ledCount: mockState.ledCount },
+    isOn: false,
+    setIsOn: () => {},
+  };
+  const getState = () => state;
+  const useBladeStore = ((selector: (s: unknown) => unknown) =>
+    selector(state)) as unknown as {
+    (selector: (s: unknown) => unknown): unknown;
+    getState: () => typeof state;
+  };
+  useBladeStore.getState = getState;
+  return { useBladeStore };
+});
+
+vi.mock('@/stores/accessibilityStore', () => {
+  const useAccessibilityStore = ((selector: (s: unknown) => unknown) =>
+    selector({
+      reducedMotion: mockState.reducedMotion,
+    })) as unknown as {
+    (selector: (s: unknown) => unknown): unknown;
+  };
+  return { useAccessibilityStore };
 });
 
 vi.mock('@/lib/uiSounds', () => ({
@@ -99,6 +138,18 @@ vi.mock('@/components/layout/MobileSidebarDrawer', () => ({
   MobileSidebarDrawer: () => createElement('div', { 'data-testid': 'mock-sidebar-drawer' }),
 }));
 
+vi.mock('@/components/editor/PixelStripPanel', () => ({
+  PixelStripPanel: () => createElement('div', { 'data-testid': 'mock-pixel-strip' }),
+}));
+
+vi.mock('@/components/editor/VisualizationStack', () => ({
+  LayerCanvas: ({ layerId }: { layerId: string }) =>
+    createElement('div', {
+      'data-testid': 'mock-layer-canvas',
+      'data-layer-id': layerId,
+    }),
+}));
+
 import { MobileShell } from '@/components/layout/MobileShell';
 
 // ── Test harness ──────────────────────────────────────────────────────
@@ -124,15 +175,12 @@ describe('MobileShell — PR A1 layout shape', () => {
     mockState.activeSection = 'my-saber';
   });
 
-  it('header uses h-12 (tightened from h-14)', () => {
+  it('header uses h-10 (PR A2 density v2)', () => {
     const html = renderShell();
-    expect(html).toContain('h-12');
-    // Sanity: ensure the old h-14 is gone from the header (other
-    // components might use h-14 for unrelated reasons; this is a
-    // scoped check — header is the first <header> tag).
     const headerMatch = html.match(/<header[^>]*>/);
     expect(headerMatch).toBeTruthy();
-    expect(headerMatch![0]).toContain('h-12');
+    expect(headerMatch![0]).toContain('h-10');
+    expect(headerMatch![0]).not.toContain('h-12');
     expect(headerMatch![0]).not.toContain('h-14');
   });
 
@@ -176,16 +224,49 @@ describe('MobileShell — PR A1 layout shape', () => {
     expect(m![1]).not.toMatch(/\bpy-1\b/);
   });
 
-  it('blade canvas region uses tightened height (22vh / 180px / 140px floor)', () => {
+  it('blade canvas region uses PR A2 height (15vh / 120px cap / 96px floor)', () => {
     const html = renderShell();
-    // Blade canvas wrapper carries an inline style="height:..." with
-    // the new min(22vh, 180px) cap and minHeight: 140 floor. React's
-    // SSR renders inline styles in the form `style="height:min(22vh, 180px);min-height:140px"`.
-    // React serializes inline numeric styles like minHeight as `min-height:140px` (kebab-case).
-    expect(html).toMatch(/height:\s*min\(22vh,\s*180px\)/);
-    expect(html).toMatch(/min-height:140px/);
-    // And the old taller values shouldn't still be there.
+    // Blade canvas wrapper inline style: `min(15vh, 120px)` cap with
+    // `minHeight: 96` floor. Per Ken's "blade preview should take less
+    // vertical space" feedback (was 178px in PR A1).
+    expect(html).toMatch(/height:\s*min\(15vh,\s*120px\)/);
+    expect(html).toMatch(/min-height:96px/);
+    // PR A1's intermediate value should be gone.
+    expect(html).not.toMatch(/min\(22vh,\s*180px\)/);
+    // And the original values too.
     expect(html).not.toMatch(/min\(28vh,\s*220px\)/);
+  });
+
+  it('mounts PixelStripPanel directly below the blade canvas (PR A2)', () => {
+    const html = renderShell();
+    // The blade canvas region (aria-label="Blade preview") should be
+    // immediately followed by the pixel strip region (aria-label="Pixel strip").
+    const m = html.match(
+      /aria-label="Blade preview"[\s\S]*?aria-label="Pixel strip"[\s\S]*?data-testid="mock-pixel-strip"/,
+    );
+    expect(m).toBeTruthy();
+  });
+
+  it('mounts LayerCanvas (rgb-luma analysis) directly below the pixel strip (PR A2)', () => {
+    const html = renderShell();
+    // Pixel strip region followed by the analysis rail region with
+    // a LayerCanvas mounted with layerId="rgb-luma".
+    const m = html.match(
+      /aria-label="Pixel strip"[\s\S]*?aria-label="Analysis rail"[\s\S]*?data-testid="mock-layer-canvas"[\s\S]*?data-layer-id="rgb-luma"/,
+    );
+    expect(m).toBeTruthy();
+  });
+
+  it('header chrome buttons are min-h-[30px] (sub-WCAG density per PR A2)', () => {
+    const html = renderShell();
+    // The audio mute button is a clear touchstone — should be
+    // min-h-[30px] / min-w-[30px] now (was min-h-[44px] in PR A1).
+    const muteBtn = html.match(/<button[^>]*aria-label="(?:Mute|Unmute) audio"[^>]*>/);
+    expect(muteBtn).toBeTruthy();
+    expect(muteBtn![0]).toContain('min-h-[30px]');
+    expect(muteBtn![0]).toContain('min-w-[30px]');
+    // The 44px floor should be gone.
+    expect(muteBtn![0]).not.toContain('min-h-[44px]');
   });
 
   it('blade canvas + effect bar are sticky — outer wrapper does NOT have overflow-y-auto', () => {

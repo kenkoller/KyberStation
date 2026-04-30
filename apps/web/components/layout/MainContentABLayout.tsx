@@ -28,6 +28,7 @@ import { type ReactNode } from 'react';
 import { useUIStore } from '@/stores/uiStore';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { REGION_LIMITS } from '@/stores/uiStore';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 export interface MainContentABLayoutProps {
   /**
@@ -62,6 +63,7 @@ export function MainContentABLayout({
 }: MainContentABLayoutProps): JSX.Element {
   const columnAWidth = useUIStore((s) => s.columnAWidth);
   const setColumnAWidth = useUIStore((s) => s.setColumnAWidth);
+  const { isMobile } = useBreakpoint();
 
   // Section opted out of A/B (single-panel pattern) — render Column B
   // at full width with no list, no handle. Same shape as legacy
@@ -70,6 +72,33 @@ export function MainContentABLayout({
     return (
       <div data-mainab-layout="single" className="flex-1 min-w-0">
         {columnB}
+      </div>
+    );
+  }
+
+  // PR A2 (mobile, <600px): stack Column A above Column B vertically.
+  // Each column uses the full viewport width — no sidebar squeeze, no
+  // ResizeHandle. Column A scrolls internally if its content exceeds
+  // its capped height; Column B fills remaining body height. This
+  // replaces the desktop side-by-side split (which crammed Column A
+  // into 280px and gave Column B only 95px on a 380px viewport).
+  if (isMobile) {
+    return (
+      <div data-mainab-layout="mobile-stacked" className="flex flex-col flex-1 min-w-0 h-full">
+        <aside
+          data-mainab-column="a"
+          aria-label="Section list"
+          className="shrink-0 max-h-[40vh] overflow-y-auto border-b border-border-subtle bg-bg-deep/40"
+        >
+          {columnA}
+        </aside>
+        <section
+          data-mainab-column="b"
+          aria-label="Section detail"
+          className="flex-1 min-h-0 overflow-y-auto"
+        >
+          {columnB}
+        </section>
       </div>
     );
   }
