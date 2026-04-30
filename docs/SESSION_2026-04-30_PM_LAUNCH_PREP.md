@@ -159,4 +159,4 @@ Workspace typecheck clean across all 10 packages.
 | Open PRs | None of mine. #147 (golden-hash harness) and #83 (old session archive) and #32 (marketing) are pre-existing from other sessions. |
 | In-flight branches | `docs/session-wrap-2026-04-30-pm` (this PR) |
 
-Next session focus: visual inspection + launch decision. See [`NEXT_SESSION_2026-05-01_LAUNCH_DECISION.md`](NEXT_SESSION_2026-05-01_LAUNCH_DECISION.md).
+Next session focus: visual inspection + launch decision. See [`NEXT_SESSION_HANDOFF.md`](NEXT_SESSION_HANDOFF.md) for the canonical paste-ready prompt.
