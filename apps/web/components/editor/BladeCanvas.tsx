@@ -112,15 +112,19 @@ const BLADE_LENGTHS = BLADE_LENGTH_OPTIONS.map((b) => ({
 
 // ─── Topology options (for the selector) ───
 
+// Topology BETA flag (2026-04-29): only single-blade is launch-shipped at
+// full fidelity. The other 7 options surface in this legacy `<select>`
+// — we suffix the visible label with " (BETA)" since `<option>` content
+// is plain-text only. See HardwarePanel.tsx for the rich-badge version.
 const TOPOLOGY_OPTIONS = [
   { id: 'single', label: 'Single Blade' },
-  { id: 'staff', label: 'Double / Staff' },
-  { id: 'crossguard', label: 'Crossguard' },
-  { id: 'triple', label: 'Triple' },
-  { id: 'quad-star', label: 'Quad Star' },
-  { id: 'inquisitor', label: 'Inquisitor' },
-  { id: 'split-blade', label: 'Split Blade' },
-  { id: 'accent', label: 'Accent LEDs' },
+  { id: 'staff', label: 'Double / Staff (BETA)' },
+  { id: 'crossguard', label: 'Crossguard (BETA)' },
+  { id: 'triple', label: 'Triple (BETA)' },
+  { id: 'quad-star', label: 'Quad Star (BETA)' },
+  { id: 'inquisitor', label: 'Inquisitor (BETA)' },
+  { id: 'split-blade', label: 'Split Blade (BETA)' },
+  { id: 'accent', label: 'Accent LEDs (BETA)' },
 ];
 
 // ─── Hilt variations ───

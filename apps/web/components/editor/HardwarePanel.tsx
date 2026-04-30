@@ -64,12 +64,17 @@ const STRIP_TYPES = [
   { id: 'penta-neo', label: '5 Strip', icon: '╬│', desc: 'Penta strip, maximum light' },
 ];
 
+// Topology BETA flag (2026-04-29): only single-blade is launch-shipped at
+// full fidelity. Staff / Crossguard / Triple / Inquisitor (and Quad-Star
+// / Split / Accent below in BladeCanvas's mirror list) are wired through
+// the engine but render with WIP markers — flagged BETA in the UI so
+// users know they're using a preview surface.
 const TOPOLOGY_OPTIONS = [
-  { id: 'single', label: 'Single Blade', icon: '╱', desc: 'Standard lightsaber' },
-  { id: 'staff', label: 'Staff', icon: '╲╱', desc: 'Double-ended saber staff' },
-  { id: 'crossguard', label: 'Crossguard', icon: '┼', desc: 'Main blade + quillons' },
-  { id: 'triple', label: 'Triple', icon: '╲│╱', desc: 'Three blades' },
-  { id: 'inquisitor', label: 'Inquisitor', icon: '◎', desc: 'Spinning double ring' },
+  { id: 'single', label: 'Single Blade', icon: '╱', desc: 'Standard lightsaber', beta: false },
+  { id: 'staff', label: 'Staff', icon: '╲╱', desc: 'Double-ended saber staff', beta: true },
+  { id: 'crossguard', label: 'Crossguard', icon: '┼', desc: 'Main blade + quillons', beta: true },
+  { id: 'triple', label: 'Triple', icon: '╲│╱', desc: 'Three blades', beta: true },
+  { id: 'inquisitor', label: 'Inquisitor', icon: '◎', desc: 'Spinning double ring', beta: true },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -209,7 +214,18 @@ export function HardwarePanel(): JSX.Element {
                   {t.icon}
                 </span>
                 <div>
-                  <div className="font-medium">{t.label}</div>
+                  <div className="font-medium flex items-center gap-1.5">
+                    <span>{t.label}</span>
+                    {t.beta && (
+                      <span
+                        className="text-[8px] tracking-wider font-mono"
+                        style={{ color: 'rgb(var(--status-magenta))' }}
+                        aria-label="Beta feature"
+                      >
+                        BETA
+                      </span>
+                    )}
+                  </div>
                   <div className="text-ui-xs text-text-muted mt-0.5">{t.desc}</div>
                 </div>
               </div>

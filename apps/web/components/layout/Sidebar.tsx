@@ -34,6 +34,7 @@
 
 import Link from 'next/link';
 import { useUIStore, type SectionId, type SidebarGroupId } from '@/stores/uiStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
 import { playUISound } from '@/lib/uiSounds';
@@ -47,6 +48,10 @@ interface SectionDef {
   modulationGated?: boolean;
   /** When true, render a small magenta "BETA" chip after the label. */
   beta?: boolean;
+  /** When true, hide unless the user has explicitly opted in via the
+   *  `showCrystal` toggle in Settings. Used for experimental UI panels
+   *  that aren't launch-ready. */
+  crystalGated?: boolean;
 }
 
 interface GroupDef {
@@ -90,7 +95,7 @@ const GROUPS: GroupDef[] = [
     sections: [
       { id: 'audio',      label: 'Audio' },
       { id: 'output',     label: 'Output' },
-      { id: 'my-crystal', label: 'Saber Card / Crystal' },
+      { id: 'my-crystal', label: 'Saber Card / Crystal', crystalGated: true },
     ],
   },
 ];
@@ -107,16 +112,20 @@ export function Sidebar({ className, style }: SidebarProps) {
   const toggleSidebarGroup = useUIStore((s) => s.toggleSidebarGroup);
   const boardId = useBoardProfile().boardId;
   const boardSupportsModulation = canBoardModulate(boardId);
+  const showCrystal = useAccessibilityStore((s) => s.showCrystal);
 
-  // Filter modulation-gated sections out per-group; if a group ends up
-  // with zero visible sections (won't happen with the v0.15 taxonomy
-  // since every group has at least one always-visible section), hide it.
+  // Filter modulation-gated and crystal-gated sections out per-group;
+  // if a group ends up with zero visible sections (won't happen with
+  // the v0.15 taxonomy since every group has at least one always-
+  // visible section), hide it.
   const visibleGroups = GROUPS
     .map((g) => ({
       ...g,
-      sections: g.sections.filter(
-        (s) => !s.modulationGated || boardSupportsModulation,
-      ),
+      sections: g.sections.filter((s) => {
+        if (s.modulationGated && !boardSupportsModulation) return false;
+        if (s.crystalGated && !showCrystal) return false;
+        return true;
+      }),
     }))
     .filter((g) => g.sections.length > 0);
 

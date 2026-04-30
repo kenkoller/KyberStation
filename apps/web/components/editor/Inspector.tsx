@@ -48,18 +48,23 @@ export function Inspector({ className, style }: InspectorProps) {
       aria-label="Quick Controls"
       style={style}
     >
-      {/* Header strip — reads as a section title + aligns visually with
-          the STATE/ANALYSIS tabs on the opposite side of the canvas. */}
-      <div className="flex items-center px-3 py-2 border-b border-border-subtle bg-bg-deep/40 shrink-0">
+      {/* Header strip — h-8 (32px) standardized across canvas-area
+          column headers (2026-04-29): matches the BLADE PREVIEW
+          PanelHeader + RightRail tab bar so the three column tops
+          align visually across the workbench. */}
+      <div className="flex items-center px-3 h-8 border-b border-border-subtle bg-bg-deep/40 shrink-0">
         <h2 className="font-mono uppercase text-ui-xs tracking-[0.12em] text-accent">
           Quick Controls
         </h2>
       </div>
 
       {/* Body — scrolls independently if content exceeds canvas-row
-          height. Sections spaced with `gap-4` to separate the action
-          row, color chips, transition pickers, and slider stack. */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-4">
+          height. Density refactor (2026-04-29): tightened gap from
+          `gap-4` → `gap-3` and let ParameterBank flow inline (no card
+          border, no "QUICK PARAMETERS" heading) so all four sections
+          (COLOR · BASE / IGNITION / RETRACTION / quick parameters)
+          read as one dense parameter strip. */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
         <ActionRow />
         <QuickColorChips />
         <QuickIgnitionPicker />
