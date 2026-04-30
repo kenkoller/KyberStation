@@ -611,53 +611,56 @@ export function ParameterBank() {
   }, []);
 
   return (
-    <div className="space-y-4">
-      {/* Quick-Access Slider Bank */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold">
-            Quick Parameters
-          </h3>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`text-ui-sm font-medium transition-colors touch-target ${
-              showAdvanced ? 'text-accent' : 'text-text-muted hover:text-text-secondary'
-            }`}
-            aria-expanded={showAdvanced}
-            aria-controls="advanced-params-section"
-          >
-            {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
-          </button>
-        </div>
+    <div className="space-y-3">
+      {/* Quick-Access Slider Bank — density refactor (2026-04-29):
+          dropped the framing card border + "QUICK PARAMETERS" heading
+          so the rows flow inline with the COLOR · BASE / IGNITION /
+          RETRACTION sections above. The "Show/Hide Advanced" toggle
+          stays as the one piece of chrome the section needs.
 
-        <div className="bg-bg-surface rounded-panel p-3 border border-border-subtle space-y-2">
-          {QUICK_ACCESS.map((param) => {
-            const val = config[param.key as keyof typeof config];
-            return (
-              <SliderControl
-                key={param.key}
-                param={param}
-                value={(val as number) ?? param.default}
-                onChange={(v) => updateConfig({ [param.key]: v })}
-              />
-            );
-          })}
-          {/* Pattern Direction — quick-access select */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="quick-direction" className="text-ui-base text-text-secondary w-24 shrink-0 truncate">Direction</label>
-            <select
-              id="quick-direction"
-              value={(config.spatialDirection as string) ?? 'hilt-to-tip'}
-              onChange={(e) => updateConfig({ spatialDirection: e.target.value as 'hilt-to-tip' | 'tip-to-hilt' | 'center-out' | 'edges-in' })}
-              className="flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-base text-text-primary touch-target"
-            >
-              <option value="hilt-to-tip">Hilt → Tip</option>
-              <option value="tip-to-hilt">Tip → Hilt</option>
-              <option value="center-out">Center Out</option>
-              <option value="edges-in">Edges In</option>
-            </select>
-          </div>
+          Sliders + Direction select still own their own gap-via-space-y
+          rhythm so they read as a coherent group. */}
+      <div className="space-y-2">
+        {QUICK_ACCESS.map((param) => {
+          const val = config[param.key as keyof typeof config];
+          return (
+            <SliderControl
+              key={param.key}
+              param={param}
+              value={(val as number) ?? param.default}
+              onChange={(v) => updateConfig({ [param.key]: v })}
+            />
+          );
+        })}
+        {/* Pattern Direction — quick-access select */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="quick-direction" className="text-ui-base text-text-secondary w-24 shrink-0 truncate">Direction</label>
+          <select
+            id="quick-direction"
+            value={(config.spatialDirection as string) ?? 'hilt-to-tip'}
+            onChange={(e) => updateConfig({ spatialDirection: e.target.value as 'hilt-to-tip' | 'tip-to-hilt' | 'center-out' | 'edges-in' })}
+            className="flex-1 bg-bg-deep border border-border-subtle rounded px-2 py-1 text-ui-base text-text-primary touch-target"
+          >
+            <option value="hilt-to-tip">Hilt → Tip</option>
+            <option value="tip-to-hilt">Tip → Hilt</option>
+            <option value="center-out">Center Out</option>
+            <option value="edges-in">Edges In</option>
+          </select>
         </div>
+      </div>
+
+      {/* Show/Hide Advanced toggle — kept on its own line, no heading. */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className={`text-ui-sm font-medium transition-colors touch-target ${
+            showAdvanced ? 'text-accent' : 'text-text-muted hover:text-text-secondary'
+          }`}
+          aria-expanded={showAdvanced}
+          aria-controls="advanced-params-section"
+        >
+          {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
+        </button>
       </div>
 
       {/* Advanced Parameter Groups (accordion) */}

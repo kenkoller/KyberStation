@@ -57,9 +57,12 @@ export function Inspector({ className, style }: InspectorProps) {
       </div>
 
       {/* Body — scrolls independently if content exceeds canvas-row
-          height. Sections spaced with `gap-4` to separate the action
-          row, color chips, transition pickers, and slider stack. */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-4">
+          height. Density refactor (2026-04-29): tightened gap from
+          `gap-4` → `gap-3` and let ParameterBank flow inline (no card
+          border, no "QUICK PARAMETERS" heading) so all four sections
+          (COLOR · BASE / IGNITION / RETRACTION / quick parameters)
+          read as one dense parameter strip. */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
         <ActionRow />
         <QuickColorChips />
         <QuickIgnitionPicker />
