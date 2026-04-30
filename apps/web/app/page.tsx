@@ -2,6 +2,10 @@ import type { Metadata } from 'next';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { LandingSaberArray } from '@/components/landing/LandingSaberArray';
 import { LandingValueStrip } from '@/components/landing/LandingValueStrip';
+import { LandingFeaturePillars } from '@/components/landing/LandingFeaturePillars';
+import { LandingTryItNow } from '@/components/landing/LandingTryItNow';
+import { LandingBetaNotice } from '@/components/landing/LandingBetaNotice';
+import { LandingCredits } from '@/components/landing/LandingCredits';
 import { LandingReleaseStrip } from '@/components/landing/LandingReleaseStrip';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
@@ -23,6 +27,10 @@ export default function LandingPage() {
       <LandingHero />
       <LandingSaberArray />
       <LandingValueStrip />
+      <LandingFeaturePillars />
+      <LandingTryItNow />
+      <LandingBetaNotice />
+      <LandingCredits />
       <LandingReleaseStrip />
       <LandingFooter />
     </main>
