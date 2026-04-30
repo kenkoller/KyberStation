@@ -361,8 +361,11 @@ describe('HardwarePanel — SSR shape', () => {
       expect(markup).toContain(`>${ch}<`);
     }
 
-    // Battery selector
-    expect(markup).toContain('id="hw-battery"');
+    // Battery selectors — both the new manufacturer-spec selector
+    // (drives the safety warning) and the legacy mAh-only runtime cell
+    // selector (drives the runtime estimator).
+    expect(markup).toContain('id="hw-battery-id"');
+    expect(markup).toContain('id="hw-battery-runtime"');
     for (const bp of BATTERY_PRESETS) {
       expect(markup).toContain(bp.label);
     }

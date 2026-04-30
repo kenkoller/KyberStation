@@ -6,6 +6,7 @@ import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
 import { IGNITION_STYLES, RETRACTION_STYLES } from '@/lib/transitionCatalogs';
 import { MODULATION_RECIPES } from '@kyberstation/presets';
+import { MiniSaber } from '@/components/shared/MiniSaber';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -388,15 +389,6 @@ export {
 export type { LockKey as __LockKey };
 export const __THEMES = THEMES;
 
-function rgbToHex(r: number, g: number, b: number): string {
-  return (
-    '#' +
-    [r, g, b]
-      .map((c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0'))
-      .join('')
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Mini Preview Card
 // ---------------------------------------------------------------------------
@@ -410,10 +402,6 @@ function MiniPreviewCard({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const baseHex = rgbToHex(config.baseColor.r, config.baseColor.g, config.baseColor.b);
-  const clashHex = rgbToHex(config.clashColor.r, config.clashColor.g, config.clashColor.b);
-  const lockupHex = rgbToHex(config.lockupColor.r, config.lockupColor.g, config.lockupColor.b);
-
   return (
     <button
       onClick={onSelect}
@@ -423,11 +411,22 @@ function MiniPreviewCard({
           : 'border-border-subtle bg-bg-surface hover:border-border-light'
       }`}
     >
-      {/* Color swatch bar */}
-      <div className="flex w-full h-6 rounded overflow-hidden">
-        <div className="flex-1" style={{ backgroundColor: baseHex }} />
-        <div className="w-3" style={{ backgroundColor: clashHex }} />
-        <div className="w-3" style={{ backgroundColor: lockupHex }} />
+      {/* Live blade preview — uses the same engine as the main BLADE
+          PREVIEW so the variant accurately reflects what the user
+          would see if they applied it. fps:30 keeps total CPU bounded
+          (6 cards × 30fps = 180 effective renders/s, well within budget). */}
+      <div className="w-full">
+        <MiniSaber
+          config={config}
+          hiltId="graflex"
+          orientation="horizontal"
+          bladeLength={150}
+          bladeThickness={6}
+          hiltLength={48}
+          fps={30}
+          dwellMs={6000}
+          ariaLabel="Variation preview"
+        />
       </div>
       {/* Style name */}
       <span className="text-ui-sm text-text-secondary truncate w-full text-center">

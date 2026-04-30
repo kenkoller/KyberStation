@@ -24,15 +24,16 @@ export function AddToQueueButton() {
   return (
     <button
       onClick={handleClick}
-      className={`px-2 py-1 rounded text-ui-xs font-medium tracking-wide transition-all border ${
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-ui-xs font-mono uppercase tracking-wider transition-all border ${
         showAdded
           ? 'bg-green-900/30 border-green-700/50 text-green-400'
-          : 'bg-bg-secondary/60 border-border-subtle text-text-muted hover:text-text hover:bg-bg-secondary hover:border-accent-border/50'
+          : 'border-accent-border/50 text-accent bg-accent-dim/20 hover:border-accent hover:bg-accent-dim/40'
       }`}
       title="Add current design to card queue"
       aria-label="Add current design to card queue"
     >
-      {showAdded ? 'Added!' : 'Queue'}
+      <span aria-hidden="true">{showAdded ? '✓' : '⊕'}</span>
+      <span>{showAdded ? 'Added' : 'Queue'}</span>
     </button>
   );
 }

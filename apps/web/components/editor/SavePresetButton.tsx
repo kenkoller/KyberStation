@@ -43,12 +43,13 @@ export function SavePresetButton(): JSX.Element {
       type="button"
       onClick={handleSave}
       disabled={saving}
-      className="px-2 py-1 rounded text-ui-xs font-mono uppercase tracking-wider transition-all border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border hover:bg-accent-dim/20 disabled:opacity-50"
+      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-ui-xs font-mono uppercase tracking-wider transition-all border border-accent-border/50 text-accent bg-accent-dim/20 hover:border-accent hover:bg-accent-dim/40 disabled:opacity-50"
       title="Save current design as a preset"
       aria-label="Save current design as a preset"
       data-testid="save-preset-button"
     >
-      Save
+      <span aria-hidden="true">★</span>
+      <span>Save</span>
     </button>
   );
 }
