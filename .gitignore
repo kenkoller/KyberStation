@@ -58,6 +58,10 @@ KyberStation.command
 layout reference*
 .claude/
 
+# External design references (downloaded handoffs, mockups, etc.)
+# Local-only; not part of the canonical project source.
+Claude Design Mobile handoff/
+
 # Bulky binary assets (kept local, not tracked)
 backups/
 voice-packs/
