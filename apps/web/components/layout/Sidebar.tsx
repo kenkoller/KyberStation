@@ -60,7 +60,7 @@ const GROUPS: GroupDef[] = [
     id: 'setup',
     label: 'Setup',
     sections: [
-      { id: 'my-saber', label: 'My Saber' },
+      { id: 'my-saber', label: 'Saber Profiles' },
       { id: 'hardware', label: 'Hardware' },
     ],
   },
