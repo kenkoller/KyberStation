@@ -26,6 +26,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /KyberStation
+          NEXT_PUBLIC_SITE_URL: https://kenkoller.github.io/KyberStation
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out

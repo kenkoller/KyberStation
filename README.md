@@ -1,5 +1,9 @@
 # KyberStation
 
+### 🪐 [**Open KyberStation →**](https://kenkoller.github.io/KyberStation/)
+
+**No install. Works in any modern browser.** Mobile, tablet, laptop, or desktop.
+
 [![CI](https://github.com/kenkoller/KyberStation/actions/workflows/ci.yml/badge.svg)](https://github.com/kenkoller/KyberStation/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Feedback Welcome](https://img.shields.io/badge/feedback-welcome-brightgreen.svg)](https://github.com/kenkoller/KyberStation/issues/new/choose)

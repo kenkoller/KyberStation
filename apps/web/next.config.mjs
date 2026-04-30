@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
   // CSP is enforced via <meta httpEquiv> in layout.tsx for production builds.
   // headers() is not served with output: 'export' and actively breaks
   // dev mode by blocking Next.js inline scripts, so it is removed.
