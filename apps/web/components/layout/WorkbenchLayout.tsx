@@ -391,6 +391,21 @@ export function WorkbenchLayout() {
   const [showWizard, setShowWizard] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const openShortcutsHelp = useCallback(() => setShowShortcutsHelp(true), []);
+
+  // Auto-open the Saber Wizard when entering /editor with `?wizard=1`.
+  // The landing page's "Launch Wizard" CTA links to /editor?wizard=1
+  // expecting this hook to fire — without it, users land in the editor
+  // with no wizard visible. Reads search params once on mount; subsequent
+  // navigations within the editor don't re-trigger.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('wizard') === '1') {
+      setShowWizard(true);
+    }
+    // Intentionally empty deps — fire once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // ── AnalysisRail expand slot (post-OV11 density pass) ──
   // State lives in `uiStore.expandedAnalysisLayerId`. The rail's ↗
   // button routes through the setter; CanvasLayout's ExpandedAnalysisSlot
