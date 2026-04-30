@@ -157,6 +157,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     feedback: false,
     // Advanced
     layout: false,
+    experimental: false,
   });
 
   const toggleSection = useCallback((key: keyof typeof sections) => {
@@ -202,6 +203,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   //    to 40% for photosensitive users. Halo stays visible but subdued. ──
   const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
   const setReduceBloom = useAccessibilityStore((s) => s.setReduceBloom);
+
+  // ── Show Crystal panel (2026-04-29) — opt-in toggle for the
+  //    experimental Three.js Saber Card / Kyber Crystal panel. Off
+  //    by default; the OUTPUT sidebar entry is gated on this flag. ──
+  const showCrystal = useAccessibilityStore((s) => s.showCrystal);
+  const setShowCrystal = useAccessibilityStore((s) => s.setShowCrystal);
 
   // ── Aurebesh mode + variant — real hook: reads/writes localStorage and applies CSS classes to <html> ──
   const { mode: aurebeshMode, setMode: setAurebeshMode, variant: aurebeshVariant, setVariant: setAurebeshVariant } = useAurebesh();
@@ -693,6 +700,37 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </section>
   );
 
+  // 2026-04-29: Experimental section — opt-in toggles for preview-quality
+  // panels we're not ready to surface for everyone yet. First entry is
+  // the Three.js Kyber Crystal / Saber Card panel.
+  const renderExperimental = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Experimental"
+        open={sections.experimental}
+        onToggle={() => toggleSection('experimental')}
+      />
+      {sections.experimental && (
+        <div className="mt-3 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ui-sm text-text-secondary">Show Crystal panel (experimental)</p>
+              <p className="text-ui-xs text-text-muted">
+                Adds a "Saber Card / Crystal" entry under OUTPUT. Three.js Kyber Crystal renderer + share-card export — preview quality.
+              </p>
+            </div>
+            <ToggleSwitch
+              id="experimental-show-crystal"
+              checked={showCrystal}
+              onChange={setShowCrystal}
+              label="Show Crystal panel"
+            />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
   const renderLayout = (): ReactNode => (
     <section className="py-4">
       <SectionToggle
@@ -888,7 +926,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div>{renderFeedback()}</div>
           </div>
 
-          {/* Advanced: Layout */}
+          {/* Advanced: Layout + Experimental */}
           <div
             role="tabpanel"
             id="settings-tabpanel-advanced"
@@ -898,6 +936,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             className="divide-y divide-border-subtle"
           >
             <div className="first:[&>section]:pt-0">{renderLayout()}</div>
+            <div>{renderExperimental()}</div>
           </div>
         </div>
 

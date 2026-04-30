@@ -69,6 +69,15 @@ interface AccessibilityState {
    * Defaults to false; persisted alongside other a11y prefs.
    */
   reduceBloom: boolean;
+  /**
+   * 2026-04-29: hide the experimental Three.js Kyber Crystal /
+   * Saber Card panel by default. Power users can opt in via Settings
+   * → Advanced → "Show Crystal panel (experimental)". The panel is
+   * gated in Sidebar.tsx so the entry simply doesn't render when this
+   * is false. Persisted alongside other a11y prefs because it's a
+   * UI-surface preference, not a data setting.
+   */
+  showCrystal: boolean;
 
   setHighContrast: (on: boolean) => void;
   setColorblindMode: (mode: ColorblindMode) => void;
@@ -78,6 +87,7 @@ interface AccessibilityState {
   setEffectAutoRelease: (config: Partial<EffectAutoRelease>) => void;
   setGraphicsQuality: (quality: GraphicsQuality) => void;
   setReduceBloom: (on: boolean) => void;
+  setShowCrystal: (on: boolean) => void;
   syncReducedMotionFromOS: () => void;
   reset: () => void;
 }
@@ -92,7 +102,7 @@ function loadFromStorage(): Partial<AccessibilityState> {
   return {};
 }
 
-function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality' | 'reduceBloom'>) {
+function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality' | 'reduceBloom' | 'showCrystal'>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
@@ -108,6 +118,9 @@ const defaults = {
   effectAutoRelease: { enabled: false, seconds: 4 } as EffectAutoRelease,
   graphicsQuality: 'high' as GraphicsQuality,
   reduceBloom: false,
+  // 2026-04-29: Crystal panel hidden by default. Power-user opt-in
+  // via Settings → Advanced.
+  showCrystal: false,
 };
 
 const stored = loadFromStorage();
@@ -123,6 +136,7 @@ function persist(s: AccessibilityState) {
     effectAutoRelease: s.effectAutoRelease,
     graphicsQuality: s.graphicsQuality,
     reduceBloom: s.reduceBloom,
+    showCrystal: s.showCrystal,
   });
 }
 
@@ -136,6 +150,7 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   effectAutoRelease: stored.effectAutoRelease ?? defaults.effectAutoRelease,
   graphicsQuality: stored.graphicsQuality ?? defaults.graphicsQuality,
   reduceBloom: stored.reduceBloom ?? defaults.reduceBloom,
+  showCrystal: stored.showCrystal ?? defaults.showCrystal,
 
   setHighContrast: (highContrast) => {
     set({ highContrast });
@@ -183,6 +198,24 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   setReduceBloom: (reduceBloom) => {
     set({ reduceBloom });
     persist(get());
+  },
+
+  setShowCrystal: (showCrystal) => {
+    set({ showCrystal });
+    persist(get());
+    // If the user toggles off while my-crystal is the active section,
+    // dynamic-import the uiStore and bounce them to a safe default.
+    // Static import would create a circular dependency between stores;
+    // dynamic import keeps the dependency unidirectional. Skip during
+    // SSR where there's no user-active session to redirect.
+    if (!showCrystal && typeof window !== 'undefined') {
+      void import('@/stores/uiStore').then(({ useUIStore }) => {
+        const ui = useUIStore.getState();
+        if (ui.activeSection === 'my-crystal') {
+          ui.setActiveSection('output');
+        }
+      });
+    }
   },
 
   syncReducedMotionFromOS: () => {
