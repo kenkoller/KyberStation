@@ -37,7 +37,19 @@ export interface SaberProfile {
   fontAssignments: Record<string, string>;
   cardConfigs: CardConfig[];
   activeCardConfigId: string;
+  /**
+   * Workbench-private notes. NEVER serialized into Kyber Code share URLs
+   * (apps/web/lib/sharePack/kyberGlyph.ts) or generated config.h output
+   * (apps/web/lib/configUrl.ts / packages/codegen). Persisted only in
+   * localStorage + JSON profile export/import.
+   */
   notes: string;
+  /**
+   * Workbench-private long-form description (e.g. character backstory,
+   * build notes, vendor info). Same privacy contract as `notes`: never
+   * shipped in Kyber Code or config.h.
+   */
+  description: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +63,22 @@ interface SaberProfileStore {
   deleteProfile: (id: string) => void;
   switchProfile: (id: string) => void;
   updateProfile: (id: string, updates: Partial<Omit<SaberProfile, 'id' | 'createdAt'>>) => void;
+  /**
+   * Rename a saber profile. Trims whitespace + caps at 100 chars to match
+   * the importProfile guard. No-op if the trimmed name is empty (the UI
+   * should revert to the previous name in that case).
+   */
+  renameProfile: (id: string, name: string) => void;
+  /**
+   * Update the workbench-private metadata fields on a profile. Both
+   * `notes` and `description` are capped at 2000 chars to match the
+   * importProfile validator.
+   *
+   * IMPORTANT: these fields NEVER appear in Kyber Code share URLs or
+   * generated config.h output — they're persisted only in localStorage
+   * and JSON profile export/import.
+   */
+  setProfileMeta: (id: string, meta: Partial<{ notes: string; description: string }>) => void;
   exportProfile: (id: string) => string | null;
   importProfile: (json: string) => SaberProfile | null;
   copyPresetsToProfile: (fromId: string, toId: string, presetIds: string[]) => void;
@@ -73,21 +101,36 @@ interface SaberProfileStore {
 
 const STORAGE_KEY = 'kyberstation-saber-profiles';
 
-/** Migrate a profile from old format (presetEntries) to new format (cardConfigs). */
+/**
+ * Migrate a profile from older formats. Two concerns layered:
+ *   1. Legacy `presetEntries` → modern `cardConfigs` (existing migration).
+ *   2. Pre-`description` profiles loaded from localStorage. Default-fills
+ *      `notes` + `description` to '' so reads downstream don't see
+ *      undefined. Idempotent — running on an already-migrated profile is
+ *      a no-op.
+ */
 function migrateProfile(profile: SaberProfile): SaberProfile {
-  if (profile.cardConfigs && profile.cardConfigs.length > 0) return profile;
+  // Default-fill workbench-private string fields for older persisted state.
+  // Use `??` so empty string '' doesn't get rewritten on every load.
+  const withDefaults: SaberProfile = {
+    ...profile,
+    notes: profile.notes ?? '',
+    description: profile.description ?? '',
+  };
+
+  if (withDefaults.cardConfigs && withDefaults.cardConfigs.length > 0) return withDefaults;
 
   // Build card entries from legacy presetEntries
-  const entries: CardPresetEntry[] = (profile.presetEntries ?? []).map((e, i) => ({
+  const entries: CardPresetEntry[] = (withDefaults.presetEntries ?? []).map((e, i) => ({
     id: crypto.randomUUID(),
     order: i,
     presetName: e.presetName,
-    fontName: e.fontName || profile.fontAssignments?.[e.id] || '',
+    fontName: e.fontName || withDefaults.fontAssignments?.[e.id] || '',
     source: e.sourcePresetId
       ? { type: 'builtin' as const, presetId: e.sourcePresetId }
       : { type: 'inline' as const },
     config: e.config,
-    fontAssociation: profile.fontAssignments?.[e.id],
+    fontAssociation: withDefaults.fontAssignments?.[e.id],
   }));
 
   const configId = crypto.randomUUID();
@@ -95,12 +138,12 @@ function migrateProfile(profile: SaberProfile): SaberProfile {
     id: configId,
     name: 'Default',
     entries,
-    createdAt: profile.createdAt,
-    updatedAt: profile.updatedAt,
+    createdAt: withDefaults.createdAt,
+    updatedAt: withDefaults.updatedAt,
   };
 
   return {
-    ...profile,
+    ...withDefaults,
     cardConfigs: [defaultConfig],
     activeCardConfigId: configId,
   };
@@ -151,6 +194,7 @@ export const useSaberProfileStore = create<SaberProfileStore>((set, get) => ({
       }],
       activeCardConfigId: configId,
       notes: '',
+      description: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -212,6 +256,32 @@ export const useSaberProfileStore = create<SaberProfileStore>((set, get) => ({
     set((state) => {
       const profiles = state.profiles.map((p) =>
         p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p,
+      );
+      saveToStorage(profiles, state.activeProfileId);
+      return { profiles };
+    }),
+
+  renameProfile: (id, name) =>
+    set((state) => {
+      const trimmed = name.trim().slice(0, 100);
+      if (!trimmed) return state;
+      const profiles = state.profiles.map((p) =>
+        p.id === id ? { ...p, name: trimmed, updatedAt: new Date().toISOString() } : p,
+      );
+      saveToStorage(profiles, state.activeProfileId);
+      return { profiles };
+    }),
+
+  setProfileMeta: (id, meta) =>
+    set((state) => {
+      // Cap each field at 2000 chars to match importProfile's validator.
+      // The cap is large enough for verbose descriptions while still
+      // bounding localStorage growth.
+      const safeMeta: Partial<Pick<SaberProfile, 'notes' | 'description'>> = {};
+      if (typeof meta.notes === 'string') safeMeta.notes = meta.notes.slice(0, 2000);
+      if (typeof meta.description === 'string') safeMeta.description = meta.description.slice(0, 2000);
+      const profiles = state.profiles.map((p) =>
+        p.id === id ? { ...p, ...safeMeta, updatedAt: new Date().toISOString() } : p,
       );
       saveToStorage(profiles, state.activeProfileId);
       return { profiles };
@@ -280,6 +350,7 @@ export const useSaberProfileStore = create<SaberProfileStore>((set, get) => ({
           ? data.activeCardConfigId
           : configId,
         notes: typeof data.notes === 'string' ? data.notes.slice(0, 2000) : '',
+        description: typeof data.description === 'string' ? data.description.slice(0, 2000) : '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
