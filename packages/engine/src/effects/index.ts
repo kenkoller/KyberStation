@@ -20,6 +20,7 @@ import { SplinterEffect } from './SplinterEffect.js';
 import { CoronaryEffect } from './CoronaryEffect.js';
 import { GlitchMatrixEffect } from './GlitchMatrixEffect.js';
 import { SiphonEffect } from './SiphonEffect.js';
+import { UnstableKyloEffect } from './UnstableKyloEffect.js';
 
 export { BaseEffect } from './BaseEffect.js';
 export { ClashEffect } from './ClashEffect.js';
@@ -43,6 +44,7 @@ export { SplinterEffect } from './SplinterEffect.js';
 export { CoronaryEffect } from './CoronaryEffect.js';
 export { GlitchMatrixEffect } from './GlitchMatrixEffect.js';
 export { SiphonEffect } from './SiphonEffect.js';
+export { UnstableKyloEffect } from './UnstableKyloEffect.js';
 
 /** Registry mapping each EffectType to its constructor. */
 export const EFFECT_REGISTRY: Record<EffectType, () => BladeEffect> = {
@@ -67,6 +69,7 @@ export const EFFECT_REGISTRY: Record<EffectType, () => BladeEffect> = {
   coronary: () => new CoronaryEffect(),
   glitchMatrix: () => new GlitchMatrixEffect(),
   siphon: () => new SiphonEffect(),
+  unstableKylo: () => new UnstableKyloEffect(),
 };
 
 /** Create a new effect instance by type. */

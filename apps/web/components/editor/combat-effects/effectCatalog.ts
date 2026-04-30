@@ -65,6 +65,7 @@ export const COMBAT_EFFECTS: ReadonlyArray<CombatEffectEntry> = [
   { id: 'coronary',     label: 'Coronary',     desc: 'Pulsing heartbeat ring',        glyph: '♥', category: 'exotic',    sustained: false, shortcut: 'E' },
   { id: 'glitchMatrix', label: 'Glitch Matrix', desc: 'Datamosh-style scramble',      glyph: '⌗', category: 'exotic',    sustained: false, shortcut: 'X' },
   { id: 'siphon',       label: 'Siphon',       desc: 'Energy drain toward emitter',   glyph: '↧', category: 'exotic',    sustained: false, shortcut: 'H' },
+  { id: 'unstableKylo', label: 'Unstable Kylo', desc: 'Crossguard white spark spray',  glyph: '✺', category: 'impact',    sustained: false, shortcut: null },
 ];
 
 // ─── Special "GENERAL" row ────────────────────────────────────────────

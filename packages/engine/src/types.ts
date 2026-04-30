@@ -77,7 +77,8 @@ export type EffectType =
   | 'splinter'
   | 'coronary'
   | 'glitchMatrix'
-  | 'siphon';
+  | 'siphon'
+  | 'unstableKylo';
 
 export interface EffectParams {
   position?: number; // 0-1, where on the blade the effect occurs
@@ -438,6 +439,14 @@ export interface BladeConfig {
   // ── Effect Customization ──
   clashLocation?: number;         // Where on blade the clash hits (0-100, default 50)
   clashIntensity?: number;        // How bright/large the flash is (0-100, default 75)
+  /**
+   * Unstable Kylo clash variant (v0.15.x effects priority 5). When true,
+   * clashes also fire the `unstableKylo` effect — bright white sparks spray
+   * from the clash point in both directions. Codegen emits a second
+   * `SimpleClashL<White, 60>` overlay alongside the standard clash; visualizer
+   * runs the particle simulation in `UnstableKyloEffect`. Both off by default.
+   */
+  unstableKylo?: boolean;
   /**
    * Per-frame decay coefficient for the modulation `clash` modulator
    * after a clash event latches it to 1.0. 0–1, where 0 = instant
