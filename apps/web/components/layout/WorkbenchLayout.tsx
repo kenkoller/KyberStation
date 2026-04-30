@@ -993,7 +993,7 @@ export function WorkbenchLayout() {
             }}
           >
             <span aria-hidden="true">✦</span>
-            <span className="hidden tablet:inline">Wizard</span>
+            <span className="hidden tablet:inline desktop:inline">Wizard</span>
           </HeaderButton>
 
           <HeaderButton
