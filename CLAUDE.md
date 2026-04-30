@@ -605,6 +605,63 @@ Per `docs/SESSION_2026-04-30_LAUNCH_DAY.md`'s end-of-day tree:
 
 ---
 
+## Current State (2026-04-30 night, T2.10 golden-hash harness + full verification)
+
+Session-end addendum to the overnight refinement wave below. After the 5 overnight refinement PRs (#139–#143) merged, ran a full integration verification sweep on main and dispatched one more agent for T2.10 (renderer-level golden-hash harness). **3 more PRs landed: #144, #147, plus Ken's parallel #149.** Session total: **17 PRs**.
+
+### Final PRs
+
+| PR | Status | Title | Notes |
+|---|---|---|---|
+| #144 | ✅ merged | docs(claude): 2026-04-30 evening session wrap | Session archive doc — pinned the overnight-wave findings before the next batch landed |
+| #147 | ✅ merged | test(renderer): renderer-level golden-hash harness for blade pipelines | T2.10 — unblocks Item K (lib/blade/* extraction) |
+| #149 | ✅ merged (Ken) | docs(claude-md): launch posture v2 | Ken's parallel work — locked v1.0 launch posture, FLASH_GUIDE current-state |
+
+### Integration verification (after 14-PR landing)
+
+Before tag-cut prep, ran a full workspace integration sweep on main. **Confirmed clean integration of all 14 merged PRs:**
+
+- **Typecheck**: 10/10 packages clean
+- **Tests**: 4899 passing (web 1875 / engine 796 / codegen 1859 / boards 260 / sound 62 / presets 47)
+- **Production build**: success — `/editor` route 260 kB / 860 kB First Load JS, all routes static-prerendered
+
+No integration drift between Wave 1 critical bugs + Ken's audio merges + overnight refinement. The 14 PRs that landed in succession all play well together — typecheck-clean across the merge sequence and full test green.
+
+### T2.10 — renderer-level golden-hash harness (PR #147)
+
+Pure test infrastructure. Pixel-output regression sentinel for the workbench blade renderer, complementary to the engine-level golden-hash from PR #112.
+
+**What ships:**
+- `apps/web/tests/rendererGoldenHash/setup.ts` — `installCanvasGlobals()` + `createTestCanvas()` bridging the renderer pipeline onto node-canvas via an `OffscreenCanvas` polyfill
+- `apps/web/tests/rendererGoldenHash/hash.ts` — `hashCanvas` (FNV-1a, full-fidelity) + `hashCanvasCoarse` (4×4 tile + 16-level luma quantization, escape hatch for AA-sensitive surfaces)
+- `apps/web/tests/rendererGoldenHash/bladeRenderer.test.ts` — 9 cases hashing `drawWorkbenchBlade` output: Obi-Wan blue × 4 states (off/igniting-50/on/retracting-50) + 3 cross-color ON variants + Darksaber + FNV drift sentinel
+- `apps/web/tests/rendererGoldenHash/__snapshots__/bladeRenderer.test.ts.snap` — recorded hashes
+- `canvas@^3.0.0` as devDependency (v2.x has no Node 24 prebuilt binary)
+
+**Scope reduction from original spec:** PR originally included 8 card-snapshot tests covering the layout × theme matrix. Those failed cross-platform CI even with coarse hashing because **Cairo's text/font rasterization diverges substantially between macOS (Core Text glyphs) and Linux CI (FreeType + Pango)**. Coarse hashing at 4×4 tiles + 16-level luma quantize was still too granular to mask the drift. Dropped from PR #147; tracked as future work using a different approach (visual-diff with tolerance, or platform-specific golden files via separate macOS/Linux test runs).
+
+**What this unblocks:** Item K (lib/blade/* module extraction from BladeCanvas.tsx, ~3000 LOC) is now safe to attempt — both engine-level and renderer-level golden-hash sentinels would catch any drift.
+
+### Architectural decisions worth carrying forward (T2.10-specific)
+
+6. **Cross-platform pixel-hash tests need pixel-aligned math.** Blade renderer hashes work cross-platform because the output is capsule rasterizer + bloom mip-chain — pixel-aligned arithmetic with no font hinting. Card-snapshot hashes failed because they include drawMetadata text, which Cairo rasterizes differently per OS. Future renderer tests: keep hash sentinels OFF text-heavy or font-dependent surfaces; reserve those for visual-diff tooling (Playwright screenshot compare, Argos, etc.) which has tolerance baked in.
+
+7. **`canvas@^3.0.0` over `canvas@^2.x` for Node 24+.** v2.11.2's prebuilt binaries don't include Node 24 ABI; v3 ships universal prebuilds. The agent caught this during dep install and pivoted before pushing.
+
+8. **OffscreenCanvas polyfill must return a real node-canvas Canvas, not a wrapper.** `drawImage`'s prototype-chain check fails on wrapper classes with "Image or Canvas expected." Used a function-style constructor that returns `createCanvas(w, h)` directly.
+
+### Recommended next steps (refreshed)
+
+1. **Ken browser walkthrough** of all 17 PRs — especially the user-visible ones (retraction, save preset, add to queue, audio-waveform layer toggle, ⌘K palette, light-theme card export, header standardization).
+2. **Cut v0.15.1 patch tag** once browser-verified — pre-launch stabilization release.
+3. **Sub-1024 layout pass** (Ken's #2) — deferred; needs Ken's eyes for breakpoint judgment. Not delegable cleanly.
+4. **Item B Safari BladeCanvas bloom** — Ken's hands-on, can't delegate.
+5. **Item K — lib/blade/* extraction** — now unblocked by PR #147. Future session.
+6. **Card-snapshot regression coverage** — different approach (visual-diff or platform-specific golden files). Tracked as backlog.
+7. **Launch comms prep** — per `docs/LAUNCH_PLAN.md`.
+
+---
+
 ## Current State (2026-04-30 evening, overnight refinement wave)
 
 Session focus: continue from 2026-04-30 morning session. Merged Ken's 6 in-flight audio PRs after rebase, dispatched Wave 1 (4 critical-bug agents in parallel), then dispatched a 5-agent overnight refinement wave while Ken slept. **14 PRs landed this session.**
