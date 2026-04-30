@@ -8,6 +8,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Feedback Welcome](https://img.shields.io/badge/feedback-welcome-brightgreen.svg)](https://github.com/kenkoller/KyberStation/issues/new/choose)
 
+**Explore:** [Features](https://kenkoller.github.io/KyberStation/features) · [Showcase](https://kenkoller.github.io/KyberStation/showcase) · [Changelog](https://kenkoller.github.io/KyberStation/changelog) · [FAQ](https://kenkoller.github.io/KyberStation/faq) · [Gallery](https://kenkoller.github.io/KyberStation/gallery)
+
 **Visual blade style editor, real-time simulator, and ProffieOS config generator for custom lightsabers.**
 
 **Free, browser-based, MIT licensed, no accounts, no backend. Hobby project. Beta.**
@@ -22,9 +24,9 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 
 ## Features
 
-### Blade Engine (150+ source files across packages, 5,000+ tests)
-- **29 blade styles** — Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage
-- **21 effect types** — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon
+### Blade Engine (150+ source files across packages, ~5,000 tests)
+- **33 blade styles** — Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage, Darksaber, Sith Flicker, Blade Charge, Tempo Lock
+- **22 effect types** — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon, Unstable Kylo
 - **19 ignition + 13 retraction animations** with 10 easing curves and custom easing support
 - Multi-directional layer compositing with per-segment effect scoping
 - Headless engine — zero DOM dependencies, runs in browser, tests, or Electron
@@ -89,16 +91,17 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 
 ### Saber Profiles & Card Presets
 - Create named saber profiles with multiple card configs ("Dueling Set", "Display Set")
-- **Inline rename + private workbench notes/description** per profile — keep build journals or vendor notes attached to a saber without exposing them in the generated config
+- **Inline rename + private workbench notes + description** per profile — keep build journals or vendor notes attached to a saber without exposing them in the generated config
+- **Click-to-rename card presets** in the queue — quick relabel without opening a modal
 - One-click **Add to Queue** from the action bar — drops the current config into the active profile's card queue with auto-generated name
-- Card Preset Composer — add from Gallery, My Presets, or current editor state, with click-to-rename in the queue
+- Card Preset Composer — add from Gallery, My Presets, or current editor state
 - 4 built-in starter templates (OT Essentials, Prequel Collection, Dark Side Pack, Dueling Minimalist)
 - Storage budget estimation per preset entry with real font sizes when library connected
 - SD Card Writer — generate a ZIP with config.h and font directories, ready to extract
 
 ### Gallery
-- 305+ character presets across canon, Legends, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots)
-- **Grid view as default** with view toggle, color/style/era filter rail, click-to-open detail modal
+- **336+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots)
+- **Grid view as default** with view toggle, color/style/era filter rail, click-to-open detail modal showing full config + load/share actions
 - Every preset is `continuity`-tagged so you can filter to just canon
 - Surprise Me randomizer pulls from the full ignition + retraction + modulation catalogs
 
@@ -120,6 +123,17 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 - Drag-and-drop panel reordering between columns via HTML5 DnD
 - Saveable layout presets — create, load, delete custom arrangements
 - Header bar with undo/redo, FPS counter, share (Kyber Code), global pause, settings
+
+### Mobile Shell
+- **Vertical-stack layout with sidebar drawer** at 375px and up — purpose-built for phones, not a squashed desktop
+- Bottom tab bar for primary navigation between editor, gallery, and saved sabers
+- Full editing parity for color, style, and effect tuning — design a saber from your phone
+
+### Marketing Pages
+- **`/features`** — long-form ledger of 10 feature pillars with deep-link anchors and inline ProffieOS code peeks
+- **`/showcase`** — curated 20-saber tour grouped JEDI / SITH / STYLE / CROSS, click-through to editor via Kyber Code
+- **`/changelog`** — auto-rendered from `CHANGELOG.md` with per-release anchors
+- **`/faq`** — 13 entries answered in the humble hobby-project tone, native `<details>`/`<summary>`
 
 ### Visualization Stack & Debug Mode
 - 13 toggleable analysis layers below the blade canvas (pixel strip, R/G/B channels, luminance, power draw, hue, saturation, effect overlay, swing response, transition progress, storage budget)
@@ -147,12 +161,16 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 The first publicly-released version. Includes:
 - **Save Preset + Add to Queue** action-bar buttons — one-click flow from "I built something" to "it's saved" or "it's on a card"
 - **Battery selector with manufacturer-spec power warnings** — pick from a catalog of common 18650 / 21700 cells; Hardware panel surfaces a safety banner when LED count outruns the cell's continuous-discharge headroom
-- **Profile rename + private workbench notes** — keep build journals attached to a saber without exposing them in the generated config
+- **Profile rename + private workbench notes + description** — keep build journals attached to a saber without exposing them in the generated config
 - **Gallery grid view** as default, with click-to-open detail modal and color/style/era filter rail
+- **Mobile shell** — vertical-stack layout with sidebar drawer, designed for 375px and up
+- **Marketing pages** — `/features`, `/showcase`, `/changelog`, `/faq` for visitors who want context before opening the editor
 - Full **Modulation Routing v1.1 Core** — 11 modulators (swing/sound/angle/twist/time/clash/battery/lockup/preon/ignition/retraction), click-to-route + true HTML5 drag-to-route, per-binding expression editing via `fx` button popover, reciprocal hover highlighting, AST-level template injection in codegen so the generated `config.h` flashes LIVE ProffieOS templates instead of snapshot values
+- **4 new engine effects** — Sith Flicker (unstable-weapon flicker), Blade Charge (visible buildup), Tempo Lock (beat-locked rhythm), Unstable Kylo (crossguard pulse)
+- **27 new kinetic-style presets** for the Surprise Me / kinetic gallery filter
 - **Vertical Saber Card layout** + 4 layouts × 5 themes (20 combos) for share-card export
 - **Animated saber GIF export** — idle hum loop + ignition cycle from the My Crystal panel, headless workbench renderer port
-- **305+ character presets** across canon, Legends, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots) — every preset is `continuity`-tagged so you can filter to just canon
+- **336+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots) — every preset is `continuity`-tagged so you can filter to just canon
 - **AST-based ProffieOS code generator** — emits balanced templates that compile against ProffieOS 7.x without modification
 - **`dfu-util` workflow as the recommended flash path** ([docs/FLASH_GUIDE.md](docs/FLASH_GUIDE.md)) with mandatory firmware backup; in-browser **WebUSB FlashPanel as experimental** behind a 3-checkbox disclaimer gate
 - **Kyber Glyph v2 sharing** — `?s=<glyph>` URL handler round-trips full configs including modulation bindings; v1 / v2 backward compatible
