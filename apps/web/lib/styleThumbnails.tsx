@@ -132,14 +132,14 @@ export const STYLE_THUMBNAILS: Record<string, StyleThumbnailEntry> = {
     label: 'Gradient',
     thumbnail: (
       <Svg>
-        <defs>
-          <linearGradient id="style-thumb-gradient" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor={ACCENT} />
-            <stop offset="50%" stopColor="rgb(var(--status-magenta, 220 80 180))" />
-            <stop offset="100%" stopColor="rgb(var(--status-cyan, 80 200 220))" />
-          </linearGradient>
-        </defs>
-        <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke="url(#style-thumb-gradient)" strokeWidth="6" strokeLinecap="round" />
+        {/* Stacked color stops with hard transitions read as "gradient" at 40×40
+            far more reliably than a smooth 3-stop blend, which compresses to an
+            indistinct line. Three vertically-stacked bands span hue: warm →
+            accent → cool, with light tick marks bridging them. */}
+        <rect x="8" y="20" width="84" height="6" fill="rgb(239 68 68)" rx="2" />
+        <rect x="8" y="27" width="84" height="6" fill={ACCENT} rx="2" />
+        <rect x="8" y="34" width="84" height="6" fill="rgb(59 130 246)" rx="2" />
+        <line x1="8" y1="20" x2="92" y2="40" stroke="rgb(255 255 255)" strokeWidth="0.8" opacity="0.35" />
       </Svg>
     ),
   },
@@ -351,6 +351,206 @@ export const STYLE_THUMBNAILS: Record<string, StyleThumbnailEntry> = {
         <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT_DIM} strokeWidth="2" strokeLinecap="round" />
         <line x1="50" y1={BLADE_Y} x2="86" y2={BLADE_Y} stroke={ACCENT} strokeWidth="4" strokeLinecap="round" opacity="0.5" />
         <circle cx="86" cy={BLADE_Y} r="5" fill={ACCENT} />
+      </Svg>
+    ),
+  },
+
+  torrent: {
+    label: 'Torrent',
+    thumbnail: (
+      <Svg>
+        {/* Three offset wave layers reading as rushing whitewater. Lower band
+            heaviest, top band lightest — gives the eye depth + flow. */}
+        <path
+          d="M8 36 Q20 30 32 36 T56 36 T80 36 T92 36"
+          stroke={ACCENT}
+          strokeWidth="3.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M8 30 Q22 24 36 30 T64 30 T92 30"
+          stroke={ACCENT_DIM}
+          strokeWidth="2.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M8 24 Q24 20 38 24 T68 24 T92 24"
+          stroke={ACCENT}
+          strokeWidth="1.5"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.5"
+        />
+      </Svg>
+    ),
+  },
+
+  moire: {
+    label: 'Moiré',
+    thumbnail: (
+      <Svg>
+        {/* Two concentric ring sets at slight offset = canonical moiré pattern.
+            Open circles (no fill) keep it readable at small sizes. */}
+        <circle cx="34" cy={BLADE_Y} r="6" stroke={ACCENT} strokeWidth="1.2" fill="none" />
+        <circle cx="34" cy={BLADE_Y} r="11" stroke={ACCENT} strokeWidth="1.2" fill="none" />
+        <circle cx="34" cy={BLADE_Y} r="16" stroke={ACCENT} strokeWidth="1.2" fill="none" />
+        <circle cx="60" cy={BLADE_Y} r="6" stroke={ACCENT_DIM} strokeWidth="1.2" fill="none" />
+        <circle cx="60" cy={BLADE_Y} r="11" stroke={ACCENT_DIM} strokeWidth="1.2" fill="none" />
+        <circle cx="60" cy={BLADE_Y} r="16" stroke={ACCENT_DIM} strokeWidth="1.2" fill="none" />
+      </Svg>
+    ),
+  },
+
+  cascade: {
+    label: 'Cascade',
+    thumbnail: (
+      <Svg>
+        {/* Stair-step descending ladder — each step half the prior tread length,
+            evoking falling water cascade pools. */}
+        <line x1="8" y1="18" x2="24" y2="18" stroke={ACCENT} strokeWidth="3" strokeLinecap="round" />
+        <line x1="24" y1="18" x2="24" y2="26" stroke={ACCENT_DIM} strokeWidth="2" />
+        <line x1="24" y1="26" x2="44" y2="26" stroke={ACCENT} strokeWidth="3" strokeLinecap="round" />
+        <line x1="44" y1="26" x2="44" y2="34" stroke={ACCENT_DIM} strokeWidth="2" />
+        <line x1="44" y1="34" x2="68" y2="34" stroke={ACCENT} strokeWidth="3" strokeLinecap="round" />
+        <line x1="68" y1="34" x2="68" y2="42" stroke={ACCENT_DIM} strokeWidth="2" />
+        <line x1="68" y1="42" x2="92" y2="42" stroke={ACCENT} strokeWidth="3" strokeLinecap="round" />
+      </Svg>
+    ),
+  },
+
+  vortex: {
+    label: 'Vortex',
+    thumbnail: (
+      <Svg>
+        {/* Inward-spiralling arc constructed from 3 quadratic bezier hops that
+            tighten toward the center. Reads as swirl / drain. */}
+        <path
+          d="M14 30 Q20 12 50 14 Q78 16 78 36 Q78 48 56 46 Q42 44 44 32 Q46 26 54 28"
+          stroke={ACCENT}
+          strokeWidth="2.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <circle cx="52" cy={BLADE_Y} r="2" fill={ACCENT} />
+      </Svg>
+    ),
+  },
+
+  nebula: {
+    label: 'Nebula',
+    thumbnail: (
+      <Svg>
+        {/* Soft cloud blob with overlapping translucent fills to suggest
+            volumetric cosmic dust. Bright accent core, dim halo. */}
+        <ellipse cx="32" cy="26" rx="18" ry="10" fill={ACCENT_DIM} opacity="0.7" />
+        <ellipse cx="58" cy="34" rx="22" ry="12" fill={ACCENT_DIM} opacity="0.6" />
+        <ellipse cx="44" cy={BLADE_Y} rx="14" ry="7" fill={ACCENT} opacity="0.85" />
+        <circle cx="22" cy="22" r="1" fill={ACCENT} />
+        <circle cx="78" cy="38" r="1.2" fill={ACCENT} />
+        <circle cx="68" cy="20" r="0.8" fill={ACCENT} opacity="0.7" />
+        <circle cx="38" cy="42" r="0.8" fill={ACCENT} opacity="0.6" />
+      </Svg>
+    ),
+  },
+
+  tidal: {
+    label: 'Tidal',
+    thumbnail: (
+      <Svg>
+        {/* Two long-period sinusoids in phase, evoking ocean swell rolling
+            beneath the blade. Lower amplitude than Plasma to read calmer. */}
+        <path
+          d="M8 28 Q30 18 50 28 T92 28"
+          stroke={ACCENT}
+          strokeWidth="3"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M8 36 Q30 46 50 36 T92 36"
+          stroke={ACCENT_DIM}
+          strokeWidth="3"
+          fill="none"
+          strokeLinecap="round"
+        />
+      </Svg>
+    ),
+  },
+
+  mirage: {
+    label: 'Mirage',
+    thumbnail: (
+      <Svg>
+        {/* Three fading horizontal wavy lines, each with progressive opacity
+            falloff — reads as heat-shimmer fading into distance. */}
+        <path
+          d="M8 22 Q18 19 28 22 T48 22 T68 22 T92 22"
+          stroke={ACCENT}
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.95"
+        />
+        <path
+          d="M8 30 Q18 27 28 30 T48 30 T68 30 T92 30"
+          stroke={ACCENT}
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+        <path
+          d="M8 38 Q18 35 28 38 T48 38 T68 38 T92 38"
+          stroke={ACCENT}
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.25"
+        />
+      </Svg>
+    ),
+  },
+
+  painted: {
+    label: 'Painted',
+    thumbnail: (
+      <Svg>
+        {/* Wide tapered brush stroke with a lighter dry-brush highlight along
+            its top — reads as a single artist's brush mark. */}
+        <path
+          d="M8 32 Q24 26 50 30 Q72 33 92 28"
+          stroke={ACCENT}
+          strokeWidth="9"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14 30 Q26 26 48 28 Q70 30 88 26"
+          stroke={ACCENT_DIM}
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.7"
+        />
+      </Svg>
+    ),
+  },
+
+  imageScroll: {
+    label: 'Image Scroll',
+    thumbnail: (
+      <Svg>
+        {/* Horizontal pixel strip with a highlighted "scrolling marker" frame
+            mid-blade — the icon for filmstrip-style image scroll mode. */}
+        <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT_DIM} strokeWidth="3" strokeLinecap="round" />
+        <rect x="20" y="22" width="6" height="16" fill={ACCENT_DIM} opacity="0.5" />
+        <rect x="30" y="22" width="6" height="16" fill={ACCENT} opacity="0.7" />
+        <rect x="40" y="20" width="6" height="20" fill={ACCENT} stroke="rgb(255 255 255)" strokeWidth="0.8" />
+        <rect x="50" y="22" width="6" height="16" fill={ACCENT} opacity="0.7" />
+        <rect x="60" y="22" width="6" height="16" fill={ACCENT_DIM} opacity="0.5" />
+        <rect x="70" y="22" width="6" height="16" fill={ACCENT_DIM} opacity="0.3" />
       </Svg>
     ),
   },
