@@ -210,7 +210,7 @@ GitHub Pages handles arbitrary traffic for free. Vercel/Netlify free tier should
 | PR #124 merged | ✅ done 2026-04-30 morning | Audio mute lifted to shared store. |
 | PR #122 merged | ✅ done | Sound categories expansion landed during 2026-04-29 session. |
 | PR #118 merged | ✅ done 2026-04-30 morning | Brave warning copy. |
-| Smoke test (clean machine) | ⏭️ pending | Next-session task. See `NEXT_SESSION_2026-05-01_LAUNCH_DECISION.md` for the walkthrough checklist. |
+| Smoke test (clean machine) | ⏭️ pending | Next-session task. See `NEXT_SESSION_HANDOFF.md` for the walkthrough checklist. |
 | Launch announcement drafted | ⏭️ pending | Reuses `docs/LAUNCH_ASSETS.md`. Task for launch-go session. |
 | Pushed v0.16.0 release | ⏭️ pending | Tag cut is the launch trigger. |
 | **Hardware-side outstanding** | | |
