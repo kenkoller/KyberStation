@@ -1,32 +1,38 @@
 'use client';
 
-// ─── MobileShell — Item H mobile overhaul (2026-04-30) ───────────────────────
+// ─── MobileShell — Phase 4.2 sticky-mini-shell rework (2026-04-30) ───────────
 //
-// Vertical-stack mobile shell for <600px viewports. Replaces the legacy
-// 4-tab swipe layout (`MergedDesignPanel` + `DesignPanel` + `TabContent`)
-// with the same Sidebar + MainContent architecture that desktop and
-// tablet use. The Sidebar lives in a slide-out drawer triggered by a
-// hamburger button; section content fills the rest of the screen.
+// Implements the handoff's StickyMiniShell anatomy from
+// "Claude Design Mobile handoff/HANDOFF.md":
 //
-// Layout (top → bottom):
-//   1. Header — hamburger ☰ + title + sound + ignite
-//   2. Action bar — IGNITE/RETRACT + 5 effect chips (touch-sized)
-//   3. Blade canvas — full-width, ~25vh tall
-//   4. Pixel strip — full-width, ~10vh tall
-//   5. Inspector (Quick Controls) — full-width, scrollable
-//   6. Active-section pill — anchored bottom, indicates current section
+//   STICKY top:
+//     1. App header              (44px)   — hamburger + title + ignite
+//     2. Mini blade canvas       (64px)   — auto-ignited live preview
+//     3. Pixel strip             (36px)   — per-LED color row
+//     4. Action bar              (56px)   — 5 icon+letter effect chips + overflow
+//     5. Section tabs            (32px)   — COLOR / STYLE / MOTION / FX / HW / ROUTE
 //
-// Touch targets: every interactive primitive is ≥44×44px per WCAG 2.5.5.
+//   SCROLLING content:
+//     - Inspector when on 'my-saber' (default home)
+//     - MainContent panel when on a tab section or any drawer-only section
 //
-// Drawer dismiss-on-section-pick is wired in MobileSidebarDrawer via
-// activeSection observation, so the hamburger flow becomes:
-//   tap ☰ → drawer opens → tap section → drawer closes + MainContent
-//   shows that section. For the home/canvas view, users either tap the
-//   "× Canvas" pill (if implemented) or pick "Hardware"/"Color"/etc.
-//   to swap the body. The blade canvas + pixel strip + inspector
-//   render only on the home view (when `activeSection === 'my-saber'`
-//   we still show the canvas above the section content as the
-//   primary anchor — see SHOW_CANVAS_FOR_SECTION below).
+//   STICKY bottom:
+//     6. Status bar              (36px)   — scrollable horizontal 11-segment strip
+//
+// Section tabs replace the drawer for shallow editing nav per handoff §3.
+// The hamburger drawer remains accessible from the header for non-tab
+// sections (my-saber profiles, my-crystal, audio, output, etc.) and as
+// a discoverability fallback. Tabs in the strip are highlighted only
+// when the active section IS one of the 6 tab sections — otherwise the
+// strip stays visible but no tab is selected.
+//
+// The Phase 4.1 PR #199/#200 chrome (Back-to-Canvas pill, in-editor
+// bottom bar) is replaced by section tabs + persistent status bar.
+// Section navigation now happens in two predictable ways:
+//   - Tap a tab in MobileSectionTabs (always visible)
+//   - Tap MENU in the header → drawer opens with full section list
+// "Back" is implicit — tap the same tab again or pick MY SABER from the
+// drawer to return home.
 
 import { useEffect, useState, useRef, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
@@ -34,46 +40,20 @@ import { useUIStore, type SectionId } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
-import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
 import { Inspector } from '@/components/editor/Inspector';
 import { MainContent } from '@/components/layout/MainContent';
 import { PixelStripPanel } from '@/components/editor/PixelStripPanel';
 import { LayerCanvas } from '@/components/editor/VisualizationStack';
-import { StatusBar } from '@/components/layout/StatusBar';
 import { AccessibilityPanel } from '@/components/editor/AccessibilityPanel';
 import { FullscreenPreview, FullscreenButton } from '@/components/editor/FullscreenPreview';
 import { PauseButton } from '@/components/layout/PauseButton';
 import { MobileSidebarDrawer } from '@/components/layout/MobileSidebarDrawer';
+import { MobileActionBar } from '@/components/layout/mobile/MobileActionBar';
+import { MobileSectionTabs } from '@/components/layout/mobile/MobileSectionTabs';
+import { MobileStatusBarStrip } from '@/components/layout/mobile/MobileStatusBarStrip';
 import { playUISound } from '@/lib/uiSounds';
 
-// Sections that render their own self-contained UI in MainContent — the
-// blade canvas + pixel strip + Inspector still appear above them as a
-// constant anchor so the user never loses the live blade view.
-//
-// my-saber is the default landing section; "home" mode shows ONLY
-// canvas + inspector with no MainContent area, since the Inspector
-// already covers the most-common quick-tune flow on mobile.
 const HOME_SECTION: SectionId = 'my-saber';
-
-// Compact labels for the in-editor bottom bar's right-side section
-// pill. Mirrors the labels Sidebar / MobileSidebarDrawer use so the
-// drawer-pick → bottom-bar-display loop is consistent. Kept short
-// enough to fit alongside "← Back to Canvas" at 380px viewport.
-const SECTION_LABELS: Record<SectionId, string> = {
-  'my-saber': 'Saber Profiles',
-  'hardware': 'Hardware',
-  'blade-style': 'Blade Style',
-  'color': 'Color',
-  'ignition-retraction': 'Ignition & Retraction',
-  'combat-effects': 'Combat Effects',
-  'layer-compositor': 'Layers',
-  'routing': 'Routing',
-  'motion-simulation': 'Motion Sim',
-  'gesture-controls': 'Gestures',
-  'audio': 'Audio',
-  'output': 'Output',
-  'my-crystal': 'Saber Card',
-};
 
 interface MobileShellProps {
   showA11yPanel: boolean;
@@ -99,23 +79,15 @@ export function MobileShell({
 }: MobileShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeSection = useUIStore((s) => s.activeSection);
-  const setActiveSection = useUIStore((s) => s.setActiveSection);
 
-  // Whether to show the canvas + inspector above MainContent. On the
-  // home section (my-saber) we hide the MainContent body entirely and
-  // let canvas+inspector own the screen. On other sections, the canvas
-  // stays visible as a small constant anchor so users never lose the
-  // live blade view while editing color / hardware / etc.
+  // 'my-saber' is the home section — its body is the Inspector (Quick
+  // Controls). Every other section renders its MainContent panel. The
+  // sticky chrome above is identical regardless of section.
   const isHome = activeSection === HOME_SECTION;
 
-  // Once the drawer is open we want the focus to return to the hamburger
-  // when it closes. Track the trigger ref for that.
   const hamburgerRef = useRef<HTMLButtonElement | null>(null);
 
-  // Pixel buffer for the analysis stack (PixelStripPanel + LayerCanvas).
-  // Same Phase pattern WorkbenchLayout uses: getPixels() returns a stable
-  // Uint8Array that the engine mutates in place each frame. LayerCanvas
-  // reads from it on its own RAF loop.
+  // Pixel buffer for the analysis stack (LayerCanvas).
   const pixelBufRef = useRef<Uint8Array | null>(null);
   useEffect(() => {
     pixelBufRef.current = engineRef.current?.getPixels() ?? null;
@@ -124,12 +96,9 @@ export function MobileShell({
   const isPaused = useUIStore((s) => s.isPaused);
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
-  // Keep the body padding off the global MobileTabBar from layout.tsx —
-  // the editor mobile shell uses its own bottom-anchored chrome (the
-  // pill nav indicator) so the 56px gutter the bar reserves is wasted
-  // space here. We can't unmount it from layout.tsx without affecting
-  // /docs and /m, so we add a class to neutralize the global bottom
-  // padding for this view only.
+  // Neutralize the global MobileTabBar bottom padding from layout.tsx —
+  // the editor mobile shell uses its own status bar at the bottom, so
+  // the 56px gutter is wasted space here.
   useEffect(() => {
     const prev = document.body.style.paddingBottom;
     document.body.style.paddingBottom = '0';
@@ -138,12 +107,9 @@ export function MobileShell({
     };
   }, []);
 
-  // Auto-ignite the blade ~500ms after the engine mounts — same Phase
-  // 1.5h pattern WorkbenchLayout uses on desktop. Without this the
-  // mobile editor opens with a retracted blade (the engine starts at
-  // extendProgress=0 even when bladeStore.isOn is persisted true), so
-  // users see a hilt + faint capsule instead of a glowing blade. Reset
-  // first to force a clean off→on animation.
+  // Auto-ignite the blade ~500ms after the engine mounts (carried from
+  // Phase 4.1). Without this the mobile editor opens with a retracted
+  // blade since the engine starts at extendProgress=0.
   const autoIgnitedRef = useRef(false);
   useEffect(() => {
     if (autoIgnitedRef.current) return;
@@ -159,15 +125,16 @@ export function MobileShell({
   return (
     <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
 
-      {/* ── Mobile Header (h-10 / 40px tall, dense buttons ~30px) ──────
-          PR A2 density v2 (per Ken's "header buttons too tall vertically"
-          field-test feedback): drops below WCAG 44 floor on individual
-          chrome buttons in exchange for a viewport-frugal mobile shell
-          that matches DAW + iOS-app density. The Ignite action button
-          stays larger (primary) — secondary chrome shrinks. */}
-      <header className="flex items-center justify-between px-1.5 h-10 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0 pt-[env(safe-area-inset-top)]">
-        {/* Hamburger menu trigger — visible MENU label for discoverability,
-            shrunk to ~30px tall for density. */}
+      {/* ── 1. Header (44px) ────────────────────────────────────────────
+          Hamburger MENU on the left, brand wordmark center, secondary
+          chrome (sound, a11y, fullscreen, pause, ignite) on the right.
+          Per HANDOFF Q-spec the header is 44px tall; primary buttons
+          honor 44×44 touch targets. */}
+      <header
+        className="flex items-center justify-between px-2 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0 pt-[env(safe-area-inset-top)]"
+        style={{ height: 'var(--header-h)' }}
+      >
+        {/* Hamburger menu trigger — opens the drawer with all sections. */}
         <button
           ref={hamburgerRef}
           type="button"
@@ -178,37 +145,37 @@ export function MobileShell({
           aria-label="Open editor sections menu"
           aria-expanded={drawerOpen}
           aria-haspopup="dialog"
-          className="min-h-[30px] flex items-center gap-1.5 px-1.5 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
+          className="flex items-center gap-1.5 px-2 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
+          style={{ minHeight: 'var(--touch-target)', minWidth: 'var(--touch-target)' }}
         >
-          <span aria-hidden="true" className="flex flex-col gap-[2px]">
-            <span className="block w-3.5 h-[2px] bg-current" />
-            <span className="block w-3.5 h-[2px] bg-current" />
-            <span className="block w-3.5 h-[2px] bg-current" />
+          <span aria-hidden="true" className="flex flex-col gap-[3px]">
+            <span className="block w-4 h-[2px] bg-current" />
+            <span className="block w-4 h-[2px] bg-current" />
+            <span className="block w-4 h-[2px] bg-current" />
           </span>
-          <span className="text-ui-xs font-medium tracking-wider uppercase">Menu</span>
+          <span className="text-ui-xs font-medium tracking-wider uppercase sr-only sm:not-sr-only">
+            Menu
+          </span>
         </button>
 
-        {/* Title — flex-1 / centered */}
         <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
           <span className="text-white">KYBER</span>
           <span className="text-accent">STATION</span>
         </h1>
 
-        {/* Right cluster — sound, settings, fullscreen, pause, ignite.
-            Dense (~30px touch) for the secondary chrome; primary Ignite
-            button stays roomier. */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {/* Sound mute */}
           <button
             type="button"
             onClick={audio.toggleMute}
             aria-label={audio.muted ? 'Unmute audio' : 'Mute audio'}
             className={[
-              'min-h-[30px] min-w-[30px] flex items-center justify-center rounded-interactive border transition-colors text-[10px]',
+              'flex items-center justify-center rounded-interactive border transition-colors text-[10px]',
               audio.muted
                 ? 'border-border-subtle text-text-muted'
                 : 'border-accent-border/40 text-accent bg-accent-dim/30',
             ].join(' ')}
+            style={{ minHeight: 32, minWidth: 32 }}
           >
             <span aria-hidden="true">{audio.muted ? 'OFF' : 'ON'}</span>
           </button>
@@ -218,104 +185,105 @@ export function MobileShell({
             type="button"
             onClick={() => setShowA11yPanel(true)}
             aria-label="Accessibility settings"
-            className="min-h-[30px] min-w-[30px] flex items-center justify-center rounded-interactive border border-border-subtle text-text-muted hover:text-text-primary transition-colors text-ui-xs"
+            className="flex items-center justify-center rounded-interactive border border-border-subtle text-text-muted hover:text-text-primary transition-colors text-ui-xs"
+            style={{ minHeight: 32, minWidth: 32 }}
           >
             {'⚙'}
           </button>
 
           {/* Fullscreen */}
-          <FullscreenButton className="min-h-[30px] min-w-[30px] flex items-center justify-center text-ui-xs" />
+          <FullscreenButton className="flex items-center justify-center text-ui-xs" />
 
-          {/* Pause — wrapper enforces minimum hit area */}
-          <div className="min-h-[30px] min-w-[30px] flex items-center justify-center">
+          {/* Pause */}
+          <div className="flex items-center justify-center" style={{ minHeight: 32, minWidth: 32 }}>
             <PauseButton />
           </div>
 
-          {/* Ignite / Retract — primary action, stays roomier than the
-              secondary chrome chips so it visually leads. */}
+          {/* Ignite — primary action; touch-target sized */}
           <button
             type="button"
             onClick={toggleWithAudio}
             aria-label={isOn ? 'Retract blade' : 'Ignite blade'}
             className={[
-              'min-h-[30px] px-2 rounded-interactive text-ui-xs font-bold uppercase tracking-wider transition-all border',
+              'px-3 rounded-interactive text-ui-xs font-bold uppercase tracking-wider transition-all border',
               isOn
                 ? 'bg-red-900/30 border-red-700/50 text-red-400 ignite-btn-on'
                 : 'bg-accent-dim border-accent-border text-accent ignite-btn-off',
             ].join(' ')}
+            style={{ minHeight: 'var(--touch-target)' }}
           >
             {isOn ? 'Off' : 'On'}
           </button>
         </div>
       </header>
 
-      {/* ── Slide-out Sidebar Drawer ─────────────────────────────────── */}
+      {/* ── Slide-out Sidebar Drawer ────────────────────────────────── */}
       <MobileSidebarDrawer
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
-          // Return focus to the hamburger after close
           requestAnimationFrame(() => hamburgerRef.current?.focus());
         }}
       />
 
-      {/* ── Main Content Area ────────────────────────────────────────────
-          Layout: effect bar + blade canvas are STICKY siblings (shrink-0
-          + outside any scroll container). Only the body region (Inspector
-          on home, MainContent on drilled) scrolls — so switching sections
-          never pushes the blade canvas off-screen. Pre-A1, the entire
-          column was `overflow-y-auto` which let tall section content
-          scroll the blade out of view, producing the "odd zoom levels"
-          UX Ken reported. */}
-      <div className="flex-1 min-h-0 flex flex-col min-w-0">
+      {/* ══ STICKY CHROME (top) ══════════════════════════════════════════ */}
 
-        {/* ── Effect / Action Bar (single row, ~24px tall) ─────────────
-            Tightened for mobile (PR A1): wrapper `px-1 py-0.5` keeps
-            the chips on a single horizontal row at 375px viewport
-            (overflow-x-auto for narrower phones if needed). EffectTriggerBar
-            in compact mode strips the kbd letter underneath. */}
-        <div className="px-1 py-0.5 shrink-0 border-b border-border-subtle bg-bg-secondary/40 overflow-x-auto">
-          <div className="flex items-center gap-1 min-w-fit">
-            <EffectTriggerBar onTrigger={triggerEffectWithAudio} compact />
-          </div>
-        </div>
+      {/* ── 2. Mini Blade Canvas (64px) ────────────────────────────────
+          Per HANDOFF §"Q4 BladeCanvas": mini-blade default; long-press
+          for Inspect mode (Phase 4.5 deferred). 64px = 1.78px / LED at
+          144 LEDs; gestalt + motion remain readable. */}
+      <div
+        className="w-full shrink-0 flex items-center justify-center bg-bg-primary border-b border-border-subtle"
+        style={{ height: 'var(--blade-rod-h)' }}
+        role="region"
+        aria-label="Blade preview"
+      >
+        <BladeCanvas engineRef={engineRef} vertical={false} compact />
+      </div>
 
-        {/* ── Blade Canvas — clean preview, ~110px tall ─────────────────
-            Per Ken's "blade preview should take less vertical space"
-            (PR A2): trimmed from 178px → 110px. Analysis layers that
-            used to overlay on top of the canvas now live in their own
-            sticky regions BELOW (PixelStripPanel + LayerCanvas), in
-            the same order desktop CanvasLayout uses (blade →
-            pixel-strip → expanded-analysis). */}
-        <div
-          className="w-full shrink-0 flex items-center justify-center bg-bg-primary border-b border-border-subtle"
-          style={{ height: 'min(15vh, 120px)', minHeight: 96 }}
-          role="region"
-          aria-label="Blade preview"
-        >
-          <BladeCanvas engineRef={engineRef} vertical={false} compact />
-        </div>
+      {/* ── 3. Pixel Strip (36px) ──────────────────────────────────────
+          Per-LED color row directly below the mini-blade. Reads the
+          same engine pixel buffer as the desktop CanvasLayout. */}
+      <div
+        className="w-full shrink-0 bg-bg-primary border-b border-border-subtle"
+        style={{ height: 'var(--mobile-pixel-strip-h)' }}
+        role="region"
+        aria-label="Pixel strip"
+      >
+        <PixelStripPanel engineRef={engineRef} />
+      </div>
 
-        {/* ── Pixel Strip — per-LED color row, full width ──────────────
-            Mirrors desktop CanvasLayout's PixelStripPanel mount; reads
-            the same engine pixel buffer. ~36px tall on mobile. */}
+      {/* ── 4. Action Bar (56px) ───────────────────────────────────────
+          5 icon+letter chips: I / C / B / L / S + … overflow.
+          Replaces the prior compact 8-chip EffectTriggerBar. */}
+      <MobileActionBar
+        onToggleIgnite={toggleWithAudio}
+        onTriggerEffect={triggerEffectWithAudio}
+        onReleaseEffect={releaseEffect}
+      />
+
+      {/* ── 5. Section Tabs (32px) ─────────────────────────────────────
+          Horizontal scrollable tabs replacing the drawer for shallow
+          editing nav. Tab tap swaps the body below. */}
+      <MobileSectionTabs />
+
+      {/* ══ SCROLLING BODY ═══════════════════════════════════════════════ */}
+
+      {/* Body — Inspector on home, MainContent on every other section.
+          Single scroll region; sticky chrome above + status bar below
+          stay anchored. */}
+      <div
+        id="mobile-section-content"
+        className="flex-1 min-h-0 flex flex-col overflow-y-auto"
+      >
+        {/* The analysis rail (rgb-luma waveform) used to live above the
+            body in PR #200's stacked layout. The handoff doesn't include
+            it in the sticky shell — it's overhead chrome users only
+            occasionally read. We mount it as a scroll-region header so
+            it's still reachable but doesn't eat sticky space. */}
         <div
           className="w-full shrink-0 bg-bg-primary border-b border-border-subtle"
-          style={{ height: 36 }}
-          role="region"
-          aria-label="Pixel strip"
-        >
-          <PixelStripPanel engineRef={engineRef} />
-        </div>
-
-        {/* ── Analysis Layer (rgb-luma) — per-LED waveform graph ───────
-            Single line-graph layer below the pixel strip, matching
-            desktop's ExpandedAnalysisSlot shape (which defaults to
-            rgb-luma). ~64px tall on mobile — enough to read the
-            waveform without crowding the body area below. */}
-        <div
-          className="w-full shrink-0 bg-bg-primary border-b border-border-subtle"
-          style={{ height: 64 }}
+          style={{ height: 56 }}
           role="region"
           aria-label="Analysis rail"
         >
@@ -328,104 +296,34 @@ export function MobileShell({
           />
         </div>
 
-        {/* ── Body — Inspector on home, MainContent on drilled.
-            Wrapped in `overflow-y-auto` so this region (and only this
-            region) scrolls when content exceeds available height. The
-            blade canvas + effect bar above stay anchored. */}
         {isHome ? (
-          // Home view: Inspector fills the remaining space directly. This
-          // is the 80% path — Quick Controls (Surprise Me, color chips,
-          // ignition picker, retraction picker, parameter bank) — and the
-          // user navigates to deep tuning via the hamburger drawer.
-          <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-            <Inspector
-              className="flex-1 min-h-0 w-full"
-              style={{ width: '100%' }}
-            />
-          </div>
+          <Inspector
+            className="flex-1 min-h-0 w-full"
+            style={{ width: '100%' }}
+          />
         ) : (
-          // Drilled-into-section view: MainContent renders the section's
-          // panel below the canvas anchor. The sidebar drawer is the
-          // only way to navigate, and tapping the active-section pill
-          // returns to home.
-          <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-            <MainContent
-              className="flex-1 min-h-0"
-              style={{ width: '100%' }}
-              triggerEffect={triggerEffectWithAudio}
-              releaseEffect={releaseEffect}
-            />
-          </div>
+          <MainContent
+            className="flex-1 min-h-0"
+            style={{ width: '100%' }}
+            triggerEffect={triggerEffectWithAudio}
+            releaseEffect={releaseEffect}
+          />
         )}
       </div>
 
-      {/* ── Bottom-anchored chrome ──────────────────────────────────── */}
-      {/* When in a drilled section, show the combined in-editor bottom
-          bar — "← Back to Canvas" on the left, "◆ <section>" pill on
-          the right (per docs/mobile-design.md §2.2). The whole bar's
-          height + safe-area clearance come from the mobile tokens
-          installed in PR #1. When on home, fall back to the StatusBar
-          slim readout — "Back to Canvas" is meaningless when canvas
-          IS the current view. */}
-      {!isHome ? (
-        <div
-          className="shrink-0 flex items-center justify-between gap-1 border-t border-border-subtle bg-bg-deep px-1 pb-[var(--mobile-safe-pb)]"
-          style={{ minHeight: 36 }}
-          role="region"
-          aria-label="Editor navigation"
-        >
-          <button
-            type="button"
-            onClick={() => {
-              playUISound('tab-switch');
-              setActiveSection(HOME_SECTION);
-            }}
-            aria-label="Return to canvas home view"
-            className="flex items-center gap-1 min-h-[30px] px-1.5 text-accent text-ui-xs font-medium tracking-wider uppercase rounded-interactive transition-colors hover:bg-bg-secondary/40"
-          >
-            <span aria-hidden="true">{'←'}</span>
-            <span>Back</span>
-          </button>
+      {/* ══ STICKY CHROME (bottom) ═══════════════════════════════════════ */}
 
-          <span
-            className="flex-1 flex items-center justify-center gap-1.5 px-1 min-h-[30px] text-text-secondary text-ui-xs font-medium tracking-wider uppercase truncate"
-            aria-live="polite"
-          >
-            <span aria-hidden="true" className="text-accent">{'◆'}</span>
-            <span className="truncate">{SECTION_LABELS[activeSection]}</span>
-          </span>
+      {/* ── 6. Status Bar (36px scrollable) ───────────────────────────
+          Per HANDOFF §"Q3": all 11 desktop segments preserved in a
+          horizontally scrollable strip with right-edge mask. Pinned
+          above the iOS home-indicator gesture area via safe-area
+          padding. */}
+      <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
+        <MobileStatusBarStrip />
+      </div>
 
-          {/* Bottom-bar hamburger — second access point for the section
-              drawer so users don't have to scroll back to the header
-              after editing a long section. */}
-          <button
-            type="button"
-            onClick={() => {
-              playUISound('tab-switch');
-              setDrawerOpen(true);
-            }}
-            aria-label="Open editor sections menu"
-            aria-haspopup="dialog"
-            className="flex items-center gap-1.5 min-h-[30px] px-1.5 border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-light transition-colors rounded-interactive"
-          >
-            <span aria-hidden="true" className="flex flex-col gap-[2px]">
-              <span className="block w-3.5 h-[2px] bg-current" />
-              <span className="block w-3.5 h-[2px] bg-current" />
-              <span className="block w-3.5 h-[2px] bg-current" />
-            </span>
-            <span className="text-ui-xs font-medium tracking-wider uppercase">Menu</span>
-          </button>
-        </div>
-      ) : (
-        <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
-          <StatusBar />
-        </div>
-      )}
-
-      {/* Accessibility Settings Modal */}
+      {/* Modals + overlays */}
       {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
-
-      {/* Fullscreen preview overlay */}
       <FullscreenPreview engineRef={engineRef} onTriggerEffect={triggerEffectWithAudio} />
     </div>
   );

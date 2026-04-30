@@ -1,32 +1,28 @@
-// ─── MobileShell — PR A1 + A2 layout shape contract ───────────────────
+// ─── MobileShell — Phase 4.2 sticky-mini-shell layout contract ──────────
 //
-// Pins the structural layout decisions from PR A1 + A2:
-//   PR A1:
-//   - Hamburger button has a visible "Menu" text label + border for
-//     discoverability (Ken couldn't find the icon-only version)
-//   - Blade canvas + effect bar are sticky siblings of the scrollable
-//     body region — NOT wrapped in the outer overflow-y-auto. This is
-//     the fix for the "odd zoom levels" UX bug where switching sections
-//     pushed the blade canvas off-screen.
-//   - Effect bar passes `compact` to EffectTriggerBar (drops kbd letter
-//     display on mobile — wasted vertical space per Ken's feedback)
-//   - Drilled-section bottom bar has a hamburger trigger so users can
-//     re-navigate without scrolling back to the header
+// Pins the StickyMiniShell anatomy from "Claude Design Mobile
+// handoff/HANDOFF.md":
 //
-//   PR A2 (density v2 + analysis stack):
-//   - Header height tightened to `h-10` (was `h-12`)
-//   - Header buttons go below WCAG 44px floor — 30px touch-target
-//     for chrome chips (DAW + iOS-app density)
-//   - Effect bar wrapper uses `px-1 py-0.5`
-//   - Blade canvas region trimmed to `min(15vh, 120px)` floor 96
-//   - PixelStripPanel mounted directly below blade canvas (matches
-//     desktop CanvasLayout vertical order)
-//   - LayerCanvas (rgb-luma analysis) mounted directly below pixel strip
+//   STICKY top:
+//     1. App header              (44px / var(--header-h))
+//     2. Mini blade canvas       (64px / var(--blade-rod-h))
+//     3. Pixel strip             (36px / var(--mobile-pixel-strip-h))
+//     4. MobileActionBar         (56px / var(--actionbar-h))
+//     5. MobileSectionTabs       (32px / var(--section-tabs-h))
+//
+//   SCROLLING body:
+//     - Analysis rail (rgb-luma LayerCanvas) at top
+//     - Inspector when activeSection='my-saber'
+//     - MainContent when activeSection is anything else
+//
+//   STICKY bottom:
+//     6. MobileStatusBarStrip    (36px / var(--statusbar-h))
 //
 // Pattern matches the AB section tests (`react-dom/server` +
 // `renderToStaticMarkup`, no jsdom dep). Heavy children (BladeCanvas,
-// MainContent, Inspector, etc.) are stubbed because they pull in the
-// engine + Zustand stores that don't matter for THIS test's contract.
+// MainContent, Inspector, etc.) are stubbed; the new mobile primitives
+// (MobileActionBar, MobileSectionTabs, MobileStatusBarStrip) render
+// their actual SSR shape so the integration is verified.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -84,29 +80,39 @@ vi.mock('@/stores/accessibilityStore', () => {
   return { useAccessibilityStore };
 });
 
+// MobileActionBar reads activeEffectsStore.active (Set). Default empty.
+vi.mock('@/stores/activeEffectsStore', () => {
+  const state = { active: new Set<string>() };
+  const useActiveEffectsStore = ((selector: (s: unknown) => unknown) =>
+    selector(state)) as unknown as {
+    (selector: (s: unknown) => unknown): unknown;
+    getState: () => typeof state;
+  };
+  useActiveEffectsStore.getState = () => state;
+  return {
+    useActiveEffectsStore,
+    isActiveSelector: () => () => false,
+  };
+});
+
 vi.mock('@/lib/uiSounds', () => ({
   playUISound: () => {},
+}));
+
+vi.mock('@/lib/effectToggle', () => ({
+  toggleOrTriggerEffect: () => {},
 }));
 
 // ── Heavy child stubs ─────────────────────────────────────────────────
 //
 // We intentionally stub these — the test is asserting the SHELL's
-// structure, not the contents of nested components. Each stub renders
-// a marker that we can grep for to confirm it mounted at the expected
-// point in the tree.
+// structure, not the contents of nested components. The new mobile
+// primitives (MobileActionBar / MobileSectionTabs / MobileStatusBarStrip)
+// are NOT stubbed — their integration is part of the contract under
+// test.
 
 vi.mock('@/components/editor/BladeCanvas', () => ({
   BladeCanvas: () => createElement('div', { 'data-testid': 'mock-blade-canvas' }),
-}));
-
-// EffectTriggerBar stub — ECHOES the `compact` prop into the DOM so
-// the test can verify MobileShell passes it.
-vi.mock('@/components/editor/EffectTriggerBar', () => ({
-  EffectTriggerBar: ({ compact }: { onTrigger: (t: string) => void; compact?: boolean }) =>
-    createElement('div', {
-      'data-testid': 'mock-effect-bar',
-      'data-compact': compact ? 'true' : 'false',
-    }),
 }));
 
 vi.mock('@/components/editor/Inspector', () => ({
@@ -117,8 +123,15 @@ vi.mock('@/components/layout/MainContent', () => ({
   MainContent: () => createElement('div', { 'data-testid': 'mock-main-content' }),
 }));
 
+// MobileStatusBarStrip wraps StatusBar — we stub the underlying
+// StatusBar (it has heavy live-data wiring) and verify the wrapper
+// mounts correctly.
 vi.mock('@/components/layout/StatusBar', () => ({
-  StatusBar: () => createElement('div', { 'data-testid': 'mock-status-bar' }),
+  StatusBar: ({ mode }: { mode?: string }) =>
+    createElement('div', {
+      'data-testid': 'mock-status-bar',
+      'data-mode': mode ?? 'default',
+    }),
 }));
 
 vi.mock('@/components/editor/AccessibilityPanel', () => ({
@@ -170,157 +183,144 @@ function renderShell() {
   );
 }
 
-describe('MobileShell — PR A1 layout shape', () => {
+describe('MobileShell — Phase 4.2 layout shape', () => {
   beforeEach(() => {
     mockState.activeSection = 'my-saber';
   });
 
-  it('header uses h-10 (PR A2 density v2)', () => {
+  // ── Sticky top chrome (5 stacked regions) ────────────────────────
+
+  it('header uses --header-h via inline style (not Tailwind h-10/h-12)', () => {
     const html = renderShell();
     const headerMatch = html.match(/<header[^>]*>/);
     expect(headerMatch).toBeTruthy();
-    expect(headerMatch![0]).toContain('h-10');
-    expect(headerMatch![0]).not.toContain('h-12');
-    expect(headerMatch![0]).not.toContain('h-14');
+    expect(headerMatch![0]).toContain('height:var(--header-h)');
   });
 
-  it('hamburger button shows visible "Menu" label', () => {
+  it('hamburger button has aria-label + visible "Menu" label', () => {
     const html = renderShell();
-    // The hamburger has aria-label="Open editor sections menu" + a
-    // visible "Menu" text node. Both must be present.
     expect(html).toContain('aria-label="Open editor sections menu"');
     expect(html).toContain('>Menu<');
   });
 
-  it('hamburger has border affordance (not bare icon)', () => {
+  it('only ONE hamburger button (in header) — bottom-bar copy was removed in 4.2', () => {
     const html = renderShell();
-    // Look for the button containing the menu label, then verify it
-    // has border classes. The first hamburger is in the header.
-    const hamburgerBtn = html.match(
-      /<button[^>]*aria-label="Open editor sections menu"[^>]*>/,
-    );
-    expect(hamburgerBtn).toBeTruthy();
-    expect(hamburgerBtn![0]).toContain('border');
-  });
-
-  it('effect bar passes compact prop to EffectTriggerBar', () => {
-    const html = renderShell();
-    expect(html).toContain('data-testid="mock-effect-bar"');
-    expect(html).toContain('data-compact="true"');
-  });
-
-  it('effect bar wrapper uses tightened px-1 py-0.5 padding (single-row, ~24px)', () => {
-    const html = renderShell();
-    // Find the effect-bar wrapper — the parent div of mock-effect-bar.
-    // We assert the wrapper's class string contains px-1 + py-0.5.
-    const m = html.match(/<div class="([^"]*)"[^>]*>\s*<div class="flex items-center gap-1 min-w-fit">/);
-    expect(m).toBeTruthy();
-    expect(m![1]).toContain('px-1');
-    expect(m![1]).toContain('py-0.5');
-    // Make sure the old looser values are gone from the wrapper.
-    expect(m![1]).not.toContain('px-2');
-    expect(m![1]).not.toContain('py-2');
-    // py-1 was an intermediate step — also gone.
-    expect(m![1]).not.toMatch(/\bpy-1\b/);
-  });
-
-  it('blade canvas region uses PR A2 height (15vh / 120px cap / 96px floor)', () => {
-    const html = renderShell();
-    // Blade canvas wrapper inline style: `min(15vh, 120px)` cap with
-    // `minHeight: 96` floor. Per Ken's "blade preview should take less
-    // vertical space" feedback (was 178px in PR A1).
-    expect(html).toMatch(/height:\s*min\(15vh,\s*120px\)/);
-    expect(html).toMatch(/min-height:96px/);
-    // PR A1's intermediate value should be gone.
-    expect(html).not.toMatch(/min\(22vh,\s*180px\)/);
-    // And the original values too.
-    expect(html).not.toMatch(/min\(28vh,\s*220px\)/);
-  });
-
-  it('mounts PixelStripPanel directly below the blade canvas (PR A2)', () => {
-    const html = renderShell();
-    // The blade canvas region (aria-label="Blade preview") should be
-    // immediately followed by the pixel strip region (aria-label="Pixel strip").
-    const m = html.match(
-      /aria-label="Blade preview"[\s\S]*?aria-label="Pixel strip"[\s\S]*?data-testid="mock-pixel-strip"/,
-    );
-    expect(m).toBeTruthy();
-  });
-
-  it('mounts LayerCanvas (rgb-luma analysis) directly below the pixel strip (PR A2)', () => {
-    const html = renderShell();
-    // Pixel strip region followed by the analysis rail region with
-    // a LayerCanvas mounted with layerId="rgb-luma".
-    const m = html.match(
-      /aria-label="Pixel strip"[\s\S]*?aria-label="Analysis rail"[\s\S]*?data-testid="mock-layer-canvas"[\s\S]*?data-layer-id="rgb-luma"/,
-    );
-    expect(m).toBeTruthy();
-  });
-
-  it('header chrome buttons are min-h-[30px] (sub-WCAG density per PR A2)', () => {
-    const html = renderShell();
-    // The audio mute button is a clear touchstone — should be
-    // min-h-[30px] / min-w-[30px] now (was min-h-[44px] in PR A1).
-    const muteBtn = html.match(/<button[^>]*aria-label="(?:Mute|Unmute) audio"[^>]*>/);
-    expect(muteBtn).toBeTruthy();
-    expect(muteBtn![0]).toContain('min-h-[30px]');
-    expect(muteBtn![0]).toContain('min-w-[30px]');
-    // The 44px floor should be gone.
-    expect(muteBtn![0]).not.toContain('min-h-[44px]');
-  });
-
-  it('blade canvas + effect bar are sticky — outer wrapper does NOT have overflow-y-auto', () => {
-    const html = renderShell();
-    // The outer Main-Content-Area wrapper used to be `<div class="...
-    // overflow-y-auto">`. After PR A1 it's `min-w-0` instead. The body
-    // region (Inspector or MainContent) gets its own overflow-y-auto.
-    //
-    // Look for the wrapper that contains the effect bar. It must NOT
-    // have `overflow-y-auto` in its className — only `min-h-0`.
-    const m = html.match(
-      /<div class="(flex-1[^"]*?)">\s*<div class="px-1 py-0\.5[^"]*?overflow-x-auto">/,
-    );
-    expect(m).toBeTruthy();
-    expect(m![1]).not.toContain('overflow-y-auto');
-    expect(m![1]).toContain('min-w-0');
-  });
-
-  it('home view body region (Inspector wrapper) has its own overflow-y-auto', () => {
-    mockState.activeSection = 'my-saber'; // home
-    const html = renderShell();
-    // Inspector is wrapped in `flex-1 min-h-0 flex flex-col overflow-y-auto`.
-    expect(html).toMatch(/<div class="flex-1 min-h-0 flex flex-col overflow-y-auto">\s*<div data-testid="mock-inspector"/);
-  });
-
-  it('drilled section view body region has overflow-y-auto + bottom bar', () => {
-    mockState.activeSection = 'blade-style'; // drilled
-    const html = renderShell();
-    // MainContent wrapper has overflow-y-auto.
-    expect(html).toMatch(/<div class="flex-1 min-h-0 flex flex-col overflow-y-auto">\s*<div data-testid="mock-main-content"/);
-    // Bottom bar appears (region with aria-label="Editor navigation").
-    expect(html).toContain('aria-label="Editor navigation"');
-  });
-
-  it('drilled section bottom bar contains hamburger trigger', () => {
-    mockState.activeSection = 'blade-style';
-    const html = renderShell();
-    // Two hamburger buttons should exist in the SSR markup when
-    // drilled: one in the header, one in the bottom bar. Both share
-    // the same aria-label, so we count occurrences.
+    // Phase 4.1's drilled-section bottom bar duplicated the hamburger
+    // in the bottom chrome. Phase 4.2 retires the bottom bar; section
+    // tabs replace it. Header is the single discoverable entry point.
     const matches = html.match(/aria-label="Open editor sections menu"/g);
-    expect(matches).toBeTruthy();
-    expect(matches!.length).toBe(2);
+    expect(matches?.length).toBe(1);
   });
 
-  it('home view does NOT show the in-editor bottom bar (StatusBar shows instead)', () => {
+  it('blade canvas region uses --blade-rod-h (64px) inline style', () => {
+    const html = renderShell();
+    // Match the wrapper div containing aria-label="Blade preview" — attr
+    // order in renderToStaticMarkup output is class→style→role→aria-label,
+    // so we anchor on the wrapper opening tag and check both attrs.
+    const m = html.match(/<div[^>]*aria-label="Blade preview"[^>]*>/);
+    expect(m).toBeTruthy();
+    expect(m![0]).toContain('style="height:var(--blade-rod-h)"');
+    // PR A1/A2's intermediate values must be gone.
+    expect(html).not.toMatch(/min\(15vh,\s*120px\)/);
+    expect(html).not.toMatch(/min\(22vh,\s*180px\)/);
+  });
+
+  it('pixel strip region uses --mobile-pixel-strip-h inline style', () => {
+    const html = renderShell();
+    const m = html.match(/<div[^>]*aria-label="Pixel strip"[^>]*>/);
+    expect(m).toBeTruthy();
+    expect(m![0]).toContain('style="height:var(--mobile-pixel-strip-h)"');
+  });
+
+  it('mounts MobileActionBar (toolbar role + 5 chips + overflow)', () => {
+    const html = renderShell();
+    expect(html).toContain('role="toolbar"');
+    expect(html).toContain('aria-label="Effect triggers"');
+    // 5 primary chip ids
+    for (const id of ['ignite', 'clash', 'blast', 'lockup', 'stab']) {
+      expect(html).toContain(`data-chip-id="${id}"`);
+    }
+    // Overflow trigger
+    expect(html).toContain('aria-label="More effects"');
+  });
+
+  it('mounts MobileSectionTabs (tablist + 6 tabs)', () => {
+    const html = renderShell();
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('aria-label="Editor sections"');
+    for (const id of [
+      'color',
+      'blade-style',
+      'motion-simulation',
+      'combat-effects',
+      'hardware',
+      'routing',
+    ]) {
+      expect(html).toContain(`data-section-id="${id}"`);
+    }
+  });
+
+  it('sticky chrome order is header → blade → pixel → action bar → section tabs', () => {
+    const html = renderShell();
+    const m = html.match(
+      /<header[\s\S]*?aria-label="Blade preview"[\s\S]*?aria-label="Pixel strip"[\s\S]*?role="toolbar"[\s\S]*?role="tablist"/,
+    );
+    expect(m).toBeTruthy();
+  });
+
+  // ── Scrolling body ───────────────────────────────────────────────
+
+  it('body scroll region carries id="mobile-section-content" + overflow-y-auto', () => {
+    const html = renderShell();
+    expect(html).toMatch(/<div id="mobile-section-content"[^>]*overflow-y-auto/);
+  });
+
+  it('analysis rail (rgb-luma LayerCanvas) is inside the scroll body, not sticky', () => {
+    const html = renderShell();
+    // Analysis rail appears AFTER the sticky chrome (after section tabs)
+    // and INSIDE #mobile-section-content.
+    const m = html.match(
+      /<div id="mobile-section-content"[\s\S]*?aria-label="Analysis rail"[\s\S]*?data-layer-id="rgb-luma"/,
+    );
+    expect(m).toBeTruthy();
+  });
+
+  it('home (my-saber) view renders Inspector inside scroll body', () => {
     mockState.activeSection = 'my-saber';
     const html = renderShell();
-    expect(html).not.toContain('aria-label="Editor navigation"');
-    // Mock StatusBar mounts in its place.
+    expect(html).toMatch(
+      /<div id="mobile-section-content"[\s\S]*?data-testid="mock-inspector"/,
+    );
+    expect(html).not.toContain('data-testid="mock-main-content"');
+  });
+
+  it('drilled section (blade-style) renders MainContent inside scroll body', () => {
+    mockState.activeSection = 'blade-style';
+    const html = renderShell();
+    expect(html).toMatch(
+      /<div id="mobile-section-content"[\s\S]*?data-testid="mock-main-content"/,
+    );
+    expect(html).not.toContain('data-testid="mock-inspector"');
+  });
+
+  // ── Bottom chrome ────────────────────────────────────────────────
+
+  it('mounts MobileStatusBarStrip (StatusBar mode="scroll") at the bottom', () => {
+    const html = renderShell();
     expect(html).toContain('data-testid="mock-status-bar"');
-    // Only ONE hamburger button on home (header only — bottom bar's
-    // hamburger only appears when drilled).
-    const matches = html.match(/aria-label="Open editor sections menu"/g);
-    expect(matches!.length).toBe(1);
+    expect(html).toContain('data-mode="scroll"');
+  });
+
+  it('does NOT render the legacy "Editor navigation" bottom bar', () => {
+    // The Phase 4.1 in-editor bottom bar (Back-to-Canvas + section pill
+    // + duplicate hamburger) was retired in 4.2 — section tabs cover
+    // the same nav role with persistent visibility.
+    const html = renderShell();
+    expect(html).not.toContain('aria-label="Editor navigation"');
+  });
+
+  it('bottom chrome wrapper applies safe-area-inset-bottom padding', () => {
+    const html = renderShell();
+    expect(html).toContain('pb-[env(safe-area-inset-bottom)]');
   });
 });
