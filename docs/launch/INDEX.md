@@ -10,7 +10,9 @@ brackets only (`[URL]`, `[Name]`, `[specific video]`).
 | File | Purpose | When to send |
 |---|---|---|
 | `REDDIT_POSTS.md` | 3 Reddit post variants + cross-post candidates + 7 reply templates | Day 1 (launch day, weekday 10am-1pm ET) |
+| `REDDIT_CLAUDE_POST.md` | r/ClaudeAI build-process post — Claude Code workflow story, parallel agents, MCPs, what didn't work | Day 4-7 (after r/lightsabers shows real engagement) |
 | `YOUTUBE_OUTREACH.md` | 5 cold-email variants + personalization checklist + follow-up | Day 7-10 (after Reddit traction shows) |
+| `FREDRIK_EMAIL.md` | Two careful drafts to the ProffieOS creator — the foundation everything sits on | Day 0 (before Reddit, same day as Fett263) |
 | `FETT263_EMAIL.md` | Two careful drafts to the prop-file author KyberStation builds on | Day 0 (before Reddit, ideally same day or day before) |
 | `TIKTOK_INSTAGRAM_OUTREACH.md` | 3 short-form DM/comment templates | Day 10-14 (parallel to YouTube wave) |
 | `GITHUB_ANNOUNCEMENT.md` | Pinned discussion + README diff suggestions | Day 0 (when repo flips public) |
@@ -19,6 +21,7 @@ brackets only (`[URL]`, `[Name]`, `[specific video]`).
 ## Suggested launch order (from LAUNCH_PLAN.md, calibrated)
 
 **T-2 days — soft prep**
+- Email Fredrik Hübinette (`FREDRIK_EMAIL.md`) — inform the ProffieOS creator
 - Email Fett263 (`FETT263_EMAIL.md`) — give him a heads-up before public launch
 - DM 3-5 trusted saber friends with the soft-launch message from `LAUNCH_ASSETS.md`
 
@@ -34,6 +37,11 @@ brackets only (`[URL]`, `[Name]`, `[specific video]`).
 **T+2 to T+3 days**
 - LinkedIn post (different audience, engineering angle)
 - Personal blog post if you have one
+
+**T+4 to T+7 days**
+- Post to **r/ClaudeAI** (`REDDIT_CLAUDE_POST.md`) — different angle,
+  build-process story. Post only after r/lightsabers numbers are real
+  (so you can cite specific engagement in the post).
 
 **T+7 to T+10 days**
 - YouTube outreach wave (`YOUTUBE_OUTREACH.md`) — only after you have real

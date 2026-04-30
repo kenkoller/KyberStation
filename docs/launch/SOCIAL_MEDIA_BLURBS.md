@@ -20,7 +20,7 @@ designing custom lightsaber blade styles + exporting Proffie configs.
 29 styles, 21 effects, 305+ presets, all in your browser. MIT.
 First public project. Feedback welcome.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~245.** Comfortably under cap. Includes URL but not
 hashtags (don't bother — they don't help on X anymore).
@@ -33,7 +33,7 @@ Arduino IDE. Hardware-validated on my own Proffieboard V3.9.
 
 Hobby project. First public release. Code's open.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~258.**
 
@@ -45,7 +45,7 @@ sim, PWA, no backend. MIT, free.
 
 It's my first publicly released project. Feedback would mean a lot.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~263.**
 
@@ -55,7 +55,7 @@ Star Wars Day is almost here. If you want to try a new blade style on
 your Proffieboard saber, I shipped a free tool a few weeks back called
 KyberStation. Browser-based, visual editor, real-time sim.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 
 Code: github.com/kenkoller/KyberStation
 ```
@@ -68,7 +68,7 @@ my real saber via WebUSB. Free, browser-based, MIT, hobby project.
 
 If you've got a Proffie or any Neopixel saber, give it a spin.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~244.** Pair with the cleanest real-saber GIF you have.
 
@@ -122,7 +122,7 @@ problems, I'd be genuinely curious to hear how you'd approach the
 parts I'm probably doing wrong. Architecture docs are in the repo.
 
 Code: github.com/kenkoller/KyberStation
-Live: [URL]
+Live: https://kenkoller.github.io/KyberStation/
 
 #opensource #typescript #sideproject
 ```
@@ -146,7 +146,7 @@ PWA, all local, no backend, MIT.
 First publicly released project of mine. If you've got a Proffie
 saber or are saber-curious, would love your feedback.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 github.com/kenkoller/KyberStation
 
 #opensource #foss #lightsabers
@@ -181,7 +181,7 @@ lightsaber blade styles, with a real-time simulator and a ProffieOS
 firmware config generator. Built primarily for my own Proffieboard
 V3.9 (89sabers hilt). Free, MIT, no backend.
 
-Live: [URL]
+Live: https://kenkoller.github.io/KyberStation/
 Code: https://github.com/kenkoller/KyberStation
 
 A few things that might interest folks here:
@@ -254,7 +254,7 @@ no backend.
 Hobby project, first public release. If you've got a Proffie saber
 or are just saber-curious, give it a spin.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 github.com/kenkoller/KyberStation
 ```
 

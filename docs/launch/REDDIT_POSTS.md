@@ -44,7 +44,7 @@ designing, previewing, and exporting blade styles. It generates ProffieOS
 config code that compiles directly in Arduino IDE. Works on desktop and
 mobile (PWA installable).
 
-**Try it:** [URL]
+**Try it:** https://kenkoller.github.io/KyberStation/
 **Code:** https://github.com/kenkoller/KyberStation
 
 **What it does:**
@@ -150,7 +150,7 @@ against a simulated motion model, and export ProffieOS code that
 compiles directly in Arduino IDE. The code generator is AST-based, so
 it's structurally impossible to emit unbalanced template brackets.
 
-**Try it:** [URL]
+**Try it:** https://kenkoller.github.io/KyberStation/
 **Code:** https://github.com/kenkoller/KyberStation
 
 A few things specifically aimed at power Proffie users:
@@ -213,7 +213,7 @@ May 4 is almost here. Wanted to re-share **KyberStation** for anyone who
 missed the original post a few weeks back. It's a free, browser-based
 blade style editor and ProffieOS code generator.
 
-**Try it:** [URL]
+**Try it:** https://kenkoller.github.io/KyberStation/
 **Code:** https://github.com/kenkoller/KyberStation
 
 **Since the original post:**

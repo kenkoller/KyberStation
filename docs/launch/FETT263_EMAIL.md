@@ -56,7 +56,7 @@ natural person to know, and (b) if anything in the generated output
 looks wrong from a prop-file perspective, I'd really want to fix it
 before the wider community sees it.
 
-Try it: [URL]
+Try it: https://kenkoller.github.io/KyberStation/
 Code: https://github.com/kenkoller/KyberStation
 
 I've credited your work in the README and the architecture docs. Happy
@@ -95,7 +95,7 @@ that compiles directly with `saber_fett263_buttons.h` selected as the
 prop file. AST-based codegen so the output structurally can't have
 unbalanced template brackets.
 
-Try it: [URL]
+Try it: https://kenkoller.github.io/KyberStation/
 Code: https://github.com/kenkoller/KyberStation
 License: MIT (KyberStation source). Generated configs go into ProffieOS,
 which is GPL-3.0; that relationship is documented in the README and
@@ -177,7 +177,7 @@ Quick bump on this — wanted to make sure it didn't get lost. No reply
 needed if everything looks fine. I'm planning to share publicly on
 [date] unless I hear concerns.
 
-Try it: [URL]
+Try it: https://kenkoller.github.io/KyberStation/
 
 Thanks again for the work you do.
 

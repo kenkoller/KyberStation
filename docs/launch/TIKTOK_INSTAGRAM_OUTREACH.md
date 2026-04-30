@@ -28,7 +28,7 @@ Built a free browser tool called KyberStation for designing blade
 styles + exporting Proffie configs. Hobby project, just shipped. If
 it's useful for your build content, awesome. If not, no worries.
 
-[URL]
+https://kenkoller.github.io/KyberStation/
 
 — Ken
 ```
@@ -58,7 +58,7 @@ KyberStation. No pressure obviously, your work doesn't need it.
 
 **Bad example (don't do this):**
 ```
-Cool video. Check out my tool: [URL]
+Cool video. Check out my tool: https://kenkoller.github.io/KyberStation/
 ```
 
 **Good example:**
