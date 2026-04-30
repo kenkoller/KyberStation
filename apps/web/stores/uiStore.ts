@@ -13,6 +13,14 @@ export type ActiveTab = 'gallery' | 'design' | 'audio' | 'output';
 export type LayoutMode = 'sidebar' | 'horizontal';
 export type FullscreenOrientation = 'horizontal' | 'vertical';
 
+/**
+ * Gallery view mode — added 2026-04-29 for the grid-default refactor.
+ * 'grid' = responsive flex-wrap card grid (default for new users).
+ * 'list' = legacy A/B sidebar (filter rail + selectable list + hero detail).
+ * Persisted in localStorage so the user's last selection sticks.
+ */
+export type GalleryView = 'grid' | 'list';
+
 // ─── Left-rail overhaul (v0.14.0) ────────────────────────────────────────────
 // Unified section taxonomy for the left sidebar nav. Each ID maps to one
 // component slot in MainContent. PR 2 made this the only path on desktop;
@@ -236,6 +244,13 @@ export interface UIStore {
    * Default matches the pre-W4 shipped set: clash, blast, lockup, stab.
    */
   pinnedEffects: string[];
+  /**
+   * Gallery view mode — 'grid' (default) shows the large card grid of
+   * all ~305 presets; 'list' shows the legacy A/B sidebar layout
+   * (filter rail + selectable list + hero detail in Column B).
+   * Persisted in localStorage under `kyberstation-gallery-view`.
+   */
+  galleryView: GalleryView;
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -289,6 +304,9 @@ export interface UIStore {
   // ── Left-rail overhaul setters ──
   setActiveSection: (section: SectionId) => void;
   toggleSidebarGroup: (group: SidebarGroupId) => void;
+
+  // ── Gallery view setter ──
+  setGalleryView: (view: GalleryView) => void;
 }
 
 // ─── OV11: resizable-region persistence ──────────────────────────────────────
@@ -468,6 +486,28 @@ function saveSidebarCollapse(c: Record<SidebarGroupId, boolean>): void {
   } catch { /* ignore */ }
 }
 
+// ─── Gallery view persistence ────────────────────────────────────────────────
+
+const GALLERY_VIEW_STORAGE_KEY = 'kyberstation-gallery-view';
+
+function loadGalleryView(): GalleryView {
+  try {
+    if (typeof localStorage === 'undefined') return 'grid';
+    const raw = localStorage.getItem(GALLERY_VIEW_STORAGE_KEY);
+    if (raw === 'grid' || raw === 'list') return raw;
+    return 'grid';
+  } catch {
+    return 'grid';
+  }
+}
+
+function saveGalleryView(view: GalleryView): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(GALLERY_VIEW_STORAGE_KEY, view);
+  } catch { /* ignore */ }
+}
+
 // ─── Battery selection persistence ────────────────────────────────────────────
 //
 // Battery is conceptually per-saber-chassis but for v1 we keep it on the
@@ -521,6 +561,7 @@ function saveBatterySelection(sel: PersistedBatterySelection): void {
 }
 
 const initialBatterySelection = loadBatterySelection();
+
 
 export const useUIStore = create<UIStore>((set) => ({
   viewMode: 'blade',
@@ -599,6 +640,9 @@ export const useUIStore = create<UIStore>((set) => ({
   // ── Left-rail overhaul defaults ──
   activeSection: loadActiveSection(),
   sidebarGroupCollapsed: loadSidebarCollapse(),
+
+  // ── Gallery view default ──
+  galleryView: loadGalleryView(),
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -742,6 +786,12 @@ export const useUIStore = create<UIStore>((set) => ({
       saveSidebarCollapse(next);
       return { sidebarGroupCollapsed: next };
     });
+  },
+
+  // ── Gallery view setter ──
+  setGalleryView: (galleryView) => {
+    saveGalleryView(galleryView);
+    set({ galleryView });
   },
 }));
 
