@@ -43,33 +43,18 @@ import {
   BOARD_MAX_MA,
 } from '@/lib/powerDraw';
 import {
-  BLADE_LENGTHS as BLADE_LENGTH_OPTIONS,
+  BLADE_LENGTHS,
+  canonicalLedCountForInches,
   inferBladeInches,
 } from '@/lib/bladeLengths';
 
 // ─── Local hardware-input constants ───
 //
 // BLADE_LENGTHS are derived from the engine's canonical BLADE_LENGTH_PRESETS
-// via lib/bladeLengths.ts so the table only ever lives in one place. STRIP
-// and TOPOLOGY tables stay local because they're UI-presentation enums with
-// no engine-side counterpart.
-
-// Decorate the canonical option shape with the human-friendly captions this
-// panel rendered before the lift (so the radiogroup labels stay familiar).
-const BLADE_LENGTH_LABELS: Record<number, string> = {
-  20: 'Yoda (20")',
-  24: 'Short (24")',
-  28: 'Medium (28")',
-  32: 'Standard (32")',
-  36: 'Long (36")',
-  40: 'Extra Long (40")',
-};
-
-const BLADE_LENGTHS = BLADE_LENGTH_OPTIONS.map((b) => ({
-  label: BLADE_LENGTH_LABELS[b.inches] ?? b.label,
-  inches: b.inches,
-  ledCount: b.ledCount,
-}));
+// via lib/bladeLengths.ts so the table only ever lives in one place — including
+// the vendor-reality human captions (`Standard (36")`, `Combat (24")`, etc.).
+// STRIP and TOPOLOGY tables stay local because they're UI-presentation enums
+// with no engine-side counterpart.
 
 const STRIP_TYPES = [
   { id: 'single', label: '1 Strip', icon: '│', desc: 'Single neopixel strip' },
@@ -107,6 +92,17 @@ export function HardwarePanel(): JSX.Element {
   const ledCount = config.ledCount ?? 132;
   const baseColor = config.baseColor ?? { r: 0, g: 0, b: 255 };
   const currentLength = inferBladeInches(ledCount);
+
+  // LED-count divergence warning: real-world Neopixel saber blades
+  // ship with vendor-canonical LED counts for each length (e.g. 36"
+  // = 144 LEDs from a 1m WS2812B strip). Manually setting an LED
+  // count outside that mapping is allowed (custom builds exist) but
+  // worth flagging so a user doesn't accidentally desync the
+  // simulator from their actual hardware. Non-blocking — the warning
+  // never gates the input.
+  const canonicalLedCount = canonicalLedCountForInches(currentLength);
+  const ledCountIsUnusual =
+    canonicalLedCount !== undefined && ledCount !== canonicalLedCount;
 
   const stats = useMemo(
     () =>
@@ -320,10 +316,29 @@ export function HardwarePanel(): JSX.Element {
             max={1024}
             value={ledCount}
             onChange={(e) => handleLedOverride(e.target.value)}
-            className="w-full bg-bg-deep border border-border-subtle rounded-interactive px-2 py-1.5 text-ui-sm font-mono tabular-nums text-text-primary focus:outline-none focus:border-accent-border"
+            aria-invalid={ledCountIsUnusual}
+            aria-describedby={ledCountIsUnusual ? 'hw-led-override-warning' : undefined}
+            className={`w-full bg-bg-deep border rounded-interactive px-2 py-1.5 text-ui-sm font-mono tabular-nums text-text-primary focus:outline-none ${
+              ledCountIsUnusual
+                ? 'border-[rgb(var(--badge-creative))] focus:border-[rgb(var(--badge-creative))]'
+                : 'border-border-subtle focus:border-accent-border'
+            }`}
             aria-label="LED count override"
             data-testid="hw-led-override"
           />
+          {ledCountIsUnusual && canonicalLedCount !== undefined ? (
+            <div
+              id="hw-led-override-warning"
+              role="status"
+              aria-live="polite"
+              data-testid="hw-led-override-warning"
+              className="mt-1 text-ui-xs text-[rgb(var(--badge-creative))] leading-snug"
+            >
+              {ledCount} LEDs is unusual for a {currentLength}&quot; blade
+              (typical: {canonicalLedCount}). Most Neopixel sabers ship with
+              the canonical count for their length.
+            </div>
+          ) : null}
         </div>
         <div>
           <label

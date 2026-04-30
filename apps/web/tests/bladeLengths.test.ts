@@ -22,6 +22,9 @@ import { describe, it, expect } from 'vitest';
 import { BLADE_LENGTH_PRESETS } from '@kyberstation/engine';
 import {
   BLADE_LENGTHS,
+  BLADE_LENGTH_CAPTIONS,
+  COMMON_BLADE_INCHES,
+  canonicalLedCountForInches,
   inferBladeInches,
   bladeLengthLabel,
 } from '@/lib/bladeLengths';
@@ -140,12 +143,81 @@ describe('inferBladeInches (reverse mapping)', () => {
 });
 
 describe('bladeLengthLabel', () => {
-  it('returns the canonical preset label for known inches', () => {
-    expect(bladeLengthLabel(36)).toBe('36"');
-    expect(bladeLengthLabel(20)).toBe('20"');
+  it('returns the vendor-reality caption for known inches', () => {
+    // Captions reflect what real-world Neopixel saber vendors sell:
+    // 36" is the de-facto Standard (full 1m WS2812B strip at 144 LEDs);
+    // 24" is Combat-style; 20" is the Shoto/Yoda shoto-class blade.
+    expect(bladeLengthLabel(36)).toBe('Standard (36")');
+    expect(bladeLengthLabel(20)).toBe('Shoto / Yoda (20")');
+    expect(bladeLengthLabel(24)).toBe('Combat (24")');
+    expect(bladeLengthLabel(32)).toBe('Medium (32")');
+    expect(bladeLengthLabel(40)).toBe('Extra Long (40")');
+  });
+
+  it('flags 28" as Uncommon — most Neopixel vendors skip from 24" to 32"', () => {
+    expect(bladeLengthLabel(28)).toBe('Uncommon (28")');
   });
 
   it('falls back to inches-formatted label for unknown values', () => {
     expect(bladeLengthLabel(99)).toBe('99"');
+  });
+});
+
+describe('BLADE_LENGTH_CAPTIONS (vendor-reality decorator)', () => {
+  it('declares a caption for every canonical blade-inches value', () => {
+    // If the engine adds a new preset, this test fails so the next agent
+    // remembers to write a vendor-reality caption for it. Falling back
+    // to the bare `${inches}"` label is allowed but not preferred.
+    for (const opt of BLADE_LENGTHS) {
+      expect(BLADE_LENGTH_CAPTIONS[opt.inches]).toBeDefined();
+    }
+  });
+
+  it('labels 36" as the Standard length (most common 1m WS2812B strip)', () => {
+    // 36" is the de-facto industry standard for Neopixel sabers — one
+    // full WS2812B 1m strip ships at exactly 144 LEDs/m. The pre-2026-04-29
+    // mislabel was "Long (36")"; the audit moved 36" to the Standard slot
+    // and 32" to "Medium" so the caption matches what users actually buy.
+    expect(BLADE_LENGTH_CAPTIONS[36]).toBe('Standard (36")');
+  });
+});
+
+describe('COMMON_BLADE_INCHES (vendor sales reality)', () => {
+  it('contains exactly the four lengths major Neopixel vendors sell', () => {
+    // Saberbay / KR Sabers / 89sabers / Vader's Vault / Korbanth all
+    // commonly ship 24"/32"/36"/40". 20" is shoto/Yoda-only; 28" is
+    // a custom-build edge case. The LED-override warning uses this
+    // set as the "expected" baseline.
+    expect([...COMMON_BLADE_INCHES].sort((a, b) => a - b)).toEqual([24, 32, 36, 40]);
+  });
+
+  it('does not include 20" — a niche shoto-class length', () => {
+    expect(COMMON_BLADE_INCHES.has(20)).toBe(false);
+  });
+
+  it('does not include 28" — most vendors skip from 24" to 32"', () => {
+    expect(COMMON_BLADE_INCHES.has(28)).toBe(false);
+  });
+});
+
+describe('canonicalLedCountForInches (LED-override sentinel input)', () => {
+  it('returns the canonical LED count for every BLADE_LENGTHS entry', () => {
+    for (const opt of BLADE_LENGTHS) {
+      expect(canonicalLedCountForInches(opt.inches)).toBe(opt.ledCount);
+    }
+  });
+
+  it('returns undefined for inches not in the canonical preset set', () => {
+    // 26" / 30" / 35" don't exist in BLADE_LENGTHS → no canonical
+    // baseline → the warning code-path treats this as "no signal,
+    // so don't warn." Verified explicitly here so a future regression
+    // doesn't accidentally start returning 0 / NaN / a bogus default.
+    expect(canonicalLedCountForInches(26)).toBeUndefined();
+    expect(canonicalLedCountForInches(30)).toBeUndefined();
+    expect(canonicalLedCountForInches(35)).toBeUndefined();
+  });
+
+  it('36" returns 144 (the WS2812B 1m strip community standard)', () => {
+    expect(canonicalLedCountForInches(36)).toBe(144);
   });
 });
