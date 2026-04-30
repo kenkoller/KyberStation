@@ -377,7 +377,7 @@ Archive long sessions at docs/SESSION_<date>.md. Update CLAUDE.md
 | `docs/SESSION_2026-04-30_LAUNCH_DAY.md` | Today's session kickoff doc |
 | `docs/LAUNCH_PLAN.md` | Launch comms strategy, May 4 amplification plan |
 | `docs/LAUNCH_ASSETS.md` | Reddit drafts + YouTube outreach + screenshot shot list |
-| `docs/LAUNCH_48H_CHECKLIST.md` | Launch punch list (status table refreshed 2026-04-30 PM) |
+| `docs/archive/LAUNCH_48H_CHECKLIST_2026-04-29.md` | Archived — pre-v0.16.0 launch punch list (all P0 items shipped) |
 | `docs/POST_LAUNCH_BACKLOG.md` | Single source of truth for open items, last audited 2026-04-30 |
 | `docs/HARDWARE_FIDELITY_PRINCIPLE.md` | North star for engine + UI architectural decisions |
 | `docs/FLASH_GUIDE.md` | Canonical end-user flash workflow (dfu-util first) |
