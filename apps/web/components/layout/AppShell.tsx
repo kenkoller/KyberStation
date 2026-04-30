@@ -6,29 +6,11 @@ import { useTimelinePlayback } from '@/hooks/useTimelinePlayback';
 import { useDeviceMotion } from '@/hooks/useDeviceMotion';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useUIStore } from '@/stores/uiStore';
-import type { ActiveTab, RenderMode } from '@/stores/uiStore';
+import type { RenderMode } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 
 import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
-import { PresetGallery } from '@/components/editor/PresetGallery';
-import { DesignPanel } from '@/components/editor/DesignPanel';
-import { DynamicsPanel } from '@/components/editor/DynamicsPanel';
-import { AudioPanel } from '@/components/editor/AudioPanel';
-import { OutputPanel } from '@/components/editor/OutputPanel';
-
-// OV6 merged Dynamics into Design. The mobile / tablet shells still
-// render a single Design tab body — we stack Design + Dynamics content
-// vertically inside one panel so motion / effect-config controls remain
-// reachable on small screens without a dedicated tab.
-function MergedDesignPanel() {
-  return (
-    <div className="space-y-6">
-      <DesignPanel />
-      <DynamicsPanel />
-    </div>
-  );
-}
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { useAudioSync } from '@/hooks/useAudioSync';
 import { useThemeApplier } from '@/hooks/useThemeApplier';
@@ -39,7 +21,6 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { usePauseSystem } from '@/hooks/usePauseSystem';
 import { PauseButton } from '@/components/layout/PauseButton';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
-import { usePresetListStore } from '@/stores/presetListStore';
 import { AccessibilityPanel } from '@/components/editor/AccessibilityPanel';
 import { SaberProfileSwitcher } from '@/components/editor/SaberProfileSwitcher';
 import { WorkbenchLayout } from '@/components/layout/WorkbenchLayout';
@@ -48,341 +29,11 @@ import { StatusBar } from '@/components/layout/StatusBar';
 import { VisualizationToolbar } from '@/components/editor/VisualizationToolbar';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
 // Left-rail overhaul (v0.14.0 PR 5c): tablet migrated off TabColumnContent
-// to Sidebar + MainContent. Mobile shell still uses the local TabContent
-// router defined below — that branch keeps its swipe-driven 4-tab UI
-// until a dedicated mobile UX pass.
+// to Sidebar + MainContent. Mobile shell migrated to the same shell
+// (PR feat/mobile-overhaul-v1, 2026-04-30) — see MobileShell.tsx.
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MainContent } from '@/components/layout/MainContent';
-import { playUISound } from '@/lib/uiSounds';
-
-const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
-  { id: 'gallery', label: 'Gallery', shortLabel: 'Gallery' },
-  { id: 'design', label: 'Design', shortLabel: 'Design' },
-  { id: 'audio', label: 'Audio', shortLabel: 'Audio' },
-  { id: 'output', label: 'Output', shortLabel: 'Out' },
-];
-
-type BladeOrientation = 'vertical' | 'horizontal';
-
-function TabContent({ activeTab }: { activeTab: ActiveTab }) {
-  switch (activeTab) {
-    case 'design':
-      return <MergedDesignPanel />;
-    case 'audio':
-      return <AudioPanel />;
-    case 'gallery':
-      return <PresetGallery />;
-    case 'output':
-      return <OutputPanel />;
-  }
-}
-
-// ─── Mobile Shell ────────────────────────────────────────────────────────────
-// Extracted into its own component so swipe-gesture refs live here rather than
-// inside AppShell, which would force conditional hook calls (rules of hooks).
-
-interface MobileShellProps {
-  isVertical: boolean;
-  setBladeOrientation: (o: BladeOrientation) => void;
-  showA11yPanel: boolean;
-  setShowA11yPanel: (v: boolean) => void;
-  showPanel: boolean;
-  setShowPanel: (v: boolean) => void;
-  activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
-  currentTabIndex: number;
-  tabIds: ActiveTab[];
-  presetListCount: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  engineRef: React.RefObject<any>;
-  isOn: boolean;
-  toggleWithAudio: () => void;
-  triggerEffectWithAudio: (type: string) => void;
-  motionData: { isActive: boolean; swingSpeed: number; bladeAngle: number; twistAngle: number };
-  permissionState: string;
-  requestPermission: () => void;
-  isSupported: boolean;
-}
-
-/** Minimum horizontal drag distance (px) to register as a tab swipe. */
-const SWIPE_THRESHOLD = 50;
-
-function MobileShell({
-  isVertical,
-  setBladeOrientation,
-  showA11yPanel,
-  setShowA11yPanel,
-  showPanel,
-  setShowPanel,
-  activeTab,
-  setActiveTab,
-  currentTabIndex,
-  tabIds,
-  presetListCount,
-  engineRef,
-  isOn,
-  toggleWithAudio,
-  triggerEffectWithAudio,
-  motionData,
-  permissionState,
-  requestPermission,
-  isSupported,
-}: MobileShellProps) {
-  // ── Touch swipe gesture tracking ──────────────────────────────────────────
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  // null = undetermined; true = user is scrolling vertically; false = swiping horizontally
-  const isScrollGesture = useRef<boolean | null>(null);
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    isScrollGesture.current = null;
-  }, []);
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    const dx = e.touches[0].clientX - touchStartX.current;
-    const dy = e.touches[0].clientY - touchStartY.current;
-
-    // Classify intent on the first substantial movement
-    if (isScrollGesture.current === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-      isScrollGesture.current = Math.abs(dy) > Math.abs(dx);
-    }
-
-    // Prevent default scroll when committed to a horizontal swipe so the
-    // panel content doesn't scroll at the same time.
-    if (isScrollGesture.current === false) {
-      e.preventDefault();
-    }
-  }, []);
-
-  const onTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (touchStartX.current === null || isScrollGesture.current !== false) {
-        touchStartX.current = null;
-        touchStartY.current = null;
-        isScrollGesture.current = null;
-        return;
-      }
-
-      const dx = e.changedTouches[0].clientX - touchStartX.current;
-      touchStartX.current = null;
-      touchStartY.current = null;
-      isScrollGesture.current = null;
-
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-
-      if (dx < 0) {
-        // Swipe left → advance to next tab
-        const next = tabIds[currentTabIndex + 1];
-        if (next) {
-          setActiveTab(next);
-          setShowPanel(true);
-        }
-      } else {
-        // Swipe right → go back to previous tab
-        const prev = tabIds[currentTabIndex - 1];
-        if (prev) {
-          setActiveTab(prev);
-          setShowPanel(true);
-        }
-      }
-    },
-    [currentTabIndex, tabIds, setActiveTab, setShowPanel],
-  );
-
-  return (
-    <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
-
-      {/* ── Compact Mobile Header ─────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-2 py-1 border-b border-border-subtle bg-bg-secondary shrink-0 min-w-0">
-        <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none shrink-0">
-          <span className="text-white">BF</span>
-        </h1>
-
-        <div className="flex items-center gap-1 min-w-0 flex-wrap justify-end">
-          {/* Orientation toggle */}
-          <button
-            onClick={() => setBladeOrientation(isVertical ? 'horizontal' : 'vertical')}
-            className="touch-target px-1 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted transition-colors active:border-accent active:text-accent"
-            title={isVertical ? 'Switch to horizontal' : 'Switch to vertical'}
-          >
-            {isVertical ? '\u2194' : '\u2195'}
-          </button>
-
-          {/* Accessibility settings */}
-          <button
-            onClick={() => setShowA11yPanel(true)}
-            className="touch-target px-1 py-1 rounded text-ui-xs font-medium border border-border-subtle text-text-muted transition-colors active:border-accent active:text-accent"
-            aria-label="Accessibility settings"
-          >
-            {'\u2699'}
-          </button>
-
-          {/* Gyro */}
-          {isSupported && (
-            <button
-              onClick={requestPermission}
-              className={`touch-target px-1 py-1 rounded text-ui-xs font-medium border transition-colors ${
-                motionData.isActive
-                  ? 'border-green-500/40 text-green-400 bg-green-900/20'
-                  : permissionState === 'denied'
-                    ? 'border-red-500/30 text-red-400'
-                    : 'border-border-subtle text-text-muted'
-              }`}
-              title={
-                motionData.isActive
-                  ? 'Gyro active'
-                  : permissionState === 'denied'
-                    ? 'Gyro denied'
-                    : 'Enable gyro'
-              }
-            >
-              {'\uD83D\uDCE1'}
-            </button>
-          )}
-
-          {/* Fullscreen — pinned in header so it's always reachable on mobile */}
-          <FullscreenButton className="touch-target w-9 h-9" />
-
-          {/* Global pause — wrapper ensures the 44×44 min touch target even
-               though the shared button is styled compactly for desktop */}
-          <div className="min-h-[44px] flex items-center">
-            <PauseButton />
-          </div>
-
-          {/* Ignite / Retract — min 44x44 touch target per WCAG 2.5.5 */}
-          <button
-            onClick={toggleWithAudio}
-            aria-label={isOn ? 'Retract blade' : 'Ignite blade'}
-            className={`min-h-[44px] min-w-[44px] px-2 py-1 rounded-md text-ui-xs font-bold uppercase tracking-wider transition-all border shrink-0 ${
-              isOn
-                ? 'bg-red-900/30 border-red-700/50 text-red-400 ignite-btn-on'
-                : 'bg-accent-dim border-accent-border text-accent ignite-btn-off'
-            }`}
-          >
-            {isOn ? 'Off' : 'On'}
-          </button>
-        </div>
-      </header>
-
-      {/* ── Blade Canvas — horizontal by default, full screen width ───────
-           Config bar (Type/Hilt/Strip/Blade dropdowns) lives inside
-           BladeCanvas with `desktop:hidden` and wraps onto multiple rows at
-           400px, so height must accommodate both the wrapped bar and the
-           200px min-height canvas. Using `min-h` instead of a fixed height
-           prevents the canvas from being clipped when the config bar grows. */}
-      <div
-        className="w-full shrink-0 flex items-center justify-center bg-bg-primary min-h-[260px]"
-        role="region"
-        aria-label="Blade preview"
-      >
-        <BladeCanvas engineRef={engineRef} vertical={false} compact />
-      </div>
-
-      {/* ── Visualization Toolbar — compact horizontal strip below blade ── */}
-      <div className="shrink-0 px-2 py-1 border-b border-border-subtle bg-bg-secondary/60 flex items-center overflow-x-auto">
-        <VisualizationToolbar orientation="horizontal" />
-      </div>
-
-      {/* ── Effect Trigger Bar ────────────────────────────────────────────── */}
-      <div className="px-1 py-0.5 shrink-0 border-b border-border-subtle">
-        <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
-      </div>
-
-      {/* ── Panel Area — swipeable, single scrollable column ─────────────── */}
-      <div
-        className="flex-1 min-h-0 flex flex-col bg-bg-secondary/50"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        {/* Tab bar row. The role="tablist" is scoped to the inner flex
-            that contains only the tab buttons — axe's
-            aria-required-children rule was failing when the dot
-            indicators + collapse toggle lived inside the same role=
-            tablist element as the tabs. */}
-        <div className="flex overflow-x-auto px-1 pt-0.5 shrink-0 border-b border-border-subtle">
-          <div className="flex flex-1 min-w-0" role="tablist">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                id={`mobile-tab-${tab.id}`}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={showPanel ? 'mobile-panel' : undefined}
-                aria-expanded={showPanel}
-                onClick={() => {
-                  playUISound('tab-switch');
-                  setActiveTab(tab.id);
-                  setShowPanel(true);
-                }}
-                className={`flex-1 min-w-0 min-h-[44px] px-2 py-1.5 text-ui-sm font-medium transition-colors relative whitespace-nowrap ${
-                  activeTab === tab.id && showPanel ? 'text-accent' : 'text-text-muted'
-                }`}
-              >
-                {tab.shortLabel}
-                {tab.id === 'output' && presetListCount > 0 && (
-                  <span className="ml-0.5 text-ui-xs text-accent">({presetListCount})</span>
-                )}
-                {activeTab === tab.id && showPanel && (
-                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-t" />
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Swipe position indicator dots (sibling to tablist, not a child) */}
-          <div className="flex items-center px-2 gap-1 shrink-0" aria-hidden="true">
-            {TABS.map((tab, i) => (
-              <span
-                key={tab.id}
-                className={`inline-block rounded-full transition-all duration-200 ${
-                  i === currentTabIndex ? 'w-2 h-2 bg-accent' : 'w-1.5 h-1.5 bg-border-subtle'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Collapse toggle (sibling to tablist, not a child) */}
-          <button
-            onClick={() => setShowPanel(!showPanel)}
-            className="min-h-[44px] px-2 py-1.5 text-ui-sm text-text-muted shrink-0"
-            aria-label={showPanel ? 'Collapse panel' : 'Expand panel'}
-          >
-            {showPanel ? '\u25BC' : '\u25B2'}
-          </button>
-        </div>
-
-        {/* Panel content — single scrollable column. ID stays stable
-            so the tab buttons' aria-controls="mobile-panel" always
-            resolves even as the content switches tabs. */}
-        {showPanel && (
-          <div
-            className="flex-1 min-h-0 overflow-y-auto p-3"
-            role="tabpanel"
-            id="mobile-panel"
-            aria-labelledby={`mobile-tab-${activeTab}`}
-          >
-            <TabContent activeTab={activeTab} />
-          </div>
-        )}
-      </div>
-
-      {/* ── Status Bar — slim readout, accounts for safe-area bottom ─────── */}
-      <div className="shrink-0 pb-[env(safe-area-inset-bottom)]">
-        <StatusBar />
-      </div>
-
-      {/* Accessibility Settings Modal */}
-      {showA11yPanel && <AccessibilityPanel onClose={() => setShowA11yPanel(false)} />}
-
-      {/* Fullscreen preview overlay */}
-      <FullscreenPreview engineRef={engineRef} onTriggerEffect={triggerEffectWithAudio} />
-    </div>
-  );
-}
+import { MobileShell } from '@/components/layout/MobileShell';
 
 // ─── Tablet Shell ────────────────────────────────────────────────────────────
 // Extracted into its own component so swipe-gesture refs live here rather than
@@ -405,12 +56,7 @@ interface TabletShellProps {
 
 // Left-rail overhaul (v0.14.0 PR 5c): TabletShell migrated from the
 // 4-tab + TabColumnContent layout to the unified Sidebar + MainContent
-// pattern that desktop uses. Swipe gestures, the inner tab bar, and
-// the showPanel collapse toggle were retired alongside the tabs.
-//
-// MobileShell is intentionally unchanged in this PR — its swipe-driven
-// tab UI is still load-bearing on small screens and benefits from a
-// dedicated UX pass (PR 5+ scope).
+// pattern that desktop uses.
 function TabletShell({
   showA11yPanel,
   setShowA11yPanel,
@@ -426,7 +72,7 @@ function TabletShell({
   return (
     <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
 
-      {/* ── Tablet Header ───────────────────────────────────────────────────── */}
+      {/* ── Tablet Header ───────────────────────────────────────────────── */}
       <header className="flex items-center justify-between px-3 py-2 border-b border-border-subtle bg-bg-secondary shrink-0">
         <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
           <span className="text-white">BLADE</span>
@@ -453,7 +99,7 @@ function TabletShell({
             className="touch-target w-7 h-7 flex items-center justify-center rounded-full border border-border-subtle text-text-muted hover:text-accent hover:border-accent-border transition-colors text-ui-sm"
             aria-label="Accessibility settings"
           >
-            ⚙
+            {'⚙'}
           </button>
           {/* Fullscreen — accessible in tablet header */}
           <FullscreenButton className="touch-target w-8 h-8" />
@@ -473,10 +119,10 @@ function TabletShell({
         </div>
       </header>
 
-      {/* ── Main Content ────────────────────────────────────────────────────── */}
+      {/* ── Main Content ────────────────────────────────────────────────── */}
       <div id="main-content" className="flex-1 min-h-0 flex flex-col overflow-hidden">
 
-        {/* ── Blade Canvas — horizontal, full width ─────────────────────────── */}
+        {/* ── Blade Canvas — horizontal, full width ───────────────────── */}
         <div
           className="shrink-0 h-[160px] border-b border-border-subtle"
           role="region"
@@ -487,12 +133,12 @@ function TabletShell({
           </div>
         </div>
 
-        {/* ── Visualization Toolbar — compact strip below blade ─────────────── */}
+        {/* ── Visualization Toolbar — compact strip below blade ──────── */}
         <div className="shrink-0 px-2 py-1 border-b border-border-subtle bg-bg-secondary/60 flex items-center overflow-x-auto">
           <VisualizationToolbar orientation="horizontal" />
         </div>
 
-        {/* ── Visualization Stack — analysis layers, capped height ──────────── */}
+        {/* ── Visualization Stack — analysis layers, capped height ───── */}
         <div
           className="shrink-0 overflow-y-auto max-h-[160px] border-b border-border-subtle bg-bg-primary"
           role="region"
@@ -504,15 +150,12 @@ function TabletShell({
           />
         </div>
 
-        {/* ── Effect Trigger Bar ────────────────────────────────────────────── */}
+        {/* ── Effect Trigger Bar ──────────────────────────────────────── */}
         <div className="px-3 py-1 shrink-0 border-b border-border-subtle">
           <EffectTriggerBar onTrigger={triggerEffectWithAudio} />
         </div>
 
-        {/* ── Panel Area — left-rail overhaul (PR 5c) ──────────────────────────────
-             Sidebar + MainContent, mirroring the desktop pattern at a
-             tighter sidebar width (240 px vs 280 px) so MainContent has
-             room to breathe at 600–1023 px viewports. */}
+        {/* ── Panel Area — Sidebar + MainContent ─────────────────────── */}
         <div
           className="flex-1 min-h-0 flex bg-bg-secondary/50"
           role="region"
@@ -523,7 +166,7 @@ function TabletShell({
         </div>
       </div>
 
-      {/* ── Status Bar — proper component, safe-area aware ───────────────────── */}
+      {/* ── Status Bar ─────────────────────────────────────────────────── */}
       <div className="shrink-0">
         <StatusBar />
       </div>
@@ -548,10 +191,7 @@ export function AppShell() {
   useAurebesh();
   usePauseSystem();
   usePresetListSync();
-  const presetListCount = usePresetListStore((s) => s.entries.length);
   const renderMode = useUIStore((s) => s.renderMode);
-  const activeTab = useUIStore((s) => s.activeTab);
-  const setActiveTab = useUIStore((s) => s.setActiveTab);
   const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
@@ -585,9 +225,7 @@ export function AppShell() {
   }, [triggerEffect, audio]);
 
   const { isMobile, isTablet } = useBreakpoint();
-  const [showPanel, setShowPanel] = useState(false);
   const [showA11yPanel, setShowA11yPanel] = useState(false);
-  const [bladeOrientation, setBladeOrientation] = useState<BladeOrientation>('horizontal');
 
   // ── Pixel buffer for VisualizationStack (tablet layout) ──
   // Same pattern as WorkbenchLayout: capture the engine's live Uint8Array once after
@@ -620,7 +258,7 @@ export function AppShell() {
       window.removeEventListener('pointerup', onUp);
     };
   }, [setSidebarWidth]);
-  const { motionData, permissionState, requestPermission, isSupported } = useDeviceMotion();
+  const { motionData } = useDeviceMotion();
 
   // Feed gyro data into the engine's motion simulator + smooth-swing audio
   useEffect(() => {
@@ -659,31 +297,16 @@ export function AppShell() {
 
   // ─── Mobile Layout ───
   if (isMobile) {
-    const isVertical = bladeOrientation === 'vertical';
-    const tabIds = TABS.map((t) => t.id);
-    const currentTabIndex = tabIds.indexOf(activeTab);
-
     return (
       <MobileShell
-        isVertical={isVertical}
-        setBladeOrientation={setBladeOrientation}
         showA11yPanel={showA11yPanel}
         setShowA11yPanel={setShowA11yPanel}
-        showPanel={showPanel}
-        setShowPanel={setShowPanel}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        currentTabIndex={currentTabIndex}
-        tabIds={tabIds}
-        presetListCount={presetListCount}
         engineRef={engineRef}
         isOn={isOn}
         toggleWithAudio={toggleWithAudio}
         triggerEffectWithAudio={triggerEffectWithAudio}
-        motionData={motionData}
-        permissionState={permissionState}
-        requestPermission={requestPermission}
-        isSupported={isSupported}
+        releaseEffect={releaseEffect}
+        audio={audio}
       />
     );
   }
