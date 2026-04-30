@@ -225,7 +225,7 @@ export class BladeEngine {
    */
   // One-shot effect types that cancel each other when triggered
   private static readonly ONE_SHOT_EFFECTS: ReadonlySet<EffectType> = new Set([
-    'clash', 'blast', 'stab', 'force',
+    'clash', 'blast', 'stab', 'force', 'unstableKylo',
   ]);
 
   triggerEffect(type: EffectType, params?: EffectParams): void {

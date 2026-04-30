@@ -64,8 +64,8 @@ function resetEffectsState() {
 }
 
 describe('combat-effects catalog', () => {
-  it('contains exactly 21 entries', () => {
-    expect(COMBAT_EFFECTS.length).toBe(21);
+  it('contains exactly 22 entries', () => {
+    expect(COMBAT_EFFECTS.length).toBe(22);
   });
 
   it('uses unique ids for every effect', () => {

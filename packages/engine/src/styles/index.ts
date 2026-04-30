@@ -29,6 +29,9 @@ import { NebulaStyle } from './NebulaStyle.js';
 import { TidalStyle } from './TidalStyle.js';
 import { MirageStyle } from './MirageStyle.js';
 import { DarkSaberStyle } from './DarkSaberStyle.js';
+import { SithFlickerStyle } from './SithFlickerStyle.js';
+import { BladeChargeStyle } from './BladeChargeStyle.js';
+import { TempoLockStyle } from './TempoLockStyle.js';
 
 export { BaseStyle } from './BaseStyle.js';
 export { StableStyle } from './StableStyle.js';
@@ -61,6 +64,9 @@ export { NebulaStyle } from './NebulaStyle.js';
 export { TidalStyle } from './TidalStyle.js';
 export { MirageStyle } from './MirageStyle.js';
 export { DarkSaberStyle } from './DarkSaberStyle.js';
+export { SithFlickerStyle } from './SithFlickerStyle.js';
+export { BladeChargeStyle } from './BladeChargeStyle.js';
+export { TempoLockStyle } from './TempoLockStyle.js';
 
 /** Registry of all available blade styles, keyed by style ID. */
 export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
@@ -94,6 +100,9 @@ export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
   tidal: () => new TidalStyle(),
   mirage: () => new MirageStyle(),
   darksaber: () => new DarkSaberStyle(),
+  sithFlicker: () => new SithFlickerStyle(),
+  bladeCharge: () => new BladeChargeStyle(),
+  tempoLock: () => new TempoLockStyle(),
 };
 
 /**

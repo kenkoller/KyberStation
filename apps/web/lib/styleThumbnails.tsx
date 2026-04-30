@@ -554,6 +554,55 @@ export const STYLE_THUMBNAILS: Record<string, StyleThumbnailEntry> = {
       </Svg>
     ),
   },
+
+  sithFlicker: {
+    label: 'Sith Flicker',
+    thumbnail: (
+      <Svg>
+        {/* Solid blade with periodic dim "dropout" segments — reads as a
+            blade flickering off-and-on along its length. The 5 alternating
+            full/dim chunks signal "unstable Sith weapon" without literal motion. */}
+        <line x1="8"  y1={BLADE_Y} x2="22" y2={BLADE_Y} stroke={ACCENT}     strokeWidth="6" strokeLinecap="round" />
+        <line x1="24" y1={BLADE_Y} x2="32" y2={BLADE_Y} stroke={ACCENT_DIM} strokeWidth="6" strokeLinecap="round" />
+        <line x1="34" y1={BLADE_Y} x2="50" y2={BLADE_Y} stroke={ACCENT}     strokeWidth="6" strokeLinecap="round" />
+        <line x1="52" y1={BLADE_Y} x2="58" y2={BLADE_Y} stroke={ACCENT_DIM} strokeWidth="6" strokeLinecap="round" />
+        <line x1="60" y1={BLADE_Y} x2="76" y2={BLADE_Y} stroke={ACCENT}     strokeWidth="6" strokeLinecap="round" />
+        <line x1="78" y1={BLADE_Y} x2="84" y2={BLADE_Y} stroke={ACCENT_DIM} strokeWidth="6" strokeLinecap="round" />
+        <line x1="86" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT}     strokeWidth="6" strokeLinecap="round" />
+      </Svg>
+    ),
+  },
+
+  bladeCharge: {
+    label: 'Blade Charge',
+    thumbnail: (
+      <Svg>
+        {/* Blade widens and brightens toward the tip — a tapered glow gradient.
+            Two stacked strokes of increasing width fake the "energy pools to tip"
+            read at thumbnail scale. */}
+        <line x1="8"  y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT_DIM} strokeWidth="3" strokeLinecap="round" />
+        <line x1="40" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT}     strokeWidth="6" strokeLinecap="round" />
+        <line x1="65" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke="rgb(255 255 255)" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+      </Svg>
+    ),
+  },
+
+  tempoLock: {
+    label: 'Tempo Lock',
+    thumbnail: (
+      <Svg>
+        {/* Blade with five evenly-spaced beat ticks above it — reads as
+            "rhythmic pulse" / metronome. Center sine arc accentuates pulse motion. */}
+        <line x1="8" y1={BLADE_Y} x2="92" y2={BLADE_Y} stroke={ACCENT} strokeWidth="6" strokeLinecap="round" />
+        <path d="M8 20 Q25 12 50 20 T92 20" stroke={ACCENT_DIM} strokeWidth="1.5" fill="none" />
+        <circle cx="14" cy="20" r="1.6" fill={ACCENT} />
+        <circle cx="33" cy="20" r="1.6" fill={ACCENT} />
+        <circle cx="50" cy="20" r="2"   fill={ACCENT} />
+        <circle cx="67" cy="20" r="1.6" fill={ACCENT} />
+        <circle cx="86" cy="20" r="1.6" fill={ACCENT} />
+      </Svg>
+    ),
+  },
 };
 
 /** Resolve a styleId to its thumbnail + label, falling back to the default. */

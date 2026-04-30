@@ -48,6 +48,9 @@ export const BLADE_STYLES: ReadonlyArray<BladeStyleCatalogEntry> = [
   { id: 'mirage',         label: 'Mirage',          desc: 'Heat shimmer mirage' },
   { id: 'painted',        label: 'Painted',         desc: 'Hand-painted blade colors' },
   { id: 'imageScroll',    label: 'Image Scroll',    desc: 'Scroll an image for light painting' },
+  { id: 'sithFlicker',    label: 'Sith Flicker',    desc: 'Vader / Inquisitor unstable flicker' },
+  { id: 'bladeCharge',    label: 'Blade Charge',    desc: 'Energy pools to tip on swing' },
+  { id: 'tempoLock',      label: 'Tempo Lock',      desc: 'BPM-locked rhythmic pulse' },
 ];
 
 // ─── Style-specific parameter defs ─────────────────────────────────────
@@ -95,6 +98,18 @@ export const STYLE_PARAMS: Record<string, StyleParamDef[]> = {
   ],
   painted: [],
   imageScroll: [],
+  sithFlicker: [
+    { key: 'flickerRate',      label: 'Flicker Rate (Hz)', min: 3, max: 8, step: 0.5,  defaultValue: 5 },
+    { key: 'flickerMinBright', label: 'Min Brightness',    min: 0, max: 0.3, step: 0.01, defaultValue: 0.1 },
+  ],
+  bladeCharge: [
+    { key: 'chargeExponent', label: 'Tip Pooling',  min: 1,   max: 3, step: 0.1,  defaultValue: 1.5 },
+    { key: 'chargeBoost',    label: 'Charge Boost', min: 0.1, max: 1, step: 0.05, defaultValue: 0.6 },
+  ],
+  tempoLock: [
+    { key: 'tempoBpm',   label: 'BPM',         min: 60, max: 180, step: 1,   defaultValue: 120 },
+    { key: 'tempoDepth', label: 'Pulse Depth', min: 0,  max: 1,   step: 0.05, defaultValue: 0.5 },
+  ],
 };
 
 /**

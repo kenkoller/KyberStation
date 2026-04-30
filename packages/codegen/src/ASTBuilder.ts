@@ -57,6 +57,10 @@ interface BladeConfig {
   retractionDown?: string;
   gradientEnd?: RGB;
   edgeColor?: RGB;
+  // ── v0.15.x effects priority 5 — Unstable Kylo clash variant ──
+  // When true, codegen emits a SimpleClashL<White, 60> overlay alongside
+  // the standard clash. See engine `BladeConfig.unstableKylo`.
+  unstableKylo?: boolean;
   [key: string]: unknown;
 }
 
@@ -217,6 +221,114 @@ function buildBaseStyle(config: BladeConfig): StyleNode {
         rgbNode({ r: 5, g: 5, b: 5 }),
         rawNode('White'),
       );
+
+    case 'sithFlicker': {
+      // Sith Flicker — Vader / Inquisitor unstable-weapon flicker.
+      // ProffieOS shape:
+      //   Mix<Sin<period_ms>, Mix<Int<floor>, Black, baseRgb>, baseRgb>
+      // Sin<> outputs a 0..32768 sine; Mix<Sin, dim, full> blends between
+      // the dim "floor" color and the full base color once per period_ms.
+      // period_ms = 1000 / flickerRate (Hz). floor = minBright * 32768.
+      // Hardware-fidelity check (per docs/HARDWARE_FIDELITY_PRINCIPLE.md):
+      // this template runs natively on real Proffieboard ProffieOS — no
+      // visualizer-only fakes. The visualizer's `SithFlickerStyle` mirrors
+      // the same sin-gated brightness math so what the user sees on the
+      // canvas is what they get on hardware.
+      const rate =
+        (config.flickerRate as number | undefined) ?? 5;
+      const minBright =
+        (config.flickerMinBright as number | undefined) ?? 0.1;
+      const periodMs = Math.round(1000 / Math.max(0.1, rate));
+      const floorScalar = Math.round(
+        Math.max(0, Math.min(1, minBright)) * 32768,
+      );
+      return templateNode(
+        'mix',
+        'Mix',
+        templateNode('function', 'Sin', intTemplateNode(periodMs)),
+        templateNode(
+          'mix',
+          'Mix',
+          intTemplateNode(floorScalar),
+          rawNode('Black'),
+          rgbNode(config.baseColor),
+        ),
+        rgbNode(config.baseColor),
+      );
+    }
+
+    case 'bladeCharge': {
+      // Blade Charge — color pools toward tip on swing. ProffieOS shape:
+      //   Mix<Scale<SwingSpeed<400>, Int<0>, Int<32768>>,
+      //       baseGradient,
+      //       brightTipGradient>
+      // SwingSpeed<400> outputs 0..32768 with 400 ms decay. Scale clamps;
+      // the outer Mix interpolates between the idle "even base color"
+      // gradient and the "bright tip / dim hilt" gradient.
+      // Hardware-fidelity: same composer pattern as modulation v1.1
+      // shimmer routing — proven live on real Proffieboard hardware.
+      const baseGradient = templateNode(
+        'color',
+        'Gradient',
+        base,
+        rgbNode(config.baseColor),
+      );
+      const brightTip = brighten(config.baseColor, 0.6);
+      const dimHilt = {
+        r: Math.round(config.baseColor.r * 0.6),
+        g: Math.round(config.baseColor.g * 0.6),
+        b: Math.round(config.baseColor.b * 0.6),
+      };
+      const chargedGradient = templateNode(
+        'color',
+        'Gradient',
+        rgbNode(dimHilt),
+        rgbNode(brightTip),
+      );
+      return templateNode(
+        'mix',
+        'Mix',
+        templateNode(
+          'function',
+          'Scale',
+          templateNode('function', 'SwingSpeed', intNode(400)),
+          intTemplateNode(0),
+          intTemplateNode(32768),
+        ),
+        baseGradient,
+        chargedGradient,
+      );
+    }
+
+    case 'tempoLock': {
+      // Tempo Lock — BPM-locked brightness pulse. ProffieOS shape:
+      //   Mix<Sin<period_ms>, Mix<Int<floor>, Black, baseRgb>, baseRgb>
+      // period_ms = 60000 / BPM (one full sin cycle per beat).
+      // floor = (1 - depth) * 32768 — dim color at trough.
+      // Hardware-fidelity: same template family as Sith Flicker; just a
+      // different period mapping. Static-BPM only (modulation-driven BPM
+      // is v1.2+ per the v0.15.x effects proposal open question 1).
+      const bpm = (config.tempoBpm as number | undefined) ?? 120;
+      const depth = (config.tempoDepth as number | undefined) ?? 0.5;
+      const clampedBpm = Math.max(1, Math.min(300, bpm));
+      const periodMs = Math.round(60000 / clampedBpm);
+      const floorScalar = Math.round(
+        Math.max(0, Math.min(1, 1 - depth)) * 32768,
+      );
+      return templateNode(
+        'mix',
+        'Mix',
+        templateNode('function', 'Sin', intTemplateNode(periodMs)),
+        templateNode(
+          'mix',
+          'Mix',
+          intTemplateNode(floorScalar),
+          rawNode('Black'),
+          rgbNode(config.baseColor),
+        ),
+        rgbNode(config.baseColor),
+      );
+    }
 
     case 'photon':
       // Stripes<5000,-1500,Rgb,Mix<Int<14000>,Black,Rgb>,Pulsing<Rgb,White,1200>>
@@ -445,6 +557,27 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
   layers.push(
     templateNode('template', 'SimpleClashL', rgbNode(config.clashColor), intNode(40)),
   );
+
+  // Unstable Kylo clash overlay (v0.15.x effects priority 5)
+  // Adds a second SimpleClashL emitting bright white with extended duration
+  // (60ms vs the standard 40ms) on top of the standard clash. Reads as the
+  // crossguard "white spark spray" Kylo signature on real ProffieOS hardware
+  // — a longer-fade white flash overlays the colored clash flash.
+  // Hardware-fidelity (per docs/HARDWARE_FIDELITY_PRINCIPLE.md): the 1D LED
+  // strip can't render actual particle motion in 2D space, so the canonical
+  // approximation is the extended-duration white clash. The visualizer's
+  // `UnstableKyloEffect` simulates the spark trajectories for richer preview
+  // but the physically-flashed config is this template.
+  if (config.unstableKylo === true) {
+    layers.push(
+      templateNode(
+        'template',
+        'SimpleClashL',
+        rawNode('White'),
+        intNode(60),
+      ),
+    );
+  }
 
   // Lockup Normal
   // When `lockupPosition` is set the user has placed the lockup spatially

@@ -49,6 +49,7 @@ const ALL_EFFECTS: EffectType[] = [
   'coronary',
   'glitchMatrix',
   'siphon',
+  'unstableKylo',
 ];
 
 // Sustained effects stay active until release() is called
