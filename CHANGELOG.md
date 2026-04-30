@@ -7,9 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.16.0] — 2026-05-01
 
-Tracking work on the v1.0 path. (No new entries since the v0.15.0 cut.)
+**KyberStation v1.0 public launch.** Ships as a visual blade design tool first. Generate your ProffieOS config, compile with `arduino-cli`, flash with `dfu-util`. Web-based flashing is experimental. 30 PRs landed since v0.15.0 across 4 waves: critical bug fixes, v1 launch features, overnight refinement, and launch-posture lock.
+
+**Test count at tag:** 4,908 workspace-wide (web 1,875 / engine 796 / codegen 1,859 / boards 260 / sound 62 / presets 47 + 9 renderer golden-hash). Typecheck clean across all 10 packages.
+
+### Added
+
+- **Save Preset v1** (PR #134) — `SAVE` button in action bar prompts for a name, snapshots config to IndexedDB-backed `userPresetStore`. "My Presets" section in gallery sidebar with click-to-load, delete, color swatches.
+- **Add to Queue v1** (PR #136) — `Queue` button in action bar. One-click adds current config to the active saber profile's card queue with auto-generated name + toast feedback. Auto-creates "My Saber" profile if none exists.
+- **Audio waveform analysis layer** (PR #140) — new `audio-waveform` layer in AnalysisRail. `audioAnalyserStore` with first-publisher-wins pattern. AnalyserNode tap after `masterGain` so mute silences both audio and waveform. Default off, opt-in. +26 tests.
+- **17 new CommandPalette commands** (PR #141) — NAVIGATE +9 (every SectionId reachable from ⌘K), EDIT +3 (Save Preset, Add to Queue, Surprise Me), TOGGLE +3 (Pause, Reduce Bloom, Reduce Motion with dynamic title). +18 tests.
+- **26 compact 24×24 SVG thumbnails** (PR #125) for crisp MiniGalleryPicker triggers, with `compactThumbnail` infrastructure (PR #117).
+- **Modulation sampler progress fields** (PR #123) — `preonProgress` / `ignitionProgress` / `retractionProgress` added to `StyleContext`. Closes v1.1 sampler TODOs.
+- **FLASH_GUIDE.md** (PR #145) — canonical end-user flash guide (~290 lines, 13 sections). Covers `dfu-util` install, ProffieOS setup, KyberStation config export, `arduino-cli` compile, DFU mode entry, mandatory firmware backup, vendor-customized board warnings, recovery, troubleshooting, FAQ.
+- **Renderer-level golden-hash harness** (PR #147) — 9 test cases hashing `drawWorkbenchBlade` output via FNV-1a. Complements engine-level golden-hash (PR #112). `canvas@^3.0.0` devDependency for Node 24+.
+- **Modern Proffie sound categories** (PR #122) — recognize 12 additional sound event categories in the font parser. +19 sound tests.
+- **Twist ignition user guide** (PR #139) — documents all 18 ignition styles + twist modulator behavior.
+- **Backlog ground-truth audit** (PR #142) — 5 stale entries cleared from 18 audited.
+
+### Fixed
+
+- **Retraction animation progress** (PR #132) — `FadeoutRetraction` + `ImplodeRetraction` had inverted progress (double-inversion with engine's 1→0 convention, making retractions look like ignitions). +43 retraction tests covering 9 types.
+- **BladeCanvas alignment drift** (PR #133) — replaced inline piecewise ternary with shared `inferBladeInches()`. Pointed blade tip fixed by removing `tipExtension`. Emitter glow when OFF gated on `extendProgress > 0.05`. +379 alignment test cases.
+- **Header button standardization** (PR #131) — extracted `<HeaderButton>` primitive, normalized 5 buttons + ShareButton + FPSCounter + UndoRedo to h-7 / rounded-interactive / focus-visible ring.
+- **Pause suspends audio** (PR #130) — `useAudioEngine` watches `isPaused` from uiStore → `ctx.suspend()` / `ctx.resume()`. Independent of mute state.
+- **Light-theme card export** (PR #143) — replaced ad-hoc `lightBackdrop` boolean with `bladeComposite: GlobalCompositeOperation` field on `CardTheme`. LIGHT_THEME = `'source-over'`, dark themes = `'lighter'`. +9 drift-sentinel tests.
+- **Wizard polish** (PR #137) — fixed stale 132→144 LED default, stale "3 steps" tooltip, added `aria-pressed` / `aria-label` on color + vibe buttons. +7 tests.
+- **Surprise Me extended** (PR #135) — randomizer now picks from full 18-ignition + 12-retraction catalogs, generates 1–2 modulation bindings, adds clashDecay, theme-aware HSL colors.
+- **Audio engine fixes** — SmoothSwing speed broadcast + hum hot-swap on font change (PR #128), ignition/retraction sound dispatch swap (PR #127), shared mute state via Zustand store (PR #124), Brave FSA flag warning (PR #118).
+- **Blend mode tightened** (PR #116) — `BlendMode` narrowed from 5-mode union to single `'normal'` literal. The 4 non-normal modes were visualizer-only fakes with no ProffieOS codegen emission.
+
+### Changed
+
+- **FlashPanel launch posture** (PR #145) — EXPERIMENTAL badge in header. Disclaimer refactored from single boolean to 3-key object (`responsibility` / `backup` / `recovery`). All three checkboxes must be checked before Proceed. Vendor-customized board warning section.
+- **README beta posture** (PR #145) — replaced misleading "validated WebUSB" hardware table with honest "dfu-util first, WebUSB experimental" framing. Credits section rewritten per LAUNCH_PLAN humble-tone guidance.
 
 ---
 
