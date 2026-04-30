@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 
 /**
@@ -26,18 +26,16 @@ import { Suspense } from 'react';
  */
 function MobileTabBarInner() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get('tab');
 
   // /m is intentionally chrome-free — preset browser + Ignite + swipe.
   // Bottom nav would fight the minimalist mode per UX spec.
   if (pathname === '/m') return null;
 
   const TABS = [
-    { href: '/m',                  label: 'Saber',   icon: '✦', match: () => pathname === '/m' },
-    { href: '/editor',             label: 'Editor',  icon: '⚒', match: () => pathname === '/editor' && tabParam !== 'gallery' },
-    { href: '/editor?tab=gallery', label: 'Gallery', icon: '◩', match: () => pathname === '/editor' && tabParam === 'gallery' },
-    { href: '/docs',               label: 'Docs',    icon: '?', match: () => pathname === '/docs' },
+    { href: '/m',       label: 'Saber',   icon: '✦', match: () => pathname === '/m' },
+    { href: '/editor',  label: 'Editor',  icon: '⚒', match: () => pathname === '/editor' },
+    { href: '/gallery', label: 'Gallery', icon: '◩', match: () => pathname === '/gallery' },
+    { href: '/docs',    label: 'Docs',    icon: '?', match: () => pathname === '/docs' },
   ] as const;
 
   return (
