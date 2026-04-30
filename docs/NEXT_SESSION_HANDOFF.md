@@ -1,6 +1,8 @@
 # Next Session — Paste-Ready Handoff Prompt
 
-Refreshed **2026-04-30** after a session that landed 14 PRs (#118, #122, #124, #126–#128, #130–#137) fixing Ken's field-test bugs and shipping v1 launch features. Both stuck agents from 2026-04-29 late were written off cleanly — worktrees removed, branches deleted.
+Refreshed **2026-04-30 night** after a full session that landed **17 PRs** (Wave 1 critical bugs + overnight refinement + T2.10 golden-hash harness + Ken's parallel launch posture). Workspace integration verified: 4899 tests green, 10/10 packages typecheck-clean, production build clean.
+
+The next session is **browser verification + visual review** by Ken, then v0.15.1 tag cut.
 
 Previous handoff is in git history (`docs/NEXT_SESSION_HANDOFF.md` rewritten in place at each wrap).
 
@@ -9,225 +11,236 @@ Previous handoff is in git history (`docs/NEXT_SESSION_HANDOFF.md` rewritten in 
 ## Paste this into a new Claude Code session
 
 ```
-Continue from the 2026-04-30 session for KyberStation.
+Continue from the 2026-04-30 night session for KyberStation.
 
 PROJECT CONTEXT
 ---------------
 KyberStation is a web-based lightsaber style editor for Proffieboard
 V3.9 / ProffieOS 7.x. Last tag is v0.15.0 (Modulation Routing v1.1
-Core, hardware-validated). 2026-04-30 shipped 14 PRs — 6 audio-engine
-improvements from Ken's parallel session (#118 Brave FSA, #122 modern
-sound categories, #124 shared mute store, #127 ProffieOS in/out swap,
-#128 SmoothSwing broadcasting + hum hot-swap) and 8 from agent dispatch
-(#130 pause audio, #131 header buttons, #132 retraction fix, #133 blade
-canvas fixes, #134 save state v1, #135 surprise me extension, #136 add
-to queue, #137 wizard audit).
+Core, hardware-validated). 2026-04-30 shipped 17 PRs total across the
+day. Workspace state: 4899 tests passing, 10/10 packages typecheck-
+clean, production build clean.
+
+WHAT JUST HAPPENED
+------------------
+The previous session was an end-to-end run from morning through
+overnight, landing in three phases:
+
+Phase 1 — Wave 1 critical bugs + Ken's audio merges (10 PRs):
+  - #126 docs(session-archive): 2026-04-29 wrap (rebase merge)
+  - #118, #122, #124, #127, #128 — Ken's audio-engine improvements
+    (Brave FSA, modern sound categories, shared mute, ProffieOS
+    in/out swap, SmoothSwing broadcast + hum hot-swap)
+  - #130 fix(audio): suspend AudioContext on global pause
+  - #131 fix(header): standardize buttons (HeaderButton primitive)
+  - #132 fix(engine): correct retraction animation progress (TOP
+    PRIORITY — retraction was rendering as ignition due to double-
+    inversion in FadeoutRetraction + ImplodeRetraction)
+  - #133 fix(blade): alignment drift, pointed tip, emitter glow
+
+Phase 2 — Overnight refinement (5 PRs, parallel agents):
+  - #139 docs: twist ignition + twist modulator behavior
+  - #140 feat(analysis): audio-waveform layer in AnalysisRail
+  - #141 feat(palette): 17 missing commands across NAVIGATE/EDIT/TOGGLE
+  - #142 docs(backlog): ground-truth audit (5 stale-bits cleared)
+  - #143 fix(card): theme-gate blade composite for LIGHT_THEME
+
+Phase 3 — Session wrap + T2.10 + verification (3 PRs):
+  - #144 docs(claude): 2026-04-30 evening session wrap
+  - #147 test(renderer): renderer-level golden-hash harness (T2.10
+    SHIPPED — unblocks Item K module extraction)
+  - #149 (Ken parallel) docs(claude-md): launch posture v2 + FLASH_GUIDE
+
+THIS SESSION'S PRIMARY TASK
+---------------------------
+Browser-verify the 17 merged PRs in a live preview. Walk through each
+user-visible change to confirm nothing regressed. Take notes on any
+observed issues; fix small ones inline, flag larger ones for follow-
+up. Once verification is clean, cut v0.15.1 patch tag.
 
 WHERE WE ARE
 ------------
-- Branch: `main` (tip 703feeb, merged PR #138 docs session wrap)
-- Last tag: v0.15.0 (substantial untagged work pending — 30+ PRs since
-  the tag; v0.15.1 patch tag is the recommended next milestone)
-- Recommended browser: Brave / Chrome / Edge. Safari known cosmetic
-  gap (BladeCanvas bloom narrower than Chromium — see
-  docs/POST_LAUNCH_BACKLOG.md Safari section).
-- Cleanup state: both stuck agents from 2026-04-29 late written off
-  cleanly. No locked worktrees from recent sessions.
+- Branch: `main` (tip 6858ab0, all PRs merged)
+- Last tag: v0.15.0 (substantial untagged work — v0.15.1 patch tag
+  is the next milestone)
+- Recommended browser: Brave / Chrome / Edge. Safari has known
+  cosmetic gap (BladeCanvas bloom narrower — see backlog).
+- Cleanup state: clean. No locked worktrees from prior sessions.
 
 READ FIRST
 ----------
-1. CLAUDE.md — top "Current State (2026-04-30)" entry has the full
-   session recap including Ken's 18-item field notes delta (12 resolved,
-   6 deferred).
-2. docs/POST_LAUNCH_BACKLOG.md — last audited 2026-04-30. Key items:
-   - Saber GIF Sprint 2 was already shipped (PR #80, stale-bit). Do
-     not re-dispatch.
-   - UX item #16 (Figma color model) removed — superseded by PR #116
-     Hardware Fidelity audit-and-tighten.
-   - 2026-04-30 session section added (PRs #127–#137).
-3. docs/HARDWARE_FIDELITY_PRINCIPLE.md — "Audit history" section at
-   the bottom. Any new blend/layer mode MUST emit to a ProffieOS
-   template before shipping.
+1. CLAUDE.md — top "Current State (2026-04-30 night)" entry has the
+   final session recap including the T2.10 cross-platform-CI lesson.
+   Below that, "2026-04-30 evening" covers the 14-PR overnight wave.
+   Below that, "2026-04-30 PM" covers Ken's launch-posture work.
+2. docs/POST_LAUNCH_BACKLOG.md — last audited 2026-04-30. PR #142
+   ground-truth-audit cleared 5 stale-bits.
+3. docs/HARDWARE_FIDELITY_PRINCIPLE.md — north star for engine + UI
+   architectural decisions.
 
-OPEN ITEMS YOU CAN PICK UP (priority order)
--------------------------------------------
+BROWSER VERIFICATION CHECKLIST
+------------------------------
 
-A. Browser verification of 2026-04-30 session
-   Start dev server. Verify in a live browser:
-   - Retraction animation shows retraction (not ignition)
-   - Surprise Me generates varied styles + modulation bindings
-   - "⭐ Save" button in action bar saves to "My Presets" in gallery
-   - "📌 Queue" button adds current config to saber profile card queue
-   - Pausing the app (Space / PauseButton) suspends audio
-   - Header buttons consistent height + focus rings
-   No new code needed unless a regression surfaces.
+Critical bug fixes (Phase 1 PRs):
 
-B. T2.10 — Renderer-level golden-hash tests
-   Gated on adding `canvas` npm dev dep. Engine-level tests already
-   shipped (PR #112, 33 cases via captureStateFrame). Renderer-level
-   tests need to capture BladeCanvas pipeline pixel output (bloom,
-   tonemap, composite) rather than just LED buffers. Node-canvas
-   (`canvas@^2.x`) enables off-screen CanvasRenderingContext2D in
-   Vitest. After this lands, Item K (lib/blade module extraction) is
-   unblocked.
+  [ ] Retraction animation (PR #132) — workbench → ignite → wait for
+      ON → trigger retract with Dissolve / FlickerOut / Drain /
+      Fadeout / Implode → confirm blade shows retraction (not ignition)
+  [ ] BladeCanvas alignment (PR #133) — verify pixel strip + analysis
+      rail widths match the blade preview at multiple LED counts
+      (20"/24"/28"/32"/36"/40")
+  [ ] Tip shape (PR #133) — verify blade tip is rounded, not pointed
+  [ ] Emitter glow (PR #133) — verify NO emitter glow when blade is
+      OFF (only when extendProgress > 0.05)
+  [ ] Pause + audio (PR #130) — play hum → press Space (pause) →
+      confirm audio silences → unpause → confirm audio resumes
+  [ ] Header standardization (PR #131) — confirm all header buttons
+      have consistent height, radius, hover, focus ring
 
-C. Item K — lib/blade/* module extraction from BladeCanvas.tsx
-   BladeCanvas.tsx is ~2800 lines with the bloom / rim-glow / motion-
-   blur / ambient pipeline inline. Extract to:
+V1 launch features (Phase 1 morning):
+
+  [ ] Save preset (PR #134) — click "⭐ Save" in action bar → name it
+      → confirm it appears in "My Presets" sidebar section → click
+      to load → delete with confirmation
+  [ ] Add to queue (PR #136) — click "📌 Queue" in action bar → toast
+      shows "Added to queue (N presets)" → verify in saber profile
+  [ ] Surprise Me extension (PR #135) — click Surprise Me multiple
+      times → confirm it varies ignition/retraction (full 18+12
+      catalog) and includes modulation bindings + clashDecay
+  [ ] Wizard audit (PR #137) — open Saber Wizard → confirm step 1
+      shows 144 LEDs default for 36" → tooltip says "4 steps" not
+      "3 steps" → screen reader announces colors + vibes correctly
+
+Overnight refinement (Phase 2 PRs):
+
+  [ ] Audio waveform rail (PR #140) — open AnalysisRail visualization
+      toolbar → toggle "Audio Waveform" layer ON → load font → play
+      hum → confirm waveform animates in the rail at blade Point A →
+      Point B → mute → confirm waveform silences too
+  [ ] CommandPalette audit (PR #141) — press ⌘K → type "save" → see
+      Save Preset → type "queue" → see Add to Queue → type "surprise"
+      → see Surprise Me → type "section: hardware" → see jump to
+      hardware → type "pause" → see toggle pause command
+  [ ] Light-theme card export (PR #143) — open My Crystal panel →
+      change theme to Light → save share card → confirm blade renders
+      with normal compositing (not over-brightened)
+  [ ] Twist docs (PR #139) — read docs/user-guide/ignitions.md and
+      docs/user-guide/modulation/modulators.md "About twist" section
+
+Architectural (Phase 3 PRs):
+
+  [ ] T2.10 harness (PR #147) — no user-visible change; just verify
+      `pnpm test --filter @kyberstation/web` passes the 9 blade-
+      renderer hashes
+
+VERIFICATION COMMANDS
+---------------------
+Before browser walk-through:
+  pnpm dev                       # Start Next.js dev server
+  pnpm typecheck                 # Should be clean
+  pnpm test                      # Should be 4899/4899 green
+
+If any test fails or typecheck shifts, that's a regression — surface
+it immediately.
+
+OPEN ITEMS YOU CAN PICK UP IF VERIFICATION IS CLEAN
+---------------------------------------------------
+
+A. Cut v0.15.1 patch tag
+   Once browser-verified, this is the pre-launch stabilization
+   release. Process: `git tag v0.15.1 && git push origin v0.15.1`,
+   then update CHANGELOG.md if needed.
+
+B. Item B — Safari BladeCanvas bloom (Ken's hands-on)
+   Cosmetic gap; bloom renders narrower in Safari than Chromium.
+   Documented in docs/POST_LAUNCH_BACKLOG.md. Needs Safari debug.
+
+C. Sub-1024 layout pass (Ken's #2)
+   Need Ken's eyes for breakpoint judgment between 768 and 1023.
+   Not delegable cleanly.
+
+D. Item K — lib/blade/* module extraction (NOW UNBLOCKED)
+   BladeCanvas.tsx is ~3000 lines with bloom + rim-glow + motion-
+   blur + ambient pipeline inline. Extract to:
      lib/blade/pipeline.ts  (capsule rasterizer + bloom chain)
      lib/blade/bloom.ts     (3-mip downsampled bright-pass)
      lib/blade/colorSpace.ts (already exists; absorbs more)
      lib/blade/tonemap.ts
-   Once extracted, MiniSaber / FullscreenPreview / SaberCard's
-   drawBlade.ts can adopt the same pipeline rather than each
-   maintaining their own port. T2.10 renderer-level tests are the
-   explicit prerequisite — don't skip them.
+   PR #147's renderer-level golden-hash harness now provides the
+   safety net for this refactor. Engine-level harness (PR #112)
+   covers state machine; renderer harness covers visual output.
 
-D. Wave 8 — Button routing sub-tab
-   Spec is 2 bullet points in
-   docs/MODULATION_ROUTING_v1.1_IMPL_PLAN.md §10. Needs a design
-   pass first: what's the visual treatment for a "button event as
-   modulator source" plate? What aux/click/hold/gesture vocabulary
-   does each prop file expose? Write a 1-page design doc before
-   coding. Estimated ~6-8h once shape is clear.
+E. Card-snapshot regression coverage
+   PR #147 dropped this from scope due to Cairo cross-platform AA
+   drift. Future approach options:
+     - Visual-diff tooling (Playwright screenshot compare, Argos)
+       which has tolerance baked in
+     - Platform-specific golden files (separate macOS/Linux test
+       runs with different snapshots)
+     - Pixel-aligned subset (skip drawMetadata text region)
 
-E. Item H — Mobile shell migration to Sidebar + MainContent
-   Needs Ken's UX call on drawer vs bottom-sheet at 375px. Once
-   that's decided, the migration unblocks the 3 consumer-migration
-   stub deletions (BladeHardwarePanel.tsx, PowerDrawPanel.tsx,
-   GradientBuilder.tsx) per the BLOCKED row in
-   docs/POST_LAUNCH_BACKLOG.md.
+F. Wave 8 — Button routing sub-tab (post-launch, sparse spec)
 
-F. v0.15.1 patch tag
-   Once browser verification (Item A) passes, cut v0.15.1 as the
-   clean pre-Wave-8 release. Changelog entry should cover all 30+
-   PRs since v0.15.0.
+G. Item H — Mobile shell migration (needs Ken's drawer-vs-bottom-
+   sheet UX call)
 
-G. useAudioEngine singleton consolidation
-   Ken's audio PRs (#124 shared mute) lifted the first shared state,
-   but 6 consumers still create their own AudioContext + FontPlayer +
-   AudioFilterChain + SmoothSwingEngine. Chrome caps AudioContext
-   per origin at ~6 (currently at the limit). Refactor to a
-   singleton engine (module-scope or React-context provider).
-   Lower risk now that mute state is lifted.
+H. Hardware cross-OS sweep (community follow-up; macOS V3.9 already
+   validated)
 
-H. Item B — Safari BladeCanvas bloom
-   Bloom renders dramatically narrower in Safari than Chromium.
-   Needs hands-on Safari debugging (mcp__Claude_Preview__* runs
-   Chromium-only). Park unless Ken has a Safari instance available.
+PROCESS NOTES
+-------------
+- 17 PRs in one day is aggressive; expect at least one regression
+  during browser walkthrough that didn't show up in tests
+- v0.15.1 should NOT include any new feature scope — just bug fixes
+  + the small additive features that already shipped
+- Ken's launch posture (PR #149) is the canonical v1.0 framing:
+  "design tool first, web flashing experimental, dfu-util is the
+  reliable path"
+- For any UI tweaks during walkthrough, prefer small inline fixes
+  (single-PR scope) over large refactors (which should wait for
+  Item K's safe-to-refactor world)
 
-I. Sub-1024px layout pass (Ken's field note #2)
-   Ken confirmed the target: clean ≥1024px + clean 375px for v1.
-   Intermediate widths can stay rough for launch. A targeted agent
-   dispatch could clean up the remaining breakpoint issues at the
-   1024-1279px range.
+DON'T
+-----
+- Don't re-dispatch the marketing or saber GIF agents — both clean
+  writeoffs in the previous session
+- Don't try to land card-snapshot regression coverage with the
+  current node-canvas approach — needs visual-diff tooling
+- Don't tag v0.15.1 until browser verification is clean
+- Don't touch the audio engine graph order — analyser tap MUST
+  stay AFTER masterGain so mute silences both audio + waveform
 
-DON'T REDO
-----------
-- Phase 4 sidebar A/B — all 6 sections done (combat-effects /
-  my-saber / audio / routing / gallery / output)
-- BlendMode tighten / Hardware Fidelity audit history — PR #116
-- T1.2 MGP compact thumbnails — PR #117 (infra) + PR #125 (26 SVGs)
-- T1.3 sampler progress fields — PR #123
-- Custom color popover (T1.1) — Ken explicitly dropped
-- UX item #16 Figma color model — Ken explicitly dropped; Hardware
-  Fidelity Principle prevents expanding to non-emittable blend modes
-- Saber GIF Sprint 2 — shipped via PR #80 (stale-bit in backlog;
-  do not re-dispatch the agent that was writing zero commits)
-- Marketing site re-implementation — Ken explicitly deprioritized;
-  not launch-blocking
-- Engine golden-hash tests (T2.10 engine side) — PR #112 (33 cases)
-  They protect engine drift; renderer-level tests are still TBD
-- Retraction animation fix — PR #132
-- Blade alignment / pointed tip / emitter glow fix — PR #133
-- Save state v1 — PR #134
-- Add to queue v1 — PR #136
-- Surprise Me extension — PR #135
-- Wizard audit — PR #137
-- Header button standardization — PR #131
-- Pause audio fix — PR #130
+LAUNCH POSTURE CONTEXT
+----------------------
+Per Ken's PR #149, v1.0 ships as a design tool first:
+  "KyberStation is a visual blade design tool. Generate your
+   ProffieOS config, compile it with arduino-cli, flash it with
+   dfu-util. Web-based flashing is experimental and coming in v0.16+."
 
-PROCESS NOTES (lessons from 2026-04-29/30)
--------------------------------------------
-1. Backlog stale-bit is real and recurs. Saber GIF Sprint 2 was
-   listed as open in POST_LAUNCH_BACKLOG.md but shipped via PR #80
-   on 2026-04-27. The 2026-04-30 ground-truth audit confirmed it.
-   Before starting any "open" item, run:
-     git log --oneline --grep="<keyword>" main
-     git grep -l <file_or_symbol>
-   Don't trust the backlog's own status field.
+The audience is Proffieboard hobbyists who already own arduino-cli.
+Codegen + compile pipeline is validated end-to-end. WebUSB FlashPanel
+ships with a 3-checkbox EXPERIMENTAL disclaimer (responsibility +
+backup + recovery acknowledgements). FLASH_GUIDE.md is the canonical
+end-user flash workflow.
 
-2. Stuck agents write zero code. The 2026-04-29 late session
-   dispatched 2 agents that ran 2.5h without pushing. Written off
-   cleanly 2026-04-30. If an agent doesn't push in ~90 min,
-   either ping via SendMessage or write off and re-dispatch fresh
-   with a smaller, more concrete prompt.
-
-3. Engine-level golden-hash != renderer-level golden-hash.
-   PR #112 shipped engine tests (LED-buffer hashes via
-   captureStateFrame + FNV-1a). They protect engine drift but NOT
-   renderer drift (bloom, tonemap, canvas pipeline). Renderer-level
-   tests need `canvas` npm and are the explicit prerequisite for
-   Item K.
-
-4. Hardware Fidelity Principle wins UX disputes. When deciding
-   whether to expand or tighten Item J (Figma color model), Ken's
-   instinct was right: "if ProffieOS can't emit it, it shouldn't
-   ship." The tighten path (PR #116) was the correct call.
-
-5. Auto-closed PRs from base-branch deletion. When merging with
-   --delete-branch, any open PRs targeting that branch auto-close.
-   Workflow: git checkout <agent-branch> + git rebase main +
-   git push --force-with-lease + gh pr create (new PR number).
-   Happened: PR #120 was reborn as #125.
-
-LAUNCH POSTURE
---------------
-v0.15.0 hardware-validated. 30+ untagged PRs since. All Tier 1 from
-Ken's pre-launch shortlist shipped. Ken's 18 field-note issues: 12
-resolved, 6 deferred (2 post-launch per Ken, 2 larger scope, 1 sub-
-1024 layout, 1 small docs). Remaining backlog is post-launch polish +
-2 architectural sprints (Modulation Wave 8 + Item K module extraction)
-+ useAudioEngine singleton. None of the open items gate launch.
-
-Recommended path:
-1. Browser verify 2026-04-30 session (Item A above)
-2. Cut v0.15.1 patch tag
-3. Renderer-level golden-hash (B) + module extraction (C)
-4. Wave 8 button routing (D) — its own focused multi-day session
-5. Mobile shell migration (E) — after Ken's UX call
-6. useAudioEngine singleton (G) — lower urgency, improves stability
-
-WRAP-UP
--------
-When you finish a session, archive at docs/SESSION_<date>.md if it's
-a long one, update CLAUDE.md "Current State" with a one-paragraph
-summary + demote the previous "Current State" block, and refresh THIS
-handoff doc in place.
-
-Begin by reading the docs above + running:
-  git fetch origin --prune
-  git status
-  git log --oneline -8
-  gh pr list --state open --author '@me'
-  git worktree list
-to confirm branch state. No stuck agents or locked worktrees expected.
+WRAP-UP CONVENTION
+------------------
+Archive at docs/SESSION_<date>.md if long. Update CLAUDE.md
+"Current State". Refresh this NEXT_SESSION_HANDOFF.md in place.
 ```
 
 ---
 
-## Why this handoff shape
+## Quick reference — what's where
 
-- **Stuck-agent recovery removed** — both 2026-04-29 stuck agents
-  were written off cleanly per the 2026-04-30 session. No recovery
-  work needed.
-- **Browser verification is now Item A** — 14 PRs landed 2026-04-30,
-  none browser-verified yet per Ken. This is the first priority.
-- **v0.15.1 tag is clearly positioned** — 30+ PRs since v0.15.0 is
-  a lot of untagged work. Cut the tag once browser verification passes.
-- **Audio singleton (Item G) surfaced** — Ken's audio PRs (#124)
-  introduced the pattern but left 6 AudioContext instances alive.
-  Chrome's ~6-per-origin cap means we're at the limit; singleton
-  consolidation is stability-relevant.
-- **Process notes updated** for the Saber GIF Sprint 2 stale-bit
-  as a concrete example of the ground-truth-check principle.
+| Doc | Purpose |
+|---|---|
+| `CLAUDE.md` "Current State (2026-04-30 night)" | T2.10 + final verification + cross-platform CI lesson |
+| `CLAUDE.md` "Current State (2026-04-30 evening)" | Wave 1 critical bugs + overnight refinement (14 PRs detail) |
+| `CLAUDE.md` "Current State (2026-04-30 PM)" | Ken's launch posture lock + FLASH_GUIDE |
+| `docs/POST_LAUNCH_BACKLOG.md` | Single source of truth for open items, last audited 2026-04-30 |
+| `docs/HARDWARE_FIDELITY_PRINCIPLE.md` | North star for engine + UI architectural decisions |
+| `docs/FLASH_GUIDE.md` | Canonical end-user flash workflow (dfu-util first) |
+| `docs/LAUNCH_PLAN.md` | Launch comms strategy, May 4 amplification plan |
+| `docs/user-guide/ignitions.md` | New: 18 ignition styles + twist deep-dive |
+| `docs/user-guide/modulation/modulators.md` | Updated: twist behavior section |
