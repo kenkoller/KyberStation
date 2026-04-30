@@ -18,13 +18,13 @@ export const siteConfig = {
   description:
     'A visual editor for lightsaber blade styles. Design, simulate, and export Proffieboard-compatible ProffieOS code without trial-and-error compiles.',
   /**
-   * Social preview image. The 512×512 maskable icon is what's available
-   * today — square; platforms letterbox it. Replace with a 1200×630
-   * hero render when the OG-image pipeline lands post-launch.
+   * Social preview image. 1200×630 OG hero rendered by
+   * `scripts/generate-og-hero.mjs` — runs offline using node-canvas.
+   * Re-run that script if the wordmark or saber composition changes.
    */
-  ogImage: '/icons/icon-512.png',
-  ogImageWidth: 512,
-  ogImageHeight: 512,
+  ogImage: '/og-hero.png',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   author: 'Ken Koller',
   github: 'https://github.com/kenkoller/KyberStation',
 } as const;
