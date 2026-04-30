@@ -61,6 +61,12 @@ const config: Config = {
         interactive: 'var(--r-interactive)',
       },
       screens: {
+        // Phase 4 PR #1 (2026-04-30): `phone-sm` adds a tighter reflow inflection
+        // INSIDE MobileShell (≤479px) without changing the existing macro-shell
+        // switch points (600 / 1024 / 1440). Per docs/mobile-design.md §1.
+        // Consumed by Phase 4 PRs #2-#10 (Sheet primitive, ChipStrip, action bar
+        // icon-only mode, edge-to-edge sheets, etc.).
+        'phone-sm': { max: '479px' },
         phone: { max: '599px' },
         tablet: { min: '600px', max: '1023px' },
         desktop: '1024px',
