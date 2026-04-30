@@ -1,41 +1,43 @@
 'use client';
 
-// ─── GalleryPage — Phase 4 A/B (2026-04-29) ─────────────────────────────────
+// ─── GalleryPage — Phase 4 A/B + Grid View toggle (2026-04-29) ──────────────
 //
-// Full-screen Gallery page (route: /gallery). Now mounts `GalleryAB` —
-// the Sidebar A/B v2 Phase 4 layout — as its body. Column A hosts the
-// filter rail + scrollable preset list; Column B renders the selected
-// preset's hero detail (large blade preview, metadata, Load + share).
+// Full-screen Gallery page (route: /gallery). Default view is now the
+// large card grid (`GalleryGridView`) showing all ~305 presets. Users
+// can toggle to the legacy A/B sidebar layout (`GalleryAB`) via the
+// `[ Grid | List ]` switch in the header. Their last selection persists
+// across sessions via `uiStore.galleryView`.
 //
-// The page itself remains a thin shell: top-level nav header at the
-// top, GalleryAB body in the middle, footer chrome (ShiftLightRail,
-// AppPerfStrip, DataTicker) at the bottom — same as /editor for visual
-// continuity when users flip between modes.
+// The page itself remains a thin shell: top-level nav header at the top
+// (with Grid/List toggle), the active gallery view in the middle, footer
+// chrome at the bottom — same as /editor for visual continuity.
 //
 // Pre-A/B history: this file used to host its own filter bar + portrait
-// card grid. Both moved into GalleryAB / GalleryColumnA / GalleryColumnB
-// to land on the same list-→-detail pattern as combat-effects, audio,
-// my-saber, and routing.
+// card grid. The intermediate Phase 4 A/B layout still ships as the
+// "List" view; the new grid view replaces it as default.
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShiftLightRail } from '@/components/layout/ShiftLightRail';
 import { AppPerfStrip } from '@/components/layout/AppPerfStrip';
 import { DataTicker } from '@/components/hud/DataTicker';
-import { useUIStore, type ActiveTab } from '@/stores/uiStore';
+import { useUIStore, type ActiveTab, type GalleryView } from '@/stores/uiStore';
 import { playUISound } from '@/lib/uiSounds';
 import { GalleryAB } from './GalleryAB';
+import { GalleryGridView } from './GalleryGridView';
 
 export function GalleryPage() {
+  const galleryView = useUIStore((s) => s.galleryView);
+
   return (
     <div className="flex flex-col h-screen bg-bg-primary text-text-primary overflow-hidden">
       <GalleryHeader />
 
-      {/* GalleryAB owns its own filter rail (Column A header) + body
-          split. The min-h-0 on this row is what lets the inner overflow
-          scroll regions actually scroll. */}
+      {/* Active gallery view body. Both views own their own filter chrome
+          + inner scroll regions. The min-h-0 here is what lets nested
+          overflow scroll regions actually scroll. */}
       <div className="flex-1 min-h-0 flex">
-        <GalleryAB />
+        {galleryView === 'grid' ? <GalleryGridView /> : <GalleryAB />}
       </div>
 
       {/* Footer chrome — same as /editor for visual continuity. */}
@@ -88,6 +90,8 @@ function headerNavLinkClass(active: boolean): string {
 function GalleryHeader() {
   const router = useRouter();
   const setActiveTab = useUIStore((s) => s.setActiveTab);
+  const galleryView = useUIStore((s) => s.galleryView);
+  const setGalleryView = useUIStore((s) => s.setGalleryView);
 
   // Helper for the Design / Audio / Output entries: set the target tab
   // in the ui store, then route-push to /editor so the editor mounts
@@ -118,10 +122,83 @@ function GalleryHeader() {
           </Link>
         </nav>
       </div>
-      <div className="font-mono uppercase text-ui-xs text-text-muted tracking-[0.12em]">
-        Preset Library
+      <div className="flex items-center gap-4">
+        <GalleryViewToggle current={galleryView} onChange={setGalleryView} />
+        <div className="font-mono uppercase text-ui-xs text-text-muted tracking-[0.12em]">
+          Preset Library
+        </div>
       </div>
     </header>
+  );
+}
+
+// ─── View toggle [ Grid | List ] ────────────────────────────────────────────
+//
+// Two-state segmented control, persisted via uiStore.galleryView.
+// Defaults to 'grid' for new users; stays sticky once changed.
+
+function GalleryViewToggle({
+  current,
+  onChange,
+}: {
+  current: GalleryView;
+  onChange: (v: GalleryView) => void;
+}): JSX.Element {
+  return (
+    <div
+      role="group"
+      aria-label="Gallery view"
+      className="inline-flex items-center rounded border border-border-subtle bg-bg-deep/40 p-0.5"
+      data-testid="gallery-view-toggle"
+    >
+      <ToggleButton
+        active={current === 'grid'}
+        onClick={() => onChange('grid')}
+        label="Grid"
+        testId="gallery-view-toggle-grid"
+        title="Show all presets as a card grid (default)"
+      />
+      <ToggleButton
+        active={current === 'list'}
+        onClick={() => onChange('list')}
+        label="List"
+        testId="gallery-view-toggle-list"
+        title="Show presets as a list with hero detail panel"
+      />
+    </div>
+  );
+}
+
+function ToggleButton({
+  active,
+  onClick,
+  label,
+  testId,
+  title,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  testId: string;
+  title: string;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={title}
+      data-testid={testId}
+      className={[
+        'px-2.5 py-1 rounded text-ui-xs font-mono uppercase tracking-[0.08em]',
+        'transition-colors',
+        active
+          ? 'text-accent bg-accent-dim/40'
+          : 'text-text-muted hover:text-text-primary',
+      ].join(' ')}
+    >
+      {label}
+    </button>
   );
 }
 
