@@ -161,17 +161,19 @@ describe('MobileShell — PR A1 layout shape', () => {
     expect(html).toContain('data-compact="true"');
   });
 
-  it('effect bar wrapper uses tightened px-1 py-1 padding', () => {
+  it('effect bar wrapper uses tightened px-1 py-0.5 padding (single-row, ~24px)', () => {
     const html = renderShell();
     // Find the effect-bar wrapper — the parent div of mock-effect-bar.
-    // We assert the wrapper's class string contains px-1 + py-1.
+    // We assert the wrapper's class string contains px-1 + py-0.5.
     const m = html.match(/<div class="([^"]*)"[^>]*>\s*<div class="flex items-center gap-1 min-w-fit">/);
     expect(m).toBeTruthy();
     expect(m![1]).toContain('px-1');
-    expect(m![1]).toContain('py-1');
+    expect(m![1]).toContain('py-0.5');
     // Make sure the old looser values are gone from the wrapper.
     expect(m![1]).not.toContain('px-2');
     expect(m![1]).not.toContain('py-2');
+    // py-1 was an intermediate step — also gone.
+    expect(m![1]).not.toMatch(/\bpy-1\b/);
   });
 
   it('blade canvas region uses tightened height (22vh / 180px / 140px floor)', () => {
@@ -195,7 +197,7 @@ describe('MobileShell — PR A1 layout shape', () => {
     // Look for the wrapper that contains the effect bar. It must NOT
     // have `overflow-y-auto` in its className — only `min-h-0`.
     const m = html.match(
-      /<div class="(flex-1[^"]*?)">\s*<div class="px-1 py-1[^"]*?overflow-x-auto">/,
+      /<div class="(flex-1[^"]*?)">\s*<div class="px-1 py-0\.5[^"]*?overflow-x-auto">/,
     );
     expect(m).toBeTruthy();
     expect(m![1]).not.toContain('overflow-y-auto');

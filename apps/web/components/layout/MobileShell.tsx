@@ -31,6 +31,7 @@
 import { useEffect, useState, useRef, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore, type SectionId } from '@/stores/uiStore';
+import { useBladeStore } from '@/stores/bladeStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 import { EffectTriggerBar } from '@/components/editor/EffectTriggerBar';
 import { Inspector } from '@/components/editor/Inspector';
@@ -121,6 +122,24 @@ export function MobileShell({
       document.body.style.paddingBottom = prev;
     };
   }, []);
+
+  // Auto-ignite the blade ~500ms after the engine mounts — same Phase
+  // 1.5h pattern WorkbenchLayout uses on desktop. Without this the
+  // mobile editor opens with a retracted blade (the engine starts at
+  // extendProgress=0 even when bladeStore.isOn is persisted true), so
+  // users see a hilt + faint capsule instead of a glowing blade. Reset
+  // first to force a clean off→on animation.
+  const autoIgnitedRef = useRef(false);
+  useEffect(() => {
+    if (autoIgnitedRef.current) return;
+    if (!engineRef.current) return;
+    useBladeStore.getState().setIsOn(false);
+    const timer = setTimeout(() => {
+      autoIgnitedRef.current = true;
+      toggleWithAudio();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [engineRef, toggleWithAudio]);
 
   return (
     <div className="h-[100dvh] flex flex-col bg-bg-primary text-text-primary font-mono overflow-hidden">
@@ -229,8 +248,12 @@ export function MobileShell({
           UX Ken reported. */}
       <div className="flex-1 min-h-0 flex flex-col min-w-0">
 
-        {/* ── Effect / Action Bar (touch-sized) ──────────────────────── */}
-        <div className="px-1 py-1 shrink-0 border-b border-border-subtle bg-bg-secondary/40 overflow-x-auto">
+        {/* ── Effect / Action Bar (single row, ~24px tall) ─────────────
+            Tightened for mobile (PR A1): wrapper `px-1 py-0.5` keeps
+            the chips on a single horizontal row at 375px viewport
+            (overflow-x-auto for narrower phones if needed). EffectTriggerBar
+            in compact mode strips the kbd letter underneath. */}
+        <div className="px-1 py-0.5 shrink-0 border-b border-border-subtle bg-bg-secondary/40 overflow-x-auto">
           <div className="flex items-center gap-1 min-w-fit">
             <EffectTriggerBar onTrigger={triggerEffectWithAudio} compact />
           </div>
