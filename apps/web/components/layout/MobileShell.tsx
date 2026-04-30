@@ -51,6 +51,8 @@ import { MobileSidebarDrawer } from '@/components/layout/MobileSidebarDrawer';
 import { MobileActionBar } from '@/components/layout/mobile/MobileActionBar';
 import { MobileSectionTabs } from '@/components/layout/mobile/MobileSectionTabs';
 import { MobileStatusBarStrip } from '@/components/layout/mobile/MobileStatusBarStrip';
+import { ColorRail } from '@/components/layout/mobile/ColorRail';
+import { ColorQuickControls } from '@/components/layout/mobile/QuickControls';
 import { playUISound } from '@/lib/uiSounds';
 
 const HOME_SECTION: SectionId = 'my-saber';
@@ -302,12 +304,27 @@ export function MobileShell({
             style={{ width: '100%' }}
           />
         ) : (
-          <MainContent
-            className="flex-1 min-h-0"
-            style={{ width: '100%' }}
-            triggerEffect={triggerEffectWithAudio}
-            releaseEffect={releaseEffect}
-          />
+          <>
+            {/* ── Phase 4.3 quick-controls header ───────────────────
+                For each editing tab, render the section's color-rail
+                (when relevant) + 2-col MiniSlider grid above the deep
+                editor panel. Color is the only fully-wired variant
+                today; other tabs (style/motion/fx/hardware/routing)
+                will get their own QuickControls primitives in the
+                follow-up Phase 4.3.x PRs. */}
+            {activeSection === 'color' && (
+              <>
+                <ColorRail />
+                <ColorQuickControls />
+              </>
+            )}
+            <MainContent
+              className="flex-1 min-h-0"
+              style={{ width: '100%' }}
+              triggerEffect={triggerEffectWithAudio}
+              releaseEffect={releaseEffect}
+            />
+          </>
         )}
       </div>
 
