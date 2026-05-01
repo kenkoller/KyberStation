@@ -18,13 +18,18 @@ angle for power-Proffie subs. Variant C is the Star Wars Day reshare.
 **Suggested timing:** Tuesday or Wednesday, 10am-1pm Eastern
 **Suggested flair:** "Tools" / "Discussion" / "DIY" depending on sub options
 
-### Title: LOCKED IN (2026-05-01)
+### Title: LOCKED IN (2026-05-01, post-launch refresh)
 
-**Introducing KyberStation, a free visual blade editor for Proffie and other saber boards. Sharing it ahead of Star Wars Day. First public project.**
+**One hilt, infinite blades. Introducing KyberStation, a free visual blade editor for Proffie and other saber boards, sharing ahead of Star Wars Day.**
+
+156 chars. Leads with the project's own landing-page tagline ("One
+hilt, infinite blades") for a punchy hook, then introduces the tool
++ timing.
 
 (Backups, in case mods reject the locked title or it needs tweaking on
 the day):
 
+0. Introducing KyberStation, a free visual blade editor for Proffie and other saber boards. Sharing it ahead of Star Wars Day. First public project.
 1. I built KyberStation, a free visual blade editor for Proffie and other saber boards. First public project, would love your feedback.
 2. Made a tool to design blade styles visually and export ProffieOS code. Free and open source. Hoping it's useful to someone besides me.
 3. KyberStation: a hobby project that grew into a full blade editor. Sharing with the community ahead of Star Wars Day.
