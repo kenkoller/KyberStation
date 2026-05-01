@@ -1,8 +1,19 @@
 # Launch Copy Pack
 
-Polished, copy-paste-ship drafts for the 2026-04-30 public launch
+Polished, copy-paste-ship drafts for the public launch
 (soft launch posture — share with the community while mobile UX
 work continues).
+
+**Calendar reality (refreshed 2026-05-01):**
+- Today is **May 1**. Star Wars Day is **May 4** — 3 days away.
+- v0.16.0 shipped 2026-04-30 but the public Reddit post never went up
+  (prep ran long; Brave-vs-Chrome screenshot detour, late-night
+  preset cartography mini-sprint pushed Visions Vol 1 + Acolyte/Maul
+  presets into main, Wave 8 LITE landed 8 new modulators).
+- **Counts at last audit (2026-05-01):** 33 styles, 22 effects, 19+13
+  ignition/retraction, **354 character presets**, **19 modulators**
+  (11 v1.1 Core + 8 Wave 8 LITE button/gesture events), 16 boards.
+- Schedule below is re-anchored to **today = T-0** (launch day).
 
 Voice: humble, specific, honest. Don't rewrite — paste and tweak the
 brackets only (`[URL]`, `[Name]`, `[specific video]`).
@@ -20,51 +31,68 @@ brackets only (`[URL]`, `[Name]`, `[specific video]`).
 | `GITHUB_ANNOUNCEMENT.md` | Pinned discussion + README diff suggestions | Day 0 (when repo flips public) |
 | `SOCIAL_MEDIA_BLURBS.md` | Twitter/X, LinkedIn, Mastodon, HN, Bluesky | Twitter day 1, LinkedIn day 4, HN if traction warrants |
 
-## Suggested launch order (from LAUNCH_PLAN.md, calibrated)
+## Suggested launch order (re-calibrated 2026-05-01)
 
-**T-2 days — soft prep**
-- Email Fredrik Hübinette (`FREDRIK_EMAIL.md`) — inform the ProffieOS creator
-- Email Fett263 (`FETT263_EMAIL.md`) — give him a heads-up before public launch
-- DM 3-5 trusted saber friends with the soft-launch message from `LAUNCH_ASSETS.md`
+**T-0 / today — May 1 (Friday): main launch event**
 
-**T-0 — main event (weekday morning, 10am-1pm ET)**
+Pre-launch infrastructure is already in place:
+- ✓ v0.16.0 tag shipped 2026-04-30
+- ✓ Repo public, GitHub Pages live at https://kenkoller.github.io/KyberStation/
+- ✓ All 11 launch screenshots committed at `docs/images/launch/`
+- ✓ Marketing GIFs in `apps/web/public/marketing/` (style-grid, color-cycle, lockup-loop)
+- ✓ Reddit title locked, 19 reply templates ready (8 generic + 11 concrete)
 
-*Note: v0.16.0 already shipped 2026-04-30, repo is already public,
-GitHub Pages is already deployed. Steps 1-2 below are kept for
-reference but already complete.*
+Today's send order (do these in this sequence):
 
-1. ~~Push `v0.16.0` tag, deploy to GitHub Pages, verify URL works~~ ✓ done
-2. ~~Flip GitHub repo public~~ ✓ done
-3. Post pinned discussion (`GITHUB_ANNOUNCEMENT.md`)
-4. Post to **r/lightsabers** primary variant (`REDDIT_POSTS.md` Variant A)
-5. After 30 min, if green: cross-post to r/Proffieboard
-6. Post to Twitter/X + Bluesky + Mastodon (`SOCIAL_MEDIA_BLURBS.md`)
-7. **Camp the Reddit thread for 4-6 hours.** Reply to every comment.
+1. **Send 3 outreach emails** (Gmail Connector in Claude Desktop):
+   - Fredrik Hübinette (`FREDRIK_EMAIL.md` Variant B)
+   - Fett263 (`FETT263_EMAIL.md` Variant B)
+   - The Collectors Outpost (`YOUTUBE_OUTREACH.md` § pre-filled)
+   Send all 3 in ~15 min window. Wait ~1-2 hours for any concerns
+   from devs before going public.
+2. **URL smoke-test** — open https://kenkoller.github.io/KyberStation/
+   one final time, verify the editor loads cleanly.
+3. **Pin GitHub Discussion** — body in `GITHUB_ANNOUNCEMENT.md`.
+4. **Post r/lightsabers** with the locked title from `REDDIT_POSTS.md`
+   + Variant A body. Inline media: pick from
+   `docs/images/launch/editor-*.jpg` (recommend editor-06 vibrant
+   green hero) + `gallery.jpg` + `apps/web/public/marketing/style-grid.gif`.
+5. **Camp the Reddit thread for 4-6 hours.** Use the 19 reply
+   templates. Don't reply instantly — batch every 30-60 min.
+6. **Post Twitter/X + Bluesky + Mastodon** (`SOCIAL_MEDIA_BLURBS.md`)
+   2-3 hours after Reddit, only if r/lightsabers shows positive
+   traction (10+ comments, net upvoted).
 
-**T+2 to T+3 days**
-- LinkedIn post (different audience, engineering angle)
-- Personal blog post if you have one
+**T+1 / Saturday May 2:**
+- Cross-post to r/Proffieboard (Variant B) if r/lightsabers is stable.
+- LinkedIn post (engineering angle, different audience).
 
-**T+4 to T+7 days**
+**T+2 / Sunday May 3:**
+- Reddit Variant C amplification post — "Star Wars Day is tomorrow,
+  here's what's new since I shared this last week" + real engagement
+  numbers from the original post. **This is the May 4 amplification
+  beat the launch plan called for.**
+- Twitter/X thread amplification.
+
+**T+3 / Monday May 4 — Star Wars Day:**
+- "Happy Star Wars Day" comment thread on the original r/lightsabers
+  post. Ask users to share their Kyber Codes.
+- **Do NOT create a new Reddit post.** Variant C ran yesterday;
+  doubling up looks promotional.
+- Coordinate with whoever's around — friends, builders, the
+  Crucible community Discord — for organic May 4 noise.
+
+**T+4 to T+7 / Tuesday-Friday week of May 5:**
 - Post to **r/ClaudeAI** (`REDDIT_CLAUDE_POST.md`) — different angle,
-  build-process story. Post only after r/lightsabers numbers are real
-  (so you can cite specific engagement in the post).
+  build-process story. Post once you have real engagement numbers
+  from r/lightsabers + r/Proffieboard to cite in the post.
 
-**T+7 to T+10 days**
-- YouTube outreach wave (`YOUTUBE_OUTREACH.md`) — only after you have real
-  user feedback to mention ("the community has already helped me fix X")
-- TikTok / Instagram DMs (`TIKTOK_INSTAGRAM_OUTREACH.md`)
-- Show HN if Reddit traction supports it
-
-**T+21 to T+25 days (~May 2-3)**
-- Reddit Variant C — Star Wars Day amplification post
-- Re-email YouTube/TikTok creators who didn't reply
-- Twitter/X amplification thread
-
-**May 4 — Star Wars Day**
-- "Happy Star Wars Day" comment thread on the original Reddit post
-- Ask users to share their Kyber Codes
-- Don't create a new post — let the community celebrate itself
+**T+7 to T+10 / following week:**
+- YouTube outreach wave (`YOUTUBE_OUTREACH.md`) — only after you
+  have real user feedback to mention ("the community has already
+  helped me fix X").
+- TikTok / Instagram DMs (`TIKTOK_INSTAGRAM_OUTREACH.md`).
+- Show HN if Reddit traction warrants it.
 
 ## Tone discipline reminder
 

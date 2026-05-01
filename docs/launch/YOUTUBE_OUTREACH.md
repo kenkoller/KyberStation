@@ -133,8 +133,9 @@ hobby needs more of."]
 I built a tool you might find useful for your design / build process.
 KyberStation is a free, browser-based visual editor for blade styles —
 design a custom style, preview it animating in real time, export the
-config to flash on your saber. There's a preset gallery with 336
-character presets across canon, Legends, and pop-culture sources,
+config to flash on your saber. There's a preset gallery with 354
+character presets across canon, Legends, pop-culture, and Star Wars
+Visions sources,
 which might be useful as starting points for builds you're planning.
 
 I'm not asking for a feature or review. I'd just appreciate your eyes
@@ -175,7 +176,7 @@ genuinely the best treatment of it I've seen on YouTube. The bit about
 I built something tangential to your usual content that I thought you
 might find interesting. KyberStation is a free, browser-based visual
 editor for designing custom lightsaber blade styles — both for the
-preset gallery (336 character presets across canon and Legends) and
+preset gallery (354 character presets across canon, Legends, pop-culture, and Star Wars Visions) and
 for designing your own from scratch.
 
 It's a tool primarily aimed at the Proffie / Neopixel saber community,
@@ -267,7 +268,7 @@ slipped past. No pressure if it's not a fit.
 
 Quick update since the first email: [one specific concrete thing —
 "the community helped me validate Proffie V2 + Windows" or "the gallery
-hit 336 presets" or "shipped a feature based on user feedback"]. So
+hit 354 presets" or "shipped a feature based on user feedback"]. So
 it's moving.
 
 Try it: https://kenkoller.github.io/KyberStation/

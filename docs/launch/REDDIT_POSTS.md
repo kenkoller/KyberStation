@@ -58,7 +58,7 @@ mobile (PWA installable).
 - 33 blade styles (Stable, Unstable, Fire, Plasma, Aurora, Crystal Shatter, and more)
 - 22 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
 - 19 ignition + 13 retraction animations
-- 336 character presets across canon, Legends, and pop-culture (LOTR, Marvel, mythology, etc.)
+- 354 character presets across canon, Legends, and pop-culture (LOTR, Marvel, mythology, anime, Star Wars Visions, and more)
 - ProffieOS C++ code generator — output compiles in Arduino IDE
 - Sound font library with SmoothSwing pair simulation
 - Saber profile manager + SD card composer (export the whole card as a ZIP)
@@ -168,10 +168,13 @@ A few things specifically aimed at power Proffie users:
   `AudioFlicker`, `StyleFire`, `Pulsing`, `Stripes`, the standard
   responsive functions (`SwingSpeed<>`, `BladeAngle<>`, `TwistAngle<>`,
   `SoundLevel<>`, `BatteryLevel<>`).
-- **Modulation routing v1.1.** You can wire any of 11 modulators
-  (swing, sound, angle, twist, time, clash, battery, lockup, preon,
-  ignition, retraction) to any tunable parameter, with combinator math
-  and per-binding expression editing. Engine samples + applies bindings
+- **Modulation routing v1.1 + Wave 8 LITE.** You can wire any of 19
+  modulators to any tunable parameter, with combinator math and
+  per-binding expression editing. v1.1 Core: 11 continuous + latched
+  signals (swing, sound, angle, twist, time, clash, battery, lockup,
+  preon, ignition, retraction). Wave 8 LITE: 8 button + gesture events
+  (aux-click, aux-hold, aux-double-click, gesture-twist, -stab,
+  -swing, -clash, -shake). Engine samples + applies bindings
   per frame for the preview; codegen emits real `Scale<SwingSpeed<>>` /
   `Sin<Int<>>` templates where possible, snapshot-value fallback where
   not.

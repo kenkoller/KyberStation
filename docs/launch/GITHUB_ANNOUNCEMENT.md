@@ -34,8 +34,8 @@ better.
 
 - **33 blade styles**, **22 effects**, **19 ignition + 13 retraction
   animations**
-- **336 character presets** across canon, Legends, and pop-culture
-  sources (LOTR, Marvel, mythology, anime, more)
+- **354 character presets** across canon, Legends, and pop-culture
+  sources (LOTR, Marvel, mythology, anime, Star Wars Visions, more)
 - **AST-based ProffieOS C++ code generator** — output compiles
   directly in Arduino IDE
 - **Sound font library** with SmoothSwing pair simulation
@@ -45,8 +45,10 @@ better.
   CFX, Golden Harvest, Xenopixel, Verso, etc.)
 - **One-click WebUSB flashing** for Proffieboards (V3.9 hardware-
   validated; other revisions unverified)
-- **Modulation routing v1.1** — wire 11 modulators to any tunable
-  parameter with combinator math + per-binding expression editing
+- **Modulation routing v1.1 + Wave 8 LITE** — wire any of 19
+  modulators (11 continuous + latched signals; 8 button/gesture
+  events) to any tunable parameter with combinator math +
+  per-binding expression editing
 - **Kyber Codes** — compact share links for any blade design
 - **PWA installable** — works offline after first visit, no app store
   needed
@@ -201,17 +203,19 @@ the entire README during launch.
 
 **Current** (line ~739 in LAUNCH_ASSETS.md): "700+ character presets"
 
-**Reality** (verified 2026-04-30 from `packages/presets/src/` —
-counted 336 entries via `grep -rhE "^\s+id:\s*['\"]"`). The "700+"
-claim is from an older draft and is **incorrect**.
+**Reality** (verified 2026-05-01 from `packages/presets/src/` —
+counted 354 entries via `grep -rhE "^\s+id:\s*['\"]"` after Star Wars
+Visions Vol 1 + Acolyte/Maul lifecycle landed). The "700+" claim is
+from an older draft and is **incorrect**.
 
 **Action:** sweep the README + LAUNCH_ASSETS.md + every Reddit / social
 draft to use the accurate count. Suggested phrasing:
 
-> **336 character presets** across canon, Legends, and pop-culture
+> **354 character presets** across canon, Legends, and pop-culture
 > sources (LOTR, Marvel, DC, mythology, anime, gaming, kids' cartoons,
-> Power Rangers, mascots, and more — every preset is `continuity`-
-> tagged so you can filter to just canon if that's your thing).
+> Power Rangers, mascots, Star Wars Visions, and more — every preset
+> is `continuity`-tagged so you can filter to just canon if that's
+> your thing).
 
 ### Edit 5: Status section — add v0.16.0 entry
 
@@ -222,10 +226,12 @@ addition near the top of that section:
 ### v0.16.0 — Public launch (2026-04-30)
 
 The first publicly-released version. Includes:
-- Full Modulation Routing v1.1 Core (11 modulators, click + drag-to-route,
-  per-binding expression editing, AST-level template injection in codegen)
+- Full Modulation Routing v1.1 Core + Wave 8 LITE (19 modulators
+  total: 11 continuous + latched signals, 8 button/gesture events;
+  click + drag-to-route, per-binding expression editing, AST-level
+  template injection in codegen)
 - Vertical Saber Card layout + animated saber GIF export
-- 336-preset gallery across canon, Legends, and pop-culture
+- 354-preset gallery across canon, Legends, pop-culture, and Star Wars Visions
 - AST-based ProffieOS code generator targeting 16 boards
 - Save Preset v1 (IndexedDB-backed user presets) + Add to Queue v1
 - WebUSB flashing — experimental, validated on Proffieboard V3.9 + macOS + Brave

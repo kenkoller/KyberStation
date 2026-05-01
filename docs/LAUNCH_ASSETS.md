@@ -235,7 +235,7 @@ total. Works on desktop and mobile (installable as a PWA).
 - 🎨 33 blade styles (Stable, Unstable, Fire, Rotoscope, Plasma Storm, Aurora, Cinder, and more)
 - ⚡ 22 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
 - 🔥 19 ignition + 13 retraction animations
-- 👥 336 character presets spanning every era of the saga + pop-culture (LOTR, Marvel, mythology, anime)
+- 👥 354 character presets spanning every era of the saga + pop-culture (LOTR, Marvel, mythology, anime, Star Wars Visions)
 - 💻 ProffieOS C++ code generator — output compiles directly in Arduino IDE
 - 🔊 Sound font library with SmoothSwing simulation
 - 📂 Saber profile manager + card preset composer for SD card writing
@@ -399,7 +399,7 @@ For your personal/professional site. Target length: 1500–2500 words. Include s
 [Screenshot of editor hero]
 
 - Browser-based visual editor
-- 33 blade styles, 22 effects, 336 presets
+- 33 blade styles, 22 effects, 354 presets
 - ProffieOS C++ code generator
 - Sound font management, multi-board compatibility, PWA install
 - All local, no backend
@@ -442,7 +442,7 @@ For your personal/professional site. Target length: 1500–2500 words. Include s
 ```
 
 **Tips:**
-- Be specific about numbers (33 styles, 22 effects, 336 presets, 16 boards)
+- Be specific about numbers (33 styles, 22 effects, 354 presets, 16 boards)
 - Don't overstate the work ("built in a weekend" when it wasn't)
 - Credit ProffieOS (Fredrik Hubinette) and Fett263 — you're standing on their work
 - End with a try-it link, not a philosophical flourish
