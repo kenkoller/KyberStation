@@ -141,6 +141,179 @@ export const BUILT_IN_MODULATORS: readonly ModulatorDescriptor[] = [
     smoothing: 0,
     builtIn: true,
   },
+  // ─── Wave 8 LITE — aux + gesture event modulators ─────────────────
+  //
+  // Eight event-driven modulators that latch to 1 on a discrete event
+  // and decay over time, mirroring the `clash` modulator's pattern
+  // (design doc §3.1 latch+decay shape). The sampler receives these
+  // events through a new optional `events: ReadonlySet<string>` arg
+  // on `sampleModulators` — see the sampler module for the contract.
+  //
+  // The 8 IDs split into two families:
+  //
+  //   - Aux button events (3): `aux-click` / `aux-hold` / `aux-double-click`
+  //     map to the prop file's discrete button events. Wave 8's full
+  //     UI (button routing sub-tab) lands in a follow-up PR.
+  //
+  //   - Gesture events (5): `gesture-twist` / `gesture-stab` /
+  //     `gesture-swing` / `gesture-clash` / `gesture-shake` map to
+  //     prop-file gesture vocabularies (Fett263, SA22C, BC).
+  //
+  // Note on `gesture-clash`: this is distinct from the `clash`
+  // modulator above. `clash` reads the engine's effects-active set
+  // (i.e. "clash effect is firing right now") and represents the
+  // visual decay of the impact flash. `gesture-clash` is the discrete
+  // button/IMU-detected gesture event that USER motion produces — it
+  // can fire without the clash effect (e.g. a user-bound clash trigger
+  // that maps to a different visual response). Two separate signals;
+  // future bindings can use either or both.
+  //
+  // Smoothing is `0` for all 8 — these are event-decay signals and
+  // the sampler's latch+decay logic owns the temporal shape directly.
+  // A non-zero smoothing would compound with the decay and feel sluggish.
+  //
+  // Decay coefficients (the per-modulator decay-per-frame multiplier)
+  // live alongside the registry entry for the sampler to read. See
+  // `EVENT_MODULATOR_DECAY` below — this is the right place for it
+  // because changing decay-feel is a UX/registry concern, not a
+  // sampler-internals concern.
+  //
+  // The IDs use kebab-case (`aux-click`, `gesture-twist`) to keep them
+  // visually distinct from the camelCase / single-word built-ins above
+  // when scanning binding tables in the UI. The string-IDs are
+  // `ModulatorId` (which accepts arbitrary strings via the custom
+  // branch); they are NOT in the locked `BuiltInModulatorId` union.
+  // The `builtIn: true` flag still applies — they're shipped in the
+  // canonical registry, they just don't extend the locked union.
+  // See PR body for the proposed types.ts extension that would
+  // formalize this in a future sprint.
+  {
+    id: 'aux-click',
+    displayName: 'Aux Click',
+    colorVar: 'var(--mod-aux-click)',         // cyan — discrete button event
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'aux-hold',
+    displayName: 'Aux Hold',
+    colorVar: 'var(--mod-aux-hold)',          // deep-cyan — sustained button
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'aux-double-click',
+    displayName: 'Aux Double Click',
+    colorVar: 'var(--mod-aux-double-click)',  // bright-cyan — double tap
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'gesture-twist',
+    displayName: 'Gesture Twist',
+    colorVar: 'var(--mod-gesture-twist)',     // violet-pink — rotation gesture
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'gesture-stab',
+    displayName: 'Gesture Stab',
+    colorVar: 'var(--mod-gesture-stab)',      // yellow — thrust gesture
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'gesture-swing',
+    displayName: 'Gesture Swing',
+    colorVar: 'var(--mod-gesture-swing)',     // sky-blue — IMU swing event
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'gesture-clash',
+    displayName: 'Gesture Clash',
+    colorVar: 'var(--mod-gesture-clash)',     // pearl — IMU clash gesture
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+  {
+    id: 'gesture-shake',
+    displayName: 'Gesture Shake',
+    colorVar: 'var(--mod-gesture-shake)',     // orange — sustained shake
+    range: [0, 1],
+    unit: '',
+    smoothing: 0,
+    builtIn: true,
+  },
+];
+
+/**
+ * Per-frame decay coefficients for the 8 Wave 8 LITE event-driven
+ * modulators (registry entries above). On a discrete event, the
+ * modulator value latches to 1.0; on subsequent frames without the
+ * event, it multiplies by the decay coefficient.
+ *
+ * The values here are tuned for a ~120 FPS visualizer and produce
+ * "reads as a flash but settles within a beat" envelopes:
+ *
+ *   - `aux-click`           0.85  ≈ 50 ms half-life — punchy click
+ *   - `aux-hold`            0.95  ≈ 165 ms half-life — sustained on
+ *                                  release; feels like "still holding"
+ *                                  for a beat after release
+ *   - `aux-double-click`    0.80  ≈ 33 ms half-life — sharper than
+ *                                  single click to read as different
+ *   - `gesture-twist`       0.92  ≈ 100 ms — matches clash's feel
+ *   - `gesture-stab`        0.88  ≈ 65 ms — quick punch
+ *   - `gesture-swing`       0.93  ≈ 115 ms — slightly slower decay
+ *                                  since swings already feel sustained
+ *   - `gesture-clash`       0.90  ≈ 80 ms — between stab and twist
+ *   - `gesture-shake`       0.95  ≈ 165 ms — slowest; shake is
+ *                                  inherently sustained, decay should
+ *                                  read as "still settling"
+ *
+ * If a future UX pass wants per-binding decay, that's a binding-level
+ * extension; for v1.1 Core, registry-level defaults beat per-binding
+ * customization on simplicity grounds.
+ */
+export const EVENT_MODULATOR_DECAY: Readonly<Record<string, number>> = {
+  'aux-click': 0.85,
+  'aux-hold': 0.95,
+  'aux-double-click': 0.8,
+  'gesture-twist': 0.92,
+  'gesture-stab': 0.88,
+  'gesture-swing': 0.93,
+  'gesture-clash': 0.9,
+  'gesture-shake': 0.95,
+};
+
+/**
+ * The 8 Wave 8 LITE event-driven modulator IDs. Exported so the
+ * sampler can iterate them in lock-step with `EVENT_MODULATOR_DECAY`
+ * without reaching into the full `BUILT_IN_MODULATORS` array.
+ */
+export const EVENT_MODULATOR_IDS: readonly string[] = [
+  'aux-click',
+  'aux-hold',
+  'aux-double-click',
+  'gesture-twist',
+  'gesture-stab',
+  'gesture-swing',
+  'gesture-clash',
+  'gesture-shake',
 ];
 
 /**

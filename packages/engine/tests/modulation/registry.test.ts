@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   BUILT_IN_MODULATORS,
+  EVENT_MODULATOR_DECAY,
+  EVENT_MODULATOR_IDS,
   isBuiltInModulatorId,
   lookupModulator,
 } from '../../src/modulation/registry';
@@ -26,14 +28,36 @@ const EXPECTED_IDS: readonly BuiltInModulatorId[] = [
   'retraction',
 ];
 
+// Wave 8 LITE — 8 event-driven aux/gesture modulators added 2026-05-01.
+// These IDs are NOT in the locked `BuiltInModulatorId` union per the
+// types.ts contract lock; they live as `ModulatorId` strings in the
+// registry. See PR body for the proposed types.ts extension.
+const EXPECTED_EVENT_IDS: readonly string[] = [
+  'aux-click',
+  'aux-hold',
+  'aux-double-click',
+  'gesture-twist',
+  'gesture-stab',
+  'gesture-swing',
+  'gesture-clash',
+  'gesture-shake',
+];
+
 describe('BUILT_IN_MODULATORS', () => {
-  it('contains exactly 11 entries', () => {
-    expect(BUILT_IN_MODULATORS).toHaveLength(11);
+  it('contains 19 entries (11 v1.1 Core + 8 Wave 8 LITE event modulators)', () => {
+    expect(BUILT_IN_MODULATORS).toHaveLength(19);
   });
 
   it('covers every BuiltInModulatorId', () => {
     const ids = new Set(BUILT_IN_MODULATORS.map((d) => d.id));
     for (const expected of EXPECTED_IDS) {
+      expect(ids.has(expected)).toBe(true);
+    }
+  });
+
+  it('covers every Wave 8 LITE event-modulator ID', () => {
+    const ids = new Set(BUILT_IN_MODULATORS.map((d) => d.id as string));
+    for (const expected of EXPECTED_EVENT_IDS) {
       expect(ids.has(expected)).toBe(true);
     }
   });
@@ -82,8 +106,9 @@ describe('BUILT_IN_MODULATORS', () => {
   });
 
   it('uses `var(--mod-<id>)` CSS-variable convention for each colorVar', () => {
+    // IDs may contain hyphens (Wave 8 LITE: `aux-click`, `gesture-twist`).
     for (const descriptor of BUILT_IN_MODULATORS) {
-      expect(descriptor.colorVar).toMatch(/^var\(--mod-[a-z]+\)$/);
+      expect(descriptor.colorVar).toMatch(/^var\(--mod-[a-z][a-z-]*\)$/);
     }
   });
 
@@ -101,7 +126,19 @@ describe('BUILT_IN_MODULATORS', () => {
     const byId = new Map<string, ModulatorDescriptor>(
       BUILT_IN_MODULATORS.map((d) => [d.id as string, d]),
     );
-    const discreteIds = ['clash', 'lockup', 'preon', 'ignition', 'retraction', 'time', 'battery'] as const;
+    // Wave 8 LITE: aux/gesture event modulators are also discrete-event
+    // — their decay envelope is owned by the sampler's latch+decay
+    // logic, so descriptor smoothing must stay at 0 to avoid compounding.
+    const discreteIds = [
+      'clash',
+      'lockup',
+      'preon',
+      'ignition',
+      'retraction',
+      'time',
+      'battery',
+      ...EXPECTED_EVENT_IDS,
+    ];
     for (const id of discreteIds) {
       const smoothing = byId.get(id)!.smoothing ?? 0;
       expect(smoothing).toBe(0);
@@ -130,6 +167,59 @@ describe('lookupModulator()', () => {
     expect(lookupModulator('beatGrid' as never)).toBeUndefined();
     expect(lookupModulator('' as never)).toBeUndefined();
     expect(lookupModulator('Swing' as never)).toBeUndefined(); // case-sensitive
+  });
+});
+
+// ─── Wave 8 LITE — event-modulator registry surface ─────────────────
+
+describe('EVENT_MODULATOR_IDS', () => {
+  it('lists all 8 Wave 8 LITE event modulator IDs', () => {
+    expect(EVENT_MODULATOR_IDS).toHaveLength(8);
+    for (const id of EXPECTED_EVENT_IDS) {
+      expect(EVENT_MODULATOR_IDS).toContain(id);
+    }
+  });
+
+  it('contains no duplicate entries', () => {
+    expect(new Set(EVENT_MODULATOR_IDS).size).toBe(EVENT_MODULATOR_IDS.length);
+  });
+
+  it('every ID is also present in BUILT_IN_MODULATORS', () => {
+    const registryIds = new Set(BUILT_IN_MODULATORS.map((d) => d.id as string));
+    for (const id of EVENT_MODULATOR_IDS) {
+      expect(registryIds.has(id)).toBe(true);
+    }
+  });
+});
+
+describe('EVENT_MODULATOR_DECAY', () => {
+  it('declares a decay coefficient for every event modulator', () => {
+    for (const id of EVENT_MODULATOR_IDS) {
+      expect(EVENT_MODULATOR_DECAY[id]).toBeDefined();
+    }
+  });
+
+  it('all coefficients live in [0, 1) per the latch+decay contract', () => {
+    for (const id of EVENT_MODULATOR_IDS) {
+      const decay = EVENT_MODULATOR_DECAY[id]!;
+      expect(decay).toBeGreaterThanOrEqual(0);
+      expect(decay).toBeLessThan(1);
+    }
+  });
+
+  it('held-event modulators (aux-hold, gesture-shake) decay slowest', () => {
+    // The two "held" modulators should have the highest decay
+    // coefficients so their values stay near 1.0 across held frames
+    // and only settle a beat after release.
+    const held = ['aux-hold', 'gesture-shake'];
+    const punchy = ['aux-click', 'aux-double-click', 'gesture-stab'];
+    for (const heldId of held) {
+      for (const punchyId of punchy) {
+        expect(EVENT_MODULATOR_DECAY[heldId]!).toBeGreaterThan(
+          EVENT_MODULATOR_DECAY[punchyId]!,
+        );
+      }
+    }
   });
 });
 

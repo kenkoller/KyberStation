@@ -333,6 +333,236 @@ describe('clash latch + decay', () => {
   });
 });
 
+// ─── Wave 8 LITE — event modulators (aux + gesture) ─────────────────
+//
+// 8 event-driven modulators that latch to 1.0 on a discrete event in
+// the new optional `events: ReadonlySet<string>` arg, then decay per
+// `EVENT_MODULATOR_DECAY[id]` on subsequent frames. Mirrors the
+// `clash` modulator's latch+decay shape; smoothing stays at 0 in the
+// registry so the sampler outer loop fully owns the temporal envelope.
+
+import { EVENT_MODULATOR_DECAY } from '../../src/modulation/registry';
+
+const ALL_EVENT_IDS = [
+  'aux-click',
+  'aux-hold',
+  'aux-double-click',
+  'gesture-twist',
+  'gesture-stab',
+  'gesture-swing',
+  'gesture-clash',
+  'gesture-shake',
+] as const;
+
+describe('Wave 8 LITE — event modulator latching', () => {
+  it.each(ALL_EVENT_IDS)(
+    '%s reads 0 on the first frame with no events',
+    (id) => {
+      const ctx = makeContext();
+      const state = sampleModulators(ctx, null, NO_EFFECTS);
+      expect(state.values.get(id)).toBe(0);
+    },
+  );
+
+  it.each(ALL_EVENT_IDS)('%s latches to 1 on a fresh event', (id) => {
+    const ctx = makeContext();
+    const events = new Set<string>([id]);
+    const state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+    expect(state.values.get(id)).toBe(1);
+    expect(state.eventIntensities.get(id)).toBe(1);
+  });
+
+  it.each(ALL_EVENT_IDS)(
+    '%s decays by its registry coefficient after release',
+    (id) => {
+      const ctx = makeContext();
+      const decay = EVENT_MODULATOR_DECAY[id]!;
+      const events = new Set<string>([id]);
+
+      // Frame 1: trigger
+      let state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+      expect(state.values.get(id)).toBe(1);
+
+      // Frame 2: release — decays to coefficient
+      state = sampleModulators(ctx, state, NO_EFFECTS);
+      expect(state.values.get(id)).toBeCloseTo(decay, 6);
+      expect(state.eventIntensities.get(id)).toBeCloseTo(decay, 6);
+
+      // Frame 3: continued decay — coefficient^2
+      state = sampleModulators(ctx, state, NO_EFFECTS);
+      expect(state.values.get(id)).toBeCloseTo(decay * decay, 6);
+    },
+  );
+
+  it.each(ALL_EVENT_IDS)('%s decays toward 0 after many frames', (id) => {
+    const ctx = makeContext();
+    const events = new Set<string>([id]);
+
+    // Trigger once, then run many decay frames.
+    let state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+    for (let i = 0; i < 500; i++) {
+      state = sampleModulators(ctx, state, NO_EFFECTS);
+    }
+    // After 500 frames every event modulator (max coeff 0.95) is below
+    // 1e-9 since 0.95^500 ≈ 7e-12.
+    expect(state.values.get(id)!).toBeLessThan(1e-6);
+  });
+
+  it.each(ALL_EVENT_IDS)(
+    '%s does not re-latch every frame on a sustained event (rising-edge guard)',
+    (id) => {
+      const ctx = makeContext();
+      const events = new Set<string>([id]);
+
+      // Frame 1: trigger latches to 1
+      let state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+      expect(state.values.get(id)).toBe(1);
+
+      // Frame 2: same event still in the set, but prev > 0.5 so the
+      // rising edge was already consumed. The value decays — does NOT
+      // re-latch to 1.
+      state = sampleModulators(ctx, state, NO_EFFECTS, undefined, events);
+      const decay = EVENT_MODULATOR_DECAY[id]!;
+      expect(state.values.get(id)).toBeCloseTo(decay, 6);
+      expect(state.values.get(id)).toBeLessThan(1);
+    },
+  );
+
+  it.each(ALL_EVENT_IDS)(
+    '%s re-latches to 1 on a fresh rising edge after decay',
+    (id) => {
+      const ctx = makeContext();
+      const events = new Set<string>([id]);
+
+      let state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+
+      // Decay enough that prev < 0.5.
+      for (let i = 0; i < 30; i++) {
+        state = sampleModulators(ctx, state, NO_EFFECTS);
+      }
+      expect(state.values.get(id)).toBeLessThan(0.5);
+
+      // Re-trigger — rising edge detected, latch to 1.
+      state = sampleModulators(ctx, state, NO_EFFECTS, undefined, events);
+      expect(state.values.get(id)).toBe(1);
+    },
+  );
+
+  it('events default to empty set when omitted (backward compat)', () => {
+    const ctx = makeContext();
+    // Call WITHOUT the events arg — existing call sites work unchanged.
+    const state = sampleModulators(ctx, null, NO_EFFECTS);
+    for (const id of ALL_EVENT_IDS) {
+      expect(state.values.get(id)).toBe(0);
+      expect(state.eventIntensities.get(id)).toBe(0);
+    }
+  });
+
+  it('multiple events in one frame each latch to 1 independently', () => {
+    const ctx = makeContext();
+    const events = new Set<string>([
+      'aux-click',
+      'gesture-twist',
+      'gesture-shake',
+    ]);
+    const state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+    expect(state.values.get('aux-click')).toBe(1);
+    expect(state.values.get('gesture-twist')).toBe(1);
+    expect(state.values.get('gesture-shake')).toBe(1);
+    // Untouched ones stay at 0.
+    expect(state.values.get('aux-hold')).toBe(0);
+    expect(state.values.get('gesture-stab')).toBe(0);
+  });
+
+  it('unknown event IDs in the set are ignored (no crash, no side effects)', () => {
+    const ctx = makeContext();
+    const events = new Set<string>([
+      'unknown-event',
+      'aux-click',
+      'foo',
+    ]);
+    const state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+    // Known ID still latches; unknown ones contribute nothing.
+    expect(state.values.get('aux-click')).toBe(1);
+    // Sanity: no spurious entries in eventIntensities for unknown IDs.
+    expect(state.eventIntensities.has('unknown-event')).toBe(false);
+    expect(state.eventIntensities.has('foo')).toBe(false);
+  });
+
+  it('decay is independent across event modulators', () => {
+    const ctx = makeContext();
+    const events = new Set<string>(['aux-click', 'gesture-shake']);
+
+    // Frame 1: both trigger
+    let state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+
+    // Frame 2: release — each decays by its OWN coefficient
+    state = sampleModulators(ctx, state, NO_EFFECTS);
+    expect(state.values.get('aux-click')).toBeCloseTo(
+      EVENT_MODULATOR_DECAY['aux-click']!,
+      6,
+    );
+    expect(state.values.get('gesture-shake')).toBeCloseTo(
+      EVENT_MODULATOR_DECAY['gesture-shake']!,
+      6,
+    );
+    // The two coefficients are different — assertions catch any
+    // accidental coupling.
+    expect(EVENT_MODULATOR_DECAY['aux-click']).not.toBe(
+      EVENT_MODULATOR_DECAY['gesture-shake'],
+    );
+  });
+
+  it('eventIntensities map carries through frame-to-frame', () => {
+    const ctx = makeContext();
+    const events = new Set<string>(['gesture-twist']);
+    let state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+    state = sampleModulators(ctx, state, NO_EFFECTS);
+    state = sampleModulators(ctx, state, NO_EFFECTS);
+    // After 2 decay frames, gesture-twist should equal coeff^2.
+    const decay = EVENT_MODULATOR_DECAY['gesture-twist']!;
+    expect(state.eventIntensities.get('gesture-twist')).toBeCloseTo(
+      decay * decay,
+      6,
+    );
+  });
+
+  it('event-modulator latching is independent of clash latching', () => {
+    const ctx = makeContext();
+    // Trigger aux-click + clash on the same frame.
+    const events = new Set<string>(['aux-click']);
+    const state = sampleModulators(
+      ctx,
+      null,
+      CLASH_ACTIVE,
+      undefined,
+      events,
+    );
+    expect(state.values.get('aux-click')).toBe(1);
+    expect(state.clashIntensity).toBe(1);
+    expect(state.values.get('clash')).toBe(1);
+  });
+
+  it('event-modulator latching is independent of effects-active set', () => {
+    const ctx = makeContext();
+    const events = new Set<string>(['gesture-clash']);
+    // Even with no effects active, the gesture-clash event-modulator
+    // can still fire — discrete gesture detection is independent of
+    // the engine's clash-effect flag.
+    const state = sampleModulators(ctx, null, NO_EFFECTS, undefined, events);
+    expect(state.values.get('gesture-clash')).toBe(1);
+    expect(state.values.get('clash')).toBe(0);
+  });
+
+  it('bypassed semantics — empty events + null prev = all zeros', () => {
+    const ctx = makeContext();
+    const state = sampleModulators(ctx, null, NO_EFFECTS, undefined, new Set());
+    for (const id of ALL_EVENT_IDS) {
+      expect(state.values.get(id)).toBe(0);
+    }
+  });
+});
+
 // ─── Determinism ────────────────────────────────────────────────────
 
 describe('determinism', () => {

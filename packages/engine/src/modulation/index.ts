@@ -35,6 +35,8 @@ export type {
 // ── Registry ────────────────────────────────────────────────────────
 export {
   BUILT_IN_MODULATORS,
+  EVENT_MODULATOR_DECAY,
+  EVENT_MODULATOR_IDS,
   lookupModulator,
   isBuiltInModulatorId,
 } from './registry.js';
