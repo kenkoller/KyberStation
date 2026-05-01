@@ -98,7 +98,16 @@ export function GalleryGridView(): JSX.Element {
           </div>
         ) : (
           <ul
-            className="flex flex-wrap justify-center gap-3 p-4"
+            className="grid gap-3 p-3 md:gap-4 md:p-4 justify-center"
+            style={{
+              // Mobile: 2 columns at 375px (cards ~160px), 3 at 480px+, then
+              // auto-fill at 200px cards on tablet/desktop.
+              // The min(160px, 100%) guard keeps cards readable even on
+              // <320px screens (small browser windows / iPhone SE
+              // landscape) by collapsing to 1 column.
+              gridTemplateColumns:
+                'repeat(auto-fill, minmax(min(160px, 100%), 200px))',
+            }}
             aria-label={`${filtered.length} presets`}
             data-testid="gallery-grid-list"
           >
@@ -137,16 +146,58 @@ function GalleryFilterToolbar({
   onFiltersChange,
   filteredCount,
 }: FilterToolbarProps): JSX.Element {
+  const [collapsed, setCollapsed] = useState(false);
+
   const update = <K extends keyof GalleryFilters>(
     key: K,
     value: GalleryFilters[K],
   ) => onFiltersChange({ ...filters, [key]: value });
 
+  if (collapsed) {
+    return (
+      <div
+        className="px-4 py-2 border-b border-border-subtle bg-bg-deep/50 shrink-0 flex flex-wrap items-center gap-3"
+        data-testid="gallery-grid-filters-collapsed"
+      >
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="inline-flex items-center gap-1 px-2 py-1 text-ui-xs font-mono uppercase tracking-[0.08em] text-text-muted hover:text-text-primary border border-border-subtle hover:border-border-light rounded transition-colors"
+          aria-expanded={false}
+          aria-controls="gallery-grid-filter-rows"
+          title="Show filter controls"
+          data-testid="gallery-grid-filters-show"
+        >
+          <span aria-hidden="true">▸</span> Filters
+        </button>
+        <span
+          className="text-ui-xs font-mono text-text-muted tabular-nums"
+          aria-live="polite"
+        >
+          {filteredCount} / {ALL_PRESETS.length} presets
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       className="px-4 py-3 border-b border-border-subtle bg-bg-deep/50 shrink-0 flex flex-wrap items-center gap-x-4 gap-y-2"
       data-testid="gallery-grid-filters"
+      id="gallery-grid-filter-rows"
     >
+      <button
+        type="button"
+        onClick={() => setCollapsed(true)}
+        className="inline-flex items-center gap-1 px-2 py-1 text-ui-xs font-mono uppercase tracking-[0.08em] text-text-muted hover:text-text-primary border border-border-subtle hover:border-border-light rounded transition-colors shrink-0"
+        aria-expanded={true}
+        aria-controls="gallery-grid-filter-rows"
+        title="Hide filter controls"
+        data-testid="gallery-grid-filters-hide"
+      >
+        <span aria-hidden="true">▾</span> Hide filters
+      </button>
+
       <input
         type="search"
         value={filters.search}
@@ -396,8 +447,12 @@ function GalleryGridCard({
   // simulates a 2px border without changing the actual border thickness
   // (which would cause a 1px layout twitch).
   const cardStyle: CSSProperties = {
-    width: 200,
-    minHeight: 360,
+    // Width is grid-driven now (auto-fill min(160px, 100%) → 200px);
+    // explicit width: 100% lets cards fill their grid cell. On mobile
+    // (<480px) this gives 2 columns at ~160px each; on tablet+ desktop
+    // 3-6 columns at 200px each.
+    width: '100%',
+    minHeight: 320,
     borderColor: isHovered
       ? `rgba(${r}, ${g}, ${b}, 0.85)`
       : 'rgb(var(--border-subtle))',
