@@ -64,7 +64,7 @@ export function GradientEditorPanel({
   title = 'Gradient Stops',
   persistKey = 'GradientEditorPanel.stops',
   defaultOpen = true,
-}: GradientEditorPanelProps = {}) {
+}: GradientEditorPanelProps) {
   const editor = useGradientEditor();
   const { interpolation, setInterpolation, handlePointerMove, handlePointerUp } = editor;
 
