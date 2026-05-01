@@ -1,5 +1,7 @@
 # Hardware validation TODO — v0.11.0 WebUSB flash
 
+> **2026-05-01 update — validation board retired.** The 89sabers Proffieboard V3.9 (serial `2081399A4B30`) used for all validation through this checklist was bricked beyond DFU recovery during a 2026-04-29 Option Bytes incident. Full recovery session 2026-04-30 confirmed the chip is unrecoverable without ST-Link via SWD pads. Session archive: [`SESSION_2026-04-30_HARDWARE_RECOVERY.md`](SESSION_2026-04-30_HARDWARE_RECOVERY.md). A new Bluetooth-enabled Proffieboard variant has been ordered. **Everything below reflects the V3.9 validation results from 2026-04-20** and remains useful as a procedural reference, but the active validation board has changed. When the new board arrives, run the equivalent Phase A/B/C sweep and add a parallel section here. Forensic dumps from the dead V3.9: [`backups/89sabers-firmware-recovery-2026-04-30/`](../backups/89sabers-firmware-recovery-2026-04-30/).
+
 **Status**: Phases A + B + C ✅ **all complete on 2026-04-20 (89sabers Proffieboard V3.9, macOS + Brave)**, including recovery re-flash. Three real DFU protocol bugs caught + fixed. Brave is Chromium-based; Chrome/Edge/Arc should behave identically but are not independently verified. Cross-platform (Windows/Linux) and cross-board (V2, V3-OLED) still pending.
 
 Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugged in. The WebUSB flasher has passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
