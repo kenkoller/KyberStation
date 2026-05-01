@@ -309,29 +309,26 @@ Hi,
 Big fan of the channel. I watched your Obi-Wan Kenobi carbon-steel
 review and the 89sabers EP4 unboxing
 (https://www.youtube.com/watch?v=pdjL8DEAMvI) before I bought my own
-saber, and I love how in-depth you go, it feels like you've reviewed
+saber, and I love how in-depth you go. Feels like you've reviewed
 every saber under the sun. The 89sabers EP4 review in particular
-gave me confidence on the build before I committed; I ended up with
-an 89sabers Proffieboard V3.9 hilt, which I'm still using daily.
+gave me confidence before I committed. I ended up with an 89sabers
+Proffieboard V3.9 hilt, which I'm still using daily.
 
-I wanted to share a tool I built on top of that hardware called
-KyberStation. It's a free, browser-based visual editor for blade
-styles with a ProffieOS code generator. Targets ~16 different boards,
-Proffie, CFX, Golden Harvest, Xenopixel, Verso, and more. Runs
-entirely in the browser, no install.
-
-I'm not asking for a review or shoutout. I'd just genuinely value your
-perspective as someone who's seen a lot of saber tech up close, what's
-confusing, what's missing, what doesn't match how reviewers / collectors
-actually work. If down the road it turns out to be something you'd
-cover, that would be incredible, but no expectation either way.
+I built a tool on top of that hardware called KyberStation. Free,
+browser-based visual editor for blade styles with a ProffieOS code
+generator. Targets ~16 different boards (Proffie, CFX, Golden
+Harvest, Xenopixel, Verso, and more), runs entirely in the browser,
+no install. Going public on r/lightsabers in the next day or two,
+ahead of Star Wars Day.
 
 Try it: https://kenkoller.github.io/KyberStation/
 Code: https://github.com/kenkoller/KyberStation
 
-Free, MIT licensed, hobby project, first public release. Hardware-
-validated on my own 89sabers Proffieboard V3.9 (macOS + Brave so far,
-other configurations untested).
+Not asking for a review or a shoutout. Just thought you might find
+it interesting given how much saber tech you cover. No need to
+reply. If you ever do try it and notice something off, want to
+flag a bug, or have feedback that would help me improve it, my
+address is on this email and I read everything.
 
 Thanks for the work you do for this community. Your reviews genuinely
 shaped my path into this hobby.
