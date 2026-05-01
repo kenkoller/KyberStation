@@ -222,6 +222,103 @@ describe('renderCardGif: ignition variant', () => {
   });
 });
 
+// ─── renderCardGif: Sprint 4 effect-specific variants ────────────────
+
+describe('renderCardGif: blast-deflect variant (Sprint 4)', () => {
+  it('resolves with an image/gif Blob', async () => {
+    const blob = await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.blast',
+      variant: 'blast-deflect',
+    });
+    expect(blob.type).toBe('image/gif');
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('produces fps × duration_seconds frames at default settings', async () => {
+    const { fps, durationMs } = GIF_VARIANT_DEFAULTS['blast-deflect'];
+    const expectedFrames = Math.round((durationMs / 1000) * fps);
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.blast',
+      variant: 'blast-deflect',
+    });
+    expect(encoderState.frameCount).toBe(expectedFrames);
+    expect(frameRendererCalls).toBe(expectedFrames);
+  });
+
+  it('default duration is the brief-target 600ms at 30 fps (= 18 frames)', () => {
+    expect(GIF_VARIANT_DEFAULTS['blast-deflect']).toEqual({ fps: 30, durationMs: 600 });
+  });
+});
+
+describe('renderCardGif: stab-tip-flash variant (Sprint 4)', () => {
+  it('resolves with an image/gif Blob', async () => {
+    const blob = await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.stab',
+      variant: 'stab-tip-flash',
+    });
+    expect(blob.type).toBe('image/gif');
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('produces fps × duration_seconds frames at default settings', async () => {
+    const { fps, durationMs } = GIF_VARIANT_DEFAULTS['stab-tip-flash'];
+    const expectedFrames = Math.round((durationMs / 1000) * fps);
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.stab',
+      variant: 'stab-tip-flash',
+    });
+    expect(encoderState.frameCount).toBe(expectedFrames);
+    expect(frameRendererCalls).toBe(expectedFrames);
+  });
+
+  it('default duration is the brief-target 500ms at 30 fps (= 15 frames)', () => {
+    expect(GIF_VARIANT_DEFAULTS['stab-tip-flash']).toEqual({ fps: 30, durationMs: 500 });
+  });
+});
+
+describe('renderCardGif: swing-response variant (Sprint 4)', () => {
+  it('resolves with an image/gif Blob', async () => {
+    const blob = await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.swing',
+      variant: 'swing-response',
+    });
+    expect(blob.type).toBe('image/gif');
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('produces fps × duration_seconds frames at default settings', async () => {
+    const { fps, durationMs } = GIF_VARIANT_DEFAULTS['swing-response'];
+    const expectedFrames = Math.round((durationMs / 1000) * fps);
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.swing',
+      variant: 'swing-response',
+    });
+    expect(encoderState.frameCount).toBe(expectedFrames);
+    expect(frameRendererCalls).toBe(expectedFrames);
+  });
+
+  it('default duration is the brief-target 2000ms at 30 fps (= 60 frames)', () => {
+    expect(GIF_VARIANT_DEFAULTS['swing-response']).toEqual({ fps: 30, durationMs: 2000 });
+  });
+
+  it('honours fps + durationMs overrides', async () => {
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.swing',
+      variant: 'swing-response',
+      fps: 12,
+      durationMs: 1000,
+    });
+    expect(encoderState.frameCount).toBe(12); // 12 × 1s
+  });
+});
+
 // ─── renderCardGif: contracts shared by both variants ─────────────────
 
 describe('renderCardGif: shared contracts', () => {

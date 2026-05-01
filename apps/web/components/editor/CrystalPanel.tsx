@@ -45,6 +45,22 @@ const THEME_OPTIONS: Array<{ id: string; label: string }> = [
 const GIF_VARIANT_OPTIONS: Array<{ id: GifVariant; label: string; tooltip: string }> = [
   { id: 'idle', label: 'Idle', tooltip: 'Steady-state shimmer loop (~1s, ~1MB)' },
   { id: 'ignition', label: 'Ignition cycle', tooltip: 'Full PREON → ON → RETRACT arc (~2.5s)' },
+  // Sprint 4 — effect-specific Tier 3 cuts. Short clips, 30 fps.
+  {
+    id: 'blast-deflect',
+    label: 'Blast deflect',
+    tooltip: 'Mid-blade blast deflection flash (~600ms)',
+  },
+  {
+    id: 'stab-tip-flash',
+    label: 'Stab tip flash',
+    tooltip: 'Tip-anchored stab flash (~500ms)',
+  },
+  {
+    id: 'swing-response',
+    label: 'Swing response',
+    tooltip: 'Sinusoidal swing-speed modulation showcase (~2s)',
+  },
 ];
 
 /** Slug a preset name into something filename-safe — falls back to the form id. */

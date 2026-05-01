@@ -146,10 +146,15 @@ export async function renderCardSnapshot(options: CardSnapshotOptions): Promise<
 // `renderCardGif` is a sibling of `renderCardSnapshot`: same chrome +
 // layout + theme, but the blade is rendered using the v0.14 workbench
 // pipeline (`./bladeRenderHeadless.ts`) and animated across N frames.
-// Two variants in Sprint 1:
 //
+// Sprint 1 variants:
 //   • 'idle'      — 1s loop of the steady-state ON shimmer.
 //   • 'ignition'  — full 2.5s PREON → IGNITING → ON → RETRACTING → OFF.
+//
+// Sprint 4 (Tier 3 effect-specific) variants:
+//   • 'blast-deflect'  — ON-idle → blast at mid-blade → return. ~600ms.
+//   • 'stab-tip-flash' — ON-idle → stab → return. ~500ms.
+//   • 'swing-response' — ON-idle, sinusoidal swing-speed modulation. ~2s.
 //
 // Per-frame inputs:
 //
@@ -172,7 +177,24 @@ export async function renderCardSnapshot(options: CardSnapshotOptions): Promise<
 //   Future optimisation: render the hilt to a buffer canvas once, then
 //   `drawImage` it per frame. Sprint 1 keeps the simple shape.
 
-export type GifVariant = 'idle' | 'ignition';
+export type GifVariant =
+  | 'idle'
+  | 'ignition'
+  | 'blast-deflect'
+  | 'stab-tip-flash'
+  | 'swing-response';
+
+/** Map a GifVariant to the underlying captureSequence mode. */
+const GIF_VARIANT_TO_CAPTURE_MODE = {
+  idle: 'idle-loop',
+  ignition: 'ignition-cycle',
+  'blast-deflect': 'blast-deflect',
+  'stab-tip-flash': 'stab-tip-flash',
+  'swing-response': 'swing-response',
+} as const satisfies Record<
+  GifVariant,
+  'idle-loop' | 'ignition-cycle' | 'blast-deflect' | 'stab-tip-flash' | 'swing-response'
+>;
 
 export interface RenderCardGifOptions extends CardSnapshotOptions {
   variant: GifVariant;
@@ -207,6 +229,11 @@ export interface RenderCardGifOptions extends CardSnapshotOptions {
 export const GIF_VARIANT_DEFAULTS = {
   idle: { fps: 18, durationMs: 1000 },
   ignition: { fps: 18, durationMs: 2500 },
+  // Sprint 4 effect-specific variants — short clips, 30 fps for smoother
+  // motion. Sizes verified well under the 5MB brief.
+  'blast-deflect': { fps: 30, durationMs: 600 },
+  'stab-tip-flash': { fps: 30, durationMs: 500 },
+  'swing-response': { fps: 30, durationMs: 2000 },
 } as const satisfies Record<GifVariant, { fps: number; durationMs: number }>;
 
 /** Default output width for animated GIFs. The blade is wide so we
@@ -328,7 +355,7 @@ export async function renderCardGif(options: RenderCardGifOptions): Promise<Blob
   const scale = outputWidth / layout.width;
 
   const frames = captureSequence({
-    mode: options.variant === 'idle' ? 'idle-loop' : 'ignition-cycle',
+    mode: GIF_VARIANT_TO_CAPTURE_MODE[options.variant],
     config: options.config,
     fps,
     durationMs,

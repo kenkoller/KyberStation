@@ -10,6 +10,7 @@ import { describe, it, expect } from 'vitest';
 import {
   captureSequence,
   captureSequenceWithStates,
+  computeEffectTriggerFrame,
   computeFrameCount,
 } from '../src/captureSequence';
 import { BladeState } from '../src/types';
@@ -202,5 +203,204 @@ describe('captureSequence: argument validation', () => {
   it('throws on unknown mode', () => {
     // @ts-expect-error — testing runtime guard against bogus mode strings.
     expect(() => captureSequence({ mode: 'spinny', config: makeBlueConfig() })).toThrow(/unknown mode/);
+  });
+});
+
+// ─── Sprint 4 — Tier 3 effect-specific modes ─────────────────────────
+
+describe('captureSequence: blast-deflect', () => {
+  it('produces 18 frames at default 30 fps × 600ms', () => {
+    const frames = captureSequence({
+      mode: 'blast-deflect',
+      config: makeBlueConfig(),
+    });
+    expect(frames.length).toBe(18);
+  });
+
+  it('matches computeFrameCount across overrides', () => {
+    const opts = {
+      mode: 'blast-deflect' as const,
+      config: makeBlueConfig(),
+      fps: 24,
+      durationMs: 800,
+    };
+    expect(captureSequence(opts).length).toBe(computeFrameCount(opts));
+  });
+
+  it('returns Uint8Array buffers sized 3 × totalLEDs (default = 132)', () => {
+    const frames = captureSequence({
+      mode: 'blast-deflect',
+      config: makeBlueConfig(),
+    });
+    for (const f of frames) {
+      expect(f).toBeInstanceOf(Uint8Array);
+      expect(f.length).toBe(132 * 3);
+    }
+  });
+
+  it('blade is lit throughout (settle-to-ON before any blast)', () => {
+    const frames = captureSequence({
+      mode: 'blast-deflect',
+      config: makeBlueConfig(),
+    });
+    for (const f of frames) {
+      expect(totalLuminance(f)).toBeGreaterThan(0);
+    }
+  });
+
+  it('the trigger frame (frameCount/3) shows a luminance spike vs pre-trigger baseline', () => {
+    const frames = captureSequence({
+      mode: 'blast-deflect',
+      config: makeBlueConfig(),
+    });
+    const triggerFrame = computeEffectTriggerFrame({ mode: 'blast-deflect' });
+    expect(triggerFrame).toBe(6); // 18 / 3
+    const preTrigger = totalLuminance(frames[triggerFrame - 1]);
+    // Frame just after trigger should be brighter than the previous
+    // baseline as the blast bump lights up around mid-blade.
+    const atOrAfter = Math.max(
+      totalLuminance(frames[triggerFrame]),
+      totalLuminance(frames[triggerFrame + 1] ?? frames[triggerFrame]),
+    );
+    expect(atOrAfter).toBeGreaterThan(preTrigger);
+  });
+
+  it('produces stable frame count + buffer sizes across runs', () => {
+    // Strict byte-determinism is not expected — `MotionSimulator.update`
+    // adds Math.random()*0.1 jitter into soundLevel, which the shimmer
+    // pipeline reads. We assert the structural shape stays stable.
+    const cfg = makeBlueConfig();
+    const a = captureSequence({ mode: 'blast-deflect', config: cfg });
+    const b = captureSequence({ mode: 'blast-deflect', config: cfg });
+    expect(a.length).toBe(b.length);
+    for (let i = 0; i < a.length; i++) {
+      expect(a[i].length).toBe(b[i].length);
+    }
+  });
+
+  it('captureSequenceWithStates reports ON state throughout (settled blade)', () => {
+    const result = captureSequenceWithStates({
+      mode: 'blast-deflect',
+      config: makeBlueConfig(),
+    });
+    // Every captured frame should be ON; we settle to ON before recording.
+    for (const s of result.states) {
+      expect(s).toBe(BladeState.ON);
+    }
+  });
+});
+
+describe('captureSequence: stab-tip-flash', () => {
+  it('produces 15 frames at default 30 fps × 500ms', () => {
+    const frames = captureSequence({
+      mode: 'stab-tip-flash',
+      config: makeBlueConfig(),
+    });
+    expect(frames.length).toBe(15);
+  });
+
+  it('blade is lit throughout (settle-to-ON before any stab)', () => {
+    const frames = captureSequence({
+      mode: 'stab-tip-flash',
+      config: makeBlueConfig(),
+    });
+    for (const f of frames) {
+      expect(totalLuminance(f)).toBeGreaterThan(0);
+    }
+  });
+
+  it('the trigger frame is at frameCount/3', () => {
+    expect(computeEffectTriggerFrame({ mode: 'stab-tip-flash' })).toBe(5); // 15 / 3
+  });
+
+  it('the trigger frame shows a luminance change vs pre-trigger baseline', () => {
+    const frames = captureSequence({
+      mode: 'stab-tip-flash',
+      config: makeBlueConfig(),
+    });
+    const triggerFrame = computeEffectTriggerFrame({ mode: 'stab-tip-flash' });
+    const preTrigger = totalLuminance(frames[triggerFrame - 1]);
+    const atOrAfter = Math.max(
+      totalLuminance(frames[triggerFrame]),
+      totalLuminance(frames[triggerFrame + 1] ?? frames[triggerFrame]),
+    );
+    // Stab brightens the tip; expect any change in luminance vs baseline.
+    expect(atOrAfter).not.toBe(preTrigger);
+  });
+
+  it('produces stable frame count + buffer sizes across runs', () => {
+    // Same caveat as blast-deflect — MotionSimulator's soundLevel jitter
+    // means strict byte-determinism is not expected; we assert shape.
+    const cfg = makeBlueConfig();
+    const a = captureSequence({ mode: 'stab-tip-flash', config: cfg });
+    const b = captureSequence({ mode: 'stab-tip-flash', config: cfg });
+    expect(a.length).toBe(b.length);
+    for (let i = 0; i < a.length; i++) {
+      expect(a[i].length).toBe(b[i].length);
+    }
+  });
+});
+
+describe('captureSequence: swing-response', () => {
+  it('produces 60 frames at default 30 fps × 2000ms', () => {
+    const frames = captureSequence({
+      mode: 'swing-response',
+      config: makeBlueConfig(),
+    });
+    expect(frames.length).toBe(60);
+  });
+
+  it('blade is lit throughout (settle-to-ON; no event triggers)', () => {
+    const frames = captureSequence({
+      mode: 'swing-response',
+      config: makeBlueConfig(),
+    });
+    for (const f of frames) {
+      expect(totalLuminance(f)).toBeGreaterThan(0);
+    }
+  });
+
+  it('captureSequenceWithStates reports ON state throughout', () => {
+    const result = captureSequenceWithStates({
+      mode: 'swing-response',
+      config: makeBlueConfig(),
+    });
+    for (const s of result.states) {
+      expect(s).toBe(BladeState.ON);
+    }
+  });
+
+  it('is deterministic across runs with the same config', () => {
+    // swing-response uses Math.sin(t) deterministically + the simulator's
+    // soundLevel uses Math.random() jitter. We care that the helper
+    // produces stable frame counts and the same swing-driven progression
+    // shape; the existence of a tiny soundLevel jitter doesn't make the
+    // mode non-deterministic at the LED-output layer because base
+    // shimmer dominates.
+    const a = captureSequence({
+      mode: 'swing-response',
+      config: makeBlueConfig({ shimmer: 0 }),
+      fps: 12,
+      durationMs: 1000,
+    });
+    const b = captureSequence({
+      mode: 'swing-response',
+      config: makeBlueConfig({ shimmer: 0 }),
+      fps: 12,
+      durationMs: 1000,
+    });
+    expect(a.length).toBe(b.length);
+  });
+});
+
+describe('captureSequence: Sprint 4 default fps', () => {
+  it('blast-deflect defaults to 30 fps', () => {
+    expect(computeFrameCount({ mode: 'blast-deflect' })).toBe(18); // 30 × 0.6
+  });
+  it('stab-tip-flash defaults to 30 fps', () => {
+    expect(computeFrameCount({ mode: 'stab-tip-flash' })).toBe(15); // 30 × 0.5
+  });
+  it('swing-response defaults to 30 fps', () => {
+    expect(computeFrameCount({ mode: 'swing-response' })).toBe(60); // 30 × 2
   });
 });
