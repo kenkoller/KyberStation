@@ -59,6 +59,7 @@ import { ANIMATED_SERIES_PRESETS } from './characters/animated-series.js';
 import { EXTENDED_UNIVERSE_PRESETS } from './characters/extended-universe.js';
 import { LEGENDS_PRESETS } from './characters/legends.js';
 import { CREATIVE_COMMUNITY_PRESETS } from './characters/creative-community.js';
+import { SHOWCASE_PRESETS } from './characters/showcase.js';
 import { POP_CULTURE_PRESETS } from './characters/pop-culture/index.js';
 
 /**
@@ -72,6 +73,7 @@ export const ALL_PRESETS: Preset[] = [
   ...EXTENDED_UNIVERSE_PRESETS,
   ...LEGENDS_PRESETS,
   ...CREATIVE_COMMUNITY_PRESETS,
+  ...SHOWCASE_PRESETS,
   ...POP_CULTURE_PRESETS,
 ];
 

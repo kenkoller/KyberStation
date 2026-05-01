@@ -30,10 +30,14 @@ export interface PresetMetadata {
    * - `pop-culture` — fan tribute to non-Star-Wars IP (Marvel, LOTR, DC, etc.).
    * - `mythology` — real-world mythology (Excalibur, Kusanagi, etc. — public
    *   domain).
+   * - `showcase` — KyberStation-original tech-demo presets that exercise the
+   *   full feature surface (multi-binding modulation, math expressions,
+   *   custom gradients, spatial effects). Distinct from pop-culture entries
+   *   because they\'re not derived from any media source.
    *
    * Consumers should read as `preset.continuity ?? 'canon'`.
    */
-  continuity?: 'canon' | 'legends' | 'pop-culture' | 'mythology';
+  continuity?: 'canon' | 'legends' | 'pop-culture' | 'mythology' | 'showcase';
   /** 'base' = simple starting point, 'detailed' = fully tuned config */
   tier: PresetTier;
   /**

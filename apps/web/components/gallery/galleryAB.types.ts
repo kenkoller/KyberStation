@@ -31,7 +31,8 @@ export type ContinuityFilter =
   | 'canon'
   | 'legends'
   | 'pop-culture'
-  | 'mythology';
+  | 'mythology'
+  | 'showcase';
 
 export interface GalleryFilters {
   era: EraFilter;

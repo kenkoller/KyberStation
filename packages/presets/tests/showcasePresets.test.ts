@@ -52,10 +52,10 @@ describe('Showcase presets — feature surface', () => {
     }
   });
 
-  it('every showcase preset has continuity="pop-culture" + author="KyberStation"', () => {
+  it('every showcase preset has continuity="showcase" + author="KyberStation"', () => {
     for (const id of SHOWCASE_IDS) {
       const preset = findById(id)!;
-      expect(preset.continuity).toBe('pop-culture');
+      expect(preset.continuity).toBe('showcase');
       expect(preset.author).toBe('KyberStation');
       expect(preset.screenAccurate).toBe(false);
     }
