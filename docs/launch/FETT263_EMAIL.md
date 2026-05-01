@@ -1,23 +1,23 @@
-# Fett263 — Direct Outreach
+# Fett263: Direct Outreach
 
 This is the most delicate outreach in the entire launch wave. Fett263
-created `saber_fett263_buttons.h` — the most-used ProffieOS prop file
-— and his style library is the de facto community reference.
+created `saber_fett263_buttons.h`, the most-used ProffieOS prop file
+and his style library is the de facto community reference.
 KyberStation generates code that targets his prop file. **You are
 standing on his work.**
 
 **Tone:**
 - Acknowledge his work as foundational
-- Be clear KyberStation isn't competing — it's a visualizer/editor that
+- Be clear KyberStation isn't competing, it's a visualizer/editor that
   produces config.h targeting his prop file
-- Ask for any concerns BEFORE the public launch — don't surprise him
+- Ask for any concerns BEFORE the public launch, don't surprise him
 - Soft offer: credit, coordination on prop-file changes
 - Make clear it's hobby, no commercial intent
 
 **Send timing:** Day -1 or -2 (a day or two before the public Reddit
 post). If he replies with concerns, you have time to address them.
 
-**Channel:** [FILL IN: contact channel — fett263.com contact form,
+**Channel:** [FILL IN: contact channel, fett263.com contact form,
 his Discord, email if known]. Whichever channel he publicly lists.
 If multiple, prefer the one he says is best for tool-related questions.
 
@@ -30,17 +30,17 @@ If multiple, prefer the one he says is best for tool-related questions.
 
 ---
 
-## Variant A — Short, cold open
+## Variant A: Short, cold open
 
 ### Subject
-KyberStation — heads-up on a free visual editor that generates configs targeting your prop file
+KyberStation, heads-up on a free visual editor that generates configs targeting your prop file
 
 ### Body
 
 ```
 Hi Fett263,
 
-I'm Ken. Long-time user of your prop file and style library — they
+I'm Ken. Long-time user of your prop file and style library, they
 genuinely transformed what my saber is capable of, and the documentation
 alone has saved me hours.
 
@@ -61,21 +61,21 @@ Code: https://github.com/kenkoller/KyberStation
 
 I've credited your work in the README and the architecture docs. Happy
 to adjust how the prop file is referenced if you'd prefer different
-language. Not asking for a shoutout or endorsement — just want to make
+language. Not asking for a shoutout or endorsement, just want to make
 sure you're aware and that nothing in the output is misrepresenting
 your work.
 
 Thank you for everything you contribute to this community.
 
-— Ken
+Ken
 ```
 
 ---
 
-## Variant B — Medium, slightly more detail
+## Variant B: Medium, slightly more detail
 
 ### Subject
-KyberStation — free visual editor that generates configs for your prop file (heads-up before launch)
+KyberStation, free visual editor that generates configs for your prop file (heads-up before launch)
 
 ### Body
 
@@ -89,7 +89,7 @@ from anything else in this space.
 
 I'm reaching out because I built a tool I'm about to share publicly,
 and I'd be uncomfortable shipping it without giving you a heads-up
-first. It's called KyberStation — a free, open-source, browser-based
+first. It's called KyberStation, a free, open-source, browser-based
 visual editor for blade styles. It generates ProffieOS config code
 that compiles directly with `saber_fett263_buttons.h` selected as the
 prop file. AST-based codegen so the output structurally can't have
@@ -111,7 +111,7 @@ What I want to make sure is right before the public launch:
 2. **Generated output.** If the generated configs misuse anything from
    your prop file conventions, or emit patterns you'd consider
    incorrect, I'd want to know before users start hitting it. Open to
-   feedback at any level — naming, ordering, defaults, anything.
+   feedback at any level, naming, ordering, defaults, anything.
 
 3. **Coordination on prop-file changes.** I want KyberStation to track
    your prop file as it evolves, not lag behind it. If there's a
@@ -122,7 +122,7 @@ What I want to make sure is right before the public launch:
 I'm not asking for a review, endorsement, or shoutout. Genuinely just
 want to make sure the relationship is clear and the output is right.
 This is a hobby project, my first public release, and there's no
-commercial intent — KyberStation is free, MIT-licensed, and runs on
+commercial intent, KyberStation is free, MIT-licensed, and runs on
 free GitHub Pages hosting that I can keep up indefinitely.
 
 If you have any concerns at all, I'd rather hear them now than after
@@ -132,7 +132,7 @@ give you time to look, I can do that.
 Thank you for everything. The work you've done changed what this hobby
 is for a lot of us.
 
-— Ken
+Ken
 ```
 
 ---
@@ -141,7 +141,7 @@ is for a lot of us.
 
 ### If positive ("looks good, share it")
 - Thank him briefly
-- Don't push for more — let him initiate any further engagement
+- Don't push for more, let him initiate any further engagement
 - Optional: offer to feature his prop file as the default-selected
   option in the UI (if not already), or add a "Compatible with Fett263
   prop file" badge prominently
@@ -173,7 +173,7 @@ Subject: `Re: [original subject]`
 ```
 Hi Fett263,
 
-Quick bump on this — wanted to make sure it didn't get lost. No reply
+Quick bump on this, wanted to make sure it didn't get lost. No reply
 needed if everything looks fine. I'm planning to share publicly on
 [date] unless I hear concerns.
 
@@ -181,5 +181,5 @@ Try it: https://kenkoller.github.io/KyberStation/
 
 Thanks again for the work you do.
 
-— Ken
+Ken
 ```

@@ -1,13 +1,13 @@
-# Fredrik Hübinette — Direct Outreach
+# Fredrik Hübinette: Direct Outreach
 
 Fredrik created ProffieOS and the Proffieboard hardware. KyberStation
 exists because ProffieOS exists. This is the most foundational
-acknowledgment in the entire launch — even more so than Fett263, because
+acknowledgment in the entire launch, even more so than Fett263, because
 the prop file runs on top of the OS Fredrik wrote.
 
 **Tone:**
-- Deep respect — he built the platform
-- Informational, not transactional — you're telling him, not asking him
+- Deep respect, he built the platform
+- Informational, not transactional, you're telling him, not asking him
 - Mention the GPL-3.0 attribution in every generated config
 - Reference his Web Bluetooth POC (shows you've done your homework)
 - Don't ask for endorsement, review, or anything
@@ -18,7 +18,7 @@ Before the public Reddit post.
 
 **Channel:** GitHub (profezzorn) or his website (fredrik.hubbe.net).
 If he has a contact form or listed email, use that. A GitHub Discussion
-post on the ProffieOS repo is also reasonable — it's public and he
+post on the ProffieOS repo is also reasonable, it's public and he
 monitors it.
 
 **What NOT to do:**
@@ -29,10 +29,10 @@ monitors it.
 
 ---
 
-## Variant A — Short, informational
+## Variant A: Short, informational
 
 ### Subject
-KyberStation — heads-up on a free visual editor built on ProffieOS
+KyberStation, heads-up on a free visual editor built on ProffieOS
 
 ### Body
 
@@ -44,7 +44,7 @@ been using ProffieOS for a while now. I wanted to reach out because
 I built a tool on top of your work that I'm about to share publicly,
 and it didn't feel right to do that without telling you first.
 
-It's called KyberStation — a free, open-source, browser-based visual
+It's called KyberStation, a free, open-source, browser-based visual
 editor for designing blade styles and exporting ProffieOS config code.
 Users design a style visually, preview it in real time, and export a
 config.h that compiles directly in Arduino IDE against ProffieOS 7.x.
@@ -58,19 +58,19 @@ README credits you as the creator of both ProffieOS and the
 Proffieboard hardware.
 
 This is a hobby project and my first public release. No commercial
-intent. I'm not asking for anything — just wanted you to know it
+intent. I'm not asking for anything, just wanted you to know it
 exists, and to say thank you. Without ProffieOS, this tool wouldn't
 exist and neither would the community it's built for.
 
-— Ken
+Ken
 ```
 
 ---
 
-## Variant B — Slightly more detail
+## Variant B: Slightly more detail
 
 ### Subject
-KyberStation — free visual blade editor built on ProffieOS (heads-up before public launch)
+KyberStation, free visual blade editor built on ProffieOS (heads-up before public launch)
 
 ### Body
 
@@ -79,14 +79,14 @@ Hi Fredrik,
 
 I'm Ken. I've been running ProffieOS on my 89sabers Proffieboard V3.9
 and it's genuinely one of the most impressive open-source projects
-I've encountered — the depth of the template system, the motion
+I've encountered, the depth of the template system, the motion
 processing, the audio engine. It's remarkable work.
 
 I'm reaching out because I built a tool on top of ProffieOS that I'm
 about to share with the saber community, and I wanted to give you a
 heads-up first.
 
-It's called KyberStation — a free, open-source, browser-based visual
+It's called KyberStation, a free, open-source, browser-based visual
 editor for designing blade styles and generating ProffieOS config
 code. The code generator is AST-based and emits real ProffieOS
 templates (Layers<>, InOutTrL<>, BlastL<>, the responsive functions,
@@ -101,11 +101,11 @@ and every generated config carries a GPL attribution header.
 
 I also came across your Web Bluetooth proof-of-concept at
 profezzorn/lightsaber-web-bluetooth during research for a future
-wireless-update feature. Impressive work — if KyberStation ever
+wireless-update feature. Impressive work, if KyberStation ever
 pursues that direction, your POC would be the natural starting point,
 and I'd want to coordinate rather than duplicate.
 
-I'm not asking for anything — no review, no endorsement, no
+I'm not asking for anything, no review, no endorsement, no
 integration. This is a hobby project, my first public release, and
 there's no commercial intent. I just wanted you to know it exists
 and to express genuine gratitude. ProffieOS is the reason this
@@ -118,7 +118,7 @@ before the wider community sees it.
 
 Thank you for everything.
 
-— Ken
+Ken
 ```
 
 ---
@@ -129,13 +129,13 @@ Thank you for everything.
 - Thank him briefly and sincerely
 - Don't push for more engagement
 - If he has technical feedback on the generated code, take it seriously
-  — he knows the template system better than anyone alive
+ , he knows the template system better than anyone alive
 
 ### If he has concerns about GPL compliance or attribution
-- Take them extremely seriously — he's the copyright holder
+- Take them extremely seriously, he's the copyright holder
 - Fix whatever he flags before the public launch
 - Offer to delay the launch until resolved
-- Consult the GPL-3.0 text if needed — KyberStation's MIT source is
+- Consult the GPL-3.0 text if needed, KyberStation's MIT source is
   an aggregate work; the generated configs are derivative of ProffieOS
 
 ### If he doesn't reply
@@ -150,7 +150,7 @@ Subject: `Re: [original subject]`
 ```
 Hi Fredrik,
 
-Quick follow-up — wanted to make sure this didn't get lost. No reply
+Quick follow-up, wanted to make sure this didn't get lost. No reply
 needed if everything looks fine. I'm planning to share KyberStation
 publicly on [date] unless I hear concerns.
 
@@ -158,5 +158,5 @@ Try it: https://kenkoller.github.io/KyberStation/
 
 Thanks again for ProffieOS.
 
-— Ken
+Ken
 ```
