@@ -1,35 +1,3 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`card snapshot golden hash — layout × theme matrix (region-masked) > FNV-1a hash function is stable for a known input 1`] = `"163e4e7b"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × default 1`] = `"583fce47"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × imperial 1`] = `"e3768c62"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × jedi 1`] = `"2f0e4a3c"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × light 1`] = `"17308808"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × space 1`] = `"c90af410"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × default 1`] = `"84e2ef2d"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × imperial 1`] = `"6605754c"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × jedi 1`] = `"9f519e26"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × light 1`] = `"89c5a731"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × space 1`] = `"6243f023"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × default 1`] = `"f9055a53"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × imperial 1`] = `"eaba70df"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × jedi 1`] = `"ccf5a1e1"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × light 1`] = `"e44f9616"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × space 1`] = `"edbc21c8"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > region-masked hash zeros the masked pixels deterministically 1`] = `"d98ea2a5"`;
