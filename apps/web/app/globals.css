@@ -252,6 +252,33 @@
 [data-density="mutable"]  { --row-h: 32px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE INSPECT MODE — Phase 4.5 (2026-05-01)
+   Per "Claude Design Mobile handoff/HANDOFF.md" §Q4: when the mobile
+   shell enters Inspect mode (long-press on the blade canvas), every
+   non-blade chrome surface fades to opacity 0.4. The blade itself
+   stays vivid; the user is studying the running blade. We do NOT
+   block taps — the user may exit by tapping outside the blade.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-inspect-mode] header,
+[data-inspect-mode] .mobile-action-bar,
+[data-inspect-mode] .mobile-section-tabs,
+[data-inspect-mode] .mobile-statusbar-scroll,
+[data-inspect-mode] [aria-label="Pixel strip"],
+[data-inspect-mode] [aria-label="Analysis rail"] {
+  opacity: 0.4;
+  transition: opacity 200ms ease-out;
+}
+
+/* The blade region itself stays at full opacity; the outer attribute
+   selector matches all chrome but NOT the blade region (it has no
+   className matching the selectors above). Belt-and-braces explicit
+   override below in case future class names overlap. */
+[data-inspect-mode] [aria-label="Blade preview"] {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ACCESSIBILITY: Reduced Motion (user toggle override)
    ═══════════════════════════════════════════════════════════════════════════ */
 

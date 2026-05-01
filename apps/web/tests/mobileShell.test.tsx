@@ -214,12 +214,13 @@ describe('MobileShell — Phase 4.2 layout shape', () => {
 
   it('blade canvas region uses --blade-rod-h (64px) inline style', () => {
     const html = renderShell();
-    // Match the wrapper div containing aria-label="Blade preview" — attr
-    // order in renderToStaticMarkup output is class→style→role→aria-label,
-    // so we anchor on the wrapper opening tag and check both attrs.
+    // Match the wrapper div containing aria-label="Blade preview".
+    // Phase 4.5 added touch-action + relative + overflow-hidden so we
+    // assert the height token is present anywhere in the inline style
+    // rather than anchoring to the full `style="..."` substring.
     const m = html.match(/<div[^>]*aria-label="Blade preview"[^>]*>/);
     expect(m).toBeTruthy();
-    expect(m![0]).toContain('style="height:var(--blade-rod-h)"');
+    expect(m![0]).toContain('height:var(--blade-rod-h)');
     // PR A1/A2's intermediate values must be gone.
     expect(html).not.toMatch(/min\(15vh,\s*120px\)/);
     expect(html).not.toMatch(/min\(22vh,\s*180px\)/);

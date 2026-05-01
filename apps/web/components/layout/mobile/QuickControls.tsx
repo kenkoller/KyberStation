@@ -22,14 +22,19 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { rgbToHsl, hslToRgb } from '@/lib/colorHsl';
 import { MiniSlider } from '@/components/layout/mobile/MiniSlider';
+import { useParameterSheetStore } from '@/stores/parameterSheetStore';
 
-/** Color-tab QuickControls — wired against bladeStore + uiStore. */
+/** Color-tab QuickControls — wired against bladeStore + uiStore.
+ *  Long-press → parameterSheetStore opens the deep-edit sheet for
+ *  the matching parameter. The sheet itself is mounted by
+ *  ParameterSheetHost at the MobileShell level. */
 export function ColorQuickControls() {
   const baseColor = useBladeStore((s) => s.config.baseColor);
   const shimmer = useBladeStore((s) => s.config.shimmer ?? 0);
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const brightness = useUIStore((s) => s.brightness);
   const setBrightness = useUIStore((s) => s.setBrightness);
+  const openSheet = useParameterSheetStore((s) => s.open);
 
   const hsl = rgbToHsl(baseColor.r, baseColor.g, baseColor.b);
 
@@ -43,6 +48,91 @@ export function ColorQuickControls() {
   }
   function setShimmer(v: number) {
     updateConfig({ shimmer: v });
+  }
+
+  // ── Sheet open handlers ─────────────────────────────────────────
+  // Each handler builds a fresh spec on the fly so `read` / `write`
+  // close over the latest hsl baseline. The store doesn't memoize the
+  // spec — it just hands it to the host at render time. Reset value
+  // for each is the canonical default (Obi-Wan Blue HSL components +
+  // 100% brightness + 10% shimmer).
+  function openHueSheet() {
+    openSheet({
+      id: 'hue',
+      title: 'Edit Hue',
+      unit: '°',
+      min: 0,
+      max: 359,
+      step: 1,
+      color: 'accent',
+      defaultValue: 207,
+      formatDisplay: (v) => Math.round(v).toString(),
+      read: () => {
+        const c = useBladeStore.getState().config.baseColor;
+        return rgbToHsl(c.r, c.g, c.b).h;
+      },
+      write: (h) => {
+        const c = useBladeStore.getState().config.baseColor;
+        const cur = rgbToHsl(c.r, c.g, c.b);
+        useBladeStore.getState().updateConfig({
+          baseColor: hslToRgb(h, cur.s, cur.l),
+        });
+      },
+    });
+  }
+  function openSatSheet() {
+    openSheet({
+      id: 'sat',
+      title: 'Edit Saturation',
+      unit: '%',
+      min: 0,
+      max: 100,
+      step: 1,
+      color: 'accent',
+      defaultValue: 100,
+      formatDisplay: (v) => Math.round(v).toString(),
+      read: () => {
+        const c = useBladeStore.getState().config.baseColor;
+        return rgbToHsl(c.r, c.g, c.b).s;
+      },
+      write: (sat) => {
+        const c = useBladeStore.getState().config.baseColor;
+        const cur = rgbToHsl(c.r, c.g, c.b);
+        useBladeStore.getState().updateConfig({
+          baseColor: hslToRgb(cur.h, sat, cur.l),
+        });
+      },
+    });
+  }
+  function openBrightSheet() {
+    openSheet({
+      id: 'bright',
+      title: 'Edit Brightness',
+      unit: '%',
+      min: 0,
+      max: 100,
+      step: 1,
+      color: 'warm',
+      defaultValue: 100,
+      formatDisplay: (v) => Math.round(v).toString(),
+      read: () => useUIStore.getState().brightness,
+      write: (v) => useUIStore.getState().setBrightness(v),
+    });
+  }
+  function openShimmerSheet() {
+    openSheet({
+      id: 'shimmer',
+      title: 'Edit Shimmer',
+      unit: '%',
+      min: 0,
+      max: 1,
+      step: 0.01,
+      color: 'info',
+      defaultValue: 0.1,
+      formatDisplay: (v) => Math.round(v * 100).toString(),
+      read: () => useBladeStore.getState().config.shimmer ?? 0,
+      write: (v) => useBladeStore.getState().updateConfig({ shimmer: v }),
+    });
   }
 
   return (
@@ -63,6 +153,7 @@ export function ColorQuickControls() {
         step={1}
         color="accent"
         onChange={setHue}
+        onLongPress={openHueSheet}
       />
       <MiniSlider
         label="Sat"
@@ -74,6 +165,7 @@ export function ColorQuickControls() {
         step={1}
         color="accent"
         onChange={setSat}
+        onLongPress={openSatSheet}
       />
       <MiniSlider
         label="Bright"
@@ -85,6 +177,7 @@ export function ColorQuickControls() {
         step={1}
         color="warm"
         onChange={setBrightness}
+        onLongPress={openBrightSheet}
       />
       <MiniSlider
         label="Shimmer"
@@ -96,6 +189,7 @@ export function ColorQuickControls() {
         step={0.01}
         color="info"
         onChange={setShimmer}
+        onLongPress={openShimmerSheet}
       />
       {/* Tempo + Depth — placeholder slots awaiting Phase 4.3.x style-
           specific store fields. Disabled state telegraphs they're
