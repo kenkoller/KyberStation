@@ -667,4 +667,252 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
       swingFxIntensity: 0.4,
     },
   },
+
+  // ─── Star Wars Visions (anime anthology, Vol 1 — 2021) ──────────────
+  //
+  // Disney+ Visions is an anthology of Japanese anime studios reimagining
+  // Star Wars. The series exists in a "non-binding canon" gray zone — Disney
+  // has called it experimental rather than firmly canonical. We include the
+  // most visually distinctive saber-wielders from Vol 1 (the most-watched
+  // entries); Vol 2 is broader and can land in a follow-up sprint.
+  //
+  // Each preset uses an existing engine style with hardware-fidelity-safe
+  // colors. Where the screen visual exceeds what 1D Neopixel can deliver
+  // (Ronin\'s simultaneous red-core-plus-white-blade is 2D, like the
+  // Darksaber), the description is honest about the approximation chosen.
+
+  // ── Ronin (The Duel) ──
+  {
+    id: 'animated-visions-ronin',
+    name: 'Ronin (Visions: The Duel)',
+    character: 'Ronin',
+    era: 'animated',
+    affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
+    description:
+      'The wandering bandit-hunter wielding a bled red kyber crystal in a katana-shape hilt. On screen the blade reads as a red core inside a pale-white energy sheath — a 2D layered effect outside what 1D Neopixel can render. The hardware approximation here uses red `unstable` with heavy white modulation through clash + lockup, capturing the bled-kyber-yearning-for-redemption character without claiming a visual the strip cannot deliver.',
+    hiltNotes: 'Katana-shape hilt with a thumb-activation slider; the saber draws from a wide-tsuba scabbard mount.',
+    config: {
+      name: 'Ronin',
+      baseColor: { r: 220, g: 0, b: 5 },
+      clashColor: { r: 255, g: 240, b: 230 },
+      lockupColor: { r: 255, g: 200, b: 180 },
+      blastColor: { r: 255, g: 220, b: 200 },
+      dragColor: { r: 255, g: 80, b: 40 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 320,
+      retractionMs: 420,
+      shimmer: 0.18,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+      noiseLevel: 0.08,
+    },
+  },
+
+  // ── Karre (The Twins) ──
+  {
+    id: 'animated-visions-karre',
+    name: 'Karre (Visions: The Twins)',
+    character: 'Karre',
+    era: 'animated',
+    affiliation: 'sith',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'The Sith twin who turns against his sister. Trigger Studio gives him a sleek, decisive crimson blade — slightly more controlled than typical Sith unstable; he\'s the half of the pair who might still walk away.',
+    hiltNotes: 'Polished black-and-gold hilt mounted in a Star Destroyer-shaped lightsaber plinth he and his sister built into.',
+    config: {
+      name: 'Karre',
+      baseColor: { r: 230, g: 10, b: 10 },
+      clashColor: { r: 255, g: 240, b: 220 },
+      lockupColor: { r: 255, g: 100, b: 60 },
+      blastColor: { r: 255, g: 130, b: 90 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 260,
+      retractionMs: 320,
+      shimmer: 0.15,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  // ── Am (The Twins) ──
+  {
+    id: 'animated-visions-am',
+    name: 'Am (Visions: The Twins)',
+    character: 'Am',
+    era: 'animated',
+    affiliation: 'sith',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Karre\'s twin sister and his rival. Where Karre wavers, Am commits — her blade burns hotter, more volatile, with a heavier cracked-kyber bleed. A second crimson preset paired with the same Star Destroyer mount but tuned for the opposing temperament.',
+    hiltNotes: 'Identical hilt design to Karre; the pair were built as a matched set on the Star Destroyer they fight aboard.',
+    config: {
+      name: 'Am',
+      baseColor: { r: 240, g: 0, b: 5 },
+      clashColor: { r: 255, g: 220, b: 200 },
+      lockupColor: { r: 255, g: 80, b: 40 },
+      blastColor: { r: 255, g: 110, b: 70 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 240,
+      retractionMs: 300,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+      noiseLevel: 0.1,
+    },
+  },
+
+  // ── Kara (The Ninth Jedi) ──
+  {
+    id: 'animated-visions-kara',
+    name: 'Kara (Visions: The Ninth Jedi)',
+    character: 'Kara',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
+    description:
+      'The lightsmith\'s daughter who builds her own blade and arrives last to the Margrave\'s summit. Her saber is a saturated yellow — the color of one who chose her own path. A clean stable Jedi yellow, slightly cooler than the Acolyte\'s Sentinel blades, befitting a brand-new construction.',
+    hiltNotes: 'Compact hilt with a chrome activation collar and a kyber-window inlay; built in her father\'s workshop just days before the duel.',
+    config: {
+      name: 'KaraNinthJedi',
+      baseColor: { r: 255, g: 220, b: 0 },
+      clashColor: { r: 255, g: 250, b: 200 },
+      lockupColor: { r: 255, g: 230, b: 100 },
+      blastColor: { r: 255, g: 240, b: 170 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.07,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── F (The Village Bride) ──
+  {
+    id: 'animated-visions-f',
+    name: 'F (Visions: The Village Bride)',
+    character: 'F',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Final survivor of her Order, hiding in a village under siege by raiders. Her late-master\'s blue lightsaber, kept dormant until she draws it to defend the bride. A composed, classical Jedi blue — the steadiness of someone who only ignites when there\'s no other choice.',
+    hiltNotes: 'Classical Jedi-issue hilt with a pilgrim\'s wrap, weatherworn from the years she spent in hiding.',
+    config: {
+      name: 'F',
+      baseColor: { r: 30, g: 130, b: 255 },
+      clashColor: { r: 220, g: 240, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 255 },
+      blastColor: { r: 200, g: 230, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'fadeout',
+      ignitionMs: 360,
+      retractionMs: 480,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Tajin Crosser (The Elder) ──
+  {
+    id: 'animated-visions-tajin-crosser',
+    name: 'Tajin Crosser (Visions: The Elder)',
+    character: 'Tajin Crosser',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'A Jedi Master investigating dark-side disturbances on a quiet outer-rim world. Trigger gives him a deep, unhurried Jedi blue — patient, ancient, the blade of someone who has already seen too much.',
+    hiltNotes: 'Worn brass-and-leather hilt, hand-carved Jedi insignia on the pommel.',
+    config: {
+      name: 'TajinCrosser',
+      baseColor: { r: 0, g: 100, b: 230 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 130, g: 180, b: 240 },
+      blastColor: { r: 200, g: 220, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 380,
+      retractionMs: 420,
+      shimmer: 0.05,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Lop (Lop and Ochō) ──
+  {
+    id: 'animated-visions-lop',
+    name: 'Lop (Visions: Lop and Ochō)',
+    character: 'Lop',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'A rabbit-folk former-slave gifted a lightsaber by Master Yasaburo. A bright sky-blue blade — Geno Studio\'s palette runs warmer than typical Star Wars Jedi blue, befitting the family-drama heart of the episode.',
+    hiltNotes: 'Slim hilt with an asymmetric activation lever, sized for a child\'s grip; engraved with the Yasaburo family crest.',
+    config: {
+      name: 'Lop',
+      baseColor: { r: 80, g: 170, b: 255 },
+      clashColor: { r: 230, g: 240, b: 255 },
+      lockupColor: { r: 180, g: 215, b: 255 },
+      blastColor: { r: 220, g: 235, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── Master TingTing (T0-B1) ──
+  {
+    id: 'animated-visions-tingting',
+    name: 'Master TingTing (Visions: T0-B1)',
+    character: 'TingTing',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Mentor of the child-droid T0-B1. Science Saru gives her a soft purple blade — the color of a Jedi who has reconciled the Force\'s extremes, raised a robot child, and made a quiet life on a forgotten desert world.',
+    hiltNotes: 'Rounded hilt with brass-tone accents and a hand-grip wrap that has been replaced too many times to count.',
+    config: {
+      name: 'TingTing',
+      baseColor: { r: 170, g: 70, b: 240 },
+      clashColor: { r: 230, g: 200, b: 255 },
+      lockupColor: { r: 200, g: 110, b: 255 },
+      blastColor: { r: 220, g: 180, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 340,
+      retractionMs: 380,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.32,
+    },
+  },
 ];
