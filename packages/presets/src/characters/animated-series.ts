@@ -915,4 +915,218 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
       swingFxIntensity: 0.32,
     },
   },
+
+  // ─── Star Wars Visions Vol 2 (anime anthology, 2023) ────────────────
+  //
+  // Visions Vol 2 widened the studio roster beyond Japan to include
+  // Spain, Ireland, Chile, India, South Africa, France, the UK, and
+  // Korea. Vol 2 saber-wielders span fewer episodes than Vol 1; this
+  // batch covers the seven where a saber is meaningful to the story.
+  // Episodes without canonical saber-wielders ("I Am Your Mother",
+  // "The Pit", "Aau\'s Song", "The Spy Dancer") are not represented.
+
+  // ── Lola (Sith - El Estudio) ──
+  {
+    id: 'animated-visions-lola',
+    name: 'Lola (Visions: Sith)',
+    character: 'Lola',
+    era: 'animated',
+    affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
+    description:
+      'The young Sith apprentice who paints emotion through color. El Estudio (Spain) gives her a vivid Sith red that pulses with her grief — by the end of the episode the kyber crystal cracks and the bleed runs even hotter. Unstable style with high shimmer matches her painter\'s volatility.',
+    hiltNotes: 'A traditional saber hilt covered in handprints from the paint she uses to process her trauma — the El Estudio design is unique to this character.',
+    config: {
+      name: 'Lola',
+      baseColor: { r: 235, g: 5, b: 10 },
+      clashColor: { r: 255, g: 230, b: 220 },
+      lockupColor: { r: 255, g: 100, b: 70 },
+      blastColor: { r: 255, g: 130, b: 90 },
+      dragColor: { r: 255, g: 80, b: 0 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 280,
+      retractionMs: 360,
+      shimmer: 0.25,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+      noiseLevel: 0.1,
+    },
+  },
+
+  // ── Lola\'s Master (Sith) ──
+  {
+    id: 'animated-visions-lolas-master',
+    name: "Lola's Master (Visions: Sith)",
+    character: "Lola's Master",
+    era: 'animated',
+    affiliation: 'sith',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'The Sith Master who keeps Lola pinned to her trauma. A more controlled crimson than his apprentice — older, slower, more certain. Still unstable per Inquisitor convention but with a tighter shimmer reflecting his discipline.',
+    hiltNotes: 'A traditional Sith saber hilt; Lola\'s painted handprints are notably absent from his.',
+    config: {
+      name: 'LolasMaster',
+      baseColor: { r: 200, g: 0, b: 5 },
+      clashColor: { r: 255, g: 200, b: 170 },
+      lockupColor: { r: 255, g: 80, b: 50 },
+      blastColor: { r: 255, g: 100, b: 60 },
+      style: 'unstable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 320,
+      retractionMs: 380,
+      shimmer: 0.16,
+      ledCount: 144,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  // ── Koten (In the Stars - Punkrobot) ──
+  {
+    id: 'animated-visions-koten',
+    name: 'Koten (Visions: In the Stars)',
+    character: 'Koten',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Older sister, survivor of an Imperial-poisoned planet. She inherited her mother\'s blue saber and uses it sparingly — water is more precious than combat in her arc. A measured Jedi blue with a slow ignition reflecting her caution.',
+    hiltNotes: 'An older, well-worn hilt — the rebuild of her late mother\'s saber. Punkrobot\'s stop-motion gives it a hand-machined look.',
+    config: {
+      name: 'Koten',
+      baseColor: { r: 30, g: 120, b: 250 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 250 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 380,
+      retractionMs: 440,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Tichina (In the Stars) ──
+  {
+    id: 'animated-visions-tichina',
+    name: 'Tichina (Visions: In the Stars)',
+    character: 'Tichina',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'Younger sister, more reckless. Where Koten holds back, Tichina goes first. A slightly brighter blue than her sister\'s — youthful confidence that hasn\'t been tempered yet.',
+    hiltNotes: 'A second saber rebuilt by Tichina from spare parts during the planet\'s long collapse; cruder than Koten\'s inherited hilt but functional.',
+    config: {
+      name: 'Tichina',
+      baseColor: { r: 60, g: 150, b: 255 },
+      clashColor: { r: 230, g: 240, b: 255 },
+      lockupColor: { r: 160, g: 210, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.07,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── Tan (Journey to the Dark Head - Studio Mir) ──
+  {
+    id: 'animated-visions-tan',
+    name: 'Tan (Visions: Journey to the Dark Head)',
+    character: 'Tan',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'A young Jedi-aspirant who undertakes a pilgrimage to a colossal dark-side stone head with his non-Force-sensitive friend. A standard Padawan blue saber, classical and clean — the journey itself is the point, not the weapon.',
+    hiltNotes: 'Standard Studio Mir hilt design with a single emitter; Korean-aesthetic engravings along the grip per the studio\'s house style.',
+    config: {
+      name: 'Tan',
+      baseColor: { r: 40, g: 130, b: 250 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 320,
+      retractionMs: 380,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Rani (The Bandits of Golak - 88 Pictures) ──
+  {
+    id: 'animated-visions-rani',
+    name: 'Rani (Visions: The Bandits of Golak)',
+    character: 'Rani',
+    era: 'animated',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    screenAccurate: true,
+    description:
+      'A young Force-sensitive girl pursued by an Inquisitor across rural India. At the climax she ignites her late mother\'s saber for the first time — a heritage Jedi blue that proves her birthright. Slightly slower ignition reflecting the awakening moment, not a trained Knight\'s reflex.',
+    hiltNotes: 'A late-Republic Jedi hilt hidden in her family\'s farmhouse for years; 88 Pictures gives it a slightly weathered, dust-touched finish.',
+    config: {
+      name: 'Rani',
+      baseColor: { r: 0, g: 130, b: 245 },
+      clashColor: { r: 220, g: 240, b: 255 },
+      lockupColor: { r: 150, g: 210, b: 255 },
+      blastColor: { r: 230, g: 245, b: 255 },
+      style: 'stable',
+      ignition: 'summon',
+      retraction: 'standard',
+      ignitionMs: 480,
+      retractionMs: 460,
+      shimmer: 0.07,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Bandits of Golak Inquisitor ──
+  {
+    id: 'animated-visions-golak-inquisitor',
+    name: 'Inquisitor (Visions: The Bandits of Golak)',
+    character: 'Bandits of Golak Inquisitor',
+    era: 'animated',
+    affiliation: 'sith',
+    tier: 'base',
+    screenAccurate: true,
+    description:
+      'The Imperial Inquisitor pursuing Rani across the Golak countryside. Standard Inquisitor cracked-kyber red with the convention\'s unstable bleed — same bureaucratic-pursuit menace as the rest of the live-action / animated Inquisitor roster.',
+    hiltNotes: 'A standard Inquisitor double-bladed spinning hilt, slightly travel-worn from the chase across rural farmland.',
+    config: {
+      name: 'GolakInquisitor',
+      baseColor: { r: 230, g: 10, b: 15 },
+      clashColor: { r: 255, g: 195, b: 150 },
+      lockupColor: { r: 255, g: 90, b: 60 },
+      blastColor: { r: 255, g: 75, b: 45 },
+      style: 'unstable',
+      ignition: 'center',
+      retraction: 'center',
+      ignitionMs: 220,
+      retractionMs: 280,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+    },
+  },
 ];
