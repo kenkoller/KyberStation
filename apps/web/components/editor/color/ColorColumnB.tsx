@@ -13,7 +13,7 @@
 //   5. Color Harmony section (wheel + complementary/analogous/triadic
 //      generated colors, with "Apply to effects" on Base channel).
 //   6. Auto-Suggest clash / lockup buttons (Base channel only).
-//   7. GradientBuilder — only on Base channel (existing component).
+//   7. GradientEditorPanel — only on Base channel (shared `lib/gradient`).
 //
 // Mirrors the inline picker + harmony + gradient blocks from legacy
 // `ColorPanel.tsx`. The 24-canon-preset list moved to Column A; the
@@ -25,7 +25,7 @@
 //   - HSL/RGB/hex picker
 //   - Harmony picker (`getHarmonyColors`)
 //   - Auto-suggest clash button
-//   - GradientBuilder mount — only on Base channel
+//   - GradientEditorPanel mount — only on Base channel
 
 import {
   useState,
@@ -47,7 +47,7 @@ import {
   rgbToHex as neopixelRgbToHex,
 } from '@/lib/neopixelColor';
 import { useDragToScrub } from '@/hooks/useDragToScrub';
-import { GradientBuilder } from '../GradientBuilder';
+import { GradientEditorPanel } from '@/lib/gradient';
 import { COLOR_CHANNELS } from './colorCatalog';
 
 // ─── Color conversion helpers ───
@@ -657,17 +657,17 @@ export function ColorColumnB(): JSX.Element {
           </div>
         )}
 
-        {/* Gradient builder — Base channel only. The standalone
-            GradientBuilder component reads/writes config.gradientStops +
-            config.gradientInterpolation directly via bladeStore, so we
-            just mount it. */}
+        {/* Gradient editor — Base channel only. `<GradientEditorPanel>`
+            wraps the shared editor body in a CollapsibleSection. State lives
+            in `config.gradientStops` + `config.gradientInterpolation` via
+            `bladeStore`, so consumers just mount the panel. */}
         {isBaseChannel && (
           <div>
             <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold mb-1.5 flex items-center gap-1">
               Gradient
               <HelpTooltip text="Multi-stop gradient applied to the Base channel. Click the bar to add stops, drag to reposition, select + Delete to remove." />
             </h3>
-            <GradientBuilder />
+            <GradientEditorPanel persistKey="ColorColumnB.gradient" />
           </div>
         )}
       </div>
