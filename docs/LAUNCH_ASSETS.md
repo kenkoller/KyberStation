@@ -232,10 +232,10 @@ total. Works on desktop and mobile (installable as a PWA).
 **What it does:**
 
 - 🗡 Visual blade simulator — design a style and watch it animate in real time
-- 🎨 29 blade styles (Stable, Unstable, Fire, Rotoscope, Plasma Storm, Aurora, Cinder, and more)
-- ⚡ 21 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
+- 🎨 33 blade styles (Stable, Unstable, Fire, Rotoscope, Plasma Storm, Aurora, Cinder, and more)
+- ⚡ 22 effects (Clash, Lockup, Blast, Drag, Melt, Lightning, Shockwave, Freeze, etc.)
 - 🔥 19 ignition + 13 retraction animations
-- 👥 305+ character presets spanning every era of the saga
+- 👥 336 character presets spanning every era of the saga + pop-culture (LOTR, Marvel, mythology, anime)
 - 💻 ProffieOS C++ code generator — output compiles directly in Arduino IDE
 - 🔊 Sound font library with SmoothSwing simulation
 - 📂 Saber profile manager + card preset composer for SD card writing
@@ -399,7 +399,7 @@ For your personal/professional site. Target length: 1500–2500 words. Include s
 [Screenshot of editor hero]
 
 - Browser-based visual editor
-- 29 blade styles, 21 effects, 305+ presets
+- 33 blade styles, 22 effects, 336 presets
 - ProffieOS C++ code generator
 - Sound font management, multi-board compatibility, PWA install
 - All local, no backend
@@ -442,7 +442,7 @@ For your personal/professional site. Target length: 1500–2500 words. Include s
 ```
 
 **Tips:**
-- Be specific about numbers (29 styles, 21 effects, 16 boards)
+- Be specific about numbers (33 styles, 22 effects, 336 presets, 16 boards)
 - Don't overstate the work ("built in a weekend" when it wasn't)
 - Credit ProffieOS (Fredrik Hubinette) and Fett263 — you're standing on their work
 - End with a try-it link, not a philosophical flourish
@@ -699,8 +699,8 @@ Complete, organized feature list. Use this to generate the Reddit bullet list, o
 
 ### Visual Editor
 - Real-time blade simulator running in your browser
-- 29 blade styles — Stable, Unstable, Fire, Rotoscope, Gradient, Photon, Plasma Storm, Crystal Shatter, Aurora, Cinder, Prism, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage, Pulse, and more
-- 21 effects — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, and more
+- 33 blade styles — Stable, Unstable, Fire, Rotoscope, Gradient, Photon, Plasma Storm, Crystal Shatter, Aurora, Cinder, Prism, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage, Pulse, Painted, Image Scroll, DarkSaber, Sith Flicker, Blade Charge, Tempo Lock, Unstable Kylo
+- 22 effects — Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon, Unstable Kylo
 - 19 ignition animations — Standard, Scroll, Spark, Center Out, Wipe, Stutter, Glitch, Crackle, Fracture, Flash Fill, Pulse Wave, Drip Up, and more
 - 13 retraction animations — Dissolve, Flicker Out, Unravel, Drain, and more
 - 10 easing curves with custom easing support

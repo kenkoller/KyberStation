@@ -220,7 +220,7 @@ See the [CHANGELOG](CHANGELOG.md) for the full Added / Changed / Fixed list and 
 
 ### Phase 6: Engine Expansion (Complete)
 - 13 new engine components: 7 styles (Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage), 6 effects (Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon), 3 ignitions (Hyperspace, Summon, Seismic), 3 retractions (Implode, Evaporate, Spaghettify)
-- Engine totals: 29 styles, 21 effects, 19 ignitions, 13 retractions (82 animation components)
+- Engine totals: 33 styles, 22 effects, 19 ignitions, 13 retractions (87 animation components)
 
 ### v0.11.1: Landing Page + Design Review Polish (Complete)
 - Replaced `redirect('/editor')` with a real first-impression landing: live BladeEngine hero (4 iconic preset rotation: Luke ROTJ, Anakin, Kylo Ren, Ahsoka), value strip, CTAs, release strip, footer.
