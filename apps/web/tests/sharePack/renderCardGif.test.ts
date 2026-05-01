@@ -28,6 +28,7 @@ import {
   GIF_VARIANT_DEFAULTS,
   __setCardFrameRendererForTesting,
   __setCreateQrSurfaceForTesting,
+  __setDrawHiltForTesting,
   renderCardGif,
 } from '@/lib/sharePack/cardSnapshot';
 import {
@@ -138,6 +139,7 @@ afterEach(() => {
   setGifEncoderFactory(null);
   __setCardFrameRendererForTesting(null);
   __setCreateQrSurfaceForTesting(null);
+  __setDrawHiltForTesting(null);
   vi.unstubAllGlobals();
 });
 
@@ -368,5 +370,90 @@ describe('renderCardGif: shared contracts', () => {
       renderCardGif({ config: TEST_CONFIG, glyph: 'JED.test', variant: 'idle' }),
     ).rejects.toThrow();
     expect(disposed).toBe(true);
+  });
+});
+
+// ─── renderCardGif: hilt-cache invariant (per-frame perf optimization) ─
+
+describe('renderCardGif: hilt buffer caching', () => {
+  it('renders the hilt exactly once for an N-frame GIF, not N times', async () => {
+    let drawHiltCalls = 0;
+    __setDrawHiltForTesting(async () => {
+      drawHiltCalls++;
+    });
+
+    // 18 fps × 1s = 18 frames for the idle variant.
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.cache',
+      variant: 'idle',
+    });
+
+    expect(encoderState.frameCount).toBe(18);
+    // CRITICAL invariant: drawHilt must be called exactly ONCE regardless
+    // of frame count. Without the prerender cache, this would be 18.
+    expect(drawHiltCalls).toBe(1);
+  });
+
+  it('still renders the hilt exactly once at higher frame counts', async () => {
+    let drawHiltCalls = 0;
+    __setDrawHiltForTesting(async () => {
+      drawHiltCalls++;
+    });
+
+    // 30 fps × 2s = 60 frames for the swing-response variant.
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.cache.long',
+      variant: 'swing-response',
+    });
+
+    expect(encoderState.frameCount).toBe(60);
+    expect(drawHiltCalls).toBe(1);
+  });
+
+  it('forwards the same hiltBuffer reference to every frame', async () => {
+    const buffersSeen: Array<HTMLCanvasElement | null | undefined> = [];
+    __setCardFrameRendererForTesting((frame) => {
+      buffersSeen.push(frame.hiltBuffer);
+    });
+    __setDrawHiltForTesting(async () => {
+      // No-op stub — prerender just needs the call to resolve.
+    });
+
+    await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.buffer-ref',
+      variant: 'idle',
+      fps: 6,
+      durationMs: 500, // 3 frames
+    });
+
+    expect(buffersSeen).toHaveLength(3);
+    // All 3 frames must receive the SAME buffer object — proves the
+    // prerender ran once and the result was reused, not re-created.
+    expect(buffersSeen[0]).not.toBeNull();
+    expect(buffersSeen[1]).toBe(buffersSeen[0]);
+    expect(buffersSeen[2]).toBe(buffersSeen[0]);
+  });
+
+  it('still produces a valid GIF if the prerender fails (drawHilt throws)', async () => {
+    // If the hilt prerender path fails for any reason (SVG decode
+    // rejected, canvas context unavailable, etc.), the frame loop
+    // should fall back gracefully — the GIF still encodes.
+    __setDrawHiltForTesting(async () => {
+      throw new Error('simulated prerender failure');
+    });
+
+    const blob = await renderCardGif({
+      config: TEST_CONFIG,
+      glyph: 'JED.test.fallback',
+      variant: 'idle',
+      fps: 6,
+      durationMs: 500,
+    });
+
+    expect(blob.type).toBe('image/gif');
+    expect(blob.size).toBeGreaterThan(0);
   });
 });
