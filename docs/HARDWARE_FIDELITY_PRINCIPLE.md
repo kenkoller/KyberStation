@@ -238,6 +238,52 @@ New drift sentinel at `packages/presets/tests/darksaberPresets.test.ts`
 - Descriptions don\'t claim "unstable / crackling / flickering blade"
   effects the engine cannot deliver
 
+### 2026-05-01 — Inquisitor preset cracked-kyber convention drift
+
+Audit pass on every preset whose character is on the canonical Inquisitor
+roster (Grand Inquisitor, Second Sister, Fifth Brother, Seventh Sister,
+Reva Sevander / Third Sister, Trilla Suduri, Marrok). Per the 2026-04-23
+preset-accuracy audit, all Inquisitors should share `style: 'unstable'`
+to capture the cracked-kyber bleed lore. The 2026-05-01 audit found two
+drift cases:
+
+1. **Trilla Suduri** (Jedi: Fallen Order, in `extended-universe.ts`)
+   shipped with `style: 'stable'`. The same character has a separate
+   "Second Sister" preset in `animated-series.ts` that correctly uses
+   `'unstable'`. Drift created a same-character-two-styles contradiction.
+   Fixed: changed to `'unstable'` (preserves the original "controlled"
+   character through a tighter shimmer value of 0.16, not by silencing
+   the bleed entirely).
+
+2. **Marrok** (Ahsoka Disney+ series) shipped with `style: 'fire'`.
+   The fire engine style produces orange flame flicker — visually
+   distinct from the cracked-kyber red the rest of the Inquisitor roster
+   produces. Fixed: changed to `'unstable'`. The "smoldering" character
+   the original style was reaching for is now carried by the high
+   shimmer (0.25), slow stutter ignition, and fadeout retraction
+   already configured. The death-revealing-Nightsister-magick is a
+   one-time visual moment in the show, not the canonical baseline blade
+   look — kept out of the engine config.
+
+Also added: missing **Inquisitor Barriss Offee** preset
+(`eu-inquisitor-barriss-red`) covering her post-fall Tales of the
+Empire (2024) arc. Distinct from the existing prequel-era Padawan-blue
+Barriss preset (which is correctly tagged `affiliation: 'jedi'`).
+
+New drift sentinel at `packages/presets/tests/inquisitorPresets.test.ts`
+(7 cases) pins the contract going forward via an explicit
+`INQUISITOR_CHARACTERS` set:
+- Every preset for a canonical Inquisitor character uses
+  `style: 'unstable'`
+- Every Inquisitor preset has `affiliation: 'sith'`
+- Every Inquisitor preset has red-dominant base color (r > g and r > b)
+- Roster completeness — there\'s at least one preset per canonical
+  Inquisitor character
+
+Adding a new Inquisitor character means adding it to
+`INQUISITOR_CHARACTERS` in the test — that\'s the single source of
+truth for the convention.
+
 ## When to update this doc
 
 - A new style is added to the engine.
