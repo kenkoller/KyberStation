@@ -7,6 +7,7 @@ export { ANIMATED_SERIES_PRESETS } from './characters/animated-series.js';
 export { EXTENDED_UNIVERSE_PRESETS } from './characters/extended-universe.js';
 export { LEGENDS_PRESETS } from './characters/legends.js';
 export { CREATIVE_COMMUNITY_PRESETS } from './characters/creative-community.js';
+export { SHOWCASE_PRESETS } from './characters/showcase.js';
 export { POP_CULTURE_PRESETS } from './characters/pop-culture/index.js';
 export {
   LOTR_PRESETS,
