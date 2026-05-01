@@ -19,7 +19,7 @@
 // Filter + selection state is owned by the parent `GalleryAB` wrapper;
 // this component is a controlled view over that state.
 
-import { useCallback, useEffect, useId } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import type { Preset } from '@kyberstation/presets';
 import { ALL_PRESETS } from '@kyberstation/presets';
 import { EraBadge, FactionBadge } from '@/components/shared/StatusSignal';
@@ -52,6 +52,7 @@ export function GalleryColumnA({
   onSelect,
 }: GalleryColumnAProps): JSX.Element {
   const searchInputId = useId();
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
   // ── User presets (My Presets) ──
   const userPresets = useUserPresetStore((s) => s.presets);
@@ -95,11 +96,34 @@ export function GalleryColumnA({
       className="flex flex-col h-full"
       data-testid="gallery-column-a"
     >
-      {/* Filter rail — sticky top */}
+      {/* Filter rail — sticky top, collapsible to free vertical space */}
       <div
         className="px-3 py-2 border-b border-border-subtle bg-bg-deep/50 shrink-0 space-y-2"
         data-testid="gallery-column-a-filters"
       >
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setFiltersCollapsed((c) => !c)}
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-ui-xs font-mono uppercase tracking-[0.08em] text-text-muted hover:text-text-primary border border-border-subtle hover:border-border-light rounded transition-colors"
+            aria-expanded={!filtersCollapsed}
+            aria-controls="gallery-column-a-filter-rows"
+            title={filtersCollapsed ? 'Show filter controls' : 'Hide filter controls'}
+            data-testid="gallery-column-a-filters-toggle"
+          >
+            <span aria-hidden="true">{filtersCollapsed ? '▸' : '▾'}</span>
+            {' '}Filters
+          </button>
+          <span
+            className="text-ui-xs font-mono text-text-muted tabular-nums"
+            aria-live="polite"
+          >
+            {filtered.length} / {ALL_PRESETS.length}
+          </span>
+        </div>
+
+        {!filtersCollapsed && (
+        <div id="gallery-column-a-filter-rows" className="space-y-2">
         <input
           id={searchInputId}
           type="search"
@@ -195,8 +219,11 @@ export function GalleryColumnA({
           />
           <span>Star Wars only</span>
         </label>
+        </div>
+        )}
 
-        {/* Footer line: count + shuffle controls */}
+        {/* Footer line: count + shuffle controls — always visible even
+            when filters are collapsed so users keep access to Shuffle. */}
         <div className="flex items-center gap-2 pt-1">
           <span
             className="text-ui-xs font-mono text-text-muted tabular-nums"
