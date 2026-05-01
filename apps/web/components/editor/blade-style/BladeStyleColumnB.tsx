@@ -5,7 +5,7 @@
 // Deep editor for whichever style is active in Column A. Renders:
 //
 //   1. Header — style name + 1-line description from the catalog
-//   2. Style-specific UI — BladePainter / ImageScrollPanel / GradientBuilder
+//   2. Style-specific UI — BladePainter / ImageScrollPanel / GradientEditorPanel
 //      mounts conditionally on `config.style`, mirroring the legacy
 //      StylePanel block-by-block. Behavior must match exactly so users
 //      flipping the `useABLayout` flag don't see a regression.
@@ -28,7 +28,7 @@
 import { useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { Randomizer } from '../Randomizer';
-import { GradientBuilder } from '../GradientBuilder';
+import { GradientEditorPanel } from '@/lib/gradient';
 import { GradientMixer } from '../GradientMixer';
 import { BladePainter } from '../BladePainter';
 import { ImageScrollPanel } from '../ImageScrollPanel';
@@ -160,7 +160,7 @@ export function BladeStyleColumnB(): JSX.Element {
               ))}
               {showGradientUI && (
                 <>
-                  <GradientBuilder />
+                  <GradientEditorPanel persistKey="BladeStyleColumnB.gradient" />
                   <GradientMixer />
                 </>
               )}
