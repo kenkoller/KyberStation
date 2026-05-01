@@ -57,7 +57,7 @@ local. MIT licensed.
 ## How to install
 
 **Easiest path: just use the deployed version.**
-[Deployed URL]
+https://kenkoller.github.io/KyberStation/
 
 **Install as PWA (recommended):**
 - **Desktop Chrome / Edge / Brave / Arc:** click the install icon in

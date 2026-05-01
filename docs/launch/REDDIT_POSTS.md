@@ -18,7 +18,12 @@ angle for power-Proffie subs. Variant C is the Star Wars Day reshare.
 **Suggested timing:** Tuesday or Wednesday, 10am-1pm Eastern
 **Suggested flair:** "Tools" / "Discussion" / "DIY" depending on sub options
 
-### Title — pick one (ranked by likely performance)
+### Title — LOCKED IN (2026-04-30)
+
+**Introducing KyberStation — a free visual blade editor for Proffie and other saber boards. First public project, would love your feedback.**
+
+(Backups, in case mods reject the locked title or it needs tweaking on
+the day):
 
 1. I built KyberStation, a free visual blade editor for Proffie and other saber boards. First public project, would love your feedback.
 2. Made a tool to design blade styles visually and export ProffieOS code. Free and open source. Hoping it's useful to someone besides me.
@@ -338,3 +343,142 @@ it. The code is MIT — fork freely.
 ### Troll / bad-faith comment
 **Don't reply.** Don't downvote-brigade. Report if it violates sub
 rules. Move on.
+
+---
+
+## Concrete pre-drafted replies (added 2026-04-30 — copy-paste-ready)
+
+Specifics filled in based on actual KyberStation capabilities. Lighter
+edits than the generic templates above.
+
+### "How does it compare to ProffieOS Workbench / Fett263's Style Library?"
+```
+Different tools, different sweet spots — I use both myself.
+
+ProffieOS Workbench is great for runtime config tweaking on a
+connected saber. Fett263's Style Library is the gold standard for
+hand-crafted style code and the prop file conventions everything
+else builds on (KyberStation's codegen targets his prop file out of
+the box).
+
+KyberStation is browser-first with a real-time visual simulator.
+You design a style and watch it animate against a motion model
+before flashing anything. AST-based codegen so unbalanced template
+brackets are structurally impossible. Different workflow, not a
+replacement.
+```
+
+### "How big is the generated config? Will it fit in flash?"
+```
+A 23-preset config landed at 264 KB / 52% flash on a Proffieboard V3
+during my own validation runs. The codegen tries to be efficient
+(shared style declarations, no template bloat), but big-preset
+configs can get tight on V2 (256 KB flash). The Output tab shows a
+live storage budget readout — if you're approaching the limit, it'll
+warn you.
+```
+
+### "Does the simulator account for [LED diffusion / gamma / polycarbonate]?"
+```
+Yes — there's a Neopixel-aware color pipeline (sRGB→linear gamma,
+WS2812B per-channel bias, polycarbonate diffusion) so what you see
+in the editor is closer to what the strip actually emits. Not a
+perfect match (real saber lighting depends on hilt internals,
+strip vendor, blade thickness, ambient light) but the calibration
+is closer than what most other tools attempt.
+```
+
+### "Will this work on Bluetooth-enabled sabers / wireless?"
+```
+Not yet — Bluetooth (Web Bluetooth) is on the post-launch roadmap.
+ProffieOS author Fredrik already shipped a proof-of-concept Web
+Bluetooth app at github.com/profezzorn/lightsaber-web-bluetooth, so
+the path forward is "port + integrate" rather than build from
+scratch. Realistic timeline: v0.17+. iOS exclusion is permanent
+(Apple WebKit doesn't allow USB or Bluetooth IO from web apps).
+```
+
+### "How do I share a design with someone?"
+```
+Every blade design has a "Kyber Code" share link — a compact URL
+that encodes the entire config. Click "Kyber Code" in the header,
+copy the URL, send to anyone. They open it and your design loads
+straight into their editor. No accounts, no backend — the config
+is encoded in the URL itself.
+```
+
+### "Will you actually maintain this?"
+```
+Yes. I built it for my own saber and I'll keep using it, so it'll
+get attention as long as I'm in the hobby. Office hours posture:
+issues get triaged within a few days, bugs and hardware reports
+get priority over new features. The project is hobby-scale, so
+"actively maintained" doesn't mean "weekly releases" — more like
+"things shipping regularly when I have evenings free."
+```
+
+### "How long did this take to build?"
+```
+A few months of evenings + weekends, on top of the day job. The
+codebase ended up at ~5,000 tests across 10 monorepo packages. The
+visual editor came together fast; the AST-based code generator and
+the WebUSB flash pipeline were the parts that took real effort.
+First publicly released programming project of mine — a lot of
+"learn while building" hours in there.
+```
+
+### "Why no Electron / desktop app?"
+```
+No accounts means no install friction matters more than native APIs
+for v1. PWA install (click the icon in your browser's address bar)
+gets you 90% of the desktop-app experience — works offline, shows
+up as an app on every platform, no app store. An Electron sidecar
+for the parts that need real serial/USB/Bluetooth IO is on the
+post-launch roadmap, but not a v1 priority.
+```
+
+### "Can I see how the config is generated?"
+```
+Yes — the Output tab shows the generated ProffieOS config.h live as
+you edit. AST-based codegen, so the C++ output is a function of
+the AST, which is a function of your config. Roundtrips are clean:
+paste an existing config.h into the import panel and it parses
+back into the editor.
+
+Architecture docs are in /docs/ARCHITECTURE.md if you want to dig
+into the engine + codegen split.
+```
+
+### "What about [88's hilt / Saberbay / KR / Vader's Vault]?"
+```
+KyberStation supports any vendor's hilt as long as the saber inside
+is one of the 16 boards the codegen targets (Proffie V2/V3/Lite,
+CFX, Golden Harvest, Xenopixel, Verso, Asteria, etc.). The hilt
+brand doesn't matter to the codegen — it's the board inside that
+counts. If your hilt has a Proffieboard, the validated flash path
+applies. If it has a vendor-specific board (KR's clone, 89's
+custom variants, etc.), I'd love a hardware report on whether the
+generated config works for you.
+```
+
+### "Will users brick their saber if they flash from this?"
+```
+Honest answer: WebUSB flashing is experimental. Hardware-validated
+end-to-end on Proffieboard V3.9 + macOS + Brave (including recovery
+re-flash). Three protocol bugs surfaced during real-hardware
+validation that 576 mock tests missed — those are fixed.
+
+Before flashing, KyberStation enforces a 3-checkbox gate:
+1. You acknowledge it's experimental
+2. You've backed up your existing firmware (mandatory)
+3. You know the recovery procedure
+
+If something goes wrong, the firmware backup + STM32 BOOT-pin DFU
+recovery means you can always re-flash to a known-good state. The
+backup step is the safety net.
+
+If you're not comfortable with WebUSB, just use the Output tab to
+export config.h and flash it via arduino-cli + dfu-util — same
+result, more control. Documented in docs/FLASH_GUIDE.md.
+```
+
