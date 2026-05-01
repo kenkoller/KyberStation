@@ -32,7 +32,7 @@ Full archive at [`docs/SESSION_2026-04-27_OVERNIGHT.md`](SESSION_2026-04-27_OVER
 - ~~**BLADE_LENGTHS source-of-truth lift**~~ — **✅ Shipped via [PR #99](https://github.com/kenkoller/KyberStation/pull/99) on 2026-04-28.** New `apps/web/lib/bladeLengths.ts` derives the canonical table from engine `BLADE_LENGTH_PRESETS`; 5 prior call sites all consume it.
 - ~~**Strip Configuration — wire visual blade thickness**~~ — **✅ Shipped via [PR #108](https://github.com/kenkoller/KyberStation/pull/108) on 2026-04-29.**
 - ~~**Topology — multi-segment renderer for Triple / Inquisitor**~~ — **✅ Shipped via [PR #109](https://github.com/kenkoller/KyberStation/pull/109) on 2026-04-29.**
-- **Community Gallery — connect to real data source** — `CommunityGallery.tsx` still renders hardcoded `placeholderStyles` (verified 2026-05-01). Production fetch from GitHub Pages is unimplemented. **🔴 Still open.**
+- ~~**Community Gallery — connect to real data source**~~ — **✅ Shipped via [PR #211](https://github.com/kenkoller/KyberStation/pull/211).** `CommunityGallery.tsx` now fetches from `${basePath}/community-gallery.json` with a 3-branch fallback chain: fresh fetch → 30-min localStorage cache → hardcoded `PLACEHOLDER_STYLES` offline safety net. Sample JSON at `apps/web/public/community-gallery.json` (5 entries, same data as the previous in-component placeholder). PR-moderated updates per `docs/COMMUNITY_GALLERY.md` going forward. +9 tests covering all 3 branches + cache TTL + malformed JSON + non-OK response.
 - ~~**Sidebar A/B Phase 4+**~~ — **✅ Done — 6/6 sections complete as of 2026-04-29 late.** See v0.15.x row below for PR list.
 
 ---

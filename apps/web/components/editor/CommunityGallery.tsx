@@ -6,7 +6,7 @@ import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { PanelSkeleton } from '@/components/shared/Skeleton';
 import { ErrorState } from '@/components/shared/ErrorState';
 
-interface CommunityStyle {
+export interface CommunityStyle {
   id: string;
   name: string;
   author: string;
@@ -17,13 +17,124 @@ interface CommunityStyle {
   created: string;
 }
 
-interface GalleryData {
+export interface GalleryData {
   styles: CommunityStyle[];
   lastUpdated: string;
 }
 
 const GALLERY_CACHE_KEY = 'kyberstation-community-gallery';
 const GALLERY_CACHE_TTL = 1000 * 60 * 30; // 30 minutes
+
+// Build the gallery JSON URL using the GitHub Pages basePath. The
+// `NEXT_PUBLIC_BASE_PATH` env var is inlined at build time (see
+// `apps/web/next.config.mjs`), so it's available in client code without
+// runtime lookup. Falls back to '' for local dev / preview deploys.
+const GALLERY_BASE_PATH =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BASE_PATH
+    ? process.env.NEXT_PUBLIC_BASE_PATH
+    : '';
+const GALLERY_URL = `${GALLERY_BASE_PATH}/community-gallery.json`;
+
+// Hardcoded fallback used when both the network fetch AND the localStorage
+// cache fail. This is the exact same data as `apps/web/public/community-gallery.json`
+// so first-launch / fully-offline users still see SOMETHING. When real
+// community submissions land, the public JSON file gets PR-moderated
+// updates per `docs/COMMUNITY_GALLERY.md`; this in-memory copy stays
+// frozen as a safety net.
+const PLACEHOLDER_STYLES: CommunityStyle[] = [
+  {
+    id: 'comm-1',
+    name: 'Sith Lightning',
+    author: 'DarthMaker',
+    description: 'Dark side unstable blade with lightning crackles',
+    tags: ['dark-side', 'unstable', 'lightning'],
+    style: 'unstable',
+    config: { baseColor: { r: 255, g: 0, b: 0 }, style: 'unstable', shimmer: 0.6 },
+    created: '2025-12-15',
+  },
+  {
+    id: 'comm-2',
+    name: 'Kyber Crystal Pure',
+    author: 'JediSmith',
+    description: 'Clean stable blue with subtle pulse',
+    tags: ['light-side', 'stable', 'clean'],
+    style: 'pulse',
+    config: { baseColor: { r: 0, g: 80, b: 255 }, style: 'pulse', shimmer: 0.2 },
+    created: '2025-11-20',
+  },
+  {
+    id: 'comm-3',
+    name: 'Beskar Forge',
+    author: 'MandalorianMaker',
+    description: 'Molten metal fire effect in orange-white',
+    tags: ['fire', 'mandalorian', 'forge'],
+    style: 'fire',
+    config: { baseColor: { r: 255, g: 120, b: 0 }, style: 'fire', shimmer: 0.4 },
+    created: '2026-01-05',
+  },
+  {
+    id: 'comm-4',
+    name: 'Aurora Borealis',
+    author: 'NorthernLights',
+    description: 'Shimmering aurora gradient from green to blue',
+    tags: ['gradient', 'aurora', 'nature'],
+    style: 'aurora',
+    config: { baseColor: { r: 0, g: 255, b: 128 }, style: 'aurora', shimmer: 0.5 },
+    created: '2026-02-14',
+  },
+  {
+    id: 'comm-5',
+    name: 'Temple Guard Gold',
+    author: 'JediArchives',
+    description: 'Ceremonial gold blade from the Jedi Temple',
+    tags: ['light-side', 'gold', 'temple-guard'],
+    style: 'stable',
+    config: { baseColor: { r: 255, g: 200, b: 0 }, style: 'stable', shimmer: 0.15 },
+    created: '2026-03-01',
+  },
+];
+
+/**
+ * Persist a successful fetch result to localStorage. Best-effort: throws
+ * (e.g. quota exceeded) are swallowed so a write failure never breaks
+ * the render path.
+ */
+function writeCache(data: GalleryData): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(
+      GALLERY_CACHE_KEY,
+      JSON.stringify({ gallery: data, cachedAt: Date.now() }),
+    );
+  } catch {
+    // Cache writes are best-effort — quota errors don't break the panel.
+  }
+}
+
+/**
+ * Read fresh-enough cached data from localStorage. Returns null on miss,
+ * stale, or any parse / type-shape error.
+ */
+function readCache(): GalleryData | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(GALLERY_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as { gallery?: GalleryData; cachedAt?: number };
+    if (
+      !parsed ||
+      typeof parsed.cachedAt !== 'number' ||
+      !parsed.gallery ||
+      !Array.isArray(parsed.gallery.styles)
+    ) {
+      return null;
+    }
+    if (Date.now() - parsed.cachedAt >= GALLERY_CACHE_TTL) return null;
+    return parsed.gallery;
+  } catch {
+    return null;
+  }
+}
 
 export function CommunityGallery() {
   const loadPreset = useBladeStore((s) => s.loadPreset);
@@ -33,89 +144,56 @@ export function CommunityGallery() {
   const [filter, setFilter] = useState('');
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
-  // Load gallery data (from cache or placeholder)
-  const loadGallery = useCallback(() => {
+  // Load gallery data with a 3-branch fallback chain:
+  //   1. Try fresh fetch from GitHub Pages (`/KyberStation/community-gallery.json`)
+  //   2. On fetch failure: try localStorage cache (best-effort, ignores stale)
+  //   3. On both failing: render in-memory `PLACEHOLDER_STYLES` (offline safety net)
+  // The fetch branch always writes the cache on success so future loads
+  // can short-circuit even when offline, until `GALLERY_CACHE_TTL` elapses.
+  const loadGallery = useCallback(async () => {
     setLoading(true);
     setError(null);
+
+    // Branch 1: fresh fetch
     try {
-      // Check localStorage cache first
-      const cached = localStorage.getItem(GALLERY_CACHE_KEY);
+      const res = await fetch(GALLERY_URL, { cache: 'no-cache' });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as GalleryData;
+      if (!data || !Array.isArray(data.styles)) {
+        throw new Error('Malformed gallery JSON: expected { styles: [...] }');
+      }
+      setGallery(data.styles);
+      writeCache(data);
+      setLoading(false);
+      return;
+    } catch (fetchErr) {
+      // Fall through to cache + placeholder branches.
+      const fetchMessage =
+        fetchErr instanceof Error ? fetchErr.message : 'fetch failed';
+
+      // Branch 2: localStorage cache
+      const cached = readCache();
       if (cached) {
-        const data = JSON.parse(cached) as { gallery: GalleryData; cachedAt: number };
-        if (Date.now() - data.cachedAt < GALLERY_CACHE_TTL) {
-          setGallery(data.gallery.styles);
-          setLoading(false);
-          return;
-        }
+        setGallery(cached.styles);
+        // Surface the underlying fetch failure as a soft warning so users
+        // know they're seeing potentially-stale data. Cache hit still
+        // counts as "loaded" — no error blocks the grid.
+        setError(null);
+        setLoading(false);
+        return;
       }
 
-      // Placeholder data — in production this fetches from GitHub Pages
-      const placeholderStyles: CommunityStyle[] = [
-        {
-          id: 'comm-1',
-          name: 'Sith Lightning',
-          author: 'DarthMaker',
-          description: 'Dark side unstable blade with lightning crackles',
-          tags: ['dark-side', 'unstable', 'lightning'],
-          style: 'unstable',
-          config: { baseColor: { r: 255, g: 0, b: 0 }, style: 'unstable', shimmer: 0.6 },
-          created: '2025-12-15',
-        },
-        {
-          id: 'comm-2',
-          name: 'Kyber Crystal Pure',
-          author: 'JediSmith',
-          description: 'Clean stable blue with subtle pulse',
-          tags: ['light-side', 'stable', 'clean'],
-          style: 'pulse',
-          config: { baseColor: { r: 0, g: 80, b: 255 }, style: 'pulse', shimmer: 0.2 },
-          created: '2025-11-20',
-        },
-        {
-          id: 'comm-3',
-          name: 'Beskar Forge',
-          author: 'MandalorianMaker',
-          description: 'Molten metal fire effect in orange-white',
-          tags: ['fire', 'mandalorian', 'forge'],
-          style: 'fire',
-          config: { baseColor: { r: 255, g: 120, b: 0 }, style: 'fire', shimmer: 0.4 },
-          created: '2026-01-05',
-        },
-        {
-          id: 'comm-4',
-          name: 'Aurora Borealis',
-          author: 'NorthernLights',
-          description: 'Shimmering aurora gradient from green to blue',
-          tags: ['gradient', 'aurora', 'nature'],
-          style: 'aurora',
-          config: { baseColor: { r: 0, g: 255, b: 128 }, style: 'aurora', shimmer: 0.5 },
-          created: '2026-02-14',
-        },
-        {
-          id: 'comm-5',
-          name: 'Temple Guard Gold',
-          author: 'JediArchives',
-          description: 'Ceremonial gold blade from the Jedi Temple',
-          tags: ['light-side', 'gold', 'temple-guard'],
-          style: 'stable',
-          config: { baseColor: { r: 255, g: 200, b: 0 }, style: 'stable', shimmer: 0.15 },
-          created: '2026-03-01',
-        },
-      ];
-
-      setGallery(placeholderStyles);
-      localStorage.setItem(GALLERY_CACHE_KEY, JSON.stringify({
-        gallery: { styles: placeholderStyles, lastUpdated: new Date().toISOString() },
-        cachedAt: Date.now(),
-      }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load gallery');
+      // Branch 3: hardcoded placeholder (final fallback)
+      setGallery(PLACEHOLDER_STYLES);
+      setError(`Showing offline samples — ${fetchMessage}`);
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
-    loadGallery();
+    void loadGallery();
   }, [loadGallery]);
 
   // All unique tags
@@ -196,8 +274,10 @@ export function CommunityGallery() {
       {error && !loading && (
         <ErrorState
           variant="load-failed"
-          message={`Couldn't reach the community gallery. ${error}`}
-          onRetry={loadGallery}
+          message={error}
+          onRetry={() => {
+            void loadGallery();
+          }}
           compact
         />
       )}
