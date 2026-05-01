@@ -1,8 +1,8 @@
 # Next Session — Paste-Ready Handoff Prompt
 
-Refreshed **2026-05-01 evening (mobile sprint feature-complete, 4 PRs in stack)**. v0.16.0 launched 2026-04-30. Mobile UX overhaul follows the **Claude Design StickyMiniShell handoff** at `Claude Design Mobile handoff/HANDOFF.md`. **All 5 phases shipped**; 4 PRs awaiting review/merge (#207, #208, #209, #210).
+Refreshed **2026-05-01 late evening (mobile sprint MERGED to main)**. v0.16.0 launched 2026-04-30. Mobile UX overhaul follows the **Claude Design StickyMiniShell handoff** at `Claude Design Mobile handoff/HANDOFF.md`. **All 5 phases shipped to main**; PRs #207 + #211 + #212 + #213 + #214 all merged. PRs #208 + #209 + #210 closed (content already on main via the #211 merge cascade).
 
-The mobile-sprint open question is the **diagnostic-strip segment-set UX call** (Ken's call). Otherwise, the next session can pivot to **non-mobile backlog** — marketing PR #32 review, audio waveform rail, sub-1024 layout pass, or any other post-launch backlog item.
+The mobile-sprint open question is the **diagnostic-strip segment-set UX call** (Ken's call). The next session pivots to **non-mobile backlog** — see CANDIDATE NEXT WORK below.
 
 ---
 
@@ -25,10 +25,11 @@ LAUNCH STATE (locked)
 - Branch protection ACTIVE on main (ruleset "Protect Main")
 - 2FA enabled on Ken's GitHub account
 
-WHAT JUST HAPPENED (2026-05-01, mobile sprint)
-----------------------------------------------
+WHAT JUST HAPPENED (2026-05-01, mobile sprint MERGED)
+-----------------------------------------------------
 Mobile UX overhaul Phases 4.1 / 4.2 / 4.3 / 4.4 / 4.4.x / 4.5 all
-shipped today across two sessions. Mobile sprint is feature-complete.
+shipped today across multiple sessions. Mobile sprint is feature
+complete on `main`.
 
 Today's merges:
   #199 mobile/shell-density-and-sticky-canvas  — PR A1: sticky shell + drawer + auto-ignite
@@ -36,21 +37,26 @@ Today's merges:
   #201 chore/gitignore-design-handoff-folder   — gitignore design reference
   #202 docs/launch-comms-prep                  — launch comms package + audit fixes
   #203 feat/mobile-section-tabs                — Phase 4.2: sticky mini-shell + section tabs + status strip
-  #205 feat/mobile-quick-controls              — Phase 4.3: Color-tab QuickControls + ColorRail (#204 recovery)
+  #205 feat/mobile-quick-controls              — Phase 4.3: Color-tab QuickControls + ColorRail
+  #206 docs/wrap-2026-04-30-mobile-sprint      — sprint wrap docs
+  #207 feat/mobile-parameter-sheet-primitive   — Phase 4.4 foundation primitive
+  #211 docs/wrap-2026-05-01-afternoon          — afternoon wrap (cascade-merged 4.4.x + 4.5 to main)
+  #212 docs/launch-images-and-replies          — launch screenshot + reply pack
+  #213 docs/launch-stale-numbers               — stale-numbers cleanup
+  #214 docs/backlog-audit-2026-05-01-evening   — backlog audit (8 items moved to ✅)
 
-In flight at session wrap (2026-05-01 evening):
-  #207 feat/mobile-parameter-sheet-primitive       — Phase 4.4 foundation primitive
-  #208 docs/handoff-refresh-phase-4.4-4.5          — handoff doc refresh
-  #209 feat/mobile-parameter-sheet-integration     — Phase 4.4.x store-based wiring (stacks on #207)
-  #210 feat/mobile-blade-inspect                   — Phase 4.5 Inspect mode + zoom HUD (stacks on #209)
+Closed (content already on main via #211 cascade):
+  #208 docs/handoff-refresh-phase-4.4-4.5      — superseded by #211
+  #209 feat/mobile-parameter-sheet-integration — auto-closed when base branch deleted; content on main
+  #210 feat/mobile-blade-inspect               — auto-closed when base branch deleted; content on main
 
-Mobile UX phase rollout state — FEATURE COMPLETE:
+Mobile UX phase rollout state — ALL ON MAIN:
   Phase 4.1 — Sticky shell foundation         ✅ merged (#199 + #200)
   Phase 4.2 — Section tabs + status strip     ✅ merged (#203)
   Phase 4.3 — QuickControls + ColorRail       ✅ merged (#205)
-  Phase 4.4 — ParameterSheet primitive        ⏳ open (#207)
-  Phase 4.4.x — ParameterSheet integration    ⏳ open (#209)
-  Phase 4.5 — Inspect mode + zoom HUD         ⏳ open (#210)
+  Phase 4.4 — ParameterSheet primitive        ✅ merged (#207)
+  Phase 4.4.x — ParameterSheet integration    ✅ merged (#211 cascade)
+  Phase 4.5 — Inspect mode + zoom HUD         ✅ merged (#211 cascade)
 
 The only remaining mobile-handoff item is the **diagnostic-strip
 segment-set UX call** (Ken's decision — see PHASE 4.5 RESIDUAL
@@ -58,18 +64,10 @@ below).
 
 PRIORITY ORDER FOR THE NEXT SESSION
 -----------------------------------
-1. **Merge the afternoon stack (in order):**
-     a. #207 Phase 4.4 ParameterSheet primitive
-     b. #208 Docs handoff refresh (independent)
-     c. #209 Phase 4.4.x integration (stacks on #207)
-     d. #210 Phase 4.5 Inspect mode (stacks on #209)
-   All four are CI-green pending review. Suggested merge strategy:
-   merge commit (--merge), preserve phase-by-phase history.
-
-2. **Make the Q3 diagnostic-strip segment-set call** (see below).
+1. **Make the Q3 diagnostic-strip segment-set call** (see below).
    Small follow-up PR after the call is made.
 
-3. **Pivot to non-mobile backlog** — see CANDIDATE NEXT WORK below.
+2. **Pivot to non-mobile backlog** — see CANDIDATE NEXT WORK below.
 
 PHASE 4.5 RESIDUAL — diagnostic-strip segment-set call
 ------------------------------------------------------
@@ -97,33 +95,62 @@ Recommended path is (a) ship-as-is — current segments cover the
 diagnostic data we have. Path (c) revisit when battery + BT
 surfaces wire up (post-v0.17 per BLUETOOTH_FEASIBILITY.md).
 
-CANDIDATE NEXT WORK (non-mobile backlog)
-----------------------------------------
-After the mobile stack lands, the natural pivots are:
+CANDIDATE NEXT WORK (non-mobile backlog, post-2026-05-01-evening audit)
+----------------------------------------------------------------------
+The 2026-05-01 evening audit (PR #214) found that 8 backlog items
+shipped silently — `useAudioEngine` singleton (PR #176), `lib/blade/*`
+extraction (PR #177), `BLADE_LENGTHS` lift (PR #99), Strip Config
+thickness (PR #108), Topology Triple/Inquisitor (PR #109), Saber GIF
+Sprint 3 (PR #184 + #185), OG hero (PR #174), favicon (PR #188), and
+`CANONICAL_DEFAULT_CONFIG` drift-sentinel (already exists). Audio
+waveform rail (Ken's note #12) shipped via PR #140. So most "natural
+pivot" candidates from the prior handoff are already done.
 
-  1. **Marketing site expansion review** — PR #32 has been open
-     since 2026-04-18. 4152 LOC across 38 files. Needs rebase +
-     focused review session. NOT trivial; budget ~2-3h.
+What's actually still open and delegable:
 
-  2. **Audio waveform rail** (Ken's note #12) — `AnalyserNode` +
-     VisualizationStack layer for the desktop workbench. Listed
-     under post-launch backlog. Smaller scope, ~1h.
+  1. **Marketing site `/community` page** (S/M) — last 1/5 marketing
+     pages from the v0.15.x re-implementation spec. The other 4
+     (`/features`, `/showcase`, `/changelog`, `/faq`) shipped via
+     PR #179. ⚠️ Active worktree `feat/marketing-site-expansion` may
+     have this in flight (per `KyberStation-mkt`); coordinate before
+     starting.
 
-  3. **Sub-1024 layout pass** (Ken's note #2) — needs Ken's eyes
-     for breakpoint judgment. Not delegable cleanly.
+  2. **Wave 8 — Button routing sub-tab + aux/gesture-as-modulator
+     plates** (L, ~6-8h) — modulation v1.1 follow-on. Well-scoped
+     per `MODULATION_ROUTING_v1.1_IMPL_PLAN.md`. Adds 8 new
+     modulator plates, button-event mapping per prop file. Its own
+     focused session.
 
-  4. **Item B Safari BladeCanvas bloom** — Ken's hands-on, can't
+  3. **Card snapshot golden-hash tests (20 layout × theme combos)**
+     (M) — has known cross-platform issue (Cairo text rasterization
+     differs on macOS vs Linux CI per PR #147 reduction). Either
+     hash only pixel-stable regions (no text), use perceptual diff
+     with tolerance, or split CI by platform.
+
+  4. **Mobile shell migration to Sidebar + MainContent** — Mobile
+     shell now has the StickyMiniShell pattern from Phase 4. The
+     legacy 4-tab swipe shell + `MergedDesignPanel` /
+     `DesignPanel.tsx` / `DynamicsPanel.tsx` can probably retire.
+     Needs Ken's UX call to confirm.
+
+  5. **`GradientBuilder` consumer-migration stub** (S) — last
+     remaining stub from the left-rail overhaul. ⚠️ Active worktree
+     `refactor/gradient-editor-extraction` may have this in flight.
+
+  6. **Wave 6 follow-on — composer slot expansion** (L) — v1.1
+     Core ships shimmer-Mix only. Per-channel RGB
+     (`Mix<driver, ColorLow, ColorHigh>` restructuring) + timing
+     scalars. Deeper AST work per the PR #60 body.
+
+  7. **Item B Safari BladeCanvas bloom** — Ken's hands-on, can't
      delegate. Defer until Ken has Safari time.
 
-  5. **Item K — `lib/blade/*` module extraction** — high-risk
-     refactor; renderer-level golden-hash sentinel must be in place
-     first. Listed in CLAUDE.md "Still open" section.
-
-  6. **Wave 8 — Button routing sub-tab** — modulation v1.1
-     follow-on. Large scope (~6-8h), its own session.
-
-  7. **Cross-OS hardware sweep** — V2 / V3-OLED / Windows / Linux
+  8. **Cross-OS hardware sweep** — V2 / V3-OLED / Windows / Linux
      validation of the WebUSB flash path. Hardware-gated.
+
+  9. **Saber GIF Sprint 4 (Tier 3 + UI walkthroughs)** —
+     effect-specific + hilt-only + UI walkthrough GIFs per
+     `SABER_GIF_ROADMAP.md` Tier 3. As-needed.
 
 ARCHITECTURAL DECISIONS FROM TODAY (worth carrying forward)
 -----------------------------------------------------------
@@ -224,21 +251,7 @@ VERIFICATION COMMANDS BEFORE STARTING
   git worktree list
   pnpm install
   pnpm typecheck    # should be clean across 10 packages
-  pnpm test         # apps/web should be 2191/2191 passing after the
-                    # afternoon stack merges
-
-MERGE THE AFTERNOON STACK FIRST (suggested)
---------------------------------------------
-gh pr merge 207 --merge --delete-branch
-gh pr merge 208 --merge --delete-branch
-# After 207 merges, 209's base auto-updates to main (if not already
-# rebased — git fetch && git rebase main if needed)
-gh pr merge 209 --merge --delete-branch
-gh pr merge 210 --merge --delete-branch
-
-After all four merge:
-  git checkout main && git pull
-  pnpm test                 # confirm 2191/2191 stays green
+  pnpm test         # apps/web should be 2176+ passing
 
 WHERE THINGS LIVE
 -----------------
@@ -250,14 +263,15 @@ WHERE THINGS LIVE
 - docs/research/NEXTJS_15_UPGRADE_PLAN.md — defer to v0.17
 - docs/research/BLUETOOTH_FEASIBILITY.md — defer to v0.17
 
-OPEN PRs (mobile + other)
--------------------------
-- #32 feat/marketing-site-expansion — needs rebase, focused review
-- #83 docs/session-archive-2026-04-27-evening — recommend close
-- #207 feat/mobile-parameter-sheet-primitive — Phase 4.4 foundation
-- #208 docs/handoff-refresh-phase-4.4-4.5 — handoff refresh
-- #209 feat/mobile-parameter-sheet-integration — Phase 4.4.x
-- #210 feat/mobile-blade-inspect — Phase 4.5
+OPEN PRs (post-mobile-sprint)
+-----------------------------
+- #214 docs/backlog-audit-2026-05-01-evening — backlog audit pass (8 items moved to ✅)
+- #215 docs/handoff-refresh-2026-05-01-evening — this handoff refresh
+- (mobile-sprint PRs all merged or closed; #207, #211, #212, #213 merged; #208, #209, #210 closed)
+
+⚠️ Active sibling worktrees (cross-session coordination):
+- `feat/marketing-site-expansion` — may have `/community` page in flight
+- `refactor/gradient-editor-extraction` — likely the GradientBuilder cleanup
 
 CROSS-SESSION COLLISION GUARDRAILS
 -----------------------------------
