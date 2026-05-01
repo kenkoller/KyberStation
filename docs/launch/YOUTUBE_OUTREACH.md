@@ -297,9 +297,9 @@ business contact. Avoid YouTube comments for first contact (too public,
 too easy to lose).
 
 ### Subject: pick one
-1. Free open-source blade editor, would love your perspective
-2. KyberStation: free tool I built for the Proffie/saber community
-3. New community tool for designing blade styles, your honest take?
+1. KyberStation, just launched + a quick hello
+2. Free open-source blade editor, just shipped
+3. KyberStation: free tool I built for the Proffie/saber community
 
 ### Body (ready to send)
 
@@ -312,26 +312,26 @@ review and the 89sabers EP4 unboxing
 saber, and I love how in-depth you go. Feels like you've reviewed
 every saber under the sun. The 89sabers EP4 review in particular
 gave me confidence before I committed. I ended up with an 89sabers
-Proffieboard V3.9 hilt, which I'm still using daily.
+Proffieboard V3.9 hilt, still using it daily.
 
-I built a tool on top of that hardware called KyberStation. Free,
-browser-based visual editor for blade styles with a ProffieOS code
-generator. Targets ~16 different boards (Proffie, CFX, Golden
-Harvest, Xenopixel, Verso, and more), runs entirely in the browser,
-no install. Going public on r/lightsabers in the next day or two,
-ahead of Star Wars Day.
+Just launched a tool I built on top of that hardware called
+KyberStation. Free, browser-based visual editor for blade styles
+with a ProffieOS code generator. Targets ~16 different boards
+(Proffie, CFX, Golden Harvest, Xenopixel, Verso, and more), runs
+entirely in the browser, no install.
 
 Try it: https://kenkoller.github.io/KyberStation/
 Code: https://github.com/kenkoller/KyberStation
 
-Not asking for a review or a shoutout. Just thought you might find
-it interesting given how much saber tech you cover. No need to
-reply. If you ever do try it and notice something off, want to
-flag a bug, or have feedback that would help me improve it, my
-address is on this email and I read everything.
+Wanted to reach out and just establish a line of communication. Not
+asking for a review or shoutout. Just thought you might find it
+interesting given how much saber tech you cover. No need to reply.
+If you ever do try it and notice something off, want to flag a bug,
+or have feedback that would help me improve it, my address is on
+this email and I read everything.
 
-Thanks for the work you do for this community. Your reviews genuinely
-shaped my path into this hobby.
+Thanks for the work you do. Your reviews genuinely shaped my path
+into this hobby.
 
 Ken
 ```
