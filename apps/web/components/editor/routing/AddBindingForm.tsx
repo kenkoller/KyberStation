@@ -11,8 +11,12 @@
 // Expression-based bindings authored via the inline ExpressionEditor on
 // any SliderControl.
 //
-// Source dropdown surfaces all 11 built-in modulators from
-// `packages/engine/src/modulation/registry.ts`.
+// Source dropdown surfaces all 19 built-in modulators (11 v1.1 Core +
+// 8 Wave 8 LITE aux/gesture event modulators) from
+// `packages/engine/src/modulation/registry.ts`. Wave 8 UI shell
+// organizes them under <optgroup> labels matching the categorization
+// in ModulatorPlateBar so users see the same mental model in both
+// surfaces.
 //
 // Board gating: hidden when the current board doesn't support
 // modulation — the parent route already hides the whole ROUTING pill,
@@ -37,6 +41,35 @@ const COMBINATORS: readonly BindingCombinator[] = [
   'multiply',
   'min',
   'max',
+];
+
+// ─── Source-dropdown groupings ───────────────────────────────────────
+//
+// Wave 8 UI shell. Mirrors the `MODULATOR_CATEGORIES` shape in
+// ModulatorPlateBar; intentionally duplicated here rather than imported
+// to keep AddBindingForm independent of the plate-bar's render
+// implementation (parallel surface, not nested).
+interface SourceGroup {
+  readonly label: string;
+  readonly modulatorIds: readonly string[];
+}
+
+const SOURCE_GROUPS: readonly SourceGroup[] = [
+  { label: 'Motion',  modulatorIds: ['swing', 'angle', 'twist'] },
+  { label: 'Audio',   modulatorIds: ['sound'] },
+  { label: 'Power',   modulatorIds: ['battery', 'time'] },
+  { label: 'State',   modulatorIds: ['clash', 'lockup', 'preon', 'ignition', 'retraction'] },
+  { label: 'Button',  modulatorIds: ['aux-click', 'aux-hold', 'aux-double-click'] },
+  {
+    label: 'Gesture',
+    modulatorIds: [
+      'gesture-twist',
+      'gesture-stab',
+      'gesture-swing',
+      'gesture-clash',
+      'gesture-shake',
+    ],
+  },
 ];
 
 // Pick the most modulation-friendly defaults for the form's initial state.
@@ -65,8 +98,12 @@ export function AddBindingForm() {
     return null;
   }
 
-  // v1.1 Core: surface all 11 built-in modulators in the source dropdown.
-  const modulators = BUILT_IN_MODULATORS;
+  // v1.1 Core + Wave 8 LITE: surface all 19 built-in modulators
+  // grouped by category (same shape as ModulatorPlateBar's grid
+  // sections).
+  const descriptorsById = new Map<string, typeof BUILT_IN_MODULATORS[number]>(
+    BUILT_IN_MODULATORS.map((m) => [m.id as string, m]),
+  );
   const parameters = getModulatableParameters();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -108,11 +145,21 @@ export function AddBindingForm() {
           className="bg-bg-surface border border-border-subtle rounded px-2 py-1 text-ui-xs focus:outline-none focus:border-accent"
           style={sourceDesc ? { color: sourceDesc.colorVar } : undefined}
         >
-          {modulators.map((m) => (
-            <option key={m.id as string} value={m.id as string}>
-              {m.displayName}
-            </option>
-          ))}
+          {SOURCE_GROUPS.map((group) => {
+            const groupOptions = group.modulatorIds
+              .map((id) => descriptorsById.get(id))
+              .filter((m): m is NonNullable<typeof m> => m !== undefined);
+            if (groupOptions.length === 0) return null;
+            return (
+              <optgroup key={group.label} label={group.label}>
+                {groupOptions.map((m) => (
+                  <option key={m.id as string} value={m.id as string}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
 
         <label htmlFor="binding-target" className="text-ui-xs font-mono uppercase text-text-muted">

@@ -28,11 +28,12 @@ const EXPECTED_IDS: readonly BuiltInModulatorId[] = [
   'retraction',
 ];
 
-// Wave 8 LITE — 8 event-driven aux/gesture modulators added 2026-05-01.
-// These IDs are NOT in the locked `BuiltInModulatorId` union per the
-// types.ts contract lock; they live as `ModulatorId` strings in the
-// registry. See PR body for the proposed types.ts extension.
-const EXPECTED_EVENT_IDS: readonly string[] = [
+// Wave 8 LITE — 8 event-driven aux/gesture modulators added 2026-05-01,
+// promoted into the `BuiltInModulatorId` union via the Wave 8 UI shell
+// PR. They share the same registry shape as the v1.1 Core 11; their
+// decay envelope is owned by the sampler's latch+decay logic via
+// `EVENT_MODULATOR_DECAY`.
+const EXPECTED_EVENT_IDS: readonly BuiltInModulatorId[] = [
   'aux-click',
   'aux-hold',
   'aux-double-click',
@@ -226,6 +227,20 @@ describe('EVENT_MODULATOR_DECAY', () => {
 describe('isBuiltInModulatorId()', () => {
   it('narrows known IDs to `true`', () => {
     for (const id of EXPECTED_IDS) {
+      expect(isBuiltInModulatorId(id)).toBe(true);
+    }
+  });
+
+  // Drift sentinel — Wave 8 UI shell PR (2026-05-01) promoted the 8
+  // aux/gesture event IDs into `BuiltInModulatorId`. If `types.ts` ever
+  // drops one of the 8 from the union but leaves the registry entry
+  // intact, this test still passes (the guard is registry-keyed) — but
+  // the drift would surface as a typecheck failure on the
+  // `EXPECTED_EVENT_IDS: readonly BuiltInModulatorId[]` declaration
+  // above. Conversely, if the registry drops an entry but the union
+  // keeps the literal, this test fails — caught here.
+  it('narrows every Wave 8 LITE event ID to `true`', () => {
+    for (const id of EXPECTED_EVENT_IDS) {
       expect(isBuiltInModulatorId(id)).toBe(true);
     }
   });

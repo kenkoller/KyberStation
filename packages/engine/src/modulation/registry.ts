@@ -180,13 +180,11 @@ export const BUILT_IN_MODULATORS: readonly ModulatorDescriptor[] = [
   //
   // The IDs use kebab-case (`aux-click`, `gesture-twist`) to keep them
   // visually distinct from the camelCase / single-word built-ins above
-  // when scanning binding tables in the UI. The string-IDs are
-  // `ModulatorId` (which accepts arbitrary strings via the custom
-  // branch); they are NOT in the locked `BuiltInModulatorId` union.
-  // The `builtIn: true` flag still applies — they're shipped in the
-  // canonical registry, they just don't extend the locked union.
-  // See PR body for the proposed types.ts extension that would
-  // formalize this in a future sprint.
+  // when scanning binding tables in the UI. As of the Wave 8 UI shell
+  // PR, all 8 IDs are members of the `BuiltInModulatorId` union — the
+  // earlier "live as `ModulatorId` strings via custom branch" workaround
+  // was tightened away. `isBuiltInModulatorId` narrows to the union via
+  // the registry-map check, so consumers get strict type narrowing.
   {
     id: 'aux-click',
     displayName: 'Aux Click',
@@ -304,8 +302,13 @@ export const EVENT_MODULATOR_DECAY: Readonly<Record<string, number>> = {
  * The 8 Wave 8 LITE event-driven modulator IDs. Exported so the
  * sampler can iterate them in lock-step with `EVENT_MODULATOR_DECAY`
  * without reaching into the full `BUILT_IN_MODULATORS` array.
+ *
+ * Tightened to `readonly BuiltInModulatorId[]` once the union was
+ * extended in the 2026-05-01 Wave 8 UI shell PR. Previously typed as
+ * `readonly string[]` because the IDs lived under `ModulatorId`'s
+ * custom-branch escape hatch — see `types.ts` history.
  */
-export const EVENT_MODULATOR_IDS: readonly string[] = [
+export const EVENT_MODULATOR_IDS: readonly BuiltInModulatorId[] = [
   'aux-click',
   'aux-hold',
   'aux-double-click',
@@ -339,6 +342,12 @@ export function lookupModulator(id: ModulatorId): ModulatorDescriptor | undefine
  * Type-guard helper for callers that need to narrow a user-typed ID
  * down to a built-in one. Kept alongside the registry so there is a
  * single source of truth for "is this ID known to the engine".
+ *
+ * Implementation is a registry-map lookup — every ID in the canonical
+ * registry corresponds to a literal in the `BuiltInModulatorId` union
+ * (post Wave 8 UI shell PR). A drift-sentinel test in
+ * `registry.test.ts` asserts every Wave 8 LITE event ID returns `true`
+ * here, catching any future drift between the union and registry.
  */
 export function isBuiltInModulatorId(id: string): id is BuiltInModulatorId {
   return BUILT_IN_MODULATOR_MAP.has(id);
