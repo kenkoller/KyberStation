@@ -5,7 +5,7 @@ interface NavLink {
   label: string;
 }
 
-const NAV_LINKS: readonly NavLink[] = [
+export const NAV_LINKS: readonly NavLink[] = [
   { href: '/features', label: 'Features' },
   { href: '/showcase', label: 'Showcase' },
   { href: '/changelog', label: 'Changelog' },

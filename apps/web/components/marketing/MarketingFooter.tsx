@@ -11,7 +11,7 @@ interface FooterLink {
   external?: boolean;
 }
 
-const PRIMARY_LINKS: readonly FooterLink[] = [
+export const PRIMARY_LINKS: readonly FooterLink[] = [
   { label: 'GitHub', href: REPO_URL, external: true },
   { label: 'Issues', href: ISSUES_URL, external: true },
   { label: 'Flash Guide', href: FLASH_GUIDE_URL, external: true },
@@ -20,6 +20,7 @@ const PRIMARY_LINKS: readonly FooterLink[] = [
   { label: 'Features', href: '/features' },
   { label: 'Showcase', href: '/showcase' },
   { label: 'Changelog', href: '/changelog' },
+  { label: 'Community', href: '/community' },
   { label: 'FAQ', href: '/faq' },
   { label: 'Docs', href: '/docs' },
   { label: 'License', href: LICENSE_URL, external: true },
@@ -28,9 +29,9 @@ const PRIMARY_LINKS: readonly FooterLink[] = [
 /**
  * Shared marketing footer. Used by both the landing page and the
  * marketing sub-routes (`/features`, `/showcase`, `/changelog`,
- * `/faq`). Tone matches `docs/LAUNCH_PLAN.md` — humble, clear about
- * the GPL-3.0 ProffieOS aggregate-work boundary, and explicit that
- * nothing here is affiliated with Lucasfilm.
+ * `/community`, `/faq`). Tone matches `docs/LAUNCH_PLAN.md` — humble,
+ * clear about the GPL-3.0 ProffieOS aggregate-work boundary, and
+ * explicit that nothing here is affiliated with Lucasfilm.
  */
 export function MarketingFooter() {
   return (
