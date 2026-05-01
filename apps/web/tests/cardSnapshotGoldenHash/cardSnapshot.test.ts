@@ -1,17 +1,19 @@
 // ─── Card-snapshot golden-hash — layout × theme matrix ──────────────
 //
 // Pixel-output regression sentinel for the saber-card pipeline. Pins
-// the rendered chrome + blade + hilt + QR composition for the full
-// 5×5 layout × theme matrix:
+// the rendered chrome + blade + hilt + QR composition for the
+// 4×5 layout × theme matrix:
 //
-//   layouts: default · og · instagram · story · vertical
+//   layouts: default · og · instagram · story
 //   themes:  default · light · imperial · jedi · space
 //
-// = 25 cases.
+// = 20 cases.
 //
-// (The brief asks for 4×5=20 combos; the cardSnapshot module ships
-// 5 layouts, including the post-v0.15.0 vertical layout. Hashing all
-// 25 = future-proof against regressions in any layout/theme pair.)
+// VERTICAL_LAYOUT is excluded — its `drawHilt` text rendering produces
+// cross-platform divergence (Cairo on Linux CI vs Core Graphics on
+// macOS) in regions the region-mask strategy doesn't cover. Re-add it
+// in a follow-up PR that either widens the masking or the vertical
+// layout stops rendering text outside the masked rects.
 //
 // === Approach A — region-masked hashing (chosen) ===
 //
@@ -74,7 +76,6 @@ import {
   OG_LAYOUT,
   INSTAGRAM_LAYOUT,
   STORY_LAYOUT,
-  VERTICAL_LAYOUT,
 } from '@/lib/sharePack/card/cardLayout';
 import {
   DEFAULT_THEME,
@@ -135,12 +136,18 @@ const TEST_GLYPH = 'JED:test-card-snapshot-2026-04-30';
 
 // ─── Layout × Theme matrix ──────────────────────────────────────────
 
+// VERTICAL_LAYOUT excluded from the matrix — its `drawHilt` path uses
+// canvas text rendering for the metadata column that diverges between
+// macOS Core Text and Linux Cairo/FreeType in regions the region-mask
+// strategy doesn't cover. The 4 horizontal layouts (default / og /
+// instagram / story) all hash cross-platform-stable. Re-add vertical
+// once a follow-up PR either widens the masking or the vertical layout
+// stops rendering text outside the masked rects.
 const LAYOUTS: CardLayout[] = [
   DEFAULT_LAYOUT,
   OG_LAYOUT,
   INSTAGRAM_LAYOUT,
   STORY_LAYOUT,
-  VERTICAL_LAYOUT,
 ];
 
 const THEMES: CardTheme[] = [

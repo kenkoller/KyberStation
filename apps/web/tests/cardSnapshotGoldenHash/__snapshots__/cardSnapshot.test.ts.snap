@@ -43,13 +43,3 @@ exports[`card snapshot golden hash — layout × theme matrix (region-masked) > 
 exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × light 1`] = `"c05a5305"`;
 
 exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × space 1`] = `"ca54e2ad"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × default 1`] = `"11f23d20"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × imperial 1`] = `"df48a8ca"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × jedi 1`] = `"ced13e59"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × light 1`] = `"d9783987"`;
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × space 1`] = `"8bf1d3e3"`;
