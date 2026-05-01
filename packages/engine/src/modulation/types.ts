@@ -26,19 +26,39 @@ import type { BladeConfig, StyleContext, EffectContext } from '../types.js';
  * Stable string IDs for every built-in modulator. Adding a new built-in
  * modulator is a breaking change — new IDs require bumping
  * {@link MODULATOR_REGISTRY_VERSION} in the companion doc.
+ *
+ * **Wave 8 LITE union extension (2026-05-01):** the 8 aux/gesture
+ * event-driven IDs (`aux-*` + `gesture-*`) were added to the union
+ * after PR #222 shipped them as `ModulatorId` strings via the custom
+ * branch. Their decay envelope is owned by the sampler's latch+decay
+ * logic, registry-tabled in `EVENT_MODULATOR_DECAY` — see
+ * `packages/engine/src/modulation/registry.ts`. Surfaced as plates in
+ * the routing UI; `ModulatorPlateBar` categorizes them under
+ * BUTTON / GESTURE section headers.
  */
 export type BuiltInModulatorId =
-  | 'swing'        // StyleContext.swingSpeed — 0..1 normalized swing speed
-  | 'angle'        // StyleContext.bladeAngle — -1..1 (down..up)
-  | 'twist'        // StyleContext.twistAngle — -1..1
-  | 'sound'        // StyleContext.soundLevel — 0..1 RMS envelope
-  | 'battery'      // StyleContext.batteryLevel — 0..1 battery charge
-  | 'time'         // StyleContext.time — ms elapsed (wraps at 2^32 ms)
-  | 'clash'        // Latched clash intensity, 0..1, decays with BladeConfig.clashIntensity
-  | 'lockup'       // 0/1 lockup active flag
-  | 'preon'        // 0..1 preon progress (1 at preon start, 0 at ignition)
-  | 'ignition'     // 0..1 ignition progress
-  | 'retraction';  // 0..1 retraction progress
+  // ─── v1.1 Core modulators (continuous + latched-effect signals) ───
+  | 'swing'              // StyleContext.swingSpeed — 0..1 normalized swing speed
+  | 'angle'              // StyleContext.bladeAngle — -1..1 (down..up)
+  | 'twist'              // StyleContext.twistAngle — -1..1
+  | 'sound'              // StyleContext.soundLevel — 0..1 RMS envelope
+  | 'battery'            // StyleContext.batteryLevel — 0..1 battery charge
+  | 'time'               // StyleContext.time — ms elapsed (wraps at 2^32 ms)
+  | 'clash'              // Latched clash intensity, 0..1, decays with BladeConfig.clashIntensity
+  | 'lockup'             // 0/1 lockup active flag
+  | 'preon'              // 0..1 preon progress (1 at preon start, 0 at ignition)
+  | 'ignition'           // 0..1 ignition progress
+  | 'retraction'         // 0..1 retraction progress
+  // ─── Wave 8 LITE — aux button events ───
+  | 'aux-click'          // Single aux button press, ~50ms decay (decay=0.85)
+  | 'aux-hold'           // Sustained aux button hold, ~165ms decay (decay=0.95)
+  | 'aux-double-click'   // Aux double-tap, ~33ms decay (decay=0.80)
+  // ─── Wave 8 LITE — gesture events ───
+  | 'gesture-twist'      // IMU rotation-about-long-axis, ~100ms decay (decay=0.92)
+  | 'gesture-stab'       // IMU forward thrust, ~65ms decay (decay=0.88)
+  | 'gesture-swing'      // IMU swing event (distinct from continuous `swing`), ~115ms (decay=0.93)
+  | 'gesture-clash'      // IMU clash gesture (distinct from `clash` effect), ~80ms (decay=0.90)
+  | 'gesture-shake';     // Sustained IMU shake, ~165ms decay (decay=0.95)
 
 export type ModulatorId = BuiltInModulatorId | (string & { readonly __custom?: unique symbol });
 

@@ -143,6 +143,29 @@
   --mod-ignition: rgb(34 211 238);
   --mod-retraction-rgb: 251 113 133; /* warm-red — retracting */
   --mod-retraction: rgb(251 113 133);
+  /* ─── Wave 8 LITE — aux button event modulators (2026-05-01) ───
+     Cyan family for button events. `aux-click` is the canonical mid-
+     cyan; `aux-hold` shifts deeper to read as "sustained"; the
+     double-tap variant brightens for the snappier feel. */
+  --mod-aux-click-rgb: 56 189 248;          /* cyan — discrete button */
+  --mod-aux-click: rgb(56 189 248);
+  --mod-aux-hold-rgb: 14 165 233;           /* deep-cyan — sustained */
+  --mod-aux-hold: rgb(14 165 233);
+  --mod-aux-double-click-rgb: 103 232 249;  /* bright-cyan — snap-tap */
+  --mod-aux-double-click: rgb(103 232 249);
+  /* ─── Wave 8 LITE — gesture event modulators (2026-05-01) ───
+     Spread across the warm half of the wheel so they don't compete
+     visually with the cyan button-event family above. */
+  --mod-gesture-twist-rgb: 217 70 239;      /* violet-pink — rotation */
+  --mod-gesture-twist: rgb(217 70 239);
+  --mod-gesture-stab-rgb: 250 204 21;       /* yellow — thrust */
+  --mod-gesture-stab: rgb(250 204 21);
+  --mod-gesture-swing-rgb: 14 165 233;      /* sky — IMU swing */
+  --mod-gesture-swing: rgb(14 165 233);
+  --mod-gesture-clash-rgb: 226 232 240;     /* pearl — IMU clash */
+  --mod-gesture-clash: rgb(226 232 240);
+  --mod-gesture-shake-rgb: 249 115 22;      /* orange — sustained shake */
+  --mod-gesture-shake: rgb(249 115 22);
   /* ─── Font Scale ─── */
   --font-scale: 1;
   /* ─── Mobile-shell sizing tokens — Phase 4 PR #1 (2026-04-30) ───
