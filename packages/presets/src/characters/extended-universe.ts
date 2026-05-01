@@ -333,7 +333,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: true,
     description:
-      'Marrok\'s red lightsaber. A sinister, smoky crimson wielded by the mysterious dark-side mercenary. Upon death, green Nightsister magick was released.',
+      'Marrok\'s red lightsaber. A sinister, smoky crimson wielded by the mysterious dark-side mercenary in Ahsoka. The smoldering character comes through high-shimmer cracked-kyber bleed (Inquisitor unstable convention) plus a slow stutter ignition + fadeout retraction. Upon death, green Nightsister magick was released — a one-time visual moment, not the canonical baseline blade look.',
     hiltNotes: 'Inquisitor-style hilt beneath dark armor.',
     config: {
       name: 'Marrok',
@@ -342,7 +342,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       lockupColor: { r: 255, g: 90, b: 50 },
       blastColor: { r: 255, g: 70, b: 30 },
       dragColor: { r: 180, g: 0, b: 0 },
-      style: 'fire',
+      style: 'unstable',
       ignition: 'stutter',
       retraction: 'fadeout',
       ignitionMs: 260,
@@ -364,7 +364,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: true,
     description:
-      'Trilla Suduri\'s red double-bladed lightsaber as the Second Sister in Jedi: Fallen Order. A controlled, lethal crimson.',
+      'Trilla Suduri\'s red double-bladed lightsaber as the Second Sister in Jedi: Fallen Order. A controlled, lethal crimson with the cracked-kyber bleed every Inquisitor inherits — controlled here means tighter shimmer, not zero shimmer.',
     hiltNotes: 'Inquisitor spinning double-bladed hilt.',
     config: {
       name: 'TrillaSuduri',
@@ -372,7 +372,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 185, b: 145 },
       lockupColor: { r: 255, g: 85, b: 60 },
       blastColor: { r: 255, g: 65, b: 40 },
-      style: 'stable',
+      style: 'unstable',
       ignition: 'center',
       retraction: 'center',
       ignitionMs: 220,
@@ -658,6 +658,45 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
       shimmer: 0.05,
       ledCount: 144,
       crossguard: true,
+    },
+  },
+
+  // ─── Tales of the Empire (2024 anthology, Inquisitor variant) ────────
+  //
+  // Tales of the Empire (Disney+ 2024) reframes Barriss Offee\'s post-
+  // betrayal arc. After Order 66 she\'s captured, broken, and inducted as
+  // an Inquisitor before eventually rejecting that path. This preset is
+  // her Inquisitor-era red saber — distinct from the prequel-era Padawan
+  // blue saber preset (`prequel-barriss-offee`) which represents her
+  // before the fall.
+
+  // ── Inquisitor Barriss Offee (Tales of the Empire) ──
+  {
+    id: 'eu-inquisitor-barriss-red',
+    name: 'Inquisitor Barriss Offee (Tales of the Empire)',
+    character: 'Barriss Offee',
+    era: 'expanded-universe',
+    affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
+    description:
+      'Barriss Offee post-fall, reforged as an Inquisitor. The Tales of the Empire arc shows her wielding the standard Inquisitor cracked-kyber red — the bleed of someone broken and reshaped by the Empire before she ultimately rejects the path. Uses the canonical `unstable` style shared by the rest of the Inquisitor roster.',
+    hiltNotes: 'Standard Inquisitor double-bladed spinning hilt; her Mirialan tattoos visible on the grip across the show\'s flashback frames.',
+    config: {
+      name: 'InquisitorBarriss',
+      baseColor: { r: 220, g: 5, b: 15 },
+      clashColor: { r: 255, g: 190, b: 150 },
+      lockupColor: { r: 255, g: 90, b: 60 },
+      blastColor: { r: 255, g: 70, b: 40 },
+      dragColor: { r: 255, g: 80, b: 0 },
+      style: 'unstable',
+      ignition: 'center',
+      retraction: 'center',
+      ignitionMs: 220,
+      retractionMs: 280,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
     },
   },
 
