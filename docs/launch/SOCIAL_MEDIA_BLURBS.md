@@ -17,7 +17,7 @@ audience + length limit + posting culture.
 Just shipped KyberStation — a free browser-based visual editor for
 designing custom lightsaber blade styles + exporting Proffie configs.
 
-33 styles, 22 effects, 336 presets, all in your browser. MIT.
+33 styles, 22 effects, 354 presets, all in your browser. MIT.
 First public project. Feedback welcome.
 
 https://kenkoller.github.io/KyberStation/
@@ -207,9 +207,12 @@ during real-hardware validation that the mocks missed — those are
 documented in the README and the validation grid honestly lists which
 hardware/OS/browser combinations are confirmed vs. unverified.
 
-**Modulation routing.** 11 modulators (swing, sound, angle, twist,
-time, clash, battery, lockup, preon, ignition, retraction) wireable
-to any tunable parameter via click-to-route, drag-to-route, or
+**Modulation routing.** 19 modulators (11 continuous + latched
+signals: swing, sound, angle, twist, time, clash, battery, lockup,
+preon, ignition, retraction. 8 Wave 8 LITE button + gesture events:
+aux-click, aux-hold, aux-double-click, gesture-twist, -stab, -swing,
+-clash, -shake) wireable to any tunable parameter via click-to-route,
+drag-to-route, or
 per-binding math expressions (peggy-parsed grammar). Engine samples
 + applies bindings per frame. Codegen emits real `Scale<SwingSpeed<>>`
 / `Sin<Int<>>` templates where possible, with snapshot-value fallback

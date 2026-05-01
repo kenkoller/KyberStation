@@ -16,7 +16,7 @@
 
 **Free · browser-based · MIT licensed · no accounts · no backend · hobby project · beta**
 
-> **33** styles · **22** effects · **19+13** ignition/retraction animations · **336+** presets · **16** boards · **~5,000** tests
+> **33** styles · **22** effects · **19+13** ignition/retraction animations · **354+** presets · **16** boards · **~5,000** tests
 
 Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device — phone, tablet, laptop, or desktop. Installable as a PWA.
 
@@ -41,7 +41,7 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - **Click-to-trigger** any of 22 effects from the action bar (Clash, Lockup, Blast, Stab) or keyboard (`C`, `L`, `B`, `S`)
 - **Sustained effects** (Lockup, Drag, Melt) hold while the trigger is held — the visualizer shows the live held state
 - **Spatial placement** — blast position + radius, lockup pivot point, drag tail length all configurable
-- **Modulation routing v1.1** — wire any of 11 modulators (swing, sound, angle, twist, time, clash, battery, lockup, preon, ignition, retraction) to any blade parameter via click-to-route, drag-to-route, or `fx`-button math expressions
+- **Modulation routing v1.1 + Wave 8 LITE** — wire any of 19 modulators (11 continuous + latched signals: swing, sound, angle, twist, time, clash, battery, lockup, preon, ignition, retraction; plus 8 button/gesture events: aux-click, aux-hold, aux-double-click, gesture-twist, -stab, -swing, -clash, -shake) to any blade parameter via click-to-route, drag-to-route, or `fx`-button math expressions
 
 ### Code Generation
 - AST-based ProffieOS C++ code emitter — balanced angle brackets, valid template nesting
@@ -115,7 +115,7 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 
 <img src="apps/web/public/marketing/color-cycle.gif" alt="A blade cycling through eight canonical saber colors" width="600" />
 
-- **336+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots)
+- **354+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots)
 - **Grid view as default** with view toggle, color/style/era filter rail, click-to-open detail modal showing full config + load/share actions
 - Every preset is `continuity`-tagged so you can filter to just canon
 - Surprise Me randomizer pulls from the full ignition + retraction + modulation catalogs
@@ -182,12 +182,12 @@ The first publicly-released version. Includes:
 - **Gallery grid view** as default, with click-to-open detail modal and color/style/era filter rail
 - **Mobile shell** — vertical-stack layout with sidebar drawer, designed for 375px and up
 - **Marketing pages** — `/features`, `/showcase`, `/changelog`, `/faq` for visitors who want context before opening the editor
-- Full **Modulation Routing v1.1 Core** — 11 modulators (swing/sound/angle/twist/time/clash/battery/lockup/preon/ignition/retraction), click-to-route + true HTML5 drag-to-route, per-binding expression editing via `fx` button popover, reciprocal hover highlighting, AST-level template injection in codegen so the generated `config.h` flashes LIVE ProffieOS templates instead of snapshot values
+- Full **Modulation Routing v1.1 Core + Wave 8 LITE** — 19 modulators (11 continuous + latched signals from v1.1 Core; 8 button/gesture events from Wave 8 LITE: aux-click, aux-hold, aux-double-click, gesture-twist, -stab, -swing, -clash, -shake), click-to-route + true HTML5 drag-to-route, per-binding expression editing via `fx` button popover, reciprocal hover highlighting, AST-level template injection in codegen so the generated `config.h` flashes LIVE ProffieOS templates instead of snapshot values
 - **4 new engine effects** — Sith Flicker (unstable-weapon flicker), Blade Charge (visible buildup), Tempo Lock (beat-locked rhythm), Unstable Kylo (crossguard pulse)
 - **27 new kinetic-style presets** for the Surprise Me / kinetic gallery filter
 - **Vertical Saber Card layout** + 4 layouts × 5 themes (20 combos) for share-card export
 - **Animated saber GIF export** — idle hum loop + ignition cycle from the My Crystal panel, headless workbench renderer port
-- **336+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots) — every preset is `continuity`-tagged so you can filter to just canon
+- **354+ character presets** across canon, Legends, kinetic-style cuts, and pop-culture sources (LOTR, Marvel, DC, Zelda, mythology, anime, gaming, kids' cartoons, Power Rangers, mascots) — every preset is `continuity`-tagged so you can filter to just canon
 - **AST-based ProffieOS code generator** — emits balanced templates that compile against ProffieOS 7.x without modification
 - **`dfu-util` workflow as the recommended flash path** ([docs/FLASH_GUIDE.md](docs/FLASH_GUIDE.md)) with mandatory firmware backup; in-browser **WebUSB FlashPanel as experimental** behind a 3-checkbox disclaimer gate
 - **Kyber Glyph v2 sharing** — `?s=<glyph>` URL handler round-trips full configs including modulation bindings; v1 / v2 backward compatible
