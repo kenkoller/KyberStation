@@ -220,12 +220,27 @@ function GalleryFilterToolbar({
           { id: 'all', label: 'All' },
           { id: 'canon', label: 'Canon' },
           { id: 'legends', label: 'Legends' },
+          { id: 'creative', label: 'Creative' },
           { id: 'pop-culture', label: 'Pop' },
           { id: 'mythology', label: 'Myth' },
           { id: 'showcase', label: '✦ Showcase' },
         ]}
         onChange={(v) => update('continuity', v)}
       />
+
+      {/* Star-Wars-only toggle — purist mode */}
+      <label
+        className="flex items-center gap-2 px-2 py-0.5 cursor-pointer text-ui-xs font-mono uppercase tracking-[0.08em] text-text-muted hover:text-text-primary select-none"
+        title="Hide all non-Star-Wars entries (pop-culture tributes, real-world mythology, KyberStation showcase tech demos)"
+      >
+        <input
+          type="checkbox"
+          checked={filters.starWarsOnly}
+          onChange={(e) => update('starWarsOnly', e.target.checked)}
+          className="accent-accent"
+        />
+        <span>Star Wars only</span>
+      </label>
 
       {/* Right-aligned count + shuffle controls */}
       <span className="ml-auto inline-flex items-center gap-2">

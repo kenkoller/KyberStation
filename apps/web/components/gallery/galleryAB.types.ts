@@ -32,7 +32,21 @@ export type ContinuityFilter =
   | 'legends'
   | 'pop-culture'
   | 'mythology'
-  | 'showcase';
+  | 'showcase'
+  | 'creative';
+
+/**
+ * Set of continuity buckets considered "Star-Wars-themed" for the
+ * Star-Wars-only toggle. Includes Disney canon + Legends EU + the
+ * KyberStation creative-community originals (which are mostly
+ * Star-Wars-themed). Excludes pop-culture tributes (LOTR / Marvel /
+ * etc.), real-world mythology, and showcase tech demos.
+ */
+export const STAR_WARS_CONTINUITIES: ReadonlySet<ContinuityFilter> = new Set([
+  'canon',
+  'legends',
+  'creative',
+]);
 
 export interface GalleryFilters {
   era: EraFilter;
@@ -40,6 +54,12 @@ export interface GalleryFilters {
   colorFamily: ColorFilter;
   styleFamily: StyleFilter;
   continuity: ContinuityFilter;
+  /**
+   * When true, hide all pop-culture / mythology / showcase entries from
+   * the grid. The user is purist-mode: only Star Wars (canon + legends
+   * + Star-Wars-themed creative variations) are shown.
+   */
+  starWarsOnly: boolean;
   search: string;
   /**
    * Deterministic shuffle seed; `null` means "default authoring order".
@@ -55,6 +75,7 @@ export const DEFAULT_FILTERS: GalleryFilters = {
   colorFamily: 'all',
   styleFamily: 'all',
   continuity: 'all',
+  starWarsOnly: false,
   search: '',
   shuffleSeed: null,
 };
@@ -94,6 +115,9 @@ export function filterPresets(
       filters.continuity !== 'all' &&
       presetContinuity(p) !== filters.continuity
     ) {
+      return false;
+    }
+    if (filters.starWarsOnly && !STAR_WARS_CONTINUITIES.has(presetContinuity(p))) {
       return false;
     }
     if (search) {

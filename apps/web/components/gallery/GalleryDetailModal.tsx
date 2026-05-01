@@ -386,6 +386,8 @@ function continuityLabel(c: ReturnType<typeof presetContinuity>): string {
       return 'Mythology';
     case 'showcase':
       return '✦ Showcase';
+    case 'creative':
+      return 'Creative';
     default:
       return c;
   }

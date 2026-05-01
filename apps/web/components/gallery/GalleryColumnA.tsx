@@ -173,12 +173,28 @@ export function GalleryColumnA({
             { id: 'all', label: 'All' },
             { id: 'canon', label: 'Canon' },
             { id: 'legends', label: 'Legends' },
+            { id: 'creative', label: 'Creative' },
             { id: 'pop-culture', label: 'Pop' },
             { id: 'mythology', label: 'Myth' },
             { id: 'showcase', label: '✦ Showcase' },
           ]}
           onChange={(v) => update('continuity', v)}
         />
+
+        {/* Star-Wars-only toggle — purist mode hides pop-culture + mythology
+            + showcase entries, leaving canon + legends + creative variants. */}
+        <label
+          className="flex items-center gap-2 px-1 py-0.5 cursor-pointer text-ui-xs font-mono uppercase tracking-[0.08em] text-text-muted hover:text-text-primary select-none"
+          title="Hide all non-Star-Wars entries (pop-culture tributes, real-world mythology, KyberStation showcase tech demos)"
+        >
+          <input
+            type="checkbox"
+            checked={filters.starWarsOnly}
+            onChange={(e) => update('starWarsOnly', e.target.checked)}
+            className="accent-accent"
+          />
+          <span>Star Wars only</span>
+        </label>
 
         {/* Footer line: count + shuffle controls */}
         <div className="flex items-center gap-2 pt-1">
