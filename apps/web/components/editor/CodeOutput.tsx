@@ -9,7 +9,7 @@ import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig }
 import type { ReconstructedConfig } from '@kyberstation/codegen';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
-import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
+import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
 import { generateQRDataUrl, downloadQR } from '@/lib/qrCode';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { ErrorState } from '@/components/shared/ErrorState';
@@ -208,8 +208,8 @@ export function CodeOutput() {
 
   const handleShareLink = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(config);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(config);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       await navigator.clipboard.writeText(url);
       playUISound('copy');
       setShareCopied(true);
@@ -221,8 +221,8 @@ export function CodeOutput() {
 
   const handleShowQR = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(config);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(config);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       // QR codes are machine-read — use fixed high-contrast colours
       // rather than theme tokens so scanners consistently recognise them
       // regardless of which UI theme is active.
@@ -239,8 +239,8 @@ export function CodeOutput() {
 
   const handleDownloadQR = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(config);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(config);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       downloadQR(url, config.name?.replace(/\s+/g, '_') || 'blade_preset');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';

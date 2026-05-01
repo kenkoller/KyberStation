@@ -24,11 +24,10 @@ export function useSharedConfig() {
         if (blade) {
           loadPreset(blade);
           setLoaded(true);
-          // Friendly notification with the archetype prefix + first 8 chars
-          const shortForm = glyphParam.length <= 16
-            ? glyphParam
-            : `${glyphParam.slice(0, glyphParam.indexOf('.') + 1)}${glyphParam.slice(glyphParam.indexOf('.') + 1, glyphParam.indexOf('.') + 9)}…`;
-          toast.success(`Loaded crystal: ${shortForm}`);
+          // Friendly notification: prefer the encoded publicName, fall
+          // back to the first blade's name, then to a generic 'crystal'.
+          const label = payload.publicName ?? blade.name ?? 'crystal';
+          toast.success(`Loaded ${label}`);
         }
         // Strip `?s=` from URL so reload doesn't re-trigger
         params.delete('s');
@@ -51,7 +50,14 @@ export function useSharedConfig() {
       }
     }
 
-    // ── Legacy `#<base64>` handler (deprecated, kept for one release) ──
+    // ── Legacy `#<base64>` handler ──
+    //
+    // Decode-only: the editor used to emit `${origin}/editor#<base64>`
+    // share links via the now-removed `encodeConfig` + `buildShareUrl`.
+    // This branch keeps decoding alive so old URLs in the wild (Twitter
+    // shares, bookmarks, embedded links) still load. New share emission
+    // uses Kyber Glyph (`?s=<glyph>`) — see the modern handler above and
+    // `apps/web/lib/sharePack/kyberGlyph.ts`.
     const hash = window.location.hash.slice(1);
     if (!hash || hash.length < 10) return;
 

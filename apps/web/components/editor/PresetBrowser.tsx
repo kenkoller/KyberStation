@@ -7,7 +7,7 @@ import { useUserPresetStore, type UserPreset } from '@/stores/userPresetStore';
 import { useAudioFontStore } from '@/stores/audioFontStore';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
-import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
+import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
 import { usePresetAnimation } from '@/hooks/usePresetAnimation';
 import {
   ALL_PRESETS,
@@ -575,8 +575,8 @@ export function PresetBrowser() {
 
   const handleShareLink = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(config);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(config);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);

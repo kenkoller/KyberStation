@@ -12,14 +12,14 @@
 //
 // Load button calls `bladeStore.loadPreset` then routes to `/editor`,
 // matching the legacy `GalleryCard` click behavior. Share button mirrors
-// `ShareButton`'s `encodeConfig` → `buildShareUrl` → clipboard pattern.
+// `ShareButton`'s `encodeGlyphFromConfig` → `?s=<glyph>` → clipboard pattern.
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Preset } from '@kyberstation/presets';
 import type { BladeConfig } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
-import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
+import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
 import { playUISound } from '@/lib/uiSounds';
 import { MiniSaber } from '@/components/shared/MiniSaber';
 import { EraBadge, FactionBadge } from '@/components/shared/StatusSignal';
@@ -74,8 +74,8 @@ function GalleryColumnBDetail({ preset }: { preset: Preset }): JSX.Element {
 
   const handleShare = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(preset.config as BladeConfig);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(preset.config as BladeConfig);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       await navigator.clipboard.writeText(url);
       playUISound('copy');
       setCopyState('copied');

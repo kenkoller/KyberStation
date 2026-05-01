@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
-import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
+import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
 import { playUISound } from '@/lib/uiSounds';
 
 /**
@@ -18,8 +18,8 @@ export function ShareButton() {
 
   const handleShare = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(config);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(config);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       await navigator.clipboard.writeText(url);
       playUISound('copy');
       setCopied(true);

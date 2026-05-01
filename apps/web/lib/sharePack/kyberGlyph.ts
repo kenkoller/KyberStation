@@ -18,6 +18,7 @@
 // stay short (~25 base58 chars for the default, <80 for max-complexity).
 
 import type { BladeConfig, RGB } from '@kyberstation/engine';
+import { isCanonicalPresetConfig } from '@kyberstation/presets';
 import { Packr, Unpackr } from 'msgpackr';
 import { deflateRaw, inflateRaw } from 'pako';
 import bs58 from 'bs58';
@@ -227,16 +228,13 @@ function isGreyish(c: RGB): boolean {
 }
 
 function isCanonicalPreset(config: BladeConfig): boolean {
-  // A preset the app ships under a well-known name. The cheapest
-  // reliable check: the `name` field matches a canonical-era label
-  // pattern and the config hasn't been meaningfully edited away from
-  // its preset defaults. For v1 we keep this conservative — a name
-  // starting with one of the film-era markers with an ignition=standard
-  // ships as CNO.
-  const n = config.name;
-  if (typeof n !== 'string') return false;
-  const canonPattern = /^(Obi-Wan|Anakin|Luke|Vader|Yoda|Mace|Windu|Rey|Kylo|Maul|Dooku|Ahsoka|Ezra|Kanan)\b/i;
-  return canonPattern.test(n);
+  // A preset the app ships under a well-known name. Delegates to the
+  // presets package's canonical-detection helper so the CNO prefix
+  // tracks the actual library: `screenAccurate === true` AND
+  // `(continuity ?? 'canon') === 'canon'`. Replaces the legacy regex
+  // that hardcoded character names — pop-culture/legends/mythology
+  // presets correctly fall through to JED/SIT/SPC now.
+  return isCanonicalPresetConfig(config);
 }
 
 export function detectArchetype(config: BladeConfig): ArchetypePrefix {
