@@ -1,0 +1,53 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`card snapshot golden hash — layout × theme matrix > FNV-1a hash function is stable for a known input 1`] = `"163e4e7b"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > default × default 1`] = `"2979ab2f"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > default × imperial 1`] = `"615db92c"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > default × jedi 1`] = `"29c450a2"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > default × light 1`] = `"8f3bffbb"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > default × space 1`] = `"72d71b3e"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > instagram × default 1`] = `"b76baa4d"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > instagram × imperial 1`] = `"be6d0515"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > instagram × jedi 1`] = `"ac3f93a9"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > instagram × light 1`] = `"e9f40ded"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > instagram × space 1`] = `"bbde0157"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > og × default 1`] = `"8b8be01a"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > og × imperial 1`] = `"73dc1106"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > og × jedi 1`] = `"88e7aed5"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > og × light 1`] = `"0999019e"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > og × space 1`] = `"2bb057c2"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > story × default 1`] = `"5fdde86d"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > story × imperial 1`] = `"1c18a5a9"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > story × jedi 1`] = `"a19a582e"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > story × light 1`] = `"497ac03f"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > story × space 1`] = `"652f0120"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > vertical × default 1`] = `"ff7a2eb2"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > vertical × imperial 1`] = `"aa48b633"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > vertical × jedi 1`] = `"23928e3c"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > vertical × light 1`] = `"a4ca1349"`;
+
+exports[`card snapshot golden hash — layout × theme matrix > vertical × space 1`] = `"380dba1f"`;

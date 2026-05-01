@@ -1,3 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`card snapshot golden hash — layout × theme matrix (region-masked) > FNV-1a hash function is stable for a known input 1`] = `"163e4e7b"`;

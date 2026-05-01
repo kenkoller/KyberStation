@@ -5,6 +5,18 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Manual trigger for snapshot regeneration. Set update_card_snapshots:
+  # 'true' to run the cardSnapshot tests with `-u` and upload the
+  # regenerated linux snap file as a build artifact. Used to bootstrap
+  # `cardSnapshot.linux.test.ts.snap` after a card-pipeline change. See
+  # `apps/web/tests/cardSnapshotGoldenHash/cardSnapshot.test.ts` for
+  # background.
+  workflow_dispatch:
+    inputs:
+      update_card_snapshots:
+        description: 'Run cardSnapshot tests with -u to regenerate linux snap'
+        type: boolean
+        default: false
 
 jobs:
   build-and-test:
@@ -19,5 +31,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      # When update_card_snapshots is set, regenerate the linux snap
+      # FIRST so the regular `pnpm test` step asserts against the new
+      # baseline. Otherwise just run tests normally.
+      - name: Regenerate cardSnapshot linux snap (workflow_dispatch only)
+        if: ${{ inputs.update_card_snapshots == true }}
+        run: pnpm --filter @kyberstation/web test -- -u tests/cardSnapshotGoldenHash
       - run: pnpm test
       - run: pnpm build
+      # When update_card_snapshots is set, upload the regenerated snap
+      # so the user can download + commit it.
+      - name: Upload regenerated snapshot
+        if: ${{ inputs.update_card_snapshots == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cardSnapshot-linux-snap
+          path: apps/web/tests/cardSnapshotGoldenHash/__snapshots__/cardSnapshot.linux.test.ts.snap
+          if-no-files-found: error
