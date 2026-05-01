@@ -1,0 +1,55 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > FNV-1a hash function is stable for a known input 1`] = `"163e4e7b"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × default 1`] = `"583fce47"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × imperial 1`] = `"e3768c62"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × jedi 1`] = `"2f0e4a3c"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × light 1`] = `"17308808"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > default × space 1`] = `"c90af410"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × default 1`] = `"84e2ef2d"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × imperial 1`] = `"6605754c"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × jedi 1`] = `"9f519e26"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × light 1`] = `"89c5a731"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > instagram × space 1`] = `"6243f023"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × default 1`] = `"f9055a53"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × imperial 1`] = `"eaba70df"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × jedi 1`] = `"ccf5a1e1"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × light 1`] = `"e44f9616"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > og × space 1`] = `"edbc21c8"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > region-masked hash zeros the masked pixels deterministically 1`] = `"d98ea2a5"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × default 1`] = `"6dc41c42"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × imperial 1`] = `"0c9c9e05"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × jedi 1`] = `"43fbbe65"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × light 1`] = `"c05a5305"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > story × space 1`] = `"ca54e2ad"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × default 1`] = `"11f23d20"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × imperial 1`] = `"df48a8ca"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × jedi 1`] = `"ced13e59"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × light 1`] = `"d9783987"`;
+
+exports[`card snapshot golden hash — layout × theme matrix (region-masked) > vertical × space 1`] = `"8bf1d3e3"`;
