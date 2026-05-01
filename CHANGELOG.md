@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.1] — 2026-05-01
+
+**Post-launch polish wave.** ~30 PRs landed in the day after v0.16.0's public launch, covering: the full mobile UX overhaul (Phases 4.1 → 4.5 feature-complete on `main`), Wave 8 modulation routing (8 aux/gesture modulator plates), Saber Card + Kyber Glyph audit fixes (the header "Share Kyber Code" button now actually shares Kyber Glyphs!), CommunityGallery wired to a real fetch, 28× speedup on GIF hilt rendering, 16+ new presets (Acolyte, Maul lifecycle, Star Wars Visions Vol 1), and the marketing site `/community` page.
+
+**Test count at tag:** ~5,500 workspace-wide. Typecheck clean across all 10 packages.
+
+### Added
+
+- **Mobile UX overhaul — feature complete** — All 5 phases of the StickyMiniShell handoff shipped to `main`:
+  - Phase 4.1 sticky shell foundation + drawer + auto-ignite (PRs #199 + #200)
+  - Phase 4.2 sticky mini-shell + section tabs + scrollable status strip (PR #203)
+  - Phase 4.3 Color-tab QuickControls + ColorRail (PR #205)
+  - Phase 4.4 ParameterSheet 3-stop primitive (PR #207)
+  - Phase 4.4.x ParameterSheet long-press integration via global store (cascade-merged PR #211)
+  - Phase 4.5 Inspect mode + zoom HUD on blade canvas (cascade-merged PR #211)
+- **Wave 8 — Button + gesture modulators** — 8 new aux/gesture modulator plates: `aux-click`, `aux-hold`, `aux-double-click`, `gesture-twist`, `gesture-stab`, `gesture-swing`, `gesture-clash`, `gesture-shake`. Engine layer (PR #222) ships registry + sampler with event-trigger latching. UI shell (PR #227) adds 6 category sections (MOTION / AUDIO / POWER / STATE / BUTTON / GESTURE) inside one ModulatorPlateBar with bespoke CSS-keyframe glyphs.
+- **CommunityGallery real fetch** (PR #221) — replaces hardcoded `placeholderStyles` with a fetch from `${basePath}/community-gallery.json` on GitHub Pages. 3-branch fallback chain: fresh fetch → 30-min localStorage cache → in-memory placeholder + soft warning.
+- **Marketing site `/community` page** (PR #219) — 5/5 marketing pages now shipped (`/features`, `/showcase`, `/changelog`, `/faq`, `/community`).
+- **Saber GIF Sprint 4** (PR #218) — 3 new effect-specific GIF variants in the My Crystal panel: `blast-deflect` (~600ms), `stab-tip-flash` (~500ms), `swing-response` (~2s).
+- **Star Wars Visions Vol 1 presets** (PR #228) — 8 new presets from Disney+ animated anthology.
+- **Acolyte + Maul lifecycle presets** (PR #224) — extends Preset Cartography with the 2024 Acolyte series sabers + Maul's full character arc.
+- **Darksaber preset audit** (PR #225) — normalizes Darksaber config fields with a drift sentinel.
+- **Card snapshot golden-hash test infrastructure** (PR #217) — FNV-1a drift sentinel + region-masked hashing utility (the layout × theme matrix path turned out non-viable cross-runner; see Changed/Fixed below).
+- **Card snapshot v2 research** (PR #223) — `docs/research/CARD_SNAPSHOT_V2_PERCEPTUAL_DIFF.md` documenting why pixelmatch perceptual diff doesn't work for cardSnapshot regression tests.
+- **Gradient editor extraction** (PR #215) — `lib/gradient/` shared module; `GradientBuilder` consumer-migration stub retired.
+
+### Changed
+
+- **Share emitters use Kyber Glyph** (PR #229) — 5 share sites migrated from the legacy base64 hash format to the modern `?s=<glyph>` URL: `ShareButton`, `GalleryColumnB`, `GalleryDetailModal`, `CodeOutput`, `PresetBrowser`. The header "Share Kyber Code" button now actually shares Kyber Glyphs. `lib/configUrl.ts` retained as decode-only for backward compatibility with existing legacy URLs.
+- **Archetype detection uses preset metadata** (PR #229) — replaced regex-based `isCanonicalPreset` with a check against `screenAccurate === true` AND `continuity === 'canon'` from the preset library. Coverage delta: ~14 → 87 canon presets correctly detect as `CNO`. Pop-culture presets (LOTR, Marvel, Zelda, etc.) correctly fall through to JED/SIT/SPC.
+- **Toast on shared URL load** (PR #229) — `Loaded crystal: JED.aBcD…` → `Loaded ${publicName ?? blade.name ?? 'crystal'}`.
+- **GIF hilt cached outside frame loop** (PR #230) — `prerenderHilt` helper renders the SVG hilt once into a buffer canvas, blitted per frame. **~28× per-frame speedup** on hilt rendering (5.07ms → 0.18ms in the 60-frame swing-response variant).
+- **Font-loaded gate before card render** (PR #230) — `await document.fonts.load("700 28px Orbitron")` in both `renderCardSnapshot` and `renderCardGif`, with defensive guards for SSR + jsdom test environments.
+- **Backlog audit pass** (PR #214) — 8 silently-shipped items moved to ✅: `useAudioEngine` singleton, `lib/blade/*` extraction, `BLADE_LENGTHS` lift, Strip Config thickness, Topology Triple/Inquisitor, Saber GIF Sprint 3, OG hero, favicon, `CANONICAL_DEFAULT_CONFIG` drift-sentinel.
+
+### Fixed
+
+- **Wizard auto-open on `/editor?wizard=1`** (PR #197) — query-param-driven wizard opening was silently broken.
+- **Marketing footer community link** (PR #220) — `/community` link in the marketing footer was 404'ing.
+- **`/dev/card-preview` stale dev artifact** (PR #230) — header comment said "deleted before commit" but the file was still in the repo. Now actually deleted.
+
+### Negative findings (worth carrying forward)
+
+- **Hash-based cardSnapshot regression testing is not viable cross-runner** (closed PR #226). Even platform-specific golden files (`cardSnapshot.linux.test.ts.snap` + `cardSnapshot.darwin.test.ts.snap`) fail because GitHub's `macos-latest` runner produces different hashes than typical local Macs (different macOS versions / font sets / node-canvas binaries). Approach A (region-masked hashing) and pixelmatch perceptual-diff both ruled out via empirical research. Recommendation for future regression coverage: component-level assertions on individual drawers (drawHilt, drawMetadata, drawQr) instead of pixel comparison.
+
+---
+
 ## [0.16.0] — 2026-04-30
 
 **KyberStation v1.0 public launch.** First publicly released version. Ships as a visual blade design tool first: generate your ProffieOS config in the browser, compile with `arduino-cli`, flash with `dfu-util`. Web-based flashing is shipped as experimental behind a 3-checkbox disclaimer with mandatory backup acknowledgement. 43 PRs landed since v0.15.0 across 5 waves: critical bug fixes, v1 launch features, overnight refinement, launch-posture lock, and pre-launch UX polish + hardware-fidelity tightening.
