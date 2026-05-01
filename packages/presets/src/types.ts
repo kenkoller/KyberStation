@@ -34,10 +34,21 @@ export interface PresetMetadata {
    *   full feature surface (multi-binding modulation, math expressions,
    *   custom gradients, spatial effects). Distinct from pop-culture entries
    *   because they\'re not derived from any media source.
+   * - `creative` — KyberStation-original creative variations + community
+   *   tributes (Temple Sentinel, Kyber Bleeding, RGB Gamer, etc.). The
+   *   `creative-community.ts` file is the canonical home; these presets
+   *   are not screen-accurate and aren\'t showcase tech demos either —
+   *   they\'re the curated "fun and creative" tab.
    *
    * Consumers should read as `preset.continuity ?? 'canon'`.
    */
-  continuity?: 'canon' | 'legends' | 'pop-culture' | 'mythology' | 'showcase';
+  continuity?:
+    | 'canon'
+    | 'legends'
+    | 'pop-culture'
+    | 'mythology'
+    | 'showcase'
+    | 'creative';
   /** 'base' = simple starting point, 'detailed' = fully tuned config */
   tier: PresetTier;
   /**
