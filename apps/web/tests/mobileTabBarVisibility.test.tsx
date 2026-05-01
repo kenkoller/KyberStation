@@ -66,6 +66,7 @@ describe('MobileTabBar — visibility', () => {
       ['/features', 'marketing features'],
       ['/showcase', 'marketing showcase'],
       ['/changelog', 'marketing changelog'],
+      ['/community', 'marketing community'],
     ];
 
     for (const [route, label] of visibleRoutes) {

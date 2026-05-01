@@ -38,6 +38,7 @@ describe('useShouldShowMobileTabBar', () => {
       '/features',
       '/showcase',
       '/changelog',
+      '/community',
       '/faq',
     ];
 

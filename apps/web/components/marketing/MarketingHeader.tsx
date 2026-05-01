@@ -9,18 +9,19 @@ const NAV_LINKS: readonly NavLink[] = [
   { href: '/features', label: 'Features' },
   { href: '/showcase', label: 'Showcase' },
   { href: '/changelog', label: 'Changelog' },
+  { href: '/community', label: 'Community' },
   { href: '/faq', label: 'FAQ' },
 ] as const;
 
 interface MarketingHeaderProps {
   /** Slug of the page that's currently active (e.g. "features"). */
-  active?: 'features' | 'showcase' | 'changelog' | 'faq';
+  active?: 'features' | 'showcase' | 'changelog' | 'community' | 'faq';
 }
 
 /**
  * Shared header for marketing pages (`/features`, `/showcase`,
- * `/changelog`, `/faq`). The landing route (`/`) renders its own
- * inline hero instead.
+ * `/changelog`, `/community`, `/faq`). The landing route (`/`) renders
+ * its own inline hero instead.
  *
  * Visual language: matches the landing — Orbitron wordmark on the
  * left, four sub-route nav links + an "Open Editor" CTA on the right.
