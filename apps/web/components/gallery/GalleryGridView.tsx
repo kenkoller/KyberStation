@@ -222,6 +222,7 @@ function GalleryFilterToolbar({
           { id: 'legends', label: 'Legends' },
           { id: 'pop-culture', label: 'Pop' },
           { id: 'mythology', label: 'Myth' },
+          { id: 'showcase', label: '✦ Showcase' },
         ]}
         onChange={(v) => update('continuity', v)}
       />
