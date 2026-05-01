@@ -202,7 +202,7 @@ export const LOTR_PRESETS: Preset[] = [
       retraction: 'standard',
       ignitionMs: 420,
       retractionMs: 500,
-      shimmer: 0.1,
+      shimmer: 0,
       ledCount: 144,
       swingFxIntensity: 0.25,
       noiseLevel: 0.05,

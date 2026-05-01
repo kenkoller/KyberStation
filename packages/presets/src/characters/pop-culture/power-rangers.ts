@@ -16,9 +16,12 @@ import type { Preset } from '../../types.js';
  * - `affiliation` uses `'neutral'` for the Rangers — they're heroes outside the
  *   Jedi/Sith axis, so the axis doesn't apply.
  * - Black Ranger uses the `darksaber` style per the Hardware Fidelity principle:
- *   a true-black blade is not achievable on WS2812B (each LED is either emitting
- *   or off), so the "black" body reads as `{r:30,g:30,b:40}` with brighter
- *   emitter + tip highlights — honest approximation of the Mastodon energy.
+ *   a true-black blade is not achievable on WS2812B, so the engine approximates
+ *   "black" as a near-black body `{r:5,g:5,b:5}` framed by a bright white
+ *   emitter + tip (the canonical Mandalorian Darksaber shape). The character
+ *   color flavor for Zack — the prehistoric Mastodon purple — is carried by
+ *   the clash + lockup + blast effect colors layered on top of the base
+ *   gradient, since the engine ignores `baseColor` for the `darksaber` style.
  */
 export const POWER_RANGERS_PRESETS: Preset[] = [
   // ── Red Ranger (Jason / Tyrannosaurus) ─────────────────────────
@@ -165,12 +168,12 @@ export const POWER_RANGERS_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      'The hip-hop kido. Zack\'s Mastodon-black — dance-fight discipline, the Power Axe swung with rhythm. Rendered via `darksaber` style per the Hardware Fidelity principle: the WS2812B cannot produce a true-black body, so the "black" reads as a very-low-luminance {r:30,g:30,b:40} with brighter emitter + tip highlights. The subtle purple edge suggests the prehistoric Mastodon purple seen in Zord sequences.',
+      'The hip-hop kido. Zack\'s Mastodon-black — dance-fight discipline, the Power Axe swung with rhythm. Rendered via the canonical `darksaber` engine path per the Hardware Fidelity principle: the WS2812B cannot produce a true-black body, so the engine approximates the blade as a near-black `{r:5,g:5,b:5}` body framed by a bright white emitter + tip. Zack\'s prehistoric Mastodon purple flavor is carried by the lockup and blast effect layers (the engine ignores `baseColor` for darksaber-style presets).',
     hiltNotes:
       'Black diamond-pattern helmet motif near the emitter, gold banding, Power Axe twin-bladed head (mirrored on both sides of the hilt at the emitter).',
     config: {
       name: 'BlackRanger',
-      baseColor: { r: 30, g: 30, b: 40 },
+      baseColor: { r: 5, g: 5, b: 5 },
       clashColor: { r: 200, g: 180, b: 220 },
       lockupColor: { r: 80, g: 60, b: 100 },
       blastColor: { r: 220, g: 200, b: 240 },
@@ -179,7 +182,7 @@ export const POWER_RANGERS_PRESETS: Preset[] = [
       retraction: 'standard',
       ignitionMs: 340,
       retractionMs: 440,
-      shimmer: 0.08,
+      shimmer: 0,
       ledCount: 144,
       swingFxIntensity: 0.25,
       noiseLevel: 0.04,
