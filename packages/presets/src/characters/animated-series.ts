@@ -89,6 +89,15 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
   },
 
   // ── Pre Vizsla (Darksaber) ──
+  //
+  // NB on hardware fidelity: the `darksaber` engine style hardcodes the
+  // body color to {r:5,g:5,b:5} and the emitter+tip to white {255,255,255};
+  // the codegen emits `Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>`
+  // verbatim and does NOT wrap it in AudioFlicker. So `baseColor` is
+  // vestigial (set to canonical body for consistency) and `shimmer` is
+  // dead (set to 0 — the field is ignored by both engine and codegen for
+  // this style). See `docs/HARDWARE_FIDELITY_PRINCIPLE.md` § Darksaber
+  // case study.
   {
     id: 'animated-pre-vizsla-darksaber',
     name: 'Pre Vizsla (Darksaber)',
@@ -98,12 +107,12 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: true,
     description:
-      'The ancient Mandalorian Darksaber: a flat, katana-shaped blade with a bright white core surrounded by a dark energy edge.',
+      'The ancient Mandalorian Darksaber. On a 1D Neopixel strip the canonical 2D-outlined blade is approximated as a bright-white emitter + tip with a near-black body — the honest hardware approximation per Fett263 conventions.',
     hiltNotes: 'Unique rectangular hilt of Mandalorian beskar, the only one of its kind.',
-    topologyNotes: 'Flat blade profile rather than cylindrical. White core with dark black-purple corona.',
+    topologyNotes: 'Flat blade profile rather than cylindrical. Hardware approximation: bright emitter + bright tip framing a near-black middle.',
     config: {
       name: 'Darksaber',
-      baseColor: { r: 255, g: 255, b: 255 },
+      baseColor: { r: 5, g: 5, b: 5 },
       clashColor: { r: 160, g: 180, b: 255 },
       lockupColor: { r: 100, g: 120, b: 200 },
       blastColor: { r: 200, g: 210, b: 255 },
@@ -112,7 +121,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
       retraction: 'standard',
       ignitionMs: 200,
       retractionMs: 300,
-      shimmer: 0.3,
+      shimmer: 0,
       ledCount: 144,
     },
   },
@@ -358,6 +367,8 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
   },
 
   // ── Sabine Wren (Darksaber) ──
+  // See Pre Vizsla preset above for the darksaber hardware-fidelity contract:
+  // baseColor + shimmer are vestigial / dead for this style.
   {
     id: 'animated-sabine-wren-darksaber',
     name: 'Sabine Wren (Darksaber)',
@@ -367,12 +378,12 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: true,
     description:
-      'The Darksaber wielded by Sabine Wren after claiming it in Mandalorian tradition. Same ancient blade, new warrior.',
+      'The Darksaber wielded by Sabine Wren after claiming it in Mandalorian tradition. Same ancient blade, new warrior — same hardware approximation.',
     hiltNotes: 'Mandalorian Darksaber — identical hilt to Pre Vizsla\'s, passed through combat.',
-    topologyNotes: 'Flat blade profile. White core with dark energy corona.',
+    topologyNotes: 'Flat blade profile. Hardware approximation: bright emitter + tip framing a near-black middle.',
     config: {
       name: 'SabineDarksaber',
-      baseColor: { r: 255, g: 255, b: 255 },
+      baseColor: { r: 5, g: 5, b: 5 },
       clashColor: { r: 150, g: 170, b: 255 },
       lockupColor: { r: 110, g: 130, b: 210 },
       blastColor: { r: 190, g: 200, b: 255 },
@@ -381,7 +392,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
       retraction: 'fadeout',
       ignitionMs: 220,
       retractionMs: 350,
-      shimmer: 0.32,
+      shimmer: 0,
       ledCount: 144,
     },
   },
@@ -538,6 +549,10 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
   },
 
   // ── Din Djarin (Darksaber) ──
+  // Din\'s lack of training is conveyed through the slow `stutter` ignition
+  // (500 ms) — NOT through "unstable" shimmer, which the darksaber engine
+  // path doesn\'t apply. See Pre Vizsla preset above for the hardware
+  // contract.
   {
     id: 'animated-din-djarin-darksaber',
     name: 'Din Djarin (Darksaber)',
@@ -546,11 +561,11 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     screenAccurate: true,
-    description: 'The Mandalorian struggles to wield the ancient Darksaber. Crackling, unstable white-core blade with a dark edge, reflecting his lack of training.',
+    description: 'The Mandalorian struggles to wield the ancient Darksaber. Same canonical Darksaber visual on hardware (bright emitter + tip, near-black body); his hesitation is captured in the slower stutter ignition rather than blade instability.',
     hiltNotes: 'Ancient Mandalorian Darksaber — flat blade, angular hilt with black finish.',
     config: {
       name: 'DinDarksaber',
-      baseColor: { r: 255, g: 255, b: 255 },
+      baseColor: { r: 5, g: 5, b: 5 },
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 180, g: 180, b: 200 },
       blastColor: { r: 255, g: 255, b: 255 },
@@ -559,7 +574,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
       retraction: 'standard',
       ignitionMs: 500,
       retractionMs: 400,
-      shimmer: 0.35,
+      shimmer: 0,
       ledCount: 144,
     },
   },

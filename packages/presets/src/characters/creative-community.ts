@@ -34,17 +34,27 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
       ledCount: 144,
     },
   },
+  // ── Crackling Black Blade ──
+  //
+  // NOT a Mandalorian Darksaber: this preset uses `style: 'unstable'`,
+  // which renders an unstable flicker on the configured `baseColor`. The
+  // canonical Darksaber engine path (`style: 'darksaber'`) is a STATIC
+  // gradient with no flicker — see `Pre Vizsla (Darksaber)` for that.
+  // This preset trades hardware fidelity for the "blade fights you"
+  // narrative effect: a dim purple-blue body modulated by unstable flicker
+  // with a glitchy ignition. Originally named "Darksaber (Crackling)";
+  // renamed 2026-05-01 audit to stop overloading the Darksaber name.
   {
     id: 'creative-darksaber-deep',
-    name: 'Darksaber (Crackling)',
-    character: 'Darksaber',
+    name: 'Crackling Black Blade',
+    character: 'Black Blade',
     era: 'animated',
     affiliation: 'neutral',
     tier: 'detailed',
-    description: 'Jet-black core with a crackling white edge. High shimmer creates the irregular, living energy the Darksaber is known for. The blade fights you.',
-    hiltNotes: 'Ancient Mandalorian hilt with angular crossguard shape. Pairs well with BifurcateEffect on clash once effect-binding ships (v1.1).',
+    description: 'Dim purple-blue body modulated by unstable flicker — a creative variant for builders who want a "the blade fights you" feel without using the canonical Darksaber engine path. NOT a screen-accurate Mandalorian Darksaber; for that, use the Pre Vizsla / Sabine Wren / Din Djarin presets which use the dedicated `darksaber` style.',
+    hiltNotes: 'Angular crossguard hilt. Pairs well with BifurcateEffect on clash once effect-binding ships (v1.1).',
     config: {
-      name: 'DarksaberCrackling',
+      name: 'CracklingBlackBlade',
       baseColor: { r: 40, g: 40, b: 60 },
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 180, g: 180, b: 200 },

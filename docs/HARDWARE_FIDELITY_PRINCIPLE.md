@@ -182,6 +182,62 @@ this principle was written down. Going forward, any new layer-compositor
 mode MUST have a corresponding ProffieOS template emission path before it
 ships in the UI.
 
+### 2026-05-01 — Darksaber preset audit + drift sentinel
+
+Audit pass on every preset using `style: 'darksaber'`. The engine path
+(`packages/engine/src/styles/DarkSaberStyle.ts`) hardcodes the body color
+to `{r:5,g:5,b:5}` and the emitter+tip to white, ignores `time` and
+`context.config.baseColor` entirely, and emits the canonical ProffieOS
+template `Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>` directly via
+the codegen — **never wrapped in AudioFlicker**. So the `baseColor` and
+`shimmer` fields on a `darksaber`-style preset are dead: the slider has
+no effect on hardware, and any color the user sets in `baseColor` is
+discarded by the engine + codegen alike.
+
+Five issue classes found:
+
+1. **Vestigial `baseColor` values.** Pre Vizsla / Sabine Wren / Din
+   Djarin used `{r:255,g:255,b:255}` (pure white); Black Ranger used
+   `{r:30,g:30,b:40}` (slightly-brighter-than-canonical). All normalized
+   to the canonical `{r:5,g:5,b:5}` so the field is consistent across the
+   library and the gallery card swatch displays a sensible body color.
+
+2. **Vestigial `shimmer` values.** All 8 canonical-darksaber presets had
+   `shimmer` ranging from `0.08` to `0.35`. The engine and codegen ignore
+   this for `darksaber` style. All normalized to `0` so the slider value
+   matches its observable effect.
+
+3. **Misleading description on Din Djarin.** Original text claimed
+   "Crackling, unstable white-core blade" — but the engine renders the
+   static gradient regardless. Rewritten to attribute Din\'s hesitation
+   to the slow `stutter` ignition (which does run on hardware) rather
+   than to blade instability the engine cannot deliver.
+
+4. **Factually wrong description on Black Ranger.** Original text claimed
+   the body would render at `{r:30,g:30,b:40}` — but the engine hardcodes
+   `{r:5,g:5,b:5}`. Rewritten to honestly describe that the engine
+   ignores `baseColor` for `darksaber` style and that Zack\'s Mastodon
+   purple flavor is carried by the clash + lockup + blast effect layers
+   composed on top.
+
+5. **`creative-darksaber-deep` style mismatch.** Preset was named
+   "Darksaber (Crackling)" with description claiming Mandalorian
+   Darksaber traits — but it used `style: 'unstable'`, NOT
+   `style: 'darksaber'`. On hardware the preset renders an unstable
+   purple-blue flicker, not the canonical Darksaber visual. Renamed to
+   "Crackling Black Blade" + character "Black Blade" + reworded
+   description to clarify it\'s a creative variant, not a Darksaber.
+   `style` kept as `'unstable'` since that\'s what delivers the
+   "crackling" intent.
+
+New drift sentinel at `packages/presets/tests/darksaberPresets.test.ts`
+(8 cases) pins the contract going forward:
+- Every `style: 'darksaber'` preset has `baseColor: {r:5,g:5,b:5}`
+- Every `style: 'darksaber'` preset has `shimmer: 0`
+- Every preset whose name contains "Darksaber" uses `style: 'darksaber'`
+- Descriptions don\'t claim "unstable / crackling / flickering blade"
+  effects the engine cannot deliver
+
 ## When to update this doc
 
 - A new style is added to the engine.

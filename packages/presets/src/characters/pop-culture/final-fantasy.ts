@@ -266,7 +266,7 @@ export const FINAL_FANTASY_PRESETS: Preset[] = [
       retraction: 'dissolve',
       ignitionMs: 500,
       retractionMs: 600,
-      shimmer: 0.1,
+      shimmer: 0,
       ledCount: 144,
       swingFxIntensity: 0.35,
       noiseLevel: 0.06,
