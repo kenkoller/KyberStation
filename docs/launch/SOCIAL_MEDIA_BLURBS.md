@@ -4,17 +4,17 @@ Channel-by-channel copy. Each is calibrated for that platform's
 audience + length limit + posting culture.
 
 **Order of posting:**
-1. Day 1 — Twitter/X + Bluesky + Mastodon (parallel with Reddit)
-2. Day 4 — LinkedIn (different audience, technical angle)
-3. Day 10+ if Reddit traction supports — Hacker News (Show HN)
+1. Day 1, Twitter/X + Bluesky + Mastodon (parallel with Reddit)
+2. Day 4, LinkedIn (different audience, technical angle)
+3. Day 10+ if Reddit traction supports, Hacker News (Show HN)
 
 ---
 
 ## Twitter / X (5 variants, all under 280 chars)
 
-### Variant 1 — Direct
+### Variant 1: Direct
 ```
-Just shipped KyberStation — a free browser-based visual editor for
+Just shipped KyberStation, a free browser-based visual editor for
 designing custom lightsaber blade styles + exporting Proffie configs.
 
 33 styles, 22 effects, 354 presets, all in your browser. MIT.
@@ -23,9 +23,9 @@ First public project. Feedback welcome.
 https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~245.** Comfortably under cap. Includes URL but not
-hashtags (don't bother — they don't help on X anymore).
+hashtags (don't bother, they don't help on X anymore).
 
-### Variant 2 — "I built a thing"
+### Variant 2: "I built a thing"
 ```
 I built a thing. KyberStation: free, browser-based visual editor for
 lightsaber blade styles. Exports ProffieOS code that compiles in
@@ -37,7 +37,7 @@ https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~258.**
 
-### Variant 3 — Engineering angle (ride on dev followers)
+### Variant 3: Engineering angle (ride on dev followers)
 ```
 Spent the last few months building a visual editor for designing
 custom lightsaber blade styles. AST-based code generator, real-time
@@ -49,7 +49,7 @@ https://kenkoller.github.io/KyberStation/
 ```
 **Char count: ~263.**
 
-### Variant 4 — Star Wars Day teaser (use ~5 days before May 4)
+### Variant 4: Star Wars Day teaser (use ~5 days before May 4)
 ```
 Star Wars Day is almost here. If you want to try a new blade style on
 your Proffieboard saber, I shipped a free tool a few weeks back called
@@ -61,7 +61,7 @@ Code: github.com/kenkoller/KyberStation
 ```
 **Char count: ~270.**
 
-### Variant 5 — Showcase clip (attach a real-saber GIF)
+### Variant 5: Showcase clip (attach a real-saber GIF)
 ```
 This is the same blade style designed in KyberStation, then flashed to
 my real saber via WebUSB. Free, browser-based, MIT, hobby project.
@@ -79,7 +79,7 @@ https://kenkoller.github.io/KyberStation/
 ```
 I shipped a side project this week.
 
-It's called KyberStation — a browser-based visual editor for
+It's called KyberStation, a browser-based visual editor for
 designing custom lightsaber blade styles, with a real-time simulator
 and a ProffieOS config generator on top. I built it for my own
 89sabers Proffieboard hilt because I was tired of hand-editing
@@ -90,7 +90,7 @@ A few things I'm proud of (and a few that humbled me):
 
 The codebase is a TypeScript / Next.js / Zustand monorepo with a
 headless simulation engine. I learned that engine-first architecture
-— simulation as the source of truth, rendering as a thin layer — pays
+simulation as the source of truth, rendering as a thin layer, pays
 off the moment you want unit tests, deterministic motion capture, or
 to run anything headless.
 
@@ -114,7 +114,7 @@ community to find the gaps" rather than "I've personally verified
 every combination."
 
 This is my first publicly released project. MIT licensed. Hobby
-project. No commercial intent — runs free on GitHub Pages, will keep
+project. No commercial intent, runs free on GitHub Pages, will keep
 running indefinitely.
 
 If anyone here works on similar visual-editor / DSL / code-gen
@@ -128,7 +128,7 @@ Live: https://kenkoller.github.io/KyberStation/
 ```
 
 **Tone check:** humble, specific, technical-but-readable, reflective.
-Don't over-hashtag (3 max). Don't add `#StarWars` — LinkedIn algo will
+Don't over-hashtag (3 max). Don't add `#StarWars`, LinkedIn algo will
 class it as entertainment and bury it.
 
 ---
@@ -174,7 +174,7 @@ name from the description.
 ### Body
 
 ```
-Hi HN — I'm Ken.
+Hi HN, I'm Ken.
 
 KyberStation is a browser-based visual editor for designing custom
 lightsaber blade styles, with a real-time simulator and a ProffieOS
@@ -188,13 +188,13 @@ A few things that might interest folks here:
 
 **Architecture.** TypeScript / Next.js 14 / Zustand monorepo,
 turborepo + pnpm workspaces. Engine package is headless (zero DOM
-deps) — runs identically in browser, vitest, and theoretically
+deps), runs identically in browser, vitest, and theoretically
 Electron. The React UI is a thin rendering layer over the engine's
 LED array output, which made testing tractable.
 
 **AST-based code generation.** ProffieOS uses deeply nested C++
 templates: `Layers<>`, `BlastL<LockupTrL<...>>`, `InOutTrL<TrWipe<300>,
-TrFade<500>, ...>`. I went AST-first — config → AST → emitted code.
+TrFade<500>, ...>`. I went AST-first, config → AST → emitted code.
 The validator catches structural issues at the AST stage, so the
 emitter can't produce unbalanced template brackets. Generated configs
 have compiled cleanly via arduino-cli against ProffieOS 7.x (23-
@@ -203,7 +203,7 @@ preset config, 264 KB / 52% flash on V3).
 **WebUSB for one-click flashing.** STM32 DfuSe protocol implemented
 from scratch in TypeScript (apps/web/lib/webusb/). 576 unit tests
 against a pure-TS DfuSe mock. Three real protocol bugs surfaced only
-during real-hardware validation that the mocks missed — those are
+during real-hardware validation that the mocks missed, those are
 documented in the README and the validation grid honestly lists which
 hardware/OS/browser combinations are confirmed vs. unverified.
 
@@ -239,7 +239,7 @@ Happy to answer questions.
 - Architecture trade-offs: yes (especially "what would you do
   differently")
 - Saber community drama: no
-- Defensiveness: no — if someone says your architecture is wrong,
+- Defensiveness: no, if someone says your architecture is wrong,
   thank them and ask what they'd do instead
 
 ---
@@ -250,7 +250,7 @@ Bluesky is small but conversational. Closer to early-Twitter than to
 LinkedIn or Mastodon.
 
 ```
-Shipped KyberStation today — a free browser-based visual editor for
+Shipped KyberStation today, a free browser-based visual editor for
 lightsaber blade styles. Real-time sim, ProffieOS code export, MIT,
 no backend.
 
@@ -261,7 +261,7 @@ https://kenkoller.github.io/KyberStation/
 github.com/kenkoller/KyberStation
 ```
 
-**Char count: ~310.** Bluesky's cap is 300 — trim "or are just saber-
+**Char count: ~310.** Bluesky's cap is 300, trim "or are just saber-
 curious" to "or are saber-curious" to fit.
 
 ```
@@ -274,7 +274,7 @@ one workstation)
 | Time (ET) | Action |
 |---|---|
 | 7:30 AM | Verify deployed URL, run a quick smoke test |
-| 8:00 AM | ~~Push `v0.16.0` tag, flip repo public~~ — already done 2026-04-30 |
+| 8:00 AM | ~~Push `v0.16.0` tag, flip repo public~~, already done 2026-04-30 |
 | 8:15 AM | Pin `GITHUB_ANNOUNCEMENT.md` body as a Discussion |
 | 8:30 AM | Apply README edits per `GITHUB_ANNOUNCEMENT.md` § "README updates needed" |
 | 9:30 AM | Soft-DM 3-5 trusted saber friends (you may have done this T-2 already) |

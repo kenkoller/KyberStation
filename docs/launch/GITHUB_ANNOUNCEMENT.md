@@ -14,12 +14,12 @@ for reference but already complete. Focus on 3-4.*
 ## Pinned Discussion
 
 **Category:** Announcements
-**Title:** Welcome to KyberStation — what this is and how to give feedback
+**Title:** Welcome to KyberStation, what this is and how to give feedback
 
 ### Body
 
 ```markdown
-Hi everyone — Ken here.
+Hi everyone, Ken here.
 
 KyberStation is a browser-based visual editor and simulator for
 lightsaber blade styles, with a ProffieOS config generator on top.
@@ -36,21 +36,21 @@ better.
   animations**
 - **354 character presets** across canon, Legends, and pop-culture
   sources (LOTR, Marvel, mythology, anime, Star Wars Visions, more)
-- **AST-based ProffieOS C++ code generator** — output compiles
+- **AST-based ProffieOS C++ code generator**, output compiles
   directly in Arduino IDE
 - **Sound font library** with SmoothSwing pair simulation
-- **Saber profile + SD card composer** — export the entire SD card as
+- **Saber profile + SD card composer**, export the entire SD card as
   a ZIP
-- **Multi-board support** — config generation for 16 boards (Proffie,
+- **Multi-board support**, config generation for 16 boards (Proffie,
   CFX, Golden Harvest, Xenopixel, Verso, etc.)
 - **One-click WebUSB flashing** for Proffieboards (V3.9 hardware-
   validated; other revisions unverified)
-- **Modulation routing v1.1 + Wave 8 LITE** — wire any of 19
+- **Modulation routing v1.1 + Wave 8 LITE**, wire any of 19
   modulators (11 continuous + latched signals; 8 button/gesture
   events) to any tunable parameter with combinator math +
   per-binding expression editing
-- **Kyber Codes** — compact share links for any blade design
-- **PWA installable** — works offline after first visit, no app store
+- **Kyber Codes**, compact share links for any blade design
+- **PWA installable**, works offline after first visit, no app store
   needed
 
 Browser-only. No accounts. No backend. No telemetry. Your data stays
@@ -114,7 +114,7 @@ meantime, the most valuable contributions are:
 - Preset / style requests for characters or designs the gallery is
   missing
 
-Forking is fully welcome — MIT license, no restrictions.
+Forking is fully welcome, MIT license, no restrictions.
 
 ## What I'm hoping for
 
@@ -125,8 +125,8 @@ Forking is fully welcome — MIT license, no restrictions.
 
 ## Credits
 
-- **ProffieOS** by Fredrik Hübinette — the firmware this tool targets
-- **Fett263's Style Library** — the prop file conventions and dual-mode
+- **ProffieOS** by Fredrik Hübinette, the firmware this tool targets
+- **Fett263's Style Library**, the prop file conventions and dual-mode
   ignition / edit-mode patterns this tool produces
 - The r/lightsabers and r/Proffieboard communities, which have been
   quietly teaching me this hobby for years
@@ -143,7 +143,7 @@ attribution header.
 
 May the Force be with you. Thanks for being here.
 
-— Ken
+Ken
 ```
 
 ---
@@ -159,11 +159,11 @@ public launch:
 ```
 **Visual blade style editor, real-time simulator, and config generator for custom lightsabers.**
 
-![KyberStation landing page — live blade render behind the wordmark](docs/images/landing-hero.png)
+![KyberStation landing page, live blade render behind the wordmark](docs/images/landing-hero.png)
 
-Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device — phone, tablet, laptop, or desktop. Installable as a PWA.
+Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device, phone, tablet, laptop, or desktop. Installable as a PWA.
 
-> Think "DAW for lightsabers" — if GarageBand let you design blade animations instead of music tracks.
+> Think "DAW for lightsabers", if GarageBand let you design blade animations instead of music tracks.
 ```
 
 **Suggested:**
@@ -182,7 +182,7 @@ This sets the right expectations in the first scroll.
 
 [Live demo: https://...](URL)
 
-Or install as a PWA — [Open the app](URL), then click the install icon
+Or install as a PWA, [Open the app](URL), then click the install icon
 in your browser's address bar. Works offline after first visit.
 ```
 
@@ -203,7 +203,7 @@ the entire README during launch.
 
 **Current** (line ~739 in LAUNCH_ASSETS.md): "700+ character presets"
 
-**Reality** (verified 2026-05-01 from `packages/presets/src/` —
+**Reality** (verified 2026-05-01 from `packages/presets/src/`,
 counted 354 entries via `grep -rhE "^\s+id:\s*['\"]"` after Star Wars
 Visions Vol 1 + Acolyte/Maul lifecycle landed). The "700+" claim is
 from an older draft and is **incorrect**.
@@ -213,17 +213,17 @@ draft to use the accurate count. Suggested phrasing:
 
 > **354 character presets** across canon, Legends, and pop-culture
 > sources (LOTR, Marvel, DC, mythology, anime, gaming, kids' cartoons,
-> Power Rangers, mascots, Star Wars Visions, and more — every preset
+> Power Rangers, mascots, Star Wars Visions, and more, every preset
 > is `continuity`-tagged so you can filter to just canon if that's
 > your thing).
 
-### Edit 5: Status section — add v0.16.0 entry
+### Edit 5: Add to Status section: v0.16.0 entry
 
 The README's "Status" section currently ends at v0.11.2. Suggested
 addition near the top of that section:
 
 ```markdown
-### v0.16.0 — Public launch (2026-04-30)
+### v0.16.0: Public launch (2026-04-30)
 
 The first publicly-released version. Includes:
 - Full Modulation Routing v1.1 Core + Wave 8 LITE (19 modulators
@@ -234,20 +234,20 @@ The first publicly-released version. Includes:
 - 354-preset gallery across canon, Legends, pop-culture, and Star Wars Visions
 - AST-based ProffieOS code generator targeting 16 boards
 - Save Preset v1 (IndexedDB-backed user presets) + Add to Queue v1
-- WebUSB flashing — experimental, validated on Proffieboard V3.9 + macOS + Brave
+- WebUSB flashing, experimental, validated on Proffieboard V3.9 + macOS + Brave
 - ~5,000 tests across 10 workspace packages
 
 See the [CHANGELOG](CHANGELOG.md) for the full list.
 ```
 
-### Edit 6: Feedback section — add "respond time" expectation
+### Edit 6: Add to Feedback section: "respond time" expectation
 
 **Current:** lists the feedback channels but doesn't set expectation.
 
 **Insert:**
 ```
 > I read every issue and discussion personally. Reply times can range
-> from hours to a few days — this is a hobby project and I'm protecting
+> from hours to a few days, this is a hobby project and I'm protecting
 > ~5 hrs/week of time for it. Nothing falls through the cracks though.
 ```
 

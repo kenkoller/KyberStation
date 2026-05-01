@@ -2,7 +2,7 @@
 
 Short-form social skews younger and more visual. The lightsaber
 community on both is growing fast. Approach is different from
-YouTube email — DMs are casual, comments are public, video samples
+YouTube email, DMs are casual, comments are public, video samples
 should look great regardless of voice.
 
 **Send timing:** ~10-14 days after Reddit launch, parallel to the
@@ -16,12 +16,12 @@ YouTube wave.
 
 ---
 
-## Template 1 — Initial DM (cold, < 500 chars)
+## Template 1: Initial DM (cold, < 500 chars)
 
 ```
-Hey [Name] —
+Hey [Name],
 
-Saw your [specific recent post — e.g., "Ahsoka build reveal", "duel
+Saw your [specific recent post, e.g., "Ahsoka build reveal", "duel
 clip from last week"] and had to say: that build is incredible.
 
 Built a free browser tool called KyberStation for designing blade
@@ -30,7 +30,7 @@ it's useful for your build content, awesome. If not, no worries.
 
 https://kenkoller.github.io/KyberStation/
 
-— Ken
+Ken
 ```
 
 **Variations by audience:**
@@ -40,17 +40,17 @@ https://kenkoller.github.io/KyberStation/
 
 ---
 
-## Template 2 — Comment-on-their-content (genuine engagement)
+## Template 2: Comment-on-their-content (genuine engagement)
 
 **Use when:** They post a build or saber clip, and KyberStation
-genuinely fits the context. Don't drop this on every saber post — it
+genuinely fits the context. Don't drop this on every saber post, it
 becomes spam fast.
 
 **Format:** ~2 sentences. First about *their* work. Second is the soft
 mention.
 
 ```
-This [build / clip / detail] is so clean — [specific genuine
+This [build / clip / detail] is so clean, [specific genuine
 observation about their post]. If you ever want to mess with custom
 blade styles for it, I just shipped a free tool for that:
 KyberStation. No pressure obviously, your work doesn't need it.
@@ -64,7 +64,7 @@ Cool video. Check out my tool: https://kenkoller.github.io/KyberStation/
 **Good example:**
 ```
 The way the SmoothSwing crossfade is hitting that backhand is exactly
-what I was hoping mine would do — what font are you running? If you
+what I was hoping mine would do, what font are you running? If you
 ever want to design custom blade styles for it I shipped a free
 browser tool for that: KyberStation. Yours doesn't need it though,
 this is dialed.
@@ -72,7 +72,7 @@ this is dialed.
 
 ---
 
-## Template 3 — "Send a video sample" follow-up
+## Template 3: "Send a video sample" follow-up
 
 **Send when:** They've replied to your DM with interest ("oh cool!"
 or "I'll check it out"), but haven't said yes to anything specific.
@@ -81,7 +81,7 @@ or "I'll check it out"), but haven't said yes to anything specific.
 content with zero work. Make the offer concrete, not vague.
 
 ```
-Cool — glad you're into it!
+Cool, glad you're into it!
 
 If it'd help for any future content, I can record a quick 5-10 second
 clip of [specific blade style they'd like / their character build's
@@ -90,10 +90,10 @@ ever want. No expectation that you'll use it; just easier than asking
 you to record yourself.
 
 Or, easier path: design a blade style you like in the editor, copy
-the Kyber Code share link, and send it to me — I'll generate a clean
+the Kyber Code share link, and send it to me, I'll generate a clean
 demo clip from it. Either way works.
 
-— Ken
+Ken
 ```
 
 **The Kyber Code path is the better play.** It puts their creative
