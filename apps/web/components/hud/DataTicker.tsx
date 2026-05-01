@@ -51,7 +51,17 @@ export function DataTicker({
         style={{
           display: 'inline-block',
           whiteSpace: 'nowrap',
-          fontFamily: "'Aurebesh AF', 'FT Aurebesh', monospace",
+          // `--aurebesh-family` is set by the user's chosen variant
+          // (canon / canon-tech / legends / legends-tech) on <html>;
+          // it falls back to `--font-aurebesh-canon` when no variant
+          // class is active. Both variables come from the
+          // `next/font/local` calls in `app/layout.tsx` so the
+          // generated @font-face URLs honor `basePath` automatically
+          // (the previous hardcoded `'Aurebesh AF'` family pointed at
+          // a root-relative URL that 404'd under the `/KyberStation`
+          // GitHub Pages basePath, dropping the ticker silently into
+          // monospace in production — 2026-05-01).
+          fontFamily: "var(--aurebesh-family, var(--font-aurebesh-canon)), 'FT Aurebesh', monospace",
           fontSize: 10,
           letterSpacing: '0.08em',
           color: 'rgba(var(--accent), 0.18)',

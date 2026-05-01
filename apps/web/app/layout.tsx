@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Orbitron, Exo_2 } from 'next/font/google';
+import localFont from 'next/font/local';
 import { MobileTabBar } from '@/components/layout/MobileTabBar';
 import './globals.css';
 
@@ -33,6 +34,43 @@ const exo2 = Exo_2({
   weight: ['300', '400', '500', '600', '700'],
 });
 
+// Aurebesh AF — 4 variants self-hosted via next/font/local so the
+// generated @font-face URLs honor `basePath` automatically (the
+// previous manual @font-face declarations in globals.css emitted
+// root-relative URLs like `/fonts/aurebesh/...` which 404 on the
+// `/KyberStation` GitHub Pages deployment — local dev with empty
+// basePath worked, production didn't, so the bottom HUD ticker
+// silently fell back to monospace in production).
+//
+// Each variable maps to one variant; `globals.css` resolves
+// `--aurebesh-family` to the matching variable based on
+// `html.aurebesh-variant-*` and consumers (DataTicker, .sw-aurebesh,
+// aurebesh-labels / aurebesh-full immersion modes) read through that
+// indirection.
+const aurebeshCanon = localFont({
+  src: '../public/fonts/aurebesh/AurebeshAF-Canon.otf',
+  display: 'swap',
+  variable: '--font-aurebesh-canon',
+});
+
+const aurebeshCanonTech = localFont({
+  src: '../public/fonts/aurebesh/AurebeshAF-CanonTech.otf',
+  display: 'swap',
+  variable: '--font-aurebesh-canon-tech',
+});
+
+const aurebeshLegends = localFont({
+  src: '../public/fonts/aurebesh/AurebeshAF-Legends.otf',
+  display: 'swap',
+  variable: '--font-aurebesh-legends',
+});
+
+const aurebeshLegendsTech = localFont({
+  src: '../public/fonts/aurebesh/AurebeshAF-LegendsTech.otf',
+  display: 'swap',
+  variable: '--font-aurebesh-legends-tech',
+});
+
 export const metadata: Metadata = {
   title: 'KyberStation — Lightsaber Style Editor',
   description:
@@ -58,7 +96,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${jetBrainsMono.variable} ${orbitron.variable} ${exo2.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${jetBrainsMono.variable} ${orbitron.variable} ${exo2.variable} ${aurebeshCanon.variable} ${aurebeshCanonTech.variable} ${aurebeshLegends.variable} ${aurebeshLegendsTech.variable}`}>
       <head>
         {process.env.NODE_ENV === 'production' && (
           <meta

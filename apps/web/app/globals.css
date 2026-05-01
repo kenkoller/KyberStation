@@ -8,40 +8,18 @@
    --font-exo2). No external Google Fonts request — eliminates ~200-400ms
    FCP delay on slow 3G (P30 + P31 2026-04-22 audit finding). */
 
-/* Phase 1.5n (2026-04-24): Aurebesh AF self-hosted from /public/fonts/aurebesh.
-   Four variants — Canon (primary), CanonTech (tech/numeric emphasis),
-   Legends (expanded-universe forms), LegendsTech. Referenced by the HUD
-   DataTicker, .sw-aurebesh decorative class, and the aurebesh-labels /
-   aurebesh-full immersion modes. `font-display: swap` so text renders
-   immediately with the monospace fallback and re-flows on font load. */
-@font-face {
-  font-family: 'Aurebesh AF';
-  src: url('/fonts/aurebesh/AurebeshAF-Canon.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Aurebesh AF Tech';
-  src: url('/fonts/aurebesh/AurebeshAF-CanonTech.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Aurebesh AF Legends';
-  src: url('/fonts/aurebesh/AurebeshAF-Legends.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Aurebesh AF Legends Tech';
-  src: url('/fonts/aurebesh/AurebeshAF-LegendsTech.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+/* Phase 1.5n (2026-04-24): Aurebesh AF self-hosted, four variants —
+   Canon (primary), CanonTech (tech/numeric emphasis), Legends
+   (expanded-universe forms), LegendsTech.
+   Referenced by the HUD DataTicker, .sw-aurebesh decorative class, and
+   the aurebesh-labels / aurebesh-full immersion modes.
+
+   2026-05-01: migrated from manual @font-face declarations (which
+   emitted root-relative `/fonts/aurebesh/...` URLs that broke under
+   GitHub Pages' `/KyberStation` basePath in production) to
+   `next/font/local` calls in `app/layout.tsx`. The `--font-aurebesh-*`
+   CSS variables are auto-set on <html> by next/font; `--aurebesh-family`
+   below is the variant-aware indirection every consumer reads. */
 
 :root {
   /* Channel-format: space-separated RGB for Tailwind opacity modifiers */
@@ -594,9 +572,10 @@ html.perf-lite [style*="skeleton-shimmer"] {
 
 /* Aurebesh decorative text — picks up the user's chosen variant via
    the same `--aurebesh-family` indirection the immersion-mode classes
-   use. Default 'Aurebesh AF' (Canon) when no variant has been set. */
+   use. Default Canon (`--font-aurebesh-canon`) when no variant has
+   been set. */
 .sw-aurebesh {
-  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', monospace;
+  font-family: var(--aurebesh-family, var(--font-aurebesh-canon)), 'FT Aurebesh', monospace;
   letter-spacing: 0.05em;
 }
 
@@ -1169,25 +1148,30 @@ html.aurebesh-labels .section-header,
 html.aurebesh-labels .tab-label,
 html.aurebesh-labels .sidebar-label,
 html.aurebesh-labels [data-aurebesh] {
-  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
+  font-family: var(--aurebesh-family, var(--font-aurebesh-canon)), 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
   letter-spacing: 0.06em;
 }
 
 /* Full mode: everything renders in Aurebesh */
 html.aurebesh-full body {
-  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
+  font-family: var(--aurebesh-family, var(--font-aurebesh-canon)), 'FT Aurebesh', var(--font-exo2), 'Exo 2', sans-serif;
 }
 html.aurebesh-full .font-cinematic {
-  font-family: var(--aurebesh-family, 'Aurebesh AF'), 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
+  font-family: var(--aurebesh-family, var(--font-aurebesh-canon)), 'FT Aurebesh', var(--font-orbitron), 'Orbitron', sans-serif;
 }
 
 /* Variant selection — defines `--aurebesh-family` per the user's
    chosen variant. Always applied (even when mode === 'off') so any
-   `.sw-aurebesh` decoratives also pick up the preferred variant. */
-html.aurebesh-variant-canon         { --aurebesh-family: 'Aurebesh AF'; }
-html.aurebesh-variant-canon-tech    { --aurebesh-family: 'Aurebesh AF Tech'; }
-html.aurebesh-variant-legends       { --aurebesh-family: 'Aurebesh AF Legends'; }
-html.aurebesh-variant-legends-tech  { --aurebesh-family: 'Aurebesh AF Legends Tech'; }
+   `.sw-aurebesh` decoratives + the bottom HUD ticker pick up the
+   preferred variant. The `--font-aurebesh-*` variables come from the
+   `next/font/local` calls in `app/layout.tsx`, which generate
+   basePath-aware @font-face URLs automatically (the manual
+   declarations here used to emit root-relative URLs that 404'd on
+   GitHub Pages). */
+html.aurebesh-variant-canon         { --aurebesh-family: var(--font-aurebesh-canon); }
+html.aurebesh-variant-canon-tech    { --aurebesh-family: var(--font-aurebesh-canon-tech); }
+html.aurebesh-variant-legends       { --aurebesh-family: var(--font-aurebesh-legends); }
+html.aurebesh-variant-legends-tech  { --aurebesh-family: var(--font-aurebesh-legends-tech); }
 
 /* Exclusions — never render in Aurebesh regardless of mode */
 html.aurebesh-labels .no-aurebesh,
