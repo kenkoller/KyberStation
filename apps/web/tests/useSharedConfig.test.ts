@@ -178,6 +178,71 @@ afterEach(() => {
 
 // ── Tests ──────────────────────────────────────────────────────────
 
+describe('useSharedConfig — success toast labelling', () => {
+  it("uses payload.publicName when present (e.g. 'Loaded My Saber')", () => {
+    // Hand-build a payload with publicName set so we can verify the
+    // toast prefers it over the blade name.
+    const blade: BladeConfig = { ...CANONICAL_DEFAULT_CONFIG, name: 'InternalName' };
+    const payload: GlyphPayload = {
+      payloadVersion: KYBER_GLYPH_VERSION,
+      visualVersion: VISUAL_SYSTEM_VERSION,
+      saberType: 'single',
+      blades: [blade],
+      hiltModel: null,
+      soundFontRef: null,
+      oledBitmapRef: null,
+      propFileId: 'default',
+      publicName: 'My Saber',
+      createdAt: 0,
+      kyberstationVersion: '',
+      extras: {},
+    };
+    const glyph = encodeGlyph(payload);
+    setUrl(`?s=${glyph}`);
+
+    renderHook(() => useSharedConfig());
+
+    expect(mocks.toastSuccessSpy).toHaveBeenCalledWith('Loaded My Saber');
+  });
+
+  it("falls back to the first blade's name when publicName is null", () => {
+    // The default makeV1Glyph helper leaves publicName null. The
+    // CANONICAL_DEFAULT_CONFIG.name ('Obi-Wan ANH') should label the toast.
+    const glyph = makeV1Glyph({ name: 'Test Saber' });
+    setUrl(`?s=${glyph}`);
+
+    renderHook(() => useSharedConfig());
+
+    expect(mocks.toastSuccessSpy).toHaveBeenCalledWith('Loaded Test Saber');
+  });
+
+  it("uses the literal 'crystal' when neither publicName nor blade.name exist", () => {
+    // Hand-build a payload with no publicName AND a blade missing name.
+    const blade = { ...CANONICAL_DEFAULT_CONFIG } as BladeConfig & { name?: string };
+    delete (blade as { name?: string }).name;
+    const payload: GlyphPayload = {
+      payloadVersion: KYBER_GLYPH_VERSION,
+      visualVersion: VISUAL_SYSTEM_VERSION,
+      saberType: 'single',
+      blades: [blade],
+      hiltModel: null,
+      soundFontRef: null,
+      oledBitmapRef: null,
+      propFileId: 'default',
+      publicName: null,
+      createdAt: 0,
+      kyberstationVersion: '',
+      extras: {},
+    };
+    const glyph = encodeGlyph(payload);
+    setUrl(`?s=${glyph}`);
+
+    renderHook(() => useSharedConfig());
+
+    expect(mocks.toastSuccessSpy).toHaveBeenCalledWith('Loaded crystal');
+  });
+});
+
 describe('useSharedConfig — `?s=<glyph>` decode path', () => {
   it('decodes a v1 glyph and calls loadPreset with the first blade', () => {
     const glyph = makeV1Glyph({ name: 'Test Saber', shimmer: 0.42 });

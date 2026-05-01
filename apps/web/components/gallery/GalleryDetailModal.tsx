@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import type { Preset } from '@kyberstation/presets';
 import type { BladeConfig } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
-import { encodeConfig, buildShareUrl } from '@/lib/configUrl';
+import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
 import { playUISound } from '@/lib/uiSounds';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { MiniSaber } from '@/components/shared/MiniSaber';
@@ -55,8 +55,8 @@ export function GalleryDetailModal({
 
   const handleShare = useCallback(async () => {
     try {
-      const encoded = await encodeConfig(preset.config as BladeConfig);
-      const url = buildShareUrl(encoded);
+      const glyph = encodeGlyphFromConfig(preset.config as BladeConfig);
+      const url = `${window.location.origin}/editor?s=${glyph}`;
       await navigator.clipboard.writeText(url);
       playUISound('copy');
       setCopyState('copied');

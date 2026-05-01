@@ -1,7 +1,21 @@
+// ─── Legacy share-URL decoder (DECODE-ONLY) ───────────────────────────
+//
+// This module used to emit `${origin}/editor#<base64>` share links via
+// `encodeConfig` + `buildShareUrl`. Both encoder exports were removed
+// when the app migrated to Kyber Glyph (`?s=<glyph>`) as the canonical
+// emission format — see `apps/web/lib/sharePack/kyberGlyph.ts`.
+//
+// The DECODER stays for backward compatibility with old URLs already
+// in the wild (Twitter shares, bookmarks, embedded links). New share
+// emission MUST use `encodeGlyphFromConfig`. If you find yourself
+// reaching for an `encodeConfig` here, you almost certainly want
+// `encodeGlyphFromConfig` from the kyberGlyph module instead.
+
 import type { BladeConfig, RGB } from '@kyberstation/engine';
 import { validateBladeConfig } from './bladeConfigIO';
 
-// Short key mapping for compact URL encoding
+// Short key mapping mirror — encoder used these to compact JSON keys;
+// decoder still needs the reverse map to expand legacy payloads.
 const TO_SHORT: Record<string, string> = {
   name: 'n', baseColor: 'bc', clashColor: 'cc', lockupColor: 'lc',
   blastColor: 'xc', dragColor: 'dc', meltColor: 'mc', lightningColor: 'tc',
@@ -14,30 +28,15 @@ const FROM_SHORT: Record<string, string> = Object.fromEntries(
   Object.entries(TO_SHORT).map(([k, v]) => [v, k])
 );
 
-// RGB ↔ compact array
-function compactRGB(rgb: RGB): [number, number, number] {
-  return [rgb.r, rgb.g, rgb.b];
-}
-
 function expandRGB(arr: [number, number, number]): RGB {
   return { r: arr[0], g: arr[1], b: arr[2] };
-}
-
-function isRGBObject(val: unknown): val is RGB {
-  return typeof val === 'object' && val !== null && 'r' in val && 'g' in val && 'b' in val;
 }
 
 function isCompactRGB(val: unknown): val is [number, number, number] {
   return Array.isArray(val) && val.length === 3 && val.every((v) => typeof v === 'number');
 }
 
-// ─── Base64url encoding ───
-
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
+// ─── Base64url decoding ───
 
 function fromBase64Url(str: string): Uint8Array {
   const padded = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -47,33 +46,7 @@ function fromBase64Url(str: string): Uint8Array {
   return bytes;
 }
 
-// ─── Compression ───
-
-async function compress(data: Uint8Array): Promise<Uint8Array> {
-  if (typeof CompressionStream !== 'undefined') {
-    const cs = new CompressionStream('deflate-raw');
-    const writer = cs.writable.getWriter();
-    writer.write(data as unknown as ArrayBuffer);
-    writer.close();
-    const chunks: Uint8Array[] = [];
-    const reader = cs.readable.getReader();
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-    const totalLen = chunks.reduce((sum, c) => sum + c.length, 0);
-    const result = new Uint8Array(totalLen);
-    let offset = 0;
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return result;
-  }
-  // Fallback: no compression
-  return data;
-}
+// ─── Decompression ───
 
 async function decompress(data: Uint8Array): Promise<Uint8Array> {
   if (typeof DecompressionStream !== 'undefined') {
@@ -105,22 +78,10 @@ async function decompress(data: Uint8Array): Promise<Uint8Array> {
   return data;
 }
 
-// ─── Encode / Decode ───
-
-export async function encodeConfig(config: BladeConfig): Promise<string> {
-  // Build compact representation
-  const compact: Record<string, unknown> = {};
-  for (const [longKey, value] of Object.entries(config)) {
-    if (value === undefined) continue;
-    const shortKey = TO_SHORT[longKey] ?? longKey;
-    compact[shortKey] = isRGBObject(value) ? compactRGB(value) : value;
-  }
-
-  const json = JSON.stringify(compact);
-  const encoded = new TextEncoder().encode(json);
-  const compressed = await compress(encoded);
-  return toBase64Url(compressed);
-}
+// ─── Decode (legacy URLs only) ───
+//
+// Encoder removed 2026-05-01 — see file header. New emitters call
+// `encodeGlyphFromConfig` from `apps/web/lib/sharePack/kyberGlyph.ts`.
 
 export async function decodeConfig(hash: string): Promise<BladeConfig> {
   if (!hash || hash.length < 5) {
@@ -158,8 +119,4 @@ export async function decodeConfig(hash: string): Promise<BladeConfig> {
   }
 
   return expanded as BladeConfig;
-}
-
-export function buildShareUrl(encoded: string): string {
-  return `${window.location.origin}/editor#${encoded}`;
 }
