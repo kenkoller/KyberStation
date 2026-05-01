@@ -18,9 +18,9 @@ angle for power-Proffie subs. Variant C is the Star Wars Day reshare.
 **Suggested timing:** Tuesday or Wednesday, 10am-1pm Eastern
 **Suggested flair:** "Tools" / "Discussion" / "DIY" depending on sub options
 
-### Title — LOCKED IN (2026-04-30)
+### Title — LOCKED IN (2026-05-01)
 
-**Introducing KyberStation — a free visual blade editor for Proffie and other saber boards. First public project, would love your feedback.**
+**Introducing KyberStation, a free visual blade editor for Proffie and other saber boards. Sharing it ahead of Star Wars Day. First public project.**
 
 (Backups, in case mods reject the locked title or it needs tweaking on
 the day):
