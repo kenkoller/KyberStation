@@ -1011,4 +1011,682 @@ export const LEGENDS_PRESETS: Preset[] = [
       swingFxIntensity: 0.4,
     },
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // BANTAM ERA / NEW JEDI ORDER NOVELS
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Anakin Solo (Sword of the Jedi era) ──
+  {
+    id: 'legends-anakin-solo-blue',
+    name: 'Anakin Solo (New Jedi Order)',
+    character: 'Anakin Solo',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'Han and Leia\'s youngest, named for his grandfather. A bright Jedi blue with quick ignition reflecting his prodigious raw talent. Killed at Myrkr in the Yuuzhan Vong war — a generation\'s loss.',
+    hiltNotes: 'Skywalker-lineage hilt with embedded chrysopaz crystal — built by Anakin during his time as Luke\'s apprentice.',
+    config: {
+      name: 'AnakinSolo',
+      baseColor: { r: 30, g: 130, b: 245 },
+      clashColor: { r: 230, g: 240, b: 255 },
+      lockupColor: { r: 150, g: 200, b: 255 },
+      blastColor: { r: 255, g: 255, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 240,
+      retractionMs: 320,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  // ── Ben Skywalker ──
+  {
+    id: 'legends-ben-skywalker-blue',
+    name: 'Ben Skywalker',
+    character: 'Ben Skywalker',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'Luke and Mara Jade\'s son. The Skywalker line continued through Legacy of the Force and the Fate of the Jedi novels. A clean Jedi blue with steady measured shimmer reflecting his thoughtful, watchful temperament.',
+    hiltNotes: 'A streamlined Skywalker-pattern hilt; built under his father\'s instruction.',
+    config: {
+      name: 'BenSkywalker',
+      baseColor: { r: 25, g: 115, b: 240 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── Tenel Ka Djo ──
+  {
+    id: 'legends-tenel-ka-turquoise',
+    name: 'Tenel Ka Djo',
+    character: 'Tenel Ka Djo',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'Hapan princess and Jedi Knight, eventually Queen Mother of the Hapes Consortium. Her unique turquoise blade reflects the rancor-tooth crystal she crafted from her single-armed combat training arc.',
+    hiltNotes: 'Single-handed grip optimized after her left arm was lost in a Force training accident. Hapan royal accents along the pommel.',
+    config: {
+      name: 'TenelKa',
+      baseColor: { r: 50, g: 200, b: 220 },
+      clashColor: { r: 220, g: 250, b: 255 },
+      lockupColor: { r: 150, g: 230, b: 240 },
+      blastColor: { r: 240, g: 255, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 360,
+      shimmer: 0.07,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── Lowbacca ──
+  {
+    id: 'legends-lowbacca-bronze',
+    name: 'Lowbacca (Wookiee Jedi)',
+    character: 'Lowbacca',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'Chewbacca\'s nephew and a member of Luke\'s academy. A rare Wookiee Jedi who built a single-bladed saber with a rich amber-bronze crystal — the warm earth-tones of Kashyyyk distilled into a blade.',
+    hiltNotes: 'Wookiee-sized hilt forged from Kashyyyk metals; bandolier mount for hands-free carry. Often paired with his miniature droid Em Teedee.',
+    config: {
+      name: 'Lowbacca',
+      baseColor: { r: 230, g: 150, b: 50 },
+      clashColor: { r: 255, g: 220, b: 150 },
+      lockupColor: { r: 255, g: 180, b: 100 },
+      blastColor: { r: 255, g: 230, b: 180 },
+      style: 'stable',
+      ignition: 'scroll',
+      retraction: 'scroll',
+      ignitionMs: 480,
+      retractionMs: 440,
+      shimmer: 0.07,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+    },
+  },
+
+  // ── Joruus C'baoth ──
+  {
+    id: 'legends-joruus-cbaoth-green',
+    name: "Joruus C'baoth",
+    character: "Joruus C'baoth",
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Insane clone of Jedi Master Jorus C\'baoth, ally to Grand Admiral Thrawn during the Heir to the Empire trilogy. A corrupted forest-green blade with high shimmer — the Jedi color worn over a fractured mind. Light-side affiliation by lineage but his actions were Sith-aligned.',
+    hiltNotes: 'A pre-Empire Jedi Master\'s hilt, dented and worn from his decades on Wayland.',
+    config: {
+      name: 'JoruusCbaoth',
+      baseColor: { r: 0, g: 230, b: 50 },
+      clashColor: { r: 220, g: 255, b: 220 },
+      lockupColor: { r: 140, g: 250, b: 130 },
+      blastColor: { r: 200, g: 255, b: 200 },
+      style: 'unstable',
+      ignition: 'crackle',
+      retraction: 'fadeout',
+      ignitionMs: 320,
+      retractionMs: 480,
+      shimmer: 0.28,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+      noiseLevel: 0.1,
+    },
+  },
+
+  // ── Vergere ──
+  {
+    id: 'legends-vergere-yellow',
+    name: 'Vergere',
+    character: 'Vergere',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'neutral',
+    tier: 'detailed',
+    description:
+      'Fosh Jedi who served the Old Republic, taught Jacen Solo unconventional Force philosophy, and may have been Sith all along. A vibrant gold-yellow blade with warm shimmer — the color of someone who walked between light and dark for centuries.',
+    hiltNotes: 'Slim ancient hilt with avian-feathered grip; predates the Clone Wars by decades.',
+    config: {
+      name: 'Vergere',
+      baseColor: { r: 255, g: 210, b: 0 },
+      clashColor: { r: 255, g: 250, b: 200 },
+      lockupColor: { r: 255, g: 220, b: 100 },
+      blastColor: { r: 255, g: 240, b: 180 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 360,
+      retractionMs: 420,
+      shimmer: 0.1,
+      ledCount: 144,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // KOTOR / KOTOR 2 ADDITIONAL CAST
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Jolee Bindo ──
+  {
+    id: 'legends-jolee-bindo-blue',
+    name: 'Jolee Bindo',
+    character: 'Jolee Bindo',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'base',
+    description:
+      'The grouchy hermit Jedi from Kashyyyk who joined Revan\'s party in KOTOR. A muted older-Jedi blue with steady, unhurried ignition — the blade of someone who has stopped trying to prove anything.',
+    hiltNotes: 'Old Republic Jedi hilt, worn pommel, hand-wrapped grip showing decades of use.',
+    config: {
+      name: 'JoleeBindo',
+      baseColor: { r: 50, g: 120, b: 220 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 160, g: 200, b: 250 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 380,
+      retractionMs: 440,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ── Juhani ──
+  {
+    id: 'legends-juhani-cyan',
+    name: 'Juhani (Cathar Jedi)',
+    character: 'Juhani',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'base',
+    description:
+      'The Cathar Jedi Padawan in Revan\'s KOTOR party. Cyan-blue blade reflecting her blue kyber crystal — earned after rejecting the dark side temptation on Dantooine.',
+    hiltNotes: 'Slim hilt sized for Cathar grip; integrated crystal-window viewport along the throat.',
+    config: {
+      name: 'Juhani',
+      baseColor: { r: 0, g: 200, b: 240 },
+      clashColor: { r: 220, g: 245, b: 255 },
+      lockupColor: { r: 130, g: 220, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.08,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+    },
+  },
+
+  // ── Atris ──
+  {
+    id: 'legends-atris-blue',
+    name: 'Atris (Jedi Historian)',
+    character: 'Atris',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'The dogmatic Jedi historian from KOTOR 2 who isolates herself on Telos with the Holocron Vault. A pale Jedi blue, almost grey-blue — the color of someone whose connection to the living Force has gone cold.',
+    hiltNotes: 'Long ornate hilt with antique Jedi heraldry; collected from the Vault rather than personally crafted.',
+    config: {
+      name: 'Atris',
+      baseColor: { r: 100, g: 160, b: 240 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 180, g: 210, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'fadeout',
+      ignitionMs: 380,
+      retractionMs: 440,
+      shimmer: 0.05,
+      ledCount: 144,
+      swingFxIntensity: 0.3,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // SWTOR / OLD REPUBLIC MMO
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Satele Shan ──
+  {
+    id: 'legends-satele-shan-blue',
+    name: 'Satele Shan',
+    character: 'Satele Shan',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'Grand Master of the Jedi Order during the SWTOR era. Descendant of Bastila Shan and Revan. A clean Jedi blue with a quiet authority — the leader of a Jedi Order that survived the Sith Empire\'s return.',
+    hiltNotes: 'A long, elegant hilt of Mandalorian-influenced design — Satele\'s mother trained her with the heritage of the Mandalorian Wars.',
+    config: {
+      name: 'SateleShan',
+      baseColor: { r: 30, g: 130, b: 250 },
+      clashColor: { r: 220, g: 240, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 320,
+      retractionMs: 380,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── Lana Beniko ──
+  {
+    id: 'legends-lana-beniko-red',
+    name: 'Lana Beniko',
+    character: 'Lana Beniko',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'SWTOR Sith Lord, member of the Empire\'s Sith Intelligence and (eventually) ally of the Outlander. A controlled, deep red — Lana favors precision over spectacle. The Sith who would rather negotiate than destroy.',
+    hiltNotes: 'Polished gold-and-black Sith hilt; engraved reliefs of Korriban tomb statuary along the throat.',
+    config: {
+      name: 'LanaBeniko',
+      baseColor: { r: 220, g: 5, b: 15 },
+      clashColor: { r: 255, g: 200, b: 170 },
+      lockupColor: { r: 255, g: 80, b: 50 },
+      blastColor: { r: 255, g: 100, b: 70 },
+      style: 'unstable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 280,
+      retractionMs: 340,
+      shimmer: 0.14,
+      ledCount: 144,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  // ── Kira Carsen ──
+  {
+    id: 'legends-kira-carsen-blue',
+    name: 'Kira Carsen',
+    character: 'Kira Carsen',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'base',
+    description:
+      'SWTOR Jedi Knight\'s primary companion, secret Child of the Emperor. A bright Jedi blue with quick energetic ignition matching her impulsive Knight-class temperament.',
+    hiltNotes: 'Standard SWTOR-era Jedi Knight hilt with Padawan-engraved Pyrian wave crystal.',
+    config: {
+      name: 'KiraCarsen',
+      baseColor: { r: 40, g: 140, b: 250 },
+      clashColor: { r: 220, g: 240, b: 255 },
+      lockupColor: { r: 150, g: 210, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 240,
+      retractionMs: 320,
+      shimmer: 0.08,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  // ── Darth Marr ──
+  {
+    id: 'legends-darth-marr-red',
+    name: 'Darth Marr',
+    character: 'Darth Marr',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Member of the Dark Council in SWTOR, eventual leader of the Sith Empire who unites with the Republic against Vitiate. A heavy, warm crimson — Marr\'s lightsaber carries the weight of millennia of Sith tradition without the volatility of younger Lords.',
+    hiltNotes: 'Massive armored hilt of black duranium and tempered red glass; Marr\'s helmet visible reflected in the saber\'s polished crossguard.',
+    config: {
+      name: 'DarthMarr',
+      baseColor: { r: 220, g: 0, b: 10 },
+      clashColor: { r: 255, g: 200, b: 160 },
+      lockupColor: { r: 255, g: 90, b: 50 },
+      blastColor: { r: 255, g: 110, b: 70 },
+      dragColor: { r: 255, g: 60, b: 0 },
+      style: 'unstable',
+      ignition: 'wipe',
+      retraction: 'standard',
+      ignitionMs: 360,
+      retractionMs: 420,
+      shimmer: 0.15,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+    },
+  },
+
+  // ── Darth Baras ──
+  {
+    id: 'legends-darth-baras-red',
+    name: 'Darth Baras',
+    character: 'Darth Baras',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Sith Warrior class storyline antagonist in SWTOR. A heavy, bloodthirsty red — Baras is the manipulator who outlived smarter Sith because he never trusted anyone, including himself.',
+    hiltNotes: 'Massive armored hilt with corpulent grip; engraved with Sith heraldry from his stint on the Dark Council.',
+    config: {
+      name: 'DarthBaras',
+      baseColor: { r: 230, g: 5, b: 5 },
+      clashColor: { r: 255, g: 220, b: 200 },
+      lockupColor: { r: 255, g: 80, b: 50 },
+      blastColor: { r: 255, g: 100, b: 70 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 320,
+      retractionMs: 480,
+      shimmer: 0.2,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+      noiseLevel: 0.08,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // BANE TRILOGY (Old Sith Wars era)
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Darth Zannah ──
+  {
+    id: 'legends-darth-zannah-red',
+    name: 'Darth Zannah',
+    character: 'Darth Zannah',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Bane\'s apprentice, the second Sith Lord of the Banite Rule of Two. Wields a double-bladed lightsaber inherited from her early Jedi-Padawan training. A vivid blood-red with the patient instability of a Sith who spent years learning before striking.',
+    hiltNotes: 'Saberstaff hilt — rebuilt from a Jedi double-blade design she trained on as a Padawan, repurposed after her fall to the Sith.',
+    topologyNotes: 'Double-bladed staff configuration.',
+    config: {
+      name: 'DarthZannah',
+      baseColor: { r: 240, g: 5, b: 10 },
+      clashColor: { r: 255, g: 220, b: 200 },
+      lockupColor: { r: 255, g: 90, b: 60 },
+      blastColor: { r: 255, g: 110, b: 80 },
+      style: 'unstable',
+      ignition: 'center',
+      retraction: 'center',
+      ignitionMs: 240,
+      retractionMs: 300,
+      shimmer: 0.18,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // FORCE UNLEASHED ADDITIONAL
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Kazdan Paratus (Junk Jedi) ──
+  {
+    id: 'legends-kazdan-paratus-blue',
+    name: 'Kazdan Paratus (Junk Jedi)',
+    character: 'Kazdan Paratus',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'The deranged Aleena Jedi Master who rebuilt the Jedi Temple in scrap on Raxus Prime. Battles Starkiller in The Force Unleashed. A bright Jedi blue, but with the uneasy shimmer of someone whose Force connection broke alongside his sanity.',
+    hiltNotes: 'A Frankenstein hilt assembled from junkyard parts after Order 66; the original was lost on Coruscant.',
+    config: {
+      name: 'KazdanParatus',
+      baseColor: { r: 30, g: 140, b: 255 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 150, g: 200, b: 255 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'unstable',
+      ignition: 'stutter',
+      retraction: 'fadeout',
+      ignitionMs: 360,
+      retractionMs: 480,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.45,
+      noiseLevel: 0.1,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // JEDI KNIGHT / DARK FORCES GAMES
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Jerec ──
+  {
+    id: 'legends-jerec-red',
+    name: 'Jerec (Blind Dark Jedi)',
+    character: 'Jerec',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'The blind Miraluka Dark Jedi from Jedi Knight: Dark Forces 2. Hunted Kyle Katarn for the Valley of the Jedi\'s power. A volatile crimson blade with frequent flicker — the unsteady gait of a man ruling by ambition rather than wisdom.',
+    hiltNotes: 'Imperial Inquisitor-style hilt with a chrome activation collar; Jerec wields it through Force-sight rather than visual aim.',
+    config: {
+      name: 'Jerec',
+      baseColor: { r: 240, g: 5, b: 15 },
+      clashColor: { r: 255, g: 210, b: 180 },
+      lockupColor: { r: 255, g: 90, b: 60 },
+      blastColor: { r: 255, g: 110, b: 80 },
+      style: 'unstable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 360,
+      shimmer: 0.22,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+      noiseLevel: 0.08,
+    },
+  },
+
+  // ── Desann ──
+  {
+    id: 'legends-desann-green',
+    name: 'Desann',
+    character: 'Desann',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Chistori Reborn warlord from Jedi Outcast — Dark Jedi sentenced for Padawan-killing, escaped Jedi prison, came back with an army. A toxic green blade — corrupted Jedi green now bled through with Sith intent.',
+    hiltNotes: 'A salvaged Jedi-era hilt with Reborn-faction modifications; Desann was a Jedi student before his fall.',
+    config: {
+      name: 'Desann',
+      baseColor: { r: 30, g: 230, b: 80 },
+      clashColor: { r: 200, g: 255, b: 200 },
+      lockupColor: { r: 130, g: 250, b: 130 },
+      blastColor: { r: 200, g: 255, b: 200 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 320,
+      retractionMs: 400,
+      shimmer: 0.2,
+      ledCount: 144,
+      swingFxIntensity: 0.5,
+      noiseLevel: 0.08,
+    },
+  },
+
+  // ── Tavion Axmis ──
+  {
+    id: 'legends-tavion-axmis-red',
+    name: 'Tavion Axmis',
+    character: 'Tavion Axmis',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'base',
+    description:
+      'Female Reborn-cult Sith from Jedi Academy — apprentice to Desann and later cult leader hunting the Scepter of Ragnos. Crimson red with quick, agile flicker reflecting her duelist combat style.',
+    hiltNotes: 'A slender hilt rebuilt during her cult-leader era with Sith-glyph etching.',
+    config: {
+      name: 'TavionAxmis',
+      baseColor: { r: 235, g: 10, b: 15 },
+      clashColor: { r: 255, g: 200, b: 170 },
+      lockupColor: { r: 255, g: 90, b: 60 },
+      blastColor: { r: 255, g: 110, b: 80 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 220,
+      retractionMs: 300,
+      shimmer: 0.16,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ADDITIONAL OLD SITH WARS / NOVELS
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Darth Tenebrous ──
+  {
+    id: 'legends-darth-tenebrous-red',
+    name: 'Darth Tenebrous',
+    character: 'Darth Tenebrous',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Plagueis\'s Master, a Bith Sith Lord from the Plagueis novel. Crimson with the cool, calculated stability of a scientist-Sith — Tenebrous saw the Force as an equation to solve, not a passion to embrace.',
+    hiltNotes: 'A precision-engineered hilt of polished durasteel and lab-glass viewport — built more like a scientific instrument than a weapon.',
+    config: {
+      name: 'DarthTenebrous',
+      baseColor: { r: 220, g: 5, b: 5 },
+      clashColor: { r: 255, g: 200, b: 170 },
+      lockupColor: { r: 255, g: 80, b: 50 },
+      blastColor: { r: 255, g: 100, b: 60 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 320,
+      retractionMs: 380,
+      shimmer: 0.07,
+      ledCount: 144,
+      swingFxIntensity: 0.35,
+    },
+  },
+
+  // ── Lord Hoth ──
+  {
+    id: 'legends-lord-hoth-blue',
+    name: 'Lord Hoth (Army of Light)',
+    character: 'Lord Hoth',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'jedi',
+    tier: 'detailed',
+    description:
+      'General of the Army of Light during the New Sith Wars; the Jedi who defeated Lord Kaan\'s Brotherhood at the Seventh Battle of Ruusan. A deep, commanding Jedi blue — the color of a thousand-year war\'s end.',
+    hiltNotes: 'Old-Republic-era Jedi General hilt; ornate quillon-style guards rare for the period.',
+    config: {
+      name: 'LordHoth',
+      baseColor: { r: 0, g: 100, b: 240 },
+      clashColor: { r: 220, g: 235, b: 255 },
+      lockupColor: { r: 140, g: 200, b: 250 },
+      blastColor: { r: 240, g: 250, b: 255 },
+      style: 'stable',
+      ignition: 'wipe',
+      retraction: 'standard',
+      ignitionMs: 380,
+      retractionMs: 440,
+      shimmer: 0.06,
+      ledCount: 144,
+      swingFxIntensity: 0.4,
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // MARVEL COMICS / DARK EMPIRE
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Lumiya ──
+  {
+    id: 'legends-lumiya-red-lightwhip',
+    name: 'Lumiya (Sith Lightwhip)',
+    character: 'Lumiya',
+    era: 'expanded-universe',
+    continuity: 'legends',
+    affiliation: 'sith',
+    tier: 'detailed',
+    description:
+      'Shira Brie / Lumiya, Marvel-era Star Wars comics Sith and Vader\'s secret apprentice. Wields a flexible lightwhip — represented here as a single-blade with high shimmer to evoke the whip\'s coiling motion (true lightwhip topology is post-launch engine work).',
+    hiltNotes: 'Sith-Marvel-era hilt with multiple flexible filament emitters; the whip extends and coils on activation.',
+    config: {
+      name: 'Lumiya',
+      baseColor: { r: 230, g: 5, b: 15 },
+      clashColor: { r: 255, g: 200, b: 170 },
+      lockupColor: { r: 255, g: 80, b: 50 },
+      blastColor: { r: 255, g: 100, b: 70 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'fadeout',
+      ignitionMs: 280,
+      retractionMs: 360,
+      shimmer: 0.3,
+      ledCount: 144,
+      swingFxIntensity: 0.6,
+      noiseLevel: 0.1,
+    },
+  },
 ];
