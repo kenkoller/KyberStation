@@ -256,6 +256,70 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     },
   },
 
+  // ── Maul (Cybernetic Crime Lord, Solo / Clone Wars S5+) ──
+  {
+    id: 'prequel-maul-crime-lord',
+    name: 'Maul (Cybernetic - Crime Lord)',
+    character: 'Darth Maul',
+    era: 'prequel',
+    affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
+    author: 'on-screen',
+    description:
+      'Maul resurrected — Mother Talzin\'s spider-leg salvage gives way to the polished cybernetic legs of his Clone Wars / Solo era. The blade flickers with the unsteady fury of a discarded apprentice rebuilding his own Rule of Two.',
+    hiltNotes: 'Single-emitter hilt rebuilt during his crime-lord period; he abandons the saberstaff after losing half of it on Naboo.',
+    config: {
+      name: 'MaulCrimeLord',
+      baseColor: { r: 240, g: 0, b: 0 },
+      clashColor: { r: 255, g: 240, b: 220 },
+      lockupColor: { r: 255, g: 130, b: 30 },
+      blastColor: { r: 255, g: 120, b: 80 },
+      dragColor: { r: 255, g: 70, b: 0 },
+      style: 'unstable',
+      ignition: 'spark',
+      retraction: 'standard',
+      ignitionMs: 260,
+      retractionMs: 320,
+      shimmer: 0.16,
+      ledCount: 144,
+      swingFxIntensity: 0.55,
+      noise: 0.1,
+    },
+  },
+
+  // ── Maul (Old Master, Rebels Tatooine) ──
+  {
+    id: 'prequel-maul-rebels-tatooine',
+    name: 'Maul (Old Master - Rebels Finale)',
+    character: 'Darth Maul',
+    era: 'prequel',
+    affiliation: 'sith',
+    tier: 'detailed',
+    screenAccurate: true,
+    author: 'on-screen',
+    description:
+      'Maul\'s last duel — a dying old master facing Obi-Wan a final time on Tatooine. The crimson has gone weary, the unstable flicker of his Crime Lord years now reduced to a slower, sadder pulse.',
+    hiltNotes: 'The same single-emitter hilt from his Crime Lord period, dented and worn after years of exile.',
+    config: {
+      name: 'MaulOld',
+      baseColor: { r: 200, g: 0, b: 30 },
+      clashColor: { r: 255, g: 220, b: 200 },
+      lockupColor: { r: 240, g: 100, b: 30 },
+      blastColor: { r: 240, g: 100, b: 60 },
+      dragColor: { r: 240, g: 60, b: 0 },
+      style: 'unstable',
+      ignition: 'standard',
+      retraction: 'fadeout',
+      ignitionMs: 360,
+      retractionMs: 480,
+      shimmer: 0.12,
+      ledCount: 144,
+      swingFxIntensity: 0.4,
+      noise: 0.08,
+    },
+  },
+
   // ─── Kit Fisto ───
   {
     id: 'prequel-kit-fisto',
