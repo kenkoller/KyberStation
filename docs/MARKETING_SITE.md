@@ -49,9 +49,9 @@ route uses `MarketingHeader` as its top chrome.
 but are app surfaces, not indexable pages: `/editor` (the
 workbench), `/m` (the mobile companion), `/s/[glyph]` (share-link
 resolver), and `/docs` (built-in ProffieOS reference). They are
-intentionally omitted from `app/sitemap.ts` — `app/robots.ts` does
-not block them, but they rank low because they are client-rendered
-SPAs.
+intentionally omitted from `apps/web/public/sitemap.xml` — the
+static `apps/web/public/robots.txt` does not block them, but they
+rank low because they are client-rendered SPAs.
 
 ## 2. Component layers
 
@@ -143,12 +143,25 @@ the square 512×512 app icon, which platforms letterbox. See
 
 ## 5. Sitemap + robots
 
-`apps/web/app/sitemap.ts` enumerates the indexable marketing routes
-(`/`, `/features`, `/showcase`, `/changelog`, `/community`, `/faq`)
-plus the editor entry point (`/editor`). `apps/web/app/robots.ts`
-exposes the canonical `Sitemap:` line and disallows nothing — the
-editor surfaces are not indexed because they're SPA shells with
-empty initial HTML, not because they're blocked.
+Both files are static under `apps/web/public/` — they ship as-is to
+the Pages bundle without going through the App Router. Static was
+the right call for KyberStation because the route set is small and
+stable; the Next.js dynamic `app/sitemap.ts` + `app/robots.ts`
+metadata routes would be overkill.
+
+- `apps/web/public/sitemap.xml` — enumerates the indexable marketing
+  routes (`/`, `/features`, `/showcase`, `/changelog`, `/community`,
+  `/faq`) plus the editor entry point (`/editor`), gallery
+  (`/gallery`), and built-in docs (`/docs`).
+- `apps/web/public/robots.txt` — exposes the canonical `Sitemap:`
+  line and disallows nothing. Editor surfaces aren't indexed
+  because they're SPA shells with empty initial HTML, not because
+  they're blocked.
+
+When a new marketing route ships, add the URL to `sitemap.xml` (and
+to `MarketingHeader.NAV_LINKS` + `MarketingFooter.PRIMARY_LINKS` —
+the `marketingFooterLinks.test.ts` drift sentinel guards the latter
+pair, but the sitemap is independent and must be updated manually).
 
 ## 6. Changelog rendering
 
@@ -201,14 +214,21 @@ page reflected that).
 Marketing-side tests live under `apps/web/tests/`:
 
 - `marketingPageMetadata.test.ts` — `pageMetadata` helper
-- `inlineCodePeekTokenizer.test.ts` — server-side tokenizer
-- `scrollReveal.test.tsx` — IntersectionObserver behavior
+- `marketingFooterLinks.test.ts` — drift sentinel asserting
+  `MarketingHeader.NAV_LINKS` matches `MarketingFooter.PRIMARY_LINKS`
+  for every internal marketing route (label + href + relative order)
 - `changelogParser.test.ts` — markdown subset renderer
-- `robots.test.ts` + `sitemap.test.ts` — Next.js metadata routes
+- `communityPage.test.tsx` — `/community` SSR markup, metadata,
+  external-link safety attributes, anchor IDs
+- (And the `mobileTabBarVisibility.test.tsx` route enumeration in
+  `tests/` covers every marketing route's mobile tab-bar
+  visibility.)
 
 Page-level tests are intentionally light — the structure is mostly
 static markup, so the per-page coverage focuses on `metadata`
-exports plus a smoke test that the page renders without error.
+exports plus a smoke test that the page renders without error. The
+drift sentinel above is what prevents the worst class of regression
+(adding a route to one shell but not the other).
 
 ## 10. Accessibility
 
