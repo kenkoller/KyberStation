@@ -19,8 +19,10 @@ import { ImportStatusBanner } from './ImportStatusBanner';
 import {
   detectConfigShape,
   extractFirstStylePtr,
+  extractPresets,
   type ConfigShape,
 } from '@/lib/import/configShapeDetect';
+import { useUserPresetStore } from '@/stores/userPresetStore';
 
 /**
  * Map a `ReconstructedConfig` (output of `reconstructConfig`) into a full
@@ -106,6 +108,7 @@ const BOARDS_WITH_CODEGEN = new Set([
 export function CodeOutput() {
   const config = useBladeStore((s) => s.config);
   const loadPreset = useBladeStore((s) => s.loadPreset);
+  const savePreset = useUserPresetStore((s) => s.savePreset);
   const presetListEntries = usePresetListStore((s) => s.entries);
   const activeProfile = useSaberProfileStore((s) => s.getActiveProfile());
   const profileBoard = activeProfile?.boardType ?? 'Proffie V3';
@@ -633,14 +636,65 @@ export function CodeOutput() {
                 <button
                   onClick={() => {
                     if (!cppResult) return;
-                    loadPreset(
-                      applyReconstructedConfig(
-                        cppResult,
-                        config.ledCount || 144,
-                        cppInput,
-                        'Pasted ProffieOS C++',
-                      ),
-                    );
+                    const isMulti =
+                      cppConfigShape?.isFullConfig &&
+                      cppConfigShape.styleCount > 1;
+                    if (isMulti) {
+                      // Sprint 5D MVP: multi-preset extraction. Each
+                      // preset becomes its own entry in My Presets,
+                      // with its OWN style block as importedRawCode
+                      // (so each preset exports just its own style on
+                      // re-flash, not the entire pasted file).
+                      const extractedPresets = extractPresets(cppInput);
+                      let savedCount = 0;
+                      extractedPresets.forEach((preset, idx) => {
+                        const parsed = parseStyleCode(preset.styleBlock);
+                        if (!parsed.ast) return;
+                        const reconstructed = reconstructConfig(parsed.ast);
+                        const presetName =
+                          preset.displayLabel ?? preset.fontName ?? `Imported preset ${idx + 1}`;
+                        const sourceLabel = preset.fontName
+                          ? `Pasted ProffieOS C++ — ${preset.fontName}`
+                          : 'Pasted ProffieOS C++';
+                        const presetConfig = applyReconstructedConfig(
+                          reconstructed,
+                          config.ledCount || 144,
+                          preset.styleBlock,
+                          sourceLabel,
+                        );
+                        // Carry the user-facing name into the preset
+                        // config so the saved entry's displayed name
+                        // matches the imported preset.
+                        presetConfig.name = presetName;
+                        savePreset(presetName, presetConfig);
+                        savedCount++;
+                      });
+                      // Also load preset 1 into the visualizer for
+                      // immediate feedback (current single-preset
+                      // behavior).
+                      loadPreset(
+                        applyReconstructedConfig(
+                          cppResult,
+                          config.ledCount || 144,
+                          cppInput,
+                          'Pasted ProffieOS C++ — full config',
+                        ),
+                      );
+                      toast.success(
+                        savedCount === 1
+                          ? `Imported 1 preset to your library`
+                          : `Imported ${savedCount} presets to your library`,
+                      );
+                    } else {
+                      loadPreset(
+                        applyReconstructedConfig(
+                          cppResult,
+                          config.ledCount || 144,
+                          cppInput,
+                          'Pasted ProffieOS C++',
+                        ),
+                      );
+                    }
                     setShowCppImport(false);
                     setCppInput('');
                     setCppResult(null);
@@ -655,7 +709,9 @@ export function CodeOutput() {
                     color: 'rgb(var(--status-ok))',
                   }}
                 >
-                  Apply to Editor
+                  {cppConfigShape?.isFullConfig && cppConfigShape.styleCount > 1
+                    ? `Import ${cppConfigShape.styleCount} Presets`
+                    : 'Apply to Editor'}
                 </button>
               )}
             </div>
@@ -687,11 +743,13 @@ export function CodeOutput() {
                 <div className="text-ui-xs leading-relaxed text-text-secondary">
                   {cppConfigShape.styleCount > 1 ? (
                     <>
-                      The visualizer is showing preset 1 only.
-                      Your full config will be preserved verbatim
-                      on export so it&apos;s flashable as-is.
-                      Multi-preset library extraction with
-                      per-preset switching is coming soon.
+                      Each preset will be saved as its own entry in
+                      your library when you click <strong>Import
+                      {' '}{cppConfigShape.styleCount} Presets</strong>.
+                      Preset 1 also loads into the visualizer for
+                      immediate preview. The original code for each
+                      preset is preserved on export so the flashed
+                      result stays byte-identical to your config.
                     </>
                   ) : (
                     <>
