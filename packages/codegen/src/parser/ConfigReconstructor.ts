@@ -120,6 +120,31 @@ export interface ReconstructedConfig {
   /** Spatial stab centre 0..1 recovered from `TransitionEffectL<..., EFFECT_STAB>`. */
   stabPosition?: number;
   stabRadius?: number;
+  /**
+   * Multi-phase color cycle recovered from `ColorChange<TR, A, B, C, ...>`,
+   * `ColorSelect<F, TR, A, B, C, ...>`, or `ColorChangeL<F, A, B, C, ...>`.
+   * The first color goes to `baseColor`; subsequent colors are surfaced
+   * here so the visualizer + UI can show "this preset has N alt phases".
+   * Empty array when no color-change wrapper is present.
+   *
+   * Sprint 5C (2026-05-02): previously the OS7 ColorChange family
+   * unwrapped to its first color and the rest were silently lost on
+   * import. Now they're preserved so each phase can be inspected (and a
+   * future UI pass can let users cycle through them in the visualizer).
+   */
+  altPhaseColors?: RGB[];
+  /**
+   * Effect events the imported style references (recovered from
+   * `TransitionEffectL<EFFECT_TYPE, ...>` and similar). Surfaced so the
+   * visualizer can render flash overlays for ignition / preon / boot /
+   * force / quote / clash / etc. Empty array when no such layers
+   * present.
+   *
+   * Sprint 5C (2026-05-02): previously only `EFFECT_PREON` and
+   * `EFFECT_STAB` were detected; this widens to the full set Fett263's
+   * generator emits.
+   */
+  detectedEffectIds?: string[];
   confidence: number;
   warnings: string[];
   rawAST: StyleNode;
@@ -355,7 +380,14 @@ function detectStyle(node: StyleNode): { style: string; confidence: number } {
     return { style: 'photon', confidence: 0.5 };
   }
 
-  // Mix<SwingSpeed<N>, ...> disambiguates rotoscope vs cinder.
+  // Mix<...,...> disambiguates rotoscope variants. Three shapes recognised:
+  //   1. Mix<SwingSpeed<400>, base, alt>           → rotoscope
+  //   2. Mix<SwingSpeed<300>, StyleFire<>, ...>    → cinder
+  //   3. Mix<HoldPeakF<SwingSpeed<...>, ...>, ...> → rotoscope (Fett263
+  //      Hyper Responsive Rotoscope, OS7's signature swing-reactive base).
+  //      Same downstream style id as the v1 rotoscope; the `HoldPeakF`
+  //      wrapper just smooths the swing input. Bumped confidence reflects
+  //      that recognising the wrapper shape is high-signal of intent.
   if (name === 'Mix') {
     const first = core.args[0];
     if (first?.name === 'SwingSpeed') {
@@ -364,6 +396,20 @@ function detectStyle(node: StyleNode): { style: string; confidence: number } {
       if (speed === 300) return { style: 'cinder', confidence: 0.9 };
       // Unknown SwingSpeed — prefer rotoscope (more common pattern).
       return { style: 'rotoscope', confidence: 0.5 };
+    }
+    // Hyper Responsive Rotoscope — Fett263's most common base style. The
+    // first Mix arg wraps SwingSpeed in HoldPeakF (a peak-hold smoother).
+    // Variants:
+    //   Mix<HoldPeakF<SwingSpeed<...>>, ...>
+    //   Mix<HoldPeakF<SwingAcceleration<...>>, ...>  (less common)
+    if (first?.name === 'HoldPeakF') {
+      const inner = first.args[0];
+      if (
+        inner?.name === 'SwingSpeed' ||
+        inner?.name === 'SwingAcceleration'
+      ) {
+        return { style: 'rotoscope', confidence: 0.85 };
+      }
     }
   }
 
@@ -1030,6 +1076,106 @@ function resolveFlickerBaseColor(ast: StyleNode): RGB | undefined {
 }
 
 /**
+ * Walk the AST looking for a `ColorChange<TR, A, B, C, ...>`,
+ * `ColorSelect<F, TR, A, B, C, ...>`, or `ColorChangeL<F, A, B, C, ...>`
+ * wrapper and pull every color stop AFTER the first into an array of
+ * alt-phase colors.
+ *
+ * Each wrapper has a different leading-arg pattern (number of "control"
+ * args before the colour list starts) — see the per-shape offset below.
+ *
+ * Returns an empty array when no color-change wrapper is present.
+ *
+ * Sprint 5C (2026-05-02) — previously the whole color list past the
+ * first color was silently dropped on import; this surfaces the rest
+ * for future per-phase UI affordances.
+ */
+function resolveAltPhaseColors(ast: StyleNode): RGB[] {
+  // Find the first color-change wrapper anywhere in the AST.
+  const wrappers = findNodes(ast, (n) => COLOR_CHANGE_WRAPPERS.has(n.name));
+  if (wrappers.length === 0) return [];
+  const wrapper = wrappers[0];
+  // Per-shape offset for "where the color list starts":
+  //   ColorChange<TRANSITION, COLOR_A, COLOR_B, ...>     → 1
+  //   ColorSelect<FUNCTION, TRANSITION, COLOR_A, ...>    → 2
+  //   ColorChangeL<FUNCTION, COLOR_A, COLOR_B, ...>      → 1
+  const colorStart =
+    wrapper.name === 'ColorSelect' ? 2 : 1;
+  const colorArgs = wrapper.args.slice(colorStart);
+  if (colorArgs.length <= 1) return []; // single-color list = no alt phases
+  const alts: RGB[] = [];
+  for (const arg of colorArgs.slice(1)) {
+    const rgb = extractRGB(arg);
+    if (rgb) alts.push(rgb);
+  }
+  return alts;
+}
+
+/**
+ * Effect-id leaf tokens the OS7 generator emits (and pre-OS7 sister
+ * forms). When `TransitionEffectL<EFFECT_X, ...>` (OS7) or
+ * `TransitionEffectL<style, trIn, trOut, EFFECT_X>` (pre-OS7) appears
+ * in the AST, the user's style references that event. Surfacing the
+ * set lets future visualizer overlays render flash effects per event
+ * without reparsing.
+ *
+ * Whitelist instead of "any EFFECT_*" so we don't accidentally count
+ * unrelated identifier tokens that happen to have the prefix.
+ */
+const KNOWN_EFFECT_IDS = new Set<string>([
+  'EFFECT_NONE',
+  'EFFECT_CLASH',
+  'EFFECT_BLAST',
+  'EFFECT_LOCKUP_BEGIN',
+  'EFFECT_LOCKUP_END',
+  'EFFECT_DRAG_BEGIN',
+  'EFFECT_DRAG_END',
+  'EFFECT_LIGHTNING_BLOCK_BEGIN',
+  'EFFECT_LIGHTNING_BLOCK_END',
+  'EFFECT_STAB',
+  'EFFECT_PREON',
+  'EFFECT_POSTOFF',
+  'EFFECT_BOOT',
+  'EFFECT_NEWFONT',
+  'EFFECT_FORCE',
+  'EFFECT_QUOTE',
+  'EFFECT_USER1',
+  'EFFECT_USER2',
+  'EFFECT_USER3',
+  'EFFECT_USER4',
+  'EFFECT_USER5',
+  'EFFECT_USER6',
+  'EFFECT_USER7',
+  'EFFECT_USER8',
+  'EFFECT_FAST_ON',
+  'EFFECT_OFF',
+  'EFFECT_ON',
+  'EFFECT_IGNITION',
+  'EFFECT_RETRACTION',
+  'EFFECT_BATTERY_LEVEL',
+  'EFFECT_VOLUME_LEVEL',
+  'EFFECT_SOUND_LOOP',
+  'EFFECT_ALT_SOUND',
+  'EFFECT_POWERSAVE',
+]);
+
+/**
+ * Find every `EFFECT_*` event the AST references. Returns a sorted
+ * deduped list — order doesn't carry meaning, just convenience.
+ */
+function detectEffectIds(ast: StyleNode): string[] {
+  const found = new Set<string>();
+  const walk = (node: StyleNode): void => {
+    if (KNOWN_EFFECT_IDS.has(node.name)) {
+      found.add(node.name);
+    }
+    for (const arg of node.args) walk(arg);
+  };
+  walk(ast);
+  return Array.from(found).sort();
+}
+
+/**
  * Reconstruct a BladeConfig from a parsed AST.
  */
 export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
@@ -1158,6 +1304,8 @@ export function reconstructConfig(ast: StyleNode): ReconstructedConfig {
     meltRadius: lockupFamily.meltRadius,
     stabPosition: spatialStab.stabPosition,
     stabRadius: spatialStab.stabRadius,
+    altPhaseColors: resolveAltPhaseColors(ast),
+    detectedEffectIds: detectEffectIds(ast),
     confidence: Math.round(confidence * 100) / 100,
     warnings,
     rawAST: ast,
@@ -1175,6 +1323,7 @@ export const __test = {
   LEGACY_STYLE_WRAPPERS,
   FLICKER_WRAPPERS,
   COLOR_CHANGE_WRAPPERS,
+  KNOWN_EFFECT_IDS,
   extractRGB,
   extractInt,
   unwrapToCore,
@@ -1185,5 +1334,7 @@ export const __test = {
   resolveColorsByContainer,
   resolvePreon,
   resolveSpatialStab,
+  resolveAltPhaseColors,
+  detectEffectIds,
   gatherStructuralWarnings,
 };
