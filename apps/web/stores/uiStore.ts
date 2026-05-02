@@ -526,6 +526,56 @@ function saveGalleryView(view: GalleryView): void {
   } catch { /* ignore */ }
 }
 
+// ─── Recent multi-preset import batch persistence (Sprint 5E follow-up) ──
+//
+// The batch itself is just `{id, name}[]` — small (~200 bytes for a typical
+// 3-preset batch) and ephemeral-ish. Persisting lets the per-preset switcher
+// survive page reloads, which fixes a small UX rough edge: today, refresh =
+// dropdown gone (saved presets remain in My Presets sidebar regardless).
+//
+// Schema is forward-compatible: an array of `{id, name}` objects. If a
+// future change adds fields, the load path picks the known fields out
+// defensively. Garbage / non-array reads silently return `null`.
+
+const IMPORT_BATCH_STORAGE_KEY = 'kyberstation-recent-import-batch';
+
+function loadRecentImportBatch(): Array<{ id: string; name: string }> | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(IMPORT_BATCH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    const batch: Array<{ id: string; name: string }> = [];
+    for (const entry of parsed) {
+      if (
+        entry &&
+        typeof entry === 'object' &&
+        typeof entry.id === 'string' &&
+        typeof entry.name === 'string'
+      ) {
+        batch.push({ id: entry.id, name: entry.name });
+      }
+    }
+    return batch.length > 0 ? batch : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveRecentImportBatch(
+  batch: Array<{ id: string; name: string }> | null,
+): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    if (batch === null || batch.length === 0) {
+      localStorage.removeItem(IMPORT_BATCH_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(IMPORT_BATCH_STORAGE_KEY, JSON.stringify(batch));
+  } catch { /* ignore */ }
+}
+
 // ─── Battery selection persistence ────────────────────────────────────────────
 //
 // Battery is conceptually per-saber-chassis but for v1 we keep it on the
@@ -662,8 +712,11 @@ export const useUIStore = create<UIStore>((set) => ({
   // ── Gallery view default ──
   galleryView: loadGalleryView(),
 
-  // ── Sprint 5E: ephemeral multi-preset import batch (no persistence) ──
-  recentImportBatch: null,
+  // ── Sprint 5E + persistence follow-up: multi-preset import batch ──
+  // Hydrated from localStorage on store init so the switcher survives
+  // page reloads. Cleared by `convertImportToNative` (via the banner's
+  // wrapped handler) and on single-style imports.
+  recentImportBatch: loadRecentImportBatch(),
 
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
@@ -719,7 +772,10 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleFullscreen: () => set((state) => ({ isFullscreen: !state.isFullscreen })),
   setFullscreenOrientation: (fullscreenOrientation) => set({ fullscreenOrientation }),
   setEditMode: (editMode) => set({ editMode }),
-  setRecentImportBatch: (recentImportBatch) => set({ recentImportBatch }),
+  setRecentImportBatch: (recentImportBatch) => {
+    saveRecentImportBatch(recentImportBatch);
+    set({ recentImportBatch });
+  },
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
   setEditTarget: (editTarget) => set({ editTarget }),
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),
