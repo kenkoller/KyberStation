@@ -91,6 +91,101 @@ export function applyReconstructedConfig(
   };
 }
 
+/**
+ * Build a pre-filled GitHub "new issue" URL for the
+ * `import_failure.md` template. Snippet is truncated when the encoded
+ * URL would exceed GitHub's 8KB limit so the link always works.
+ *
+ * Sprint 5F (Chip #6): one-click path from "this didn't import
+ * cleanly" → a fully-formed bug report with diagnostics, OS, browser,
+ * and the offending code. Closes the community-validation loop given
+ * KyberStation can't do owner-side cross-OS / cross-board hardware
+ * validation.
+ */
+export function buildImportFailureIssueUrl(params: {
+  snippet: string;
+  warnings: string[];
+  errors: string[];
+  confidence: number | undefined;
+  userAgent: string;
+}): string {
+  // GitHub URL practical limit is ~8KB. Reserve ~1KB for the
+  // template + scaffolding; truncate snippet if it'd push us over.
+  const SNIPPET_BUDGET = 6000;
+  const trimmedSnippet =
+    params.snippet.length > SNIPPET_BUDGET
+      ? params.snippet.slice(0, SNIPPET_BUDGET) +
+        `\n... (truncated; ${params.snippet.length - SNIPPET_BUDGET} chars omitted)`
+      : params.snippet;
+
+  // Pull the first ~3 unique unknown-template warnings to surface in
+  // the issue body without overwhelming the form.
+  const unknownTemplates = Array.from(
+    new Set(
+      params.warnings
+        .filter((w) => w.startsWith('Unknown template'))
+        .map((w) => w.match(/Unknown template "([^"]+)"/)?.[1])
+        .filter((t): t is string => typeof t === 'string'),
+    ),
+  ).slice(0, 5);
+
+  const errorsBlock =
+    params.errors.length > 0
+      ? `**Parse errors**:\n\n\`\`\`\n${params.errors.join('\n')}\n\`\`\`\n\n`
+      : '';
+
+  const warningsLine =
+    params.warnings.length === 0
+      ? 'none'
+      : `${params.warnings.length}${
+          unknownTemplates.length > 0
+            ? ` (unique unknown templates: ${unknownTemplates.join(', ')})`
+            : ''
+        }`;
+
+  const confidenceLine =
+    typeof params.confidence === 'number'
+      ? `**Reconstruction confidence**: ${params.confidence.toFixed(2)}\n`
+      : '';
+
+  const body = [
+    '<!-- Pre-filled by KyberStation\'s import banner. Add any extra context below; the structured fields will be filled from the template when the form opens. -->',
+    '',
+    `## What happened`,
+    '',
+    'My pasted ProffieOS code didn\'t import cleanly into KyberStation. See diagnostics below.',
+    '',
+    '## The failing snippet',
+    '',
+    '```cpp',
+    trimmedSnippet,
+    '```',
+    '',
+    '## KyberStation diagnostics',
+    '',
+    `**Parse warnings**: ${warningsLine}`,
+    confidenceLine,
+    errorsBlock,
+    '## Environment',
+    '',
+    `**User agent**: \`${params.userAgent.slice(0, 200)}\``,
+    '',
+    '## Anything else',
+    '',
+    '<!-- Add any extra context here. -->',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const params_ = new URLSearchParams({
+    template: 'import_failure.md',
+    title: 'Import failed: ',
+    body,
+  });
+
+  return `https://github.com/kenkoller/KyberStation/issues/new?${params_.toString()}`;
+}
+
 /** Maps user-facing board names to Proffie config board IDs */
 const PROFFIE_BOARD_MAP: Record<string, 'proffieboard_v2' | 'proffieboard_v3'> = {
   'Proffie V3': 'proffieboard_v3',
@@ -807,6 +902,47 @@ export function CodeOutput() {
                     + {cppWarnings.length - 10} more…
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* "Report this snippet" affordance — surfaces when the
+                paste is suspect (parse errors, many warnings, or low
+                reconstruct confidence). Pre-fills a GitHub issue using
+                the import_failure template so failing snippets become
+                test fixtures + drive the next round of template
+                additions without owner-side hardware. */}
+            {(cppErrors.length > 0 ||
+              cppWarnings.length >= 5 ||
+              (cppResult && cppResult.confidence < 0.3)) && (
+              <div
+                data-testid="report-failing-snippet"
+                className="text-ui-xs rounded p-2 border"
+                style={{
+                  color: 'rgb(var(--badge-creative))',
+                  background: 'rgb(var(--badge-creative) / 0.08)',
+                  borderColor: 'rgb(var(--badge-creative) / 0.35)',
+                }}
+              >
+                <span className="font-medium">Doesn&apos;t look right? </span>
+                <a
+                  href={buildImportFailureIssueUrl({
+                    snippet: cppInput,
+                    warnings: cppWarnings,
+                    errors: cppErrors,
+                    confidence: cppResult?.confidence,
+                    userAgent:
+                      typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:no-underline focus-visible:ring-2 focus-visible:ring-accent rounded"
+                >
+                  Report this snippet on GitHub
+                </a>
+                <span className="text-text-secondary block mt-0.5">
+                  Real failing snippets are the fastest way Fett263 import
+                  coverage expands.
+                </span>
               </div>
             )}
 

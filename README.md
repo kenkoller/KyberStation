@@ -317,6 +317,8 @@ ideas, and style requests are the most useful way to help.
 - **Bug reports**, [File an issue](https://github.com/kenkoller/KyberStation/issues/new?template=bug_report.md)
 - **Feature requests**, [File an issue](https://github.com/kenkoller/KyberStation/issues/new?template=feature_request.md)
 - **New blade styles or presets**, [File a style request](https://github.com/kenkoller/KyberStation/issues/new?template=style_request.md)
+- **Fett263 / ProffieOS configs that don't import cleanly**, [Report a failing import](https://github.com/kenkoller/KyberStation/issues/new?template=import_failure.md) — KyberStation also surfaces a "Report this snippet" link directly in the import banner when warnings fire. Real failing snippets are the fastest way Fett263 import coverage expands.
+- **Hardware reports** (board / OS / browser combinations we haven't validated), [File a hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md)
 - **Questions & discussion**, [GitHub Discussions](https://github.com/kenkoller/KyberStation/discussions)
 
 The [Contributing Guide](docs/CONTRIBUTING.md) documents the repo structure and
