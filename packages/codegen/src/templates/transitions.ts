@@ -257,9 +257,20 @@ export const transitionTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'TrBlinkX',
     {
+      // Per transitions/blink.h: TrBlinkX<MILLIS_FUNCTION, N, WIDTH_FUNCTION>.
+      // N is a compile-time int template parameter (count), not a function.
       name: 'TrBlinkX',
-      argTypes: ['FUNCTION', 'FUNCTION', 'COLOR'],
-      description: 'Blink transition (frequency function, duty function, color)',
+      argTypes: ['FUNCTION', 'INTEGER', 'FUNCTION'],
+      description: 'Blink between A↔B N times in MILLIS, modulated by WIDTH (0..32768; 16384 = even split)',
+    },
+  ],
+  [
+    'TrBlink',
+    {
+      // Integer-arg sibling: TrBlink<MILLIS, N, WIDTH=16384>.
+      name: 'TrBlink',
+      argTypes: ['INTEGER', 'INTEGER', 'INTEGER'],
+      description: 'Blink between A↔B N times in MILLIS, with optional WIDTH (default 16384 even split)',
     },
   ],
   [
@@ -316,6 +327,60 @@ export const transitionTemplates: Map<string, TemplateDefinition> = new Map([
       name: 'TrDoEffectAlwaysX',
       argTypes: ['TRANSITION', 'EFFECT', 'FUNCTION'],
       description: 'Always trigger an effect mid-transition (overrides cooldown)',
+    },
+  ],
+  // ── Center-wipe variants (extra MILLIS/POSITION integer-arg siblings) ──
+  [
+    'TrCenterWipe',
+    {
+      // Per transitions/center_wipe.h: TrCenterWipe<MILLIS, POSITION=16384>.
+      name: 'TrCenterWipe',
+      argTypes: ['INTEGER', 'INTEGER'],
+      description: 'Center-outward wipe (MILLIS, optional POSITION default 16384)',
+    },
+  ],
+  [
+    'TrCenterWipeSpark',
+    {
+      // Per transitions/center_wipe.h: TrCenterWipeSpark<COLOR, MILLIS, POSITION=16384>.
+      name: 'TrCenterWipeSpark',
+      argTypes: ['COLOR', 'INTEGER', 'INTEGER'],
+      description: 'Center-outward wipe with traveling spark (color, ms, optional position)',
+    },
+  ],
+  [
+    'TrCenterWipeSparkX',
+    {
+      name: 'TrCenterWipeSparkX',
+      argTypes: ['COLOR', 'FUNCTION', 'FUNCTION'],
+      description: 'Center wipe with spark, function-driven duration + position',
+    },
+  ],
+  [
+    'TrCenterWipeInSpark',
+    {
+      // Per transitions/center_wipe.h: TrCenterWipeInSpark<COLOR, MILLIS, POSITION=16384>.
+      name: 'TrCenterWipeInSpark',
+      argTypes: ['COLOR', 'INTEGER', 'INTEGER'],
+      description: 'Center-inward wipe with spark traveling to center (color, ms, optional position)',
+    },
+  ],
+  [
+    'TrCenterWipeInSparkX',
+    {
+      name: 'TrCenterWipeInSparkX',
+      argTypes: ['COLOR', 'FUNCTION', 'FUNCTION'],
+      description: 'Center-inward spark wipe with function-driven duration + position',
+    },
+  ],
+  // ── Wipe-spark-tip extra X-suffix sibling ──
+  [
+    'TrWipeInSparkTipX',
+    {
+      // Per transitions/wipe.h: TrWipeInSparkTipX<COLOR, MILLIS_FUNC, SIZE_FUNC=Int<400>>.
+      name: 'TrWipeInSparkTipX',
+      argTypes: ['COLOR', 'FUNCTION', 'FUNCTION'],
+      description: 'Wipe-in with spark traveling to tip, function-driven duration + size',
     },
   ],
 ]);
