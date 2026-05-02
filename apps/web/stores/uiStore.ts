@@ -251,6 +251,22 @@ export interface UIStore {
    * Persisted in localStorage under `kyberstation-gallery-view`.
    */
   galleryView: GalleryView;
+  /**
+   * Sprint 5E (2026-05-02): the most recent multi-preset import batch.
+   * Populated when the user clicks "Import N Presets" on a config.h
+   * paste. The ImportStatusBanner uses this to render a switcher
+   * dropdown so users can flip the visualizer between any of the
+   * recently-imported presets without having to navigate to My Presets.
+   *
+   * Ephemeral state — not persisted across page reloads. After a
+   * reload the dropdown disappears; presets remain accessible from
+   * the My Presets sidebar. Cleared by `convertImportToNative` and on
+   * any single-style import (replaced with `null`).
+   *
+   * Shape: array of `{ id, name }` references into `userPresetStore.presets`.
+   * `null` when no recent multi-preset batch is active.
+   */
+  recentImportBatch: Array<{ id: string; name: string }> | null;
 
   setViewMode: (mode: ViewMode) => void;
   setRenderMode: (mode: RenderMode) => void;
@@ -280,6 +296,8 @@ export interface UIStore {
   setFullscreenOrientation: (o: FullscreenOrientation) => void;
   setEditMode: (on: boolean) => void;
   toggleEditMode: () => void;
+  /** Sprint 5E (2026-05-02): set/clear the recently-imported multi-preset batch (drives the switcher dropdown in ImportStatusBanner). */
+  setRecentImportBatch: (batch: Array<{ id: string; name: string }> | null) => void;
   setEditTarget: (target: 'lockup' | 'blast') => void;
   setHoveredModulator: (id: string | null) => void;
   setHoveredParameterPath: (path: string | null) => void;
@@ -644,6 +662,9 @@ export const useUIStore = create<UIStore>((set) => ({
   // ── Gallery view default ──
   galleryView: loadGalleryView(),
 
+  // ── Sprint 5E: ephemeral multi-preset import batch (no persistence) ──
+  recentImportBatch: null,
+
   setViewMode: (viewMode) => set({ viewMode }),
   setRenderMode: (renderMode) => set({ renderMode }),
   setActiveTab: (activeTab) => set({ activeTab }),
@@ -698,6 +719,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleFullscreen: () => set((state) => ({ isFullscreen: !state.isFullscreen })),
   setFullscreenOrientation: (fullscreenOrientation) => set({ fullscreenOrientation }),
   setEditMode: (editMode) => set({ editMode }),
+  setRecentImportBatch: (recentImportBatch) => set({ recentImportBatch }),
   toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
   setEditTarget: (editTarget) => set({ editTarget }),
   setHoveredModulator: (hoveredModulatorId) => set({ hoveredModulatorId }),

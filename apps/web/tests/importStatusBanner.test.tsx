@@ -24,10 +24,17 @@ interface StubConfig {
 const stubState = vi.hoisted(() => ({
   config: {} as StubConfig,
   convertImportToNative: vi.fn(),
+  loadPreset: vi.fn(),
 }));
 
 const userPresetStub = vi.hoisted(() => ({
   savePreset: vi.fn(() => 'fake-id'),
+  presets: [] as Array<{ id: string; name: string; config: Record<string, unknown> }>,
+}));
+
+const uiStoreStub = vi.hoisted(() => ({
+  recentImportBatch: null as Array<{ id: string; name: string }> | null,
+  setRecentImportBatch: vi.fn(),
 }));
 
 vi.mock('@/stores/bladeStore', () => {
@@ -42,6 +49,13 @@ vi.mock('@/stores/userPresetStore', () => {
     return selector(userPresetStub);
   }
   return { useUserPresetStore };
+});
+
+vi.mock('@/stores/uiStore', () => {
+  function useUIStore<T>(selector: (s: typeof uiStoreStub) => T): T {
+    return selector(uiStoreStub);
+  }
+  return { useUIStore };
 });
 
 vi.mock('@/lib/toastManager', () => ({
@@ -60,7 +74,11 @@ describe('ImportStatusBanner', () => {
   beforeEach(() => {
     stubState.config = {};
     stubState.convertImportToNative.mockReset();
+    stubState.loadPreset.mockReset();
     userPresetStub.savePreset.mockClear();
+    userPresetStub.presets = [];
+    uiStoreStub.recentImportBatch = null;
+    uiStoreStub.setRecentImportBatch.mockClear();
   });
 
   it('renders nothing when importedRawCode is absent', () => {
@@ -217,5 +235,102 @@ describe('ImportStatusBanner', () => {
     const html = renderToStaticMarkup(createElement(ImportStatusBanner));
     expect(html).not.toContain('Save Preset');
     expect(html).not.toContain('import-banner-save-button');
+  });
+
+  // ── Sprint 5E: per-preset switcher (multi-preset import batch) ──
+  describe('preset switcher', () => {
+    it('does NOT render the switcher when no recent batch is active', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+        name: 'Single import',
+      };
+      uiStoreStub.recentImportBatch = null;
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).not.toContain('import-banner-preset-switcher');
+    });
+
+    it('does NOT render the switcher when batch has only one entry', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+        name: 'Solo preset',
+      };
+      uiStoreStub.recentImportBatch = [{ id: 'a', name: 'Solo preset' }];
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).not.toContain('import-banner-preset-switcher');
+    });
+
+    it('renders the switcher when batch has 2+ entries AND the active config matches one', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+        name: 'Obi-Wan ANH',
+      };
+      uiStoreStub.recentImportBatch = [
+        { id: 'a', name: 'Obi-Wan ANH' },
+        { id: 'b', name: 'Darth Maul' },
+        { id: 'c', name: 'Mace Windu' },
+      ];
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('data-testid="import-banner-preset-switcher"');
+      expect(html).toContain('Preset 1 of 3');
+      expect(html).toContain('1. Obi-Wan ANH');
+      expect(html).toContain('2. Darth Maul');
+      expect(html).toContain('3. Mace Windu');
+    });
+
+    it('shows the correct "Preset N of M" indicator for the middle preset', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Red>()',
+        name: 'Darth Maul',
+      };
+      uiStoreStub.recentImportBatch = [
+        { id: 'a', name: 'Obi-Wan ANH' },
+        { id: 'b', name: 'Darth Maul' },
+        { id: 'c', name: 'Mace Windu' },
+      ];
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('Preset 2 of 3');
+    });
+
+    it('does NOT render the switcher when batch is set but active config name is not in the batch', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Yellow>()',
+        name: 'Ahsoka', // not in batch
+      };
+      uiStoreStub.recentImportBatch = [
+        { id: 'a', name: 'Obi-Wan ANH' },
+        { id: 'b', name: 'Darth Maul' },
+      ];
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).not.toContain('import-banner-preset-switcher');
+    });
+
+    it('switcher select has accessibility label', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+        name: 'Obi-Wan ANH',
+      };
+      uiStoreStub.recentImportBatch = [
+        { id: 'a', name: 'Obi-Wan ANH' },
+        { id: 'b', name: 'Darth Maul' },
+      ];
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain(
+        'aria-label="Switch the visualizer to a different imported preset"',
+      );
+    });
+
+    it('switcher select has the correct ID matched to the label', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+        name: 'Obi-Wan ANH',
+      };
+      uiStoreStub.recentImportBatch = [
+        { id: 'a', name: 'Obi-Wan ANH' },
+        { id: 'b', name: 'Darth Maul' },
+      ];
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('for="import-banner-preset-select"');
+      expect(html).toContain('id="import-banner-preset-select"');
+    });
   });
 });

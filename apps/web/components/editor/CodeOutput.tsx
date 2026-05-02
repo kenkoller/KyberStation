@@ -125,6 +125,7 @@ export function CodeOutput() {
   // same flag.
   const editMode = useUIStore((s) => s.editMode);
   const setEditMode = useUIStore((s) => s.setEditMode);
+  const setRecentImportBatch = useUIStore((s) => s.setRecentImportBatch);
   const [volume, setVolume] = useState(1500);
   const [showCppImport, setShowCppImport] = useState(false);
   const [cppInput, setCppInput] = useState('');
@@ -646,7 +647,12 @@ export function CodeOutput() {
                       // (so each preset exports just its own style on
                       // re-flash, not the entire pasted file).
                       const extractedPresets = extractPresets(cppInput);
-                      let savedCount = 0;
+                      // Sprint 5E: capture the saved IDs + display
+                      // names so the ImportStatusBanner can render a
+                      // switcher dropdown. Order matches the source
+                      // config — preset 1 is index 0.
+                      const batch: Array<{ id: string; name: string }> = [];
+                      let firstPresetConfig: BladeConfig | null = null;
                       extractedPresets.forEach((preset, idx) => {
                         const parsed = parseStyleCode(preset.styleBlock);
                         if (!parsed.ast) return;
@@ -662,28 +668,37 @@ export function CodeOutput() {
                           preset.styleBlock,
                           sourceLabel,
                         );
-                        // Carry the user-facing name into the preset
-                        // config so the saved entry's displayed name
-                        // matches the imported preset.
                         presetConfig.name = presetName;
-                        savePreset(presetName, presetConfig);
-                        savedCount++;
+                        const id = savePreset(presetName, presetConfig);
+                        batch.push({ id, name: presetName });
+                        if (idx === 0) firstPresetConfig = presetConfig;
                       });
-                      // Also load preset 1 into the visualizer for
-                      // immediate feedback (current single-preset
-                      // behavior).
-                      loadPreset(
-                        applyReconstructedConfig(
-                          cppResult,
-                          config.ledCount || 144,
-                          cppInput,
-                          'Pasted ProffieOS C++ — full config',
-                        ),
-                      );
+                      // Load preset 1 into the visualizer for immediate
+                      // feedback. Sprint 5E: use the FIRST extracted
+                      // preset's reconstructed config (style-block
+                      // specific) instead of the cppResult fallback,
+                      // so the visualizer matches the actual preset 1
+                      // style — not a partial reconstruction of the
+                      // full pasted blob.
+                      if (firstPresetConfig) {
+                        loadPreset(firstPresetConfig);
+                      } else {
+                        loadPreset(
+                          applyReconstructedConfig(
+                            cppResult,
+                            config.ledCount || 144,
+                            cppInput,
+                            'Pasted ProffieOS C++ — full config',
+                          ),
+                        );
+                      }
+                      // Sprint 5E: register the batch so the banner can
+                      // render the per-preset switcher.
+                      setRecentImportBatch(batch.length > 1 ? batch : null);
                       toast.success(
-                        savedCount === 1
+                        batch.length === 1
                           ? `Imported 1 preset to your library`
-                          : `Imported ${savedCount} presets to your library`,
+                          : `Imported ${batch.length} presets to your library`,
                       );
                     } else {
                       loadPreset(
