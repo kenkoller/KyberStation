@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/s3config.h
+// NoSloppy Sabertrio config — Responsive Lightning Block on RandomFlicker DodgerBlue base
+// ResponsiveLightningBlockL with 2-stage TrConcat: bump-in then HumpFlicker fade-out
+// Common pattern for the LB sustained effect — used while button is held during lockup
+StylePtr<Layers<RandomFlicker<RotateColorsX<Variation,DodgerBlue>,RotateColorsX<Variation,Rgb<0,20,128>>>,ResponsiveLightningBlockL<AlphaL<Red,Int<0>>,TrConcat<TrInstant,AlphaL<White,Bump<Int<12000>,Int<18000>>>,TrFade<200>>,TrConcat<TrInstant,HumpFlickerL<AlphaL<White,Int<16000>>,30>,TrSmoothFade<600>>>,InOutTrL<TrWipe<300>,TrWipeIn<600>,Black>>>()

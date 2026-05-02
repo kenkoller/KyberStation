@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/s3config.h
+// NoSloppy Sabertrio config — Simple RandomFlicker base with RotateColorsX<Variation>
+// Common foundation: per-LED random flicker between two color variants of base hue.
+// RotateColorsX with Variation lets users customize base color via menu.
+StylePtr<Layers<RandomFlicker<RotateColorsX<Variation,DodgerBlue>,RotateColorsX<Variation,Rgb<0,20,128>>>,InOutTrL<TrWipe<300>,TrWipeIn<600>,Black>>>()

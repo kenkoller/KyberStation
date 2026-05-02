@@ -1,0 +1,4 @@
+// Source: https://github.com/FrankKerschbaumer3/proffie_configs/blob/master/fallen_config.h
+// Cal Kestis Survivor — Yellow Stripes pulsing-blade with EFFECT_FORCE 30s overlay
+// Variant for the "yellow" kyber phase. Same shape as blue but Rgb<180,180,0> tinting.
+StylePtr<Layers<Stripes<16000,-1000,RotateColorsX<Variation,Rgb<180,180,0>>,Pulsing<RotateColorsX<Variation,Rgb<64,64,0>>,RotateColorsX<Variation,Rgb<180,180,0>>,800>,RotateColorsX<Variation,Rgb<180,180,0>>>,TransitionEffectL<TrConcat<TrFade<600>,RandomFlicker<RotateColorsX<Variation,Rgb<180,180,0>>,RotateColorsX<Variation,Rgb<113,113,0>>>,TrDelay<30000>,RotateColorsX<Variation,Rgb<180,180,0>>,TrFade<800>>,EFFECT_FORCE>,InOutTrL<TrWipe<300>,TrWipeIn<500>,Black>>>()

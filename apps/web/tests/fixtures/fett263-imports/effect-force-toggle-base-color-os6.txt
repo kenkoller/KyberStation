@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/diag3ca.h
+// NoSloppy "Binary Dark" preset — EFFECT_FORCE EffectSequence toggling base saber colors
+// Triggering force gesture cycles between two complete blade Layers<> (DeepSkyBlue ↔ Red)
+// Each variant has its own HumpFlicker base + audio flicker swing + ripple swing layers.
+StylePtr<EffectSequence<EFFECT_FORCE,Layers<HumpFlicker<RotateColorsX<Variation,DeepSkyBlue>,RotateColorsX<Variation,Rgb<0,50,120>>,50>,AlphaL<AudioFlickerL<Stripes<1000,-1500,RandomPerLEDFlicker<RotateColorsX<Variation,Cyan>,Black>,Black,RotateColorsX<Variation,DeepSkyBlue>,Black>>,SwingSpeed<350>>>,Layers<HumpFlicker<RotateColorsX<Variation,Red>,RotateColorsX<Variation,Rgb<128,0,0>>,50>,AlphaL<AudioFlickerL<Stripes<1000,-1500,RandomPerLEDFlicker<RotateColorsX<Variation,DarkOrange>,Black>,Black,RotateColorsX<Variation,Red>,Black>>,SwingSpeed<350>>>>>()

@@ -1,0 +1,5 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_config2.h
+// Fett263 OS6 — EFFECT_FORCE swing takeover (dark orange swing for 30s after force trigger)
+// TransitionEffectL pattern: TrFade in → AlphaL with SwingSpeed mask (only visible mid-swing)
+// → TrDelay 30s holding → TrFade out. Force triggered by gesture; effect persists 30s.
+StylePtr<Layers<AudioFlicker<RotateColorsX<Variation,Red>,RotateColorsX<Variation,Rgb<200,0,0>>>,TransitionEffectL<TrConcat<TrFade<200>,AlphaL<RotateColorsX<Variation,Rgb16<65535,11439,0>>,SwingSpeed<500>>,TrDelay<30000>,AlphaL<RotateColorsX<Variation,Rgb16<65535,11439,0>>,SwingSpeed<500>>,TrFade<800>>,EFFECT_FORCE>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

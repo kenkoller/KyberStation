@@ -1,0 +1,6 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/BC_Corran_Horn_7.x.h
+// NoSloppy Corran Horn — EFFECT_POSTOFF "emitter cool-off" decay
+// 3-stage TrFade with Bump at base position scaled by Percentage<WavLen<>,N%>:
+// Light blue (6000 wide) 25% → Orange (4000 wide) 25% → Red (2000 wide) 50%.
+// Simulates real emitter cooling from hot-blue → warm-orange → red-ember after retraction.
+StylePtr<Layers<Black,TransitionEffectL<TrConcat<TrInstant,AlphaL<Rgb<100,200,255>,Bump<Int<0>,Int<6000>>>,TrFadeX<Percentage<WavLen<>,25>>,AlphaL<Orange,Bump<Int<0>,Int<4000>>>,TrFadeX<Percentage<WavLen<>,25>>,AlphaL<Red,Bump<Int<0>,Int<2000>>>,TrFadeX<Percentage<WavLen<>,50>>>,EFFECT_POSTOFF>>>()

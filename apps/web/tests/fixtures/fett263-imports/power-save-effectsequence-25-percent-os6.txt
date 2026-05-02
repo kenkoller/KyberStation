@@ -1,0 +1,7 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_revan.h
+// Fett263 OS6 — Power Save EffectSequence (25% increment dimming via EFFECT_POWERSAVE)
+// "Hold Aux + click PWR while ON pointing up" cycles dim 25% / 50% / 75% / OFF.
+// AlphaL<Black, Int<N>> with N stepping through 8192 / 16384 / 24576 / 0 (full off).
+// Standalone-style demonstrating the canonical Power Save shape — wrap inside Layers<>
+// alongside other event effects.
+StylePtr<Layers<RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,EffectSequence<EFFECT_POWERSAVE,AlphaL<Black,Int<8192>>,AlphaL<Black,Int<16384>>,AlphaL<Black,Int<24576>>,AlphaL<Black,Int<0>>>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

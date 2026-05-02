@@ -1,0 +1,5 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_revan.h
+// Fett263 OS6 — ResponsiveStabL + ResponsiveClashL with TransitionEffect color shift
+// ResponsiveStabL<RotateColorsX<Variation,Yellow>> — yellow stab tinted by color variation
+// ResponsiveClashL with TransitionEffect color shift from Rgb<255,240,80> to LemonChiffon
+StylePtr<Layers<Blue,ResponsiveStabL<RotateColorsX<Variation,Yellow>>,ResponsiveClashL<TransitionEffect<Rgb<255,240,80>,LemonChiffon,TrInstant,TrFade<100>,EFFECT_CLASH>,TrInstant,TrFade<400>,Scale<BladeAngle<0,16000>,Int<4000>,Int<26000>>,Int<6000>,Int<20000>>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

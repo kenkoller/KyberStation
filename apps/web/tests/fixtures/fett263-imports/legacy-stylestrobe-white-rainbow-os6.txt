@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/common_presets.h
+// Legacy ProffieOS — StyleStrobePtr<color1, color2, freq_hz, ignite_ms, retract_ms>
+// White-Rainbow strobe at 15Hz — high-frequency alternating effect
+StyleStrobePtr<WHITE,Rainbow,15,300,800>()

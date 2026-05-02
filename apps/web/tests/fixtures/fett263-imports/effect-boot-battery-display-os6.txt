@@ -1,0 +1,6 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_revan.h
+// Fett263 OS6 — EFFECT_BOOT battery-level display (1.5s delay → 1s fade-in → 3s hold → fade-out)
+// On boot, displays a Bump at the emitter (Int<0>,Int<6000>) colored by Mix<BatteryLevel,Red,Green>.
+// Acts as a passive battery monitor — appears after each power-on for 3 seconds.
+// Pattern is widely used as the canonical "passive battery readout" effect.
+StylePtr<Layers<RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,TransitionEffectL<TrConcat<TrDelay<1500>,Black,TrFade<1000>,AlphaL<Mix<BatteryLevel,Red,Green>,Bump<Int<0>,Int<6000>>>,TrFade<3000>>,EFFECT_BOOT>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

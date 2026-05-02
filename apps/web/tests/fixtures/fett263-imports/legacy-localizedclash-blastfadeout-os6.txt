@@ -1,0 +1,5 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// Legacy ProffieOS — LocalizedClash + Lockup + BlastFadeout + OnSpark + HumpFlicker stack
+// Demonstrates Lockup<basecolor,blast_overlay,lockup_color,lightning_color> chained
+// with LocalizedClash positioning on impact + BlastFadeout decay
+StylePtr<InOutHelper<LocalizedClash<Lockup<BlastFadeout<OnSpark<HumpFlicker<Black,Blue,5>,White,200>,White,200>,AudioFlicker<Blue,White>,AudioFlicker<Green,White>>,White>,300,800>>()

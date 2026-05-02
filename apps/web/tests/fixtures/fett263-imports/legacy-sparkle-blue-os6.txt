@@ -1,0 +1,3 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// Legacy ProffieOS — Sparkle<color> wrapped in StyleNormalPtr — twinkling blue effect
+StyleNormalPtr<Sparkle<BLUE>,WHITE,300,800>()

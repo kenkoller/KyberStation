@@ -1,0 +1,6 @@
+// Source: https://github.com/farzahn/proffie/blob/main/ProffieOS/config/ff-jedi_survivor.h
+// Fett263 OS7.14 v2.242p — HEART (Crystal Chamber accent) — Dual Phase Oscillate
+// using HEART = Layers<...> definition resolved as a flat StylePtr.
+// Crystal Chamber accent uses oscillating Sin gradient between BASE_COLOR and ALT_COLOR.
+using HEART = Layers<Mix<Sin<Int<6>>,Gradient<RotateColorsX<Scale<Sin<Int<20>>,Int<0>,Int<4096>>,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>>,RotateColorsX<Scale<Sin<Int<20>>,Int<4096>,Int<0>>,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>>>,Gradient<RotateColorsX<Scale<Sin<Int<20>>,Int<0>,Int<4096>>,RgbArg<ALT_COLOR_ARG,Rgb<0,255,0>>>,RotateColorsX<Scale<Sin<Int<20>>,Int<4096>,Int<0>>,RgbArg<ALT_COLOR_ARG,Rgb<0,255,0>>>>>,TransitionEffectL<TrWaveX<RgbArg<BLAST_COLOR_ARG,Rgb<255,255,255>>,Scale<EffectRandomF<EFFECT_BLAST>,Int<100>,Int<400>>,Int<100>,Scale<EffectPosition<EFFECT_BLAST>,Int<100>,Int<400>>,Scale<EffectPosition<EFFECT_BLAST>,Int<28000>,Int<8000>>>,EFFECT_BLAST>,InOutTrL<TrWipeX<IgnitionTime<300>>,TrWipeInX<RetractionTime<0>>,Black>>;
+StylePtr<HEART>()

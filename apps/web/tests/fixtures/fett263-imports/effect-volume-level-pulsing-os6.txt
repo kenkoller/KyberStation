@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/diag3ca.h
+// NoSloppy "FALLENORDERCALBUNDLE" preset — EFFECT_VOLUME_LEVEL display
+// On volume change, displays Pulsing<base,Mix<base,White>> at the bottom of the blade
+// scaled by VolumeLevel — visual readout of current volume setting.
+StylePtr<Layers<RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,InOutTrL<TrWipeX<BendTimePowInvX<IgnitionTime<300>,Mult<IntArg<IGNITION_OPTION2_ARG,10992>,Int<98304>>>>,TrWipeInX<BendTimePowX<RetractionTime<0>,Mult<IntArg<RETRACTION_OPTION2_ARG,10992>,Int<98304>>>>,Black>,TransitionEffectL<TrConcat<TrExtend<2000,TrWipe<100>>,AlphaL<Pulsing<RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,Mix<Int<4096>,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,White>,2000>,SmoothStep<VolumeLevel,Int<-1>>>,TrFade<300>>,EFFECT_VOLUME_LEVEL>>>()

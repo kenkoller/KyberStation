@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/common_presets.h
+// Legacy ProffieOS — InOutHelper + EasyBlade with OnSpark<GREEN> base
+// Common starter config style: green base, white shimmer, green spark on transitions
+StylePtr<InOutHelper<EasyBlade<OnSpark<GREEN>,WHITE>,300,800>>()

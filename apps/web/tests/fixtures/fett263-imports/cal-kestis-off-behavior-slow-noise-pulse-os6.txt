@@ -1,0 +1,7 @@
+// Source: https://github.com/FrankKerschbaumer3/proffie_configs/blob/master/fallen_config.h
+// Cal Kestis Survivor — OFF behavior pulse via InOutTrL retraction-color-mix
+// Critical pattern: InOutTrL<TrInstant, TrFade<300>, Mix<IsLessThan<SlowNoise<Int<3000>>,
+// Int<10000>>, RandomFlicker<Blue,DarkBlue>, Black>> — when blade is OFF, the
+// retraction color slot uses SlowNoise to randomly flicker some LEDs ON, simulating
+// a "broken kyber" idle effect (used for Cal Kestis cracked-kyber pre-survivor variant).
+StylePtr<Layers<Stripes<16000,-1000,RotateColorsX<Variation,Blue>,Pulsing<RotateColorsX<Variation,Rgb<0,0,90>>,RotateColorsX<Variation,Blue>,800>,RotateColorsX<Variation,Blue>>,InOutTrL<TrInstant,TrFade<300>,Mix<IsLessThan<SlowNoise<Int<3000>>,Int<10000>>,RandomFlicker<RotateColorsX<Variation,Blue>,RotateColorsX<Variation,Rgb<0,0,90>>>,Black>>>>()

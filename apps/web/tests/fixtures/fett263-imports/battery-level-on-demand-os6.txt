@@ -1,0 +1,6 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_revan.h
+// Fett263 OS6 — On-demand Battery Level via EFFECT_BATTERY_LEVEL TransitionEffectL
+// User triggers via Hold AUX + click PWR while OFF. Renders Bump<BatteryLevel,Int<10000>>
+// at the battery position (tip=full, hilt=low) colored by Mix<BatteryLevel,Red,Green>
+// (red=low, yellow=mid, green=full). Decays after 2s+1s fade.
+StylePtr<Layers<RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,TransitionEffectL<TrConcat<TrInstant,AlphaL<Mix<BatteryLevel,Red,Green>,Bump<BatteryLevel,Int<10000>>>,TrDelay<2000>,AlphaL<Mix<BatteryLevel,Red,Green>,Bump<BatteryLevel,Int<10000>>>,TrFade<1000>>,EFFECT_BATTERY_LEVEL>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

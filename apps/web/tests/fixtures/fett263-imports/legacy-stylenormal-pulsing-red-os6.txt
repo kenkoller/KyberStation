@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/common_presets.h
+// Legacy ProffieOS — Pulsing<bright,dim,period_ms> base with WHITE shimmer + RED clash
+// Smooth sinusoidal pulse between bright Red and dim Red over 5000ms cycle
+StyleNormalPtr<Pulsing<RED,Rgb<50,0,0>,5000>,WHITE,300,800,RED>()
