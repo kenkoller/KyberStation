@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.19.0] — 2026-05-02
+
+**Sprint 5C reconstructor patterns.** Three new ConfigReconstructor recognitions lifted from the v0.18 corpus expansion. The visualizer now correctly classifies Fett263's most common base-style shape and surfaces multi-phase + effect-event metadata on every imported config.
+
+### Added
+
+- **Hyper Responsive Rotoscope detection** (PR #266) — `Mix<HoldPeakF<SwingSpeed<...>>, base, alt>` is Fett263's signature swing-reactive base style. Previously fell through to `custom` with 0.2 confidence (visualizer defaulted to blue). Now classified as `rotoscope` with 0.85 confidence so the visualizer renders the imported preset correctly. Also catches the `SwingAcceleration` variant. Browser-verified: pasting a Hyper Responsive sample with base color `Rgb<140,30,200>` lands the visualizer at `#8c1ec8` instead of default blue.
+
+- **Multi-phase ColorChange extraction** (PR #266) — `ColorChange<TR, A, B, C, ...>`, `ColorSelect<F, TR, A, B, C, ...>`, and `ColorChangeL<F, A, B, C, ...>` now surface their alt-phase colors via a new `altPhaseColors[]` field on `ReconstructedConfig`. Previously the OS7 ColorChange family unwrapped to its first color and the rest were silently lost. Per-shape offset for "where the color list starts" handled correctly (1 / 2 / 1 respectively).
+
+- **Effect-id detection across the whole AST** (PR #266) — new `detectedEffectIds[]` field surfaces every `EFFECT_*` event the imported style references. Whitelist of 33 known IDs (Force / Boot / Preon / Quote / User1-8 / Battery / Volume / PowerSave / etc.) covers OS7's full set. Previously only `EFFECT_PREON` and `EFFECT_STAB` were detected. Future visualizer overlays can render flash effects per-event without re-walking the AST.
+
+- **`__test` seam exports extended** — `KNOWN_EFFECT_IDS`, `resolveAltPhaseColors`, `detectEffectIds` now exposed for unit testing of the new pattern helpers in isolation.
+
+### Note on scope
+
+The two new fields (`altPhaseColors`, `detectedEffectIds`) are returned on `ReconstructedConfig` but not yet threaded into `BladeConfig` or surfaced in the editor UI. That's a future sprint — this release gives downstream consumers (visualizer, future per-phase UI affordances, effect-overlay renderer) the data they need to act on it. The user-facing improvement that ships today is the Hyper Responsive Rotoscope classification fix.
+
+### Test count delta
+
++20 tests in `reconstructorSprint5C.test.ts`. Codegen 2542 → 2562. All 10 packages typecheck + test green.
+
+---
+
 ## [0.18.0] — 2026-05-02
 
 **Fett263 import coverage push (Sprint 5).** Builds on v0.17.0's preserve-and-tweak foundation. The headline user-facing win: **paste your full Fett263-generated `config.h` and every preset becomes its own entry in your library, ready to flash with the original code preserved.** The previous release made single-style imports work; this release closes the actual user workflow — bringing forward whole saved configs.
