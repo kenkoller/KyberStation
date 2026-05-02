@@ -37,6 +37,9 @@ const NAMED_PRIMITIVES = new Set([
   'ClashImpactF', 'RandomF', 'RandomPerLEDF',
   'Variation', 'Rainbow', 'RgbCycle',
   'AltF',
+  // ── 0-arg ProffieOS sound / blaster / haptic helpers (Sprint 5A) ──
+  'SmoothSoundLevel', 'NoisySoundLevelCompat', 'VolumeLevel',
+  'WavNum', 'BlasterModeF', 'BlasterCharge', 'BulletCount',
   // ── ProffieOS preset-builder macros (parens, not angle brackets) ──
   'EASYBLADE', 'SIMPLE_BLADE', 'STANDARD_BLADE',
   // ── C++ keywords that may appear in `using ALIAS = Layers<…>;` declarations ──
@@ -81,10 +84,43 @@ const VARIADIC_TEMPLATES = new Map<string, number>([
   // ── Function combinators ──
   ['Sum', 2],
   ['Mult', 2],
+  // ── IntSelect / IntSelectX (variadic select-by-index — Sprint 5A) ──
+  // First arg is a SELECTION function; remaining N args are the int (or
+  // function) values to choose from. Minimum 2 args (selection + at least one).
+  ['IntSelect', 2],
+  ['IntSelectX', 2],
+  // ── LayerFunctions composer (Sprint 5A) ──
+  // Per functions/layer_functions.h: LayerFunctions<F1, F2, ...>.
+  ['LayerFunctions', 2],
   // ── Pre-OS7 form: TransitionEffectL<COLOR, TR_IN, TR_OUT, EFFECT>
   //    OS7 form: TransitionEffectL<TRANSITION, EFFECT>
   //    Both forms are valid; treat the 4-arg form as a "wider variadic".
   ['TransitionEffectL', 2],
+  // ── Sprint 5A — multi-trigger TransitionEffectL extension ──
+  // MultiTransitionEffectL<TRANSITION, EFFECT, N=3>; N defaults to 3.
+  ['MultiTransitionEffectL', 2],
+  // ── WavLen / EffectPosition / TimeSinceEffect — 0 or 1 EFFECT arg ──
+  // Per ProffieOS source these accept either WavLen<> (uses last-detected
+  // effect) OR WavLen<EFFECT>. Min 0 to silence the 1-arg-default case.
+  ['WavLen', 0],
+  ['EffectPosition', 0],
+  // ── Sprint 5A — center-wipe optional POSITION arg (defaults to 16384) ──
+  ['TrCenterWipeX', 1],
+  ['TrCenterWipeInX', 1],
+  ['TrCenterWipe', 1],
+  ['TrCenterWipeIn', 1],
+  // ── Sprint 5A — wipe-spark-tip optional SIZE arg (defaults to 400) ──
+  ['TrWipeSparkTip', 2],
+  ['TrWipeSparkTipX', 2],
+  ['TrWipeInSparkTip', 2],
+  ['TrWipeInSparkTipX', 2],
+  ['TrCenterWipeSpark', 2],
+  ['TrCenterWipeSparkX', 2],
+  ['TrCenterWipeInSpark', 2],
+  ['TrCenterWipeInSparkX', 2],
+  // ── Sprint 5A — TrColorCycle optional START_RPM/END_RPM (defaults 0/6000) ──
+  ['TrColorCycle', 1],
+  ['TrColorCycleX', 1],
 ]);
 
 export interface ParseError {
