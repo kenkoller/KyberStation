@@ -2940,8 +2940,16 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           </div>
         )}
         {/* Zoom controls removed in v0.14.0 — auto-fit is the only scale. */}
-        {/* Analyze / Clean mode toggle (hidden in panelMode — panels have their own visibility toggles; hidden in mobileFullscreen so `/m` stays a clean preset browser) */}
-        {!panelMode && !mobileFullscreen && (
+        {/* Analyze / Clean mode toggle. Hidden in:
+              - panelMode (panels have their own visibility toggles)
+              - mobileFullscreen (`/m` stays a clean preset browser)
+              - compact (mobile shell — the 64px mini-blade region is
+                too small for a 50×44px touch-target overlay; the
+                pixel strip is always-visible in mobile sticky chrome
+                anyway, so the Analyze toggle has no useful target.
+                Removed 2026-05-02 per user feedback that the button
+                visually overlapped the mini-blade rendering area.) */}
+        {!panelMode && !mobileFullscreen && !compact && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-bg-deep/80 rounded px-1.5 py-0.5 border border-border-subtle">
             <button
               onClick={() => useUIStore.getState().toggleAnalyzeMode()}
