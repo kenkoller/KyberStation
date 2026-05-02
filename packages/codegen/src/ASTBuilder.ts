@@ -61,6 +61,12 @@ interface BladeConfig {
   // When true, codegen emits a SimpleClashL<White, 60> overlay alongside
   // the standard clash. See engine `BladeConfig.unstableKylo`.
   unstableKylo?: boolean;
+  // ── Import preservation (mirrors engine types — keep in sync) ──
+  // When `importedRawCode` is present, generateStyleCode emits it verbatim
+  // with a provenance header instead of regenerating from BladeConfig.
+  importedRawCode?: string;
+  importedAt?: number;
+  importedSource?: string;
   [key: string]: unknown;
 }
 

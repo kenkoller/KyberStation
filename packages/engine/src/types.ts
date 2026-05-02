@@ -163,6 +163,36 @@ export function migrateBlendMode(_value: unknown): BlendMode {
   return 'normal';
 }
 
+/**
+ * Coerce arbitrary persisted state into the import-preservation field
+ * shape. Drops non-string code, non-number timestamps, and non-string
+ * source labels. Used by the bladeStore loadPreset path + glyph
+ * decoders so old snapshots without these fields don't crash.
+ *
+ * Returns a partial object — callers spread it into their target
+ * shape rather than receiving a fully-defaulted object, so the
+ * "field is absent" semantic (= treat as native) round-trips cleanly.
+ */
+export function migrateImportFields(value: unknown): {
+  importedRawCode?: string;
+  importedAt?: number;
+  importedSource?: string;
+} {
+  if (!value || typeof value !== 'object') return {};
+  const v = value as Record<string, unknown>;
+  const out: { importedRawCode?: string; importedAt?: number; importedSource?: string } = {};
+  if (typeof v.importedRawCode === 'string' && v.importedRawCode.length > 0) {
+    out.importedRawCode = v.importedRawCode;
+  }
+  if (typeof v.importedAt === 'number' && Number.isFinite(v.importedAt)) {
+    out.importedAt = v.importedAt;
+  }
+  if (typeof v.importedSource === 'string' && v.importedSource.length > 0) {
+    out.importedSource = v.importedSource;
+  }
+  return out;
+}
+
 export interface LayerConfig {
   style: string; // style ID
   direction: LayerDirection;
@@ -318,6 +348,30 @@ export interface BladeConfig {
    * BladeEngine itself — it's purely a display-side hint.
    */
   hiltId?: string;
+
+  // ── Import Preservation (2026-05-02) ──
+  /**
+   * Original ProffieOS C++ style code captured at import time. When present,
+   * the codegen path emits this verbatim (with a provenance header comment)
+   * instead of regenerating from BladeConfig fields. The "Convert to native"
+   * UI clears this field, at which point standard regeneration resumes.
+   *
+   * Why: Fett263's OS7 Style Library generates ~100+ templates beyond
+   * what KyberStation's parser registry covers. Re-emitting from the
+   * reconstructed BladeConfig would silently drop any unrecognized
+   * structure. Preserving the raw code lets users paste a complex
+   * Fett263 config, flash the same code, and tweak basic params via
+   * the "Convert to native" path when they're ready to lose fidelity.
+   */
+  importedRawCode?: string;
+  /** Unix timestamp (ms) when `importedRawCode` was captured. Surfaced in the "Imported" banner. */
+  importedAt?: number;
+  /**
+   * Free-form provenance label shown in the import banner. Examples:
+   * "Fett263 OS7 Style Library", "Pasted from config.h", "Discord snippet".
+   * Optional — UI falls back to a generic "Imported" label when absent.
+   */
+  importedSource?: string;
 
   // ── Spatial Lockup (Edit Mode) ──
   /** Lockup centre position along the blade, 0..1. 0 = hilt, 1 = tip. Undefined = non-positional (runtime default). */
