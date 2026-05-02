@@ -98,7 +98,7 @@ export function extractFirstStylePtr(rawCode: string): string | null {
   for (const pattern of STYLE_PTR_PATTERNS) {
     const match = pattern.exec(rawCode);
     if (match && (earliest === null || match.index < earliest.index)) {
-      earliest = { index: match.index, name: match[0].replace('<', '') };
+      earliest = { index: match.index, name: match[0].slice(0, -1) };
     }
   }
   if (earliest === null) return null;
