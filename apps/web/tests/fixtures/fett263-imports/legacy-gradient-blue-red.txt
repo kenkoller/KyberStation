@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Legacy ProffieOS — Gradient template inside StyleNormalPtr (red→blue base, cyan→yellow clash)
+// Tests that the parser handles nested Gradient<> within StyleNormalPtr<>
+StyleNormalPtr<Gradient<RED, BLUE>, Gradient<CYAN, YELLOW>, 300, 800>()

@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Fett263 OS6.7 v4.018 — Luke ROTJ off-behavior accent style with TransitionLoop / TrBoing
+// Off Behavior: animated red arrow that bounces every 3 sec when blade is off
+StylePtr<Layers<Black,InOutTrL<TrInstant,TrInstant,TransitionLoop<Black,TrConcat<TrDelay<3000>,RgbArg<OFF_COLOR_ARG,Rgb<255,0,0>>,TrBoing<2000,5>>>>>>()

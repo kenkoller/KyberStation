@@ -1,0 +1,4 @@
+// Source: https://github.com/EVDOG4LIFE/ProffieConfigs/blob/main/Configs/Kenobi.h
+// Fett263 OS6.7 v4.021 — Rotoscope Single Color (Sequels) accent LED / PCB
+// Single Style, Off Behavior: Off, instant transitions
+StylePtr<Layers<RandomFlicker<Stripes<14000,-4000,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,Mix<Int<7710>,Black,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>>,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,Mix<Int<16448>,Black,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>>>,RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>>,InOutTrL<TrInstant,TrInstant,Black>>>()

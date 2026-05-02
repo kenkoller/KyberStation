@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Legacy ProffieOS StyleFirePtr — blue/cyan fire effect (size variant 0 for primary blade)
+// Common with the "Rogue Commander" preset shipped in default configs
+StyleFirePtr<BLUE, CYAN, 0>()

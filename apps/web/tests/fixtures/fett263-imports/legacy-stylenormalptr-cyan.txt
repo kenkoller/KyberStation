@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Legacy ProffieOS StyleNormalPtr — cyan blade with white shimmer (300ms ignite, 800ms retract)
+// Common starter style; ships with default Proffieboard configs
+StyleNormalPtr<CYAN, WHITE, 300, 800>()

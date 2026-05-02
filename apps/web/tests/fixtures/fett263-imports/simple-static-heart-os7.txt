@@ -1,0 +1,5 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS7/mysaber_ani.h
+// Fett263 OS7.12 v1.017-p — Simple (Accent LED / PCB) — minimal accent style
+// Single Style, Base Style: Static, Off Behavior: Off
+using HEART = Layers<RgbArg<BASE_COLOR_ARG,Rgb<255,255,255>>,InOutTrL<TrWipeX<BendTimePowInvX<IgnitionTime<100>,Mult<IntArg<IGNITION_OPTION2_ARG,10992>,Int<98304>>>>,TrWipeInX<BendTimePowInvX<RetractionTime<100>,Mult<IntArg<RETRACTION_OPTION2_ARG,10992>,Int<98304>>>>,Black>>;
+StylePtr<HEART>()

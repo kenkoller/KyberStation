@@ -1,0 +1,4 @@
+// Source: https://github.com/DarthMaledous/config/blob/master/joe_ren_SKv2.1.h
+// Fett263 OS6.6 v3.04 — Crystal Chamber: AudioFlicker on / Fast Pulse Dim-On off
+// Demonstrates the crystal-chamber accent style for Joe Ren build
+StylePtr<Layers<AudioFlicker<RgbArg<BASE_COLOR_ARG,Rgb<255,0,0>>,Mix<Int<16384>,Black,RgbArg<BASE_COLOR_ARG,Rgb<255,0,0>>>>,InOutTrL<TrInstant,TrInstant,Pulsing<Mix<Int<8192>,Black,RgbArg<OFF_COLOR_ARG,Rgb<255,0,0>>>,RgbArg<OFF_COLOR_ARG,Rgb<255,0,0>>,2000>>>>()
