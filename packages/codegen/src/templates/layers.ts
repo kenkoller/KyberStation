@@ -254,6 +254,80 @@ export const layerTemplates: Map<string, TemplateDefinition> = new Map([
       description: 'Remap blade positions through a function before evaluating the inner color',
     },
   ],
+  [
+    'OnSparkL',
+    {
+      // Per styles/on_spark.h: OnSparkL<SPARK_COLOR, MILLIS>.
+      name: 'OnSparkL',
+      argTypes: ['COLOR', 'INTEGER'],
+      description: 'Spark on ignition as overlay layer (color + duration ms)',
+    },
+  ],
+  [
+    'BlinkingL',
+    {
+      // Per styles/blinking.h: BlinkingL<COLOR, BLINK_MILLIS_FUNC, BLINK_PROMILLE_FUNC>.
+      name: 'BlinkingL',
+      argTypes: ['COLOR', 'FUNCTION', 'FUNCTION'],
+      description: 'Blinking pattern as overlay layer (period + promille functions)',
+    },
+  ],
+  [
+    'PulsingL',
+    {
+      // Per styles/pulsing.h: PulsingL<COLOR, PULSE_MILLIS_FUNC>.
+      name: 'PulsingL',
+      argTypes: ['COLOR', 'FUNCTION'],
+      description: 'Pulsing color blend as overlay layer (period function)',
+    },
+  ],
+  [
+    'SparkleL',
+    {
+      // Per styles/sparkle.h: SparkleL<SPARKLE_COLOR, SPARK_CHANCE_PROMILLE, SPARK_INTENSITY>.
+      name: 'SparkleL',
+      argTypes: ['COLOR', 'INTEGER', 'INTEGER'],
+      description: 'Glittering speckle effect as overlay layer (chance + intensity)',
+    },
+  ],
+  [
+    'StrobeL',
+    {
+      // Per styles/strobe.h: StrobeL<STROBE_COLOR, FREQUENCY_FUNC, MILLIS_FUNC>.
+      name: 'StrobeL',
+      argTypes: ['COLOR', 'FUNCTION', 'FUNCTION'],
+      description: 'Strobe between two colors as overlay layer (frequency + on-time functions)',
+    },
+  ],
+  [
+    'TransitionLoopWhileL',
+    {
+      // Per ProffieOS transition_loop.h:
+      //   TransitionLoopWhileL<LOOP_TRANSITION, END_TRANSITION, CONDITION>
+      name: 'TransitionLoopWhileL',
+      argTypes: ['TRANSITION', 'TRANSITION', 'FUNCTION'],
+      description: 'Loop a transition while a condition is true; END_TRANSITION runs when condition flips',
+    },
+  ],
+  [
+    'TransitionPulse',
+    {
+      // Function form: TransitionPulse<TRANSITION, PULSE>
+      name: 'TransitionPulse',
+      argTypes: ['TRANSITION', 'FUNCTION'],
+      description: 'Pulsing transition (function form, used inside other layers)',
+    },
+  ],
+  [
+    'MultiTransitionEffectL',
+    {
+      // Per styles/transition_effect.h: MultiTransitionEffectL<TRANSITION, EFFECT, N>.
+      // N defaults to 3 in C++; we still register as 3-arg.
+      name: 'MultiTransitionEffectL',
+      argTypes: ['TRANSITION', 'EFFECT', 'INTEGER'],
+      description: 'TransitionEffectL that can handle N concurrent effect triggers (default 3, OS7 multi-trigger form)',
+    },
+  ],
   // ── Legacy non-L variants (parsed without warnings; pre-OS6 hand-written
   //    or Fredrik Style Editor exports).
   [
