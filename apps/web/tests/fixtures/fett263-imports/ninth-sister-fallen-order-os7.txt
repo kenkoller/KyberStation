@@ -1,0 +1,6 @@
+// Source: https://github.com/farzahn/proffie/blob/main/ProffieOS/config/ff-jedi_survivor.h
+// Fett263 OS7.14 v2.242p — Ninth Sister (FallenOrder, Primary Blade)
+// Base style: "Fallen Order Ninth Sister" — uses ALT_COLOR2_ARG, double-flicker striped
+// red blade. Distinct shape: outer Stripes uses RandomFlicker<RandomFlicker<Stripes...>>
+// double-nested for chaotic per-LED variation typical of cracked-kyber unstable blades.
+StylePtr<Layers<Stripes<18000,-1600,RgbArg<ALT_COLOR2_ARG,Rgb<255,0,0>>,RandomFlicker<RgbArg<ALT_COLOR2_ARG,Rgb<255,0,0>>,Mix<Int<16384>,Black,RgbArg<ALT_COLOR2_ARG,Rgb<255,0,0>>>>,RandomFlicker<RgbArg<ALT_COLOR2_ARG,Rgb<255,0,0>>,Stripes<9000,-900,RgbArg<ALT_COLOR2_ARG,Rgb<255,0,0>>,Mix<Int<7710>,Black,RgbArg<ALT_COLOR2_ARG,Rgb<255,0,0>>>>>>,TransitionEffectL<TrWaveX<RgbArg<BLAST_COLOR_ARG,Rgb<255,255,255>>,Scale<EffectRandomF<EFFECT_BLAST>,Int<100>,Int<400>>,Int<100>,Scale<EffectPosition<EFFECT_BLAST>,Int<100>,Int<400>>,Scale<EffectPosition<EFFECT_BLAST>,Int<28000>,Int<8000>>>,EFFECT_BLAST>,InOutTrL<TrWipeX<BendTimePowInvX<IgnitionTime<300>,Mult<IntArg<IGNITION_OPTION2_ARG,10992>,Int<98304>>>>,TrWipeInX<BendTimePowInvX<RetractionTime<0>,Mult<IntArg<RETRACTION_OPTION2_ARG,10992>,Int<98304>>>>,Black>>>()

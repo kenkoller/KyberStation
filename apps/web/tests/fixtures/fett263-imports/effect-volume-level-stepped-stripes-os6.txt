@@ -1,0 +1,6 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/BC_OledTest.h
+// NoSloppy testfont2b — EFFECT_VOLUME_LEVEL stepped blue stripes display
+// Renders 3 stacked AlphaL bars at fixed positions (LinearSectionF) when volume changes.
+// Each bar represents one volume level — bars light up sequentially from low to high.
+// Standard Fett263 pattern for "visual volume readout" via stepped chunks.
+StylePtr<Layers<Black,TransitionEffectL<TrConcat<TrExtendX<Int<1000>,TrSmoothFade<200>>,AlphaL<Layers<AlphaL<Blue,LinearSectionF<Int<1638>,Int<3276>>>,AlphaL<SteelBlue,LinearSectionF<Int<4914>,Int<3276>>>,AlphaL<Blue,LinearSectionF<Int<8190>,Int<3276>>>>,SmoothStep<VolumeLevel,Int<-1>>>,TrSmoothFade<500>>,EFFECT_VOLUME_LEVEL>>>()

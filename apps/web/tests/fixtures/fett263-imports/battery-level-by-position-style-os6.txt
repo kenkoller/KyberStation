@@ -1,0 +1,6 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// ProffieOS reference — Battery-Level by-position style (no Bump — just gradient)
+// Sin global pulse over a battery-level gradient. Tip = full color, hilt = low color.
+// Variant of the charging style without the position-bump; renders an animated
+// pulsing field that spans the whole blade colored by battery state.
+StylePtr<Mix<Sin<Int<20>,Int<8192>,Int<32768>>,Black,Mix<BatteryLevel,Red,Red,Orange,Orange,Orange,Blue,Blue,Blue,Blue,Green,Green,Green>>>()

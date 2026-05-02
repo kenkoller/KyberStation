@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// Legacy ProffieOS — RandomBlink<period_ms, c1, c2> with WHITE shimmer
+// Each LED randomly toggles between c1 and c2 every period — chaotic noise effect
+StyleNormalPtr<RandomBlink<1000,RED,GREEN>,WHITE,300,800>()

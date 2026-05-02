@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/diag3ca.h
+// NoSloppy "Binary Dark" preset — ResponsiveStabL with WavLen-percentage timings
+// ResponsiveStabL<color, TrWipeIn, TrFade> — duration scales with WavLen<EFFECT_STAB>
+// percentage. Common pattern when stab .wav files have varying lengths.
+StylePtr<Layers<HumpFlicker<RotateColorsX<Variation,DeepSkyBlue>,RotateColorsX<Variation,Rgb<0,50,120>>,50>,ResponsiveStabL<AudioFlickerL<RgbArg<STAB_COLOR_ARG,Yellow>>,TrWipeInX<Percentage<WavLen<EFFECT_STAB>,50>>,TrFadeX<Percentage<WavLen<EFFECT_STAB>,50>>>,InOutTrL<TrWipeSparkTip<White,1500>,TrColorCycleX<Int<500>,500>>>>()

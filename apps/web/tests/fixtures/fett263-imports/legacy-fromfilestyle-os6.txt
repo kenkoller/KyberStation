@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// Legacy ProffieOS — FromFileStyle reads style.ini from font folder dynamically
+// Allows users to swap blade styles without re-flashing — reads template from SD card
+StylePtr<FromFileStyle<>>()

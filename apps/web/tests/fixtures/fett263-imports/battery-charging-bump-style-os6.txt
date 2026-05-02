@@ -1,0 +1,6 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// ProffieOS reference — Battery-driven "charging" style (red→orange→blue→green by level)
+// Sin pulse modulates a Bump positioned at BatteryLevel; color picked from BatteryLevel-Mix.
+// Used for charging-prop visualization (blade is OFF as far as user is concerned, but the
+// BladeConfig still attaches a style that shows charge progress).
+StylePtr<Mix<Sin<Int<20>,Int<8192>,Int<32768>>,Black,Mix<Bump<BatteryLevel,Int<8000>>,Black,Mix<BatteryLevel,Red,Red,Orange,Orange,Orange,Blue,Blue,Blue,Blue,Green,Green,Green>>>>()

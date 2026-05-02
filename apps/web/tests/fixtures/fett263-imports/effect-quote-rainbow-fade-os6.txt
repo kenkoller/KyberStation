@@ -1,0 +1,6 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/BC_OledTest.h
+// NoSloppy testfont2b — EFFECT_QUOTE Rainbow takeover
+// On EFFECT_QUOTE trigger (text-to-speech / random quote playback), blade goes
+// Rainbow then fades back over 2 seconds. Visual cue paired with audio quote.
+// EFFECT_QUOTE is one of the standard Fett263-recognized event types.
+StylePtr<Layers<Black,TransitionEffectL<TrConcat<TrInstant,Rainbow,TrFade<2000>>,EFFECT_QUOTE>,InOutTrL<TrWipe<300>,TrWipeIn<600>,Black>>>()

@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/common_presets.h
+// Legacy ProffieOS — AudioFlicker<color, flicker_color> as base with BLUE shimmer
+// Standard preset shape: yellow blade flickering toward white driven by audio level
+StyleNormalPtr<AudioFlicker<YELLOW,WHITE>,BLUE,300,800>()

@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/BC_Corran_Horn_7.x.h
+// NoSloppy Corran Horn — EFFECT_FAST_ON: Strobe black/white at 15Hz + center spark wipe
+// EFFECT_FAST_ON triggers when blade is fast-ignited via gesture (not standard ignition)
+// Visual: rapid 15Hz strobe + center-wipe spark, simulating energy surge.
+StylePtr<Layers<Rainbow,TransitionEffectL<TrConcat<TrInstant,Strobe<Black,White,15,81>,TrCenterWipeInSpark<White,500>>,EFFECT_FAST_ON>,InOutTrL<TrWipeX<BendTimePowInvX<Int<1000>,Int<180000>>>,TrWipeInX<BendTimePowX<WavLen<EFFECT_RETRACTION>,Int<180000>>>>>>()

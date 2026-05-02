@@ -1,0 +1,5 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_revan.h
+// Fett263 OS6 — EFFECT_NEWFONT battery-level display on font change
+// Same shape as EFFECT_BOOT but triggered on font swap. Renders Bump at emitter
+// position colored by BatteryLevel for 3 seconds whenever the user changes presets.
+StylePtr<Layers<RgbArg<BASE_COLOR_ARG,Rgb<0,0,255>>,TransitionEffectL<TrConcat<TrInstant,AlphaL<Mix<BatteryLevel,Red,Green>,Bump<Int<0>,Int<6000>>>,TrFade<3000>>,EFFECT_NEWFONT>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

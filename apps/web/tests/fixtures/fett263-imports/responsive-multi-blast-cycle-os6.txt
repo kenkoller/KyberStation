@@ -1,0 +1,6 @@
+// Source: https://github.com/farzahn/proffie/blob/main/legacy_configs/OS6/mysaber_revan.h
+// Fett263 OS6 — Multi-Blast: EffectSequence cycles through 6 different blast effects
+// Each EFFECT_BLAST advances to next variant: ResponsiveBlastL → LocalizedClashL →
+// ResponsiveBlastWaveL → BlastL → ResponsiveBlastFadeL → ResponsiveBlastL.
+// Demonstrates cycling effect-pool pattern that's common to "responsive" combat styles.
+StylePtr<Layers<Blue,EffectSequence<EFFECT_BLAST,ResponsiveBlastL<White,Int<400>,Scale<SwingSpeed<200>,Int<100>,Int<400>>,Int<400>>,LocalizedClashL<White,80,30,EFFECT_BLAST>,ResponsiveBlastWaveL<White,Scale<SwingSpeed<400>,Int<500>,Int<200>>,Scale<SwingSpeed<400>,Int<100>,Int<400>>>,BlastL<White,200,200>,ResponsiveBlastFadeL<White,Scale<SwingSpeed<400>,Int<6000>,Int<12000>>,Scale<SwingSpeed<400>,Int<400>,Int<100>>>,ResponsiveBlastL<White,Scale<SwingSpeed<400>,Int<400>,Int<100>>,Scale<SwingSpeed<400>,Int<200>,Int<100>>,Scale<SwingSpeed<400>,Int<400>,Int<200>>>>,InOutTrL<TrWipe<500>,TrWipeIn<1125>>>>()

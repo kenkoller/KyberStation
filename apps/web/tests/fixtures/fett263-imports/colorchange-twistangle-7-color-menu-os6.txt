@@ -1,0 +1,6 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/BC_DarkShadow_6.x.h
+// NoSloppy Thanos Greyscale preset — ColorChange menu with 7-color permutations + TwistAngle
+// Demonstrates ColorChange<TrDelay,c1,c2,c3,c4,c5,c6,c7,Mix<TwistAngle<1>,...>> shape
+// Used for "color editing" menu mode — user clicks through colors via prop button.
+// Twist toggle alternates color order on the fly.
+StylePtr<Layers<Stripes<3000,-3000,Rgb<100,100,150>,Rgb<25,25,40>,ColorChange<TrDelay<400>,Rgb<130,130,180>,Rgb<95,0,210>,Blue,Red,DarkOrange,Green,Yellow,Mix<TwistAngle<1>,Rgb<95,0,210>,Blue,Red,DarkOrange,Green,Yellow>>,Rgb<50,50,75>>,InOutTrL<TrWipe<150>,TrWipeInX<WavLen<EFFECT_RETRACTION>>>>>()

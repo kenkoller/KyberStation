@@ -1,0 +1,4 @@
+// Source: https://github.com/profezzorn/ProffieOS/blob/master/config/proffieboard_v1_test_bench_config.h
+// Legacy ProffieOS — 6-color rainbow Stripes with WHITE shimmer + 300/800 ignite/retract
+// Stripes<width,scroll,c1,c2,c3,c4,c5,c6> shape — common alternative to Rainbow<>
+StyleNormalPtr<Stripes<1000,1000,RED,GREEN,BLUE,CYAN,YELLOW,MAGENTA>,WHITE,300,800>()

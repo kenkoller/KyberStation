@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/diag3ca.h
+// NoSloppy "Binary Dark" preset — TrWipeSparkTip ignition + TrColorCycleX retraction
+// Distinct InOutTrL: ignition uses spark-tip wipe (1500ms), retraction uses 500ms
+// color cycle. Common pattern for unstable / kyber-bleeding character ignition.
+StylePtr<Layers<HumpFlicker<RotateColorsX<Variation,DeepSkyBlue>,RotateColorsX<Variation,Rgb<0,50,120>>,50>,InOutTrL<TrWipeSparkTip<White,1500>,TrColorCycleX<Int<500>,500>>>>()

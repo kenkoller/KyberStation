@@ -1,0 +1,6 @@
+// Source: https://github.com/farzahn/proffie/blob/main/ProffieOS/config/ff-jedi_survivor.h
+// Fett263 OS7.14 v2.242p — AUX (Secondary blade for crossguard / saberstaff)
+// Static green base with full effect stack (lockup/lightning/drag/melt) — typical
+// for crossguard quillon or split-blade configs with a secondary tip.
+using AUX = Layers<RgbArg<BASE_COLOR_ARG,Rgb<0,255,0>>,TransitionEffectL<TrWaveX<RgbArg<BLAST_COLOR_ARG,Rgb<255,255,255>>,Scale<EffectRandomF<EFFECT_BLAST>,Int<100>,Int<400>>,Int<100>,Scale<EffectPosition<EFFECT_BLAST>,Int<100>,Int<400>>,Scale<EffectPosition<EFFECT_BLAST>,Int<28000>,Int<8000>>>,EFFECT_BLAST>,InOutTrL<TrWipeX<IgnitionTime<300>>,TrWipeInX<RetractionTime<0>>,Black>>;
+StylePtr<AUX>()

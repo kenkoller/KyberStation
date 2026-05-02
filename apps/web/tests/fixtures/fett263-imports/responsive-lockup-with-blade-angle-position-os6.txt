@@ -1,0 +1,5 @@
+// Source: https://github.com/NoSloppy/ProffieOS3-eval/blob/master/config/s3config.h
+// NoSloppy "The Return" preset — ResponsiveLockupL with custom BladeAngle position
+// Demonstrates ResponsiveLockupL pattern: lockup position scales with BladeAngle (10000-30000)
+// and bump width scales with SwingSpeed. Includes EFFECT_LOCKUP_END BrownNoiseFlicker.
+StylePtr<Layers<Stripes<5000,-1500,RotateColorsX<Variation,Red>,RotateColorsX<Variation,Rgb<60,0,0>>,RotateColorsX<Variation,Rgb<255,50,50>>,RotateColorsX<Variation,Rgb<128,0,0>>>,AlphaL<BrownNoiseFlicker<RotateColorsX<Variation,Red>,Black,300>,SwingSpeed<400>>,TransitionEffectL<TrConcat<TrInstant,BrownNoiseFlickerL<AlphaL<White,Int<16000>>,Int<50>>,TrSmoothFade<600>>,EFFECT_LOCKUP_END>,ResponsiveLockupL<Strobe<White,BrownNoiseFlicker<White,Blue,300>,50,1>,TrConcat<TrInstant,White,TrFade<400>>,TrFade<100>,Scale<BladeAngle<0,16000>,Int<10000>,Int<30000>>,Int<10000>,Scale<SwingSpeed<100>,Int<10000>,Int<14000>>>,InOutTrL<TrWipe<300>,TrWipeIn<1100>,Black>>>()
