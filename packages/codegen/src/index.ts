@@ -134,6 +134,15 @@ export type {
 /**
  * One-shot convenience: BladeConfig -> ProffieOS C++ style code string.
  *
+ * Import-preservation early-return (Phase 2A, 2026-05-02):
+ * If the BladeConfig carries an `importedRawCode` string captured at
+ * import time, that raw code is emitted verbatim with a provenance
+ * header comment. This skips the AST build + emit pipeline entirely so
+ * complex Fett263 OS7 Style Library snippets (which reach beyond
+ * KyberStation's parser registry) round-trip byte-identically. The
+ * "Convert to native" UI clears the field, after which the standard
+ * regenerate-from-BladeConfig path resumes.
+ *
  * v1.1 Core flow when the config carries a `config.modulation` payload:
  *
  *   1. `mapBindings()` partitions every binding into `mappable` (a
@@ -162,6 +171,21 @@ export function generateStyleCode(
   config: BladeConfig,
   options?: EmitOptions & BuildOptions,
 ): string {
+  // ─── Import-preservation early-return (Phase 2A) ───
+  // When `importedRawCode` is a non-empty string, the original ProffieOS
+  // code is emitted verbatim with a provenance header. Modulation bindings
+  // (if any) cannot be applied to raw code — surface a single warning so
+  // users know to "Convert to native" if they want their bindings to take
+  // effect. Defense in depth: `migrateImportFields` already drops empty
+  // strings, but the explicit check below keeps this path predictable when
+  // callers construct configs by hand.
+  if (
+    typeof config.importedRawCode === 'string' &&
+    config.importedRawCode.length > 0
+  ) {
+    return buildImportedRawCodeOutput(config, options);
+  }
+
   const payload =
     (config as BladeConfig & { modulation?: ModulationPayloadLike }).modulation;
 
@@ -230,4 +254,59 @@ export function generateStyleCode(
     deferredFromMapping: deferredSummaries,
   });
   return commentBlock + code;
+}
+
+// ─── Import-preservation helpers (Phase 2A) ──────────────────────────
+
+/**
+ * Emit imported raw ProffieOS code verbatim with a provenance header.
+ *
+ * The header is load-bearing context for anyone reading the emitted
+ * config, so it survives `comments: false` (which exists to suppress the
+ * per-preset modulation banner inside a config.h preset array — a
+ * different concern). The optional modulation-bindings warning IS
+ * suppressed under `comments: false` to preserve that contract.
+ *
+ * Caller is responsible for clearing `importedRawCode` when the user
+ * "Converts to native" — see Phase 2B for the UI wiring.
+ */
+function buildImportedRawCodeOutput(
+  config: BladeConfig,
+  options?: EmitOptions & BuildOptions,
+): string {
+  const raw = config.importedRawCode!;
+  const source = config.importedSource ?? 'external source';
+  const importedAtIso = formatImportedAt(config.importedAt);
+  const lines: string[] = [
+    `// Imported from ${source}`,
+    `// Imported at: ${importedAtIso}`,
+    '// Original ProffieOS code preserved verbatim — regenerated structure suppressed.',
+  ];
+
+  // Modulation-bindings warning (suppressed under comments: false to keep
+  // the preset-array path clean). Surface once per emit, not per binding.
+  const payload =
+    (config as BladeConfig & { modulation?: ModulationPayloadLike }).modulation;
+  const bindingCount = payload?.bindings?.length ?? 0;
+  if (bindingCount > 0 && options?.comments !== false) {
+    lines.push(
+      `// NOTE: this config has ${bindingCount} modulation binding${bindingCount === 1 ? '' : 's'} that ${bindingCount === 1 ? 'is' : 'are'} not applied to the imported raw code. Click "Convert to native" in the editor to regenerate from BladeConfig with bindings.`,
+    );
+  }
+
+  return lines.join('\n') + '\n' + raw;
+}
+
+/**
+ * Format an `importedAt` Unix-ms timestamp as an ISO date string for the
+ * provenance header. Falls back to the literal "unknown" when missing or
+ * not a finite number — defense against legacy persisted state.
+ */
+function formatImportedAt(value: number | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'unknown';
+  try {
+    return new Date(value).toISOString();
+  } catch {
+    return 'unknown';
+  }
 }
