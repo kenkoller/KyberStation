@@ -16,6 +16,11 @@ import { ErrorState } from '@/components/shared/ErrorState';
 import { FilenameReveal } from '@/hooks/useFilenameReveal';
 import { toast } from '@/lib/toastManager';
 import { ImportStatusBanner } from './ImportStatusBanner';
+import {
+  detectConfigShape,
+  extractFirstStylePtr,
+  type ConfigShape,
+} from '@/lib/import/configShapeDetect';
 
 /**
  * Map a `ReconstructedConfig` (output of `reconstructConfig`) into a full
@@ -123,6 +128,7 @@ export function CodeOutput() {
   const [cppResult, setCppResult] = useState<ReconstructedConfig | null>(null);
   const [cppErrors, setCppErrors] = useState<string[]>([]);
   const [cppWarnings, setCppWarnings] = useState<string[]>([]);
+  const [cppConfigShape, setCppConfigShape] = useState<ConfigShape | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isMultiPreset = presetListEntries.length > 0;
@@ -581,8 +587,14 @@ export function CodeOutput() {
           <div className="space-y-2">
             <textarea
               value={cppInput}
-              onChange={(e) => setCppInput(e.target.value)}
-              placeholder="Paste ProffieOS C++ style code here, e.g. StylePtr<Layers<AudioFlicker<Rgb<0,0,255>,...>>>()"
+              onChange={(e) => {
+                setCppInput(e.target.value);
+                // Clear stale config-shape state on edit so the
+                // "Detected N presets" notice doesn't linger after
+                // the user paste-overwrites with a different blob.
+                setCppConfigShape(null);
+              }}
+              placeholder="Paste ProffieOS C++ style code here, e.g. StylePtr<Layers<AudioFlicker<Rgb<0,0,255>,...>>>() — or paste your entire config.h file"
               aria-label="ProffieOS C++ style code input"
               className="w-full h-24 bg-black/40 rounded border border-border-subtle p-2 text-ui-base font-mono text-text-secondary placeholder:text-text-muted resize-y"
             />
@@ -590,7 +602,19 @@ export function CodeOutput() {
               <button
                 onClick={() => {
                   if (!cppInput.trim()) return;
-                  const result = parseStyleCode(cppInput);
+                  // Detect whether the pasted blob is a full config.h
+                  // (with #ifdef wrapping + multi-preset Preset[]) or
+                  // a naked StylePtr<...>(). For full configs, parse
+                  // ONLY the first style template so the visualizer
+                  // gets a clean reconstruction; the export path
+                  // separately preserves the FULL pasted text via
+                  // applyReconstructedConfig's rawCode parameter.
+                  const shape = detectConfigShape(cppInput);
+                  setCppConfigShape(shape);
+                  const codeForParser = shape.isFullConfig
+                    ? extractFirstStylePtr(cppInput) ?? cppInput
+                    : cppInput;
+                  const result = parseStyleCode(codeForParser);
                   setCppErrors(result.errors.map((e) => e.message));
                   setCppWarnings(
                     result.warnings?.map((w) => w.message) ?? [],
@@ -622,6 +646,7 @@ export function CodeOutput() {
                     setCppResult(null);
                     setCppErrors([]);
                     setCppWarnings([]);
+                    setCppConfigShape(null);
                   }}
                   className="touch-target px-3 py-1.5 rounded text-ui-xs font-medium border"
                   style={{
@@ -634,6 +659,50 @@ export function CodeOutput() {
                 </button>
               )}
             </div>
+
+            {/* Multi-preset detection notice — surfaces when the
+                user pasted a full config.h with multiple presets.
+                The visualizer reconstructs from the FIRST preset
+                only (Step 2 of Sprint 5); full multi-preset
+                extraction with per-preset library entries lands
+                in Sprint 5D. The full original code is preserved
+                verbatim on export regardless. */}
+            {cppConfigShape?.isFullConfig && (
+              <div
+                role="note"
+                data-testid="multi-preset-detection-notice"
+                className="text-ui-sm rounded p-2 border"
+                style={{
+                  color: 'rgb(var(--badge-creative))',
+                  background: 'rgb(var(--badge-creative) / 0.1)',
+                  borderColor: 'rgb(var(--badge-creative) / 0.4)',
+                }}
+              >
+                <div className="font-semibold mb-1">
+                  Detected full config.h
+                  {cppConfigShape.styleCount > 1
+                    ? ` with ${cppConfigShape.styleCount} presets`
+                    : ''}
+                </div>
+                <div className="text-ui-xs leading-relaxed text-text-secondary">
+                  {cppConfigShape.styleCount > 1 ? (
+                    <>
+                      The visualizer is showing preset 1 only.
+                      Your full config will be preserved verbatim
+                      on export so it&apos;s flashable as-is.
+                      Multi-preset library extraction with
+                      per-preset switching is coming soon.
+                    </>
+                  ) : (
+                    <>
+                      The full file (including <code>#ifdef</code>{' '}
+                      blocks and <code>#define</code> directives) is
+                      preserved verbatim on export.
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {cppErrors.length > 0 && (
               <div
