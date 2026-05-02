@@ -84,6 +84,18 @@ export interface BladeStore {
   updateBinding: (bindingId: string, partial: Partial<SerializedBinding>) => void;
   toggleBindingBypass: (bindingId: string) => void;
   clearAllBindings: () => void;
+
+  // ── Import preservation (Phase 2B, 2026-05-02) ──
+  /**
+   * Strip `importedRawCode` / `importedAt` / `importedSource` from the
+   * current config. Subsequent exports regenerate from BladeConfig
+   * fields rather than re-emitting the imported code verbatim.
+   *
+   * One-way operation — the imported code cannot be recovered after
+   * this without re-pasting. Bound to the "Convert to Native" button
+   * surfaced in the OUTPUT panel's import banner.
+   */
+  convertImportToNative: () => void;
 }
 
 export const useBladeStore = create<BladeStore>((set) => ({
@@ -166,6 +178,22 @@ export const useBladeStore = create<BladeStore>((set) => ({
         return { config, topology: updatedTopology };
       }
       return { config };
+    }),
+
+  convertImportToNative: () =>
+    set((state) => {
+      // Spread, then explicitly overwrite the import fields with undefined
+      // so they're stripped from the JSON shape on the next persist /
+      // export. Using delete on a frozen object would throw under strict
+      // mode; omitting via destructuring + spread keeps the operation
+      // immutable and avoids leaking the typing escape hatch.
+      const {
+        importedRawCode: _importedRawCode,
+        importedAt: _importedAt,
+        importedSource: _importedSource,
+        ...rest
+      } = state.config;
+      return { config: rest };
     }),
 
   // ── Modulation routing actions ──
