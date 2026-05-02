@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.20.0] — 2026-05-02
+
+**Sprint 5E — per-preset switcher in the import banner.** When a user imports a multi-preset config.h via Sprint 5D's "Import N Presets" flow, all presets land in their library. Today the user has to navigate to My Presets sidebar to flip the visualizer between them. v0.20.0 adds a switcher dropdown directly inside the import banner so they can preview any imported preset without leaving the OUTPUT panel.
+
+### Added
+
+- **Per-preset switcher dropdown in `ImportStatusBanner`** (PR #268):
+  - Renders only when `recentImportBatch.length > 1` AND the active config name matches one of the batch entries
+  - "Preset N of M" indicator showing current position
+  - Native select listing all batch entries by name in source order
+  - `onChange` calls `bladeStore.loadPreset` for the selected preset's stored config
+  - Disappears when the user navigates to a non-import preset or clicks Convert to Native
+
+- **`uiStore.recentImportBatch`** — ephemeral list of `{id, name}` for the most recently imported batch. Set by CodeOutput's import handler (only when `batch.length > 1`); cleared by `setRecentImportBatch(null)` from the banner's Convert-to-Native wrapper. Not persisted across page reloads — saved presets remain in My Presets.
+
+### Changed
+
+- **CodeOutput's "Import N Presets" handler** now loads the FIRST extracted preset's reconstructed config into the visualizer instead of the previous fallback (`cppResult` was a partial parse of the full pasted blob, which often defaulted to blue). Preset 1 now renders accurately on first paint.
+- **`ImportStatusBanner`'s Convert to Native button** wrapped in a handler that also clears `recentImportBatch` so the switcher disappears together with the banner.
+
+### Test count delta
+
++7 tests in `importStatusBanner.test.tsx` (18 → 25). All 10 packages typecheck + test green. Web 2750+ tests passing.
+
+---
+
 ## [0.19.0] — 2026-05-02
 
 **Sprint 5C reconstructor patterns.** Three new ConfigReconstructor recognitions lifted from the v0.18 corpus expansion. The visualizer now correctly classifies Fett263's most common base-style shape and surfaces multi-phase + effect-event metadata on every imported config.
