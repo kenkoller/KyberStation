@@ -307,7 +307,20 @@ class Parser {
         name === 'SlowNoise' || name === 'RandomF' || name === 'RandomPerLEDF' ||
         name === 'HumpFlickerFX' || name === 'SparkleF' || name === 'StrobeF' ||
         name === 'IgnitionTime' || name === 'RetractionTime' || name === 'BendTimePowInvX' ||
-        name === 'WavLen') {
+        name === 'WavLen' ||
+        // ── Sprint 5A function additions ──
+        name === 'Subtract' || name === 'Divide' || name === 'IsBetween' ||
+        name === 'Percentage' || name === 'IntSelect' || name === 'IntSelectX' ||
+        name === 'EffectPulse' || name === 'EffectPulseF' || name === 'LayerFunctions' ||
+        name === 'SmoothSoundLevel' || name === 'NoisySoundLevelCompat' ||
+        name === 'VolumeLevel' || name === 'WavNum' ||
+        name === 'BlasterModeF' || name === 'BlasterCharge' || name === 'BulletCount' ||
+        name === 'BladeAngleX' || name === 'TwistAcceleration' ||
+        name === 'MarbleF' || name === 'CircularSectionF' || name === 'BrownNoiseF' ||
+        name === 'BlastF' || name === 'BlastFadeoutF' || name === 'OriginalBlastF' ||
+        name === 'OnsparkF' || name === 'ReadPinF' || name === 'AnalogReadPinF' ||
+        name === 'BlinkingF' || name === 'RandomBlinkF' ||
+        name === 'IncrementF' || name === 'IncrementModulo') {
       return 'function';
     }
     if (
