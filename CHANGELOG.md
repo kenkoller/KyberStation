@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.17.0] — 2026-05-02
+
+**Fett263 import sprint.** Closes the import gap that the first GitHub user feedback flagged: pasting a real Fett263 OS7 Style Library config used to drop ~30 templates per fixture as "unknown" and silently strip anything KyberStation's reconstructor didn't fully understand. After this sprint, the same fixtures parse with **0 unknown-template warnings**, the original ProffieOS code is preserved verbatim on export (so it's flashable as-is), and a UI banner explains the contract with "★ Save Preset" and "Convert to Native" actions wired right where users land after importing.
+
+**Test count delta:** +260 tests across the sprint (engine 14, codegen 79, web 167). All 10 workspace packages typecheck + test green.
+
+### Added
+
+- **Import preservation schema** (PR #252) — `BladeConfig` gains `importedRawCode` / `importedAt` / `importedSource` optional fields plus a `migrateImportFields(value)` helper. When set, the codegen export path emits the original code verbatim with a provenance header instead of regenerating from `BladeConfig`. 14 contract tests pin the migration shape.
+- **Verbatim raw-code export path** (PR #253) — `generateStyleCode` early-returns the imported raw code with a 3-line provenance header (`// Imported from {source}` / `// Imported at: {ISO date}` / `// Original ProffieOS code preserved verbatim — regenerated structure suppressed.`) when `BladeConfig.importedRawCode` is non-empty. Modulation-binding warning surfaces when bindings are present alongside the raw path. +21 tests covering edge cases (empty / null / whitespace `rawCode`, non-finite `importedAt`, multi-line nested bracket preservation).
+- **ProffieOS template registry expansion** (PR #254) — registry grows from **46 → 219 templates** to cover the OS7 Style Library staples Fett263 emits: full `Responsive*L` family (`ResponsiveBlastL`, `ResponsiveStabL`, `ResponsiveDragL`, `ResponsiveMeltL`, `ResponsiveBlastFadeL`, `ResponsiveBlastWaveL`, `ResponsiveLightningBlockL`), flicker color templates (`BrownNoiseFlicker`, `RandomFlicker`, `RandomPerLEDFlicker`), OS7 Color Change machinery (`ColorChange`, `ColorSelect`, `Variation`, `ColorChangeL`, `ColorSequence`), the function-parameterised X transitions (`TrFadeX`, `TrWipeX`, `TrJoin`, `TrLoop`, `TrColorCycle`, `TrSparkX`, `TrWaveX`, `TrCenterWipeX`), legacy `Style*Ptr` wrappers, and the full `EFFECT_*` / `LOCKUP_*` / `*_COLOR_ARG` enum-token surface. `Parser.ts` `VARIADIC_TEMPLATES` upgraded from `Set` to `Map<name, minArgs>` for proper variadic-arg validation; `NAMED_PRIMITIVES` expanded for legacy ALL-CAPS color macros + `EASYBLADE` / `using` tokens.
+- **ConfigReconstructor pattern expansion** (PR #255) — recognises 10 new Fett263-specific patterns: OS7 layer-sandwich shape (slot-recognition for ResponsiveBlast/Stab/Drag/Melt/LightningBlock), responsive-effect color extraction, two-form `TransitionEffectL` (OS7 2-arg + pre-OS7 4-arg), `ARG_SLOT_IDS` catalog of OS7 Edit Mode arg names, flicker-wrapper base-color extraction, ColorChange / ColorSelect / ColorChangeL recognition with default-color extraction, EffectSequence preservation, legacy `Style*Ptr` wrappers (`StyleNormalPtr` / `StyleStrobePtr` / `StyleFirePtr` / `StyleRainbowPtr`), `Tr*X` function-driven transition duration extraction, EFFECT / LOCKUP leaf-token handling. +35 tests covering each pattern + variants + cross-pattern integration.
+- **`<ImportStatusBanner>`** (PR #256, expanded in PR #257) — warn-toned (`badge-creative` palette, `role=status`) banner renders in CodeOutput above the generated code section whenever `config.importedRawCode` is set. Shows source label + relative time + plain-language explanation that visualizer edits update the preview only until you convert. Two action buttons: **★ Save Preset** (PR #257 — discoverability fix) opens window.prompt, persists current config including `importedRawCode` to `userPresetStore` (IndexedDB-backed), button flips to ✓ Saved with status-ok green for 2.4s. **Convert to Native** clears the 3 import fields via the new store action.
+- **`bladeStore.convertImportToNative()`** (PR #256) — strips `importedRawCode` / `importedAt` / `importedSource` via destructure-and-spread (immutable update, fresh object reference). One-way operation surfaced through the banner's Convert button.
+- **Fett263 fixture corpus** (PR #254) — 21 real-world Fett263 OS7 / OS6 / legacy style snippets at `apps/web/tests/fixtures/fett263-imports/`, scraped from public GitHub configs. Spans Baylan Skoll, Kylo Ren, Mace Windu, Revan, Marrok, Cal Kestis, Ronin, multi-phase 5-color, legacy `StyleNormalPtr`, `StyleStrobePtr`, `StyleFirePtr`, `StyleRainbowPtr` shapes. Each file carries a `// Source:` attribution comment.
+- **Corpus round-trip suite** (PR #257) — `apps/web/tests/fett263CorpusRoundTrip.test.ts` exercises the full Phase 1–2B journey across the 21-fixture corpus: parse → reconstruct → apply (with raw code) → export (verbatim with header) → tweak baseColor (raw still preserved) → convertImportToNative + regen (no header, structurally diverged). 116/118 passing across 19 parseable fixtures × 6 assertions + 2 aggregate stats; 2 fixtures `it.todo` for documented lexer-incompatible shapes.
+- **Save+import preservation tests** (PR #257) — 8 tests in `userPresetStoreImportFields.test.ts` covering save → hydrate → restore round-trip through a mocked IndexedDB layer. Multi-line raw code with embedded brackets round-trips byte-identical; native (no-import) configs stay clean; `duplicatePreset` preserves import fields.
+
+### Changed
+
+- **Apply to Editor passes raw code** (PR #256) — `applyReconstructedConfig` now accepts `rawCode` + `source` parameters. CodeOutput's "Apply to Editor" handler wires the textarea content + "Pasted ProffieOS C++" label so imported configs land in the store with the import-preservation fields populated automatically.
+
+### Fixed
+
+- **`__research__` directory excluded from web tsconfig** (PR #252) — pre-existing typecheck error from `apps/web/tests/cardSnapshotGoldenHash/__research__/pixelmatch-prototype.ts` referencing the unbundled `pixelmatch` dep. The file's own header explicitly says "THIS IS NOT A TEST" — it's a manual `vite-node` script. Excluding the directory pattern from the project glob honors that intent.
+
+---
+
 ## [0.16.1] — 2026-05-01
 
 **Post-launch polish wave.** ~30 PRs landed in the day after v0.16.0's public launch, covering: the full mobile UX overhaul (Phases 4.1 → 4.5 feature-complete on `main`), Wave 8 modulation routing (8 aux/gesture modulator plates), Saber Card + Kyber Glyph audit fixes (the header "Share Kyber Code" button now actually shares Kyber Glyphs!), CommunityGallery wired to a real fetch, 28× speedup on GIF hilt rendering, 16+ new presets (Acolyte, Maul lifecycle, Star Wars Visions Vol 1), and the marketing site `/community` page.
