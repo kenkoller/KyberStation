@@ -143,4 +143,6 @@ export {
   ACCENT_TOPOLOGY,
   TOPOLOGY_PRESETS,
   BLADE_LENGTH_PRESETS,
+  migrateBlendMode,
+  migrateImportFields,
 } from './types.js';
