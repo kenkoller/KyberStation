@@ -398,9 +398,303 @@ export const functionTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'WavLen',
     {
+      // Per functions/wavlen.h: WavLen<> or WavLen<EFFECT>. Both valid.
+      // Registered as 1-arg; 0-arg call also OK via parser-side suppression.
       name: 'WavLen',
       argTypes: ['EFFECT'],
-      description: 'Length in milliseconds of the wav file associated with EFFECT',
+      description: 'Length in milliseconds of the wav file associated with EFFECT (or last-detected effect when no arg)',
+    },
+  ],
+  // ── Math primitives (functions/subtract.h, divide.h, mod.h) ──
+  [
+    'Subtract',
+    {
+      name: 'Subtract',
+      argTypes: ['FUNCTION', 'FUNCTION'],
+      description: 'Subtract second function from first (A - B)',
+    },
+  ],
+  [
+    'Divide',
+    {
+      name: 'Divide',
+      argTypes: ['FUNCTION', 'FUNCTION'],
+      description: 'Divide F by V (returns 0 when V=0); not the inverse of Mult since Mult uses fixed-point math',
+    },
+  ],
+  [
+    'IsBetween',
+    {
+      // Per functions/isbetween.h: IsBetween<F, BOTTOM, TOP>.
+      // Returns 32768 when F > BOTTOM and < TOP, else 0.
+      name: 'IsBetween',
+      argTypes: ['FUNCTION', 'INTEGER', 'INTEGER'],
+      description: 'Returns 32768 when F > BOTTOM and < TOP, else 0 (boolean predicate)',
+    },
+  ],
+  [
+    'Percentage',
+    {
+      // Per functions/mult.h: Percentage<F, V> — multiply F by V/100.
+      name: 'Percentage',
+      argTypes: ['FUNCTION', 'INTEGER'],
+      description: 'Multiply F by a percentage V (e.g. Percentage<F, 50> halves the value)',
+    },
+  ],
+  // ── IntSelect / IntSelectX (variadic select-by-index) ──
+  [
+    'IntSelect',
+    {
+      // Per functions/int_select.h: IntSelect<SELECTION, Int1, Int2...>.
+      // Variadic on integer args; declared in VARIADIC_TEMPLATES.
+      name: 'IntSelect',
+      argTypes: ['FUNCTION', 'INTEGER', 'INTEGER'],
+      description: 'Select one of N integers based on a selection function (variadic)',
+    },
+  ],
+  [
+    'IntSelectX',
+    {
+      // Per functions/int_select.h: IntSelectX<SELECTION, F1, F2, ...>.
+      name: 'IntSelectX',
+      argTypes: ['FUNCTION', 'FUNCTION', 'FUNCTION'],
+      description: 'Select one of N functions based on a selection function (variadic)',
+    },
+  ],
+  // ── Effect-pulse + Layer-functions wrappers ──
+  [
+    'EffectPulse',
+    {
+      // Per functions/effect_increment.h: EffectPulse<EFFECT>.
+      // Returns 32768 ONCE per EFFECT firing.
+      name: 'EffectPulse',
+      argTypes: ['EFFECT'],
+      description: 'Returns 32768 once each time EFFECT fires (use as PULSE arg in IncrementModulo etc.)',
+    },
+  ],
+  [
+    'EffectPulseF',
+    {
+      // Internal SVF-style alias for EffectPulse — both forms appear in code.
+      name: 'EffectPulseF',
+      argTypes: ['EFFECT'],
+      description: 'EffectPulse alias (SVF-style suffix)',
+    },
+  ],
+  [
+    'LayerFunctions',
+    {
+      // Per functions/layer_functions.h: LayerFunctions<F1, F2, ...> — variadic.
+      name: 'LayerFunctions',
+      argTypes: ['FUNCTION', 'FUNCTION'],
+      description: 'Composite multiple alpha functions (variadic; each layered on top)',
+    },
+  ],
+  // ── Sound / blaster / haptic functions ──
+  [
+    'SmoothSoundLevel',
+    {
+      // Per functions/sound_level.h: SmoothSoundLevel.
+      name: 'SmoothSoundLevel',
+      argTypes: [],
+      description: 'Returns smoothed audio level',
+    },
+  ],
+  [
+    'NoisySoundLevelCompat',
+    {
+      // Per functions/sound_level.h: NoisySoundLevelCompat — pre-OS6 compat shim.
+      name: 'NoisySoundLevelCompat',
+      argTypes: [],
+      description: 'Pre-OS6 compatibility audio level (drops some smoothing)',
+    },
+  ],
+  [
+    'VolumeLevel',
+    {
+      // Per functions/volume_level.h: VolumeLevel.
+      name: 'VolumeLevel',
+      argTypes: [],
+      description: 'Returns the current global volume setting',
+    },
+  ],
+  [
+    'WavNum',
+    {
+      // Per functions/wavnum.h: WavNum<>.
+      name: 'WavNum',
+      argTypes: [],
+      description: 'Returns the index of the most-recently-played wav file',
+    },
+  ],
+  [
+    'BlasterModeF',
+    {
+      // Per functions/blaster_mode.h: BlasterModeF.
+      name: 'BlasterModeF',
+      argTypes: [],
+      description: 'Current blaster mode (Auto/Stun/Kill/etc) for blaster props',
+    },
+  ],
+  [
+    'BlasterCharge',
+    {
+      // Per functions/bullet_count.h: BlasterCharge.
+      name: 'BlasterCharge',
+      argTypes: [],
+      description: 'Returns 0..32768 charge level for a blaster prop',
+    },
+  ],
+  [
+    'BulletCount',
+    {
+      // Per functions/bullet_count.h: BulletCount.
+      name: 'BulletCount',
+      argTypes: [],
+      description: 'Returns the current bullet count for a blaster prop',
+    },
+  ],
+  // ── BladeAngle expansion (X variant + 0/2-arg shim) ──
+  [
+    'BladeAngleX',
+    {
+      // Per functions/blade_angle.h: BladeAngleX<MIN, MAX>.
+      name: 'BladeAngleX',
+      argTypes: ['INTEGER', 'INTEGER'],
+      description: 'Blade-angle function with min/max integer thresholds',
+    },
+  ],
+  [
+    'TwistAcceleration',
+    {
+      // Per functions/twist_angle.h: TwistAcceleration<MAX>.
+      name: 'TwistAcceleration',
+      argTypes: ['INTEGER'],
+      description: 'Twist-acceleration with max threshold',
+    },
+  ],
+  // ── Marble + circular section + brown noise ──
+  [
+    'MarbleF',
+    {
+      // Per functions/marble.h: MarbleF<OFFSET, FRICTION, ACCELERATION, GRAVITY>.
+      name: 'MarbleF',
+      argTypes: ['FUNCTION', 'FUNCTION', 'FUNCTION', 'FUNCTION'],
+      description: 'Simulates a marble in a circular track (offset, friction, acceleration, gravity)',
+    },
+  ],
+  [
+    'CircularSectionF',
+    {
+      // Per functions/circular_section.h: CircularSectionF<POSITION, FRACTION>.
+      name: 'CircularSectionF',
+      argTypes: ['FUNCTION', 'FUNCTION'],
+      description: 'Returns 32768 for LEDs near POSITION, 0 elsewhere; FRACTION controls width',
+    },
+  ],
+  [
+    'BrownNoiseF',
+    {
+      // Per functions/brown_noise.h: BrownNoiseF<GRADE>.
+      name: 'BrownNoiseF',
+      argTypes: ['INTEGER'],
+      description: 'Brown noise function with grade parameter',
+    },
+  ],
+  // ── Effect blast / blast-fade / original-blast as functions ──
+  [
+    'BlastF',
+    {
+      // Per functions/blast.h: BlastF<FADEOUT_MS, WAVE_SIZE, WAVE_MS, EFFECT>.
+      name: 'BlastF',
+      argTypes: ['INTEGER', 'INTEGER', 'INTEGER', 'EFFECT'],
+      description: 'Blast wave function (fadeout, wave size, wave speed, effect type)',
+    },
+  ],
+  [
+    'BlastFadeoutF',
+    {
+      // Per functions/blast.h: BlastFadeoutF<FADEOUT_MS, EFFECT>.
+      name: 'BlastFadeoutF',
+      argTypes: ['INTEGER', 'EFFECT'],
+      description: 'Blast that just fades, no wave (fadeout ms, effect type)',
+    },
+  ],
+  [
+    'OriginalBlastF',
+    {
+      // Per functions/blast.h: OriginalBlastF<EFFECT>.
+      name: 'OriginalBlastF',
+      argTypes: ['EFFECT'],
+      description: 'Original (very early) blast function form',
+    },
+  ],
+  // ── Pin reading + on-spark ──
+  [
+    'OnsparkF',
+    {
+      // Per functions/on_spark.h: OnsparkF<MILLIS>.
+      name: 'OnsparkF',
+      argTypes: ['INTEGER'],
+      description: 'On-ignition spark function (duration ms); used by OnSparkL/OnSpark',
+    },
+  ],
+  [
+    'ReadPinF',
+    {
+      // Per functions/readpin.h: ReadPinF<PIN>.
+      name: 'ReadPinF',
+      argTypes: ['INTEGER'],
+      description: 'Read a digital input pin (returns 32768 high, 0 low)',
+    },
+  ],
+  [
+    'AnalogReadPinF',
+    {
+      // Per functions/readpin.h: AnalogReadPinF<PIN>.
+      name: 'AnalogReadPinF',
+      argTypes: ['INTEGER'],
+      description: 'Read an analog input pin (0..32768)',
+    },
+  ],
+  // ── Blinking / random-blink / strobe / sparkle as functions ──
+  [
+    'BlinkingF',
+    {
+      // Per functions/blinking.h: BlinkingF<A, B, BLINK_MILLIS_FUNC, BLINK_PROMILLE_FUNC>.
+      // Note: A and B are functions returning 0..32768 (used as alpha-mask sources).
+      name: 'BlinkingF',
+      argTypes: ['FUNCTION', 'FUNCTION', 'FUNCTION', 'FUNCTION'],
+      description: 'Blinking function source (period + duty as functions)',
+    },
+  ],
+  [
+    'RandomBlinkF',
+    {
+      // Per functions/random_blink.h: RandomBlinkF<MILLIHZ>.
+      name: 'RandomBlinkF',
+      argTypes: ['INTEGER'],
+      description: 'Random blink function with frequency in milli-hertz',
+    },
+  ],
+  // ── IncrementF + IncrementModulo (function-form siblings) ──
+  [
+    'IncrementF',
+    {
+      // Per functions/increment.h.
+      name: 'IncrementF',
+      argTypes: ['FUNCTION', 'FUNCTION', 'FUNCTION'],
+      description: 'Function-form counter incremented by INCREMENT each PULSE, capped by MAX',
+    },
+  ],
+  [
+    'IncrementModulo',
+    {
+      // Per functions/increment.h: IncrementModulo<PULSE, MAX, INCREMENT>.
+      // Already had IncrementModuloF (deprecated SVF-style alias) — registering modern name.
+      name: 'IncrementModulo',
+      argTypes: ['FUNCTION', 'FUNCTION', 'FUNCTION'],
+      description: 'Counter that wraps modulo MAX, increments by INCREMENT on each PULSE',
     },
   ],
 ]);
