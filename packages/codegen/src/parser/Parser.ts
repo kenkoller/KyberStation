@@ -11,12 +11,36 @@ import { lookupTemplate } from '../templates/index.js';
  * standalone identifiers without being templates. We skip these
  * during template validation so they don't trigger spurious "unknown
  * template" warnings.
+ *
+ * Note: bare `EFFECT_*`, `LOCKUP_*`, and `SaberBase::*` identifiers are
+ * already filtered out by prefix in `validateTemplate` below — they
+ * don't need to be enumerated here.
  */
 const NAMED_PRIMITIVES = new Set([
+  // ── PascalCase named colors (ProffieOS color.h) ──
   'White', 'Black', 'Red', 'Green', 'Blue',
-  'Yellow', 'Cyan', 'Magenta', 'Orange',
-  'DeepSkyBlue', 'DodgerBlue', 'Purple',
+  'Yellow', 'Cyan', 'Magenta', 'Orange', 'Pink',
+  'DeepSkyBlue', 'DodgerBlue', 'Purple', 'Brown',
+  'Gray', 'Silver', 'Gold', 'Lime', 'Maroon',
+  'Navy', 'Olive', 'Teal', 'Crimson', 'Coral',
+  'Salmon', 'Tomato', 'Violet', 'Indigo',
+  'Turquoise', 'MossGreen', 'PaleGreen', 'ForestGreen',
+  'LightSkyBlue', 'RoyalBlue', 'SteelBlue',
+  // ── Legacy ALL-CAPS color macros (Fredrik Style Editor exports) ──
+  'WHITE', 'BLACK', 'RED', 'GREEN', 'BLUE',
+  'YELLOW', 'CYAN', 'MAGENTA', 'ORANGE',
+  'PURPLE', 'PINK',
+  // ── Zero-arg transitions / functions usable as bare identifiers ──
   'TrInstant',
+  'BladeAngle', 'TwistAngle', 'BatteryLevel',
+  'NoisySoundLevel', 'SoundLevel', 'CenterDistF',
+  'ClashImpactF', 'RandomF', 'RandomPerLEDF',
+  'Variation', 'Rainbow', 'RgbCycle',
+  'AltF',
+  // ── ProffieOS preset-builder macros (parens, not angle brackets) ──
+  'EASYBLADE', 'SIMPLE_BLADE', 'STANDARD_BLADE',
+  // ── C++ keywords that may appear in `using ALIAS = Layers<…>;` declarations ──
+  'using',
 ]);
 
 /**
@@ -25,11 +49,42 @@ const NAMED_PRIMITIVES = new Set([
  * takes a base style + any number of effect layers, Gradient takes any
  * number of colour stops, TrConcat chains 2+ transitions, etc. Treat
  * arg-count mismatches for these as informational, not warnings.
+ *
+ * `min` is the minimum arg count required for the template to be
+ * structurally meaningful — a Gradient with 1 color is degenerate, a
+ * Layers with 0 children has no base style. Anything below the minimum
+ * still warns; anything at or above it is silent.
  */
-const VARIADIC_TEMPLATES = new Set([
-  'Layers',
-  'Gradient',
-  'TrConcat',
+const VARIADIC_TEMPLATES = new Map<string, number>([
+  // ── Compositors ──
+  ['Layers', 1],
+  ['Gradient', 2],
+  // ── Color templates with variadic color stops ──
+  ['Stripes', 4],
+  ['StripesX', 3],
+  ['HardStripes', 4],
+  ['ColorChange', 2],
+  ['ColorSelect', 3],
+  ['ColorSequence', 2],
+  ['ColorChangeL', 2],
+  ['Sequence', 2],
+  // ── Transitions ──
+  ['TrConcat', 2],
+  ['TrJoin', 2],
+  ['TrJoinR', 2],
+  ['TrSelect', 2],
+  ['TrRandom', 1],
+  ['TrSequence', 1],
+  // ── Layer compositors ──
+  ['EffectSequence', 2],
+  ['AlphaMixL', 3],
+  // ── Function combinators ──
+  ['Sum', 2],
+  ['Mult', 2],
+  // ── Pre-OS7 form: TransitionEffectL<COLOR, TR_IN, TR_OUT, EFFECT>
+  //    OS7 form: TransitionEffectL<TRANSITION, EFFECT>
+  //    Both forms are valid; treat the 4-arg form as a "wider variadic".
+  ['TransitionEffectL', 2],
 ]);
 
 export interface ParseError {
@@ -180,22 +235,60 @@ class Parser {
     const tmpl = lookupTemplate(name);
     if (!tmpl) return 'template';
 
-    // Use template registry categories
-    if (name === 'Rgb' || name === 'RgbArg' || name === 'Mix' || name === 'Gradient' ||
-        name === 'AudioFlicker' || name === 'StyleFire' || name === 'Pulsing' ||
-        name === 'Stripes' || name === 'HumpFlicker' || name === 'Rainbow' ||
-        name === 'RotateColorsX' || name === 'FireConfig') {
+    // ── Color templates (per registry categorisation) ──
+    // The base set covers most common templates; the suffix-based fallback
+    // below catches the long tail (HumpFlickerL, RandomPerLEDFlickerL, etc.).
+    if (
+      name === 'Rgb' || name === 'Rgb16' || name === 'RgbArg' || name === 'RgbCycle' ||
+      name === 'Mix' || name === 'Gradient' ||
+      name === 'AudioFlicker' || name === 'BrownNoiseFlicker' ||
+      name === 'RandomFlicker' || name === 'RandomPerLEDFlicker' ||
+      name === 'StyleFire' || name === 'StaticFire' || name === 'Pulsing' ||
+      name === 'Stripes' || name === 'StripesX' || name === 'HardStripes' ||
+      name === 'HumpFlicker' || name === 'Rainbow' ||
+      name === 'RotateColorsX' || name === 'FireConfig' ||
+      name === 'ColorChange' || name === 'ColorSelect' || name === 'ColorSequence' ||
+      name === 'ColorCycle' || name === 'Sparkle' || name === 'Blinking' ||
+      name === 'RandomBlink' || name === 'Strobe' || name === 'Cylon' ||
+      name === 'PixelateX' || name === 'Sequence'
+    ) {
       return 'color';
     }
     if (name.startsWith('Tr') || name === 'TrConcat') return 'transition';
     if (name === 'Int' || name === 'IntArg' || name === 'Scale' || name === 'Sin' ||
-        name === 'SwingSpeed' || name === 'Bump' || name === 'SmoothStep' ||
-        name === 'NoisySoundLevel' || name === 'BatteryLevel' ||
-        name === 'BladeAngle' || name === 'TwistAngle' || name === 'IncrementModuloF') {
+        name === 'SwingSpeed' || name === 'SwingAcceleration' || name === 'Bump' ||
+        name === 'SmoothStep' || name === 'LinearSectionF' || name === 'SliceF' ||
+        name === 'ModF' || name === 'ClampF' || name === 'HoldPeakF' ||
+        name === 'ThresholdPulseF' || name === 'LockupPulseF' || name === 'ChangeSlowly' ||
+        name === 'IsLessThan' || name === 'IsGreaterThan' || name === 'Sum' ||
+        name === 'Mult' || name === 'Ifon' || name === 'InOutFunc' ||
+        name === 'IncrementModuloF' || name === 'IncrementWithReset' ||
+        name === 'EffectIncrementF' || name === 'EffectPosition' ||
+        name === 'TimeSinceEffect' || name === 'EffectRandomF' || name === 'Trigger' ||
+        name === 'Variation' || name === 'NoisySoundLevel' || name === 'SoundLevel' ||
+        name === 'BatteryLevel' || name === 'BladeAngle' || name === 'TwistAngle' ||
+        name === 'CenterDistF' || name === 'ClashImpactF' || name === 'ClashImpactFX' ||
+        name === 'SlowNoise' || name === 'RandomF' || name === 'RandomPerLEDF' ||
+        name === 'HumpFlickerFX' || name === 'SparkleF' || name === 'StrobeF' ||
+        name === 'IgnitionTime' || name === 'RetractionTime' || name === 'BendTimePowInvX' ||
+        name === 'WavLen') {
       return 'function';
     }
-    if (name === 'StylePtr' || name === 'InOutTrL' || name === 'Layers') return 'wrapper';
+    if (
+      name === 'StylePtr' || name === 'StyleNormalPtr' || name === 'StyleFirePtr' ||
+      name === 'StyleStrobePtr' || name === 'StyleRainbowPtr' || name === 'ChargingStylePtr' ||
+      name === 'IgnitionDelay' || name === 'RetractionDelay' || name === 'DimBlade' ||
+      name === 'InOutHelper' || name === 'InOutHelperX' || name === 'InOutSparkTip' ||
+      name === 'InOutTr' || name === 'InOutTrL' || name === 'Layers' ||
+      name === 'LengthFinder' || name === 'DisplayStyle' || name === 'ByteOrderStyle'
+    ) {
+      return 'wrapper';
+    }
     if (name === 'Mix') return 'mix';
+
+    // ── Suffix-based fallback for the long tail of layer / function names ──
+    if (name.endsWith('L')) return 'template'; // overlay layers (BlastL, AlphaL, ResponsiveBlastL, etc.)
+    if (name.endsWith('F') || name.endsWith('FX')) return 'function';
 
     return 'template';
   }
@@ -232,11 +325,18 @@ class Parser {
     // Also skip reserved ProffieOS primitives: the SaberBase enum values,
     // effect / lockup enum tokens, and named colours (White, Red, etc.)
     // which parse as standalone identifiers rather than proper templates.
+    //
+    // Edit-Mode arg-slot identifiers (`BASE_COLOR_ARG`, `LOCKUP_POSITION_ARG`,
+    // `IGNITION_OPTION2_ARG`, etc.) appear bare as the FIRST argument to
+    // `RgbArg<>` / `IntArg<>`. They're #defined indices in
+    // `style_defaults.h`, not templates. Recognized by the `_ARG` suffix.
     if (
       name.startsWith('SaberBase::') ||
       name.startsWith('EFFECT_') ||
       name.startsWith('LOCKUP_') ||
+      name.startsWith('OFF_') ||
       name === 'SaberBase' ||  // appears bare when ::-splitting is disabled
+      name.endsWith('_ARG') ||  // Fett263 OS7 Edit-Mode arg slots
       NAMED_PRIMITIVES.has(name)
     ) {
       return;
@@ -253,10 +353,10 @@ class Parser {
     }
 
     const expected = registered.argTypes.length;
-    if (VARIADIC_TEMPLATES.has(name)) {
+    const minArgs = VARIADIC_TEMPLATES.get(name);
+    if (minArgs !== undefined) {
       // Variadic — only warn if the user supplied FEWER than the
-      // minimum (1 for a layer stack, 2 for a gradient, 2 for concat).
-      const minArgs = name === 'Layers' ? 1 : 2;
+      // template's minimum (per VARIADIC_TEMPLATES table).
       if (args.length < minArgs) {
         this.warnings.push({
           message: `Template "${name}" expects at least ${minArgs} arg${

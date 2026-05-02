@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Legacy ProffieOS — AudioFlicker (yellow/white) base with blue clash
+// Demonstrates AudioFlicker template inside StyleNormalPtr
+StyleNormalPtr<AudioFlicker<YELLOW, WHITE>, BLUE, 300, 800>()

@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Legacy ProffieOS StyleStrobePtr — white strobing over rainbow at 15Hz
+// 300ms ignition / 800ms retraction
+StyleStrobePtr<WHITE, Rainbow, 15, 300, 800>()

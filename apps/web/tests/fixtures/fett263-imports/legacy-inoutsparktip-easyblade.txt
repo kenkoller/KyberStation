@@ -1,0 +1,4 @@
+// Source: https://github.com/asyncbridge/proffie-board-config/blob/master/my_rotj_config.h
+// Legacy ProffieOS — InOutSparkTip wrapper around EASYBLADE macro (blue with white sparks)
+// "SmthJedi" classic preset shape
+StylePtr<InOutSparkTip<EASYBLADE(BLUE, WHITE), 300, 800> >()
