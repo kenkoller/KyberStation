@@ -5,6 +5,8 @@ import {
   detectConfigShape,
   countStyleBlocks,
   extractFirstStylePtr,
+  findStylePtrBlocks,
+  extractPresets,
 } from '@/lib/import/configShapeDetect';
 
 const FULL_CONFIG_H = `#ifdef CONFIG_TOP
@@ -145,6 +147,121 @@ describe('configShapeDetect', () => {
     it('handles ChargingStylePtr', () => {
       const code = `ChargingStylePtr<Blue, Red>()`;
       expect(extractFirstStylePtr(code)).toBe(code);
+    });
+  });
+
+  describe('findStylePtrBlocks', () => {
+    it('finds all 2 style blocks in the FULL_CONFIG_H sample', () => {
+      const blocks = findStylePtrBlocks(FULL_CONFIG_H);
+      expect(blocks.length).toBe(2);
+      expect(blocks[0].name).toBe('StyleNormalPtr');
+      expect(blocks[1].name).toBe('StylePtr');
+    });
+
+    it('returns blocks in source order (ascending index)', () => {
+      const blocks = findStylePtrBlocks(FULL_CONFIG_H);
+      expect(blocks[0].index).toBeLessThan(blocks[1].index);
+    });
+
+    it('returns empty array for code with no style templates', () => {
+      expect(findStylePtrBlocks('#define VOLUME 1500')).toEqual([]);
+    });
+
+    it('handles back-to-back style-ptrs without preset wrapping', () => {
+      const code = `StylePtr<Blue>(); StyleNormalPtr<RED, WHITE, 300, 800>(); StyleFirePtr<Yellow, Orange, 0, 3>()`;
+      const blocks = findStylePtrBlocks(code);
+      expect(blocks.length).toBe(3);
+      expect(blocks.map((b) => b.name)).toEqual([
+        'StylePtr',
+        'StyleNormalPtr',
+        'StyleFirePtr',
+      ]);
+    });
+
+    it('does not infinite-loop on unbalanced brackets', () => {
+      const code = `StylePtr<Layers<Blue StyleNormalPtr<CYAN, WHITE, 300, 800>()`;
+      // Should make progress past the unbalanced first block.
+      const blocks = findStylePtrBlocks(code);
+      // The unbalanced StylePtr is skipped; the StyleNormalPtr inside is found.
+      expect(blocks.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('extractPresets', () => {
+    it('extracts both presets from the FULL_CONFIG_H sample', () => {
+      const presets = extractPresets(FULL_CONFIG_H);
+      expect(presets.length).toBe(2);
+    });
+
+    it('captures fontName as the first quoted string', () => {
+      const presets = extractPresets(FULL_CONFIG_H);
+      expect(presets[0].fontName).toBe('ObiWan');
+      expect(presets[1].fontName).toBe('Maul');
+    });
+
+    it('captures track as the second quoted string', () => {
+      const presets = extractPresets(FULL_CONFIG_H);
+      expect(presets[0].track).toBe('tracks/episode4.wav');
+      expect(presets[1].track).toBe('tracks/dueloffates.wav');
+    });
+
+    it('captures displayLabel as the last quoted string when 3+ literals present', () => {
+      const presets = extractPresets(FULL_CONFIG_H);
+      expect(presets[0].displayLabel).toBe('Obi-Wan ANH');
+      expect(presets[1].displayLabel).toBe('Darth Maul');
+    });
+
+    it('captures the per-preset style block (not the entire config)', () => {
+      const presets = extractPresets(FULL_CONFIG_H);
+      expect(presets[0].styleBlock).toBe('StyleNormalPtr<CYAN, WHITE, 300, 800>()');
+      expect(presets[1].styleBlock).toContain('Layers<Blue, ResponsiveLockupL');
+      // Critical: the second preset's styleBlock should NOT contain the first preset's content
+      expect(presets[1].styleBlock).not.toContain('CYAN');
+    });
+
+    it('returns empty array for code with no style templates', () => {
+      expect(extractPresets('#define VOLUME 1500')).toEqual([]);
+    });
+
+    it('returns presets with null metadata when style is naked (no surrounding {})', () => {
+      const presets = extractPresets(NAKED_STYLE);
+      expect(presets.length).toBe(1);
+      expect(presets[0].fontName).toBeNull();
+      expect(presets[0].track).toBeNull();
+      expect(presets[0].displayLabel).toBeNull();
+      expect(presets[0].styleBlock).toBe(NAKED_STYLE);
+    });
+
+    it('handles a 3-preset config with all metadata captured', () => {
+      const code = `
+        Preset presets[] = {
+           { "ObiWanANH", "tracks/episode4.wav",
+              StyleNormalPtr<CYAN, WHITE, 300, 800>(),
+              "Obi-Wan ANH"
+           },
+           { "DarthMaul", "tracks/dueloffates.wav",
+              StylePtr<Layers<Red, ResponsiveLockupL<White, TrInstant, TrFade<300>>>>(),
+              "Darth Maul"
+           },
+           { "Mace", "tracks/windutheme.wav",
+              StylePtr<Layers<AudioFlicker<Rgb<128,0,255>,Mix<Int<16384>,Rgb<128,0,255>,White>>,InOutTrL<TrWipe<300>,TrWipeIn<800>,Black>>>(),
+              "Mace Windu Amethyst"
+           }
+        };
+      `;
+      const presets = extractPresets(code);
+      expect(presets.length).toBe(3);
+      expect(presets.map((p) => p.fontName)).toEqual(['ObiWanANH', 'DarthMaul', 'Mace']);
+      expect(presets.map((p) => p.displayLabel)).toEqual([
+        'Obi-Wan ANH',
+        'Darth Maul',
+        'Mace Windu Amethyst',
+      ]);
+    });
+
+    it('preserves source order in the returned array', () => {
+      const presets = extractPresets(FULL_CONFIG_H);
+      expect(presets[0].styleIndex).toBeLessThan(presets[1].styleIndex);
     });
   });
 });

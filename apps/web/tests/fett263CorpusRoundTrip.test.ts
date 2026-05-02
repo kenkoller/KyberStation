@@ -63,8 +63,11 @@ const fixtures = readdirSync(FIXTURE_DIR)
   .sort();
 
 describe('Fett263 corpus round-trip — full user journey', () => {
-  it('discovered all 21 fixtures', () => {
-    expect(fixtures.length).toBe(21);
+  it('discovered the corpus fixtures', () => {
+    // Sprint 5B grew the corpus from 21 to 63+ fixtures. Keep the
+    // floor at 21 to lock in the original Phase 0B baseline; new
+    // fixtures from corpus expansion sprints are additive.
+    expect(fixtures.length).toBeGreaterThanOrEqual(21);
   });
 
   for (const fixtureName of fixtures) {
