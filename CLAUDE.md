@@ -543,6 +543,83 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-02, Fett263 import sprint — 4 versions shipped)
+
+Marathon session triggered by a single Reddit comment from `gschram92` on the launch post. The commenter said two things: (1) Fett263's editor has no save feature so iterating on saved configs is hard, and (2) when they tried KyberStation's import, "pretty much every library/style I use from fett263 is not integrated yet." Initial reading misread (1) as a KyberStation gap; mid-session re-read corrected it — the user has saved Fett263-generated config.h files on disk and wants KyberStation to be the editor that finally lets them save + iterate.
+
+**14 PRs merged across 4 minor version bumps in this stretch.**
+
+| Tag | Sprint | PRs | Headline |
+|---|---|---|---|
+| `v0.17.0` | Phase 1–4: preserve-and-tweak | #252–#258 | `BladeConfig.importedRawCode` + verbatim export + `ImportStatusBanner` + Save Preset button (closes the discoverability half of the commenter's complaint) |
+| `v0.18.0` | Sprint 5A/5B/5D + Step 1/2 | #259–#265 | Template registry 46 → 265, corpus 21 → 63 fixtures, full config.h shape detection, multi-preset extraction with per-preset library entries |
+| `v0.19.0` | Sprint 5C reconstructor patterns | #266–#267 | Hyper Responsive Rotoscope detection + multi-phase ColorChange extraction + 33-ID effect detection |
+| `v0.20.0` | Sprint 5E per-preset switcher | #268–#269 | Switcher dropdown in import banner — flip the visualizer between recently-imported presets without leaving OUTPUT |
+
+### Test count delta across the day
+
+Web 2293 → 2750 (+457). Codegen 2421 → 2562 (+141). Engine 957 → 957 (no engine changes). All 10 packages typecheck + test green at every tag cut.
+
+### What the user can actually do now (closed gap)
+
+Paste a saved Fett263 `config.h` (3-preset Obi-Wan + Maul + Mace, e.g.) into the Output tab's Paste C++ field → KyberStation:
+
+1. Detects the shape ("full config.h with 3 presets" notice)
+2. Extracts each preset into its OWN style block + saves all 3 to `userPresetStore` with the per-preset block as `importedRawCode` (each preset will export ITS OWN style on re-flash, not the entire pasted file)
+3. Loads preset 1 into the visualizer with the right base color (CYAN, not default blue — the previous fallback)
+4. Renders an `ImportStatusBanner` with: source label + relative time + Save Preset button + Convert to Native button + per-preset switcher dropdown (when batch.length > 1)
+5. Switcher's `onChange` flips visualizer to any other preset in the batch with one click
+6. Generated code preserves the original pasted file byte-identically with a 3-line provenance header
+7. Color tweaks in the visualizer don't affect export until Convert to Native (explicit one-way escape hatch)
+
+**Browser-verified end-to-end with Baylan Skoll OS7, marrok-color-change, and a 3-preset assembled config.h.**
+
+### Architectural decisions worth carrying forward
+
+1. **Raw-code preservation is the ground floor.** The whole sprint hinges on `BladeConfig.importedRawCode` — every other piece (template registry, reconstructor patterns, switcher) is additive on top. When KyberStation can't fully recognize a template, the export still emits the original code byte-identically. This means coverage gains can be aggressive without risk: there's no "broke import on this template" failure mode, only "didn't recognize it for editing."
+
+2. **The CLAUDE.md "auto-close on `--delete-branch`" trap fired again.** Hit it twice in this sprint:
+   - PR #262 → #263 (5D MVP — base branch was Step 2's branch, deleted on #260 merge)
+   - PR #261 needed force-push rebase after dependency PRs merged (test relaxation was in #263)
+   Workflow that worked: when stacking PRs, the base PR's merge auto-closes the children. Open a new PR with `--base main` against the same branch (no rebase needed if branch is fast-forward). The `> Recovery PR` callout in the body explains why it exists so reviewers don't think it's duplicate work.
+
+3. **Worktree leaks happen even with `isolation: "worktree"` in the agent dispatch.** Sprint 5A's first agent + Sprint 5A re-dispatch + the reconstructor agent all leaked file writes into the main repo path (an absolute path that contained `.claude/worktrees/agent-xxx/` resolved to the main checkout). The salvage pattern: parent session inspects the working tree, runs typecheck/tests, commits + pushes if clean. Cost ~10 min per salvage. Don't dispatch more than 4 concurrent agents — concurrent leak risk compounds.
+
+4. **Heredoc + parentheses in `git commit -m "$(cat <<'EOF'...)"` keeps tripping bash parsing.** When the commit body has parens (very common — version numbers, file references, paragraphs), the shell loses track of the opening `$(`. Workaround: write the message to `/tmp/commit-msg-X.txt` first, then `git commit -F /tmp/commit-msg-X.txt`. Save 30 sec of debugging per commit.
+
+5. **CodeQL "incomplete string escaping" on `String.replace(string, string)`.** Used `match[0].replace('<', '')` to strip a trailing `<` from a regex match like `"StylePtr<"`. CodeQL flagged it as a security risk because `String.replace` only replaces the first occurrence. Behavior was correct (only one `<` in the match) but the static analyzer can't prove it. Fix: `match[0].slice(0, -1)` — deterministic, drops the last char. Quieter analyzer.
+
+6. **Multi-PR ordering matters when one introduces a test relaxation that blocks another.** Sprint 5B (PR #261) added 42 fixtures, breaking the strict `expect(fixtures.length).toBe(21)` in `fett263CorpusRoundTrip.test.ts`. The relaxation (`toBeGreaterThanOrEqual(21)`) lived in 5D's PR #263. So 5B's CI failed until #263 merged. Resolution: rebase #261 onto post-#263 main + force-push. In retrospect: if a corpus expansion PR is going to break another PR's strict test, land the test relaxation FIRST (or bundle them).
+
+7. **Sprint 5A's first dispatch stalled mid-task; the salvage pattern works.** Agent committed ~185 LOC to `colors.ts` then went silent. Inspecting the worktree showed the work was intact + test-clean. Committed as PR #259 (5A partial), then re-dispatched the rest as PR #264. Agents stalling is real; "what's on disk + test green = ship it as partial" beats "abandon and restart."
+
+### Workflow patterns that worked
+
+- **Background CI poll via `until ... do sleep 25; done; echo GREEN`** in `run_in_background: true`. Notification fires when poll exits. Cleaner than periodically checking with `gh pr checks`. Used 5+ times this sprint.
+- **Parallel agent dispatch for independent registry work.** Sprint 5A + 5B + 5C overlapped — 5A and 5B both ran in background; 5C ran in foreground. All shipped within the same session.
+- **Browser preview verification at the end of each user-facing change.** Pasted real fixtures (Baylan Skoll, marrok-color-change, 3-preset assembled) and inspected via `mcp__Claude_Preview__preview_eval`. Caught the "visualizer renders default blue instead of preset 1's CYAN" gap that drove Step 2.
+- **IndexedDB inspection via raw `indexedDB.open()`** in preview eval. Verified that the 3-preset save round-tripped through the store layer and through actual IndexedDB (not just the in-memory Zustand state).
+
+### Still open (next-session candidates)
+
+The Fett263 import surface is in a genuinely complete state for the commenter's stated workflow. The natural follow-ups, ordered by value:
+
+1. **Lexer hardening** — close the 2 remaining `it.todo` corpus fixtures (`legacy-inoutsparktip-easyblade.txt` uses `EASYBLADE(BLUE,WHITE)` C-preprocessor macros; `ronin-force-pulse-os7.txt` has unmatched `>` in source). Each fix unlocks more real-world configs.
+2. **Wire `altPhaseColors` + `detectedEffectIds` into `BladeConfig` + UI** — Sprint 5C surfaces these on `ReconstructedConfig` but they're not yet visible to users. Future visualizer overlays can render flash effects per detected `EFFECT_*` event.
+3. **Per-preset switcher persistence** — today the switcher is ephemeral (cleared on reload). Adding ~200 bytes to localStorage would survive page reloads. Small, focused.
+4. **More Fett263 corpus** — 7 templates flagged by Sprint 5B's `_NEW_TEMPLATES_FOR_5A.md` were noted but not all caught by 5A re-dispatch (`PulsingL`, `PulsingF`, `SmoothSoundLevel`, `VolumeLevel`, `Percentage`, `BendTimePowX`, `TrCenterWipeInSpark` — though the actual gap should be re-audited against the registry post-merge).
+5. **Outside Fett263 import territory:** Marketing site PR #32 (open since pre-launch, needs focused rebase), mobile UX iterations, sound font work.
+
+### Cleanup status
+
+Reaped 3 merged-agent worktrees from this sprint (`agent-a0fdcffbb401bd65f` Phase 2A, `agent-acbe307507f4e79de` Phase 2D, `agent-a3675ecde588d053c` Sprint 5B). 9 older worktrees remain locked under `.claude/worktrees/` from prior sessions — left untouched per cross-session coordination rules.
+
+### One unfinished item from the original scope
+
+The Reddit reply to gschram92 was drafted twice (long version, then softened-claims version with no em dashes), but never posted — Ken handles that. Final draft lives at `/tmp/reply-draft.md` plus inline in CLAUDE.md session message history.
+
+---
+
 ## Current State (2026-05-01 afternoon, mobile sprint feature-complete)
 
 Continuation of the 2026-05-01 morning session. **Three more PRs opened this afternoon** (#207, #209, #210) plus a docs refresh (#208), bringing the mobile redesign through Phase 4.4 → 4.4.x → 4.5. **The mobile sprint is now feature-complete** per `Claude Design Mobile handoff/HANDOFF.md` — all 5 phases shipped, only the Q3 diagnostic-strip segment-set decision remains as an open UX call for Ken.
