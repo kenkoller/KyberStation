@@ -154,4 +154,91 @@ describe('CodeOutput import round-trip (v0.9.1 regression)', () => {
     expect(result.style).toBe('stable');
     expect(result.ignition).toBe('standard');
   });
+
+  // ── Phase 2B: import preservation field plumbing ──
+  describe('import preservation fields', () => {
+    const minimalCppResult = {
+      baseColor: { r: 0, g: 0, b: 255 },
+      confidence: 0.5,
+      warnings: [],
+      rawAST: { type: 'raw' as const, name: 'Blue', args: [] },
+    };
+
+    it('does NOT populate import fields when rawCode is undefined', () => {
+      const result = applyReconstructedConfig(minimalCppResult, 144);
+      expect(result.importedRawCode).toBeUndefined();
+      expect(result.importedAt).toBeUndefined();
+      expect(result.importedSource).toBeUndefined();
+    });
+
+    it('does NOT populate import fields when rawCode is empty string', () => {
+      const result = applyReconstructedConfig(minimalCppResult, 144, '');
+      expect(result.importedRawCode).toBeUndefined();
+      expect(result.importedAt).toBeUndefined();
+      expect(result.importedSource).toBeUndefined();
+    });
+
+    it('does NOT populate import fields when rawCode is whitespace-only', () => {
+      const result = applyReconstructedConfig(minimalCppResult, 144, '   \n\t  ');
+      expect(result.importedRawCode).toBeUndefined();
+    });
+
+    it('populates importedRawCode (trimmed) when rawCode is non-empty', () => {
+      const raw = '  StylePtr<Layers<Blue, ResponsiveLockupL<White>>>()  ';
+      const result = applyReconstructedConfig(minimalCppResult, 144, raw);
+      expect(result.importedRawCode).toBe(raw.trim());
+    });
+
+    it('populates importedAt with a recent timestamp', () => {
+      const before = Date.now();
+      const result = applyReconstructedConfig(minimalCppResult, 144, 'StylePtr<Blue>()');
+      const after = Date.now();
+      expect(result.importedAt).toBeGreaterThanOrEqual(before);
+      expect(result.importedAt).toBeLessThanOrEqual(after);
+    });
+
+    it('uses the provided source label when supplied', () => {
+      const result = applyReconstructedConfig(
+        minimalCppResult,
+        144,
+        'StylePtr<Blue>()',
+        'Fett263 OS7 Style Library',
+      );
+      expect(result.importedSource).toBe('Fett263 OS7 Style Library');
+    });
+
+    it('falls back to "Pasted ProffieOS C++" when source is omitted', () => {
+      const result = applyReconstructedConfig(minimalCppResult, 144, 'StylePtr<Blue>()');
+      expect(result.importedSource).toBe('Pasted ProffieOS C++');
+    });
+
+    it('preserves multi-line raw code with embedded angle brackets', () => {
+      const raw = `StylePtr<Layers<
+  Stripes<3000, 1500, Rgb<0,140,255>, Rgb<255,255,255>>,
+  ResponsiveLockupL<White, TrInstant, TrFade<300>>
+>>()`;
+      const result = applyReconstructedConfig(minimalCppResult, 144, raw);
+      expect(result.importedRawCode).toBe(raw);
+    });
+
+    it('still populates the standard reconstructed fields alongside import fields', () => {
+      const fullCppResult = {
+        baseColor: { r: 100, g: 0, b: 200 },
+        clashColor: { r: 255, g: 255, b: 255 },
+        style: 'unstable',
+        ignitionMs: 500,
+        confidence: 0.8,
+        warnings: [],
+        rawAST: { type: 'raw' as const, name: 'Layers', args: [] },
+      };
+      const result = applyReconstructedConfig(fullCppResult, 144, 'StylePtr<Layers<...>>()', 'Test');
+      // Reconstructed fields preserved
+      expect(result.baseColor).toEqual({ r: 100, g: 0, b: 200 });
+      expect(result.style).toBe('unstable');
+      expect(result.ignitionMs).toBe(500);
+      // Import fields populated
+      expect(result.importedRawCode).toBe('StylePtr<Layers<...>>()');
+      expect(result.importedSource).toBe('Test');
+    });
+  });
 });

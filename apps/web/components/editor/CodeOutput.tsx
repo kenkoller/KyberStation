@@ -15,6 +15,7 @@ import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { ErrorState } from '@/components/shared/ErrorState';
 import { FilenameReveal } from '@/hooks/useFilenameReveal';
 import { toast } from '@/lib/toastManager';
+import { ImportStatusBanner } from './ImportStatusBanner';
 
 /**
  * Map a `ReconstructedConfig` (output of `reconstructConfig`) into a full
@@ -23,11 +24,25 @@ import { toast } from '@/lib/toastManager';
  * spatial lockup, spatial blast, Preon, and extended colours silently on
  * import round-trip. Centralising + widening here means a single file edit
  * whenever BladeConfig gains a new field the reconstructor recovers.
+ *
+ * **Import preservation (Phase 2B, 2026-05-02):** when `rawCode` is
+ * supplied, the BladeConfig also carries `importedRawCode` /
+ * `importedAt` / `importedSource` fields. The codegen export path
+ * detects these and re-emits `rawCode` verbatim instead of regenerating
+ * from BladeConfig — the only way a Fett263 OS7 import can survive the
+ * round-trip without losing templates KyberStation's reconstructor
+ * doesn't recognize. The "Convert to Native" button in the OUTPUT
+ * panel's import banner strips these fields when the user is ready to
+ * trade fidelity for full editability.
  */
 export function applyReconstructedConfig(
   cppResult: ReconstructedConfig,
   ledCount: number,
+  rawCode?: string,
+  source?: string,
 ): BladeConfig {
+  const trimmedRaw = rawCode?.trim() ?? '';
+  const hasRawCode = trimmedRaw.length > 0;
   return {
     baseColor: cppResult.baseColor ?? { r: 0, g: 0, b: 255 },
     clashColor: cppResult.clashColor ?? { r: 255, g: 255, b: 255 },
@@ -59,6 +74,13 @@ export function applyReconstructedConfig(
     preonMs: cppResult.preonMs,
     shimmer: 0,
     ledCount: ledCount || 144,
+    ...(hasRawCode
+      ? {
+          importedRawCode: trimmedRaw,
+          importedAt: Date.now(),
+          importedSource: source ?? 'Pasted ProffieOS C++',
+        }
+      : {}),
   };
 }
 
@@ -297,6 +319,10 @@ export function CodeOutput() {
           everything to your SD card, or download the .h file below if you prefer manual setup.</span>
         </p>
       </div>
+
+      {/* Imported-config status banner. Renders only when
+          config.importedRawCode is set (paste-in import flow). */}
+      <ImportStatusBanner />
 
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
@@ -584,7 +610,12 @@ export function CodeOutput() {
                   onClick={() => {
                     if (!cppResult) return;
                     loadPreset(
-                      applyReconstructedConfig(cppResult, config.ledCount || 144),
+                      applyReconstructedConfig(
+                        cppResult,
+                        config.ledCount || 144,
+                        cppInput,
+                        'Pasted ProffieOS C++',
+                      ),
                     );
                     setShowCppImport(false);
                     setCppInput('');
