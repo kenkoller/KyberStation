@@ -38,12 +38,10 @@ import { useEffect, useState, useRef, type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useUIStore, type SectionId } from '@/stores/uiStore';
 import { useBladeStore } from '@/stores/bladeStore';
-import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { BladeCanvas } from '@/components/editor/BladeCanvas';
 import { Inspector } from '@/components/editor/Inspector';
 import { MainContent } from '@/components/layout/MainContent';
 import { PixelStripPanel } from '@/components/editor/PixelStripPanel';
-import { LayerCanvas } from '@/components/editor/VisualizationStack';
 import { AccessibilityPanel } from '@/components/editor/AccessibilityPanel';
 import { FullscreenPreview, FullscreenButton } from '@/components/editor/FullscreenPreview';
 import { PauseButton } from '@/components/layout/PauseButton';
@@ -92,14 +90,12 @@ export function MobileShell({
 
   const hamburgerRef = useRef<HTMLButtonElement | null>(null);
 
-  // Pixel buffer for the analysis stack (LayerCanvas).
-  const pixelBufRef = useRef<Uint8Array | null>(null);
-  useEffect(() => {
-    pixelBufRef.current = engineRef.current?.getPixels() ?? null;
-  }, [engineRef]);
-  const ledCount = useBladeStore((s) => s.config.ledCount);
-  const isPaused = useUIStore((s) => s.isPaused);
-  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  // The pixelBufRef + ledCount + isPaused + reducedMotion reads that
+  // used to live here fed the LayerCanvas rgb-luma analysis rail (now
+  // removed — see comment in the scrolling body section). If a future
+  // mobile-shell change wants to mount any visualization layer, the
+  // pattern is: read engineRef.current?.getPixels() into a ref + pass
+  // the same isPaused/reducedMotion props the desktop AnalysisRail uses.
 
   // ── Phase 4.5 Inspect mode wiring ────────────────────────────────
   const isInspecting = useInspectModeStore((s) => s.isInspecting);
@@ -448,26 +444,15 @@ export function MobileShell({
         id="mobile-section-content"
         className="flex-1 min-h-0 flex flex-col overflow-y-auto"
       >
-        {/* The analysis rail (rgb-luma waveform) used to live above the
-            body in PR #200's stacked layout. The handoff doesn't include
-            it in the sticky shell — it's overhead chrome users only
-            occasionally read. We mount it as a scroll-region header so
-            it's still reachable but doesn't eat sticky space. */}
-        <div
-          className="w-full shrink-0 bg-bg-primary border-b border-border-subtle"
-          style={{ height: 56 }}
-          role="region"
-          aria-label="Analysis rail"
-        >
-          <LayerCanvas
-            layerId="rgb-luma"
-            pixels={pixelBufRef.current}
-            pixelCount={ledCount}
-            isPaused={isPaused}
-            reducedMotion={reducedMotion}
-          />
-        </div>
-
+        {/* Analysis rail (rgb-luma waveform) removed 2026-05-02 per
+            user feedback — read as visually duplicate of the sticky
+            pixel strip above + ate 56px without showing meaningful
+            activity (waveforms hugged the baseline at typical pixel
+            values). The original mount was a "still reachable"
+            compromise from PR #200's stacked layout, NOT in the
+            StickyMiniShell handoff anatomy. Desktop AnalysisRail is
+            unaffected — desktop users still get the full 9-layer
+            visualization stack. */}
         {isHome ? (
           <Inspector
             className="flex-1 min-h-0 w-full"

@@ -276,14 +276,15 @@ describe('MobileShell — Phase 4.2 layout shape', () => {
     expect(html).toMatch(/<div id="mobile-section-content"[^>]*overflow-y-auto/);
   });
 
-  it('analysis rail (rgb-luma LayerCanvas) is inside the scroll body, not sticky', () => {
+  it('analysis rail (rgb-luma LayerCanvas) is NOT mounted in the mobile shell', () => {
+    // Removed 2026-05-02 per user feedback: the rgb-luma waveform read
+    // as visually duplicate of the sticky pixel strip + ate 56px without
+    // showing meaningful activity. Was a "still reachable" compromise from
+    // PR #200's stacked layout, never in the StickyMiniShell handoff
+    // anatomy. Desktop AnalysisRail is unaffected.
     const html = renderShell();
-    // Analysis rail appears AFTER the sticky chrome (after section tabs)
-    // and INSIDE #mobile-section-content.
-    const m = html.match(
-      /<div id="mobile-section-content"[\s\S]*?aria-label="Analysis rail"[\s\S]*?data-layer-id="rgb-luma"/,
-    );
-    expect(m).toBeTruthy();
+    expect(html).not.toContain('aria-label="Analysis rail"');
+    expect(html).not.toContain('data-layer-id="rgb-luma"');
   });
 
   it('home (my-saber) view renders Inspector inside scroll body', () => {
