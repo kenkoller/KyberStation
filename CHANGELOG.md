@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.18.0] — 2026-05-02
+
+**Fett263 import coverage push (Sprint 5).** Builds on v0.17.0's preserve-and-tweak foundation. The headline user-facing win: **paste your full Fett263-generated `config.h` and every preset becomes its own entry in your library, ready to flash with the original code preserved.** The previous release made single-style imports work; this release closes the actual user workflow — bringing forward whole saved configs.
+
+**Test count delta:** +291 web tests (2452 → 2743). +6 PRs across the sprint. All 10 workspace packages typecheck + test green.
+
+### Added
+
+- **Multi-preset extraction from full config.h** (PR #263) — paste a complete `Preset presets[] = { ... }` array and KyberStation extracts each preset into its own `userPresetStore` entry, preserving:
+  - User-facing display label as the entry name (e.g. "Obi-Wan ANH", "Darth Maul Sith Saber")
+  - The preset's font name in `importedSource` (e.g. "Pasted ProffieOS C++ — ObiWanANH")
+  - The per-preset style block as `importedRawCode` — each preset exports its OWN style on re-flash, not the entire pasted file
+  - Standard reconstructed `BladeConfig` fields for the visualizer preview
+  - Toast: "Imported N presets to your library"
+  - Apply button label flips from "Apply to Editor" to "Import N Presets" when N > 1
+  - `findStylePtrBlocks` (angle-bracket-balanced multi-block walker) + `extractPresets` (per-preset metadata via enclosing brace + string-literal extraction) + helpers in `apps/web/lib/import/configShapeDetect.ts`
+  - 14 new unit tests + 5 integration tests in `multiPresetImportFlow.test.ts`
+
+- **Full config.h shape detection + first-preset extraction** (PR #260) — when users paste a wrapped config (`#ifdef CONFIG_TOP`, `#define`, `Preset presets[]`, `BladeConfig blades[]`), KyberStation detects the shape, extracts the first preset's style template for the visualizer reconstruction, and surfaces a "Detected full config.h with N presets" notice. Before this, the visualizer would default to pure blue when it couldn't find a recognizable style template at the wrapped root.
+  - `detectConfigShape` heuristic (no full parse — `#ifdef CONFIG_PRESETS` / `Preset presets[]` / `BladeConfig blades[]` / `CONFIGARRAY(...)` markers)
+  - `extractFirstStylePtr` walks angle-bracket-balanced to pull the first style block
+  - 20 unit tests for naked / wrapped / multi-preset / edge-case inputs
+
+- **Template registry expansion to 265+ templates** — Sprint 5A in two parts:
+  - **PR #259** (5A partial): +32 color templates + named-color expansion for OS7 sister-form aliases (`PulsingX`, `PulsingL`, `Pixelate`, etc.)
+  - **PR #264** (5A rest): +8 layer templates (`OnSparkL`, `BlinkingL`, `PulsingL`, `SparkleL`, `StrobeL`, `TransitionLoopWhileL`, `TransitionPulse`, `MultiTransitionEffectL`), +7 transitions (`TrBlink`, `TrCenterWipe`/`-X`, `TrCenterWipeSpark`/`-X`, `TrCenterWipeInSpark`/`-X`, `TrWipeInSparkTipX`), +31 functions (math primitives, blaster props, audio sources, geometric helpers, blast functions, pin reading, blink functions, counters), +4 wrapper signature corrections (`IgnitionDelay`, `RetractionDelay`, `InOutHelperX`, `InOutTr`), Parser `NAMED_PRIMITIVES` +7, `VARIADIC_TEMPLATES` +18, `classifyNode` +28
+  - Combined: registry covers most of Fett263's OS7 generator output + ProffieOS 7.x stdlib
+
+- **Corpus expansion to 63 fixtures** (PR #261) — grew the test corpus from 21 to **63 real Fett263 fixtures** scraped from public GitHub configs (`farzahn/proffie`, `profezzorn/ProffieOS`, `NoSloppy/ProffieOS3-eval`, `FrankKerschbaumer3/proffie_configs`). Spans 13 niche generator-path categories: Crystal Chamber accent, Multi-blade AUX, Multi-Phase 4/10/2-color, Hyper Responsive Rotoscope, Special Abilities `EFFECT_USER1`, Battery/charging, Power Save, Force/Boot/Preon, Quote/Music/Track, Lockup variants, Stab/drag/melt customization, Off-behavior, Legacy ProffieOS variants. Each fixture has a `// Source:` GitHub URL header.
+
+- **`findEnclosingBraceBlock` + `extractStringLiterals`** helpers (PR #263) — backbone of the per-preset metadata extraction; each style block walks backward to its enclosing `{ ... }` block and pulls quoted string literals (first → fontName, second → track, last → displayLabel).
+
+### Changed
+
+- **`applyReconstructedConfig` now optionally accepts `rawCode` + `source` parameters** (carried from v0.17.0; reused by Sprint 5D's per-preset call site) — when supplied, the returned BladeConfig carries `importedRawCode` / `importedAt` / `importedSource` so the export path emits the original code verbatim with provenance header.
+- **CodeOutput.tsx Apply handler branches on `cppConfigShape.styleCount > 1`** — multi-preset path calls `extractPresets`, parses + reconstructs each, saves each via `useUserPresetStore.savePreset`, then loads preset 1 into the visualizer.
+- **`fett263CorpusRoundTrip.test.ts` floor changed from `toBe(21)` to `toBeGreaterThanOrEqual(21)`** — Sprint 5B's expansion would otherwise break this test on merge.
+
+### Fixed
+
+- **CodeQL "incomplete string escaping" warning on `match[0].replace('<', '')`** (PR #260 follow-up) — switched to `match[0].slice(0, -1)` (deterministic, drops the trailing literal `<` from the regex match). Functionally identical, quiets the security analyzer.
+
+### Honest scope
+
+Coverage is much higher than v0.17.0 but still not "every Fett263 library template." The raw-code preservation safety net continues to do load-bearing work — anything KyberStation can't fully reconstruct still flashes byte-identically to the original. Send failing snippets via GitHub issue and they go directly into the next corpus expansion sprint.
+
+---
+
 ## [0.17.0] — 2026-05-02
 
 **Fett263 import sprint.** Closes the import gap that the first GitHub user feedback flagged: pasting a real Fett263 OS7 Style Library config used to drop ~30 templates per fixture as "unknown" and silently strip anything KyberStation's reconstructor didn't fully understand. After this sprint, the same fixtures parse with **0 unknown-template warnings**, the original ProffieOS code is preserved verbatim on export (so it's flashable as-is), and a UI banner explains the contract with "★ Save Preset" and "Convert to Native" actions wired right where users land after importing.
