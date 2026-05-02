@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUserPresetStore } from '@/stores/userPresetStore';
+import { useUIStore } from '@/stores/uiStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
 import { toast } from '@/lib/toastManager';
 
@@ -46,7 +47,11 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
   const importedAt = config.importedAt;
   const importedSource = config.importedSource;
   const convertImportToNative = useBladeStore((s) => s.convertImportToNative);
+  const loadPreset = useBladeStore((s) => s.loadPreset);
   const savePreset = useUserPresetStore((s) => s.savePreset);
+  const userPresets = useUserPresetStore((s) => s.presets);
+  const recentImportBatch = useUIStore((s) => s.recentImportBatch);
+  const setRecentImportBatch = useUIStore((s) => s.setRecentImportBatch);
   const [saved, setSaved] = useState(false);
 
   const relativeTime = useMemo(() => {
@@ -69,9 +74,36 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
     setTimeout(() => setSaved(false), 2400);
   }, [config, savePreset]);
 
+  const handleSwitchPreset = useCallback(
+    (presetId: string) => {
+      const preset = userPresets.find((p) => p.id === presetId);
+      if (!preset) return;
+      loadPreset(preset.config);
+    },
+    [userPresets, loadPreset],
+  );
+
+  const handleConvert = useCallback(() => {
+    convertImportToNative();
+    // Sprint 5E: clear the batch when converting since the user is
+    // explicitly leaving the imported state. The batch's per-preset
+    // switcher only makes sense while the import is active.
+    setRecentImportBatch(null);
+  }, [convertImportToNative, setRecentImportBatch]);
+
   if (!importedRawCode || importedRawCode.length === 0) return null;
 
   const sourceLabel = importedSource ?? 'External source';
+  // Sprint 5E: show the switcher only when there are 2+ presets in the
+  // recent batch AND the current config is one of them (the user
+  // hasn't navigated away to a different preset).
+  const showSwitcher =
+    recentImportBatch !== null &&
+    recentImportBatch.length > 1 &&
+    recentImportBatch.some((entry) => entry.name === config.name);
+  const currentBatchIndex = showSwitcher
+    ? recentImportBatch!.findIndex((entry) => entry.name === config.name)
+    : -1;
 
   return (
     <div
@@ -106,6 +138,44 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
             update the preview only — they won&apos;t change the exported
             code until you convert.
           </div>
+          {/* Sprint 5E: per-preset switcher. When the most recent
+              import was a multi-preset batch (e.g. 3 presets from a
+              full config.h paste), let users flip the visualizer
+              between them without going through the My Presets
+              sidebar. Renders only when batch.length > 1 AND the
+              current config is one of the batch entries. */}
+          {showSwitcher && (
+            <div
+              className="mt-2 flex items-center gap-2 text-ui-xs"
+              data-testid="import-banner-preset-switcher"
+            >
+              <label
+                htmlFor="import-banner-preset-select"
+                className="text-text-secondary shrink-0"
+              >
+                Preset {currentBatchIndex + 1} of {recentImportBatch!.length}:
+              </label>
+              <select
+                id="import-banner-preset-select"
+                value={
+                  recentImportBatch!.find((e) => e.name === config.name)?.id ?? ''
+                }
+                onChange={(e) => handleSwitchPreset(e.target.value)}
+                className="touch-target px-2 py-1 rounded-interactive text-ui-xs font-mono border bg-bg-deep focus-visible:ring-2 focus-visible:ring-accent transition-colors min-w-0 flex-1"
+                style={{
+                  borderColor: 'rgb(var(--badge-creative) / 0.4)',
+                  color: 'rgb(var(--badge-creative))',
+                }}
+                aria-label="Switch the visualizer to a different imported preset"
+              >
+                {recentImportBatch!.map((entry, idx) => (
+                  <option key={entry.id} value={entry.id}>
+                    {idx + 1}. {entry.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
           <button
@@ -130,7 +200,7 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
           </button>
           <button
             type="button"
-            onClick={convertImportToNative}
+            onClick={handleConvert}
             className="touch-target px-3 py-1.5 rounded-interactive text-ui-xs font-medium border focus-visible:ring-2 focus-visible:ring-accent transition-colors"
             style={{
               background: 'rgb(var(--badge-creative) / 0.18)',
