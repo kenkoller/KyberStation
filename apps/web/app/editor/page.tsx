@@ -11,6 +11,8 @@ import { ALL_PRESETS } from '@kyberstation/presets';
 import type { BladeConfig } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore, type ActiveTab } from '@/stores/uiStore';
+import { useUserPresetStore } from '@/stores/userPresetStore';
+import { useImportBatchHydration } from '@/hooks/useImportBatchHydration';
 
 const SPLASH_SEEN_KEY = 'kyberstation-splash-seen';
 
@@ -53,6 +55,15 @@ function EditorPageContent() {
   const { shareError } = useSharedConfig();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Sprint 5E persistence follow-up: hydrate userPresetStore from
+  // IndexedDB on mount, then restore the imported-config banner state
+  // if a recentImportBatch was persisted from a prior session.
+  const hydrateUserPresets = useUserPresetStore((s) => s.hydrate);
+  useEffect(() => {
+    void hydrateUserPresets();
+  }, [hydrateUserPresets]);
+  useImportBatchHydration();
 
   // ── Preset query-param handoff (e.g. from /m "Edit →" link) ───────────────
   // If the URL carries ?preset=<id>, look it up in ALL_PRESETS and load it
