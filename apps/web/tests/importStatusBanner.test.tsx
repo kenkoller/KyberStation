@@ -18,11 +18,16 @@ interface StubConfig {
   importedRawCode?: string;
   importedAt?: number;
   importedSource?: string;
+  name?: string;
 }
 
 const stubState = vi.hoisted(() => ({
   config: {} as StubConfig,
   convertImportToNative: vi.fn(),
+}));
+
+const userPresetStub = vi.hoisted(() => ({
+  savePreset: vi.fn(() => 'fake-id'),
 }));
 
 vi.mock('@/stores/bladeStore', () => {
@@ -31,6 +36,17 @@ vi.mock('@/stores/bladeStore', () => {
   }
   return { useBladeStore };
 });
+
+vi.mock('@/stores/userPresetStore', () => {
+  function useUserPresetStore<T>(selector: (s: typeof userPresetStub) => T): T {
+    return selector(userPresetStub);
+  }
+  return { useUserPresetStore };
+});
+
+vi.mock('@/lib/toastManager', () => ({
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
 
 // HelpTooltip pulls in icon assets that aren't worth loading for SSR shape tests.
 vi.mock('@/components/shared/HelpTooltip', () => ({
@@ -44,6 +60,7 @@ describe('ImportStatusBanner', () => {
   beforeEach(() => {
     stubState.config = {};
     stubState.convertImportToNative.mockReset();
+    userPresetStub.savePreset.mockClear();
   });
 
   it('renders nothing when importedRawCode is absent', () => {
@@ -170,5 +187,35 @@ describe('ImportStatusBanner', () => {
     const html = renderToStaticMarkup(createElement(ImportStatusBanner));
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-label="Imported configuration status"');
+  });
+
+  // ── Phase 3.7: Save Preset button (discoverability fix) ──
+  it('renders the Save Preset button when import is active', () => {
+    stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    expect(html).toContain('data-testid="import-banner-save-button"');
+    expect(html).toContain('Save Preset');
+  });
+
+  it('Save Preset button has descriptive aria-label', () => {
+    stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    expect(html).toContain(
+      'aria-label="Save this imported preset to your library so you can return to it later"',
+    );
+  });
+
+  it('uses a star glyph for the Save action (visual affordance)', () => {
+    stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    // Match the parent SavePresetButton's ★ glyph convention
+    expect(html).toContain('★ Save Preset');
+  });
+
+  it('does NOT render Save Preset button when no import is active', () => {
+    stubState.config = {};
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    expect(html).not.toContain('Save Preset');
+    expect(html).not.toContain('import-banner-save-button');
   });
 });

@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useUserPresetStore } from '@/stores/userPresetStore';
 import { HelpTooltip } from '@/components/shared/HelpTooltip';
+import { toast } from '@/lib/toastManager';
 
 /**
  * Render a relative-time string for the imported-at timestamp.
@@ -39,15 +41,33 @@ export interface ImportStatusBannerProps {
  * Renders nothing when no import is active (`importedRawCode` absent).
  */
 export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
-  const importedRawCode = useBladeStore((s) => s.config.importedRawCode);
-  const importedAt = useBladeStore((s) => s.config.importedAt);
-  const importedSource = useBladeStore((s) => s.config.importedSource);
+  const config = useBladeStore((s) => s.config);
+  const importedRawCode = config.importedRawCode;
+  const importedAt = config.importedAt;
+  const importedSource = config.importedSource;
   const convertImportToNative = useBladeStore((s) => s.convertImportToNative);
+  const savePreset = useUserPresetStore((s) => s.savePreset);
+  const [saved, setSaved] = useState(false);
 
   const relativeTime = useMemo(() => {
     if (typeof importedAt !== 'number' || !Number.isFinite(importedAt)) return null;
     return formatRelativeTime(importedAt, nowMs ?? Date.now());
   }, [importedAt, nowMs]);
+
+  const handleSave = useCallback(() => {
+    const defaultName =
+      typeof config.name === 'string' && config.name.length > 0
+        ? `${config.name} (imported)`
+        : `Imported preset ${new Date().toLocaleTimeString()}`;
+    const name = window.prompt('Name this preset:', defaultName);
+    if (!name || name.trim().length === 0) return;
+    savePreset(name.trim(), { ...config });
+    toast.success(`Saved "${name.trim()}"`);
+    setSaved(true);
+    // Reset the "Saved" affordance after a beat — banner stays as long as
+    // the import does, so users can save multiple revisions if they want.
+    setTimeout(() => setSaved(false), 2400);
+  }, [config, savePreset]);
 
   if (!importedRawCode || importedRawCode.length === 0) return null;
 
@@ -87,19 +107,41 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
             code until you convert.
           </div>
         </div>
-        <button
-          type="button"
-          onClick={convertImportToNative}
-          className="touch-target px-3 py-1.5 rounded-interactive text-ui-xs font-medium border focus-visible:ring-2 focus-visible:ring-accent transition-colors shrink-0"
-          style={{
-            background: 'rgb(var(--badge-creative) / 0.18)',
-            borderColor: 'rgb(var(--badge-creative) / 0.5)',
-            color: 'rgb(var(--badge-creative))',
-          }}
-          aria-label="Convert imported code to native KyberStation config — discards original code, enables full editing"
-        >
-          Convert to Native
-        </button>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleSave}
+            data-testid="import-banner-save-button"
+            className="touch-target px-3 py-1.5 rounded-interactive text-ui-xs font-medium border focus-visible:ring-2 focus-visible:ring-accent transition-colors"
+            style={{
+              background: saved
+                ? 'rgb(var(--status-ok) / 0.2)'
+                : 'rgb(var(--badge-creative) / 0.1)',
+              borderColor: saved
+                ? 'rgb(var(--status-ok) / 0.5)'
+                : 'rgb(var(--badge-creative) / 0.4)',
+              color: saved
+                ? 'rgb(var(--status-ok))'
+                : 'rgb(var(--badge-creative))',
+            }}
+            aria-label="Save this imported preset to your library so you can return to it later"
+          >
+            {saved ? '✓ Saved' : '★ Save Preset'}
+          </button>
+          <button
+            type="button"
+            onClick={convertImportToNative}
+            className="touch-target px-3 py-1.5 rounded-interactive text-ui-xs font-medium border focus-visible:ring-2 focus-visible:ring-accent transition-colors"
+            style={{
+              background: 'rgb(var(--badge-creative) / 0.18)',
+              borderColor: 'rgb(var(--badge-creative) / 0.5)',
+              color: 'rgb(var(--badge-creative))',
+            }}
+            aria-label="Convert imported code to native KyberStation config — discards original code, enables full editing"
+          >
+            Convert to Native
+          </button>
+        </div>
       </div>
     </div>
   );
