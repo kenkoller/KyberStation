@@ -55,22 +55,26 @@ export const wrapperTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'IgnitionDelay',
     {
+      // Per styles/ignition_delay.h: IgnitionDelay<DELAY_MILLIS, BASE>.
+      // 2-arg form (delay + base style); previously registered as 1-arg.
       name: 'IgnitionDelay',
-      argTypes: ['INTEGER'],
-      description: 'Delay ignition by N milliseconds',
+      argTypes: ['INTEGER', 'COLOR'],
+      description: 'Delay ignition by N milliseconds, then run the wrapped BASE style',
     },
   ],
   [
     'RetractionDelay',
     {
+      // Per styles/retraction_delay.h: RetractionDelay<DELAY_MILLIS, BASE>.
       name: 'RetractionDelay',
-      argTypes: ['INTEGER'],
-      description: 'Delay retraction by N milliseconds',
+      argTypes: ['INTEGER', 'COLOR'],
+      description: 'Delay retraction by N milliseconds, then run the wrapped BASE style',
     },
   ],
   [
     'DimBlade',
     {
+      // Per styles/dim_blade.h: DimBlade<BASE, PERCENT>.
       name: 'DimBlade',
       argTypes: ['COLOR', 'INTEGER'],
       description: 'Dim a wrapped style by a percentage (0-100)',
@@ -79,33 +83,40 @@ export const wrapperTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'InOutHelper',
     {
+      // Per styles/inout_helper.h: InOutHelper<BASE, OUT_MILLIS, IN_MILLIS>.
       name: 'InOutHelper',
       argTypes: ['COLOR', 'INTEGER', 'INTEGER'],
-      description: 'Older in/out helper wrapper (pre-OS6 tutorials)',
+      description: 'Older in/out helper wrapper: <BASE, OUT_MILLIS, IN_MILLIS>',
     },
   ],
   [
     'InOutHelperX',
     {
+      // Per styles/inout_helper.h: InOutHelperX<BASE, EXTENSION, OFF_COLOR>.
+      // Previously registered as 2-arg; 3-arg form lets the wrapped style
+      // specify both an extension function and an off-state color.
       name: 'InOutHelperX',
-      argTypes: ['COLOR', 'FUNCTION'],
-      description: 'Function-parameterised in/out helper',
+      argTypes: ['COLOR', 'FUNCTION', 'COLOR'],
+      description: 'Function-parameterised in/out helper: <BASE, EXTENSION, OFF_COLOR>',
     },
   ],
   [
     'InOutSparkTip',
     {
+      // Per styles/inout_sparktip.h: InOutSparkTip<BASE, OUT_MILLIS, IN_MILLIS, SPARK_COLOR>.
       name: 'InOutSparkTip',
       argTypes: ['COLOR', 'INTEGER', 'INTEGER', 'COLOR'],
-      description: 'In/out wrapper with a tip-spark on ignition',
+      description: 'In/out wrapper with a tip-spark on ignition: <BASE, OUT_MS, IN_MS, SPARK_COLOR>',
     },
   ],
   [
     'InOutTr',
     {
+      // Per styles/inout_helper.h: InOutTr<BASE, OUT_TRANSITION, IN_TRANSITION, OFF_COLOR>.
+      // Previously registered as 3-arg; correct is 4-arg (off-color is mandatory).
       name: 'InOutTr',
-      argTypes: ['COLOR', 'TRANSITION', 'TRANSITION'],
-      description: 'Plain in/out transition wrapper (predecessor of InOutTrL)',
+      argTypes: ['COLOR', 'TRANSITION', 'TRANSITION', 'COLOR'],
+      description: 'Plain in/out transition wrapper: <BASE, OUT_TRANSITION, IN_TRANSITION, OFF_COLOR>',
     },
   ],
   [
