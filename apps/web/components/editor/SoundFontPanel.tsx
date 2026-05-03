@@ -183,7 +183,11 @@ function FontLibraryTab({ onLoadFont }: { onLoadFont: (fontName: string) => void
             color: 'rgb(var(--status-warn) / 0.85)',
           }}
         >
-          Font library browsing requires Chrome, Edge, or Arc. You can still import individual fonts via drag-and-drop in the Sound Fonts tab.
+          Font library browsing requires the File System Access API. Supported in Chrome, Edge, Arc, and Brave (Brave users: enable{' '}
+          <code className="font-mono px-1 py-0.5 rounded bg-bg-deep/60 text-ui-xs">
+            brave://flags/#file-system-access-api
+          </code>
+          ). Not yet supported in Safari or Firefox. You can still import individual fonts via drag-and-drop in the Sound Fonts tab.
         </div>
       </div>
     );
