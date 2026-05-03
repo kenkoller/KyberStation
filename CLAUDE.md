@@ -543,6 +543,53 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-02 evening, sound-font audit pass)
+
+Short follow-up session after the Fett263 import sprint. Goal: read-only audit of the sound-font surface area after a stretch of import-focused work, confirm Ken's prior audio-engine PRs (#115, #118, #122, #124, #127, #128, #130, #176) are still intact, and surface gaps worth queueing for post-launch.
+
+### What shipped
+
+**1 PR opened:** `feat/sound-font-audit-2026-05-02` (this branch, claude/loving-tu-e431f1).
+
+| File | Scope |
+|---|---|
+| [`docs/SOUND_FONT_AUDIT_2026-05-02.md`](docs/SOUND_FONT_AUDIT_2026-05-02.md) (new, 126 lines) | Architecture review + subscription-wiring inspection + 7-item open-gap list for Ken's prioritization. None are launch blockers. |
+| [`apps/web/components/editor/SoundFontPanel.tsx`](apps/web/components/editor/SoundFontPanel.tsx) | One-line copy fix: legacy panel's no-FSA fallback warning ("Chrome, Edge, or Arc") was stale relative to `AudioColumnB.tsx`'s post-PR-#118 copy. Brought it into line so users who flip to `useABLayout === false` see consistent Brave-flag guidance. |
+
+### Confirmed working (live-preview-verified)
+
+- Audio singleton (PR #176): one AudioContext, six consumers share it
+- Brave FSA flag warning (PR #118): live in modern A/B path; now also in legacy panel
+- Modern Proffie / Kyberphonic categories (PR #122): all 12 wired through `SoundCategory` union + `FontParser` regex matchers
+- Pause → AudioContext suspend (PR #130): `▶ Paused` flips on click; subscription installs once per singleton
+- Mute → master gain (PR #124): live, shared store
+- SmoothSwing speed broadcast + hum hot-swap (PR #128): subscriptions installed in singleton init
+- ProffieOS in/out convention (PR #127): `out.wav` plays during ignition, `in.wav` during retraction
+- Directory iterator yields tuples (PR #115): scan/load handle iterator handles `for await … of dirHandle` correctly
+
+### Open gaps surfaced (for Ken's prioritization, none are launch blockers)
+
+1. **Phase A/B/C of `SOUND_FONT_LIBRARY_AND_CUSTOM_PRESETS.md`** — XL feature, post-launch. Tracked in `POST_LAUNCH_BACKLOG.md`.
+2. **Modern category playback dispatch** — PR #122 surfaces the 12 modern categories in the manifest, but `CATEGORY_MAP` in `audioEngineSingleton.ts` only maps the 11 classic events. New `bgnlock`/`endlock`/`bgnlb`/`endlb`/`bgnmelt`/`endmelt`/`bgndrag`/`enddrag` are detected but not played on BladeEngine state changes. Per the type-file comment, this is "deferred to v0.16+." Tracked.
+3. **Surprise-me sound font** (Ken's field-note #17) — randomizer doesn't pick a library font. S effort, post-launch per Ken.
+4. **`userPreset.fontAssociation` round-trip** — `saveStateV1` doesn't capture which font was loaded at save time, so loading a preset later doesn't auto-reload the paired font. S-M effort.
+5. **Legacy `SoundFontPanel.tsx` retirement window** — modern A/B path owns active rendering on desktop+tablet. Hygiene call: keep legacy as fallback or retire alongside `AudioPanel.tsx` once `useABLayout` defaults are confirmed. S audit / M delete.
+6. **`pstoff` mapping** — collected by `FontParser` but never played during retraction. One-line addition. S effort.
+7. **Library handle revocation flow** — if user denies permission on `hydrateLibrary`, store stays set in memory but reads fail. Should clear stale handle from IDB. S effort.
+
+### Test + typecheck state
+
+- Web: 2771/2771 passing (1 file touched, 0 new tests added — copy-only fix, 65 audio-related tests already cover the path)
+- Codegen / engine / sound / boards / presets: unchanged
+- 10/10 packages typecheck clean
+
+### Deferred from this session
+
+- Gap items 2–7 above. Each is small enough to land in a focused micro-sprint but not urgent. Best handled when Ken's next walking through the audio surface or a sibling concern.
+- The legacy `SoundFontPanel.tsx` warning fix is the only behavioural change in this session; if Ken decides to retire the legacy panel entirely (gap #5), this fix becomes moot.
+
+---
+
 ## Current State (2026-05-02, Fett263 import sprint — 4 versions shipped)
 
 Marathon session triggered by a single Reddit comment from `gschram92` on the launch post. The commenter said two things: (1) Fett263's editor has no save feature so iterating on saved configs is hard, and (2) when they tried KyberStation's import, "pretty much every library/style I use from fett263 is not integrated yet." Initial reading misread (1) as a KyberStation gap; mid-session re-read corrected it — the user has saved Fett263-generated config.h files on disk and wants KyberStation to be the editor that finally lets them save + iterate.
