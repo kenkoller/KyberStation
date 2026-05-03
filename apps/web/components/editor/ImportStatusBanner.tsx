@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUserPresetStore } from '@/stores/userPresetStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -53,6 +53,26 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
   const recentImportBatch = useUIStore((s) => s.recentImportBatch);
   const setRecentImportBatch = useUIStore((s) => s.setRecentImportBatch);
   const [saved, setSaved] = useState(false);
+
+  // Auto-scroll the banner into view whenever a new import lands. Tracks
+  // the `importedAt` timestamp so we re-scroll for each distinct import
+  // (e.g. switching presets in a multi-preset batch) but not on
+  // unrelated re-renders. Mobile UX audit (2026-05-02) caught that the
+  // banner was below-the-fold by default after Apply on phones — users
+  // saw the visualizer update but missed the "your import was preserved"
+  // affordance entirely.
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+  const lastScrolledForRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (!importedRawCode || importedRawCode.length === 0) return;
+    if (typeof importedAt !== 'number' || !Number.isFinite(importedAt)) return;
+    if (lastScrolledForRef.current === importedAt) return;
+    lastScrolledForRef.current = importedAt;
+    // rAF ensures layout has settled (banner just mounted) before scrolling.
+    requestAnimationFrame(() => {
+      bannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [importedRawCode, importedAt]);
 
   const relativeTime = useMemo(() => {
     if (typeof importedAt !== 'number' || !Number.isFinite(importedAt)) return null;
@@ -107,16 +127,21 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
 
   return (
     <div
+      ref={bannerRef}
       role="status"
       aria-label="Imported configuration status"
       data-testid="import-status-banner"
-      className="mb-3 px-3 py-2.5 rounded-panel border"
+      className="mb-3 px-3 py-2.5 rounded-panel border scroll-mt-3"
       style={{
         background: 'rgb(var(--badge-creative) / 0.1)',
         borderColor: 'rgb(var(--badge-creative) / 0.4)',
       }}
     >
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      {/* Mobile UX audit (2026-05-02): default to vertical stack so the
+          description has full width on phone + tablet (where Column B is
+          ~210-343px wide). Switch to horizontal at desktop+ where there's
+          room for description-left + actions-right side-by-side. */}
+      <div className="flex flex-col gap-3 desktop:flex-row desktop:items-start desktop:justify-between desktop:flex-wrap">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-ui-sm font-semibold uppercase tracking-widest"
                style={{ color: 'rgb(var(--badge-creative))' }}>

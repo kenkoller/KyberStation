@@ -207,6 +207,37 @@ describe('ImportStatusBanner', () => {
     expect(html).toContain('aria-label="Imported configuration status"');
   });
 
+  // ── Mobile UX audit (2026-05-02): responsive layout drift sentinels ──
+  it('inner row defaults to vertical stack on mobile (flex-col)', () => {
+    // The default (mobile + tablet) layout stacks description + buttons
+    // vertically so the description gets full width on narrow viewports.
+    // At ~343px container width, the previous flex-row layout crushed
+    // description text into an ~83px column (vertical word-strip).
+    stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    expect(html).toMatch(/class="[^"]*\bflex-col\b/);
+  });
+
+  it('inner row switches to horizontal at desktop+ (desktop:flex-row)', () => {
+    // Desktop+ keeps the description-left + actions-right side-by-side
+    // layout where the banner sits in a roomy right column.
+    stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    expect(html).toContain('desktop:flex-row');
+    expect(html).toContain('desktop:items-start');
+    expect(html).toContain('desktop:justify-between');
+  });
+
+  it('banner root carries scroll-mt for the auto-scroll-into-view anchor', () => {
+    // The `scrollIntoView({ block: 'start' })` effect lands the banner
+    // flush against its scroll-parent's top edge. `scroll-mt-3` adds a
+    // small breathing margin so the banner doesn't visually butt against
+    // a sticky header.
+    stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
+    const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+    expect(html).toContain('scroll-mt-3');
+  });
+
   // ── Phase 3.7: Save Preset button (discoverability fix) ──
   it('renders the Save Preset button when import is active', () => {
     stubState.config = { importedRawCode: 'StylePtr<Blue>()' };
