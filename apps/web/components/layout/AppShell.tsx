@@ -75,8 +75,8 @@ function TabletShell({
       {/* ── Tablet Header ───────────────────────────────────────────────── */}
       <header className="flex items-center justify-between px-3 py-2 border-b border-border-subtle bg-bg-secondary shrink-0">
         <h1 className="font-cinematic text-ui-sm font-bold tracking-[0.15em] select-none">
-          <span className="text-white">BLADE</span>
-          <span className="text-accent">FORGE</span>
+          <span className="text-white">KYBER</span>
+          <span className="text-accent">STATION</span>
         </h1>
 
         <div className="flex items-center gap-2">
