@@ -352,11 +352,21 @@ const GOLDEN_HARVEST_V3: BoardProfile = {
 
 // ── Preview-only profiles (CFX / Xenopixel / Verso) ───────────────────
 //
-// These boards use entirely different firmware (CFX = Plecter script,
-// Xenopixel = text config, Verso = JSON). KyberStation does not emit
-// for them; the profile exists so the Gallery + preview canvas can
-// show users what the blade *would* look like on that board, and the
-// modulation / export / flash paths stay hidden.
+// These boards use entirely different firmware ecosystems (CFX = Plecter
+// script, Xenopixel = preloaded effect files baked into firmware, Verso
+// = JSON). KyberStation does NOT generate flashable firmware for them.
+// The profile exists so:
+//   1. The Gallery + preview canvas can show users what their blade
+//      design would look like on that board.
+//   2. The Output → ZIP export path can produce a "design reference"
+//      bundle (config file documenting the user's intended colors +
+//      timings + a `KYBERSTATION_README.txt` explaining the contract)
+//      that helps users replicate the design via their board's actual
+//      configuration workflow (button menu, vendor app, SD card edits).
+//
+// "Preview-only" therefore means: editor + visualizer + design-reference
+// export work; modulation + native code generation + flash paths stay
+// hidden. Real flash always requires Proffieboard.
 //
 // All four share the same shape: empty feature arrays where we don't
 // support them, minimal hardware declaration, modulation hard-FALSE.

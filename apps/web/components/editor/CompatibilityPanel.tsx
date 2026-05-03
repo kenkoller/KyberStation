@@ -147,7 +147,7 @@ export function CompatibilityPanel() {
     <div className="space-y-3">
       <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
         Board Compatibility
-        <HelpTooltip text="Feature support across lightsaber soundboard platforms. KyberStation generates full native code for Proffieboard, with limited export for CFX, Golden Harvest, and Xenopixel. Budget boards show what KyberStation features apply to your hardware." />
+        <HelpTooltip text="Feature support across lightsaber soundboard platforms. KyberStation generates flashable ProffieOS code for Proffieboard, and design-reference exports (not flashable firmware) for CFX, Golden Harvest, and Xenopixel. Budget boards show what KyberStation features apply to your hardware." />
       </h3>
 
       {/* Filters */}
@@ -237,9 +237,10 @@ export function CompatibilityPanel() {
       </div>
 
       <p className="text-ui-xs text-text-muted">
-        KyberStation generates native ProffieOS C++ code with full config.h export. CFX, Golden Harvest, and Xenopixel boards
-        get simplified style export. Budget boards (Asteria, SN-Pixel, S-RGB) show which KyberStation features apply
-        to your hardware. Baselit boards support color selection only.
+        KyberStation generates native ProffieOS C++ code with full config.h export — flashable on Proffieboard V2/V3 hardware.
+        CFX, Golden Harvest, and Xenopixel boards get a <em>design-reference</em> export only: a structured config file documenting your colors, ignition timing, and style choices that you can use as a guide when configuring presets via your saber's button menu, vendor app, or SD card workflow.
+        These exports are not flashable firmware — Xenopixel's preloaded-effect architecture in particular precludes external configuration.
+        Budget boards (Asteria, SN-Pixel, S-RGB) show which KyberStation features apply to your hardware. Baselit boards support color selection only.
       </p>
     </div>
   );
