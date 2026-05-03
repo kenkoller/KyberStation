@@ -187,10 +187,15 @@ export const useBladeStore = create<BladeStore>((set) => ({
       // export. Using delete on a frozen object would throw under strict
       // mode; omitting via destructuring + spread keeps the operation
       // immutable and avoids leaking the typing escape hatch.
+      // altPhaseColors + detectedEffectIds are import-time read-only
+      // surfaces — once the user converts to native, the visualizer
+      // becomes the source of truth, so they're cleared too.
       const {
         importedRawCode: _importedRawCode,
         importedAt: _importedAt,
         importedSource: _importedSource,
+        altPhaseColors: _altPhaseColors,
+        detectedEffectIds: _detectedEffectIds,
         ...rest
       } = state.config;
       return { config: rest };

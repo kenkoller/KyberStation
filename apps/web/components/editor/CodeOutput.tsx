@@ -81,6 +81,17 @@ export function applyReconstructedConfig(
     preonMs: cppResult.preonMs,
     shimmer: 0,
     ledCount: ledCount || 144,
+    // Sprint 5C plumbing (2026-05-03): surface alternate-phase colors +
+    // detected effect ids on the BladeConfig so ImportStatusBanner can
+    // show a summary chip-line. Only attach when non-empty so configs
+    // without a ColorChange wrapper / EFFECT_* layers don't carry
+    // empty arrays through the persistence pipeline.
+    ...(cppResult.altPhaseColors && cppResult.altPhaseColors.length > 0
+      ? { altPhaseColors: cppResult.altPhaseColors }
+      : {}),
+    ...(cppResult.detectedEffectIds && cppResult.detectedEffectIds.length > 0
+      ? { detectedEffectIds: cppResult.detectedEffectIds }
+      : {}),
     ...(hasRawCode
       ? {
           importedRawCode: trimmedRaw,

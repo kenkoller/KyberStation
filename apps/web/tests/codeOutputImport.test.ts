@@ -241,4 +241,97 @@ describe('CodeOutput import round-trip (v0.9.1 regression)', () => {
       expect(result.importedSource).toBe('Test');
     });
   });
+
+  // Sprint 5C plumbing (2026-05-03): the reconstructor surfaces
+  // altPhaseColors (from ColorChange/ColorSelect/ColorChangeL wrappers)
+  // and detectedEffectIds (from TransitionEffectL<EFFECT_*, ...> layers).
+  // applyReconstructedConfig must pass these through onto BladeConfig so
+  // ImportStatusBanner can render the detection-summary chip-line.
+  describe('Sprint 5C — altPhaseColors + detectedEffectIds passthrough', () => {
+    const baseCppResult = {
+      baseColor: { r: 0, g: 140, b: 255 },
+      confidence: 0.7,
+      warnings: [],
+      rawAST: { type: 'raw' as const, name: 'Blue', args: [] },
+    };
+
+    it('passes altPhaseColors through when non-empty', () => {
+      const cppResult = {
+        ...baseCppResult,
+        altPhaseColors: [
+          { r: 255, g: 0, b: 0 },
+          { r: 0, g: 255, b: 0 },
+        ],
+      };
+      const result = applyReconstructedConfig(cppResult, 144);
+      expect(result.altPhaseColors).toEqual([
+        { r: 255, g: 0, b: 0 },
+        { r: 0, g: 255, b: 0 },
+      ]);
+    });
+
+    it('does NOT attach altPhaseColors when undefined on cppResult', () => {
+      const result = applyReconstructedConfig(baseCppResult, 144);
+      expect('altPhaseColors' in result).toBe(false);
+    });
+
+    it('does NOT attach altPhaseColors when empty array on cppResult', () => {
+      const cppResult = { ...baseCppResult, altPhaseColors: [] };
+      const result = applyReconstructedConfig(cppResult, 144);
+      expect('altPhaseColors' in result).toBe(false);
+    });
+
+    it('passes detectedEffectIds through when non-empty', () => {
+      const cppResult = {
+        ...baseCppResult,
+        detectedEffectIds: ['EFFECT_PREON', 'EFFECT_BOOT', 'EFFECT_FORCE'],
+      };
+      const result = applyReconstructedConfig(cppResult, 144);
+      expect(result.detectedEffectIds).toEqual([
+        'EFFECT_PREON',
+        'EFFECT_BOOT',
+        'EFFECT_FORCE',
+      ]);
+    });
+
+    it('does NOT attach detectedEffectIds when undefined on cppResult', () => {
+      const result = applyReconstructedConfig(baseCppResult, 144);
+      expect('detectedEffectIds' in result).toBe(false);
+    });
+
+    it('does NOT attach detectedEffectIds when empty array on cppResult', () => {
+      const cppResult = { ...baseCppResult, detectedEffectIds: [] };
+      const result = applyReconstructedConfig(cppResult, 144);
+      expect('detectedEffectIds' in result).toBe(false);
+    });
+
+    it('passes both fields through together when both present', () => {
+      const cppResult = {
+        ...baseCppResult,
+        altPhaseColors: [{ r: 255, g: 200, b: 100 }],
+        detectedEffectIds: ['EFFECT_USER1'],
+      };
+      const result = applyReconstructedConfig(cppResult, 144);
+      expect(result.altPhaseColors).toEqual([{ r: 255, g: 200, b: 100 }]);
+      expect(result.detectedEffectIds).toEqual(['EFFECT_USER1']);
+    });
+
+    it('coexists with importedRawCode + importedSource', () => {
+      const cppResult = {
+        ...baseCppResult,
+        altPhaseColors: [{ r: 100, g: 100, b: 100 }],
+        detectedEffectIds: ['EFFECT_PREON'],
+      };
+      const result = applyReconstructedConfig(
+        cppResult,
+        144,
+        'StylePtr<...>()',
+        'Fett263 OS7 Style Library',
+      );
+      expect(result.altPhaseColors).toEqual([{ r: 100, g: 100, b: 100 }]);
+      expect(result.detectedEffectIds).toEqual(['EFFECT_PREON']);
+      expect(result.importedRawCode).toBe('StylePtr<...>()');
+      expect(result.importedSource).toBe('Fett263 OS7 Style Library');
+    });
+  });
 });
