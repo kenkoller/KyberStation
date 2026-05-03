@@ -19,6 +19,8 @@ interface StubConfig {
   importedAt?: number;
   importedSource?: string;
   name?: string;
+  altPhaseColors?: Array<{ r: number; g: number; b: number }>;
+  detectedEffectIds?: string[];
 }
 
 const stubState = vi.hoisted(() => ({
@@ -362,6 +364,182 @@ describe('ImportStatusBanner', () => {
       const html = renderToStaticMarkup(createElement(ImportStatusBanner));
       expect(html).toContain('for="import-banner-preset-select"');
       expect(html).toContain('id="import-banner-preset-select"');
+    });
+  });
+
+  // Sprint 5C surface (2026-05-03): the parser already populates
+  // altPhaseColors + detectedEffectIds on ReconstructedConfig and
+  // applyReconstructedConfig now plumbs them onto BladeConfig. The
+  // banner shows a chip-line so users can see at a glance what the
+  // imported style cycles through and which effect events it hooks.
+  describe('detection summary (altPhaseColors + detectedEffectIds)', () => {
+    it('does NOT render the summary when neither field is present', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).not.toContain('data-testid="import-banner-detection-summary"');
+    });
+
+    it('does NOT render the summary when both fields are empty arrays', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<Blue>()',
+        altPhaseColors: [],
+        detectedEffectIds: [],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).not.toContain('data-testid="import-banner-detection-summary"');
+    });
+
+    it('renders alt-phase swatches with rgb backgrounds', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<ColorChange<TR, Blue, Red, Green>>()',
+        altPhaseColors: [
+          { r: 255, g: 0, b: 0 },
+          { r: 0, g: 255, b: 0 },
+        ],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('data-testid="import-banner-detection-summary"');
+      expect(html).toContain('data-testid="alt-phase-swatches"');
+      expect(html).toContain('background:rgb(255, 0, 0)');
+      expect(html).toContain('background:rgb(0, 255, 0)');
+    });
+
+    it('uses singular "phase" when there is exactly one alt phase', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        altPhaseColors: [{ r: 255, g: 0, b: 255 }],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('1 alt phase:');
+      expect(html).not.toContain('1 alt phases:');
+    });
+
+    it('uses plural "phases" for 2+ alt phases', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        altPhaseColors: [
+          { r: 255, g: 0, b: 0 },
+          { r: 0, g: 0, b: 255 },
+          { r: 0, g: 255, b: 0 },
+        ],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('3 alt phases:');
+    });
+
+    it('caps swatches at 6 and shows +N overflow chip', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        altPhaseColors: [
+          { r: 1, g: 1, b: 1 },
+          { r: 2, g: 2, b: 2 },
+          { r: 3, g: 3, b: 3 },
+          { r: 4, g: 4, b: 4 },
+          { r: 5, g: 5, b: 5 },
+          { r: 6, g: 6, b: 6 },
+          { r: 7, g: 7, b: 7 },
+          { r: 8, g: 8, b: 8 },
+        ],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('8 alt phases:');
+      expect(html).toContain('+2');
+    });
+
+    it('renders detected effect ids with EFFECT_ prefix stripped', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        detectedEffectIds: ['EFFECT_PREON', 'EFFECT_BOOT', 'EFFECT_FORCE'],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('3 effects:');
+      expect(html).toContain('PREON');
+      expect(html).toContain('BOOT');
+      expect(html).toContain('FORCE');
+      // Stripped, not present as raw EFFECT_PREON in the visible chip text
+      expect(html).toContain('PREON, BOOT, FORCE');
+    });
+
+    it('uses singular "effect" when there is exactly one detected effect', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        detectedEffectIds: ['EFFECT_PREON'],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('1 effect:');
+      expect(html).not.toContain('1 effects:');
+    });
+
+    it('caps effect-id chip text at 4 ids and shows +N suffix', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        detectedEffectIds: [
+          'EFFECT_PREON',
+          'EFFECT_BOOT',
+          'EFFECT_FORCE',
+          'EFFECT_QUOTE',
+          'EFFECT_USER1',
+          'EFFECT_USER2',
+        ],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('6 effects:');
+      expect(html).toContain('+2');
+    });
+
+    it('puts the full id list in the title attribute for hover discovery', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        detectedEffectIds: ['EFFECT_PREON', 'EFFECT_BOOT'],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      // The full original list (with EFFECT_ prefix) should appear in title
+      expect(html).toContain('title="EFFECT_PREON, EFFECT_BOOT"');
+    });
+
+    it('renders both alt-phase + effect rows when both are present', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        altPhaseColors: [{ r: 100, g: 200, b: 50 }],
+        detectedEffectIds: ['EFFECT_PREON'],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('1 alt phase:');
+      expect(html).toContain('1 effect:');
+    });
+
+    it('renders only effects when only detectedEffectIds is present', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        detectedEffectIds: ['EFFECT_BOOT'],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('data-testid="import-banner-detection-summary"');
+      expect(html).toContain('1 effect:');
+      expect(html).not.toContain('alt phase');
+    });
+
+    it('renders only alt phases when only altPhaseColors is present', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        altPhaseColors: [{ r: 255, g: 200, b: 100 }],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('data-testid="import-banner-detection-summary"');
+      expect(html).toContain('1 alt phase:');
+      expect(html).not.toContain('effects:');
+      expect(html).not.toContain('1 effect:');
+    });
+
+    it('summary has descriptive aria-label for screen readers', () => {
+      stubState.config = {
+        importedRawCode: 'StylePtr<...>()',
+        altPhaseColors: [{ r: 255, g: 0, b: 0 }],
+      };
+      const html = renderToStaticMarkup(createElement(ImportStatusBanner));
+      expect(html).toContain('aria-label="Detected style features"');
     });
   });
 });

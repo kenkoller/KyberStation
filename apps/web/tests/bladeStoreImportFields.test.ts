@@ -131,4 +131,56 @@ describe('bladeStore.convertImportToNative', () => {
     expect(afterTwice.baseColor).toEqual(afterOnce.baseColor);
     expect('importedRawCode' in afterTwice).toBe(false);
   });
+
+  // Sprint 5C (2026-05-03): the parser-detected fields are import-time
+  // read-only surfaces. Once the user converts to native, the visualizer
+  // becomes the source of truth, so detection metadata is cleared too.
+  it('strips altPhaseColors from the active config', () => {
+    useBladeStore.setState({
+      config: {
+        ...INITIAL_CONFIG,
+        importedRawCode: 'StylePtr<ColorChange<TR, A, B, C>>()',
+        altPhaseColors: [
+          { r: 255, g: 0, b: 0 },
+          { r: 0, g: 255, b: 0 },
+        ],
+      },
+    });
+    useBladeStore.getState().convertImportToNative();
+    const after = useBladeStore.getState().config;
+    expect('altPhaseColors' in after).toBe(false);
+  });
+
+  it('strips detectedEffectIds from the active config', () => {
+    useBladeStore.setState({
+      config: {
+        ...INITIAL_CONFIG,
+        importedRawCode: 'StylePtr<...>()',
+        detectedEffectIds: ['EFFECT_PREON', 'EFFECT_BOOT'],
+      },
+    });
+    useBladeStore.getState().convertImportToNative();
+    const after = useBladeStore.getState().config;
+    expect('detectedEffectIds' in after).toBe(false);
+  });
+
+  it('strips all five import-related fields atomically when all are set', () => {
+    useBladeStore.setState({
+      config: {
+        ...INITIAL_CONFIG,
+        importedRawCode: 'StylePtr<...>()',
+        importedAt: 1714694400000,
+        importedSource: 'Test',
+        altPhaseColors: [{ r: 100, g: 200, b: 50 }],
+        detectedEffectIds: ['EFFECT_USER1'],
+      },
+    });
+    useBladeStore.getState().convertImportToNative();
+    const after = useBladeStore.getState().config;
+    expect('importedRawCode' in after).toBe(false);
+    expect('importedAt' in after).toBe(false);
+    expect('importedSource' in after).toBe(false);
+    expect('altPhaseColors' in after).toBe(false);
+    expect('detectedEffectIds' in after).toBe(false);
+  });
 });

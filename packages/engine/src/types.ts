@@ -372,6 +372,26 @@ export interface BladeConfig {
    * Optional — UI falls back to a generic "Imported" label when absent.
    */
   importedSource?: string;
+  /**
+   * Alternate-phase colors recovered by the parser from `ColorChange`,
+   * `ColorSelect`, or `ColorChangeL` wrappers in the imported style. The
+   * first color goes to `baseColor`; these are the additional phases the
+   * preset cycles through on hardware. Surfaced in the import banner so
+   * users can see at a glance "this preset has N alt phases" before they
+   * click into the live preview. Empty array / undefined when the
+   * imported style has no color-change wrapper. Future: visualizer
+   * overlay to cycle the live preview between phases.
+   */
+  altPhaseColors?: RGB[];
+  /**
+   * Effect events the imported style references — recovered from
+   * `TransitionEffectL<EFFECT_TYPE, ...>` and similar layer wrappers.
+   * Examples: `EFFECT_PREON`, `EFFECT_BOOT`, `EFFECT_FORCE`,
+   * `EFFECT_QUOTE`, `EFFECT_USER1..4`. Surfaced in the import banner so
+   * users know which event hooks the preset is wired for. Future:
+   * visualizer flash overlays per detected event.
+   */
+  detectedEffectIds?: string[];
 
   // ── Spatial Lockup (Edit Mode) ──
   /** Lockup centre position along the blade, 0..1. 0 = hilt, 1 = tip. Undefined = non-positional (runtime default). */

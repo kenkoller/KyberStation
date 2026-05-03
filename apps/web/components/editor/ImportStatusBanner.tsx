@@ -163,6 +163,68 @@ export function ImportStatusBanner({ nowMs }: ImportStatusBannerProps) {
             update the preview only — they won&apos;t change the exported
             code until you convert.
           </div>
+          {/* Sprint 5C surface (2026-05-03): show what the parser
+              detected in the imported style — alternate color phases
+              from ColorChange/ColorSelect/ColorChangeL wrappers + effect
+              event hooks like EFFECT_PREON / EFFECT_BOOT / EFFECT_USER*.
+              Read-only, advisory; future visualizer overlays will let
+              users cycle through phases + flash detected effects. */}
+          {((config.altPhaseColors && config.altPhaseColors.length > 0) ||
+            (config.detectedEffectIds && config.detectedEffectIds.length > 0)) && (
+            <div
+              className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-ui-xs"
+              data-testid="import-banner-detection-summary"
+              aria-label="Detected style features"
+            >
+              {config.altPhaseColors && config.altPhaseColors.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-text-secondary">
+                    {config.altPhaseColors.length} alt
+                    {config.altPhaseColors.length === 1 ? ' phase' : ' phases'}:
+                  </span>
+                  <span className="flex items-center gap-1" data-testid="alt-phase-swatches">
+                    {config.altPhaseColors.slice(0, 6).map((rgb, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-block w-3 h-3 rounded-sm border"
+                        style={{
+                          background: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+                          borderColor: 'rgb(var(--border-light))',
+                        }}
+                        title={`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`}
+                        aria-label={`Alt phase color ${idx + 1}`}
+                      />
+                    ))}
+                    {config.altPhaseColors.length > 6 && (
+                      <span className="text-text-secondary">
+                        +{config.altPhaseColors.length - 6}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+              {config.detectedEffectIds && config.detectedEffectIds.length > 0 && (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-text-secondary shrink-0">
+                    {config.detectedEffectIds.length} effect
+                    {config.detectedEffectIds.length === 1 ? '' : 's'}:
+                  </span>
+                  <span
+                    className="font-mono text-text-secondary truncate"
+                    data-testid="detected-effect-ids"
+                    title={config.detectedEffectIds.join(', ')}
+                  >
+                    {config.detectedEffectIds
+                      .slice(0, 4)
+                      .map((id) => id.replace(/^EFFECT_/, ''))
+                      .join(', ')}
+                    {config.detectedEffectIds.length > 4 &&
+                      ` +${config.detectedEffectIds.length - 4}`}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
           {/* Sprint 5E: per-preset switcher. When the most recent
               import was a multi-preset batch (e.g. 3 presets from a
               full config.h paste), let users flip the visualizer
