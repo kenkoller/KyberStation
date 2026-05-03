@@ -44,7 +44,14 @@ export const BLADE_LENGTHS: BladeLengthOption[] = CANONICAL_BLADE_LENGTHS.map(
   }),
 );
 
-export type BoardId = 'proffie-v3' | 'proffie-v2' | 'cfx' | 'gh-v4' | 'gh-v3';
+export type BoardId =
+  | 'proffie-v3'
+  | 'proffie-v2'
+  | 'cfx'
+  | 'gh-v4'
+  | 'gh-v3'
+  | 'xenopixel-v3'
+  | 'xenopixel-v2';
 
 /**
  * Hardware-compatibility tier for the wizard's board picker.
@@ -106,6 +113,20 @@ export const BOARDS: BoardOption[] = [
     storeValue: 'GH V3',
     compatibility: 'reference',
     tagline: 'Editor + reference only — flash needs Proffie.',
+  },
+  {
+    id: 'xenopixel-v3',
+    label: 'Xenopixel V3',
+    storeValue: 'Xenopixel V3',
+    compatibility: 'reference',
+    tagline: 'Editor + design reference. Xenopixel uses preloaded effect files.',
+  },
+  {
+    id: 'xenopixel-v2',
+    label: 'Xenopixel V2',
+    storeValue: 'Xenopixel V2',
+    compatibility: 'reference',
+    tagline: 'Editor + design reference. Xenopixel uses preloaded effect files.',
   },
 ];
 
