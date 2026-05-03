@@ -543,6 +543,47 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-02 evening, post-Fett263-sprint cleanup wave)
+
+Three small focused PRs landed after the v0.20.0 cut, addressing UX rough edges exposed by the import sprint and adding community-feedback infrastructure. Tip is `39e5732` (PR #273 merge); no open PRs; working tree clean.
+
+| PR | Time (UTC) | Scope |
+|---|---|---|
+| [#271](https://github.com/kenkoller/KyberStation/pull/271) | 19:13 | **Persist `recentImportBatch` + restore banner on reload.** New `kyberstation-recent-import-batch` localStorage key + `useImportBatchHydration` hook mounted at editor page level. Closes the v0.20.0 "Still open" item #3 — the per-preset switcher banner is now durable across page reloads. Defensive load (non-array reads return null); save on every `setRecentImportBatch`; null/empty array removes the key. |
+| [#272](https://github.com/kenkoller/KyberStation/pull/272) | 19:39 | **Hide Analyze toggle on `compact` BladeCanvas + remove rgb-luma rail from MobileShell.** Two related mobile-shell cleanups Ken flagged after v0.20.1 (informal subversion). The Analyze button at `bottom-2 left-2` overlapped the 64px-tall mini-blade canvas; gate widened from `!panelMode && !mobileFullscreen` to `!panelMode && !mobileFullscreen && !compact` (also takes care of the redundant tablet-AppShell mount that duplicated `VisualizationToolbar`). The 56px rgb-luma analysis rail in the mobile scroll body was removed wholesale — read as visually duplicate of the sticky pixel strip + waveforms hugged the baseline at typical pixel values. Side cleanup: `LayerCanvas` import + `pixelBufRef`/`ledCount`/`isPaused`/`reducedMotion` reads + `useAccessibilityStore` import all dropped (removed rail was the only consumer). Test gate flipped from "asserts rail mounts" to "asserts rail does NOT mount." Browser-verified at 375 / 1203 / 1440px. |
+| [#273](https://github.com/kenkoller/KyberStation/pull/273) | 22:56 | **`import_failure` issue template + Report-a-failing-config affordance.** New community-feedback path so future Fett263 import users can report a failing config in one click instead of going through generic-bug-report friction. The affordance lands inline in the import banner where users hit the failure mode. |
+
+### What this means for the import workflow loop
+
+The 2026-05-02 marathon was triggered by gschram92's Reddit comment that the import "didn't recognize most of [their] Fett263 library." Sprint 5A-5E closed the import-recognition gap; PRs #271 + #272 + #273 closed three smaller-but-real UX rough edges that surfaced once the import flow was actually usable end-to-end:
+
+- **#271** — paste config → import → reload page → switcher gone. Fixed.
+- **#272** — paste config on phone → mini-blade obscured by an unfindable Analyze button + rgb-luma rail showed an empty band. Fixed.
+- **#273** — paste config that doesn't recognize → user has no clear path to tell us. Fixed (one-click issue-template prefill).
+
+Nothing in the import path itself shipped after v0.20.0; these are pure post-sprint polish + community-loop infrastructure.
+
+### Test deltas
+
+Workspace test counts effectively unchanged from v0.20.0 (PR #271 added a small handful of localStorage round-trip cases, PR #272 inverted one assertion net -3, PR #273 is template + UI affordance with no testable engine logic). 10/10 packages typecheck + test green at session wrap.
+
+### Cleanup status
+
+No new agent worktrees this session. The 9 older worktrees from prior sessions still locked under `.claude/worktrees/` are untouched per cross-session coordination rules. Working tree clean on `main` at `39e5732`.
+
+### What's actually next (refreshed)
+
+The "Still open" list at the end of the v0.20.0 entry below has been updated in-place to reflect that item #3 (switcher persistence) shipped via PR #271 and the Analyze/rgb-luma slice of item #5 (mobile UX iterations) shipped via PR #272. The remaining genuinely-open candidates, ordered by value:
+
+1. **Lexer hardening** — the 2 `it.todo` corpus fixtures need EASYBLADE macro support (paren-as-template-syntax fallback or a dedicated macro registry). Non-trivial; a focused multi-hour session.
+2. **`altPhaseColors` + `detectedEffectIds` UI surface** — Sprint 5C plumbing exists; needs visualizer overlay design + wiring.
+3. **More Fett263 corpus** — 7 templates flagged by Sprint 5B's `_NEW_TEMPLATES_FOR_5A.md`. Re-audit against current registry first; some may have landed via 5A re-dispatch.
+4. **Marketing site PR #32 rebase** — open since pre-launch, needs focused rebase against the 200+ PRs that have shipped since.
+5. **Sound font work** — none currently scheduled; surface area open.
+6. **Mobile shell migration to Sidebar + MainContent** — separate, larger UX call (drawer vs bottom-sheet at 375px) per `docs/POST_LAUNCH_BACKLOG.md` v0.15.x table.
+
+---
+
 ## Current State (2026-05-02 evening, post-import-sprint mobile UX audit)
 
 Audit-only session in a fresh worktree (`claude/cool-williamson-bb756a`,
@@ -748,11 +789,11 @@ Paste a saved Fett263 `config.h` (3-preset Obi-Wan + Maul + Mace, e.g.) into the
 
 The Fett263 import surface is in a genuinely complete state for the commenter's stated workflow. The natural follow-ups, ordered by value:
 
-1. **Lexer hardening** — close the 2 remaining `it.todo` corpus fixtures (`legacy-inoutsparktip-easyblade.txt` uses `EASYBLADE(BLUE,WHITE)` C-preprocessor macros; `ronin-force-pulse-os7.txt` has unmatched `>` in source). Each fix unlocks more real-world configs.
+1. **Lexer hardening** — close the 2 remaining `it.todo` corpus fixtures (`legacy-inoutsparktip-easyblade.txt` uses `EASYBLADE(BLUE,WHITE)` C-preprocessor macros; `ronin-force-pulse-os7.txt` has unmatched `>` in source). Each fix unlocks more real-world configs. Both are non-trivial — EASYBLADE needs a macro registry/expander or a paren-as-template-syntax fallback in the lexer.
 2. **Wire `altPhaseColors` + `detectedEffectIds` into `BladeConfig` + UI** — Sprint 5C surfaces these on `ReconstructedConfig` but they're not yet visible to users. Future visualizer overlays can render flash effects per detected `EFFECT_*` event.
-3. **Per-preset switcher persistence** — today the switcher is ephemeral (cleared on reload). Adding ~200 bytes to localStorage would survive page reloads. Small, focused.
+3. ~~**Per-preset switcher persistence**~~ — **✅ Shipped via [PR #271](https://github.com/kenkoller/KyberStation/pull/271) on 2026-05-02 afternoon.** New `kyberstation-recent-import-batch` localStorage key + `useImportBatchHydration` hook restores the switcher banner across page reloads.
 4. **More Fett263 corpus** — 7 templates flagged by Sprint 5B's `_NEW_TEMPLATES_FOR_5A.md` were noted but not all caught by 5A re-dispatch (`PulsingL`, `PulsingF`, `SmoothSoundLevel`, `VolumeLevel`, `Percentage`, `BendTimePowX`, `TrCenterWipeInSpark` — though the actual gap should be re-audited against the registry post-merge).
-5. **Outside Fett263 import territory:** Marketing site PR #32 (open since pre-launch, needs focused rebase), mobile UX iterations, sound font work.
+5. **Outside Fett263 import territory:** Marketing site PR #32 (open since pre-launch, needs focused rebase), sound font work. ~~Mobile UX iterations~~ — partial: the Analyze-button overlap + rgb-luma duplicate-rail fixes shipped via [PR #272](https://github.com/kenkoller/KyberStation/pull/272) on 2026-05-02 afternoon. Larger mobile shell migration to Sidebar + MainContent (P5 from `POST_LAUNCH_BACKLOG.md`) still needs a UX call from Ken on drawer vs bottom-sheet at 375px.
 
 ### Cleanup status
 
