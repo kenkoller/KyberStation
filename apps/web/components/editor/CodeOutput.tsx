@@ -492,11 +492,11 @@ export function CodeOutput() {
 
       <p className="text-ui-xs text-text-muted mt-2">
         {!hasCodegen ? (
-          `${profileBoard} does not support custom code generation. KyberStation can preview styles, but code export is available for Proffie, CFX, Golden Harvest, and Xenopixel boards.`
+          `${profileBoard} does not support custom code generation. KyberStation can preview styles, and produces flashable code for Proffie boards. CFX, Golden Harvest, and Xenopixel get a design-reference export only — see ZIP README for usage.`
         ) : isMultiPreset ? (
-          `Complete config for ${profileBoard} with ${presetListEntries.length} preset(s) in order.${isProffie ? ' Ready to flash with ProffieOS 7.x.' : ''}`
+          `Complete config for ${profileBoard} with ${presetListEntries.length} preset(s) in order.${isProffie ? ' Ready to flash with ProffieOS 7.x.' : ' Design-reference only — not flashable firmware. See ZIP README for usage.'}`
         ) : (
-          `Generated for ${profileBoard}.${isProffie ? ' Paste into your config.h presets[] array. AST-validated with balanced angle brackets.' : ' Export format depends on board.'}`
+          `Generated for ${profileBoard}.${isProffie ? ' Paste into your config.h presets[] array. AST-validated with balanced angle brackets.' : ' Design reference, not flashable firmware. ZIP export includes a README explaining how to apply these values to your board.'}`
         )}
       </p>
 
