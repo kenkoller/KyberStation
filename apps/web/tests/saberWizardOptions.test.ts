@@ -93,12 +93,45 @@ describe('SaberWizard BOARDS', () => {
   });
 
   it('non-Proffie boards are reference-only', () => {
-    // CFX / GH live in different firmware ecosystems entirely; the
-    // generated ProffieOS config.h won't run on them.
-    for (const id of ['cfx', 'gh-v4', 'gh-v3'] as const) {
+    // CFX / GH / Xenopixel live in different firmware ecosystems entirely;
+    // the generated ProffieOS config.h won't run on them.
+    for (const id of [
+      'cfx',
+      'gh-v4',
+      'gh-v3',
+      'xenopixel-v3',
+      'xenopixel-v2',
+    ] as const) {
       const b = BOARDS.find((board) => board.id === id);
       expect(b?.compatibility).toBe('reference');
     }
+  });
+
+  it('includes Xenopixel V3 + V2 (popular budget board, was missing pre-2026-05-03)', () => {
+    // Xenopixel is one of the most common saber boards in the hobby
+    // (budget-friendly, popular with first-time builders) but was absent
+    // from the wizard step 1 picker until 2026-05-03. Its onboarding
+    // path was "skip wizard → find in profile manager later" which is a
+    // poor first-run experience for the most-popular budget board.
+    const xv3 = BOARDS.find((b) => b.id === 'xenopixel-v3');
+    const xv2 = BOARDS.find((b) => b.id === 'xenopixel-v2');
+    expect(xv3?.storeValue).toBe('Xenopixel V3');
+    expect(xv2?.storeValue).toBe('Xenopixel V2');
+    // Xenopixel's tagline is honest about the design-reference limitation
+    // (preloaded effect files, not flashable from C++ config).
+    expect(xv3?.tagline.toLowerCase()).toContain('preloaded');
+    expect(xv2?.tagline.toLowerCase()).toContain('preloaded');
+  });
+
+  it('Xenopixel storeValue strings match SaberProfileManager + CodeOutput keys', () => {
+    // CodeOutput.tsx:211 lists 'Xenopixel V3' / 'Xenopixel V2' as
+    // recognized board names, and SaberProfileManager.tsx renders the
+    // same option labels. If wizard storeValue drifts, profile import
+    // round-trips would fail validation.
+    const xv3 = BOARDS.find((b) => b.id === 'xenopixel-v3');
+    const xv2 = BOARDS.find((b) => b.id === 'xenopixel-v2');
+    expect(xv3?.storeValue).toBe('Xenopixel V3');
+    expect(xv2?.storeValue).toBe('Xenopixel V2');
   });
 
   it('storeValue for Proffie V3 / V2 matches CodeOutput board-name keys', () => {
@@ -120,11 +153,22 @@ describe('SaberWizard BOARDS', () => {
     }
   });
 
-  it('reference boards mention Proffie in their tagline', () => {
+  it('reference boards explain the limitation in their tagline', () => {
+    // Original rule was "must mention Proffie" — works for CFX/GH because
+    // Proffie is the closest-equivalent Neopixel board users could flash
+    // KyberStation's output on. But Xenopixel users would never flash via
+    // Proffie (different SD card workflow entirely), so its tagline is
+    // honest about the actual limitation: preloaded effect files. Either
+    // phrasing is acceptable as long as the limitation is surfaced.
     const refOnly = BOARDS.filter((b) => b.compatibility === 'reference');
     expect(refOnly.length).toBeGreaterThan(0);
     for (const b of refOnly) {
-      expect(b.tagline.toLowerCase()).toContain('proffie');
+      const tagline = b.tagline.toLowerCase();
+      const explainsLimitation =
+        tagline.includes('proffie') ||
+        tagline.includes('preloaded') ||
+        tagline.includes('reference');
+      expect(explainsLimitation, `${b.id} tagline must explain limitation: "${b.tagline}"`).toBe(true);
     }
   });
 
