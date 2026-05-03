@@ -225,7 +225,20 @@ class Parser {
           }
         }
 
-        this.expect('CLOSE_ANGLE');
+        // Missing close at EOF: real-world Fett263 sources sometimes ship
+        // with a stray-bracket typo (e.g. `BC_Ronin_fett263_7.x.h` is
+        // under-closed by one `>`). Downgrade to a warning so the partial
+        // AST still flows through; the import path preserves the raw code
+        // verbatim regardless of reconstruction fidelity.
+        if (this.peek().type === 'CLOSE_ANGLE') {
+          this.advance();
+        } else {
+          this.warnings.push({
+            message: `Unclosed angle bracket in "${name}<...>" — source may be missing a '>'.`,
+            position: nameToken.position,
+            template: name,
+          });
+        }
 
         // Optional trailing () — e.g., StylePtr<...>()
         if (this.peek().type === 'OPEN_PAREN') {
@@ -237,6 +250,53 @@ class Parser {
         // Non-fatal warnings only — validation never prevents a parse from
         // succeeding. Unknown templates still parse as generic nodes so
         // downstream can at least display them.
+        this.validateTemplate(name, args, nameToken.position);
+
+        return {
+          type: this.classifyNode(name),
+          name,
+          args,
+        };
+      }
+
+      // C-preprocessor macro syntax: NAME(arg1, arg2, ...)
+      // ProffieOS preset-builder macros from `style_defaults.h` —
+      // EASYBLADE, SIMPLE_BLADE, STANDARD_BLADE — invoke with parens
+      // rather than angle brackets. Parse the same way as <args>; the
+      // round-trip path preserves the original raw code verbatim, so
+      // we only need a non-erroring parse to keep the import flow alive.
+      if (this.peek().type === 'OPEN_PAREN') {
+        this.advance(); // consume '('
+        const args: StyleNode[] = [];
+
+        while (this.peek().type !== 'CLOSE_PAREN' && this.peek().type !== 'EOF') {
+          const arg = this.parseExpression();
+          if (arg) {
+            args.push(arg);
+          } else {
+            while (
+              this.peek().type !== 'COMMA' &&
+              this.peek().type !== 'CLOSE_PAREN' &&
+              this.peek().type !== 'EOF'
+            ) {
+              this.advance();
+            }
+          }
+          if (this.peek().type === 'COMMA') {
+            this.advance();
+          }
+        }
+
+        if (this.peek().type === 'CLOSE_PAREN') {
+          this.advance();
+        } else {
+          this.warnings.push({
+            message: `Unclosed paren in "${name}(...)" — source may be missing a ')'.`,
+            position: nameToken.position,
+            template: name,
+          });
+        }
+
         this.validateTemplate(name, args, nameToken.position);
 
         return {

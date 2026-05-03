@@ -572,20 +572,17 @@ export function StatusBar({ mode = 'default' }: StatusBarProps = {}) {
 // Renders the inline BoardPicker as a StatusBar segment. The picker itself
 // reads + writes through `useBoardProfile` (localStorage-backed with
 // cross-tab sync via CustomEvent), so every capability-sensitive
-// consumer reacts in lockstep. Falls into the same Segment skeleton as
-// the rest of the bar (label + value wrapper) but replaces the value
-// with the compact picker button.
+// consumer reacts in lockstep.
+//
+// The picker's button already renders its own "BOARD · displayName" label
+// (BoardPicker.tsx:161), so we don't wrap it in a redundant outer "Board"
+// label here — that produced "Board  BOARD · Proffieboard V3.9" duplicates
+// in the rendered status bar (caught in 2026-05-02 mobile UX audit).
 
 function BoardSegment() {
   const { boardId, setBoardId } = useBoardProfile();
   return (
-    <div
-      className="flex items-baseline gap-1.5 px-2 shrink-0"
-      data-statusbar-board
-    >
-      <span className="text-[9px] font-mono uppercase tracking-[0.12em] text-text-muted">
-        Board
-      </span>
+    <div className="px-2 shrink-0" data-statusbar-board>
       <BoardPicker
         variant="inline"
         selectedBoardId={boardId}

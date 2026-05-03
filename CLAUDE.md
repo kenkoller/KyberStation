@@ -584,6 +584,150 @@ The "Still open" list at the end of the v0.20.0 entry below has been updated in-
 
 ---
 
+## Current State (2026-05-02 evening, post-import-sprint mobile UX audit)
+
+Audit-only session in a fresh worktree (`claude/cool-williamson-bb756a`,
+cut from `main` at `39e5732` — i.e. post-v0.20.0 with all 14
+import-sprint PRs merged). Goal: surface findings on three remaining
+mobile-handoff items, NOT ship fixes. Deliverable: [`docs/MOBILE_UX_AUDIT_2026-05-02.md`](docs/MOBILE_UX_AUDIT_2026-05-02.md)
+— self-contained, ~250 lines, ready for Ken's triage.
+
+### What the audit covered
+
+1. **Diagnostic strip §Q3 segment-set decision** (recurring Q-call from
+   the launch-day session). Live measurement at 375 px: scrollWidth
+   1337 px in 373 px container — ≈75% of segments require horizontal
+   swipe to reach.
+2. **Sub-1024 responsive cleanup** (Ken's #2 from v0.15.x field notes).
+   Walked 768 / 900 / 1023 / 1024 boundaries.
+3. **ImportStatusBanner mobile collision** with v0.20.0's banner
+   mounted at `CodeOutput.tsx:430` → `OutputColumnB → CodeOutput`.
+
+### Findings worth carrying forward (full detail in the audit doc)
+
+- **Brand drift caught.** TabletShell renders `BLADEFORGE` (legacy
+  pre-rename brand) at 600–1023 px viewports — visible on every iPad
+  portrait. One-line fix in [AppShell.tsx:77–80](apps/web/components/layout/AppShell.tsx).
+  Mobile (KYBERSTATION) and desktop (KYBERSTATION) brands are correct;
+  TabletShell was missed during the project rename.
+- **Status bar "BOARD · BOARD" duplication.** `BoardSegment` in
+  [StatusBar.tsx:579–596](apps/web/components/layout/StatusBar.tsx)
+  renders a 9 px "Board" label, then `<BoardPicker variant="inline">`
+  in [BoardPicker.tsx:161](apps/web/components/shared/BoardPicker.tsx)
+  renders its own "BOARD · displayName". Net text reads: `Profile ·
+  KYBER  Board  BOARD · Proffieboard V3.9  Conn · IDLE`. Drop the
+  outer label.
+- **Tablet Output A/B Column B squeezed to ~210 px** at 768. Outer
+  Sidebar (240) + MainContent (528) → nested A/B split (Column A 280 +
+  Column B ~210). One nested split too many at tablet width. Suggested
+  fix: extend `MainContentABLayout`'s mobile-stacked branch (currently
+  `<600`) to cover `<1024` for `output` only.
+- **ImportStatusBanner DOES render** at 375 px (banner present +
+  visible) but layout breaks down: description text wraps to ~83 px
+  column (vertical word-strip) because right-aligned action buttons
+  consume 165 of 343 px banner width. Banner top edge at y=531 in
+  812-px viewport — below the fold by default after Apply. Suggested
+  fix: `flex-col` at phone breakpoint + auto-scroll-to-banner on
+  mount.
+
+### Diagnostic strip §Q3 recommendation
+
+**Path (a) keep current desktop-mirror for v1.0.** Paths (b) and (c)
+need battery-charge / voltage / BT data sources we haven't wired (BT
+is post-v0.17). Plan toward (c) hybrid post-v0.17 when battery + Web
+Bluetooth land. Two narrow polish items inside (a): fix the BOARD-BOARD
+duplication, verify default scroll position keeps PWR + Profile + Board
+anchored.
+
+### Triage table (from the audit doc)
+
+| Item | Severity | Effort | Recommendation |
+|---|---|---|---|
+| BLADEFORGE → KYBERSTATION on tablet | medium-high | 1 LOC | Ship now |
+| BOARD-BOARD label dedup | low-medium | ~5 LOC | Ship with brand fix |
+| Banner vertical-stack at phone | medium | ~15 LOC + tests | Next session |
+| Tablet Output Column B squeeze | medium | medium PR | Post-launch |
+| Drop duplicate Column B header | low | ~3 LOC | Bundle with output cleanup |
+| Auto-scroll to banner | low | small | Nice-to-have |
+| §Q3 path (c) hybrid | n/a | gated on v0.17+ | Plan, don't build |
+
+### Process notes
+
+- Worktree was just-created at session start — required `pnpm install`
+  before `preview_start` would resolve `next`. Took ~10 s + esbuild +
+  canvas postinstalls. Worth flagging in future fresh-worktree sessions.
+- Used Baylan Skoll fixture (`apps/web/tests/fixtures/fett263-imports/baylan-skoll-purple-os7.txt`)
+  for paste-import end-to-end test. Standard Fett263 OS7 single-style
+  template — ideal smoke-test fixture for the import-banner flow.
+- All measurements via `preview_inspect` + `getBoundingClientRect()` —
+  no screenshot-only inferences. Per the preview-tools verification
+  workflow.
+
+### State at session wrap
+
+- Working tree: clean except for the new `docs/MOBILE_UX_AUDIT_2026-05-02.md`
+- No code changes shipped (per session scope: audit + recommendation, not fixes)
+- Dev server running on port 56990; `preview_stop` recommended on next
+  use of this worktree
+- Branch `claude/cool-williamson-bb756a` not pushed; local-only
+
+### Suggested next session
+
+Bundle the two trivial fixes (`BLADEFORGE` rename + `BOARD-BOARD`
+dedup) into one focused PR before any larger v0.21 work. Both are
+1–5 LOC, both close visible UX papercuts, neither risks regression.
+Banner vertical-stack is the next-tier candidate — deserves its own
+PR with tests for both desktop unchanged + phone stack-applied.
+
+---
+
+## Current State (2026-05-02 evening, sound-font audit pass)
+
+Short follow-up session after the Fett263 import sprint. Goal: read-only audit of the sound-font surface area after a stretch of import-focused work, confirm Ken's prior audio-engine PRs (#115, #118, #122, #124, #127, #128, #130, #176) are still intact, and surface gaps worth queueing for post-launch.
+
+### What shipped
+
+**1 PR opened:** `feat/sound-font-audit-2026-05-02` (this branch, claude/loving-tu-e431f1).
+
+| File | Scope |
+|---|---|
+| [`docs/SOUND_FONT_AUDIT_2026-05-02.md`](docs/SOUND_FONT_AUDIT_2026-05-02.md) (new, 126 lines) | Architecture review + subscription-wiring inspection + 7-item open-gap list for Ken's prioritization. None are launch blockers. |
+| [`apps/web/components/editor/SoundFontPanel.tsx`](apps/web/components/editor/SoundFontPanel.tsx) | One-line copy fix: legacy panel's no-FSA fallback warning ("Chrome, Edge, or Arc") was stale relative to `AudioColumnB.tsx`'s post-PR-#118 copy. Brought it into line so users who flip to `useABLayout === false` see consistent Brave-flag guidance. |
+
+### Confirmed working (live-preview-verified)
+
+- Audio singleton (PR #176): one AudioContext, six consumers share it
+- Brave FSA flag warning (PR #118): live in modern A/B path; now also in legacy panel
+- Modern Proffie / Kyberphonic categories (PR #122): all 12 wired through `SoundCategory` union + `FontParser` regex matchers
+- Pause → AudioContext suspend (PR #130): `▶ Paused` flips on click; subscription installs once per singleton
+- Mute → master gain (PR #124): live, shared store
+- SmoothSwing speed broadcast + hum hot-swap (PR #128): subscriptions installed in singleton init
+- ProffieOS in/out convention (PR #127): `out.wav` plays during ignition, `in.wav` during retraction
+- Directory iterator yields tuples (PR #115): scan/load handle iterator handles `for await … of dirHandle` correctly
+
+### Open gaps surfaced (for Ken's prioritization, none are launch blockers)
+
+1. **Phase A/B/C of `SOUND_FONT_LIBRARY_AND_CUSTOM_PRESETS.md`** — XL feature, post-launch. Tracked in `POST_LAUNCH_BACKLOG.md`.
+2. **Modern category playback dispatch** — PR #122 surfaces the 12 modern categories in the manifest, but `CATEGORY_MAP` in `audioEngineSingleton.ts` only maps the 11 classic events. New `bgnlock`/`endlock`/`bgnlb`/`endlb`/`bgnmelt`/`endmelt`/`bgndrag`/`enddrag` are detected but not played on BladeEngine state changes. Per the type-file comment, this is "deferred to v0.16+." Tracked.
+3. **Surprise-me sound font** (Ken's field-note #17) — randomizer doesn't pick a library font. S effort, post-launch per Ken.
+4. **`userPreset.fontAssociation` round-trip** — `saveStateV1` doesn't capture which font was loaded at save time, so loading a preset later doesn't auto-reload the paired font. S-M effort.
+5. **Legacy `SoundFontPanel.tsx` retirement window** — modern A/B path owns active rendering on desktop+tablet. Hygiene call: keep legacy as fallback or retire alongside `AudioPanel.tsx` once `useABLayout` defaults are confirmed. S audit / M delete.
+6. **`pstoff` mapping** — collected by `FontParser` but never played during retraction. One-line addition. S effort.
+7. **Library handle revocation flow** — if user denies permission on `hydrateLibrary`, store stays set in memory but reads fail. Should clear stale handle from IDB. S effort.
+
+### Test + typecheck state
+
+- Web: 2771/2771 passing (1 file touched, 0 new tests added — copy-only fix, 65 audio-related tests already cover the path)
+- Codegen / engine / sound / boards / presets: unchanged
+- 10/10 packages typecheck clean
+
+### Deferred from this session
+
+- Gap items 2–7 above. Each is small enough to land in a focused micro-sprint but not urgent. Best handled when Ken's next walking through the audio surface or a sibling concern.
+- The legacy `SoundFontPanel.tsx` warning fix is the only behavioural change in this session; if Ken decides to retire the legacy panel entirely (gap #5), this fix becomes moot.
+
+---
+
 ## Current State (2026-05-02, Fett263 import sprint — 4 versions shipped)
 
 Marathon session triggered by a single Reddit comment from `gschram92` on the launch post. The commenter said two things: (1) Fett263's editor has no save feature so iterating on saved configs is hard, and (2) when they tried KyberStation's import, "pretty much every library/style I use from fett263 is not integrated yet." Initial reading misread (1) as a KyberStation gap; mid-session re-read corrected it — the user has saved Fett263-generated config.h files on disk and wants KyberStation to be the editor that finally lets them save + iterate.
