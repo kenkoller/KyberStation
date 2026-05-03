@@ -1,7 +1,9 @@
+import type { BladeConfig } from '@kyberstation/engine';
 import { MarketingHeader } from '@/components/marketing/MarketingHeader';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { ScrollReveal } from '@/components/marketing/ScrollReveal';
 import { InlineCodePeek } from '@/components/marketing/InlineCodePeek';
+import { LiveBladePreview } from '@/components/marketing/LiveBladePreview';
 import { pageMetadata } from '@/lib/marketing/pageMetadata';
 
 export const metadata = pageMetadata({
@@ -19,6 +21,64 @@ interface Pillar {
   bullets: string[];
   code?: { language?: string; caption?: string; body: string };
 }
+
+interface DemoBlade {
+  label: string;
+  config: BladeConfig;
+}
+
+const baseDemoConfig = (overrides: Partial<BladeConfig>): BladeConfig =>
+  ({
+    name: 'demo',
+    baseColor: { r: 22, g: 114, b: 243 },
+    clashColor: { r: 255, g: 255, b: 255 },
+    lockupColor: { r: 255, g: 255, b: 255 },
+    blastColor: { r: 255, g: 255, b: 255 },
+    dragColor: { r: 255, g: 180, b: 0 },
+    style: 'stable',
+    ignition: 'standard',
+    retraction: 'standard',
+    ignitionMs: 320,
+    retractionMs: 420,
+    shimmer: 0.07,
+    ledCount: 144,
+    swingFxIntensity: 0,
+    noiseLevel: 0,
+    ...overrides,
+  }) as BladeConfig;
+
+const DEMO_BLADES: DemoBlade[] = [
+  {
+    label: 'STABLE / AZURE',
+    config: baseDemoConfig({
+      baseColor: { r: 22, g: 114, b: 243 },
+      style: 'stable',
+    }),
+  },
+  {
+    label: 'UNSTABLE / CRIMSON',
+    config: baseDemoConfig({
+      baseColor: { r: 230, g: 30, b: 30 },
+      style: 'unstable',
+      shimmer: 0.18,
+    }),
+  },
+  {
+    label: 'PULSE / VIOLET',
+    config: baseDemoConfig({
+      baseColor: { r: 170, g: 60, b: 240 },
+      style: 'pulse',
+      shimmer: 0.12,
+    }),
+  },
+  {
+    label: 'PHOTON / EMERALD',
+    config: baseDemoConfig({
+      baseColor: { r: 30, g: 220, b: 110 },
+      style: 'photon',
+    }),
+  },
+];
 
 const PILLARS: Pillar[] = [
   {
@@ -209,6 +269,49 @@ export default function FeaturesPage() {
               ProffieOS code peeks alongside the styles + modulation
               entries so you can read the actual output before you open
               the editor.
+            </p>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section
+        className="relative border-b border-border-subtle py-10 md:py-12"
+        aria-labelledby="features-live-now-heading"
+      >
+        <div className="max-w-4xl mx-auto px-6 md:px-8">
+          <ScrollReveal>
+            <div className="flex items-baseline justify-between gap-4 mb-6">
+              <div>
+                <div
+                  className="font-mono text-[11px] tracking-widest mb-1 tabular-nums"
+                  style={{ color: 'rgb(var(--accent))' }}
+                >
+                  ● LIVE NOW
+                </div>
+                <h2
+                  id="features-live-now-heading"
+                  className="font-cinematic text-lg md:text-xl tracking-[0.08em] text-text-primary"
+                >
+                  The engine, running right now in your browser.
+                </h2>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-end justify-center md:justify-start gap-x-8 gap-y-6">
+              {DEMO_BLADES.map((blade, i) => (
+                <LiveBladePreview
+                  key={blade.label}
+                  config={blade.config}
+                  label={blade.label}
+                  width={180}
+                  height={44}
+                  cycleLitMs={2600 + i * 400}
+                />
+              ))}
+            </div>
+            <p className="mt-6 text-[13px] text-text-muted max-w-2xl leading-relaxed">
+              Every preset in the showcase renders through the same
+              engine you&apos;d use to design your own. No screenshots —
+              this is the actual output, frame-by-frame.
             </p>
           </ScrollReveal>
         </div>
