@@ -1,6 +1,6 @@
 // ─── Fett263 Corpus Round-Trip — Phase 3 of the import sprint ──────────
 //
-// End-to-end validation across the full 21-fixture Fett263 corpus.
+// End-to-end validation across the full Fett263 corpus.
 // Exercises the user journey shipped in Phases 1–2B:
 //
 //   paste → parseStyleCode → reconstructConfig → applyReconstructedConfig
@@ -11,11 +11,12 @@
 //   convertImportToNative (= drop import fields) → re-export → assert
 //   regenerated from BladeConfig with the tweak baked in
 //
-// Three legacy fixtures contain shapes the parser rejects at lexer
-// level (EASYBLADE(BLUE,WHITE) C-preprocessor macro syntax,
-// unmatched angle brackets) — those are documented pre-existing
-// parser limitations, NOT import-preservation bugs. The test marks
-// them as expected lexer failures rather than skipping silently.
+// The two previously lexer-incompatible fixtures (legacy EASYBLADE
+// macro syntax + ronin under-closed angle bracket) now parse cleanly
+// after the lexer-hardening sprint — see the LEXER_INCOMPATIBLE notes
+// below for the historical record. The set is now empty; if a new
+// fixture surfaces a parser limit, add it here with a documenting
+// comment + a corresponding `it.todo`.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -49,14 +50,15 @@ function stripCommentsAndHeader(raw: string): string {
 
 // Fixtures with known lexer-level parse failures — pre-existing parser
 // limitations, NOT bugs in the import-preservation chain.
-const LEXER_INCOMPATIBLE = new Set<string>([
-  // C-preprocessor macro EASYBLADE(BLUE,WHITE) uses parens, not angle
-  // brackets; the lexer treats parens as plain identifiers and confuses
-  // the recursive-descent parser.
-  'legacy-inoutsparktip-easyblade.txt',
-  // Contains an unmatched `>` in the middle of a Layers<> block.
-  'ronin-force-pulse-os7.txt',
-]);
+//
+// Historical entries (now closed, kept here as breadcrumbs):
+//   - `legacy-inoutsparktip-easyblade.txt` — EASYBLADE(BLUE,WHITE)
+//     C-preprocessor macro syntax. Closed by adding an OPEN_PAREN args
+//     branch to the parser that mirrors the angle-bracket args branch.
+//   - `ronin-force-pulse-os7.txt` — under-closed by one `>`. Closed by
+//     downgrading missing-CLOSE_ANGLE-at-EOF from a hard error to a
+//     non-fatal `Unclosed angle bracket` warning.
+const LEXER_INCOMPATIBLE = new Set<string>();
 
 const fixtures = readdirSync(FIXTURE_DIR)
   .filter((name) => name.endsWith('.txt'))
@@ -205,6 +207,6 @@ describe('Fett263 corpus aggregate stats', () => {
       if (exported.includes(code)) preservedCount++;
     }
     expect(preservedCount).toBe(parseableCount);
-    expect(parseableCount).toBeGreaterThanOrEqual(19); // 21 minus 2 lexer-incompatible
+    expect(parseableCount).toBeGreaterThanOrEqual(21); // baseline of 21 fixtures all parse now
   });
 });
