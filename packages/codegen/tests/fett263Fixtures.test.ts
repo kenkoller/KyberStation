@@ -89,11 +89,11 @@ describeIfFixtures('Fett263 fixture parse — unknown-template warnings', () => 
       const { ast, warnings } = parseStyleCode(code);
 
       // The parser is intentionally generous — unknown templates parse
-      // through as generic nodes — so a non-null AST is the bar. A few
-      // legacy fixtures contain C-preprocessor macro syntax (EASYBLADE
-      // (BLUE, WHITE)) or unmatched angle brackets that hit lexer-level
-      // errors; that's a pre-existing parser limitation, not Phase 2C
-      // scope.
+      // through as generic nodes — so a non-null AST is the bar. The
+      // two formerly lexer-incompatible fixtures (EASYBLADE macro
+      // syntax + ronin under-closed bracket) now parse cleanly; see
+      // `apps/web/tests/fett263CorpusRoundTrip.test.ts` for the
+      // historical breadcrumbs.
       expect(ast).not.toBeNull();
 
       // Filter to the warning subset that signals "registry coverage gap".
