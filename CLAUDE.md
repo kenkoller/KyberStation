@@ -543,6 +543,103 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-02 evening, post-import-sprint mobile UX audit)
+
+Audit-only session in a fresh worktree (`claude/cool-williamson-bb756a`,
+cut from `main` at `39e5732` — i.e. post-v0.20.0 with all 14
+import-sprint PRs merged). Goal: surface findings on three remaining
+mobile-handoff items, NOT ship fixes. Deliverable: [`docs/MOBILE_UX_AUDIT_2026-05-02.md`](docs/MOBILE_UX_AUDIT_2026-05-02.md)
+— self-contained, ~250 lines, ready for Ken's triage.
+
+### What the audit covered
+
+1. **Diagnostic strip §Q3 segment-set decision** (recurring Q-call from
+   the launch-day session). Live measurement at 375 px: scrollWidth
+   1337 px in 373 px container — ≈75% of segments require horizontal
+   swipe to reach.
+2. **Sub-1024 responsive cleanup** (Ken's #2 from v0.15.x field notes).
+   Walked 768 / 900 / 1023 / 1024 boundaries.
+3. **ImportStatusBanner mobile collision** with v0.20.0's banner
+   mounted at `CodeOutput.tsx:430` → `OutputColumnB → CodeOutput`.
+
+### Findings worth carrying forward (full detail in the audit doc)
+
+- **Brand drift caught.** TabletShell renders `BLADEFORGE` (legacy
+  pre-rename brand) at 600–1023 px viewports — visible on every iPad
+  portrait. One-line fix in [AppShell.tsx:77–80](apps/web/components/layout/AppShell.tsx).
+  Mobile (KYBERSTATION) and desktop (KYBERSTATION) brands are correct;
+  TabletShell was missed during the project rename.
+- **Status bar "BOARD · BOARD" duplication.** `BoardSegment` in
+  [StatusBar.tsx:579–596](apps/web/components/layout/StatusBar.tsx)
+  renders a 9 px "Board" label, then `<BoardPicker variant="inline">`
+  in [BoardPicker.tsx:161](apps/web/components/shared/BoardPicker.tsx)
+  renders its own "BOARD · displayName". Net text reads: `Profile ·
+  KYBER  Board  BOARD · Proffieboard V3.9  Conn · IDLE`. Drop the
+  outer label.
+- **Tablet Output A/B Column B squeezed to ~210 px** at 768. Outer
+  Sidebar (240) + MainContent (528) → nested A/B split (Column A 280 +
+  Column B ~210). One nested split too many at tablet width. Suggested
+  fix: extend `MainContentABLayout`'s mobile-stacked branch (currently
+  `<600`) to cover `<1024` for `output` only.
+- **ImportStatusBanner DOES render** at 375 px (banner present +
+  visible) but layout breaks down: description text wraps to ~83 px
+  column (vertical word-strip) because right-aligned action buttons
+  consume 165 of 343 px banner width. Banner top edge at y=531 in
+  812-px viewport — below the fold by default after Apply. Suggested
+  fix: `flex-col` at phone breakpoint + auto-scroll-to-banner on
+  mount.
+
+### Diagnostic strip §Q3 recommendation
+
+**Path (a) keep current desktop-mirror for v1.0.** Paths (b) and (c)
+need battery-charge / voltage / BT data sources we haven't wired (BT
+is post-v0.17). Plan toward (c) hybrid post-v0.17 when battery + Web
+Bluetooth land. Two narrow polish items inside (a): fix the BOARD-BOARD
+duplication, verify default scroll position keeps PWR + Profile + Board
+anchored.
+
+### Triage table (from the audit doc)
+
+| Item | Severity | Effort | Recommendation |
+|---|---|---|---|
+| BLADEFORGE → KYBERSTATION on tablet | medium-high | 1 LOC | Ship now |
+| BOARD-BOARD label dedup | low-medium | ~5 LOC | Ship with brand fix |
+| Banner vertical-stack at phone | medium | ~15 LOC + tests | Next session |
+| Tablet Output Column B squeeze | medium | medium PR | Post-launch |
+| Drop duplicate Column B header | low | ~3 LOC | Bundle with output cleanup |
+| Auto-scroll to banner | low | small | Nice-to-have |
+| §Q3 path (c) hybrid | n/a | gated on v0.17+ | Plan, don't build |
+
+### Process notes
+
+- Worktree was just-created at session start — required `pnpm install`
+  before `preview_start` would resolve `next`. Took ~10 s + esbuild +
+  canvas postinstalls. Worth flagging in future fresh-worktree sessions.
+- Used Baylan Skoll fixture (`apps/web/tests/fixtures/fett263-imports/baylan-skoll-purple-os7.txt`)
+  for paste-import end-to-end test. Standard Fett263 OS7 single-style
+  template — ideal smoke-test fixture for the import-banner flow.
+- All measurements via `preview_inspect` + `getBoundingClientRect()` —
+  no screenshot-only inferences. Per the preview-tools verification
+  workflow.
+
+### State at session wrap
+
+- Working tree: clean except for the new `docs/MOBILE_UX_AUDIT_2026-05-02.md`
+- No code changes shipped (per session scope: audit + recommendation, not fixes)
+- Dev server running on port 56990; `preview_stop` recommended on next
+  use of this worktree
+- Branch `claude/cool-williamson-bb756a` not pushed; local-only
+
+### Suggested next session
+
+Bundle the two trivial fixes (`BLADEFORGE` rename + `BOARD-BOARD`
+dedup) into one focused PR before any larger v0.21 work. Both are
+1–5 LOC, both close visible UX papercuts, neither risks regression.
+Banner vertical-stack is the next-tier candidate — deserves its own
+PR with tests for both desktop unchanged + phone stack-applied.
+
+---
+
 ## Current State (2026-05-02, Fett263 import sprint — 4 versions shipped)
 
 Marathon session triggered by a single Reddit comment from `gschram92` on the launch post. The commenter said two things: (1) Fett263's editor has no save feature so iterating on saved configs is hard, and (2) when they tried KyberStation's import, "pretty much every library/style I use from fett263 is not integrated yet." Initial reading misread (1) as a KyberStation gap; mid-session re-read corrected it — the user has saved Fett263-generated config.h files on disk and wants KyberStation to be the editor that finally lets them save + iterate.
