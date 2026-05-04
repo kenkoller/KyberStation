@@ -213,8 +213,13 @@ describe('Xenopixel export — design-reference disclaimer', () => {
     });
   });
 
-  describe('Other boards are unaffected', () => {
-    it('Proffie ZIP does NOT include the Xenopixel README', async () => {
+  describe('Other boards have their own README content (not the Xenopixel one)', () => {
+    // 2026-05-03 update: PR adding CFX + GH design-reference READMEs
+    // means all three non-Proffie boards now ship a KYBERSTATION_README.txt
+    // at ZIP root — but each has board-specific content. Tests verify
+    // the README content is distinct (Xenopixel-specific phrasing not
+    // present in CFX or GH READMEs).
+    it('Proffie ZIP does NOT include any KYBERSTATION_README.txt (its config.h IS flashable)', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Test'),
         boardId: 'proffie',
@@ -224,24 +229,28 @@ describe('Xenopixel export — design-reference disclaimer', () => {
       expect(paths).toContain('config.h');
     });
 
-    it('CFX ZIP does NOT include the Xenopixel README', async () => {
+    it('CFX README is NOT the Xenopixel README content', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Test'),
         boardId: 'cfx',
       });
-      const paths = await listZipPaths(blob);
-      expect(paths).not.toContain('KYBERSTATION_README.txt');
-      expect(paths).toContain('config.txt');
+      const readme = await readZipFile(blob, 'KYBERSTATION_README.txt');
+      expect(readme).not.toBeNull();
+      // CFX README must mention CFX/Plecter, not Xenopixel firmware specifics
+      expect(readme).toContain('CFX');
+      expect(readme).not.toContain('Xenopixel boards use preloaded effects');
     });
 
-    it('Golden Harvest ZIP does NOT include the Xenopixel README', async () => {
+    it('GH README is NOT the Xenopixel README content', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Test'),
         boardId: 'golden_harvest',
       });
-      const paths = await listZipPaths(blob);
-      expect(paths).not.toContain('KYBERSTATION_README.txt');
-      expect(paths).toContain('config.ini');
+      const readme = await readZipFile(blob, 'KYBERSTATION_README.txt');
+      expect(readme).not.toBeNull();
+      // GH README must mention Golden Harvest, not Xenopixel firmware specifics
+      expect(readme!.toLowerCase()).toContain('golden harvest');
+      expect(readme).not.toContain('Xenopixel boards use preloaded effects');
     });
   });
 });
