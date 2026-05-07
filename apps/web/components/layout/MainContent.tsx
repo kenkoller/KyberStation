@@ -9,6 +9,7 @@
 // Selection happens in the Sidebar; this component just renders.
 
 import { useUIStore, type SectionId } from '@/stores/uiStore';
+import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { StylePanel } from '@/components/editor/StylePanel';
 import { ColorPanel } from '@/components/editor/ColorPanel';
 import { IgnitionRetractionPanel } from '@/components/editor/IgnitionRetractionPanel';
@@ -36,6 +37,12 @@ import { CombatEffectsAB } from '@/components/editor/combat-effects';
 import { MySaberAB } from '@/components/editor/my-saber';
 import { AudioAB } from '@/components/editor/audio';
 import { OutputAB } from '@/components/editor/output';
+import {
+  XenoEffectPickerConnected,
+  XenoIgnitionPickerConnected,
+  XenoMotionPanelConnected,
+  XenoSettingsPanelConnected,
+} from '@/components/editor/xenopixel/connected';
 
 interface MainContentProps {
   className?: string;
@@ -71,7 +78,20 @@ const SECTION_LABELS: Record<SectionId, string> = {
   'my-crystal':          'My Crystal',
 };
 
-function renderLegacySection(activeSection: SectionId): React.ReactNode {
+function renderLegacySection(activeSection: SectionId, isXenopixel: boolean): React.ReactNode {
+  // Xenopixel board swaps — simpler panels for the fixed-firmware board
+  if (isXenopixel) {
+    switch (activeSection) {
+      case 'blade-style':         return <XenoEffectPickerConnected />;
+      case 'ignition-retraction': return <XenoIgnitionPickerConnected />;
+      case 'gesture-controls':    return <XenoMotionPanelConnected />;
+      case 'hardware':            return <XenoSettingsPanelConnected />;
+      // Sections hidden via Sidebar.proffieOnly won't route here,
+      // but fall through to the default Proffie panels for any
+      // shared sections (color, combat-effects, audio, output, etc.)
+    }
+  }
+
   switch (activeSection) {
     case 'my-saber':            return <MySaberPanel />;
     case 'hardware':            return <HardwarePanel />;
@@ -97,6 +117,8 @@ export function MainContent({
 }: MainContentProps) {
   const activeSection = useUIStore((s) => s.activeSection);
   const useABLayout = useUIStore((s) => s.useABLayout);
+  const { boardId } = useBoardProfile();
+  const isXenopixel = boardId === 'xenopixel';
   const label = SECTION_LABELS[activeSection];
 
   // Sidebar A/B v2 — sections that consume the MainContentABLayout
@@ -106,9 +128,14 @@ export function MainContent({
   // adds `color` + `ignition-retraction`. Other sections still render
   // the legacy single-panel shell with the SECTION_LABELS header above
   // the body.
+  //
+  // When the active board is Xenopixel, most A/B sections fall through
+  // to the legacy path which renders the simpler Xenopixel panels.
+  // Only shared sections (color, my-saber, audio, output) keep the A/B
+  // layout on Xenopixel.
   let abContent: React.ReactNode = null;
   if (useABLayout) {
-    if (activeSection === 'blade-style') {
+    if (activeSection === 'blade-style' && !isXenopixel) {
       abContent = (
         <MainContentABLayout
           columnA={<BladeStyleColumnA />}
@@ -124,11 +151,11 @@ export function MainContent({
           resizeLabel="Color preset list width"
         />
       );
-    } else if (activeSection === 'ignition-retraction') {
+    } else if (activeSection === 'ignition-retraction' && !isXenopixel) {
       // The ignition-retraction wrapper owns its own MainContentABLayout
       // mount because it threads transient tab state into both columns.
       abContent = <IgnitionRetractionAB />;
-    } else if (activeSection === 'combat-effects') {
+    } else if (activeSection === 'combat-effects' && !isXenopixel) {
       // Phase 4: the combat-effects wrapper threads selection state
       // into both columns AND forwards the engine effect handlers from
       // MainContent's props down into Column B's Trigger button.
@@ -200,7 +227,7 @@ export function MainContent({
         </h2>
       </header>
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
-        {renderLegacySection(activeSection)}
+        {renderLegacySection(activeSection, isXenopixel)}
       </div>
     </main>
   );
