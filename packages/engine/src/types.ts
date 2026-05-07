@@ -321,6 +321,19 @@ export interface PresetEasing {
 
 export type EasingConfig = CubicBezierEasing | PresetEasing;
 
+// ─── Render Mode ───
+
+/**
+ * Determines which style/ignition registry the engine uses.
+ *
+ * - `'proffie'` — full ProffieOS-grade multi-layer rendering with modulation
+ *   routing. Uses `STYLE_REGISTRY` + `IGNITION_REGISTRY` / `RETRACTION_REGISTRY`.
+ * - `'xenopixel'` — simplified single-style rendering matching the Xenopixel V3
+ *   firmware's fixed 8-effect / 10-ignition set. Uses `XENO_STYLE_REGISTRY` +
+ *   `XENO_IGNITION_REGISTRY`. Skips modulation routing and multi-layer compositing.
+ */
+export type RenderMode = 'proffie' | 'xenopixel';
+
 // ─── Blade Configuration ───
 
 export interface BladeConfig {
