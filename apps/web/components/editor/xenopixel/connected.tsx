@@ -18,8 +18,12 @@ import { useXenopixelSettingsStore } from '@/stores/xenopixelSettingsStore';
 import { XENO_BLADE_EFFECTS } from '@kyberstation/boards';
 import { XenoEffectPicker } from './XenoEffectPicker';
 import { XenoIgnitionPicker } from './XenoIgnitionPicker';
+import { XenoBlasterPicker } from './XenoBlasterPicker';
+import { XenoForcePicker } from './XenoForcePicker';
 import { XenoMotionPanel } from './XenoMotionPanel';
 import { XenoSettingsPanel } from './XenoSettingsPanel';
+import { XenoImportPanel } from './XenoImportPanel';
+import type { ImportedXenoConfig } from '@/lib/xenopixelImport';
 
 // ─── Blade Effect ↔ BladeConfig.style mapping ──────────────────────
 
@@ -145,4 +149,111 @@ export function XenoSettingsPanelConnected() {
   const globalSettings = useXenopixelSettingsStore((s) => s.global);
   const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
   return <XenoSettingsPanel settings={globalSettings} onSettingsChange={updateGlobal} />;
+}
+
+// ─── Connected: XenoBlasterPicker ──────────────────────────────────
+//
+// Blaster effect is Xenopixel-specific (fontconfig.ini "B" field).
+// Persisted via the xenopixelSettingsStore.
+
+export function XenoBlasterPickerConnected() {
+  const blasterEffect = useXenopixelSettingsStore((s) => s.global.blasterEffect);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+  const globalSettings = useXenopixelSettingsStore((s) => s.global);
+
+  const handleSelect = useCallback(
+    (id: number) => {
+      updateGlobal({ ...globalSettings, blasterEffect: id });
+    },
+    [updateGlobal, globalSettings],
+  );
+
+  return (
+    <XenoBlasterPicker
+      selectedBlaster={blasterEffect}
+      onSelectBlaster={handleSelect}
+    />
+  );
+}
+
+// ─── Connected: XenoForcePicker ────────────────────────────────────
+//
+// Force effect is Xenopixel-specific (fontconfig.ini "C" field).
+// Persisted via the xenopixelSettingsStore.
+
+export function XenoForcePickerConnected() {
+  const forceEffect = useXenopixelSettingsStore((s) => s.global.forceEffect);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+  const globalSettings = useXenopixelSettingsStore((s) => s.global);
+
+  const handleSelect = useCallback(
+    (id: number) => {
+      updateGlobal({ ...globalSettings, forceEffect: id });
+    },
+    [updateGlobal, globalSettings],
+  );
+
+  return (
+    <XenoForcePicker
+      selectedForce={forceEffect}
+      onSelectForce={handleSelect}
+    />
+  );
+}
+
+// ─── Connected: XenoImportPanel ───────────────────────────────────
+//
+// Bridges the stateless import panel to bladeStore (loadPreset) and
+// xenopixelSettingsStore (updateMotion + updateGlobal) so a parsed
+// SD card config can be applied in one click.
+
+export function XenoImportPanelConnected() {
+  const loadPreset = useBladeStore((s) => s.loadPreset);
+  const updateMotion = useXenopixelSettingsStore((s) => s.updateMotion);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+
+  const handleApply = useCallback(
+    (fontIndex: number, imported: ImportedXenoConfig) => {
+      const bladeConfig = imported.bladeConfigs[fontIndex];
+      if (bladeConfig) {
+        loadPreset({ ...bladeConfig, modulation: undefined });
+      }
+
+      const g = imported.global;
+      updateGlobal({
+        volume: g.volume,
+        clashSensitivity: g.clashSensitivity,
+        flashOnClash: g.flashOnClash,
+        pixelNumber: g.pixelNumber,
+        velocityMode: g.velocityMode,
+        torchMode: g.torchMode,
+        multiblockMode: g.multiblockMode,
+        multilockMode: g.multilockMode,
+        lightningBlockMode: g.lightningBlockMode,
+        blasterMode: g.blasterMode,
+        ghostMode: g.ghostMode,
+        powerOnTime: g.powerOnTime,
+        powerOffTime: g.powerOffTime,
+        countdown: g.countdown,
+        blasterEffect: imported.fonts[fontIndex]?.blasterEffect ?? 0,
+        forceEffect: imported.fonts[fontIndex]?.forceEffect ?? 0,
+      });
+
+      updateMotion({
+        motionControl: g.motionControl,
+        swingOn: g.swingOn,
+        swingSensitivity: g.swingSensitivity,
+        twistOn: g.twistOn,
+        twistOff: g.twistOff,
+        twistSensitivity: g.twistSensitivity,
+        pullPushOn: g.pullPushOn,
+        pushPullOff: g.pushPullOff,
+        pushSensitivity: g.pushSensitivity,
+        pullSensitivity: g.pullSensitivity,
+      });
+    },
+    [loadPreset, updateGlobal, updateMotion],
+  );
+
+  return <XenoImportPanel onApplyFont={handleApply} />;
 }

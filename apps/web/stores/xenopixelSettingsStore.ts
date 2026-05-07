@@ -45,6 +45,8 @@ const DEFAULT_GLOBAL: XenoGlobalSettings = {
   powerOnTime: 1500,
   powerOffTime: 5000,
   countdown: false,
+  blasterEffect: 0,
+  forceEffect: 0,
 };
 
 // ─── Persistence ─────────────────────────────────────────────────────

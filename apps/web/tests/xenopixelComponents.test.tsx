@@ -52,6 +52,8 @@ const DEFAULT_GLOBAL_SETTINGS: XenoGlobalSettings = {
   powerOnTime: 2000,
   powerOffTime: 10000,
   countdown: false,
+  blasterEffect: 0,
+  forceEffect: 0,
 };
 
 // ─── XenoEffectPicker ───────────────────────────────────────────────

@@ -15,6 +15,8 @@ export interface XenoGlobalSettings {
   powerOnTime: number;
   powerOffTime: number;
   countdown: boolean;
+  blasterEffect: number;
+  forceEffect: number;
 }
 
 export interface XenoSettingsPanelProps {

@@ -40,9 +40,13 @@ import { OutputAB } from '@/components/editor/output';
 import {
   XenoEffectPickerConnected,
   XenoIgnitionPickerConnected,
+  XenoBlasterPickerConnected,
+  XenoForcePickerConnected,
   XenoMotionPanelConnected,
   XenoSettingsPanelConnected,
+  XenoImportPanelConnected,
 } from '@/components/editor/xenopixel/connected';
+import { XenoConfigPreview } from '@/components/editor/xenopixel/XenoConfigPreview';
 
 interface MainContentProps {
   className?: string;
@@ -84,11 +88,24 @@ function renderLegacySection(activeSection: SectionId, isXenopixel: boolean): Re
     switch (activeSection) {
       case 'blade-style':         return <XenoEffectPickerConnected />;
       case 'ignition-retraction': return <XenoIgnitionPickerConnected />;
+      case 'combat-effects':      return (
+        <div className="space-y-6">
+          <XenoBlasterPickerConnected />
+          <XenoForcePickerConnected />
+        </div>
+      );
       case 'gesture-controls':    return <XenoMotionPanelConnected />;
       case 'hardware':            return <XenoSettingsPanelConnected />;
+      case 'output':              return (
+        <div className="space-y-6">
+          <OutputPanel />
+          <XenoConfigPreview />
+          <XenoImportPanelConnected />
+        </div>
+      );
       // Sections hidden via Sidebar.proffieOnly won't route here,
       // but fall through to the default Proffie panels for any
-      // shared sections (color, combat-effects, audio, output, etc.)
+      // shared sections (color, audio, etc.)
     }
   }
 

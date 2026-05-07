@@ -246,6 +246,8 @@ describe('Xenopixel board-gated panel switching', () => {
       powerOnTime: 1500,
       powerOffTime: 5000,
       countdown: false,
+      blasterEffect: 0,
+      forceEffect: 0,
     };
 
     it('renders all settings sections', () => {
