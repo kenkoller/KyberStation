@@ -376,94 +376,73 @@ describe('XenopixelEmitter', () => {
     expect(emitter.boardId).toBe('xenopixel');
   });
 
-  it('configFileName is "config.json"', () => {
+  it('configFileName is "fontconfig.ini"', () => {
     const output = emitter.emit(STUB_AST, makeOptions());
-    expect(output.configFileName).toBe('config.json');
+    expect(output.configFileName).toBe('fontconfig.ini');
   });
 
-  it('output is valid JSON', () => {
+  it('output is valid fontconfig.ini with font1= line', () => {
     const output = emitter.emit(STUB_AST, makeOptions());
-    expect(() => JSON.parse(output.configContent)).not.toThrow();
+    expect(output.configContent).toContain('font1=');
+    expect(output.configContent).toMatch(/^font1=\(\d+,\d+,\d+\),/);
   });
 
-  it('JSON has version, board, presets, and settings', () => {
+  it('emits fontconfig.ini content + set/config.ini as additional file', () => {
     const output = emitter.emit(STUB_AST, makeOptions());
-    const config = JSON.parse(output.configContent);
 
-    expect(config.version).toBe(2);
-    expect(config.board).toBe('xenopixel');
-    expect(Array.isArray(config.presets)).toBe(true);
-    expect(config.presets.length).toBe(1);
-    expect(config.settings).toBeDefined();
+    // fontconfig.ini is the primary output
+    expect(output.configFileName).toBe('fontconfig.ini');
+    expect(output.configContent).toContain('font1=');
+
+    // set/config.ini is an additional file with global settings
+    expect(output.additionalFiles).toBeDefined();
+    expect(output.additionalFiles!['set/config.ini']).toBeDefined();
+    expect(output.additionalFiles!['set/config.ini']).toContain('pixel_number=');
   });
 
-  it('settings include volume, smooth_swing, and clash_sensitivity', () => {
+  it('global config.ini includes motion, volume, and clash settings', () => {
     const output = emitter.emit(STUB_AST, makeOptions());
-    const config = JSON.parse(output.configContent);
+    const globalConfig = output.additionalFiles!['set/config.ini'];
 
-    expect(typeof config.settings.volume).toBe('number');
-    expect(typeof config.settings.smooth_swing).toBe('boolean');
-    expect(typeof config.settings.clash_sensitivity).toBe('number');
+    expect(globalConfig).toContain('volume=');
+    expect(globalConfig).toContain('motion_control=');
+    expect(globalConfig).toContain('clash_sensitivity=');
+    expect(globalConfig).toContain('swing_sensitivity=');
   });
 
-  it('preset contains expected fields with correct types', () => {
+  it('fontconfig line encodes base color as RGB tuple + blade/ignition params', () => {
     const output = emitter.emit(STUB_AST, makeOptions());
-    const config = JSON.parse(output.configContent);
-    const preset = config.presets[0];
-
-    expect(preset.name).toBe('Test Preset');
-    expect(preset.font).toBe('smoothjedi');
-    expect(Array.isArray(preset.blade_color)).toBe(true);
-    expect(preset.blade_color).toEqual([0, 0, 255]);
-    expect(Array.isArray(preset.clash_color)).toBe(true);
-    expect(preset.clash_color).toEqual([255, 200, 50]);
-    expect(Array.isArray(preset.lockup_color)).toBe(true);
-    expect(preset.lockup_color).toEqual([255, 255, 255]);
-    expect(Array.isArray(preset.blast_color)).toBe(true);
-    expect(preset.blast_color).toEqual([200, 200, 255]);
-    expect(typeof preset.blade_style).toBe('number');
-    expect(typeof preset.ignition_type).toBe('number');
-    expect(typeof preset.retraction_type).toBe('number');
-    expect(preset.ignition_time).toBe(300);
-    expect(preset.retraction_time).toBe(300);
-    expect(preset.led_count).toBe(144);
+    // stable → blade effect 1 (Steady), standard → ignition 0
+    // format: font1=(R,G,B),bladeEffect,blasterEffect,forceEffect,lockupEffect,defaultLightEffect,ignitionStyle,ignitionSpeed,retractionSpeed
+    expect(output.configContent).toContain('(0,0,255)');
+    expect(output.configContent).toMatch(/font1=\(0,0,255\),1,0,0,0,0,0,300,300/);
   });
 
-  it('uses default lockup/blast colors when not provided', () => {
-    const opts = makeOptions();
-    delete opts.lockupColor;
-    delete opts.blastColor;
-    const output = emitter.emit(STUB_AST, opts);
-    const config = JSON.parse(output.configContent);
-    const preset = config.presets[0];
-
-    // Default lockup: [255, 200, 80], blast: [255, 255, 255]
-    expect(preset.lockup_color).toEqual([255, 200, 80]);
-    expect(preset.blast_color).toEqual([255, 255, 255]);
+  it('fontconfig line reflects baseColor from options', () => {
+    const output = emitter.emit(STUB_AST, makeOptions({ baseColor: { r: 255, g: 140, b: 0 } }));
+    expect(output.configContent).toContain('(255,140,0)');
   });
 
-  it('multi-preset generates multiple entries in presets array', () => {
+  it('multi-preset generates multiple font lines', () => {
     const output = emitter.emitMultiPreset([
       { ast: STUB_AST, options: makeOptions({ presetName: 'Blue Jedi' }) },
       { ast: STUB_AST, options: makeOptions({ presetName: 'Red Sith', baseColor: { r: 255, g: 0, b: 0 } }) },
     ]);
-    const config = JSON.parse(output.configContent);
-    expect(config.presets).toHaveLength(2);
-    expect(config.presets[0].name).toBe('Blue Jedi');
-    expect(config.presets[1].name).toBe('Red Sith');
-    expect(config.presets[1].blade_color).toEqual([255, 0, 0]);
+    expect(output.configContent).toContain('font1=');
+    expect(output.configContent).toContain('font2=');
+    expect(output.configContent).toContain('(0,0,255)');
+    expect(output.configContent).toContain('(255,0,0)');
   });
 
-  it('maps stable style to blade_style 0', () => {
+  it('maps stable style to blade effect 1 (Steady)', () => {
     const output = emitter.emit(STUB_AST, makeOptions({ style: 'stable' }));
-    const config = JSON.parse(output.configContent);
-    expect(config.presets[0].blade_style).toBe(0);
+    // font1=(R,G,B),<bladeEffect>,...  — bladeEffect is the first comma-delimited field after the RGB tuple
+    expect(output.configContent).toMatch(/font1=\(0,0,255\),1,/);
   });
 
-  it('maps fire style to blade_style 2', () => {
+  it('maps fire style to blade effect 0', () => {
     const output = emitter.emit(STUB_AST, makeOptions({ style: 'fire' }));
-    const config = JSON.parse(output.configContent);
-    expect(config.presets[0].blade_style).toBe(2);
+    expect(output.configContent).toMatch(/font1=\(0,0,255\),0,/);
   });
 
   it('notes degradation for unsupported styles', () => {
@@ -473,17 +452,17 @@ describe('XenopixelEmitter', () => {
     expect(output.notes!.some((n) => n.includes('degraded'))).toBe(true);
   });
 
-  it('volume from options is used in settings', () => {
-    const output = emitter.emit(STUB_AST, makeOptions({ volume: 2000 }));
-    const config = JSON.parse(output.configContent);
-    expect(config.settings.volume).toBe(2000);
+  it('pixel_number in global config reflects ledCount from options', () => {
+    const output = emitter.emit(STUB_AST, makeOptions({ ledCount: 133 }));
+    const globalConfig = output.additionalFiles!['set/config.ini'];
+    expect(globalConfig).toContain('pixel_number=133');
   });
 
-  it('defaults volume to 1500 when not provided', () => {
+  it('defaults pixel_number to 133 when ledCount not provided', () => {
     const opts = makeOptions();
-    delete opts.volume;
+    delete (opts as any).ledCount;
     const output = emitter.emit(STUB_AST, opts);
-    const config = JSON.parse(output.configContent);
-    expect(config.settings.volume).toBe(1500);
+    const globalConfig = output.additionalFiles!['set/config.ini'];
+    expect(globalConfig).toContain('pixel_number=133');
   });
 });

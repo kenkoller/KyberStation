@@ -1,23 +1,20 @@
-// ─── Xenopixel export honesty contract (2026-05-03) ───
+// ─── Xenopixel SD card export contract tests ───────────────────────
 //
-// Pins the design-reference disclaimer surfaces shipped to clarify
-// that KyberStation's Xenopixel export is NOT flashable firmware.
-// Two surfaces:
+// Pins the Xenopixel V3 SD card config export format:
 //
-//   1. JSON `_kyberstation_note` top-level field — carries the banner
-//      text in-band so any tool inspecting the file sees the contract.
-//   2. `KYBERSTATION_README.txt` at ZIP root — plain-text explainer
-//      for non-technical users who pop open the ZIP in Finder/Explorer.
+//   1. set/config.ini — global saber settings (motion, volume, etc.)
+//   2. N/fontconfig.ini — per-font blade color + effect + ignition
+//   3. KYBERSTATION_README.txt — user-facing explainer at ZIP root
 //
-// Backward-compat: the JSON's `profiles[]` shape is unchanged so
-// `cardDetector.ts` Xenopixel SD-card recognition keeps working.
+// These tests verify the real INI-based SD card structure that
+// Xenopixel V3 boards expect, not a design-reference JSON.
 
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
 import {
   exportMultiPresetZip,
   exportPresetZip,
-  XENOPIXEL_DESIGN_REFERENCE_NOTE,
+  XENOPIXEL_SD_CARD_NOTE,
   XENOPIXEL_README_TEXT,
   type ExportPreset,
 } from '@/lib/zipExporter';
@@ -47,9 +44,6 @@ function makePreset(name: string, overrides: Partial<BladeConfig> = {}): ExportP
 }
 
 async function blobToBuffer(blob: Blob): Promise<ArrayBuffer> {
-  // JSZip.loadAsync handles ArrayBuffer reliably across Node test envs;
-  // raw Blob support is patchy depending on whether jsdom or node-fetch
-  // ships a compatible Blob implementation.
   return blob.arrayBuffer();
 }
 
@@ -65,77 +59,29 @@ async function listZipPaths(blob: Blob): Promise<string[]> {
   return Object.keys(zip.files).sort();
 }
 
-describe('Xenopixel export — design-reference disclaimer', () => {
-  describe('config.json shape', () => {
-    it('emits a top-level `_kyberstation_note` field with the banner text', async () => {
+describe('Xenopixel SD card export', () => {
+  describe('SD card structure', () => {
+    it('produces set/config.ini for global settings', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Obi-Wan'),
         boardId: 'xenopixel',
       });
-      const json = await readZipFile(blob, 'config.json');
-      expect(json).not.toBeNull();
-      const parsed = JSON.parse(json!);
-      expect(parsed._kyberstation_note).toBe(XENOPIXEL_DESIGN_REFERENCE_NOTE);
+      const configIni = await readZipFile(blob, 'set/config.ini');
+      expect(configIni).not.toBeNull();
+      expect(configIni!.length).toBeGreaterThan(0);
     });
 
-    it('emits `exportType: "design-reference"` so tools can detect the contract programmatically', async () => {
+    it('produces numbered font folders with fontconfig.ini', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Obi-Wan'),
         boardId: 'xenopixel',
       });
-      const parsed = JSON.parse((await readZipFile(blob, 'config.json'))!);
-      expect(parsed.exportType).toBe('design-reference');
+      const fontConfig = await readZipFile(blob, '1/fontconfig.ini');
+      expect(fontConfig).not.toBeNull();
+      expect(fontConfig!).toContain('font1=');
     });
 
-    it('the banner text says "NOT flashable" so the contract is unambiguous', () => {
-      // Pinned exact phrasing — the test fails if a future copy edit
-      // accidentally softens "NOT" to "not always" or similar.
-      expect(XENOPIXEL_DESIGN_REFERENCE_NOTE).toContain('NOT flashable');
-    });
-
-    it('the banner text mentions Xenopixel\'s preloaded-effects architecture', () => {
-      expect(XENOPIXEL_DESIGN_REFERENCE_NOTE.toLowerCase()).toContain('preloaded effects');
-    });
-
-    it('the banner text points users at the README for full details', () => {
-      expect(XENOPIXEL_DESIGN_REFERENCE_NOTE).toContain('KYBERSTATION_README.txt');
-    });
-
-    it('preserves the existing `profiles[]` shape so cardDetector still works', async () => {
-      // cardDetector.ts reads `parsed.profiles` to enumerate Xenopixel
-      // presets on a recognized SD card. The disclaimer fields are
-      // additive — backward compat must hold.
-      const blob = await exportMultiPresetZip({
-        presets: [
-          makePreset('Obi-Wan', { baseColor: { r: 0, g: 140, b: 255 } }),
-          makePreset('Vader', { baseColor: { r: 255, g: 0, b: 0 } }),
-        ],
-        boardId: 'xenopixel',
-      });
-      const parsed = JSON.parse((await readZipFile(blob, 'config.json'))!);
-      expect(Array.isArray(parsed.profiles)).toBe(true);
-      expect(parsed.profiles.length).toBe(2);
-      expect(parsed.profiles[0].name).toBe('Obi-Wan');
-      expect(parsed.profiles[0].color.base).toEqual([0, 140, 255]);
-      expect(parsed.profiles[1].name).toBe('Vader');
-      expect(parsed.profiles[1].color.base).toEqual([255, 0, 0]);
-    });
-
-    it('preserves `generator: "KyberStation"` field so cardDetector\'s Xenopixel-marker check keeps matching', async () => {
-      // cardDetector.ts:167 checks for any of `profiles` / `generator` /
-      // `version` to flag a config.json as Xenopixel-style. We keep
-      // `generator` in the schema so the detection path is unchanged.
-      const blob = await exportPresetZip({
-        preset: makePreset('Test'),
-        boardId: 'xenopixel',
-      });
-      const parsed = JSON.parse((await readZipFile(blob, 'config.json'))!);
-      expect(parsed.generator).toBe('KyberStation');
-    });
-  });
-
-  describe('KYBERSTATION_README.txt at ZIP root', () => {
-    it('is included in every Xenopixel ZIP export', async () => {
+    it('includes KYBERSTATION_README.txt at ZIP root', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Obi-Wan'),
         boardId: 'xenopixel',
@@ -144,8 +90,38 @@ describe('Xenopixel export — design-reference disclaimer', () => {
       expect(readme).not.toBeNull();
       expect(readme!.length).toBeGreaterThan(100);
     });
+  });
 
-    it('content matches the exported XENOPIXEL_README_TEXT constant', async () => {
+  describe('fontconfig.ini content', () => {
+    it('encodes base color as RGB tuple', async () => {
+      const blob = await exportPresetZip({
+        preset: makePreset('Blue Saber', { baseColor: { r: 0, g: 140, b: 255 } }),
+        boardId: 'xenopixel',
+      });
+      const fontConfig = await readZipFile(blob, '1/fontconfig.ini');
+      expect(fontConfig).not.toBeNull();
+      // font1=(R,G,B),... format
+      expect(fontConfig!).toContain('(0,140,255)');
+    });
+
+    it('maps blade effect IDs for Xenopixel-compatible styles', async () => {
+      const blob = await exportPresetZip({
+        preset: makePreset('Fire Saber', { style: 'fire' }),
+        boardId: 'xenopixel',
+      });
+      const fontConfig = await readZipFile(blob, '1/fontconfig.ini');
+      expect(fontConfig).not.toBeNull();
+      // fire → effect 0 on Xenopixel
+      expect(fontConfig!).toMatch(/font1=\(\d+,\d+,\d+\),0/);
+    });
+  });
+
+  describe('SD card note and README', () => {
+    it('SD card note describes the export as real config files', () => {
+      expect(XENOPIXEL_SD_CARD_NOTE).toContain('SD card');
+    });
+
+    it('README content matches the exported constant', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Test'),
         boardId: 'xenopixel',
@@ -154,48 +130,45 @@ describe('Xenopixel export — design-reference disclaimer', () => {
       expect(readme).toBe(XENOPIXEL_README_TEXT);
     });
 
-    it('explains what\'s in the ZIP (config.json + font folders)', () => {
-      expect(XENOPIXEL_README_TEXT).toContain('config.json');
-      expect(XENOPIXEL_README_TEXT.toLowerCase()).toContain('font1');
+    it('README explains what\'s in the ZIP (config.ini + font folders)', () => {
+      expect(XENOPIXEL_README_TEXT).toContain('config.ini');
+      expect(XENOPIXEL_README_TEXT.toLowerCase()).toContain('font');
     });
 
-    it('explains why Xenopixel can\'t be flashed directly', () => {
-      // The "why" section is the most likely place for community
-      // misunderstanding — pin its presence so a future copy edit
-      // can't accidentally remove the explanation.
-      expect(XENOPIXEL_README_TEXT.toLowerCase()).toContain(
-        'why kyberstation can\'t flash xenopixel directly',
-      );
+    it('README includes install instructions', () => {
+      expect(XENOPIXEL_README_TEXT).toContain('HOW TO INSTALL');
     });
 
-    it('points users at Proffieboard V3 as the path for full programmatic control', () => {
-      expect(XENOPIXEL_README_TEXT).toContain('Proffieboard V3');
-    });
-
-    it('includes a GitHub issues URL for feedback', () => {
+    it('README includes a GitHub URL for feedback', () => {
       expect(XENOPIXEL_README_TEXT).toContain('github.com/kenkoller/KyberStation');
     });
 
-    it('is plain text — no markdown headers, no emoji, no rich formatting', () => {
-      // Notepad-friendly. Markdown `#` headers would render literally on
-      // Windows + render incorrectly on macOS Quick Look text preview.
+    it('README is plain text — no markdown headers, no emoji', () => {
       expect(XENOPIXEL_README_TEXT).not.toMatch(/^#\s/m);
       expect(XENOPIXEL_README_TEXT).not.toMatch(/[🚨⚠️🔥✅❌]/u);
     });
   });
 
   describe('Multi-preset Xenopixel export', () => {
-    it('still includes the README + JSON disclaimer on multi-preset exports', async () => {
+    it('creates numbered folders for each preset', async () => {
       const blob = await exportMultiPresetZip({
         presets: [makePreset('A'), makePreset('B'), makePreset('C')],
         boardId: 'xenopixel',
       });
       const paths = await listZipPaths(blob);
       expect(paths).toContain('KYBERSTATION_README.txt');
-      expect(paths).toContain('config.json');
+      expect(paths.some(p => p.startsWith('set/'))).toBe(true);
+
+      // Each preset gets its own numbered folder
+      const font1 = await readZipFile(blob, '1/fontconfig.ini');
+      const font2 = await readZipFile(blob, '2/fontconfig.ini');
+      const font3 = await readZipFile(blob, '3/fontconfig.ini');
+      expect(font1).not.toBeNull();
+      expect(font2).not.toBeNull();
+      expect(font3).not.toBeNull();
     });
 
-    it('lists profiles in submission order', async () => {
+    it('assigns sequential font numbers to each preset', async () => {
       const blob = await exportMultiPresetZip({
         presets: [
           makePreset('First'),
@@ -204,21 +177,18 @@ describe('Xenopixel export — design-reference disclaimer', () => {
         ],
         boardId: 'xenopixel',
       });
-      const parsed = JSON.parse((await readZipFile(blob, 'config.json'))!);
-      expect(parsed.profiles.map((p: { name: string }) => p.name)).toEqual([
-        'First',
-        'Second',
-        'Third',
-      ]);
+
+      const font1 = await readZipFile(blob, '1/fontconfig.ini');
+      const font2 = await readZipFile(blob, '2/fontconfig.ini');
+      const font3 = await readZipFile(blob, '3/fontconfig.ini');
+
+      expect(font1!).toContain('font1=');
+      expect(font2!).toContain('font2=');
+      expect(font3!).toContain('font3=');
     });
   });
 
   describe('Other boards have their own README content (not the Xenopixel one)', () => {
-    // 2026-05-03 update: PR adding CFX + GH design-reference READMEs
-    // means all three non-Proffie boards now ship a KYBERSTATION_README.txt
-    // at ZIP root — but each has board-specific content. Tests verify
-    // the README content is distinct (Xenopixel-specific phrasing not
-    // present in CFX or GH READMEs).
     it('Proffie ZIP does NOT include any KYBERSTATION_README.txt (its config.h IS flashable)', async () => {
       const blob = await exportPresetZip({
         preset: makePreset('Test'),
@@ -236,9 +206,8 @@ describe('Xenopixel export — design-reference disclaimer', () => {
       });
       const readme = await readZipFile(blob, 'KYBERSTATION_README.txt');
       expect(readme).not.toBeNull();
-      // CFX README must mention CFX/Plecter, not Xenopixel firmware specifics
       expect(readme).toContain('CFX');
-      expect(readme).not.toContain('Xenopixel boards use preloaded effects');
+      expect(readme).not.toBe(XENOPIXEL_README_TEXT);
     });
 
     it('GH README is NOT the Xenopixel README content', async () => {
@@ -248,9 +217,8 @@ describe('Xenopixel export — design-reference disclaimer', () => {
       });
       const readme = await readZipFile(blob, 'KYBERSTATION_README.txt');
       expect(readme).not.toBeNull();
-      // GH README must mention Golden Harvest, not Xenopixel firmware specifics
       expect(readme!.toLowerCase()).toContain('golden harvest');
-      expect(readme).not.toContain('Xenopixel boards use preloaded effects');
+      expect(readme).not.toBe(XENOPIXEL_README_TEXT);
     });
   });
 });

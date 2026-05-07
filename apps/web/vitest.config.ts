@@ -23,6 +23,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
+      '@kyberstation/boards': path.resolve(__dirname, '../../packages/boards/src'),
       '@kyberstation/engine': path.resolve(__dirname, '../../packages/engine/src'),
       '@kyberstation/codegen': path.resolve(__dirname, '../../packages/codegen/src'),
       '@kyberstation/presets': path.resolve(__dirname, '../../packages/presets/src'),

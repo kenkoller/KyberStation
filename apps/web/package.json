@@ -13,6 +13,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
+    "@kyberstation/boards": "workspace:*",
     "@kyberstation/codegen": "workspace:*",
     "@kyberstation/engine": "workspace:*",
     "@kyberstation/presets": "workspace:*",

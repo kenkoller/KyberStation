@@ -19,6 +19,9 @@
       "@/*": [
         "./*"
       ],
+      "@kyberstation/boards": [
+        "../../packages/boards/src"
+      ],
       "@kyberstation/engine": [
         "../../packages/engine/src"
       ],
