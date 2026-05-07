@@ -86,6 +86,40 @@ export interface UIOverrides {
   customPanels?: string[];
 }
 
+// ─── Xenopixel-specific configuration types ───
+
+export interface XenoBladeEffect {
+  readonly id: number;
+  readonly name: string;
+  /** KyberStation engine style ID that approximates this effect, or null if no equivalent */
+  readonly kyberStyle: string | null;
+}
+
+export interface XenoIgnitionStyle {
+  readonly id: number;
+  readonly name: string;
+  /** Category for UI grouping: undefined = standard blade mode, 'special-preon' = special ignition */
+  readonly category?: 'special-preon';
+}
+
+export interface XenoLightEffect {
+  readonly id: number;
+  readonly name: string;
+}
+
+export interface XenopixelConfig {
+  bladeEffects: readonly XenoBladeEffect[];
+  ignitionStyles: readonly XenoIgnitionStyle[];
+  blasterEffects: readonly XenoLightEffect[];
+  forceEffects: readonly XenoLightEffect[];
+  supportsCrossguard: boolean;
+  supportsDoubleBlade: boolean;
+  maxFonts: number;
+  firmwareVersions: readonly string[];
+}
+
+// ─── Board Profile ───
+
 export interface BoardProfile {
   id: BoardId;
   name: string;
@@ -102,4 +136,6 @@ export interface BoardProfile {
   };
   terminology: TerminologyMap;
   uiOverrides: UIOverrides;
+  /** Xenopixel-specific configuration — present only on Xenopixel board profiles */
+  xenopixelConfig?: XenopixelConfig;
 }
