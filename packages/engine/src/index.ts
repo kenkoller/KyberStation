@@ -49,6 +49,7 @@ export type {
   CubicBezierEasing,
   PresetEasing,
   EasingConfig,
+  RenderMode,
   BladeConfig,
   SegmentRole,
   EffectScoping,

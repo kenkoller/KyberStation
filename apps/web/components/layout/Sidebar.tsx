@@ -52,6 +52,10 @@ interface SectionDef {
    *  `showCrystal` toggle in Settings. Used for experimental UI panels
    *  that aren't launch-ready. */
   crystalGated?: boolean;
+  /** When true, hide this section on non-Proffie boards (Xenopixel,
+   *  CFX, Golden Harvest). These boards don't support the ProffieOS
+   *  layer compositor or full motion simulation. */
+  proffieOnly?: boolean;
 }
 
 interface GroupDef {
@@ -77,7 +81,7 @@ const GROUPS: GroupDef[] = [
       { id: 'color',               label: 'Color' },
       { id: 'ignition-retraction', label: 'Ignition & Retraction' },
       { id: 'combat-effects',      label: 'Combat Effects' },
-      { id: 'layer-compositor',    label: 'Layers' },
+      { id: 'layer-compositor',    label: 'Layers', proffieOnly: true },
     ],
   },
   {
@@ -85,7 +89,7 @@ const GROUPS: GroupDef[] = [
     label: 'Reactivity',
     sections: [
       { id: 'routing',           label: 'Routing', modulationGated: true, beta: true },
-      { id: 'motion-simulation', label: 'Motion Simulation' },
+      { id: 'motion-simulation', label: 'Motion Simulation', proffieOnly: true },
       { id: 'gesture-controls',  label: 'Gesture Controls' },
     ],
   },
@@ -114,16 +118,19 @@ export function Sidebar({ className, style }: SidebarProps) {
   const boardSupportsModulation = canBoardModulate(boardId);
   const showCrystal = useAccessibilityStore((s) => s.showCrystal);
 
-  // Filter modulation-gated and crystal-gated sections out per-group;
-  // if a group ends up with zero visible sections (won't happen with
-  // the v0.15 taxonomy since every group has at least one always-
-  // visible section), hide it.
+  const isProffie = boardId.startsWith('proffie');
+
+  // Filter modulation-gated, crystal-gated, and proffieOnly sections
+  // out per-group; if a group ends up with zero visible sections
+  // (won't happen with the v0.15 taxonomy since every group has at
+  // least one always-visible section), hide it.
   const visibleGroups = GROUPS
     .map((g) => ({
       ...g,
       sections: g.sections.filter((s) => {
         if (s.modulationGated && !boardSupportsModulation) return false;
         if (s.crystalGated && !showCrystal) return false;
+        if (s.proffieOnly && !isProffie) return false;
         return true;
       }),
     }))

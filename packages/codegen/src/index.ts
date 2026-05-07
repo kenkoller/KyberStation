@@ -44,6 +44,7 @@ export type {
   BoardEmitter,
   BoardEmitOptions,
   EmitterOutput,
+  XenoEmitterFirmwareVersion,
 } from './emitters/index.js';
 export {
   CFXEmitter,

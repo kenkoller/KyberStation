@@ -12,6 +12,7 @@ import type {
   IgnitionAnimation,
   IgnitionContext,
   LayerDirection,
+  RenderMode,
   RGB,
   StyleContext,
   EffectScoping,
@@ -20,9 +21,10 @@ import { BladeState, DEFAULT_TOPOLOGY } from './types.js';
 import { LEDArray, lerpColor, scaleColor, clampColor } from './LEDArray.js';
 import { MotionSimulator } from './motion/MotionSimulator.js';
 import { createEasingFunction } from './easing.js';
-import { createStyle } from './styles/index.js';
+import { createStyle, XENO_STYLE_REGISTRY } from './styles/index.js';
 import { createEffect } from './effects/index.js';
 import { createIgnition, createRetraction } from './ignition/index.js';
+import { XENO_IGNITION_REGISTRY } from './ignition/xenopixel/index.js';
 import {
   sampleModulators,
   emptySamplerState,
@@ -95,6 +97,7 @@ export class BladeEngine {
   private _state: BladeState = BladeState.OFF;
   private _extendProgress: number = 0;
   private _topology: BladeTopology;
+  private _renderMode: RenderMode = 'proffie';
   private _elapsedTime: number = 0;
   /** Preon elapsed ms — counts up while in PREON state, resets on leave. */
   private _preonElapsed: number = 0;
@@ -144,6 +147,33 @@ export class BladeEngine {
 
   get topology(): BladeTopology {
     return this._topology;
+  }
+
+  get renderMode(): RenderMode {
+    return this._renderMode;
+  }
+
+  /**
+   * Switch the engine's render mode between ProffieOS and Xenopixel.
+   *
+   * In `'xenopixel'` mode the engine uses:
+   *   - `XENO_STYLE_REGISTRY` (8 fixed blade effects) instead of the
+   *     full 32+ ProffieOS styles
+   *   - `XENO_IGNITION_REGISTRY` (10 ignition modes) instead of the
+   *     ProffieOS ignition + retraction registries
+   *   - Simplified single-layer rendering (no layer compositing, no
+   *     modulation routing)
+   *
+   * Switching mode clears the style/ignition caches so the next
+   * frame resolves fresh instances from the correct registry.
+   */
+  setRenderMode(mode: RenderMode): void {
+    if (this._renderMode === mode) return;
+    this._renderMode = mode;
+    // Flush caches — styles/ignitions from the old registry are invalid.
+    this.styleCache.clear();
+    this.ignitionCache.clear();
+    this.retractionCache.clear();
   }
 
   // ─── State machine controls ───
@@ -468,7 +498,11 @@ export class BladeEngine {
     // the static authoring values. See MODULATION_ROUTING_V1.1.md §6.1.
     //
     // No-op if the config has no bindings (the common case).
-    const modulatedConfig = this.applyModulation(config);
+    // Xenopixel mode skips modulation routing entirely — the firmware
+    // has no concept of per-frame parameter modulation.
+    const modulatedConfig = this._renderMode === 'xenopixel'
+      ? config
+      : this.applyModulation(config);
 
     // (e) Build the StyleContext shared by all style/effect evaluations
     // T1.3 (2026-04-29): same state-progress fields as the sampler-side
@@ -902,6 +936,28 @@ export class BladeEngine {
   // ─── Private: Lazy instance caches ───
 
   private getStyle(id: string): BladeStyle {
+    // In Xenopixel mode, look up the xeno-prefixed style from the
+    // Xeno registry first. If the caller passes a KyberStation style
+    // ID (e.g. 'fire'), try to resolve the xeno equivalent ('xeno-fire');
+    // if already xeno-prefixed, use as-is.
+    if (this._renderMode === 'xenopixel') {
+      const xenoId = id.startsWith('xeno-') ? id : `xeno-${id}`;
+      let style = this.styleCache.get(xenoId);
+      if (!style) {
+        const factory = XENO_STYLE_REGISTRY[xenoId];
+        if (factory) {
+          style = factory();
+          this.styleCache.set(xenoId, style);
+          return style;
+        }
+        // Fallback to xeno-steady (Xenopixel's safe default)
+        const fallback = XENO_STYLE_REGISTRY['xeno-steady']!;
+        style = fallback();
+        this.styleCache.set(xenoId, style);
+      }
+      return style;
+    }
+
     let style = this.styleCache.get(id);
     if (!style) {
       style = createStyle(id);
@@ -921,6 +977,10 @@ export class BladeEngine {
   }
 
   private getIgnition(id: string): IgnitionAnimation {
+    // In Xenopixel mode, use the Xeno ignition registry.
+    if (this._renderMode === 'xenopixel') {
+      return this.getXenoIgnition(id);
+    }
     let ignition = this.ignitionCache.get(id);
     if (!ignition) {
       ignition = createIgnition(id);
@@ -930,11 +990,37 @@ export class BladeEngine {
   }
 
   private getRetraction(id: string): IgnitionAnimation {
+    // In Xenopixel mode, Xeno ignitions serve as both ignition and
+    // retraction animations (the firmware uses the same set for both).
+    if (this._renderMode === 'xenopixel') {
+      return this.getXenoIgnition(id);
+    }
     let retraction = this.retractionCache.get(id);
     if (!retraction) {
       retraction = createRetraction(id);
       this.retractionCache.set(id, retraction);
     }
     return retraction;
+  }
+
+  /**
+   * Resolve a Xenopixel ignition animation from the Xeno registry.
+   * Handles both xeno-prefixed IDs ('xeno-standard') and bare KyberStation
+   * IDs ('standard') by attempting a xeno- prefix lookup first.
+   */
+  private getXenoIgnition(id: string): IgnitionAnimation {
+    const xenoId = id.startsWith('xeno-') ? id : `xeno-${id}`;
+    let ignition = this.ignitionCache.get(xenoId);
+    if (!ignition) {
+      const factory = XENO_IGNITION_REGISTRY[xenoId];
+      if (factory) {
+        ignition = factory();
+      } else {
+        // Fallback to xeno-standard
+        ignition = XENO_IGNITION_REGISTRY['xeno-standard']!();
+      }
+      this.ignitionCache.set(xenoId, ignition);
+    }
+    return ignition;
   }
 }

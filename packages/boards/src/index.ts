@@ -10,6 +10,12 @@ export type {
   TerminologyMap,
   UIOverrides,
   BoardProfile,
+  XenoBladeEffect,
+  XenoIgnitionStyle,
+  XenoLightEffect,
+  XenopixelConfig,
+  XenoFirmwareVersion,
+  XenoFirmwareFeatures,
 } from './types.js';
 
 // ─── Board Registry & Helpers ───
@@ -35,6 +41,12 @@ export {
 export {
   XENOPIXEL_V2,
   XENOPIXEL_V3,
+  XENO_BLADE_EFFECTS,
+  XENO_IGNITION_STYLES,
+  XENO_BLASTER_EFFECTS,
+  XENO_FORCE_EFFECTS,
+  XENO_FIRMWARE_FEATURES,
+  getXenoFirmwareFeatures,
 } from './profiles/xenopixel.js';
 
 export {

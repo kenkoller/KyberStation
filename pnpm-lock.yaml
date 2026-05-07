@@ -17,6 +17,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@kyberstation/boards':
+        specifier: workspace:*
+        version: link:../../packages/boards
       '@kyberstation/codegen':
         specifier: workspace:*
         version: link:../../packages/codegen

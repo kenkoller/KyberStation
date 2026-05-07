@@ -86,6 +86,75 @@ export interface UIOverrides {
   customPanels?: string[];
 }
 
+// ─── Xenopixel-specific configuration types ───
+
+/**
+ * Known Xenopixel V3 firmware versions with feature implications.
+ *
+ * Each version adds features that affect the emitter output format
+ * and the set of available effects:
+ *   - '1.0'   — base 8 effects, root-level fontconfig.ini
+ *   - '1.2'   — adds motor crystal chamber toggle, BT toggle in config.ini
+ *   - '1.2.5' — per-font fontconfig.ini (moved from root to N/fontconfig.ini)
+ *   - '1.3.1' — adds knock/poke, lightning block mode, melt effect
+ *   - '1.4.0' — configurable in/out time per-font, custom function field
+ */
+export type XenoFirmwareVersion = '1.0' | '1.2' | '1.2.5' | '1.3.1' | '1.4.0';
+
+/** Describes which features each firmware version unlocks. */
+export interface XenoFirmwareFeatures {
+  readonly version: XenoFirmwareVersion;
+  readonly label: string;
+  /** fontconfig.ini lives in each font folder (N/fontconfig.ini) instead of root */
+  readonly perFolderFontConfig: boolean;
+  /** config.ini includes motor_crystal_chamber and bt_mode fields */
+  readonly motorCrystalChamber: boolean;
+  /** config.ini includes bt_mode field */
+  readonly btMode: boolean;
+  /** Melt effect available */
+  readonly meltEffect: boolean;
+  /** Lightning block mode available */
+  readonly lightningBlock: boolean;
+  /** Knock and poke gestures available in config.ini */
+  readonly knockPoke: boolean;
+  /** fontconfig.ini supports configurable in/out time per font */
+  readonly configurableInOutTime: boolean;
+  /** Custom function field in fontconfig.ini */
+  readonly customFunction: boolean;
+}
+
+export interface XenoBladeEffect {
+  readonly id: number;
+  readonly name: string;
+  /** KyberStation engine style ID that approximates this effect, or null if no equivalent */
+  readonly kyberStyle: string | null;
+}
+
+export interface XenoIgnitionStyle {
+  readonly id: number;
+  readonly name: string;
+  /** Category for UI grouping: undefined = standard blade mode, 'special-preon' = special ignition */
+  readonly category?: 'special-preon';
+}
+
+export interface XenoLightEffect {
+  readonly id: number;
+  readonly name: string;
+}
+
+export interface XenopixelConfig {
+  bladeEffects: readonly XenoBladeEffect[];
+  ignitionStyles: readonly XenoIgnitionStyle[];
+  blasterEffects: readonly XenoLightEffect[];
+  forceEffects: readonly XenoLightEffect[];
+  supportsCrossguard: boolean;
+  supportsDoubleBlade: boolean;
+  maxFonts: number;
+  firmwareVersions: readonly XenoFirmwareVersion[];
+}
+
+// ─── Board Profile ───
+
 export interface BoardProfile {
   id: BoardId;
   name: string;
@@ -102,4 +171,6 @@ export interface BoardProfile {
   };
   terminology: TerminologyMap;
   uiOverrides: UIOverrides;
+  /** Xenopixel-specific configuration — present only on Xenopixel board profiles */
+  xenopixelConfig?: XenopixelConfig;
 }

@@ -68,6 +68,17 @@ export { SithFlickerStyle } from './SithFlickerStyle.js';
 export { BladeChargeStyle } from './BladeChargeStyle.js';
 export { TempoLockStyle } from './TempoLockStyle.js';
 
+// ─── Xenopixel Styles ───
+export { XenoFireStyle } from './xenopixel/XenoFireStyle.js';
+export { XenoSteadyStyle } from './xenopixel/XenoSteadyStyle.js';
+export { XenoUnstableStyle } from './xenopixel/XenoUnstableStyle.js';
+export { XenoRainbowStyle } from './xenopixel/XenoRainbowStyle.js';
+export { XenoCandyStyle } from './xenopixel/XenoCandyStyle.js';
+export { XenoCrackStyle } from './xenopixel/XenoCrackStyle.js';
+export { XenoPulseStyle } from './xenopixel/XenoPulseStyle.js';
+export { XenoFlashingStyle } from './xenopixel/XenoFlashingStyle.js';
+export { XENO_STYLE_REGISTRY, createXenoStyle, xenoEffectIdToStyleId } from './xenopixel/index.js';
+
 /** Registry of all available blade styles, keyed by style ID. */
 export const STYLE_REGISTRY: Record<string, () => BladeStyle> = {
   stable: () => new StableStyle(),
