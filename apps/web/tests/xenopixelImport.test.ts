@@ -3,9 +3,10 @@ import {
   parseXenoConfigIni,
   parseXenoFontConfig,
   xenoFontToBladeConfig,
+  detectFirmwareVersion,
   importXenoSdCard,
 } from '../lib/xenopixelImport';
-import type { XenoFontConfig } from '../lib/xenopixelImport';
+import type { XenoGlobalConfig, XenoFontConfig } from '../lib/xenopixelImport';
 
 // ─── config.ini Parsing ───
 
@@ -769,5 +770,210 @@ describe('importXenoSdCard', () => {
     expect(result.fonts).toHaveLength(0);
     expect(result.bladeConfigs).toHaveLength(0);
     expect(result.warnings.length).toBeGreaterThan(0);
+  });
+});
+
+// ─── Firmware Version Detection (unit) ───
+
+describe('detectFirmwareVersion', () => {
+  const baseGlobal: XenoGlobalConfig = {
+    pixelNumber: 133, motionControl: true, pullPushOn: true, pushPullOff: true,
+    pushSensitivity: 18, pullSensitivity: 13, swingOn: true, swingSensitivity: 1100,
+    twistOn: false, twistOff: false, twistSensitivity: 220, volume: 80,
+    velocityMode: false, torchMode: false, multiblockMode: false, multilockMode: false,
+    lightningBlockMode: false, blasterMode: false, ghostMode: false, countdown: true,
+    flashOnClash: true, clashSensitivity: 2.0, powerOnTime: 2000, powerOffTime: 10000,
+  };
+
+  const baseFont: XenoFontConfig = {
+    fontNumber: 1, baseColor: { r: 0, g: 0, b: 255 },
+    bladeEffect: 1, blasterEffect: 0, forceEffect: 0, lockupEffect: 0,
+    defaultLightEffect: 0, ignitionStyle: 0, ignitionSpeedMs: 300, retractionSpeedMs: 500,
+  };
+
+  it('returns 1.0 for empty files map + default global config + basic fonts', () => {
+    const version = detectFirmwareVersion(new Map(), { ...baseGlobal }, [{ ...baseFont }]);
+    expect(version).toBe('1.0');
+  });
+
+  it('detects V1.2 via motorCrystalChamber', () => {
+    const global = { ...baseGlobal, motorCrystalChamber: true };
+    const version = detectFirmwareVersion(new Map(), global, [{ ...baseFont }]);
+    expect(version).toBe('1.2');
+  });
+
+  it('detects V1.2 via btMode', () => {
+    const global = { ...baseGlobal, btMode: true };
+    const version = detectFirmwareVersion(new Map(), global, [{ ...baseFont }]);
+    expect(version).toBe('1.2');
+  });
+
+  it('detects V1.2.5 via per-folder fontconfig.ini files', () => {
+    const files = new Map<string, string>();
+    files.set('1/fontconfig.ini', 'font1=(0,0,255),1,0,0,0,0,0,300,500\n');
+    const version = detectFirmwareVersion(files, { ...baseGlobal }, [{ ...baseFont }]);
+    expect(version).toBe('1.2.5');
+  });
+
+  it('detects V1.3.1 via meltMode', () => {
+    const global = { ...baseGlobal, meltMode: true };
+    const version = detectFirmwareVersion(new Map(), global, [{ ...baseFont }]);
+    expect(version).toBe('1.3.1');
+  });
+
+  it('detects V1.3.1 via knockOn', () => {
+    const global = { ...baseGlobal, knockOn: true };
+    const version = detectFirmwareVersion(new Map(), global, [{ ...baseFont }]);
+    expect(version).toBe('1.3.1');
+  });
+
+  it('detects V1.4.0 via inTimeMs on fonts', () => {
+    const font = { ...baseFont, inTimeMs: 400 };
+    const version = detectFirmwareVersion(new Map(), { ...baseGlobal }, [font]);
+    expect(version).toBe('1.4.0');
+  });
+
+  it('detects V1.4.0 via customFunction on fonts', () => {
+    const font = { ...baseFont, customFunction: 42 };
+    const version = detectFirmwareVersion(new Map(), { ...baseGlobal }, [font]);
+    expect(version).toBe('1.4.0');
+  });
+
+  it('returns highest version when both V1.2 and V1.4.0 signals are present', () => {
+    const global = { ...baseGlobal, motorCrystalChamber: true, btMode: true };
+    const font = { ...baseFont, inTimeMs: 400, outTimeMs: 600 };
+    const version = detectFirmwareVersion(new Map(), global, [font]);
+    expect(version).toBe('1.4.0');
+  });
+});
+
+// ─── V1.2+ config.ini parsing ───
+
+describe('V1.2+ config.ini parsing', () => {
+  it('parses motor_crystal_chamber and bt_mode from config.ini', () => {
+    const content = [
+      'pixel_number=133',
+      'motor_crystal_chamber=1',
+      'bt_mode=1',
+      'volume=80',
+    ].join('\n');
+
+    const config = parseXenoConfigIni(content);
+    expect(config.motorCrystalChamber).toBe(true);
+    expect(config.btMode).toBe(true);
+  });
+
+  it('parses motor_crystal_chamber=0 as false (not undefined)', () => {
+    const content = 'motor_crystal_chamber=0\n';
+    const config = parseXenoConfigIni(content);
+    expect(config.motorCrystalChamber).toBe(false);
+  });
+
+  it('parses V1.3.1+ keys: melt_mode, knock_on, poke_on', () => {
+    const content = [
+      'pixel_number=133',
+      'melt_mode=1',
+      'knock_on=1',
+      'poke_on=1',
+    ].join('\n');
+
+    const config = parseXenoConfigIni(content);
+    expect(config.meltMode).toBe(true);
+    expect(config.knockOn).toBe(true);
+    expect(config.pokeOn).toBe(true);
+  });
+
+  it('leaves V1.2+ and V1.3.1+ fields undefined when not present', () => {
+    const content = 'pixel_number=133\nvolume=80\n';
+    const config = parseXenoConfigIni(content);
+
+    expect(config.motorCrystalChamber).toBeUndefined();
+    expect(config.btMode).toBeUndefined();
+    expect(config.meltMode).toBeUndefined();
+    expect(config.knockOn).toBeUndefined();
+    expect(config.pokeOn).toBeUndefined();
+  });
+});
+
+// ─── V1.4.0 extended fontconfig parsing ───
+
+describe('V1.4.0 extended fontconfig parsing', () => {
+  it('parses 10-field fontconfig line with inTimeMs and outTimeMs', () => {
+    const content = 'font1=(0,0,255),1,0,0,0,0,0,300,500,400,600\n';
+    const fonts = parseXenoFontConfig(content);
+
+    expect(fonts).toHaveLength(1);
+    expect(fonts[0].inTimeMs).toBe(400);
+    expect(fonts[0].outTimeMs).toBe(600);
+    expect(fonts[0].customFunction).toBeUndefined();
+  });
+
+  it('parses 11-field fontconfig line with customFunction', () => {
+    const content = 'font1=(0,0,255),1,0,0,0,0,0,300,500,400,600,42\n';
+    const fonts = parseXenoFontConfig(content);
+
+    expect(fonts).toHaveLength(1);
+    expect(fonts[0].inTimeMs).toBe(400);
+    expect(fonts[0].outTimeMs).toBe(600);
+    expect(fonts[0].customFunction).toBe(42);
+  });
+
+  it('leaves extended fields undefined for standard 8-field line', () => {
+    const content = 'font1=(0,0,255),1,0,0,0,0,0,300,500\n';
+    const fonts = parseXenoFontConfig(content);
+
+    expect(fonts).toHaveLength(1);
+    expect(fonts[0].inTimeMs).toBeUndefined();
+    expect(fonts[0].outTimeMs).toBeUndefined();
+    expect(fonts[0].customFunction).toBeUndefined();
+  });
+});
+
+// ─── importXenoSdCard firmware detection integration ───
+
+describe('importXenoSdCard firmware detection integration', () => {
+  it('detects V1.0 for basic SD card with root fontconfig.ini and standard config.ini', () => {
+    const files = new Map<string, string>();
+    files.set('set/config.ini', 'pixel_number=133\nvolume=80\n');
+    files.set('fontconfig.ini', 'font1=(0,0,255),1,0,0,0,0,0,300,500\n');
+
+    const result = importXenoSdCard(files);
+    expect(result.detectedFirmwareVersion).toBe('1.0');
+  });
+
+  it('detects V1.2.5 when per-folder fontconfig.ini files are present', () => {
+    const files = new Map<string, string>();
+    files.set('set/config.ini', 'pixel_number=133\n');
+    files.set('1/fontconfig.ini', 'font1=(255,0,0),0,0,0,0,0,0,200,400\n');
+
+    const result = importXenoSdCard(files);
+    expect(result.detectedFirmwareVersion).toBe('1.2.5');
+  });
+
+  it('detects V1.2 when config.ini has motor_crystal_chamber', () => {
+    const files = new Map<string, string>();
+    files.set('set/config.ini', 'pixel_number=133\nmotor_crystal_chamber=1\n');
+    files.set('fontconfig.ini', 'font1=(0,0,255),1,0,0,0,0,0,300,500\n');
+
+    const result = importXenoSdCard(files);
+    expect(result.detectedFirmwareVersion).toBe('1.2');
+  });
+
+  it('detects V1.3.1 when config.ini has melt_mode', () => {
+    const files = new Map<string, string>();
+    files.set('set/config.ini', 'pixel_number=133\nmelt_mode=1\n');
+    files.set('fontconfig.ini', 'font1=(0,0,255),1,0,0,0,0,0,300,500\n');
+
+    const result = importXenoSdCard(files);
+    expect(result.detectedFirmwareVersion).toBe('1.3.1');
+  });
+
+  it('detects V1.4.0 when fontconfig.ini has extended fields (10+ columns)', () => {
+    const files = new Map<string, string>();
+    files.set('set/config.ini', 'pixel_number=133\n');
+    files.set('fontconfig.ini', 'font1=(0,0,255),1,0,0,0,0,0,300,500,400,600\n');
+
+    const result = importXenoSdCard(files);
+    expect(result.detectedFirmwareVersion).toBe('1.4.0');
   });
 });

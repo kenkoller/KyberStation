@@ -1,6 +1,8 @@
 import type {
   BoardProfile,
   XenoBladeEffect,
+  XenoFirmwareFeatures,
+  XenoFirmwareVersion,
   XenoIgnitionStyle,
   XenoLightEffect,
 } from '../types.js';
@@ -55,6 +57,84 @@ export const XENO_FORCE_EFFECTS: readonly XenoLightEffect[] = [
   { id: 0, name: 'Force Effect 1' },
   { id: 1, name: 'Force Effect 2' },
 ] as const;
+
+// ─── Xenopixel V3 Firmware Feature Matrix ───
+// Each entry describes which features a given firmware version unlocks.
+// Features are cumulative — V1.3.1 inherits V1.2.5's perFolderFontConfig, etc.
+//
+// Source: XENO3.0 Setting Change Manual revision history + community firmware changelogs
+
+export const XENO_FIRMWARE_FEATURES: readonly XenoFirmwareFeatures[] = [
+  {
+    version: '1.0',
+    label: 'V1.0 — Base',
+    perFolderFontConfig: false,
+    motorCrystalChamber: false,
+    btMode: false,
+    meltEffect: false,
+    lightningBlock: false,
+    knockPoke: false,
+    configurableInOutTime: false,
+    customFunction: false,
+  },
+  {
+    version: '1.2',
+    label: 'V1.2 — Motor + BT',
+    perFolderFontConfig: false,
+    motorCrystalChamber: true,
+    btMode: true,
+    meltEffect: false,
+    lightningBlock: false,
+    knockPoke: false,
+    configurableInOutTime: false,
+    customFunction: false,
+  },
+  {
+    version: '1.2.5',
+    label: 'V1.2.5 — Per-Font Config',
+    perFolderFontConfig: true,
+    motorCrystalChamber: true,
+    btMode: true,
+    meltEffect: false,
+    lightningBlock: false,
+    knockPoke: false,
+    configurableInOutTime: false,
+    customFunction: false,
+  },
+  {
+    version: '1.3.1',
+    label: 'V1.3.1 — Melt + Lightning',
+    perFolderFontConfig: true,
+    motorCrystalChamber: true,
+    btMode: true,
+    meltEffect: true,
+    lightningBlock: true,
+    knockPoke: true,
+    configurableInOutTime: false,
+    customFunction: false,
+  },
+  {
+    version: '1.4.0',
+    label: 'V1.4.0 — In/Out Time + Custom',
+    perFolderFontConfig: true,
+    motorCrystalChamber: true,
+    btMode: true,
+    meltEffect: true,
+    lightningBlock: true,
+    knockPoke: true,
+    configurableInOutTime: true,
+    customFunction: true,
+  },
+] as const;
+
+/**
+ * Look up the feature flags for a specific firmware version.
+ * Falls back to the V1.0 base feature set for unknown versions.
+ */
+export function getXenoFirmwareFeatures(version: XenoFirmwareVersion): XenoFirmwareFeatures {
+  const found = XENO_FIRMWARE_FEATURES.find(f => f.version === version);
+  return found ?? XENO_FIRMWARE_FEATURES[0];
+}
 
 // ─── Shared types ───
 

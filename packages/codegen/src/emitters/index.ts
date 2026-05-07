@@ -4,6 +4,7 @@ export type { BoardEmitter, BoardEmitOptions, EmitterOutput } from './BaseEmitte
 export { CFXEmitter } from './CFXEmitter.js';
 export { GHv3Emitter } from './GHv3Emitter.js';
 export { XenopixelEmitter } from './XenopixelEmitter.js';
+export type { XenoEmitterFirmwareVersion } from './XenopixelEmitter.js';
 
 import type { BoardEmitter } from './BaseEmitter.js';
 import { CFXEmitter } from './CFXEmitter.js';

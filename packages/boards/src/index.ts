@@ -14,6 +14,8 @@ export type {
   XenoIgnitionStyle,
   XenoLightEffect,
   XenopixelConfig,
+  XenoFirmwareVersion,
+  XenoFirmwareFeatures,
 } from './types.js';
 
 // ─── Board Registry & Helpers ───
@@ -43,6 +45,8 @@ export {
   XENO_IGNITION_STYLES,
   XENO_BLASTER_EFFECTS,
   XENO_FORCE_EFFECTS,
+  XENO_FIRMWARE_FEATURES,
+  getXenoFirmwareFeatures,
 } from './profiles/xenopixel.js';
 
 export {

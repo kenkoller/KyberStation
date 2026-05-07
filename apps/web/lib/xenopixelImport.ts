@@ -2,10 +2,22 @@
 // Inverse of packages/codegen/src/emitters/XenopixelEmitter.ts.
 // Parses Xenopixel V3 SD card config files (set/config.ini + N/fontconfig.ini)
 // and reconstructs KyberStation BladeConfig presets from them.
+//
+// Firmware version detection heuristic (from file structure + config.ini keys):
+//   - has N/fontconfig.ini     → V1.2.5+
+//   - has motor_crystal_chamber → V1.2+
+//   - has melt_mode / knock_on → V1.3.1+
+//   - fontconfig line has 10+  → V1.4.0+ (in/out time fields)
 
 import type { BladeConfig, RGB } from '@kyberstation/engine';
 
 // ─── Parsed Types ───
+
+/**
+ * Detected firmware version based on file structure + config.ini keys.
+ * Matches @kyberstation/boards XenoFirmwareVersion but kept local.
+ */
+export type DetectedFirmwareVersion = '1.0' | '1.2' | '1.2.5' | '1.3.1' | '1.4.0';
 
 /** Global board settings parsed from set/config.ini */
 export interface XenoGlobalConfig {
@@ -33,6 +45,16 @@ export interface XenoGlobalConfig {
   clashSensitivity: number;
   powerOnTime: number;
   powerOffTime: number;
+  /** V1.2+: motor crystal chamber toggle (undefined if not present in config) */
+  motorCrystalChamber?: boolean;
+  /** V1.2+: Bluetooth mode (undefined if not present in config) */
+  btMode?: boolean;
+  /** V1.3.1+: melt mode toggle (undefined if not present in config) */
+  meltMode?: boolean;
+  /** V1.3.1+: knock gesture (undefined if not present in config) */
+  knockOn?: boolean;
+  /** V1.3.1+: poke gesture (undefined if not present in config) */
+  pokeOn?: boolean;
 }
 
 /** Single font preset parsed from a fontconfig.ini line */
@@ -47,6 +69,12 @@ export interface XenoFontConfig {
   ignitionStyle: number;
   ignitionSpeedMs: number;
   retractionSpeedMs: number;
+  /** V1.4.0+: per-font in time override (undefined if not present) */
+  inTimeMs?: number;
+  /** V1.4.0+: per-font out time override (undefined if not present) */
+  outTimeMs?: number;
+  /** V1.4.0+: custom function field (undefined if not present) */
+  customFunction?: number;
 }
 
 /** Full imported config from an SD card */
@@ -54,6 +82,8 @@ export interface ImportedXenoConfig {
   global: XenoGlobalConfig;
   fonts: XenoFontConfig[];
   bladeConfigs: BladeConfig[];
+  /** Detected firmware version based on file structure + config keys */
+  detectedFirmwareVersion: DetectedFirmwareVersion;
   /** Any issues encountered during parsing (non-fatal) */
   warnings: string[];
 }
@@ -265,6 +295,25 @@ export function parseXenoConfigIni(content: string): XenoGlobalConfig {
       case 'powerofftime':
         config.powerOffTime = parseIntSafe(value, config.powerOffTime);
         break;
+
+      // V1.2+ keys
+      case 'motor_crystal_chamber':
+        config.motorCrystalChamber = parseBoolInt(value);
+        break;
+      case 'bt_mode':
+        config.btMode = parseBoolInt(value);
+        break;
+
+      // V1.3.1+ keys
+      case 'melt_mode':
+        config.meltMode = parseBoolInt(value);
+        break;
+      case 'knock_on':
+        config.knockOn = parseBoolInt(value);
+        break;
+      case 'poke_on':
+        config.pokeOn = parseBoolInt(value);
+        break;
     }
   }
 
@@ -304,7 +353,7 @@ function parseFontConfigLine(line: string): XenoFontConfig | null {
   // The remaining fields are comma-separated numbers
   const fields = rgbMatch[2].split(',').map(s => s.trim());
 
-  return {
+  const result: XenoFontConfig = {
     fontNumber,
     baseColor: rgb,
     bladeEffect: parseIntSafe(fields[0] ?? '', 1),
@@ -316,6 +365,19 @@ function parseFontConfigLine(line: string): XenoFontConfig | null {
     ignitionSpeedMs: parseIntSafe(fields[6] ?? '', 300),
     retractionSpeedMs: parseIntSafe(fields[7] ?? '', 500),
   };
+
+  // V1.4.0+ extended fields: inTime, outTime, customFunction
+  if (fields.length > 8 && fields[8] !== undefined && fields[8] !== '') {
+    result.inTimeMs = parseIntSafe(fields[8], result.ignitionSpeedMs);
+  }
+  if (fields.length > 9 && fields[9] !== undefined && fields[9] !== '') {
+    result.outTimeMs = parseIntSafe(fields[9], result.retractionSpeedMs);
+  }
+  if (fields.length > 10 && fields[10] !== undefined && fields[10] !== '') {
+    result.customFunction = parseIntSafe(fields[10], 0);
+  }
+
+  return result;
 }
 
 /**
@@ -411,6 +473,49 @@ export function xenoFontToBladeConfig(font: XenoFontConfig, ledCount?: number): 
   };
 }
 
+// ─── Firmware Version Detection ───
+
+/**
+ * Detect the firmware version from SD card structure clues.
+ *
+ * Heuristic (highest-wins):
+ *   1. Any fontconfig.ini line has 10+ comma-separated fields → V1.4.0
+ *   2. config.ini has melt_mode / knock_on / poke_on → V1.3.1
+ *   3. Per-folder N/fontconfig.ini files exist → V1.2.5
+ *   4. config.ini has motor_crystal_chamber / bt_mode → V1.2
+ *   5. Otherwise → V1.0
+ */
+export function detectFirmwareVersion(
+  files: Map<string, string>,
+  global: XenoGlobalConfig,
+  fonts: XenoFontConfig[],
+): DetectedFirmwareVersion {
+  // Check for V1.4.0 extended fontconfig fields
+  const hasExtendedFontFields = fonts.some(f =>
+    f.inTimeMs !== undefined || f.outTimeMs !== undefined || f.customFunction !== undefined,
+  );
+  if (hasExtendedFontFields) return '1.4.0';
+
+  // Check for V1.3.1 config.ini keys
+  if (global.meltMode !== undefined || global.knockOn !== undefined || global.pokeOn !== undefined) {
+    return '1.3.1';
+  }
+
+  // Check for V1.2.5 per-folder fontconfig files
+  const hasPerFolderFontConfig = Array.from(files.keys()).some(path => {
+    const normalized = path.replace(/\\/g, '/').toLowerCase();
+    return /^\d+\/fontconfig\.ini$/.test(normalized);
+  });
+  if (hasPerFolderFontConfig) return '1.2.5';
+
+  // Check for V1.2 config.ini keys
+  if (global.motorCrystalChamber !== undefined || global.btMode !== undefined) {
+    return '1.2';
+  }
+
+  return '1.0';
+}
+
 // ─── SD Card Orchestrator ───
 
 /**
@@ -472,6 +577,9 @@ export function importXenoSdCard(files: Map<string, string>): ImportedXenoConfig
     warnings.push('No font presets found in any fontconfig.ini file');
   }
 
+  // ── Detect firmware version ──
+  const detectedFirmwareVersion = detectFirmwareVersion(files, global, allFonts);
+
   // ── Convert to BladeConfigs ──
   const bladeConfigs: BladeConfig[] = [];
   for (const font of allFonts) {
@@ -488,6 +596,7 @@ export function importXenoSdCard(files: Map<string, string>): ImportedXenoConfig
     global,
     fonts: allFonts,
     bladeConfigs,
+    detectedFirmwareVersion,
     warnings,
   };
 }

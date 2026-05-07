@@ -1,13 +1,61 @@
 // ─── Xenopixel V3 Emitter ───
 // Generates real Xenopixel V3 SD card config files:
-//   - fontconfig.ini  (per-font preset lines in the SD root)
+//   - fontconfig.ini  (per-font preset lines — root or per-folder depending on firmware)
 //   - set/config.ini  (global board settings)
 //
 // Xenopixel V3 uses a compact comma-delimited format for each font preset:
 //   font1=(R,G,B),bladeEffect,blasterEffect,forceEffect,lockupEffect,defaultLightEffect,ignitionStyle,ignitionSpeedMs,retractionSpeedMs
+//
+// Firmware-version-aware (V1.0 → V1.4.0):
+//   - V1.0–V1.2:   single fontconfig.ini in SD root
+//   - V1.2.5+:     per-font fontconfig.ini (N/fontconfig.ini)
+//   - V1.2+:       motor_crystal_chamber + bt_mode in config.ini
+//   - V1.3.1+:     melt_mode + lightning_block_mode + knock_on + poke_on in config.ini
+//   - V1.4.0+:     configurable in/out time per font, custom_function field in fontconfig.ini
 
 import type { StyleNode } from '../types.js';
 import type { BoardEmitter, BoardEmitOptions, EmitterOutput } from './BaseEmitter.js';
+
+// ─── Firmware Version ───
+
+/**
+ * Supported Xenopixel V3 firmware versions.
+ * Local type to avoid cross-package import from @kyberstation/boards.
+ */
+export type XenoEmitterFirmwareVersion = '1.0' | '1.2' | '1.2.5' | '1.3.1' | '1.4.0';
+
+/**
+ * Feature flags derived from firmware version.
+ * Matches the shape in @kyberstation/boards but kept local for decoupling.
+ */
+interface FirmwareCapabilities {
+  perFolderFontConfig: boolean;
+  motorCrystalChamber: boolean;
+  btMode: boolean;
+  meltEffect: boolean;
+  lightningBlock: boolean;
+  knockPoke: boolean;
+  configurableInOutTime: boolean;
+  customFunction: boolean;
+}
+
+/** Resolve capabilities from a firmware version string. */
+function getFirmwareCapabilities(version: XenoEmitterFirmwareVersion): FirmwareCapabilities {
+  // Parse version as a comparable number (1.0 → 100, 1.2 → 120, 1.2.5 → 125, etc.)
+  const parts = version.split('.').map(Number);
+  const v = parts[0] * 100 + (parts[1] ?? 0) * 10 + (parts[2] ?? 0);
+
+  return {
+    perFolderFontConfig: v >= 125,    // V1.2.5+
+    motorCrystalChamber: v >= 120,    // V1.2+
+    btMode: v >= 120,                 // V1.2+
+    meltEffect: v >= 131,             // V1.3.1+
+    lightningBlock: v >= 131,         // V1.3.1+
+    knockPoke: v >= 131,              // V1.3.1+
+    configurableInOutTime: v >= 140,  // V1.4.0+
+    customFunction: v >= 140,         // V1.4.0+
+  };
+}
 
 // ─── Xenopixel V3 Interfaces ───
 
@@ -23,6 +71,12 @@ export interface XenoPresetOptions {
   ignitionStyle: number;       // 0-11
   ignitionSpeedMs: number;     // typically 100-800
   retractionSpeedMs: number;   // typically 200-1000
+  /** V1.4.0+: per-font in time override (ms). undefined = use global PowerOnTime. */
+  inTimeMs?: number;
+  /** V1.4.0+: per-font out time override (ms). undefined = use global PowerOffTime. */
+  outTimeMs?: number;
+  /** V1.4.0+: custom function field. undefined = omit. */
+  customFunction?: number;
 }
 
 export interface XenoGlobalSettings {
@@ -50,6 +104,16 @@ export interface XenoGlobalSettings {
   clashSensitivity: number;      // default 2.0
   powerOnTime: number;           // ms, default 2000
   powerOffTime: number;          // ms, default 10000
+  /** V1.2+: motor crystal chamber toggle */
+  motorCrystalChamber?: boolean;
+  /** V1.2+: Bluetooth mode toggle */
+  btMode?: boolean;
+  /** V1.3.1+: melt effect mode */
+  meltMode?: boolean;
+  /** V1.3.1+: knock gesture on */
+  knockOn?: boolean;
+  /** V1.3.1+: poke gesture on */
+  pokeOn?: boolean;
 }
 
 // ─── Defaults ───
@@ -222,12 +286,27 @@ export class XenopixelEmitter implements BoardEmitter {
   readonly boardName = 'Xenopixel V3';
   readonly formatDescription = 'Xenopixel V3 SD card config (fontconfig.ini + set/config.ini)';
 
+  /** Active firmware version — controls output format. Default: '1.0' (widest compatibility). */
+  firmwareVersion: XenoEmitterFirmwareVersion;
+
+  constructor(firmwareVersion: XenoEmitterFirmwareVersion = '1.0') {
+    this.firmwareVersion = firmwareVersion;
+  }
+
+  /** Get the resolved feature flags for the active firmware version. */
+  get capabilities(): FirmwareCapabilities {
+    return getFirmwareCapabilities(this.firmwareVersion);
+  }
+
   /**
    * Generate a single fontconfig.ini line for one preset.
-   * Format: fontN=(R,G,B),A,B,C,D,E,F,G,H
+   * Format: fontN=(R,G,B),A,B,C,D,E,F,G,H[,inTime,outTime[,customFunction]]
+   *
+   * V1.4.0+ appends per-font in/out time and custom function fields.
    */
   emitFontConfigLine(fontNumber: number, options: BoardEmitOptions): { line: string; notes: string[] } {
     const notes: string[] = [];
+    const caps = this.capabilities;
 
     // Map style → blade effect
     const [bladeEffect, styleNote] = mapBladeEffect(options.style);
@@ -255,14 +334,31 @@ export class XenopixelEmitter implements BoardEmitter {
     const defaultLightEffect = 0;
 
     const rgb = formatRgb(options.baseColor);
-    const line = `font${fontNumber}=${rgb},${bladeEffect},${blasterEffect},${forceEffect},${lockupEffect},${defaultLightEffect},${ignitionStyle},${ignitionSpeed},${retractionSpeed}`;
+    let line = `font${fontNumber}=${rgb},${bladeEffect},${blasterEffect},${forceEffect},${lockupEffect},${defaultLightEffect},${ignitionStyle},${ignitionSpeed},${retractionSpeed}`;
+
+    // V1.4.0+: append per-font in/out time + custom function
+    if (caps.configurableInOutTime) {
+      const xenoOpts = options as BoardEmitOptions & {
+        xenoInTimeMs?: number;
+        xenoOutTimeMs?: number;
+        xenoCustomFunction?: number;
+      };
+      const inTime = xenoOpts.xenoInTimeMs ?? options.ignitionMs;
+      const outTime = xenoOpts.xenoOutTimeMs ?? options.retractionMs;
+      line += `,${inTime},${outTime}`;
+
+      if (caps.customFunction) {
+        const customFn = xenoOpts.xenoCustomFunction ?? 0;
+        line += `,${customFn}`;
+      }
+    }
 
     return { line, notes };
   }
 
   /**
-   * Generate a full fontconfig.ini for multiple presets.
-   * Each line is: fontN=(R,G,B),A,B,C,D,E,F,G,H
+   * Generate fontconfig.ini content for multiple presets.
+   * Each line is: fontN=(R,G,B),A,B,C,D,E,F,G,H[,inTime,outTime[,customFunction]]
    */
   emitFontConfig(presets: Array<{ options: BoardEmitOptions }>): { content: string; notes: string[] } {
     const lines: string[] = [];
@@ -283,9 +379,14 @@ export class XenopixelEmitter implements BoardEmitter {
   /**
    * Generate config.ini with global settings.
    * This file lives in the set/ folder on the SD card.
+   *
+   * Output adapts to firmware version:
+   *   - V1.2+: includes motor_crystal_chamber + bt_mode
+   *   - V1.3.1+: includes melt_mode + knock_on + poke_on
    */
   emitGlobalConfig(settings?: Partial<XenoGlobalSettings>): string {
     const s: XenoGlobalSettings = { ...DEFAULT_GLOBAL_SETTINGS, ...settings };
+    const caps = this.capabilities;
 
     const lines: string[] = [];
 
@@ -304,6 +405,12 @@ export class XenopixelEmitter implements BoardEmitter {
     lines.push(`twist_on=${boolToInt(s.twistOn)}`);
     lines.push(`twist_off=${boolToInt(s.twistOff)}`);
     lines.push(`twist_sensitivity=${s.twistSensitivity}`);
+
+    // V1.3.1+: knock and poke gestures
+    if (caps.knockPoke) {
+      lines.push(`knock_on=${boolToInt(s.knockOn ?? false)}`);
+      lines.push(`poke_on=${boolToInt(s.pokeOn ?? false)}`);
+    }
     lines.push('');
 
     lines.push('#Volume');
@@ -318,6 +425,11 @@ export class XenopixelEmitter implements BoardEmitter {
     lines.push(`lightning_block_mode=${boolToInt(s.lightningBlockMode)}`);
     lines.push(`blaster_mode=${boolToInt(s.blasterMode)}`);
     lines.push(`ghost_mode=${boolToInt(s.ghostMode)}`);
+
+    // V1.3.1+: melt mode
+    if (caps.meltEffect) {
+      lines.push(`melt_mode=${boolToInt(s.meltMode ?? false)}`);
+    }
     lines.push('');
 
     lines.push('#Sound');
@@ -334,6 +446,16 @@ export class XenopixelEmitter implements BoardEmitter {
     lines.push(`PowerOffTime=${s.powerOffTime}`);
     lines.push('');
 
+    // V1.2+: motor crystal chamber + Bluetooth
+    if (caps.motorCrystalChamber) {
+      lines.push('#Hardware');
+      lines.push(`motor_crystal_chamber=${boolToInt(s.motorCrystalChamber ?? false)}`);
+    }
+    if (caps.btMode) {
+      lines.push(`bt_mode=${boolToInt(s.btMode ?? true)}`);
+      lines.push('');
+    }
+
     return lines.join('\n');
   }
 
@@ -346,6 +468,7 @@ export class XenopixelEmitter implements BoardEmitter {
   emitMultiPreset(presets: Array<{ ast: StyleNode; options: BoardEmitOptions }>): EmitterOutput {
     // Derive LED count for global config from the first preset
     const ledCount = presets[0]?.options.ledCount ?? 133;
+    const caps = this.capabilities;
 
     const { content: fontConfigContent, notes } = this.emitFontConfig(
       presets.map(p => ({ options: p.options })),
@@ -353,12 +476,25 @@ export class XenopixelEmitter implements BoardEmitter {
 
     const globalConfig = this.emitGlobalConfig({ pixelNumber: ledCount });
 
+    // Build the file map based on firmware version
+    const additionalFiles: Record<string, string> = {
+      'set/config.ini': globalConfig,
+    };
+
+    // V1.2.5+: per-font fontconfig.ini files instead of (or in addition to) root
+    if (caps.perFolderFontConfig) {
+      for (let i = 0; i < presets.length; i++) {
+        const fontNum = i + 1;
+        const { line } = this.emitFontConfigLine(fontNum, presets[i].options);
+        // Per-folder: N/fontconfig.ini contains just the single font line
+        additionalFiles[`${fontNum}/fontconfig.ini`] = line + '\n';
+      }
+    }
+
     return {
       configContent: fontConfigContent,
       configFileName: 'fontconfig.ini',
-      additionalFiles: {
-        'set/config.ini': globalConfig,
-      },
+      additionalFiles,
       notes: notes.length > 0 ? notes : undefined,
     };
   }

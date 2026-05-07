@@ -558,3 +558,225 @@ describe('XenopixelEmitter', () => {
     });
   });
 });
+
+// ─── Firmware Version Awareness ───
+
+describe('firmware version awareness', () => {
+  describe('V1.0 base format', () => {
+    const v10 = new XenopixelEmitter('1.0');
+
+    it('explicit V1.0 produces the same 8-field fontconfig format as the default emitter', () => {
+      const opts = makeOptions();
+      const { line } = v10.emitFontConfigLine(1, opts);
+      // Split after the RGB close-paren to get the field list
+      const afterRgb = line.split('),')[1];
+      const fields = afterRgb.split(',');
+      expect(fields).toHaveLength(8);
+      // Verify the line matches the expected shape
+      expect(line).toBe('font1=(0,0,255),1,0,0,0,0,0,300,500');
+    });
+
+    it('config.ini does NOT contain V1.2+ features', () => {
+      const config = v10.emitGlobalConfig();
+      expect(config).not.toContain('motor_crystal_chamber');
+      expect(config).not.toContain('bt_mode');
+      expect(config).not.toContain('melt_mode');
+      expect(config).not.toContain('knock_on');
+      expect(config).not.toContain('poke_on');
+    });
+  });
+
+  describe('V1.2 motor + BT', () => {
+    const v12 = new XenopixelEmitter('1.2');
+
+    it('config.ini CONTAINS motor_crystal_chamber and bt_mode', () => {
+      const config = v12.emitGlobalConfig();
+      expect(config).toContain('motor_crystal_chamber=');
+      expect(config).toContain('bt_mode=');
+    });
+
+    it('fontconfig line still has exactly 8 fields after RGB (no extended fields)', () => {
+      const opts = makeOptions();
+      const { line } = v12.emitFontConfigLine(1, opts);
+      const afterRgb = line.split('),')[1];
+      const fields = afterRgb.split(',');
+      expect(fields).toHaveLength(8);
+    });
+
+    it('config.ini does NOT contain V1.3.1+ features', () => {
+      const config = v12.emitGlobalConfig();
+      expect(config).not.toContain('melt_mode');
+      expect(config).not.toContain('knock_on');
+      expect(config).not.toContain('poke_on');
+    });
+  });
+
+  describe('V1.2.5 per-folder fontconfig', () => {
+    const v125 = new XenopixelEmitter('1.2.5');
+
+    it('emitMultiPreset produces per-folder fontconfig.ini files', () => {
+      const presets = [
+        { ast: dummyAst(), options: makeOptions({ presetName: 'A', baseColor: { r: 0, g: 0, b: 255 } }) },
+        { ast: dummyAst(), options: makeOptions({ presetName: 'B', baseColor: { r: 255, g: 0, b: 0 } }) },
+      ];
+
+      const result = v125.emitMultiPreset(presets);
+      expect(result.additionalFiles).toBeDefined();
+      expect(result.additionalFiles!['1/fontconfig.ini']).toBeDefined();
+      expect(result.additionalFiles!['2/fontconfig.ini']).toBeDefined();
+    });
+
+    it('each per-folder file contains a single font line', () => {
+      const presets = [
+        { ast: dummyAst(), options: makeOptions({ presetName: 'A', baseColor: { r: 0, g: 0, b: 255 } }) },
+        { ast: dummyAst(), options: makeOptions({ presetName: 'B', baseColor: { r: 255, g: 0, b: 0 } }) },
+      ];
+
+      const result = v125.emitMultiPreset(presets);
+      // Per-folder files should each contain exactly one font line
+      const folder1 = result.additionalFiles!['1/fontconfig.ini'].trim();
+      const folder2 = result.additionalFiles!['2/fontconfig.ini'].trim();
+      expect(folder1.split('\n')).toHaveLength(1);
+      expect(folder2.split('\n')).toHaveLength(1);
+      expect(folder1).toMatch(/^font1=/);
+      expect(folder2).toMatch(/^font2=/);
+    });
+
+    it('root fontconfig.ini still contains all lines', () => {
+      const presets = [
+        { ast: dummyAst(), options: makeOptions({ presetName: 'A', baseColor: { r: 0, g: 0, b: 255 } }) },
+        { ast: dummyAst(), options: makeOptions({ presetName: 'B', baseColor: { r: 255, g: 0, b: 0 } }) },
+      ];
+
+      const result = v125.emitMultiPreset(presets);
+      const rootLines = result.configContent.trim().split('\n');
+      expect(rootLines).toHaveLength(2);
+      expect(rootLines[0]).toMatch(/^font1=/);
+      expect(rootLines[1]).toMatch(/^font2=/);
+    });
+  });
+
+  describe('V1.3.1 melt + knock/poke', () => {
+    const v131 = new XenopixelEmitter('1.3.1');
+
+    it('config.ini CONTAINS melt_mode, knock_on, and poke_on', () => {
+      const config = v131.emitGlobalConfig();
+      expect(config).toContain('melt_mode=');
+      expect(config).toContain('knock_on=');
+      expect(config).toContain('poke_on=');
+    });
+
+    it('inherits V1.2 motor + BT features', () => {
+      const config = v131.emitGlobalConfig();
+      expect(config).toContain('motor_crystal_chamber=');
+      expect(config).toContain('bt_mode=');
+    });
+
+    it('inherits V1.2.5 per-folder fontconfig', () => {
+      const presets = [
+        { ast: dummyAst(), options: makeOptions({ presetName: 'A' }) },
+        { ast: dummyAst(), options: makeOptions({ presetName: 'B' }) },
+      ];
+
+      const result = v131.emitMultiPreset(presets);
+      expect(result.additionalFiles!['1/fontconfig.ini']).toBeDefined();
+      expect(result.additionalFiles!['2/fontconfig.ini']).toBeDefined();
+    });
+  });
+
+  describe('V1.4.0 in/out time + custom function', () => {
+    const v140 = new XenopixelEmitter('1.4.0');
+
+    it('fontconfig line has MORE than 8 fields after RGB', () => {
+      const opts = makeOptions();
+      const { line } = v140.emitFontConfigLine(1, opts);
+      const afterRgb = line.split('),')[1];
+      const fields = afterRgb.split(',');
+      expect(fields.length).toBeGreaterThan(8);
+    });
+
+    it('basic emit appends in-time and out-time after retraction speed', () => {
+      const opts = makeOptions({ ignitionMs: 300, retractionMs: 500 });
+      const { line } = v140.emitFontConfigLine(1, opts);
+      const afterRgb = line.split('),')[1];
+      const fields = afterRgb.split(',');
+      // Fields: bladeEffect,blasterEffect,forceEffect,lockupEffect,defaultLightEffect,ignitionStyle,ignitionSpeed,retractionSpeed,inTime,outTime,customFunction
+      // Index 8 = inTime (defaults to ignitionMs), Index 9 = outTime (defaults to retractionMs)
+      expect(Number(fields[8])).toBe(300);
+      expect(Number(fields[9])).toBe(500);
+    });
+
+    it('respects xenoInTimeMs and xenoOutTimeMs overrides', () => {
+      const opts = {
+        ...makeOptions({ ignitionMs: 300, retractionMs: 500 }),
+        xenoInTimeMs: 400,
+        xenoOutTimeMs: 600,
+      } as BoardEmitOptions & { xenoInTimeMs: number; xenoOutTimeMs: number };
+
+      const { line } = v140.emitFontConfigLine(1, opts);
+      const afterRgb = line.split('),')[1];
+      const fields = afterRgb.split(',');
+      expect(Number(fields[8])).toBe(400);
+      expect(Number(fields[9])).toBe(600);
+    });
+
+    it('appends custom function when xenoCustomFunction is set', () => {
+      const opts = {
+        ...makeOptions(),
+        xenoInTimeMs: 400,
+        xenoOutTimeMs: 600,
+        xenoCustomFunction: 42,
+      } as BoardEmitOptions & { xenoInTimeMs: number; xenoOutTimeMs: number; xenoCustomFunction: number };
+
+      const { line } = v140.emitFontConfigLine(1, opts);
+      const afterRgb = line.split('),')[1];
+      const fields = afterRgb.split(',');
+      // Last field should be the custom function
+      expect(Number(fields[fields.length - 1])).toBe(42);
+    });
+
+    it('config.ini includes all V1.3.1 features (cumulative)', () => {
+      const config = v140.emitGlobalConfig();
+      // V1.2
+      expect(config).toContain('motor_crystal_chamber=');
+      expect(config).toContain('bt_mode=');
+      // V1.3.1
+      expect(config).toContain('melt_mode=');
+      expect(config).toContain('knock_on=');
+      expect(config).toContain('poke_on=');
+    });
+  });
+
+  describe('capabilities getter', () => {
+    it('V1.0 has all flags false', () => {
+      const caps = new XenopixelEmitter('1.0').capabilities;
+      expect(caps.perFolderFontConfig).toBe(false);
+      expect(caps.motorCrystalChamber).toBe(false);
+      expect(caps.btMode).toBe(false);
+      expect(caps.meltEffect).toBe(false);
+      expect(caps.lightningBlock).toBe(false);
+      expect(caps.knockPoke).toBe(false);
+      expect(caps.configurableInOutTime).toBe(false);
+      expect(caps.customFunction).toBe(false);
+    });
+
+    it('V1.4.0 has all flags true', () => {
+      const caps = new XenopixelEmitter('1.4.0').capabilities;
+      expect(caps.perFolderFontConfig).toBe(true);
+      expect(caps.motorCrystalChamber).toBe(true);
+      expect(caps.btMode).toBe(true);
+      expect(caps.meltEffect).toBe(true);
+      expect(caps.lightningBlock).toBe(true);
+      expect(caps.knockPoke).toBe(true);
+      expect(caps.configurableInOutTime).toBe(true);
+      expect(caps.customFunction).toBe(true);
+    });
+
+    it('V1.2 has motor + BT true but perFolderFontConfig false', () => {
+      const caps = new XenopixelEmitter('1.2').capabilities;
+      expect(caps.motorCrystalChamber).toBe(true);
+      expect(caps.btMode).toBe(true);
+      expect(caps.perFolderFontConfig).toBe(false);
+    });
+  });
+});
