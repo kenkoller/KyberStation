@@ -362,14 +362,21 @@ const XENO_STYLE_MAP: Record<string, number> = {
 };
 
 /**
- * Map KyberStation ignition IDs to Xenopixel V3 ignition/blade-style IDs (0-11).
- * 0=Standard, 1=Velocity, 2=Torch, 3=Blaster
+ * Map KyberStation ignition names to Xenopixel V3 ignition IDs (0-11).
  */
 const XENO_IGNITION_MAP: Record<string, number> = {
   standard: 0,
   scroll: 1,
   wipe: 2,
   spark: 3,
+  ghost: 4,
+  stack: 5,
+  foldTile: 6,
+  word: 7,
+  faser: 8,
+  scavenger: 9,
+  hunter: 10,
+  broken: 11,
 };
 
 function xenoStyleId(style: string): number {

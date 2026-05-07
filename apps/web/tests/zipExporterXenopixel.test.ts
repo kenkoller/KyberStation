@@ -188,6 +188,48 @@ describe('Xenopixel SD card export', () => {
     });
   });
 
+  describe('ignition ID mapping', () => {
+    it.each([
+      ['standard', 0],
+      ['scroll', 1],
+      ['wipe', 2],
+      ['spark', 3],
+      ['ghost', 4],
+      ['stack', 5],
+      ['foldTile', 6],
+      ['word', 7],
+      ['faser', 8],
+      ['scavenger', 9],
+      ['hunter', 10],
+      ['broken', 11],
+    ])('maps ignition "%s" to Xenopixel ID %i', async (ignition, expectedId) => {
+      const blob = await exportPresetZip({
+        preset: makePreset('Test', { ignition: ignition as string }),
+        boardId: 'xenopixel',
+      });
+      const fontConfig = await readZipFile(blob, '1/fontconfig.ini');
+      expect(fontConfig).not.toBeNull();
+      // fontconfig format: font1=(R,G,B),A,B,C,D,E,F,G,H
+      // F field (7th value after the RGB tuple) is the ignition ID
+      const match = fontConfig!.match(/font1=\([^)]+\),(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)/);
+      expect(match).not.toBeNull();
+      // match[6] is the F field (ignition/blade style)
+      expect(Number(match![6])).toBe(expectedId);
+    });
+
+    it('defaults unmapped ignition names to Standard (0)', async () => {
+      const blob = await exportPresetZip({
+        preset: makePreset('Test', { ignition: 'nonexistent-ignition' }),
+        boardId: 'xenopixel',
+      });
+      const fontConfig = await readZipFile(blob, '1/fontconfig.ini');
+      expect(fontConfig).not.toBeNull();
+      const match = fontConfig!.match(/font1=\([^)]+\),(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)/);
+      expect(match).not.toBeNull();
+      expect(Number(match![6])).toBe(0);
+    });
+  });
+
   describe('Other boards have their own README content (not the Xenopixel one)', () => {
     it('Proffie ZIP does NOT include any KYBERSTATION_README.txt (its config.h IS flashable)', async () => {
       const blob = await exportPresetZip({

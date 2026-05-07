@@ -230,10 +230,11 @@ describe('BladeEngine renderMode', () => {
       expect(engine.state).toBe(BladeState.OFF);
     });
 
-    it('renders all 10 xeno ignitions without error', () => {
+    it('renders all 12 xeno ignitions without error', () => {
       const xenoIgnitions = [
         'standard', 'velocity', 'torch', 'blaster', 'ghost',
-        'stack', 'fold-tile', 'word', 'faser', 'broken',
+        'stack', 'fold-tile', 'word', 'faser', 'scavenger',
+        'hunter', 'broken',
       ];
 
       for (const ignition of xenoIgnitions) {
