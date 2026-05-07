@@ -58,6 +58,24 @@ export { HyperspaceIgnition } from './HyperspaceIgnition.js';
 export { SummonIgnition } from './SummonIgnition.js';
 export { SeismicIgnition } from './SeismicIgnition.js';
 
+// ─── Xenopixel Ignition Registry ───
+export {
+  XENO_IGNITION_MAP,
+  XENO_IGNITION_REGISTRY,
+  createXenoIgnition,
+  xenoIgnitionIdToStyleId,
+  XenoStandardIgnition,
+  XenoVelocityIgnition,
+  XenoTorchIgnition,
+  XenoBlasterIgnition,
+  XenoGhostIgnition,
+  XenoStackIgnition,
+  XenoFoldTileIgnition,
+  XenoWordIgnition,
+  XenoFaserIgnition,
+  XenoBrokenIgnition,
+} from './xenopixel/index.js';
+
 /** Registry mapping ignition style IDs to their constructors. */
 export const IGNITION_REGISTRY: Record<string, () => IgnitionAnimation> = {
   standard: () => new StandardIgnition(),

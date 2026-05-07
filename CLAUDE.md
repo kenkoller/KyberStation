@@ -552,7 +552,7 @@ Single marathon PR (#287) implementing the full Xenopixel V3 implementation plan
 | Phase | Scope | Key files |
 |---|---|---|
 | **1A** Board profiles | Updated Xenopixel profiles: `configFormat` → `'ini-txt'`, 8 blade effects, 12 ignition styles, 3 blaster effects, 2 force effects, firmware version features. Exported `XENO_BLADE_EFFECTS`, `XENO_IGNITION_STYLES`, `XENO_BLASTER_EFFECTS`, `XENO_FORCE_EFFECTS`, `XENO_FIRMWARE_FEATURES`, `getXenoFirmwareFeatures` | `packages/boards/src/profiles/xenopixel.ts`, `packages/boards/src/types.ts`, `packages/boards/src/index.ts` |
-| **1B** Emitter rewrite | `XenopixelEmitter` generates real `fontconfig.ini` + `config.ini` with firmware-version-aware format (v1.4.0 adds `inTime,outTime,customFunction` fields). `emitFontConfig()`, `emitGlobalConfig()`, `emitSDCardStructure()` | `packages/codegen/src/emitters/XenopixelEmitter.ts` |
+| **1B** Emitter rewrite | `XenopixelEmitter` generates real `fontconfig.ini` + `config.ini` with firmware-version-aware format (v1.4.0 adds `inTime,outTime,customFunction` fields). `emitFontConfig()`, `emitGlobalConfig()` | `packages/codegen/src/emitters/XenopixelEmitter.ts` |
 | **2A** Effect picker | `XenoEffectPicker` — 8-card visual grid with animated preview descriptions | `apps/web/components/editor/xenopixel/XenoEffectPicker.tsx` |
 | **2B** Ignition picker | `XenoIgnitionPicker` — 12-card grid, standard vs special-preon categories | `apps/web/components/editor/xenopixel/XenoIgnitionPicker.tsx` |
 | **2C** Board-gated panels | `MainContent.tsx` swaps ProffieOS surfaces for Xenopixel equivalents when active board starts with `'xenopixel'` | `apps/web/components/layout/MainContent.tsx` |
@@ -560,7 +560,7 @@ Single marathon PR (#287) implementing the full Xenopixel V3 implementation plan
 | **3A** Blade effect styles | 8 engine style classes under `packages/engine/src/styles/xenopixel/` approximating real firmware output | `XenoFireStyle.ts` through `XenoFlashingStyle.ts` |
 | **3B** Ignition animations | 10 ignition classes under `packages/engine/src/ignition/xenopixel/` | `XenoStandardIgnition.ts` through `XenoBrokenIgnition.ts` |
 | **3C** Board-aware engine | `BladeEngine.renderMode: 'proffie' \| 'xenopixel'` switches style + ignition registries. `setRenderMode()` / `getRenderMode()` API | `packages/engine/src/BladeEngine.ts` |
-| **4A–4B** Compat + porter | `xenopixelCompat` on preset metadata, `getClosestXenoEffect()` / `getClosestXenoIgnition()` mapping utilities, `XenoDesignPorter` conversion dialog, `XenoConfigPreview` live INI preview | `apps/web/lib/xenopixelCompat.ts`, `apps/web/components/editor/xenopixel/Xeno{DesignPorter,ConfigPreview}.tsx` |
+| **4A–4B** Compat + porter | `xenopixelCompat` on preset metadata, `getClosestXenoEffect()` / `getClosestXenoIgnition()` mapping utilities, `XenoDesignPorter` conversion dialog (UI only — apply is a visual acknowledgment, does not mutate config) | `apps/web/lib/xenopixelCompat.ts`, `apps/web/components/editor/xenopixel/XenoDesignPorter.tsx` |
 | **4C** SD card import | `parseXenoFontConfig()`, `parseXenoGlobalConfig()`, `parseXenoSDCard()`, `inferFirmwareVersion()` heuristic | `apps/web/lib/xenopixelImport.ts` |
 | **5A** Firmware versions | `XenoFirmwareVersion` type (`'1.0' \| '1.2' \| '1.2.5' \| '1.3.1' \| '1.4.0'`), `XenoFirmwareFeatures` interface with cumulative capability flags, emitter format branching per version | `packages/boards/src/profiles/xenopixel.ts`, `packages/codegen/src/emitters/XenopixelEmitter.ts` |
 

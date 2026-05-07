@@ -132,6 +132,21 @@ export {
   ExpressionParseError,
 } from './modulation/index.js';
 
+// ─── Xenopixel Style Registry ───
+export {
+  XENO_STYLE_REGISTRY,
+  createXenoStyle,
+  xenoEffectIdToStyleId,
+} from './styles/xenopixel/index.js';
+
+// ─── Xenopixel Ignition Registry ───
+export {
+  XENO_IGNITION_MAP,
+  XENO_IGNITION_REGISTRY,
+  createXenoIgnition,
+  xenoIgnitionIdToStyleId,
+} from './ignition/xenopixel/index.js';
+
 export {
   BladeState,
   DEFAULT_TOPOLOGY,

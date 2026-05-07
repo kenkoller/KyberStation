@@ -15,7 +15,7 @@ export class XenoStackIgnition extends BaseIgnition {
   getMask(position: number, progress: number): number {
     // 12 discrete segments stack from base to tip
     const segments = 12;
-    const segIndex = Math.floor(position * segments);
+    const segIndex = Math.min(segments - 1, Math.floor(position * segments));
 
     // How many full segments should be lit at this progress
     const litSegments = Math.floor(progress * segments);

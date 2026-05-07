@@ -10,24 +10,34 @@ import type { BoardEmitter } from './BaseEmitter.js';
 import { CFXEmitter } from './CFXEmitter.js';
 import { GHv3Emitter } from './GHv3Emitter.js';
 import { XenopixelEmitter } from './XenopixelEmitter.js';
+import type { XenoEmitterFirmwareVersion } from './XenopixelEmitter.js';
 
-const EMITTER_REGISTRY: Record<string, () => BoardEmitter> = {
+/** Options for emitter creation. Currently only Xenopixel boards use this. */
+export interface EmitterOptions {
+  /** Firmware version for Xenopixel emitters. Default varies by board entry. */
+  firmwareVersion?: XenoEmitterFirmwareVersion;
+}
+
+const EMITTER_REGISTRY: Record<string, (opts?: EmitterOptions) => BoardEmitter> = {
   cfx: () => new CFXEmitter(),
   ghv3: () => new GHv3Emitter(),
   ghv4: () => new GHv3Emitter(), // GHv4 uses same format as V3
-  xenopixel: () => new XenopixelEmitter(),
-  'xenopixel-v2': () => new XenopixelEmitter(),
-  'xenopixel-v3': () => new XenopixelEmitter(),
+  xenopixel: (opts) => new XenopixelEmitter(opts?.firmwareVersion ?? '1.0'),
+  'xenopixel-v2': (opts) => new XenopixelEmitter(opts?.firmwareVersion ?? '1.0'),
+  'xenopixel-v3': (opts) => new XenopixelEmitter(opts?.firmwareVersion ?? '1.0'),
 };
 
 /**
  * Get a board-specific emitter by board ID.
  * Returns undefined if no emitter exists for that board
  * (ProffieOS uses the existing CodeEmitter/ConfigBuilder directly).
+ *
+ * For Xenopixel boards, pass `options.firmwareVersion` to configure
+ * firmware-version-aware output format (default: '1.0').
  */
-export function getEmitter(boardId: string): BoardEmitter | undefined {
+export function getEmitter(boardId: string, options?: EmitterOptions): BoardEmitter | undefined {
   const factory = EMITTER_REGISTRY[boardId];
-  return factory ? factory() : undefined;
+  return factory ? factory(options) : undefined;
 }
 
 /**

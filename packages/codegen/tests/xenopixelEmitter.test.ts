@@ -303,7 +303,8 @@ describe('XenopixelEmitter', () => {
       expect(config).toContain('torch_mode=0');
       expect(config).toContain('multiblock_mode=0');
       expect(config).toContain('multilock_mode=0');
-      expect(config).toContain('lightning_block_mode=0');
+      // lightning_block_mode is V1.3.1+ only — should NOT be in V1.0 default
+      expect(config).not.toContain('lightning_block_mode');
       expect(config).toContain('blaster_mode=0');
       expect(config).toContain('ghost_mode=0');
       expect(config).toContain('countdown=1');
@@ -606,6 +607,7 @@ describe('firmware version awareness', () => {
     it('config.ini does NOT contain V1.3.1+ features', () => {
       const config = v12.emitGlobalConfig();
       expect(config).not.toContain('melt_mode');
+      expect(config).not.toContain('lightning_block_mode');
       expect(config).not.toContain('knock_on');
       expect(config).not.toContain('poke_on');
     });
@@ -659,9 +661,10 @@ describe('firmware version awareness', () => {
   describe('V1.3.1 melt + knock/poke', () => {
     const v131 = new XenopixelEmitter('1.3.1');
 
-    it('config.ini CONTAINS melt_mode, knock_on, and poke_on', () => {
+    it('config.ini CONTAINS melt_mode, lightning_block_mode, knock_on, and poke_on', () => {
       const config = v131.emitGlobalConfig();
       expect(config).toContain('melt_mode=');
+      expect(config).toContain('lightning_block_mode=');
       expect(config).toContain('knock_on=');
       expect(config).toContain('poke_on=');
     });
@@ -742,6 +745,7 @@ describe('firmware version awareness', () => {
       expect(config).toContain('bt_mode=');
       // V1.3.1
       expect(config).toContain('melt_mode=');
+      expect(config).toContain('lightning_block_mode=');
       expect(config).toContain('knock_on=');
       expect(config).toContain('poke_on=');
     });
