@@ -5,12 +5,14 @@ import type { EffectType } from '@kyberstation/engine';
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { PARAMETER_DESCRIPTORS } from '@/lib/parameterGroups';
+import { useBoardProfile } from '@/hooks/useBoardProfile';
 
 export function useBladeEngine() {
   const engineRef = useRef<BladeEngine | null>(null);
   const config = useBladeStore((s) => s.config);
   const topology = useBladeStore((s) => s.topology);
   const motionSim = useBladeStore((s) => s.motionSim);
+  const { boardId } = useBoardProfile();
 
   // Track previous ignition/retraction/style to detect changes
   const prevIgnitionRef = useRef(config.ignition);
@@ -79,6 +81,20 @@ export function useBladeEngine() {
       cancelAnimationFrame(rafId);
     };
   }, []);
+
+  // ── Sync engine render mode when board changes ──
+  //
+  // Xenopixel V3 uses a simplified rendering pipeline: single-style per
+  // blade effect, no multi-layer compositing, no modulation routing, and a
+  // fixed set of 8 blade effects + 10 ignition styles. When the user
+  // switches to a Xenopixel board, the engine resolves styles/ignitions
+  // from the Xeno registries instead of the ProffieOS ones.
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const mode = boardId === 'xenopixel' ? 'xenopixel' : 'proffie';
+    engine.setRenderMode(mode);
+  }, [boardId]);
 
   // Sync engine topology when store topology changes (e.g. preset load with different ledCount)
   useEffect(() => {
