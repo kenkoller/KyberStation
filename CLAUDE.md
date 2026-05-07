@@ -2,7 +2,7 @@
 
 ## Overview
 
-KyberStation is a standalone desktop + web application for designing, previewing, and exporting custom lightsaber blade styles for the Proffieboard V3.9 running ProffieOS 7.x. It is a visual style editor, real-time blade simulator, sound font manager, and config generator — think "DAW for lightsabers."
+KyberStation is a standalone desktop + web application for designing, previewing, and exporting custom lightsaber blade styles. Primary support is Proffieboard V2/V3 running ProffieOS 7.x with full Xenopixel V3 configuration mode as of v0.21.0. It is a visual style editor, real-time blade simulator, sound font manager, and multi-board config generator — think "DAW for lightsabers."
 
 The app targets the Neopixel lightsaber hobbyist community (cosplay, reenactment, collecting, dueling) and aims to surpass every existing tool (Fett263 Style Library web UI, Fredrik's Style Editor, manual config editing) by combining them into a single cohesive experience with features nobody has built yet.
 
@@ -21,7 +21,7 @@ The app targets the Neopixel lightsaber hobbyist community (cosplay, reenactment
 - **UI**: React 18+, Tailwind CSS, Radix UI primitives
 - **State**: Zustand (global store) + React state for local UI
 - **Canvas/Rendering**: HTML5 Canvas 2D for blade visualizer, Three.js for optional 3D hilt preview
-- **Code Generation**: Custom AST-based ProffieOS style code emitter
+- **Code Generation**: Custom AST-based ProffieOS style code emitter + Xenopixel INI config emitter
 - **Sound**: Web Audio API for font preview playback
 - **Storage**: IndexedDB (via Dexie.js) for local project persistence
 - **Desktop**: Electron wrapper (future phase) for USB serial communication with Proffieboard
@@ -540,6 +540,62 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 4. **When parking WIP** for another session, push the branch to
    origin so work is recoverable even if the local worktree is
    clobbered.
+
+---
+
+## Current State (2026-05-07, Xenopixel V3 full board support — v0.21.0)
+
+Single marathon PR (#287) implementing the full Xenopixel V3 implementation plan (`docs/XENOPIXEL_IMPLEMENTATION_PLAN.md`), Phases 1 through 5A. KyberStation now has complete second-board rendering and configuration support alongside Proffieboard. 12 commits, 60 files changed, +8,025/−439 lines. Merged at commit `3b75f06bf6`.
+
+### What shipped (PR #287 — 12 commits)
+
+| Phase | Scope | Key files |
+|---|---|---|
+| **1A** Board profiles | Updated Xenopixel profiles: `configFormat` → `'ini-txt'`, 8 blade effects, 12 ignition styles, 3 blaster effects, 2 force effects, firmware version features. Exported `XENO_BLADE_EFFECTS`, `XENO_IGNITION_STYLES`, `XENO_BLASTER_EFFECTS`, `XENO_FORCE_EFFECTS`, `XENO_FIRMWARE_FEATURES`, `getXenoFirmwareFeatures` | `packages/boards/src/profiles/xenopixel.ts`, `packages/boards/src/types.ts`, `packages/boards/src/index.ts` |
+| **1B** Emitter rewrite | `XenopixelEmitter` generates real `fontconfig.ini` + `config.ini` with firmware-version-aware format (v1.4.0 adds `inTime,outTime,customFunction` fields). `emitFontConfig()`, `emitGlobalConfig()`, `emitSDCardStructure()` | `packages/codegen/src/emitters/XenopixelEmitter.ts` |
+| **2A** Effect picker | `XenoEffectPicker` — 8-card visual grid with animated preview descriptions | `apps/web/components/editor/xenopixel/XenoEffectPicker.tsx` |
+| **2B** Ignition picker | `XenoIgnitionPicker` — 12-card grid, standard vs special-preon categories | `apps/web/components/editor/xenopixel/XenoIgnitionPicker.tsx` |
+| **2C** Board-gated panels | `MainContent.tsx` swaps ProffieOS surfaces for Xenopixel equivalents when active board starts with `'xenopixel'` | `apps/web/components/layout/MainContent.tsx` |
+| **2D–2E** Motion + settings | `XenoMotionPanel` (stab/twist/swing/pull toggles + sensitivity sliders), `XenoSettingsPanel` (volume, clash, blade modes, countdown, blade length, crossguard) | `apps/web/components/editor/xenopixel/Xeno{Motion,Settings}Panel.tsx` |
+| **3A** Blade effect styles | 8 engine style classes under `packages/engine/src/styles/xenopixel/` approximating real firmware output | `XenoFireStyle.ts` through `XenoFlashingStyle.ts` |
+| **3B** Ignition animations | 10 ignition classes under `packages/engine/src/ignition/xenopixel/` | `XenoStandardIgnition.ts` through `XenoBrokenIgnition.ts` |
+| **3C** Board-aware engine | `BladeEngine.renderMode: 'proffie' \| 'xenopixel'` switches style + ignition registries. `setRenderMode()` / `getRenderMode()` API | `packages/engine/src/BladeEngine.ts` |
+| **4A–4B** Compat + porter | `xenopixelCompat` on preset metadata, `getClosestXenoEffect()` / `getClosestXenoIgnition()` mapping utilities, `XenoDesignPorter` conversion dialog, `XenoConfigPreview` live INI preview | `apps/web/lib/xenopixelCompat.ts`, `apps/web/components/editor/xenopixel/Xeno{DesignPorter,ConfigPreview}.tsx` |
+| **4C** SD card import | `parseXenoFontConfig()`, `parseXenoGlobalConfig()`, `parseXenoSDCard()`, `inferFirmwareVersion()` heuristic | `apps/web/lib/xenopixelImport.ts` |
+| **5A** Firmware versions | `XenoFirmwareVersion` type (`'1.0' \| '1.2' \| '1.2.5' \| '1.3.1' \| '1.4.0'`), `XenoFirmwareFeatures` interface with cumulative capability flags, emitter format branching per version | `packages/boards/src/profiles/xenopixel.ts`, `packages/codegen/src/emitters/XenopixelEmitter.ts` |
+
+### Test count delta
+
+| Package | Before | After | Delta |
+|---|---|---|---|
+| Engine | 957 | 1,057 | +100 |
+| Codegen | 2,562 | 2,654 | +92 |
+| Web | 2,867 | 3,005 | +138 |
+| Boards | 260 | 278 | +18 |
+| **Total** | **6,846** | **7,194** | **+348** |
+
+All 10 packages typecheck + test green.
+
+### Architectural decisions worth carrying forward
+
+1. **`renderMode` on BladeEngine is the board-aware rendering gate.** When set to `'xenopixel'`, the engine uses Xeno-specific style/ignition registries instead of ProffieOS ones. The visualizer shows what the user's actual saber will produce. Adding a third board's rendering pipeline follows the same pattern: add a render mode, register styles/ignitions under it, gate `getStyleClass()` / `getIgnitionClass()`.
+
+2. **Board-gated UI is a `boardId.startsWith()` check, not a feature flag.** `MainContent.tsx` checks if `activeBoardId` starts with `'xenopixel'` and swaps entire panel surfaces. This is simpler than a feature-flag matrix and scales to future boards (CFX, GH) by adding more `startsWith` branches.
+
+3. **Firmware version awareness is cumulative.** Each `XenoFirmwareVersion` inherits all capabilities of earlier versions. `getXenoFirmwareFeatures()` returns a `XenoFirmwareFeatures` object with boolean flags; the emitter reads these to decide output format (e.g. v1.4.0 appends `inTime,outTime,customFunction` fields to `fontconfig.ini`).
+
+4. **Design porter uses degradation notes, not silent conversion.** When mapping ProffieOS → Xenopixel, every conversion carries a human-readable `degradationNote` string (e.g. "Approximated as Fire Blade — Xenopixel has no direct equivalent for Aurora"). Users see exactly what they're losing.
+
+5. **SD card import infers firmware version heuristically.** `inferFirmwareVersion()` reads structural clues from the file content (field count, key presence) rather than requiring users to know their firmware version. Falls back to `'1.0'` when ambiguous.
+
+### What's next after Xenopixel
+
+Per `docs/XENOPIXEL_IMPLEMENTATION_PLAN.md`, the remaining phases are:
+
+- **Phase 5B** — Hardware validation on real Xenopixel V3 saber (generate test SD card config → flash → verify colors/effects/timing match)
+- **Phase 5C** — Xeno Configurator BLE integration (stretch goal, depends on APK reverse engineering)
+
+The engine styles (Phase 3A) were authored from video reference of Xenopixel V3 demo footage; hardware validation will refine any visual discrepancies.
 
 ---
 

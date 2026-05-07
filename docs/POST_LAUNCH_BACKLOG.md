@@ -91,6 +91,9 @@ Multi-week / cross-package work.
 | **Modulation v1.3 Advanced** | [`MODULATION_ROUTING_ROADMAP.md`](MODULATION_ROUTING_ROADMAP.md) | XL | Envelope followers (meyda + AudioWorklet) + step sequencers + `ModulationGraphPanel` + community UDF library + gesture recording. Target ~2026-07-18. |
 | **Multi-Blade Workbench** | [`MODULATION_ROUTING_ROADMAP.md`](MODULATION_ROUTING_ROADMAP.md) | XL | Channel-strip UI for dual-blade / saberstaff / crossguard. Target ~2026-08-08. |
 | **Preset Cartography sprint** | `CLAUDE.md` upcoming sprints table | L-XL | Parallel-agent preset library expansion: deep-cut Jedi/Sith lanes, Legends/KOTOR/SWTOR, animated series, sequel/Mando/Ahsoka/Acolyte, space-combat games, cross-franchise. Could 4-5× the preset library in one session. |
+| ~~**Xenopixel V3 full board support (Phases 1–5A)**~~ | [`XENOPIXEL_IMPLEMENTATION_PLAN.md`](XENOPIXEL_IMPLEMENTATION_PLAN.md) | XL | **✅ Done — landed via [PR #287](https://github.com/kenkoller/KyberStation/pull/287) on 2026-05-07.** Board profiles, emitter rewrite, effect/ignition pickers, board-gated UI, 8 engine styles, 10 ignitions, renderMode, design porter, SD card import, firmware version awareness. +348 tests across 4 packages. |
+| **Xenopixel Phase 5B — hardware validation** | [`XENOPIXEL_IMPLEMENTATION_PLAN.md`](XENOPIXEL_IMPLEMENTATION_PLAN.md) | M | Generate test SD card config from KyberStation → flash onto real Xenopixel V3 saber → verify colors/effects/timing match. Requires physical Xenopixel V3 hardware. |
+| **Xenopixel Phase 5C — BLE integration (stretch)** | [`XENOPIXEL_IMPLEMENTATION_PLAN.md`](XENOPIXEL_IMPLEMENTATION_PLAN.md) | XL | Push config changes via Bluetooth to Xenopixel saber without SD card removal. Depends on reverse-engineering the Xeno Configurator APK for BLE service UUIDs + characteristic formats. |
 
 ## Safari rendering follow-ups (P31 cross-browser sweep, 2026-04-27)
 
