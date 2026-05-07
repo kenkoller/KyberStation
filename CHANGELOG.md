@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.21.0] — 2026-05-07
+
+**Xenopixel V3 — Full Board Support.** KyberStation now has complete second-board support for Xenopixel V3, the most popular budget lightsaber controller. Visual effect picker, accurate blade previews, real SD card config generation, firmware version awareness, and a Proffie-to-Xenopixel design porter — all in one PR (#287, 12 commits, 60 files, +8,025 lines).
+
+### Added
+
+- **8 Xenopixel blade effect styles in the engine** — `XenoFireStyle`, `XenoSteadyStyle`, `XenoUnstableStyle`, `XenoRainbowStyle`, `XenoCandyStyle`, `XenoCrackStyle`, `XenoPulseStyle`, `XenoFlashingStyle` at `packages/engine/src/styles/xenopixel/`. Each approximates what the real Xenopixel V3 firmware produces on hardware.
+
+- **10 Xenopixel ignition animations** — `XenoStandardIgnition`, `XenoVelocityIgnition`, `XenoTorchIgnition`, `XenoStackIgnition`, `XenoFoldTileIgnition`, `XenoWordIgnition`, `XenoFaserIgnition`, `XenoScavengerIgnition`, `XenoHunterIgnition`, `XenoBrokenIgnition` at `packages/engine/src/ignition/xenopixel/`.
+
+- **Board-aware `renderMode` on BladeEngine** — `'proffie' | 'xenopixel'` flag switches the style and ignition registries so the visualizer shows what the user's actual saber will produce. `setRenderMode()` + `getRenderMode()` API on `BladeEngine`.
+
+- **Real `fontconfig.ini` + `config.ini` generation** — `XenopixelEmitter` rewritten from placeholder JSON to actual INI file output matching the Xenopixel V3 SD card format: `fontN=(R,G,B),bladeEffect,blasterEffect,forceEffect,lockupEffect,defaultEffect,ignitionStyle,ignitionSpeed,retractionSpeed[,inTime,outTime[,customFunction]]`.
+
+- **Firmware version awareness** (`XenoFirmwareVersion` type) — 5 firmware versions (`1.0`, `1.2`, `1.2.5`, `1.3.1`, `1.4.0`) with cumulative capability flags (`perFontConfig`, `motorChamber`, `btToggle`, `knockPoke`, `lightningBlock`, `meltEffect`, `configurableInOutTime`, `customFunction`). Emitter adjusts output format based on selected version. `getXenoFirmwareFeatures()` + `XENO_FIRMWARE_FEATURES` exported from `@kyberstation/boards`.
+
+- **Xenopixel board profile enrichment** — `XENO_BLADE_EFFECTS` (8 effects with `kyberStyle` mappings), `XENO_IGNITION_STYLES` (12 styles with categories), `XENO_BLASTER_EFFECTS` (3), `XENO_FORCE_EFFECTS` (2), all exported as typed const arrays from `packages/boards/src/profiles/xenopixel.ts`. `configFormat` corrected from `'json'` to `'ini-txt'`.
+
+- **Board-gated UI components** — `XenoEffectPicker` (visual 8-card grid for blade effects), `XenoIgnitionPicker` (12-card grid for ignition styles), `XenoMotionPanel` (toggle + sensitivity for stab/twist/swing/pull), `XenoSettingsPanel` (volume, clash sensitivity, blade modes, countdown, blade length, crossguard), `XenoConfigPreview` (live fontconfig.ini + config.ini preview). All render only when active board is Xenopixel; ProffieOS surfaces hidden automatically.
+
+- **Proffie-to-Xenopixel design porter** — `getClosestXenoEffect()` + `getClosestXenoIgnition()` map each ProffieOS style/ignition to the closest Xenopixel equivalent with a human-readable degradation note. `XenoDesignPorter` component surfaces a conversion dialog when switching boards.
+
+- **SD card import** — `parseXenoFontConfig()` + `parseXenoGlobalConfig()` + `parseXenoSDCard()` reconstruct KyberStation `BladeConfig` entries from existing Xenopixel SD card files. `inferFirmwareVersion()` heuristic detects firmware version from file structure clues.
+
+- **Compatibility scoring** — `xenopixelCompat` field on preset metadata with `bladeEffect`, `ignitionStyle`, and optional `degradationNote`. `scoreCompatibility()` enriched to handle Xenopixel capability constraints.
+
+### Changed
+
+- **Emitter registry** expanded — `getEmitter()` / `hasEmitter()` / `listEmitterBoards()` unchanged API, but the `XenopixelEmitter` behind them now produces real config files instead of placeholder JSON.
+- **`packages/boards` exports** expanded with 6 new Xenopixel-specific type exports and 4 new const exports.
+- **`packages/codegen` exports** expanded with `XenoEmitterFirmwareVersion` type export.
+
+### Test count delta
+
+| Package | Before | After | Delta |
+|---------|--------|-------|-------|
+| Engine | 957 | 1,057 | +100 |
+| Codegen | 2,562 | 2,654 | +92 |
+| Web | 2,867 | 3,005 | +138 |
+| Boards | 260 | 278 | +18 |
+| **Total** | **6,846** | **7,194** | **+348** |
+
+All 10 packages typecheck + test green.
+
+---
+
 ## [0.20.0] — 2026-05-02
 
 **Sprint 5E — per-preset switcher in the import banner.** When a user imports a multi-preset config.h via Sprint 5D's "Import N Presets" flow, all presets land in their library. Today the user has to navigate to My Presets sidebar to flip the visualizer between them. v0.20.0 adds a switcher dropdown directly inside the import banner so they can preview any imported preset without leaving the OUTPUT panel.

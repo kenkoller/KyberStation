@@ -48,12 +48,18 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - Full config.h generation with Layers<>, BlastL<>, InOutTrL<>, transitions, functions
 - ProffieOS 7.x compilation validated via arduino-cli (23-preset config, 264 KB / 52% flash)
 - Correct `SaberBase::` enum prefixes, `maxLedsPerStrip` placement, `CONFIG_PROP` section separation
+- **Xenopixel `fontconfig.ini` + `config.ini` emitter** — real SD card config file generation for Xenopixel V3 boards, firmware-version-aware format output
 
 ### Multi-Board Support (16 boards)
 - Proffieboard V2.2, V3.9, Lite, and Clone variants
 - CFX, Golden Harvest V3/V4, Verso
 - Xenopixel V2/V3, LGT, Asteria, Darkwolf, DamienSaber
 - Board capability matrices with compatibility scoring per preset
+- **Full Xenopixel V3 configuration mode** — visual blade effect picker (8 effects), ignition style picker (12 styles), motion control panel, global settings panel, live config preview, and SD card ZIP export
+- **Accurate Xenopixel blade previews** — 8 engine style implementations + 10 ignition animations that approximate what real Xenopixel V3 firmware produces on hardware
+- **Proffie-to-Xenopixel design porter** — switch boards and get an automatic conversion dialog mapping your ProffieOS style to the closest Xenopixel equivalent with degradation notes
+- **Xenopixel SD card import** — parse existing `fontconfig.ini` + `config.ini` files to reconstruct editable presets in KyberStation
+- **Firmware version awareness** — 5 Xenopixel firmware versions (1.0 through 1.4.0) with version-specific config format and capability gating
 - **Battery selector with manufacturer-spec discharge warnings**, pick from a catalog of common 18650 + 21700 cells; Hardware panel surfaces a safety warning when configured LED count exceeds the cell's continuous-discharge headroom
 - **Vendor-reality blade length captions**, Hardware panel flags when configured LED count diverges from typical vendor practice for a given inch length
 
