@@ -59,11 +59,11 @@ export function useBladeEngine() {
       if (engine) {
         const delta = time - prevTime;
         prevTime = time;
-        const paused = useUIStore.getState().animationPaused;
-        if (!paused) {
+        const { animationPaused, timeScale } = useUIStore.getState();
+        if (!animationPaused) {
           // Read the current config from the store (not from closure) so
           // live updates (e.g. colour changes) are picked up immediately.
-          engine.update(delta, useBladeStore.getState().config);
+          engine.update(delta * timeScale, useBladeStore.getState().config);
         }
         // Mirror engine state into store. Zustand dedupes identical writes,
         // but we compare explicitly to skip work when state hasn't transitioned.
