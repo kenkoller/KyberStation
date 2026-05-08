@@ -132,6 +132,9 @@ export {
   ExpressionParseError,
 } from './modulation/index.js';
 
+// ─── Template Eval Bridge (pixel-accurate ProffieOS rendering) ───
+export { TemplateEvalBridge } from './templateEval/TemplateEvalBridge.js';
+
 // ─── Xenopixel Style Registry ───
 export {
   XENO_STYLE_REGISTRY,

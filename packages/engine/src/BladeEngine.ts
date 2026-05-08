@@ -34,6 +34,7 @@ import {
   type ModulationPayload,
   type ParameterClampRanges,
 } from './modulation/index.js';
+import { TemplateEvalBridge } from './templateEval/TemplateEvalBridge.js';
 
 // ─── Direction transform helpers ───
 
@@ -111,6 +112,9 @@ export class BladeEngine {
   /** Set of effect types currently active (for clash/lockup modulator latching). */
   private _activeEffectTypes: Set<EffectType> = new Set();
 
+  // ─── Template-eval bridge (pixel-accurate ProffieOS rendering) ───
+  private _templateEvalBridge: TemplateEvalBridge | null = null;
+
   // ─── Caches ───
   private styleCache: Map<string, BladeStyle> = new Map();
   private effectPool: Map<string, BladeEffect> = new Map();
@@ -174,6 +178,10 @@ export class BladeEngine {
     this.styleCache.clear();
     this.ignitionCache.clear();
     this.retractionCache.clear();
+    if (mode !== 'template-eval' && this._templateEvalBridge) {
+      this._templateEvalBridge.reset();
+      this._templateEvalBridge = null;
+    }
   }
 
   // ─── State machine controls ───
@@ -259,6 +267,10 @@ export class BladeEngine {
   ]);
 
   triggerEffect(type: EffectType, params?: EffectParams): void {
+    if (this._renderMode === 'template-eval' && this._templateEvalBridge) {
+      this._templateEvalBridge.triggerEffect(type, params?.position);
+    }
+
     const segmentId = params?.segmentId ?? '_global';
 
     // Cancel other active one-shot effects to prevent stacking
@@ -280,6 +292,10 @@ export class BladeEngine {
    * Release a sustained effect (lockup, drag, melt, lightning).
    */
   releaseEffect(type: EffectType, segmentId?: string): void {
+    if (this._renderMode === 'template-eval' && this._templateEvalBridge) {
+      this._templateEvalBridge.releaseEffect(type);
+    }
+
     const key = `${segmentId ?? '_global'}-${type}`;
     const effect = this.effectPool.get(key);
     if (effect && effect.isActive()) {
@@ -488,6 +504,37 @@ export class BladeEngine {
     if (this._state === BladeState.OFF) {
       this.leds.clear();
       return;
+    }
+
+    // (d.6) Template-eval render path — pixel-accurate ProffieOS rendering
+    //
+    // When renderMode is 'template-eval' and the config carries an
+    // importedRawCode string, the TemplateEvalBridge evaluates the real
+    // ProffieOS template per-LED instead of the approximation pipeline.
+    // This bypasses modulation routing, segment topology, and layer
+    // compositing — the template IS the complete style definition.
+    if (this._renderMode === 'template-eval' && config.importedRawCode) {
+      if (!this._templateEvalBridge) {
+        this._templateEvalBridge = new TemplateEvalBridge();
+      }
+      const ok = this._templateEvalBridge.setTemplate(config.importedRawCode);
+      if (ok) {
+        this._templateEvalBridge.renderFrame(
+          this.leds,
+          deltaMs,
+          this._state === BladeState.ON || this._state === BladeState.IGNITING,
+          this._extendProgress,
+          this.motion.swingSpeed,
+          this.motion.bladeAngle,
+          this.motion.twistAngle,
+          this.motion.soundLevel,
+          1.0, // batteryLevel — simulated, always full
+          0,   // variation — default 0
+        );
+        this.cleanupEffects();
+        return;
+      }
+      // Template parse failed — fall through to approximation pipeline
     }
 
     // (d.5) Modulation routing — v1.0 Preview

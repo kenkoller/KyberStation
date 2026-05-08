@@ -33,6 +33,9 @@
       ],
       "@kyberstation/sound": [
         "../../packages/sound/src"
+      ],
+      "@kyberstation/template-eval": [
+        "../../packages/template-eval/src"
       ]
     },
     "noEmit": true,

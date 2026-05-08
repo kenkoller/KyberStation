@@ -22,6 +22,7 @@
     "gif:pickers": "tsx scripts/generate-picker-gifs.mjs"
   },
   "dependencies": {
+    "@kyberstation/template-eval": "workspace:*",
     "peggy": "^4.2.0"
   },
   "devDependencies": {
