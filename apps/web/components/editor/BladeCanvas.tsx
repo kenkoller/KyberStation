@@ -38,6 +38,7 @@ import {
 import type { LedBufferLike } from '@/lib/blade/types';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 import { BladeLayersDebugOverlay, type DebugLayerCapture } from './BladeLayersDebugOverlay';
+import { useMouseSwing } from '@/hooks/useMouseSwing';
 
 type RenderMode = 'photorealistic' | 'pixel';
 
@@ -415,6 +416,13 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
   const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
   const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
   const isPaused = useUIStore((s) => s.isPaused);
+
+  // Mouse-driven swing simulation — horizontal velocity → swing speed,
+  // vertical position → blade angle. Active when mouseSwingEnabled is
+  // true in accessibilityStore (default on for desktop). Writes directly
+  // to engine.motion.targetSwing / targetAngle, coexisting with the
+  // MotionSimPanel sliders (which write via bladeStore → useEffect sync).
+  const mouseSwing = useMouseSwing(engineRef);
   const pauseScope = useUIStore((s) => s.pauseScope);
   const editMode = useUIStore((s) => s.editMode);
   const theme = useMemo(() => getThemeById(canvasTheme), [canvasTheme]);
@@ -2907,8 +2915,15 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
           role="img"
           aria-label="Blade style preview visualizer"
           onPointerDown={handleCanvasPointerDown}
-          onPointerMove={handleCanvasPointerMove}
-          onPointerLeave={handleCanvasPointerLeave}
+          onPointerMove={(e) => {
+            handleCanvasPointerMove(e);
+            mouseSwing.handlePointerMove(e);
+          }}
+          onPointerEnter={mouseSwing.handlePointerEnter}
+          onPointerLeave={() => {
+            handleCanvasPointerLeave();
+            mouseSwing.handlePointerLeave();
+          }}
           style={{
             cursor: editMode ? 'crosshair' : undefined,
           }}
