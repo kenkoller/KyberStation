@@ -153,6 +153,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     display: false,
     density: false,
     // Behavior
+    mouseSwing: false,
     effects: false,
     feedback: false,
     // Advanced
@@ -203,6 +204,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   //    to 40% for photosensitive users. Halo stays visible but subdued. ──
   const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
   const setReduceBloom = useAccessibilityStore((s) => s.setReduceBloom);
+
+  // ── Mouse-driven swing — when on, mouse movement over the blade
+  //    canvas drives swing speed (horizontal velocity) + blade angle
+  //    (vertical position). Default ON for desktop. ──
+  const mouseSwingEnabled = useAccessibilityStore((s) => s.mouseSwingEnabled);
+  const setMouseSwingEnabled = useAccessibilityStore((s) => s.setMouseSwingEnabled);
 
   // ── Show Crystal panel (2026-04-29) — opt-in toggle for the
   //    experimental Three.js Saber Card / Kyber Crystal panel. Off
@@ -521,6 +528,47 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               </label>
             ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderMouseSwing = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Mouse swing"
+        open={sections.mouseSwing}
+        onToggle={() => toggleSection('mouseSwing')}
+      />
+      {sections.mouseSwing && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            When enabled, moving the mouse over the blade canvas drives the
+            swing simulation — horizontal velocity controls swing speed,
+            vertical position controls blade angle. Provides immediate visual
+            feedback for motion-reactive styles without the MotionSim sliders.
+          </p>
+
+          <div
+            className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded border transition-colors ${
+              mouseSwingEnabled
+                ? 'border-accent/50 bg-accent/5 text-text-primary'
+                : 'border-border-subtle bg-bg-deep/50 text-text-muted hover:border-border-light hover:text-text-secondary'
+            }`}
+          >
+            <label
+              htmlFor="setting-mouse-swing"
+              className="text-ui-sm font-medium cursor-pointer"
+            >
+              Enable mouse swing
+            </label>
+            <ToggleSwitch
+              id="setting-mouse-swing"
+              checked={mouseSwingEnabled}
+              onChange={setMouseSwingEnabled}
+              label="Enable mouse swing"
+            />
           </div>
         </div>
       )}
@@ -913,7 +961,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div>{renderDensity()}</div>
           </div>
 
-          {/* Behavior: Effect auto-release → Feedback */}
+          {/* Behavior: Mouse swing → Effect auto-release → Feedback */}
           <div
             role="tabpanel"
             id="settings-tabpanel-behavior"
@@ -922,7 +970,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             hidden={activeTab !== 'behavior'}
             className="divide-y divide-border-subtle"
           >
-            <div className="first:[&>section]:pt-0">{renderEffectAutoRelease()}</div>
+            <div className="first:[&>section]:pt-0">{renderMouseSwing()}</div>
+            <div>{renderEffectAutoRelease()}</div>
             <div>{renderFeedback()}</div>
           </div>
 

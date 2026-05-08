@@ -78,6 +78,14 @@ interface AccessibilityState {
    * UI-surface preference, not a data setting.
    */
   showCrystal: boolean;
+  /**
+   * Mouse-driven swing simulation — when true, moving the mouse over
+   * the blade canvas drives swing speed (from horizontal velocity) and
+   * blade angle (from vertical position). Provides immediate visual
+   * feedback for SwingSpeed-reactive styles without needing the
+   * MotionSim panel sliders. Default true on desktop. Persisted.
+   */
+  mouseSwingEnabled: boolean;
 
   setHighContrast: (on: boolean) => void;
   setColorblindMode: (mode: ColorblindMode) => void;
@@ -88,6 +96,7 @@ interface AccessibilityState {
   setGraphicsQuality: (quality: GraphicsQuality) => void;
   setReduceBloom: (on: boolean) => void;
   setShowCrystal: (on: boolean) => void;
+  setMouseSwingEnabled: (on: boolean) => void;
   syncReducedMotionFromOS: () => void;
   reset: () => void;
 }
@@ -102,7 +111,7 @@ function loadFromStorage(): Partial<AccessibilityState> {
   return {};
 }
 
-function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality' | 'reduceBloom' | 'showCrystal'>) {
+function saveToStorage(state: Pick<AccessibilityState, 'highContrast' | 'colorblindMode' | 'reducedMotion' | 'hasExplicitMotionPref' | 'fontScale' | 'density' | 'effectAutoRelease' | 'graphicsQuality' | 'reduceBloom' | 'showCrystal' | 'mouseSwingEnabled'>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
@@ -121,6 +130,9 @@ const defaults = {
   // 2026-04-29: Crystal panel hidden by default. Power-user opt-in
   // via Settings → Advanced.
   showCrystal: false,
+  // Mouse-driven swing: default ON for desktop — intuitive first-use
+  // experience matching Fredrik's ProffieOS Style Editor.
+  mouseSwingEnabled: true,
 };
 
 const stored = loadFromStorage();
@@ -137,6 +149,7 @@ function persist(s: AccessibilityState) {
     graphicsQuality: s.graphicsQuality,
     reduceBloom: s.reduceBloom,
     showCrystal: s.showCrystal,
+    mouseSwingEnabled: s.mouseSwingEnabled,
   });
 }
 
@@ -151,6 +164,7 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
   graphicsQuality: stored.graphicsQuality ?? defaults.graphicsQuality,
   reduceBloom: stored.reduceBloom ?? defaults.reduceBloom,
   showCrystal: stored.showCrystal ?? defaults.showCrystal,
+  mouseSwingEnabled: stored.mouseSwingEnabled ?? defaults.mouseSwingEnabled,
 
   setHighContrast: (highContrast) => {
     set({ highContrast });
@@ -216,6 +230,11 @@ export const useAccessibilityStore = create<AccessibilityState>((set, get) => ({
         }
       });
     }
+  },
+
+  setMouseSwingEnabled: (mouseSwingEnabled) => {
+    set({ mouseSwingEnabled });
+    persist(get());
   },
 
   syncReducedMotionFromOS: () => {
