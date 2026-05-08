@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`getChildren()` tree walking on all template-eval classes** — 40+ template classes across colors, styles, effects, transitions, functions, and wrappers now expose their child `StyleTemplate` references via `getChildren()`. Enables recursive DFS through arbitrary template nesting depths for variant cycling, future AST editing, and style transforms.
+
+- **ColorChange variant cycling** — `TemplateEvalBridge` exposes `variantCount`, `currentVariant`, and `setVariant(index)` API backed by recursive `walkForColorChange()` tree walk. `EFFECT_CHANGE` events cycle through color variants in templates using `ColorChange<>`.
+
+- **`ChangeEffect` in engine effects registry** — no-op effect entry for the `'change'` EffectType, allowing the engine's effect system to dispatch color-change meta-events to the template evaluator.
+
+---
+
 ## [0.21.0] — 2026-05-07
 
 **Xenopixel V3 — Full Board Support.** KyberStation now has complete second-board support for Xenopixel V3, the most popular budget lightsaber controller. Visual effect picker, accurate blade previews, real SD card config generation, firmware version awareness, and a Proffie-to-Xenopixel compatibility dialog — all in one PR (#287, 12 commits, 60 files, +8,025 lines).
