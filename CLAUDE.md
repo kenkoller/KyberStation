@@ -650,8 +650,8 @@ Single marathon PR (#287) implementing the full Xenopixel V3 implementation plan
 | **3A** Blade effect styles | 8 engine style classes under `packages/engine/src/styles/xenopixel/` approximating real firmware output | `XenoFireStyle.ts` through `XenoFlashingStyle.ts` |
 | **3B** Ignition animations | 10 ignition classes under `packages/engine/src/ignition/xenopixel/` | `XenoStandardIgnition.ts` through `XenoBrokenIgnition.ts` |
 | **3C** Board-aware engine | `BladeEngine.renderMode: 'proffie' \| 'xenopixel'` switches style + ignition registries. `setRenderMode()` / `getRenderMode()` API | `packages/engine/src/BladeEngine.ts` |
-| **4A–4B** Compat + porter | `xenopixelCompat` on preset metadata, `getClosestXenoEffect()` / `getClosestXenoIgnition()` mapping utilities, `XenoDesignPorter` conversion dialog (UI only — apply is a visual acknowledgment, does not mutate config) | `apps/web/lib/xenopixelCompat.ts`, `apps/web/components/editor/xenopixel/XenoDesignPorter.tsx` |
-| **4C** SD card import | `parseXenoFontConfig()`, `parseXenoGlobalConfig()`, `parseXenoSDCard()`, `inferFirmwareVersion()` heuristic | `apps/web/lib/xenopixelImport.ts` |
+| **4A–4B** Compat + porter | `getXenopixelCompat()` computes compatibility analysis on-the-fly (not stored as preset metadata) with `mapStyleToXenoEffect()` / `mapIgnitionToXenoStyle()` mapping utilities and human-readable `degradationNote` strings | `apps/web/lib/xenopixelCompat.ts` |
+| **4C** SD card import | `parseXenoFontConfig()`, `parseXenoConfigIni()`, `importXenoSdCard()`, `detectFirmwareVersion()` heuristic | `apps/web/lib/xenopixelImport.ts` |
 | **5A** Firmware versions | `XenoFirmwareVersion` type (`'1.0' \| '1.2' \| '1.2.5' \| '1.3.1' \| '1.4.0'`), `XenoFirmwareFeatures` interface with cumulative capability flags, emitter format branching per version | `packages/boards/src/profiles/xenopixel.ts`, `packages/codegen/src/emitters/XenopixelEmitter.ts` |
 
 ### Test count delta
@@ -676,7 +676,7 @@ All 10 packages typecheck + test green.
 
 4. **Design porter uses degradation notes, not silent conversion.** When mapping ProffieOS → Xenopixel, every conversion carries a human-readable `degradationNote` string (e.g. "Approximated as Fire Blade — Xenopixel has no direct equivalent for Aurora"). Users see exactly what they're losing.
 
-5. **SD card import infers firmware version heuristically.** `inferFirmwareVersion()` reads structural clues from the file content (field count, key presence) rather than requiring users to know their firmware version. Falls back to `'1.0'` when ambiguous.
+5. **SD card import infers firmware version heuristically.** `detectFirmwareVersion()` reads structural clues from the file content (field count, key presence) rather than requiring users to know their firmware version. Falls back to `'1.0'` when ambiguous.
 
 ### What's next after Xenopixel
 
