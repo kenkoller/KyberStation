@@ -331,8 +331,12 @@ export type EasingConfig = CubicBezierEasing | PresetEasing;
  * - `'xenopixel'` — simplified single-style rendering matching the Xenopixel V3
  *   firmware's fixed 8-effect / 10-ignition set. Uses `XENO_STYLE_REGISTRY` +
  *   `XENO_IGNITION_REGISTRY`. Skips modulation routing and multi-layer compositing.
+ * - `'template-eval'` — pixel-accurate ProffieOS template evaluation. Evaluates
+ *   the raw C++ template string from `BladeConfig.importedRawCode` using the
+ *   `@kyberstation/template-eval` interpreter. Produces the same per-LED output
+ *   as real ProffieOS firmware. Skips the approximation engine entirely.
  */
-export type RenderMode = 'proffie' | 'xenopixel';
+export type RenderMode = 'proffie' | 'xenopixel' | 'template-eval';
 
 // ─── Blade Configuration ───
 

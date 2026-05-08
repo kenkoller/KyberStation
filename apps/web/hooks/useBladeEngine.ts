@@ -92,9 +92,18 @@ export function useBladeEngine() {
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
-    const mode = boardId === 'xenopixel' ? 'xenopixel' : 'proffie';
+    // Template-eval mode takes priority when the config carries raw
+    // ProffieOS template code (from a Fett263 import or paste). The
+    // engine evaluates the real template per-LED for pixel-accurate
+    // rendering. Falls back to board-based mode when no raw code.
+    const hasRawTemplate = !!config.importedRawCode;
+    const mode = hasRawTemplate
+      ? 'template-eval'
+      : boardId === 'xenopixel'
+        ? 'xenopixel'
+        : 'proffie';
     engine.setRenderMode(mode);
-  }, [boardId]);
+  }, [boardId, config.importedRawCode]);
 
   // Sync engine topology when store topology changes (e.g. preset load with different ledCount)
   useEffect(() => {

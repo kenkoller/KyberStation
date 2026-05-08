@@ -374,4 +374,162 @@ describe('BladeEngine renderMode', () => {
       expect(hasColor).toBe(true);
     });
   });
+
+  // ─── Template-eval mode ─────────────────────────────────────────
+
+  describe('template-eval mode', () => {
+    it('switches to template-eval mode', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      expect(engine.renderMode).toBe('template-eval');
+    });
+
+    it('renders pixel output when importedRawCode is a valid template', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: 'Rgb<255,0,0>',
+      } as Partial<BladeConfig>);
+
+      engine.ignite(config);
+      runFrames(engine, config, 20);
+
+      const buf = engine.leds.buffer;
+      const hasColor = buf.some((v) => v > 0);
+      expect(hasColor).toBe(true);
+    });
+
+    it('produces red output for Rgb<255,0,0> template', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: 'Rgb<255,0,0>',
+      } as Partial<BladeConfig>);
+
+      engine.ignite(config);
+      runFrames(engine, config, 20);
+
+      const buf = engine.leds.buffer;
+      // LED buffer is RGB triplets — check that red channel has signal
+      let redSum = 0;
+      let greenSum = 0;
+      let blueSum = 0;
+      for (let i = 0; i < buf.length; i += 3) {
+        redSum += buf[i];
+        greenSum += buf[i + 1];
+        blueSum += buf[i + 2];
+      }
+      expect(redSum).toBeGreaterThan(0);
+      expect(greenSum).toBe(0);
+      expect(blueSum).toBe(0);
+    });
+
+    it('falls back to approximation pipeline when importedRawCode is absent', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig();
+
+      engine.ignite(config);
+      runFrames(engine, config, 20);
+
+      // Without importedRawCode, falls through to normal proffie rendering
+      const buf = engine.leds.buffer;
+      const hasColor = buf.some((v) => v > 0);
+      expect(hasColor).toBe(true);
+    });
+
+    it('falls back when importedRawCode is an invalid template string', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: '<<<invalid>>>',
+      } as Partial<BladeConfig>);
+
+      engine.ignite(config);
+      runFrames(engine, config, 20);
+
+      // Invalid template → parse fails → falls through to approximation
+      const buf = engine.leds.buffer;
+      const hasColor = buf.some((v) => v > 0);
+      expect(hasColor).toBe(true);
+    });
+
+    it('clears template-eval bridge state when switching away', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: 'Rgb<0,255,0>',
+      } as Partial<BladeConfig>);
+
+      engine.ignite(config);
+      runFrames(engine, config, 10);
+
+      // Switch to proffie — bridge should be cleared
+      engine.setRenderMode('proffie');
+      runFrames(engine, config, 10);
+      expect(engine.renderMode).toBe('proffie');
+
+      // Proffie mode should produce output (no crash from stale bridge)
+      const buf = engine.leds.buffer;
+      const hasColor = buf.some((v) => v > 0);
+      expect(hasColor).toBe(true);
+    });
+
+    it('state machine works in template-eval mode', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: 'Rgb<0,0,255>',
+      } as Partial<BladeConfig>);
+
+      expect(engine.state).toBe(BladeState.OFF);
+
+      engine.ignite(config);
+      expect(engine.state).toBe(BladeState.IGNITING);
+
+      runFrames(engine, config, 30);
+      expect(engine.state).toBe(BladeState.ON);
+
+      engine.retract();
+      expect(engine.state).toBe(BladeState.RETRACTING);
+
+      runFrames(engine, config, 50);
+      expect(engine.state).toBe(BladeState.OFF);
+    });
+
+    it('effect forwarding works in template-eval mode', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: 'Rgb<255,255,255>',
+      } as Partial<BladeConfig>);
+
+      engine.ignite(config);
+      runFrames(engine, config, 20);
+
+      // Should not throw when triggering effects
+      expect(() => engine.triggerEffect('clash')).not.toThrow();
+      expect(() => engine.triggerEffect('blast')).not.toThrow();
+      expect(() => engine.triggerEffect('lockup')).not.toThrow();
+      expect(() => engine.releaseEffect('lockup')).not.toThrow();
+      expect(() => engine.triggerEffect('drag')).not.toThrow();
+      expect(() => engine.releaseEffect('drag')).not.toThrow();
+    });
+
+    it('mode switch mid-ignition does not crash', () => {
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      const config = makeTestConfig({
+        importedRawCode: 'Rgb<128,0,255>',
+      } as Partial<BladeConfig>);
+
+      engine.ignite(config);
+      runFrames(engine, config, 5); // mid-ignition
+
+      expect(() => {
+        engine.setRenderMode('proffie');
+        runFrames(engine, config, 10);
+      }).not.toThrow();
+    });
+  });
 });
