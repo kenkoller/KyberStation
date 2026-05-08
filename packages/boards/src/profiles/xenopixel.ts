@@ -16,10 +16,10 @@ export const XENO_BLADE_EFFECTS: readonly XenoBladeEffect[] = [
   { id: 1, name: 'Steady Blade', kyberStyle: 'stable' },
   { id: 2, name: 'Unstable Blade', kyberStyle: 'unstable' },
   { id: 3, name: 'Rainbow Blade', kyberStyle: 'rainbow' },
-  { id: 4, name: 'Candy Blade', kyberStyle: null },
+  { id: 4, name: 'Candy Blade', kyberStyle: 'candy' },
   { id: 5, name: 'Crack Blade', kyberStyle: 'crystalShatter' },
   { id: 6, name: 'Pulse Blade', kyberStyle: 'pulse' },
-  { id: 7, name: 'Flashing Blade', kyberStyle: null },
+  { id: 7, name: 'Flashing Blade', kyberStyle: 'flashing' },
 ] as const;
 
 // ─── Xenopixel V3 Ignition Styles ───

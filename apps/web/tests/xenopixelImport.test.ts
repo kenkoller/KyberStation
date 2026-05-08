@@ -329,10 +329,10 @@ describe('xenoFontToBladeConfig', () => {
       [1, 'stable'],
       [2, 'unstable'],
       [3, 'rainbow'],
-      [4, 'stable'],           // Candy → stable
+      [4, 'candy'],
       [5, 'crystalShatter'],
       [6, 'pulse'],
-      [7, 'stable'],           // Flashing → stable
+      [7, 'flashing'],
     ];
 
     for (const [effectId, expectedStyle] of effectToStyle) {
@@ -668,15 +668,15 @@ describe('importXenoSdCard', () => {
     expect(result.bladeConfigs).toHaveLength(0);
   });
 
-  it('generates warnings for lossy blade effect mappings', () => {
+  it('does not generate warnings for known blade effect mappings', () => {
     const files = new Map<string, string>();
     files.set('set/config.ini', 'pixel_number=133\n');
-    // Effect 4 = Candy (no KyberStation equivalent)
+    // Effect 4 = Candy (now has a direct KyberStation style)
     files.set('fontconfig.ini', 'font1=(255,0,0),4,0,0,0,0,0,300,500\n');
 
     const result = importXenoSdCard(files);
     const candyWarning = result.warnings.find(w => w.includes('Candy'));
-    expect(candyWarning).toBeDefined();
+    expect(candyWarning).toBeUndefined();
   });
 
   it('generates warnings for special preon ignition mappings', () => {

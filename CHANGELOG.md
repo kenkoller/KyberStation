@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **10 Xenopixel ignition animations** — `XenoStandardIgnition`, `XenoVelocityIgnition`, `XenoTorchIgnition`, `XenoStackIgnition`, `XenoFoldTileIgnition`, `XenoWordIgnition`, `XenoFaserIgnition`, `XenoScavengerIgnition`, `XenoHunterIgnition`, `XenoBrokenIgnition` at `packages/engine/src/ignition/xenopixel/`.
 
-- **Board-aware `renderMode` on BladeEngine** — `'proffie' | 'xenopixel'` flag switches the style and ignition registries so the visualizer shows what the user's actual saber will produce. `setRenderMode()` + `getRenderMode()` API on `BladeEngine`.
+- **Board-aware `renderMode` on BladeEngine** — `'proffie' | 'xenopixel'` flag switches the style and ignition registries so the visualizer shows what the user's actual saber will produce. `setRenderMode()` method + `renderMode` getter on `BladeEngine`.
 
 - **Real `fontconfig.ini` + `config.ini` generation** — `XenopixelEmitter` rewritten from placeholder JSON to actual INI file output matching the Xenopixel V3 SD card format: `fontN=(R,G,B),bladeEffect,blasterEffect,forceEffect,lockupEffect,defaultEffect,ignitionStyle,ignitionSpeed,retractionSpeed[,inTime,outTime[,customFunction]]`.
 
@@ -25,13 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Xenopixel board profile enrichment** — `XENO_BLADE_EFFECTS` (8 effects with `kyberStyle` mappings), `XENO_IGNITION_STYLES` (12 styles with categories), `XENO_BLASTER_EFFECTS` (3), `XENO_FORCE_EFFECTS` (2), all exported as typed const arrays from `packages/boards/src/profiles/xenopixel.ts`. `configFormat` corrected from `'json'` to `'ini-txt'`.
 
-- **Board-gated UI components** — `XenoEffectPicker` (visual 8-card grid for blade effects), `XenoIgnitionPicker` (12-card grid for ignition styles), `XenoMotionPanel` (toggle + sensitivity for stab/twist/swing/pull), `XenoSettingsPanel` (volume, clash sensitivity, blade modes, countdown, blade length, crossguard). All render only when active board is Xenopixel; ProffieOS surfaces hidden automatically.
+- **Board-gated UI components** — `XenoEffectPicker` (visual 8-card grid for blade effects), `XenoIgnitionPicker` (12-card grid for ignition styles), `XenoBlasterPicker` (3-card blaster effect grid), `XenoForcePicker` (2-card force effect grid), `XenoMotionPanel` (toggle + sensitivity for stab/twist/swing/pull), `XenoSettingsPanel` (volume, clash sensitivity, blade modes, countdown, blade length, crossguard), `XenoConfigPreview` (live fontconfig.ini + config.ini preview), `XenoImportPanel` (SD card config paste-and-parse). All render only when active board is Xenopixel; ProffieOS surfaces hidden automatically.
 
-- **Proffie-to-Xenopixel design porter (UI only)** — `getClosestXenoEffect()` + `getClosestXenoIgnition()` map each ProffieOS style/ignition to the closest Xenopixel equivalent with a human-readable degradation note. `XenoDesignPorter` component surfaces a conversion dialog when switching boards; apply is a visual acknowledgment only and does not mutate the blade config (actual config conversion is planned for a future release).
+- **Proffie-to-Xenopixel compatibility analysis** — `getXenopixelCompat()` in `apps/web/lib/xenopixelCompat.ts` maps each ProffieOS style/ignition to the closest Xenopixel equivalent with a human-readable degradation note. `mapStyleToXenoEffect()` + `mapIgnitionToXenoStyle()` handle direct matches and approximate mappings with 25+ style entries.
 
-- **SD card import** — `parseXenoFontConfig()` + `parseXenoGlobalConfig()` + `parseXenoSDCard()` reconstruct KyberStation `BladeConfig` entries from existing Xenopixel SD card files. `inferFirmwareVersion()` heuristic detects firmware version from file structure clues.
+- **SD card import** — `parseXenoFontConfig()` + `parseXenoConfigIni()` + `importXenoSdCard()` reconstruct KyberStation `BladeConfig` entries from existing Xenopixel SD card files. `detectFirmwareVersion()` heuristic detects firmware version from file structure clues.
 
-- **Compatibility scoring** — `xenopixelCompat` field on preset metadata with `bladeEffect`, `ignitionStyle`, and optional `degradationNote`. `scoreCompatibility()` enriched to handle Xenopixel capability constraints.
+- **Compatibility scoring** — `getXenopixelCompat()` computes compatibility analysis on-the-fly (not stored as preset metadata) with `bladeEffect`, `ignitionStyle`, and `degradationNote` fields. `scoreCompatibility()` enriched to handle Xenopixel capability constraints.
 
 ### Changed
 
