@@ -72,11 +72,25 @@ Multi-day work or architecturally heavier items.
 
 | Item | Source | Scope | Notes |
 |---|---|---|---|
-| **Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates** | [`MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](MODULATION_ROUTING_v1.1_IMPL_PLAN.md) | L (~6-8 h) | New ROUTING sub-tab inside Inspector. Maps button events (aux click/hold/gesture) to actions per prop file; adds 8 new modulator plates. |
+| **Wave 8 — Button routing sub-tab + aux/gesture-as-modulator plates** | [`MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](MODULATION_ROUTING_v1.1_IMPL_PLAN.md) | L (~6-8 h) | New ROUTING sub-tab inside Inspector. Maps button events (aux click/hold/gesture) to actions per prop file; adds 8 new modulator plates. Also serves as **Prop File Editor Level 2** (see tiered plan below). |
 | **Wave 6 follow-on — composer slot expansion** | `CLAUDE.md` overnight recap | L | v1.1 Core ships shimmer-Mix only. Per-channel RGB (`Mix<driver, ColorLow, ColorHigh>` restructuring) + timing scalars. Deeper AST work per the PR #60 body. |
 | ~~**UX item #16 — Figma color model (opacity + blend modes)**~~ | ~~[`NEXT_SESSIONS.md`](NEXT_SESSIONS.md)~~ | ~~M~~ | **Superseded / dropped** — Per Ken's 2026-04-29 decision invoking the Hardware Fidelity Principle: non-emittable blend modes (`add`, `multiply`, `screen`, `overlay`) violate the principle because the codegen never emitted them. The correct path was audit-and-tighten, not expansion. PR #116 closed the existing violation (5-mode `BlendMode` union → `'normal'` literal) and documented the principle. Going forward any blend mode MUST have a verified ProffieOS emission path before shipping. This item will not be revisited as originally specified. |
 | ~~**Hilt Library Stage 2 — 29 new parts across 7 assemblies**~~ | ~~[`HILT_STAGE_2_BRIEFING.md`](HILT_STAGE_2_BRIEFING.md)~~ | ~~L~~ | **✅ Done — landed via [PR #79](https://github.com/kenkoller/KyberStation/pull/79) on 2026-04-27** (duplicate of v0.15.x row). |
 | ~~**Saber GIF Sprint 3**~~ | ~~[`SABER_GIF_ROADMAP.md`](SABER_GIF_ROADMAP.md)~~ | ~~M~~ | **✅ Done — landed via [PR #184](https://github.com/kenkoller/KyberStation/pull/184) on 2026-04-30 night** (3 marketing showcase GIFs salvage). Bloom polish follow-up shipped via [PR #185](https://github.com/kenkoller/KyberStation/pull/185). |
+
+## Prop File Editor (tiered roadmap)
+
+Triggered by Reddit user feedback (2026-05-08): user has a custom Proffieboard control scheme with countdown beep cycling for font/ignition/blade-style switching and asked if KyberStation can configure that. Three tiers, each independently shippable. Existing infrastructure: `PropFileProfile` registry at `apps/web/lib/propFileProfiles.ts` (4 prop files with full event vocabularies), 8 aux/gesture modulators in `packages/engine/src/modulation/registry.ts`, `ModulatorPlateBar` already renders Button + Gesture categories.
+
+| Item | Scope | Notes |
+|---|---|---|
+| **Level 1: Fett263 #define configurator** | M (1-2 sessions) | Toggle panel for ~30-40 Fett263 #defines (`FETT263_EDIT_MODE_MENU`, `FETT263_MULTI_PHASE`, gesture controls, etc.). Emits `#define` block at top of config.h. Similar shape to `XenoSettingsPanel`. Covers ~90% of Proffie users who just need to toggle features on/off. |
+| **Level 2: Button routing sub-tab (Wave 8)** | L (~6-8h) | Tracked in v0.16.0 table above. Maps button/gesture events to effects and modulation targets visually. All 8 aux/gesture modulators already registered; `ModulatorPlateBar` renders Button + Gesture categories. |
+| **Level 3: Custom prop file generation** | XL (weeks-months) | Visual state machine editor generating complete custom `*_buttons.h` files. Would support custom countdown sequences, font cycling logic, audio feedback triggers. Requires modeling ProffieOS's full event system and generating valid compilable C++. Evaluate community demand after Level 1 + Wave 8 ship. |
+
+Recommended sequence: Level 1 first (highest user coverage, lowest effort), then Wave 8 (already planned), then evaluate Level 3 based on demand.
+
+---
 
 ## v0.16.0+ / longer sprints
 
