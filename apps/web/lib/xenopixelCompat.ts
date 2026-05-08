@@ -84,6 +84,29 @@ function mapStyleToXenoEffect(style: string): {
     // Styles that map to Flashing Blade (strobing)
     dataStream:   { id: 7, reason: 'Data Stream approximated as Flashing Blade' },
     gravity:      { id: 7, reason: 'Gravity approximated as Flashing Blade' },
+    tempoLock:    { id: 7, reason: 'Tempo Lock approximated as Flashing Blade — rhythmic pattern closest to strobe' },
+
+    // Additional particle/flicker styles → Fire Blade
+    cinder:       { id: 0, reason: 'Cinder approximated as Fire Blade — particle-based effect closest to fire' },
+    sithFlicker:  { id: 0, reason: 'Sith Flicker approximated as Fire Blade — flicker-based effect closest to fire' },
+
+    // Additional multi-color styles → Rainbow Blade
+    nebula:       { id: 3, reason: 'Nebula approximated as Rainbow Blade — multi-color effect closest to rainbow' },
+    moire:        { id: 3, reason: 'Moire approximated as Rainbow Blade — pattern-based effect closest to rainbow' },
+    vortex:       { id: 3, reason: 'Vortex approximated as Rainbow Blade — rotational multi-color closest to rainbow' },
+
+    // Additional flowing-motion styles → Unstable Blade
+    cascade:      { id: 2, reason: 'Cascade approximated as Unstable Blade — flowing motion closest to unstable' },
+    torrent:      { id: 2, reason: 'Torrent approximated as Unstable Blade — flowing motion closest to unstable' },
+    mirage:       { id: 2, reason: 'Mirage approximated as Unstable Blade — shimmering effect closest to unstable' },
+
+    // Additional wave/pulse styles → Pulse Blade
+    tidal:        { id: 6, reason: 'Tidal approximated as Pulse Blade — wave-like effect closest to pulse' },
+    bladeCharge:  { id: 6, reason: 'Blade Charge approximated as Pulse Blade — energy buildup closest to pulse' },
+
+    // Additional multi-segment styles → Candy Blade
+    painted:      { id: 4, reason: 'Painted approximated as Candy Blade — multi-color segments closest to candy' },
+    imageScroll:  { id: 4, reason: 'Image Scroll approximated as Candy Blade — scrolling content closest to candy' },
   };
 
   const approx = APPROX_MAP[style];

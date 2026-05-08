@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.21.0] — 2026-05-07
 
-**Xenopixel V3 — Full Board Support.** KyberStation now has complete second-board support for Xenopixel V3, the most popular budget lightsaber controller. Visual effect picker, accurate blade previews, real SD card config generation, firmware version awareness, and a Proffie-to-Xenopixel design porter — all in one PR (#287, 12 commits, 60 files, +8,025 lines).
+**Xenopixel V3 — Full Board Support.** KyberStation now has complete second-board support for Xenopixel V3, the most popular budget lightsaber controller. Visual effect picker, accurate blade previews, real SD card config generation, firmware version awareness, and a Proffie-to-Xenopixel compatibility dialog — all in one PR (#287, 12 commits, 60 files, +8,025 lines).
 
 ### Added
 
@@ -25,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Xenopixel board profile enrichment** — `XENO_BLADE_EFFECTS` (8 effects with `kyberStyle` mappings), `XENO_IGNITION_STYLES` (12 styles with categories), `XENO_BLASTER_EFFECTS` (3), `XENO_FORCE_EFFECTS` (2), all exported as typed const arrays from `packages/boards/src/profiles/xenopixel.ts`. `configFormat` corrected from `'json'` to `'ini-txt'`.
 
-- **Board-gated UI components** — `XenoEffectPicker` (visual 8-card grid for blade effects), `XenoIgnitionPicker` (12-card grid for ignition styles), `XenoMotionPanel` (toggle + sensitivity for stab/twist/swing/pull), `XenoSettingsPanel` (volume, clash sensitivity, blade modes, countdown, blade length, crossguard), `XenoConfigPreview` (live fontconfig.ini + config.ini preview). All render only when active board is Xenopixel; ProffieOS surfaces hidden automatically.
+- **Board-gated UI components** — `XenoEffectPicker` (visual 8-card grid for blade effects), `XenoIgnitionPicker` (12-card grid for ignition styles), `XenoMotionPanel` (toggle + sensitivity for stab/twist/swing/pull), `XenoSettingsPanel` (volume, clash sensitivity, blade modes, countdown, blade length, crossguard). All render only when active board is Xenopixel; ProffieOS surfaces hidden automatically.
 
-- **Proffie-to-Xenopixel design porter** — `getClosestXenoEffect()` + `getClosestXenoIgnition()` map each ProffieOS style/ignition to the closest Xenopixel equivalent with a human-readable degradation note. `XenoDesignPorter` component surfaces a conversion dialog when switching boards.
+- **Proffie-to-Xenopixel design porter (UI only)** — `getClosestXenoEffect()` + `getClosestXenoIgnition()` map each ProffieOS style/ignition to the closest Xenopixel equivalent with a human-readable degradation note. `XenoDesignPorter` component surfaces a conversion dialog when switching boards; apply is a visual acknowledgment only and does not mutate the blade config (actual config conversion is planned for a future release).
 
 - **SD card import** — `parseXenoFontConfig()` + `parseXenoGlobalConfig()` + `parseXenoSDCard()` reconstruct KyberStation `BladeConfig` entries from existing Xenopixel SD card files. `inferFirmwareVersion()` heuristic detects firmware version from file structure clues.
 

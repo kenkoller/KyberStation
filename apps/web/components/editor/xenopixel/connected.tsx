@@ -3,22 +3,27 @@
 // ─── Connected Xenopixel panels ─────────────────────────────────────
 //
 // Thin wrappers that bridge the stateless Xeno* components to the
-// blade store (for style/ignition) or to component-local state (for
-// motion settings and global settings, which don't have Proffie
-// equivalents in BladeConfig).
+// blade store (for style/ignition) or to the xenopixelSettingsStore
+// (for motion + global settings that don't have Proffie equivalents
+// in BladeConfig).
 //
 // The blade-effect and ignition pickers map between Xenopixel numeric
 // IDs and BladeConfig's string-based `style` / `ignition` fields via
 // the XENO_BLADE_EFFECTS / XENO_IGNITION_STYLES lookup tables from
 // @kyberstation/boards.
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
+import { useXenopixelSettingsStore } from '@/stores/xenopixelSettingsStore';
 import { XENO_BLADE_EFFECTS } from '@kyberstation/boards';
 import { XenoEffectPicker } from './XenoEffectPicker';
 import { XenoIgnitionPicker } from './XenoIgnitionPicker';
-import { XenoMotionPanel, type XenoMotionSettings } from './XenoMotionPanel';
-import { XenoSettingsPanel, type XenoGlobalSettings } from './XenoSettingsPanel';
+import { XenoBlasterPicker } from './XenoBlasterPicker';
+import { XenoForcePicker } from './XenoForcePicker';
+import { XenoMotionPanel } from './XenoMotionPanel';
+import { XenoSettingsPanel } from './XenoSettingsPanel';
+import { XenoImportPanel } from './XenoImportPanel';
+import type { ImportedXenoConfig } from '@/lib/xenopixelImport';
 
 // ─── Blade Effect ↔ BladeConfig.style mapping ──────────────────────
 
@@ -38,13 +43,20 @@ function xenoEffectIdToStyle(id: number): string {
 
 /** Map a BladeConfig.ignition string to the closest Xenopixel ignition ID. */
 function ignitionToXenoId(ignition: string): number {
-  // Blade modes (0-4) have direct name mappings
+  // Blade modes (0-4) + special preon ignitions (5-11)
   const nameMap: Record<string, number> = {
     standard: 0,
     scroll: 1,
     wipe: 2,
     spark: 3,
     ghost: 4,
+    stack: 5,
+    foldTile: 6,
+    word: 7,
+    faser: 8,
+    scavenger: 9,
+    hunter: 10,
+    broken: 11,
   };
   if (ignition in nameMap) return nameMap[ignition];
   // For any unmapped ignition, default to Standard (0)
@@ -59,6 +71,13 @@ function xenoIgnitionIdToStyle(id: number): string {
     2: 'wipe',
     3: 'spark',
     4: 'ghost',
+    5: 'stack',
+    6: 'foldTile',
+    7: 'word',
+    8: 'faser',
+    9: 'scavenger',
+    10: 'hunter',
+    11: 'broken',
   };
   return nameMap[id] ?? 'standard';
 }
@@ -112,51 +131,129 @@ export function XenoIgnitionPickerConnected() {
 // ─── Connected: XenoMotionPanel ─────────────────────────────────────
 //
 // Motion settings are Xenopixel-specific (no Proffie equivalent in
-// BladeConfig). State lives in component-local useState for now;
-// persisted to the xenopixel config.ini via the zip exporter at
-// export time. A dedicated xenopixelStore is a future follow-up.
-
-const DEFAULT_MOTION_SETTINGS: XenoMotionSettings = {
-  motionControl: true,
-  swingOn: false,
-  swingSensitivity: 1000,
-  twistOn: true,
-  twistOff: true,
-  twistSensitivity: 200,
-  pullPushOn: false,
-  pushPullOff: false,
-  pushSensitivity: 10,
-  pullSensitivity: 10,
-};
+// BladeConfig). State lives in the xenopixelSettingsStore (persisted
+// to localStorage) so values survive section navigation.
 
 export function XenoMotionPanelConnected() {
-  const [settings, setSettings] = useState<XenoMotionSettings>(DEFAULT_MOTION_SETTINGS);
-  return <XenoMotionPanel settings={settings} onSettingsChange={setSettings} />;
+  const motionSettings = useXenopixelSettingsStore((s) => s.motion);
+  const updateMotion = useXenopixelSettingsStore((s) => s.updateMotion);
+  return <XenoMotionPanel settings={motionSettings} onSettingsChange={updateMotion} />;
 }
 
 // ─── Connected: XenoSettingsPanel ───────────────────────────────────
 //
-// Global settings are Xenopixel-specific. Component-local state for
-// now; flows into the zip exporter's `set/config.ini` generation.
-
-const DEFAULT_GLOBAL_SETTINGS: XenoGlobalSettings = {
-  volume: 70,
-  clashSensitivity: 3.0,
-  flashOnClash: true,
-  pixelNumber: 133,
-  velocityMode: false,
-  torchMode: false,
-  multiblockMode: true,
-  multilockMode: true,
-  lightningBlockMode: false,
-  blasterMode: false,
-  ghostMode: false,
-  powerOnTime: 1500,
-  powerOffTime: 5000,
-  countdown: false,
-};
+// Global settings are Xenopixel-specific. Persisted via the
+// xenopixelSettingsStore so values survive section navigation.
 
 export function XenoSettingsPanelConnected() {
-  const [settings, setSettings] = useState<XenoGlobalSettings>(DEFAULT_GLOBAL_SETTINGS);
-  return <XenoSettingsPanel settings={settings} onSettingsChange={setSettings} />;
+  const globalSettings = useXenopixelSettingsStore((s) => s.global);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+  return <XenoSettingsPanel settings={globalSettings} onSettingsChange={updateGlobal} />;
+}
+
+// ─── Connected: XenoBlasterPicker ──────────────────────────────────
+//
+// Blaster effect is Xenopixel-specific (fontconfig.ini "B" field).
+// Persisted via the xenopixelSettingsStore.
+
+export function XenoBlasterPickerConnected() {
+  const blasterEffect = useXenopixelSettingsStore((s) => s.global.blasterEffect);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+  const globalSettings = useXenopixelSettingsStore((s) => s.global);
+
+  const handleSelect = useCallback(
+    (id: number) => {
+      updateGlobal({ ...globalSettings, blasterEffect: id });
+    },
+    [updateGlobal, globalSettings],
+  );
+
+  return (
+    <XenoBlasterPicker
+      selectedBlaster={blasterEffect}
+      onSelectBlaster={handleSelect}
+    />
+  );
+}
+
+// ─── Connected: XenoForcePicker ────────────────────────────────────
+//
+// Force effect is Xenopixel-specific (fontconfig.ini "C" field).
+// Persisted via the xenopixelSettingsStore.
+
+export function XenoForcePickerConnected() {
+  const forceEffect = useXenopixelSettingsStore((s) => s.global.forceEffect);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+  const globalSettings = useXenopixelSettingsStore((s) => s.global);
+
+  const handleSelect = useCallback(
+    (id: number) => {
+      updateGlobal({ ...globalSettings, forceEffect: id });
+    },
+    [updateGlobal, globalSettings],
+  );
+
+  return (
+    <XenoForcePicker
+      selectedForce={forceEffect}
+      onSelectForce={handleSelect}
+    />
+  );
+}
+
+// ─── Connected: XenoImportPanel ───────────────────────────────────
+//
+// Bridges the stateless import panel to bladeStore (loadPreset) and
+// xenopixelSettingsStore (updateMotion + updateGlobal) so a parsed
+// SD card config can be applied in one click.
+
+export function XenoImportPanelConnected() {
+  const loadPreset = useBladeStore((s) => s.loadPreset);
+  const updateMotion = useXenopixelSettingsStore((s) => s.updateMotion);
+  const updateGlobal = useXenopixelSettingsStore((s) => s.updateGlobal);
+
+  const handleApply = useCallback(
+    (fontIndex: number, imported: ImportedXenoConfig) => {
+      const bladeConfig = imported.bladeConfigs[fontIndex];
+      if (bladeConfig) {
+        loadPreset({ ...bladeConfig, modulation: undefined });
+      }
+
+      const g = imported.global;
+      updateGlobal({
+        volume: g.volume,
+        clashSensitivity: g.clashSensitivity,
+        flashOnClash: g.flashOnClash,
+        pixelNumber: g.pixelNumber,
+        velocityMode: g.velocityMode,
+        torchMode: g.torchMode,
+        multiblockMode: g.multiblockMode,
+        multilockMode: g.multilockMode,
+        lightningBlockMode: g.lightningBlockMode,
+        blasterMode: g.blasterMode,
+        ghostMode: g.ghostMode,
+        powerOnTime: g.powerOnTime,
+        powerOffTime: g.powerOffTime,
+        countdown: g.countdown,
+        blasterEffect: imported.fonts[fontIndex]?.blasterEffect ?? 0,
+        forceEffect: imported.fonts[fontIndex]?.forceEffect ?? 0,
+      });
+
+      updateMotion({
+        motionControl: g.motionControl,
+        swingOn: g.swingOn,
+        swingSensitivity: g.swingSensitivity,
+        twistOn: g.twistOn,
+        twistOff: g.twistOff,
+        twistSensitivity: g.twistSensitivity,
+        pullPushOn: g.pullPushOn,
+        pushPullOff: g.pushPullOff,
+        pushSensitivity: g.pushSensitivity,
+        pullSensitivity: g.pullSensitivity,
+      });
+    },
+    [loadPreset, updateGlobal, updateMotion],
+  );
+
+  return <XenoImportPanel onApplyFont={handleApply} />;
 }

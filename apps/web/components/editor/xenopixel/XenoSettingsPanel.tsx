@@ -15,6 +15,8 @@ export interface XenoGlobalSettings {
   powerOnTime: number;
   powerOffTime: number;
   countdown: boolean;
+  blasterEffect: number;
+  forceEffect: number;
 }
 
 export interface XenoSettingsPanelProps {
@@ -86,7 +88,10 @@ export function XenoSettingsPanel({ settings, onSettingsChange }: XenoSettingsPa
             min={1}
             max={300}
             value={settings.pixelNumber}
-            onChange={(e) => update({ pixelNumber: Number(e.target.value) })}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10);
+              if (!isNaN(n)) update({ pixelNumber: Math.max(1, Math.min(n, 300)) });
+            }}
             className="w-20 rounded border border-[var(--border-subtle)] bg-transparent px-2 py-1 text-sm font-mono text-[rgb(var(--text-primary))] text-right"
           />
           <span className="text-xs text-[rgb(var(--text-muted))]">LEDs</span>

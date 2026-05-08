@@ -215,6 +215,13 @@ const XENO_IGNITION_STYLES: Record<string, number> = {
   wipe: 2,        // Torch
   spark: 3,       // Blaster
   ghost: 4,       // Ghost
+  stack: 5,       // Stack Ignition (special preon)
+  foldTile: 6,    // FoldTile Ignition (special preon)
+  word: 7,        // Word Ignition (special preon)
+  faser: 8,       // Faser Ignition (special preon)
+  scavenger: 9,   // Scavenger Ignition (special preon)
+  hunter: 10,     // Hunter Ignition (special preon)
+  broken: 11,     // Broken Ignition (special preon)
 };
 
 /**
@@ -422,7 +429,10 @@ export class XenopixelEmitter implements BoardEmitter {
     lines.push(`torch_mode=${boolToInt(s.torchMode)}`);
     lines.push(`multiblock_mode=${boolToInt(s.multiblockMode)}`);
     lines.push(`multilock_mode=${boolToInt(s.multilockMode)}`);
-    lines.push(`lightning_block_mode=${boolToInt(s.lightningBlockMode)}`);
+    // V1.3.1+: lightning block mode
+    if (caps.lightningBlock) {
+      lines.push(`lightning_block_mode=${boolToInt(s.lightningBlockMode)}`);
+    }
     lines.push(`blaster_mode=${boolToInt(s.blasterMode)}`);
     lines.push(`ghost_mode=${boolToInt(s.ghostMode)}`);
 

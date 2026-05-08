@@ -19,7 +19,7 @@ export class XenoCandyStyle extends BaseStyle {
 
     // Divide blade into 5 segments.
     const segmentCount = 5;
-    const segIndex = Math.floor(position * segmentCount);
+    const segIndex = Math.min(segmentCount - 1, Math.floor(position * segmentCount));
     // Fractional position within the segment (for soft edges).
     const segFrac = (position * segmentCount) - segIndex;
 

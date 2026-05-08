@@ -15,7 +15,7 @@ export class XenoBlasterIgnition extends BaseIgnition {
   getMask(position: number, progress: number): number {
     // Divide blade into 8 segments
     const segments = 8;
-    const segIndex = Math.floor(position * segments);
+    const segIndex = Math.min(segments - 1, Math.floor(position * segments));
     const segThreshold = (segIndex + 1) / segments;
 
     // Each segment lights up as a whole when progress crosses its threshold

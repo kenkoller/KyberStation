@@ -3,6 +3,7 @@ import type { BladeConfig } from '@kyberstation/engine';
 import { generateStyleCode } from '@kyberstation/codegen';
 import { buildConfigFile } from '@kyberstation/codegen';
 import type { ConfigOptions, PresetEntry } from '@kyberstation/codegen';
+import { useXenopixelSettingsStore } from '@/stores/xenopixelSettingsStore';
 
 // ─── Board Identifiers ───
 
@@ -362,14 +363,21 @@ const XENO_STYLE_MAP: Record<string, number> = {
 };
 
 /**
- * Map KyberStation ignition IDs to Xenopixel V3 ignition/blade-style IDs (0-11).
- * 0=Standard, 1=Velocity, 2=Torch, 3=Blaster
+ * Map KyberStation ignition names to Xenopixel V3 ignition IDs (0-11).
  */
 const XENO_IGNITION_MAP: Record<string, number> = {
   standard: 0,
   scroll: 1,
   wipe: 2,
   spark: 3,
+  ghost: 4,
+  stack: 5,
+  foldTile: 6,
+  word: 7,
+  faser: 8,
+  scavenger: 9,
+  hunter: 10,
+  broken: 11,
 };
 
 function xenoStyleId(style: string): number {
@@ -391,9 +399,10 @@ function generateXenoFontConfig(preset: ExportPreset, fontNumber: number): strin
   const g = Math.max(0, Math.min(255, Math.round(c.baseColor.g)));
   const b = Math.max(0, Math.min(255, Math.round(c.baseColor.b)));
 
-  const bladeEffect = xenoStyleId(c.style);      // A — blade effect ID (0-7)
-  const blasterLight = 0;                         // B — blaster light effect (0-2)
-  const forceLight = 0;                           // C — force lighting effect (0-1)
+  const xenoGlobal = useXenopixelSettingsStore.getState().global;
+  const bladeEffect = xenoStyleId(c.style);       // A — blade effect ID (0-7)
+  const blasterLight = xenoGlobal.blasterEffect;  // B — blaster light effect (0-2)
+  const forceLight = xenoGlobal.forceEffect;      // C — force lighting effect (0-1)
   const lockupLight = 0;                          // D — lockup lighting effect (0)
   const defaultLight = 0;                         // E — default light effect (0-2)
   const bladeStyle = xenoIgnitionId(c.ignition);  // F — blade style/ignition (0-11)
@@ -408,46 +417,49 @@ function generateXenoFontConfig(preset: ExportPreset, fontNumber: number): strin
  * Uses sensible defaults; LED count derived from the first preset.
  */
 function generateXenoGlobalConfig(presets: ExportPreset[]): string {
-  const ledCount = presets[0]?.config.ledCount ?? 133;
+  const xenoState = useXenopixelSettingsStore.getState();
+  const g = xenoState.global;
+  const m = xenoState.motion;
+  const ledCount = g.pixelNumber || (presets[0]?.config.ledCount ?? 133);
 
   const lines: string[] = [];
   lines.push('#Main blade length');
   lines.push(`pixel_number=${ledCount}`);
   lines.push('');
   lines.push('#Motion control');
-  lines.push('motion_control=1');
-  lines.push('pull_push_on=1');
-  lines.push('push_pull_off=1');
-  lines.push('push_sensitivity=18');
-  lines.push('pull_sensitivity=13');
-  lines.push('swing_on=1');
-  lines.push('swing_sensitivity=1100');
-  lines.push('twist_on=0');
-  lines.push('twist_off=0');
-  lines.push('twist_sensitivity=220');
+  lines.push(`motion_control=${m.motionControl ? 1 : 0}`);
+  lines.push(`pull_push_on=${m.pullPushOn ? 1 : 0}`);
+  lines.push(`push_pull_off=${m.pushPullOff ? 1 : 0}`);
+  lines.push(`push_sensitivity=${m.pushSensitivity}`);
+  lines.push(`pull_sensitivity=${m.pullSensitivity}`);
+  lines.push(`swing_on=${m.swingOn ? 1 : 0}`);
+  lines.push(`swing_sensitivity=${m.swingSensitivity}`);
+  lines.push(`twist_on=${m.twistOn ? 1 : 0}`);
+  lines.push(`twist_off=${m.twistOff ? 1 : 0}`);
+  lines.push(`twist_sensitivity=${m.twistSensitivity}`);
   lines.push('');
   lines.push('#Volume');
-  lines.push('volume=80');
+  lines.push(`volume=${g.volume}`);
   lines.push('');
   lines.push('#Blade modes');
-  lines.push('velocity_mode=0');
-  lines.push('torch_mode=0');
-  lines.push('multiblock_mode=0');
-  lines.push('multilock_mode=0');
-  lines.push('lightning_block_mode=0');
-  lines.push('blaster_mode=0');
-  lines.push('ghost_mode=0');
+  lines.push(`velocity_mode=${g.velocityMode ? 1 : 0}`);
+  lines.push(`torch_mode=${g.torchMode ? 1 : 0}`);
+  lines.push(`multiblock_mode=${g.multiblockMode ? 1 : 0}`);
+  lines.push(`multilock_mode=${g.multilockMode ? 1 : 0}`);
+  lines.push(`lightning_block_mode=${g.lightningBlockMode ? 1 : 0}`);
+  lines.push(`blaster_mode=${g.blasterMode ? 1 : 0}`);
+  lines.push(`ghost_mode=${g.ghostMode ? 1 : 0}`);
   lines.push('');
   lines.push('#Sound');
-  lines.push('countdown=1');
+  lines.push(`countdown=${g.countdown ? 1 : 0}`);
   lines.push('');
   lines.push('#Clash');
-  lines.push('flash_on_clash=1');
-  lines.push('clash_sensitivity=2.0');
+  lines.push(`flash_on_clash=${g.flashOnClash ? 1 : 0}`);
+  lines.push(`clash_sensitivity=${g.clashSensitivity}`);
   lines.push('');
   lines.push('#Power timing');
-  lines.push('PowerOnTime=2000');
-  lines.push('PowerOffTime=10000');
+  lines.push(`PowerOnTime=${g.powerOnTime}`);
+  lines.push(`PowerOffTime=${g.powerOffTime}`);
   lines.push('');
   return lines.join('\n');
 }
