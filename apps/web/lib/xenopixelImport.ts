@@ -122,18 +122,17 @@ const DEFAULT_GLOBAL_CONFIG: XenoGlobalConfig = {
 /**
  * Blade effect ID (0-7) → KyberStation style string.
  * Inverse of XenopixelEmitter's XENO_BLADE_EFFECTS mapping.
- * IDs 4 (Candy) and 7 (Flashing) have no direct KyberStation equivalent
- * and fall back to 'stable'.
+ * All 8 blade effects map to their corresponding KyberStation style IDs.
  */
 const BLADE_EFFECT_TO_STYLE: Record<number, string> = {
   0: 'fire',
   1: 'stable',
   2: 'unstable',
   3: 'rainbow',
-  4: 'stable',       // Candy → no KyberStation equivalent, closest is stable
+  4: 'candy',
   5: 'crystalShatter',
   6: 'pulse',
-  7: 'stable',       // Flashing → no KyberStation equivalent, closest is stable
+  7: 'flashing',
 };
 
 /**
@@ -410,13 +409,6 @@ export function parseXenoFontConfig(content: string): XenoFontConfig[] {
 function lookupBladeStyle(effectId: number): [string, string | null] {
   const style = BLADE_EFFECT_TO_STYLE[effectId];
   if (style !== undefined) {
-    // Warn about IDs with no exact KyberStation match
-    if (effectId === 4) {
-      return [style, `Blade effect "Candy" (${effectId}) has no KyberStation equivalent; mapped to "stable"`];
-    }
-    if (effectId === 7) {
-      return [style, `Blade effect "Flashing" (${effectId}) has no KyberStation equivalent; mapped to "stable"`];
-    }
     return [style, null];
   }
   return ['stable', `Unknown blade effect ID ${effectId}; defaulted to "stable"`];
