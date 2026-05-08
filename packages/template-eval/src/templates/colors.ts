@@ -139,6 +139,10 @@ export class MixTemplate extends BaseStyleTemplate {
     const b = this.colorB.getColor(led);
     return mixColors(a, b, f);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.fFunc, this.colorA, this.colorB];
+  }
 }
 
 // ─── Gradient<C1, C2, ...> ───
@@ -176,6 +180,10 @@ export class GradientTemplate extends BaseStyleTemplate {
       g: clamp(Math.round(lerp(a.g, b.g, segT)), 0, 255),
       b: clamp(Math.round(lerp(a.b, b.b, segT)), 0, 255),
     };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return this.colors;
   }
 }
 
@@ -227,6 +235,10 @@ export class RotateColorsXTemplate extends BaseStyleTemplate {
     const hsl = rgbToHsl(c.r, c.g, c.b);
     return hslToRgb((hsl.h + degrees) % 360, hsl.s, hsl.l);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.rotation, this.color];
+  }
 }
 
 // ─── ColorChange<Trigger, C1, C2, ...> ───
@@ -237,6 +249,7 @@ export class ColorChangeTemplate extends BaseStyleTemplate {
   private readonly trigger: StyleTemplate;
   private readonly colors: StyleTemplate[];
   private selectedIndex = 0;
+  private lastChangeEventWavnum = -1;
 
   constructor(args: StyleTemplate[]) {
     super();
@@ -248,12 +261,38 @@ export class ColorChangeTemplate extends BaseStyleTemplate {
     super.run(state, effects);
     this.trigger.run(state, effects);
     for (const c of this.colors) c.run(state, effects);
+
+    if (this.colors.length > 1) {
+      const changeEvent = effects.getLastEffect('EFFECT_CHANGE');
+      if (changeEvent && changeEvent.wavnum !== this.lastChangeEventWavnum) {
+        this.lastChangeEventWavnum = changeEvent.wavnum;
+        this.selectedIndex = (this.selectedIndex + 1) % this.colors.length;
+      }
+    }
   }
 
   getColor(led: number): Color {
     if (this.colors.length === 0) return BLACK;
     const idx = clamp(this.selectedIndex, 0, this.colors.length - 1);
     return this.colors[idx].getColor(led);
+  }
+
+  get variantCount(): number {
+    return this.colors.length;
+  }
+
+  get currentVariant(): number {
+    return this.selectedIndex;
+  }
+
+  setVariant(index: number): void {
+    if (this.colors.length > 0) {
+      this.selectedIndex = clamp(index, 0, this.colors.length - 1);
+    }
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.trigger, ...this.colors];
   }
 }
 
@@ -286,6 +325,10 @@ export class ColorSelectTemplate extends BaseStyleTemplate {
     );
     return this.colors[idx].getColor(led);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.selection, ...this.colors];
+  }
 }
 
 // ─── AlphaL<Color, Shape> ───
@@ -317,6 +360,10 @@ export class AlphaLTemplate extends BaseStyleTemplate {
       b: Math.round(c.b * a),
     };
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color, this.shape];
+  }
 }
 
 // ─── RgbArg<ARG_NAME, DefaultColor> ───
@@ -345,6 +392,10 @@ export class RgbArgTemplate extends BaseStyleTemplate {
   getInteger(led: number): number {
     return this.defaultColor.getInteger(led);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.defaultColor];
+  }
 }
 
 // ─── IntArg<ARG_NAME, DefaultValue> ───
@@ -356,7 +407,7 @@ export class IntArgTemplate extends BaseStyleTemplate {
   constructor(args: StyleTemplate[]) {
     super();
     // args[0] is argument name, args[1] is default
-    this.defaultValue = args[1] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 0; } };
+    this.defaultValue = args[1] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 0; }, getChildren() { return []; } };
   }
 
   run(state: BladeState, effects: EffectSystem): void {

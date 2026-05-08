@@ -87,6 +87,10 @@ export class TrFadeXTemplate extends BaseStyleTemplate {
   getColor(_led: number): Color {
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.durationFunc];
+  }
 }
 
 // ─── TrSmoothFade<Ms> ───
@@ -199,6 +203,10 @@ export class TrWipeXTemplate extends BaseStyleTemplate {
   getColor(_led: number): Color {
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.durationFunc];
+  }
 }
 
 // ─── TrWipeIn<Ms> ───
@@ -273,6 +281,10 @@ export class TrWipeInXTemplate extends BaseStyleTemplate {
 
   getColor(_led: number): Color {
     return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.durationFunc];
   }
 }
 
@@ -352,6 +364,10 @@ export class TrCenterWipeXTemplate extends BaseStyleTemplate {
 
   getColor(_led: number): Color {
     return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.durationFunc];
   }
 }
 
@@ -433,6 +449,10 @@ export class TrConcatTemplate extends BaseStyleTemplate {
     }
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [...this.transitions, ...this.intermediateColors];
+  }
 }
 
 // ─── TrJoin<Tr1, Tr2> ───
@@ -461,6 +481,10 @@ export class TrJoinTemplate extends BaseStyleTemplate {
   getColor(_led: number): Color {
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.tr1, this.tr2];
+  }
 }
 
 // ─── TrJoinR<Tr1, Tr2> ───
@@ -488,6 +512,10 @@ export class TrJoinRTemplate extends BaseStyleTemplate {
 
   getColor(_led: number): Color {
     return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.tr1, this.tr2];
   }
 }
 
@@ -526,6 +554,10 @@ export class TrExtendTemplate extends BaseStyleTemplate {
   getColor(_led: number): Color {
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.transition];
+  }
 }
 
 // ─── TrWaveX<Color, Fadeout, WaveSize, WaveMs, WaveCenter> ───
@@ -543,9 +575,9 @@ export class TrWaveXTemplate extends BaseStyleTemplate {
     super();
     this.color = args[0]!;
     this.fadeoutMs = args[1]!;
-    this.waveSize = args[2] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 200; } } as StyleTemplate;
-    this.waveMs = args[3] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 100; } } as StyleTemplate;
-    this.waveCenter = args[4] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return PROFFIE_MAX / 2; } } as StyleTemplate;
+    this.waveSize = args[2] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 200; }, getChildren() { return []; } } as StyleTemplate;
+    this.waveMs = args[3] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 100; }, getChildren() { return []; } } as StyleTemplate;
+    this.waveCenter = args[4] ?? { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return PROFFIE_MAX / 2; }, getChildren() { return []; } } as StyleTemplate;
   }
 
   run(state: BladeState, effects: EffectSystem): void {
@@ -594,6 +626,10 @@ export class TrWaveXTemplate extends BaseStyleTemplate {
   getInteger(led: number): number {
     const c = this.getColor(led);
     return Math.max(c.r, c.g, c.b) * 128;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color, this.fadeoutMs, this.waveSize, this.waveMs, this.waveCenter];
   }
 }
 
@@ -672,5 +708,9 @@ export class TrCenterWipeInXTemplate extends BaseStyleTemplate {
 
   getColor(_led: number): Color {
     return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.durationFunc];
   }
 }

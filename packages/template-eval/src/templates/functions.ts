@@ -56,6 +56,10 @@ export class ScaleTemplate extends BaseStyleTemplate {
     const maxV = this.max.getInteger(led);
     return scaleValue(inp, minV, maxV);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.input, this.min, this.max];
+  }
 }
 
 // ─── SwingSpeed<MaxSpeed> ───
@@ -193,6 +197,13 @@ export class SinTemplate extends BaseStyleTemplate {
     }
     return raw;
   }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [this.periodMs];
+    if (this.low) children.push(this.low);
+    if (this.high) children.push(this.high);
+    return children;
+  }
 }
 
 // ─── Bump<Center, Width> ───
@@ -219,6 +230,10 @@ export class BumpTemplate extends BaseStyleTemplate {
     const center = this.center.getInteger(led);
     const width = this.width.getInteger(led);
     return bumpFn(pos, center, width);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.center, this.width];
   }
 }
 
@@ -247,6 +262,10 @@ export class SmoothStepTemplate extends BaseStyleTemplate {
     const end = this.end.getInteger(led);
     const val = smoothStepFn(start, end, pos);
     return Math.round(val * PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.start, this.end];
   }
 }
 
@@ -277,6 +296,10 @@ export class ClampFTemplate extends BaseStyleTemplate {
     const lo = this.min.getInteger(led);
     const hi = this.max.getInteger(led);
     return clamp(val, lo, hi);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.func, this.min, this.max];
   }
 }
 
@@ -319,6 +342,10 @@ export class ChangeSlowlyTemplate extends BaseStyleTemplate {
   getInteger(_led: number): number {
     return Math.round(clamp(this.current, 0, PROFFIE_MAX));
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.func, this.speed];
+  }
 }
 
 // ─── Sum<A, B, ...> ───
@@ -340,6 +367,10 @@ export class SumTemplate extends BaseStyleTemplate {
     let sum = 0;
     for (const a of this.args) sum += a.getInteger(led);
     return sum;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return this.args;
   }
 }
 
@@ -367,6 +398,10 @@ export class MultTemplate extends BaseStyleTemplate {
     const b = this.b.getInteger(led);
     return Math.round((a * b) / PROFFIE_MAX);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.a, this.b];
+  }
 }
 
 // ─── Percentage<F, Percent> ───
@@ -390,6 +425,10 @@ export class PercentageTemplate extends BaseStyleTemplate {
 
   getInteger(led: number): number {
     return Math.round((this.func.getInteger(led) * this.pct.getInteger(led)) / 100);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.func, this.pct];
   }
 }
 
@@ -418,6 +457,10 @@ export class IsLessThanTemplate extends BaseStyleTemplate {
 
   getColor(led: number): Color {
     return this.getInteger(led) > 0 ? { r: 255, g: 255, b: 255 } : BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.func, this.threshold];
   }
 }
 
@@ -451,6 +494,10 @@ export class TimeSinceEffectTemplate extends BaseStyleTemplate {
     // the argument name to an EffectType, which would need the string name.
     return this.state.timeMs;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.effectArg];
+  }
 }
 
 // ─── EffectPosition<Effect?> ───
@@ -482,6 +529,10 @@ export class EffectRandomFTemplate extends BaseStyleTemplate {
   getInteger(_led: number): number {
     // Return a pseudo-random value based on time
     return Math.floor(hashPair(this.state.timeMs, 42) * PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.effectArg];
   }
 }
 
@@ -524,6 +575,12 @@ export class CenterDistFTemplate extends BaseStyleTemplate {
     const center = this.center?.getInteger(led) ?? (PROFFIE_MAX / 2);
     const dist = Math.abs(pos - center);
     return clamp(dist * 2, 0, PROFFIE_MAX); // Scale so edge = 32768
+  }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [];
+    if (this.center) children.push(this.center);
+    return children;
   }
 }
 
@@ -583,6 +640,10 @@ export class IfonTemplate extends BaseStyleTemplate {
   getColor(led: number): Color {
     return this.state.isOn ? this.onStyle.getColor(led) : this.offStyle.getColor(led);
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.onStyle, this.offStyle];
+  }
 }
 
 // ─── IgnitionTime<Default?> / RetractionTime<Default?> ───
@@ -636,5 +697,9 @@ export class BendTimePowInvXTemplate extends BaseStyleTemplate {
   getInteger(led: number): number {
     // Simplified: just return the time value
     return this.time.getInteger(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.time, this.bend];
   }
 }

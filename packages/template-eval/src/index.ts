@@ -43,5 +43,8 @@ export { EffectManager } from './EffectSystem.js';
 // Base classes (for extending)
 export { BaseStyleTemplate, IntegerLiteral } from './BaseStyle.js';
 
+// Color templates (for variant cycling introspection)
+export { ColorChangeTemplate } from './templates/colors.js';
+
 // Registry introspection
 export { isRegistered, registrySize, registeredNames } from './registry.js';
