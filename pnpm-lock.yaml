@@ -193,6 +193,15 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@22.19.17)(jiti@1.21.7)(jsdom@25.0.1(canvas@2.11.2))
 
+  packages/template-eval:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@22.19.17)(jiti@1.21.7)(jsdom@25.0.1(canvas@2.11.2))
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
