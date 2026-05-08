@@ -7,6 +7,7 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { type AurebeshMode, type AurebeshVariant } from '@/lib/aurebesh';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useAccessibilityStore, type DensityMode } from '@/stores/accessibilityStore';
+import { useUIStore } from '@/stores/uiStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -154,6 +155,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     density: false,
     // Behavior
     mouseSwing: false,
+    playbackSpeed: false,
     effects: false,
     feedback: false,
     // Advanced
@@ -210,6 +212,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   //    (vertical position). Default ON for desktop. ──
   const mouseSwingEnabled = useAccessibilityStore((s) => s.mouseSwingEnabled);
   const setMouseSwingEnabled = useAccessibilityStore((s) => s.setMouseSwingEnabled);
+
+  const timeScale = useUIStore((s) => s.timeScale);
+  const setTimeScale = useUIStore((s) => s.setTimeScale);
 
   // ── Show Crystal panel (2026-04-29) — opt-in toggle for the
   //    experimental Three.js Saber Card / Kyber Crystal panel. Off
@@ -569,6 +574,41 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onChange={setMouseSwingEnabled}
               label="Enable mouse swing"
             />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
+  const renderPlaybackSpeed = (): ReactNode => (
+    <section className="py-4">
+      <SectionToggle
+        label="Playback speed"
+        open={sections.playbackSpeed}
+        onToggle={() => toggleSection('playbackSpeed')}
+      />
+      {sections.playbackSpeed && (
+        <div className="mt-3 space-y-3">
+          <p className="text-ui-xs text-text-muted">
+            Slow down blade animations to inspect fast transitions,
+            ignition arcs, and effect timing. Also available via the
+            speed button next to Pause.
+          </p>
+          <div className="flex items-center gap-2">
+            {[1, 0.5, 0.25].map((speed) => (
+              <button
+                key={speed}
+                onClick={() => setTimeScale(speed)}
+                className={[
+                  'flex-1 px-3 py-2 rounded border text-ui-sm font-mono font-medium transition-colors',
+                  timeScale === speed
+                    ? 'border-accent/60 text-accent bg-accent-dim/30'
+                    : 'border-border-subtle text-text-muted hover:text-text-secondary hover:border-border-light',
+                ].join(' ')}
+              >
+                {speed === 1 ? '1×' : speed === 0.5 ? '½×' : '¼×'}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -961,7 +1001,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div>{renderDensity()}</div>
           </div>
 
-          {/* Behavior: Mouse swing → Effect auto-release → Feedback */}
+          {/* Behavior: Mouse swing → Playback speed → Effect auto-release → Feedback */}
           <div
             role="tabpanel"
             id="settings-tabpanel-behavior"
@@ -971,6 +1011,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             className="divide-y divide-border-subtle"
           >
             <div className="first:[&>section]:pt-0">{renderMouseSwing()}</div>
+            <div>{renderPlaybackSpeed()}</div>
             <div>{renderEffectAutoRelease()}</div>
             <div>{renderFeedback()}</div>
           </div>

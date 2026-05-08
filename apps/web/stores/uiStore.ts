@@ -98,6 +98,7 @@ export interface UIStore {
    * The field is only meaningful when `isPaused` is true.
    */
   pauseScope: 'full' | 'partial';
+  timeScale: number;
   /** Battery preset index for power draw estimation. @deprecated Use `batteryId` for warning math; this index drives the legacy mAh-only runtime estimator. */
   batteryPresetIdx: number;
   /**
@@ -286,6 +287,8 @@ export interface UIStore {
   toggleAnimationPaused: () => void;
   togglePause: (scope?: 'full' | 'partial') => void;
   setPaused: (paused: boolean, scope?: 'full' | 'partial') => void;
+  setTimeScale: (scale: number) => void;
+  cycleTimeScale: () => void;
   setBatteryPresetIdx: (idx: number) => void;
   setBatteryId: (id: string) => void;
   setCustomBattery: (spec: { capacityMah: number; maxDischargeA: number; voltageNominal: number } | null) => void;
@@ -652,6 +655,7 @@ export const useUIStore = create<UIStore>((set) => ({
   animationPaused: false,
   isPaused: false,
   pauseScope: 'full' as const,
+  timeScale: 1,
   batteryPresetIdx: 0,
   batteryId: initialBatterySelection.id,
   customBattery: initialBatterySelection.custom,
@@ -750,6 +754,13 @@ export const useUIStore = create<UIStore>((set) => ({
       isPaused,
       pauseScope: scope,
       animationPaused: isPaused ? scope === 'full' : false,
+    }),
+  setTimeScale: (timeScale) => set({ timeScale: Math.max(0.1, Math.min(2, timeScale)) }),
+  cycleTimeScale: () =>
+    set((state) => {
+      const steps = [1, 0.5, 0.25];
+      const idx = steps.indexOf(state.timeScale);
+      return { timeScale: steps[(idx + 1) % steps.length] };
     }),
   setBatteryPresetIdx: (batteryPresetIdx) => set({ batteryPresetIdx }),
   setBatteryId: (batteryId) => {
