@@ -10,7 +10,7 @@ import { useAccessibilityStore } from '@/stores/accessibilityStore';
  * Pixels-per-second threshold below which we treat the mouse as "still".
  * Prevents micro-jitter from registering as meaningful swing.
  */
-const VELOCITY_DEAD_ZONE = 8;
+export const VELOCITY_DEAD_ZONE = 8;
 
 /**
  * Maximum pixels-per-second that maps to swingSpeed 1.0.
@@ -18,14 +18,14 @@ const VELOCITY_DEAD_ZONE = 8;
  * ~0.3 seconds reads as full swing (~4000 px/s). A moderate swipe
  * (~800 px/s) gives ~0.2 swing.
  */
-const VELOCITY_MAX_PPS = 4000;
+export const VELOCITY_MAX_PPS = 4000;
 
 /**
  * Decay half-life in milliseconds — how long it takes swing speed to
  * fall to 50% after the mouse stops or leaves. 200ms feels natural:
  * fast enough to not feel laggy, slow enough to avoid snap-to-zero.
  */
-const DECAY_HALF_LIFE_MS = 200;
+export const DECAY_HALF_LIFE_MS = 200;
 
 /**
  * Derived exponential decay factor per millisecond.
@@ -38,9 +38,21 @@ const DECAY_PER_MS = Math.pow(0.5, 1 / DECAY_HALF_LIFE_MS);
  * Closer to 0 = smoother (more lag); closer to 1 = more responsive.
  * 0.3 gives a good balance between responsiveness and jitter rejection.
  */
-const VELOCITY_SMOOTHING = 0.3;
+export const VELOCITY_SMOOTHING = 0.3;
 
 // ─── Pure computation helpers (exported for testing) ────────────────────────
+
+/**
+ * One-pole low-pass filter step. Returns the new smoothed value given
+ * the previous smoothed value and a new raw sample.
+ */
+export function smoothValue(
+  previousSmoothed: number,
+  rawSample: number,
+  alpha: number = VELOCITY_SMOOTHING,
+): number {
+  return previousSmoothed * (1 - alpha) + rawSample * alpha;
+}
 
 /**
  * Convert a raw pixel-per-second velocity into normalized swing speed (0-1).
@@ -202,9 +214,10 @@ export function useMouseSwing(
           const rawVelocityPps = (dx / dt) * 1000;
 
           // One-pole low-pass filter on the velocity
-          state.smoothedVelocity =
-            state.smoothedVelocity * (1 - VELOCITY_SMOOTHING) +
-            rawVelocityPps * VELOCITY_SMOOTHING;
+          state.smoothedVelocity = smoothValue(
+            state.smoothedVelocity,
+            rawVelocityPps,
+          );
 
           const swing = velocityToSwingSpeed(state.smoothedVelocity);
           // Only update swing if mouse-derived value is higher than current

@@ -43,5 +43,20 @@ export { EffectManager } from './EffectSystem.js';
 // Base classes (for extending)
 export { BaseStyleTemplate, IntegerLiteral } from './BaseStyle.js';
 
+// Color templates (for variant cycling introspection)
+export { ColorChangeTemplate } from './templates/colors.js';
+
+// Function templates (for registry gap coverage)
+export {
+  PulsingFTemplate,
+  VolumeLevelTemplate,
+  EffectPulseFTemplate,
+  ModFTemplate,
+  BendTimePowXTemplate,
+} from './templates/functions.js';
+
+// Transition templates (for registry gap coverage)
+export { TrCenterWipeInSparkTemplate } from './templates/transitions.js';
+
 // Registry introspection
 export { isRegistered, registrySize, registeredNames } from './registry.js';

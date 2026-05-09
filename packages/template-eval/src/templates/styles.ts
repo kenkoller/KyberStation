@@ -42,6 +42,10 @@ export class LayersTemplate extends BaseStyleTemplate {
 
     return result;
   }
+
+  getChildren(): StyleTemplate[] {
+    return this.layers;
+  }
 }
 
 // ─── AudioFlicker<A, B> ───
@@ -77,6 +81,10 @@ export class AudioFlickerTemplate extends BaseStyleTemplate {
     const mixFactor = rng < threshold ? 0 : (rng - threshold) / (1 - threshold);
 
     return mixColors(a, b, Math.round(mixFactor * PROFFIE_MAX));
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.colorA, this.colorB];
   }
 }
 
@@ -143,6 +151,10 @@ export class StyleFireTemplate extends BaseStyleTemplate {
     const c2 = this.color2.getColor(led);
     return mixColors(c2, c1, Math.round(t * PROFFIE_MAX));
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color1, this.color2];
+  }
 }
 
 // ─── Pulsing<A, B, PulseMs> ───
@@ -178,6 +190,10 @@ export class PulsingTemplate extends BaseStyleTemplate {
       this.colorB.getColor(led),
       Math.round(t * PROFFIE_MAX)
     );
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.colorA, this.colorB, this.pulseMs];
   }
 }
 
@@ -231,6 +247,10 @@ export class StripesTemplate extends BaseStyleTemplate {
       b: clamp(Math.round(lerp(a.b, b.b, segT)), 0, 255),
     };
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.width, this.speed, ...this.colors];
+  }
 }
 
 // ─── StripesX<Speed, C1, C2, ...> ───
@@ -239,7 +259,7 @@ export class StripesTemplate extends BaseStyleTemplate {
 export class StripesXTemplate extends StripesTemplate {
   constructor(args: StyleTemplate[]) {
     // StripesX: speed is first arg, width is auto
-    const width = { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 10000; } } as StyleTemplate;
+    const width = { run() { /* noop */ }, getColor() { return BLACK; }, getInteger() { return 10000; }, getChildren() { return []; } } as StyleTemplate;
     super([width, args[0]!, ...args.slice(1)]);
   }
 }

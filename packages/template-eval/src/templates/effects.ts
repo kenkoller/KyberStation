@@ -61,6 +61,10 @@ export class SimpleClashLTemplate extends BaseStyleTemplate {
       b: Math.round(c.b * clamp(alpha, 0, 1)),
     };
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
 }
 
 // ─── ResponsiveClashL<ClashColor, TrTransition?, TrReturn?, Top?, Bottom?, Size?> ───
@@ -124,6 +128,13 @@ export class ResponsiveClashLTemplate extends BaseStyleTemplate {
       b: Math.round(c.b * clamp(alpha, 0, 1)),
     };
   }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [this.color];
+    if (this.trTransition) children.push(this.trTransition);
+    if (this.trReturn) children.push(this.trReturn);
+    return children;
+  }
 }
 
 // ─── BlastL<BlastColor, FadeMs?, Size?, WaveMs?> ───
@@ -185,6 +196,10 @@ export class BlastLTemplate extends BaseStyleTemplate {
       g: Math.round(c.g * clamp(maxAlpha, 0, 1)),
       b: Math.round(c.b * clamp(maxAlpha, 0, 1)),
     };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
   }
 }
 
@@ -275,6 +290,15 @@ export class ResponsiveLockupLTemplate extends BaseStyleTemplate {
       b: Math.round(c.b * clamp(alpha, 0, 1)),
     };
   }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [this.color];
+    if (this.trBegin) children.push(this.trBegin);
+    if (this.trEnd) children.push(this.trEnd);
+    if (this.position) children.push(this.position);
+    if (this.size) children.push(this.size);
+    return children;
+  }
 }
 
 // ─── LockupTrL<Color, TrBegin, TrHold, TrEnd, LockupType> ───
@@ -341,6 +365,10 @@ export class LockupTrLTemplate extends BaseStyleTemplate {
 
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color, this.trBegin, this.trHold, this.trEnd];
+  }
 }
 
 // ─── ResponsiveStabL<StabColor, TrTransition?, TrReturn?, Size?, Position?> ───
@@ -390,6 +418,10 @@ export class ResponsiveStabLTemplate extends BaseStyleTemplate {
       g: Math.round(c.g * clamp(alpha, 0, 1)),
       b: Math.round(c.b * clamp(alpha, 0, 1)),
     };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
   }
 }
 
@@ -461,6 +493,10 @@ export class ResponsiveDragLTemplate extends BaseStyleTemplate {
 
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
 }
 
 // ─── ResponsiveLightningBlockL<Color, TrTransition?, TrReturn?, Size?> ───
@@ -516,6 +552,10 @@ export class ResponsiveLightningBlockLTemplate extends BaseStyleTemplate {
 
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
 }
 
 // ─── ResponsiveMeltL<MeltColor, TrTransition?, TrReturn?, Size?> ───
@@ -566,6 +606,10 @@ export class ResponsiveMeltLTemplate extends BaseStyleTemplate {
       b: Math.round(c.b * alpha),
     };
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
 }
 
 // ─── TransitionEffectL<Tr, Effect> ───
@@ -595,6 +639,10 @@ export class TransitionEffectLTemplate extends BaseStyleTemplate {
 
   getColor(led: number): Color {
     return this.transition.getColor?.(led) ?? BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.transition];
   }
 }
 
@@ -629,6 +677,10 @@ export class EffectSequenceTemplate extends BaseStyleTemplate {
   getColor(led: number): Color {
     if (this.colors.length === 0) return BLACK;
     return this.colors[this.currentIndex].getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return this.colors;
   }
 }
 

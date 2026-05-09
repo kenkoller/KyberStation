@@ -15,6 +15,7 @@ import type {
   BladeState as TemplateBladeState,
   EffectType as TemplateEffectType,
 } from '@kyberstation/template-eval';
+import { ColorChangeTemplate } from '@kyberstation/template-eval';
 import type { LEDArray } from '../LEDArray.js';
 import type { EffectType as EngineEffectType } from '../types.js';
 
@@ -26,6 +27,7 @@ const ENGINE_TO_TEMPLATE_EFFECT: Partial<Record<EngineEffectType, TemplateEffect
   melt: 'EFFECT_MELT',
   stab: 'EFFECT_STAB',
   force: 'EFFECT_FORCE',
+  change: 'EFFECT_CHANGE',
 };
 
 export class TemplateEvalBridge {
@@ -131,4 +133,43 @@ export class TemplateEvalBridge {
   get isReady(): boolean {
     return this.template !== null;
   }
+
+  /**
+   * Number of color variants in the active ColorChange template, or 0 if
+   * the template doesn't use ColorChange.
+   */
+  get variantCount(): number {
+    const cc = this.findColorChange();
+    return cc ? cc.variantCount : 0;
+  }
+
+  /**
+   * Currently selected variant index (0-based).
+   */
+  get currentVariant(): number {
+    const cc = this.findColorChange();
+    return cc ? cc.currentVariant : 0;
+  }
+
+  /**
+   * Set the active variant index directly (for UI controls).
+   */
+  setVariant(index: number): void {
+    const cc = this.findColorChange();
+    if (cc) cc.setVariant(index);
+  }
+
+  private findColorChange(): ColorChangeTemplate | null {
+    if (!this.template) return null;
+    return walkForColorChange(this.template);
+  }
+}
+
+function walkForColorChange(node: StyleTemplate): ColorChangeTemplate | null {
+  if (node instanceof ColorChangeTemplate) return node;
+  for (const child of node.getChildren()) {
+    const found = walkForColorChange(child);
+    if (found) return found;
+  }
+  return null;
 }

@@ -29,6 +29,8 @@ import {
   RandomPerLEDFTemplate, CenterDistFTemplate, WavLenTemplate,
   IncrementWithResetTemplate, AltFTemplate, IfonTemplate,
   IgnitionTimeTemplate, RetractionTimeTemplate, BendTimePowInvXTemplate,
+  PulsingFTemplate, VolumeLevelTemplate, EffectPulseFTemplate,
+  ModFTemplate, BendTimePowXTemplate,
 } from './templates/functions.js';
 
 // Style templates
@@ -60,6 +62,7 @@ import {
   TrCenterWipeXTemplate, TrDelayTemplate, TrConcatTemplate,
   TrJoinTemplate, TrJoinRTemplate, TrExtendTemplate,
   TrWaveXTemplate, TrCenterWipeInTemplate, TrCenterWipeInXTemplate,
+  TrCenterWipeInSparkTemplate,
 } from './templates/transitions.js';
 
 // Wrapper templates
@@ -168,6 +171,11 @@ registerClass('Ifon', IfonTemplate);
 registerClass('IgnitionTime', IgnitionTimeTemplate);
 registerClass('RetractionTime', RetractionTimeTemplate);
 registerClass('BendTimePowInvX', BendTimePowInvXTemplate);
+registerClass('PulsingF', PulsingFTemplate);
+registerClass('VolumeLevel', VolumeLevelTemplate);
+registerClass('EffectPulseF', EffectPulseFTemplate);
+registerClass('ModF', ModFTemplate);
+registerClass('BendTimePowX', BendTimePowXTemplate);
 
 // ─── Style Templates ───
 registerClass('Layers', LayersTemplate);
@@ -234,6 +242,7 @@ registerClass('TrJoinR', TrJoinRTemplate);
 registerClass('TrExtend', TrExtendTemplate);
 registerClass('TrExtendX', TrExtendTemplate);
 registerClass('TrWaveX', TrWaveXTemplate);
+registerClass('TrCenterWipeInSpark', TrCenterWipeInSparkTemplate);
 
 // ─── Wrapper Templates ───
 registerClass('InOutTrL', InOutTrLTemplate);

@@ -78,7 +78,8 @@ export type EffectType =
   | 'coronary'
   | 'glitchMatrix'
   | 'siphon'
-  | 'unstableKylo';
+  | 'unstableKylo'
+  | 'change';
 
 export interface EffectParams {
   position?: number; // 0-1, where on the blade the effect occurs

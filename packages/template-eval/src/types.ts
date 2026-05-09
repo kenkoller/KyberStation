@@ -70,7 +70,8 @@ export type EffectType =
   | 'EFFECT_USER2'
   | 'EFFECT_USER3'
   | 'EFFECT_USER4'
-  | 'EFFECT_USER5';
+  | 'EFFECT_USER5'
+  | 'EFFECT_CHANGE';
 
 /**
  * A single effect event with location and timing.
@@ -134,6 +135,8 @@ export interface StyleTemplate {
   getColor(led: number): Color;
   /** Get the integer value (0-32768) for functions. */
   getInteger(led: number): number;
+  /** Child templates for tree walking (empty for leaf templates). */
+  getChildren(): StyleTemplate[];
 }
 
 // ─── Parser AST ───

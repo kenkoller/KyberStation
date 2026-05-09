@@ -37,6 +37,10 @@ export abstract class BaseStyleTemplate implements StyleTemplate {
   getInteger(_led: number): number {
     return 0;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [];
+  }
 }
 
 /**

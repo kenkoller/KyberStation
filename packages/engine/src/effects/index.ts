@@ -1,4 +1,5 @@
-import type { BladeEffect, EffectType } from '../types.js';
+import type { BladeEffect, EffectType, EffectContext, RGB } from '../types.js';
+import { BaseEffect } from './BaseEffect.js';
 import { ClashEffect } from './ClashEffect.js';
 import { LockupEffect } from './LockupEffect.js';
 import { BlastEffect } from './BlastEffect.js';
@@ -46,6 +47,12 @@ export { GlitchMatrixEffect } from './GlitchMatrixEffect.js';
 export { SiphonEffect } from './SiphonEffect.js';
 export { UnstableKyloEffect } from './UnstableKyloEffect.js';
 
+class ChangeEffect extends BaseEffect {
+  readonly id = 'change';
+  readonly type = 'change' as const;
+  apply(color: RGB, _position: number, _context: EffectContext): RGB { return color; }
+}
+
 /** Registry mapping each EffectType to its constructor. */
 export const EFFECT_REGISTRY: Record<EffectType, () => BladeEffect> = {
   clash: () => new ClashEffect(),
@@ -70,6 +77,7 @@ export const EFFECT_REGISTRY: Record<EffectType, () => BladeEffect> = {
   glitchMatrix: () => new GlitchMatrixEffect(),
   siphon: () => new SiphonEffect(),
   unstableKylo: () => new UnstableKyloEffect(),
+  change: () => new ChangeEffect(),
 };
 
 /** Create a new effect instance by type. */

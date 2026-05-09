@@ -12,6 +12,8 @@ import { PinnedEffectChips, EffectsPinDropdown } from '@/components/editor/Effec
 import { SavePresetButton } from '@/components/editor/SavePresetButton';
 import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { AddToQueueButton } from './AddToQueueButton';
+import { VariantCycler } from './VariantCycler';
+import { TimeScaleControl } from './TimeScaleControl';
 import { BladeCanvas } from './BladeCanvas';
 import { PixelStripPanel } from './PixelStripPanel';
 import { StateGrid } from './StateGrid';
@@ -169,6 +171,8 @@ export function CanvasLayout({
                 {isOn ? 'Retract' : 'Ignite'}
               </button>
               <PauseButton />
+              <VariantCycler engineRef={engineRef} />
+              <TimeScaleControl engineRef={engineRef} />
               <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />
               <PinnedEffectChips
                 onToggle={toggleOrTriggerEffect}

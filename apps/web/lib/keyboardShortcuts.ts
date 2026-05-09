@@ -76,6 +76,8 @@ export interface BladeControlShortcut {
 
 export const BLADE_CONTROL_SHORTCUTS: readonly BladeControlShortcut[] = [
   { key: 'Space', label: 'Ignite / Retract', description: 'Toggle the blade on or off' },
+  { key: '[',     label: 'Slower',           description: 'Decrease playback speed (0.25x / 0.5x / 1x / 2x)' },
+  { key: ']',     label: 'Faster',           description: 'Increase playback speed (0.25x / 0.5x / 1x / 2x)' },
 ] as const;
 
 /**

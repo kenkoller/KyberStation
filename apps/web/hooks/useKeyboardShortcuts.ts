@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { EFFECT_SHORTCUTS_BY_CODE } from '@/lib/keyboardShortcuts';
 import { toggleOrTriggerEffect } from '@/lib/effectToggle';
 import { useUIStore, type SectionId } from '@/stores/uiStore';
+import { TIME_SCALE_PRESETS } from '@/components/editor/TimeScaleControl';
 
 /**
  * `⌘1` … `⌘4` / `Ctrl+1` … `Ctrl+4` — left-rail overhaul (v0.14.0 PR 4)
@@ -29,6 +30,12 @@ export interface KeyboardShortcutHandlers {
    * listeners can react normally.
    */
   openHelp?: () => void;
+  /**
+   * Optional — ref to the BladeEngine for time-scale keyboard shortcuts
+   * `[` (slower) and `]` (faster). When provided, those keys cycle
+   * through TIME_SCALE_PRESETS. When omitted, the keys are ignored.
+   */
+  engineRef?: React.MutableRefObject<{ timeScale: number } | null>;
 }
 
 /** Returns true when the event target is a text-input surface; skip
@@ -103,6 +110,31 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       if (handlers.openHelp && (e.key === '?' || e.key === 'F1')) {
         e.preventDefault();
         handlers.openHelp();
+        return;
+      }
+
+      // ── [ / ] — time-scale cycling ──
+      // `[` cycles slower: 2 → 1 → 0.5 → 0.25 (descending through presets)
+      // `]` cycles faster: 0.25 → 0.5 → 1 → 2 (ascending through presets)
+      if (handlers.engineRef && (e.code === 'BracketLeft' || e.code === 'BracketRight')) {
+        // Ignore modified keystrokes so Cmd+[ (back nav) etc. still work.
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const eng = handlers.engineRef.current;
+        if (!eng) return;
+        e.preventDefault();
+        const current = eng.timeScale;
+        const presets = TIME_SCALE_PRESETS; // [0.25, 0.5, 1, 2]
+        // Find nearest preset index
+        let idx = presets.findIndex((p) => Math.abs(p - current) < 0.01);
+        if (idx < 0) idx = presets.indexOf(1); // fallback to 1x
+        if (e.code === 'BracketRight') {
+          // Faster: move toward higher values
+          idx = Math.min(presets.length - 1, idx + 1);
+        } else {
+          // Slower: move toward lower values
+          idx = Math.max(0, idx - 1);
+        }
+        eng.timeScale = presets[idx];
         return;
       }
 

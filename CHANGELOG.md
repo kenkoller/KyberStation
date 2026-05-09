@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **`getChildren()` tree walking on all template-eval classes** — 40+ template classes across colors, styles, effects, transitions, functions, and wrappers now expose their child `StyleTemplate` references via `getChildren()`. Enables recursive DFS through arbitrary template nesting depths for variant cycling, future AST editing, and style transforms.
+
+- **ColorChange variant cycling** — `TemplateEvalBridge` exposes `variantCount`, `currentVariant`, and `setVariant(index)` API backed by recursive `walkForColorChange()` tree walk. `EFFECT_CHANGE` events cycle through color variants in templates using `ColorChange<>`.
+
+- **`ChangeEffect` in engine effects registry** — no-op effect entry for the `'change'` EffectType, allowing the engine's effect system to dispatch color-change meta-events to the template evaluator.
+
+- **VariantCycler UI component** — inline action-bar control (`[ ◀ ] N / M [ ▶ ]`) for cycling through ColorChange template variants. Only renders when `variantCount > 0`. 3 public accessors on `BladeEngine` (`variantCount`, `currentVariant`, `setVariant`) delegate to the template-eval bridge. Full a11y with `role="group"`, `aria-label`, `aria-live="polite"`.
+
+- **6 new template-eval classes** — `PulsingFTemplate`, `VolumeLevelTemplate`, `EffectPulseFTemplate`, `ModFTemplate`, `BendTimePowXTemplate`, `TrCenterWipeInSparkTemplate`. Closes all 7 known registry gaps from Fett263 corpus fixtures (PulsingL was already aliased). Registry count: 147 → 153.
+
+- **Mouse-driven swing simulation** — `useMouseSwing` hook tracks pointer movement over the blade canvas: horizontal velocity → swing speed (0-1), vertical position → blade angle (-1 to 1). One-pole low-pass filter, exponential decay on pointer leave, tuning constants exported for testability. Gated by `mouseSwingEnabled` in `accessibilityStore` (default on). 46 tests across 7 describe blocks.
+
+- **Time-scale control** — `BladeEngine.timeScale` multiplier (0.1x–4.0x) scales all animation timing. `TimeScaleControl.tsx` inline toolbar component with compact/expanded modes and presets [0.25, 0.5, 1, 2]. Keyboard shortcuts: `[` slower, `]` faster. 9 engine tests + 12 UI tests.
+
+- **93 new tests total** — 13 engine variant cycling, 12 VariantCycler UI, 25 template registry gaps, 22 mouse swing (net new), 9 time-scale engine, 12 TimeScaleControl UI.
+
+---
+
 ## [0.21.0] — 2026-05-07
 
 **Xenopixel V3 — Full Board Support.** KyberStation now has complete second-board support for Xenopixel V3, the most popular budget lightsaber controller. Visual effect picker, accurate blade previews, real SD card config generation, firmware version awareness, and a Proffie-to-Xenopixel compatibility dialog — all in one PR (#287, 12 commits, 60 files, +8,025 lines).

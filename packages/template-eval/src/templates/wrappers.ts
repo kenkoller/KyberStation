@@ -31,6 +31,7 @@ export class InOutTrLTemplate extends BaseStyleTemplate {
       run() { /* noop */ },
       getColor() { return BLACK; },
       getInteger() { return 0; },
+      getChildren() { return []; },
     } as StyleTemplate;
   }
 
@@ -92,6 +93,10 @@ export class InOutTrLTemplate extends BaseStyleTemplate {
     const c = this.getColor(led);
     return Math.max(c.r, c.g, c.b) * 128;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.trIgnition, this.trRetraction, this.offColor];
+  }
 }
 
 // ─── InOutHelperL<OnColor, InMs, OutMs, OffColor?> ───
@@ -118,6 +123,7 @@ export class InOutHelperLTemplate extends BaseStyleTemplate {
       run() { /* noop */ },
       getColor() { return BLACK; },
       getInteger() { return 0; },
+      getChildren() { return []; },
     } as StyleTemplate;
   }
 
@@ -169,6 +175,10 @@ export class InOutHelperLTemplate extends BaseStyleTemplate {
     }
 
     return this.offColor.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.onColor, this.offColor];
   }
 }
 
@@ -253,6 +263,10 @@ export class StyleNormalPtrTemplate extends BaseStyleTemplate {
 
     return BLACK;
   }
+
+  getChildren(): StyleTemplate[] {
+    return [this.baseColor, this.clashColor];
+  }
 }
 
 // ─── TransitionLoop<Color, Transition> ───
@@ -283,6 +297,10 @@ export class TransitionLoopTemplate extends BaseStyleTemplate {
       g: Math.round(c.g * alpha),
       b: Math.round(c.b * alpha),
     };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color, this.transition];
   }
 }
 
@@ -317,5 +335,9 @@ export class SequenceLTemplate extends BaseStyleTemplate {
   getColor(led: number): Color {
     if (this.colors.length === 0) return BLACK;
     return this.colors[this.currentIndex].getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return this.colors;
   }
 }
