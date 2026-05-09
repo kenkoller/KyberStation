@@ -171,6 +171,23 @@ export class BladeEngine {
    * Switching mode clears the style/ignition caches so the next
    * frame resolves fresh instances from the correct registry.
    */
+  // ─── Variant cycling (ColorChange template support) ───
+
+  /** Number of color variants in the active template (0 if none or not in template-eval mode). */
+  get variantCount(): number {
+    return this._templateEvalBridge?.variantCount ?? 0;
+  }
+
+  /** Currently active variant index (0-based). */
+  get currentVariant(): number {
+    return this._templateEvalBridge?.currentVariant ?? 0;
+  }
+
+  /** Switch to a specific variant. No-op if no ColorChange in the template. */
+  setVariant(index: number): void {
+    this._templateEvalBridge?.setVariant(index);
+  }
+
   setRenderMode(mode: RenderMode): void {
     if (this._renderMode === mode) return;
     this._renderMode = mode;
