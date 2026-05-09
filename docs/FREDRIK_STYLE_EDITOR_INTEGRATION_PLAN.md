@@ -43,8 +43,10 @@ test suites.
 | `getChildren()` tree walk | ✅ All 40+ template classes | All 6 template files + BaseStyle.ts |
 | `walkForColorChange()` | ✅ Shipped | `TemplateEvalBridge.ts` |
 | `ChangeEffect` (no-op) | ✅ Shipped | `packages/engine/src/effects/index.ts` |
+| Mouse swing simulation | ✅ Complete (Phase 3) | `hooks/useMouseSwing.ts` + BladeCanvas wiring |
+| Time-scale control | ✅ Complete (Phase 4) | `BladeEngine.timeScale` + `TimeScaleControl.tsx` |
 | 180 template-eval tests | Passing | `packages/template-eval/tests/` |
-| 7,591 total workspace tests | Passing | All 7 packages |
+| 7,634 total workspace tests | Passing | All 7 packages |
 
 ### Variant cycling — completed (committed on `feat/variant-cycling`)
 
@@ -156,91 +158,61 @@ Add to `packages/template-eval/src/templates/transitions.ts`:
 
 ---
 
-## Phase 3: Mouse-Driven Swing Simulation (M effort, ~1 session)
+## Phase 3: Mouse-Driven Swing Simulation — ✅ DONE
 
-**Goal:** Moving the mouse over the blade canvas feeds SwingSpeed/BladeAngle,
-giving instant feedback for motion-reactive styles.
+**Status:** Complete. Hook + tests + BladeCanvas wiring all shipped.
 
-### 3A. Mouse velocity tracker
+### Implementation
 
-New `apps/web/hooks/useMouseSwing.ts`:
-
-```typescript
-interface MouseSwingState {
-  swingSpeed: number;   // 0-1, fed into MotionSimulator
-  bladeAngle: number;   // -1 to 1, fed into MotionSimulator
-  isActive: boolean;    // true while mouse is over canvas
-}
-```
-
-Track `mousemove` events on the blade canvas. Compute velocity from
-`(dx^2 + dy^2) / dt`. Normalize to 0-1 range with a configurable
-sensitivity curve (exponential ramp, saturates at ~800px/s). Smooth
-with a one-pole lowpass filter (same approach as `SmoothSoundLevel`
-in the template-eval package). Compute blade angle from mouse Y
-position relative to canvas center.
-
-### 3B. Feed into MotionSimulator
-
-When `isActive`, override `MotionSimulator.swingSpeed` and
-`MotionSimulator.bladeAngle` with the mouse-derived values. When
-mouse leaves canvas, decay back to the MotionSimPanel slider values
-over ~300ms (smooth handoff, no jarring snap).
-
-### 3C. Settings toggle
-
-Add to Settings modal, Behavior tab:
-
-```
-[ ] Enable mouse swing simulation (desktop only)
-```
-
-Default: ON for desktop, hidden on mobile/tablet (already have DeviceMotion).
-Persist in `accessibilityStore` or `uiStore`.
-
-### 3D. Visual feedback
-
-Optional: slight 2D rotation of the blade canvas (max ~3 degrees) following
-mouse position to reinforce the "swinging" metaphor. Purely cosmetic; gated
-behind the same setting.
-
-### 3E. Tests
-
-- Velocity calculation unit tests: stationary=0, fast=saturates, smooth decay
-- Integration: mock `mousemove` events on canvas, verify `MotionSimulator.swingSpeed` updates
-- Settings toggle: verify mouse events are no-ops when disabled
+- **`useMouseSwing.ts`** — hook tracks pointer events on the blade canvas.
+  Horizontal velocity → swing speed (0-1), vertical position → blade angle
+  (-1 to 1). One-pole low-pass filter on raw velocity, exponential decay
+  when pointer leaves. Exported pure functions for testability:
+  `velocityToSwingSpeed`, `verticalPositionToBladeAngle`, `decaySwingSpeed`,
+  `smoothValue`. Tuning constants: `VELOCITY_DEAD_ZONE=8`, `VELOCITY_MAX_PPS=4000`,
+  `DECAY_HALF_LIFE_MS=200`, `VELOCITY_SMOOTHING=0.3`.
+- **BladeCanvas wiring** — `useMouseSwing(engineRef)` called inside
+  `BladeCanvas.tsx`, handlers bound to canvas `onPointerMove`, `onPointerEnter`,
+  `onPointerLeave`. Writes directly to `engine.motion.targetSwing` and
+  `engine.motion.targetAngle`.
+- **Settings toggle** — `mouseSwingEnabled` in `accessibilityStore` (default on).
+  Hook checks `getState()` in hot-path handlers to avoid stale closures.
+- **Decay** — RAF loop on pointer leave; decays swing to 0 exponentially,
+  then stops. Does NOT write targetSwing=0 on stop (lets MotionSimPanel
+  sliders resume control naturally).
+- **46 tests** in `mouseSwing.test.ts` across 7 describe blocks: velocity
+  conversion, blade angle, decay, smoothing, simulation flow, store field,
+  tuning constants.
 
 ---
 
-## Phase 4: Slow-Motion Mode (S effort, ~2 hours)
+## Phase 4: Slow-Motion Mode — ✅ DONE
 
-**Goal:** 0.25x / 0.5x / 1x / 2x time scale for inspecting fast transitions.
+**Status:** Complete. Engine + UI + keyboard shortcuts all shipped.
 
-### 4A. Time scale in engine
+### Implementation
 
-Add `timeScale: number` to `BladeEngine` (or `TemplateEvalBridge`). Multiply
-`deltaMs` by `timeScale` before passing to `template.run()`. Default: 1.0.
-
-### 4B. UI control
-
-Add to the blade canvas toolbar (next to the existing Pause button):
-
-```
-[ 0.25x | 0.5x | 1x | 2x ]
-```
-
-Or a dropdown if toolbar space is tight. Keyboard shortcut: `[` slower, `]` faster.
-
-### 4C. Interaction with pause
-
-- Pause = `timeScale` temporarily set to 0 (animation frozen)
-- Slow-motion = `timeScale` < 1 (animation runs, time passes slower)
-- Both can coexist: paused overrides slow-motion
-
-### 4D. Tests
-
-- Engine: verify `deltaMs` scaling at 0.25, 0.5, 1.0, 2.0
-- UI: keyboard shortcut cycles through presets
+- **`BladeEngine.timeScale`** — private `_timeScale` field with getter/setter
+  (clamped [0.1, 4.0], default 1.0). `update()` computes
+  `scaledDelta = deltaMs * this._timeScale` before all downstream consumers
+  (elapsed time, motion, style rendering). Reset clears to 1.0. Independent
+  of pause (pause stops the RAF loop entirely).
+- **`TimeScaleControl.tsx`** — inline toolbar component with two modes:
+  compact "1×" button at default speed, expanded preset bar at non-1x.
+  Presets: `[0.25, 0.5, 1, 2]`. Tick-counter pattern for engine state
+  re-reads. Full a11y: `role="group"`, `aria-label`, `aria-pressed`.
+  Mounted in `CanvasLayout.tsx` toolbar between VariantCycler and the
+  separator.
+- **Keyboard shortcuts** — `[` cycles slower (descending through presets),
+  `]` cycles faster (ascending). Added to `useKeyboardShortcuts.ts` via
+  `engineRef` on the handlers interface. Modifier keys ignored (Cmd+[
+  browser back nav still works). Added to `keyboardShortcuts.ts`
+  `BLADE_CONTROL_SHORTCUTS` for help modal display.
+- **9 engine tests** in `timeScale.test.ts`: default, get/set, clamping,
+  reset, behavioral (0.5x halves progress, 2x doubles, 0.25x quarters,
+  frame count verification).
+- **12 UI tests** in `timeScaleControl.test.tsx`: compact/expanded rendering,
+  aria attributes, preset labels, null engine, cycling logic.
 
 ---
 

@@ -422,8 +422,9 @@ export function WorkbenchLayout() {
       triggerEffect: triggerEffectWithAudio,
       releaseEffect,
       openHelp: openShortcutsHelp,
+      engineRef,
     }),
-    [toggleWithAudio, triggerEffectWithAudio, releaseEffect, openShortcutsHelp],
+    [toggleWithAudio, triggerEffectWithAudio, releaseEffect, openShortcutsHelp, engineRef],
   );
   useKeyboardShortcuts(handlers);
   useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);

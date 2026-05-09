@@ -102,6 +102,11 @@ export class BladeEngine {
   private _elapsedTime: number = 0;
   /** Preon elapsed ms — counts up while in PREON state, resets on leave. */
   private _preonElapsed: number = 0;
+  /** Time-scale multiplier for slow-motion / fast-forward inspection.
+   *  1.0 = real-time. 0.25 = quarter-speed. Clamped to [0.1, 4.0].
+   *  Independent of the pause system (pause stops calling update()
+   *  entirely; timeScale scales the delta when update() IS called). */
+  private _timeScale: number = 1.0;
 
   // ─── Modulation routing (v1.0 Preview) ───
   /** Persistent sampler state for one-pole smoothing + clash latching. */
@@ -155,6 +160,23 @@ export class BladeEngine {
 
   get renderMode(): RenderMode {
     return this._renderMode;
+  }
+
+  /**
+   * Time-scale multiplier for slow-motion / fast-forward inspection.
+   * 1.0 = real-time. 0.25 = quarter-speed. 2.0 = double-speed.
+   */
+  get timeScale(): number {
+    return this._timeScale;
+  }
+
+  /**
+   * Set the time-scale multiplier. Clamped to [0.1, 4.0].
+   * Independent of the pause system — pause stops calling update()
+   * entirely; timeScale scales the delta when update() IS called.
+   */
+  set timeScale(value: number) {
+    this._timeScale = Math.max(0.1, Math.min(4.0, value));
   }
 
   /**
@@ -472,10 +494,16 @@ export class BladeEngine {
    * @param config  — current blade configuration
    */
   update(deltaMs: number, config: BladeConfig): void {
-    this._elapsedTime += deltaMs;
+    // Apply time-scale at the very top so ALL downstream consumers
+    // (elapsed time, motion, preon, extend progress, template-eval)
+    // see the scaled value. Independent of the pause system — pause
+    // stops calling update() entirely; this just scales the delta.
+    const scaledDelta = deltaMs * this._timeScale;
+
+    this._elapsedTime += scaledDelta;
 
     // (a) Update motion simulator
-    this.motion.update(deltaMs);
+    this.motion.update(scaledDelta);
 
     // (b) Update easing functions if config has changed
     this.updateEasings(config);
@@ -485,7 +513,7 @@ export class BladeEngine {
     //       extend-progress pipeline takes over.
     if (this._state === BladeState.PREON) {
       const preonMs = config.preonMs ?? 300;
-      this._preonElapsed += deltaMs;
+      this._preonElapsed += scaledDelta;
       if (this._preonElapsed >= preonMs) {
         // Preon complete — hand off to ignition.
         this._state = BladeState.IGNITING;
@@ -512,7 +540,7 @@ export class BladeEngine {
     }
 
     // (c) Update ignition/retraction progress
-    this.updateExtendProgress(deltaMs, config);
+    this.updateExtendProgress(scaledDelta, config);
 
     // (d) Update state machine transitions
     this.updateStateMachine();
@@ -538,7 +566,7 @@ export class BladeEngine {
       if (ok) {
         this._templateEvalBridge.renderFrame(
           this.leds,
-          deltaMs,
+          scaledDelta,
           this._state === BladeState.ON || this._state === BladeState.IGNITING,
           this._extendProgress,
           this.motion.swingSpeed,
@@ -698,6 +726,7 @@ export class BladeEngine {
     this._state = BladeState.OFF;
     this._extendProgress = 0;
     this._elapsedTime = 0;
+    this._timeScale = 1.0;
     this.leds.clear();
     this.motion.reset();
     this.segmentDelayProgress.clear();
