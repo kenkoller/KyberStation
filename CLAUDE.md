@@ -543,6 +543,69 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-09, Fredrik Style Editor Integration — Phases 1-4)
+
+Two-session sprint implementing Phases 1–4 of the Fredrik Style Editor Integration Plan (`docs/FREDRIK_STYLE_EDITOR_INTEGRATION_PLAN.md`). PR #298 open targeting main from `feat/variant-cycling` branch. 5 commits, 12 new/modified files, +2,000 lines. Worktree at `.claude/worktrees/awesome-mclean-9bfbd5/`.
+
+### What shipped (PR #298 — 5 commits)
+
+| Phase | Scope | Key files |
+|---|---|---|
+| **1A+1B** Tree walking + variant cycling API | `getChildren()` on all 40+ template classes, `walkForColorChange()` DFS, `ColorChangeTemplate` variant state, `ChangeEffect` no-op in engine effects | `packages/template-eval/src/templates/*.ts`, `packages/engine/src/templateEval/TemplateEvalBridge.ts` |
+| **1C+1D** Variant cycling UI + tests | `VariantCycler.tsx` action-bar component (`[ ◀ ] N / M [ ▶ ]`), 3 public accessors on `BladeEngine`, 13 engine integration tests, 12 component tests | `apps/web/components/editor/VariantCycler.tsx`, `packages/engine/tests/variantCycling.test.ts` |
+| **2** Template registry gaps | 6 new template classes (`PulsingFTemplate`, `VolumeLevelTemplate`, `EffectPulseFTemplate`, `ModFTemplate`, `BendTimePowXTemplate`, `TrCenterWipeInSparkTemplate`), registry 147→153 | `packages/template-eval/src/templates/functions.ts`, `transitions.ts`, `registry.ts` |
+| **3** Mouse swing simulation | `useMouseSwing` hook (pointer velocity→swingSpeed, vertical→bladeAngle), one-pole LP filter, exponential decay, wired into `BladeCanvas.tsx` pointer events, gated by `accessibilityStore.mouseSwingEnabled` | `apps/web/hooks/useMouseSwing.ts`, `apps/web/components/editor/BladeCanvas.tsx` |
+| **4** Time-scale control | `BladeEngine._timeScale` (0.1x–4.0x), `TimeScaleControl.tsx` toolbar component with presets [0.25, 0.5, 1, 2], keyboard `[`/`]` shortcuts via `useKeyboardShortcuts`, mounted in `CanvasLayout.tsx` | `packages/engine/src/BladeEngine.ts`, `apps/web/components/editor/TimeScaleControl.tsx`, `apps/web/hooks/useKeyboardShortcuts.ts` |
+
+### Test count delta
+
+| Package | Before | After | Delta |
+|---|---|---|---|
+| Engine | 1,057 | 1,206 | +149 |
+| Template-eval | 155 | 180 | +25 |
+| Web | 3,005 | 3,116 | +111 |
+| Codegen | 2,654 | 2,654 | 0 |
+| Boards | 278 | 278 | 0 |
+| Presets | 138 | 138 | 0 |
+| Sound | 62 | 62 | 0 |
+| **Total** | **7,194** | **7,634** | **+440** |
+
+All 7 packages typecheck + test green. CI running on push.
+
+### Architectural decisions worth carrying forward
+
+1. **Tick-counter pattern for engine-state React re-reads.** `VariantCycler` and `TimeScaleControl` both use `const [, setTick] = useState(0)` to force re-renders after user clicks. Source of truth is on the engine object (not React state). After calling `engine.setVariant(n)` or `engine.timeScale = x`, increment the tick counter to trigger a re-read. This avoids duplicating engine state in React while still getting reactive updates.
+
+2. **`useMouseSwing` writes to `engine.motion.targetSwing/targetAngle` directly.** Does NOT write `targetSwing=0` on decay stop — lets the MotionSimPanel sliders resume control naturally. The existing MotionSimulator smoothing carries values back toward slider targets.
+
+3. **Time scale is independent of pause.** Pause stops the RAF loop entirely (`isPaused` gates the tick). Time scale multiplies `deltaMs` inside `update()`. Both can coexist: a paused blade at 0.5x will resume at half speed when unpaused.
+
+4. **`engineRef` threading for keyboard shortcuts.** `WorkbenchLayout` passes `engineRef` through the `handlers` object to `useKeyboardShortcuts`. The hook checks for `handlers.engineRef` before installing `[`/`]` listeners. This avoids calling `useBladeEngine()` inside the keyboard hook (which would spawn a second engine).
+
+5. **Parallel agent file-boundary discipline.** Phase 3 and Phase 4 were dispatched as parallel agents. Both needed to touch `CanvasLayout.tsx`, so agents were instructed to create only their own components/hooks and NOT modify shared files. The main session handled integration (mounting TimeScaleControl in CanvasLayout, wiring engineRef in WorkbenchLayout). This prevented merge conflicts.
+
+### What's next — Phase 5: Structured AST Editor Panel
+
+The remaining phase from `docs/FREDRIK_STYLE_EDITOR_INTEGRATION_PLAN.md`. This is the largest phase (L effort, 2-3 sessions). Goal: a "Template View" panel showing the ProffieOS template tree with inline editing, matching Fredrik's right-panel experience.
+
+**Phase 5 sub-tasks:**
+- **5A** — AST-to-tree renderer (`TemplateTreePanel.tsx`): collapsible tree view of parsed template nodes, template name bold, collapse/expand toggles
+- **5B** — Parameter annotations: metadata registry mapping template names to per-argument descriptions
+- **5C** — Layer controls: drag-to-reorder Layers<> children, add/remove layer children, move layers between positions
+- **5D** — Inline editing: click-to-edit integer values (Enter to apply), color swatch + picker for `Rgb<r,g,b>` nodes
+- **5E** — Board-gated panel mounting: wire into sidebar as a new section, only visible when `renderMode === 'template-eval'`
+
+**Recommended approach:** Phase 5A as a standalone PR (read-only tree view, no editing). Then 5B+5D (annotations + editing) as a second PR. 5C (layer reordering) as a third if needed.
+
+### Open items
+
+- **PR #298 CI** — running; merge when green
+- **Phase 5** — next session's primary scope
+- **Marketing site PR #32** — still open, needs focused rebase
+- **Lexer hardening** — 2 `it.todo` corpus fixtures need EASYBLADE macro support
+
+---
+
 ## Current State (2026-05-07, Xenopixel V3 full board support — v0.21.0)
 
 Single marathon PR (#287) implementing the full Xenopixel V3 implementation plan (`docs/XENOPIXEL_IMPLEMENTATION_PLAN.md`), Phases 1 through 5A. KyberStation now has complete second-board rendering and configuration support alongside Proffieboard. 12 commits, 60 files changed, +8,025/−439 lines. Merged at commit `3b75f06bf6`.
