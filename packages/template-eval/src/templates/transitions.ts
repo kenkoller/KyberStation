@@ -10,6 +10,7 @@
 import { BaseStyleTemplate } from '../BaseStyle.js';
 import type { BladeState, Color, EffectSystem, StyleTemplate } from '../types.js';
 import { BLACK, clamp, PROFFIE_MAX } from '../types.js';
+import { hashPair } from '../utils.js';
 
 // ─── TrInstant ───
 // Instant transition — jumps from old to new immediately.
@@ -712,5 +713,77 @@ export class TrCenterWipeInXTemplate extends BaseStyleTemplate {
 
   getChildren(): StyleTemplate[] {
     return [this.durationFunc];
+  }
+}
+
+// ─── TrCenterWipeInSpark<Ms, SparkColor> ───
+// Center-in wipe with spark particles at the leading edge.
+// Same wipe geometry as TrCenterWipeIn but adds randomized
+// bright spark pixels near the wipe front.
+
+export class TrCenterWipeInSparkTemplate extends BaseStyleTemplate {
+  private readonly durationMs: number;
+  private readonly sparkColor: StyleTemplate;
+  private startTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.durationMs = args[0]?.getInteger(0) ?? 300;
+    this.sparkColor = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.sparkColor.run(state, effects);
+    if (this.startTime < 0) {
+      this.startTime = state.timeMs;
+    }
+  }
+
+  getInteger(led: number): number {
+    if (this.durationMs <= 0) return PROFFIE_MAX;
+    const numLeds = this.state.numLeds || 144;
+    const elapsed = this.state.timeMs - this.startTime;
+    const progress = clamp(elapsed / this.durationMs, 0, 1);
+    const ledPos = led / Math.max(1, numLeds - 1);
+    // Distance from nearest end (0 at ends, 0.5 at center)
+    const distFromEnd = Math.min(ledPos, 1 - ledPos) * 2;
+
+    if (distFromEnd <= progress) return PROFFIE_MAX;
+    if (distFromEnd > progress + 0.05) return 0;
+    const edge = (distFromEnd - progress) / 0.05;
+    return Math.round((1 - edge) * PROFFIE_MAX);
+  }
+
+  getColor(led: number): Color {
+    if (this.durationMs <= 0) return BLACK;
+    const numLeds = this.state.numLeds || 144;
+    const elapsed = this.state.timeMs - this.startTime;
+    const progress = clamp(elapsed / this.durationMs, 0, 1);
+    const ledPos = led / Math.max(1, numLeds - 1);
+    const distFromEnd = Math.min(ledPos, 1 - ledPos) * 2;
+
+    // Spark zone: pixels near the wipe front (within 10% of blade length)
+    const sparkZoneWidth = 0.10;
+    const distFromFront = distFromEnd - progress;
+    if (distFromFront > 0 && distFromFront < sparkZoneWidth && progress < 1) {
+      // Pseudo-random spark: deterministic per LED per time slice
+      const sparkHash = hashPair(led, Math.floor(this.state.timeMs / 20));
+      if (sparkHash > 0.6) {
+        // Spark is active — blend spark color with proximity falloff
+        const proximity = 1 - distFromFront / sparkZoneWidth;
+        const sparkC = this.sparkColor.getColor(led);
+        return {
+          r: Math.round(sparkC.r * proximity * sparkHash),
+          g: Math.round(sparkC.g * proximity * sparkHash),
+          b: Math.round(sparkC.b * proximity * sparkHash),
+        };
+      }
+    }
+    return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.sparkColor];
   }
 }

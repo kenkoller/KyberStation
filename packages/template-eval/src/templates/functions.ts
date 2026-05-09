@@ -675,6 +675,161 @@ export class RetractionTimeTemplate extends BaseStyleTemplate {
   }
 }
 
+// ─── PulsingF<Speed> ───
+// Function producing a 0-32768 pulsing value based on time.
+// Uses a sine wave at the given speed (period in ms).
+
+export class PulsingFTemplate extends BaseStyleTemplate {
+  private readonly speed: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.speed = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.speed.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const speedMs = this.speed.getInteger(led);
+    if (speedMs <= 0) return PROFFIE_MAX / 2;
+    // sin(time * 2pi / speed) * 0.5 + 0.5, scaled to 0-32768
+    const phase = (this.state.timeMs % speedMs) / speedMs;
+    const value = Math.sin(phase * 2 * Math.PI) * 0.5 + 0.5;
+    return Math.round(value * PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.speed];
+  }
+}
+
+// ─── VolumeLevel<> ───
+// Returns the current volume level setting, 0-32768.
+// Since BladeState doesn't have a volume field, returns a constant mid-value.
+
+export class VolumeLevelTemplate extends BaseStyleTemplate {
+  getInteger(_led: number): number {
+    // BladeState doesn't carry volume; return half-max as a reasonable default
+    return PROFFIE_MAX / 2;
+  }
+}
+
+// ─── EffectPulseF<EffectType, PulseMs> ───
+// Returns a pulse (32768 → 0) triggered by a specified effect, decaying over time.
+
+export class EffectPulseFTemplate extends BaseStyleTemplate {
+  private readonly effectArg: StyleTemplate;
+  private readonly pulseMsArg: StyleTemplate;
+  private lastTriggerTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.effectArg = args[0]!;
+    this.pulseMsArg = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.effectArg.run(state, effects);
+    this.pulseMsArg.run(state, effects);
+
+    // Check for recent effect activity — use clash as a proxy trigger
+    if (effects) {
+      const impact = effects.clashImpact;
+      if (impact > 0 && this.lastTriggerTime < 0) {
+        this.lastTriggerTime = state.timeMs;
+      }
+    }
+  }
+
+  getInteger(led: number): number {
+    if (this.lastTriggerTime < 0) return 0;
+    const pulseMs = this.pulseMsArg.getInteger(led);
+    if (pulseMs <= 0) return 0;
+    const elapsed = this.state.timeMs - this.lastTriggerTime;
+    if (elapsed >= pulseMs) {
+      this.lastTriggerTime = -1;
+      return 0;
+    }
+    // Linear decay from 32768 to 0
+    const t = 1 - elapsed / pulseMs;
+    return Math.round(clamp(t, 0, 1) * PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.effectArg, this.pulseMsArg];
+  }
+}
+
+// ─── ModF<Dividend, Divisor> ───
+// Modulo operation on two integer functions.
+
+export class ModFTemplate extends BaseStyleTemplate {
+  private readonly dividend: StyleTemplate;
+  private readonly divisor: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.dividend = args[0]!;
+    this.divisor = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.dividend.run(state, effects);
+    this.divisor.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const a = this.dividend.getInteger(led);
+    const b = this.divisor.getInteger(led);
+    if (b === 0) return 0;
+    return a % b;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.dividend, this.divisor];
+  }
+}
+
+// ─── BendTimePowX<TimeFunc, Exponent> ───
+// Time-bending easing power curve: t^(N/32768) where t is normalized input.
+
+export class BendTimePowXTemplate extends BaseStyleTemplate {
+  private readonly timeFunc: StyleTemplate;
+  private readonly exponent: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.timeFunc = args[0]!;
+    this.exponent = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.timeFunc.run(state, effects);
+    this.exponent.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const t = this.timeFunc.getInteger(led) / PROFFIE_MAX; // normalize to 0-1
+    const n = this.exponent.getInteger(led);
+    if (n <= 0) return this.timeFunc.getInteger(led);
+    const power = n / PROFFIE_MAX;
+    // t^power, clamped to [0, 1]
+    const clamped = clamp(t, 0, 1);
+    const result = Math.pow(clamped, power);
+    return Math.round(clamp(result, 0, 1) * PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.timeFunc, this.exponent];
+  }
+}
+
 // ─── BendTimePowInvX<T, Bend> ───
 // Time modifier for ignition/retraction curves. Returns the time value.
 
