@@ -152,18 +152,19 @@ export function isColorNode(name: string): boolean {
  * Check if a template name matches a named ProffieOS color constant.
  * e.g., Red, Blue, White, DarkOrange, etc.
  */
+// Module-scope Set — avoids per-call allocation
+const NAMED_COLORS = new Set([
+  'Red', 'Green', 'Blue', 'Yellow', 'Cyan', 'Magenta', 'White', 'Black',
+  'Orange', 'DarkOrange', 'Tomato', 'OrangeRed', 'LemonChiffon',
+  'GreenYellow', 'Aquamarine', 'DeepSkyBlue', 'DodgerBlue', 'SteelBlue',
+  'Coral', 'Pink', 'HotPink', 'DeepPink', 'MediumPurple', 'Violet',
+  'Ivory', 'LightCyan', 'MistyRose', 'NavajoWhite', 'Snow',
+  'AliceBlue', 'Chartreuse', 'Cornsilk', 'Gold', 'Honeydew',
+  'LavenderBlush', 'LightYellow', 'Linen', 'MintCream',
+  'OldLace', 'SeaShell', 'SpringGreen',
+]);
+
 export function isNamedColorNode(name: string): boolean {
-  // Named colors have no args and are registered constants
-  const NAMED_COLORS = new Set([
-    'Red', 'Green', 'Blue', 'Yellow', 'Cyan', 'Magenta', 'White', 'Black',
-    'Orange', 'DarkOrange', 'Tomato', 'OrangeRed', 'LemonChiffon',
-    'GreenYellow', 'Aquamarine', 'DeepSkyBlue', 'DodgerBlue', 'SteelBlue',
-    'Coral', 'Pink', 'HotPink', 'DeepPink', 'MediumPurple', 'Violet',
-    'Ivory', 'LightCyan', 'MistyRose', 'NavajoWhite', 'Snow',
-    'AliceBlue', 'Chartreuse', 'Cornsilk', 'Gold', 'Honeydew',
-    'LavenderBlush', 'LightYellow', 'Linen', 'MintCream',
-    'OldLace', 'SeaShell', 'SpringGreen',
-  ]);
   return NAMED_COLORS.has(name);
 }
 
@@ -183,34 +184,53 @@ export function extractRgbFromNode(args: Array<{ name: string }>): { r: number; 
 /**
  * Map a named ProffieOS color to its RGB value for swatches.
  */
+// Module-scope map — avoids per-call allocation.
+// Every entry in NAMED_COLORS should have a mapping here.
+const NAMED_COLOR_RGB: Record<string, { r: number; g: number; b: number }> = {
+  Red:          { r: 255, g: 0,   b: 0   },
+  Green:        { r: 0,   g: 255, b: 0   },
+  Blue:         { r: 0,   g: 0,   b: 255 },
+  Yellow:       { r: 255, g: 255, b: 0   },
+  Cyan:         { r: 0,   g: 255, b: 255 },
+  Magenta:      { r: 255, g: 0,   b: 255 },
+  White:        { r: 255, g: 255, b: 255 },
+  Black:        { r: 0,   g: 0,   b: 0   },
+  Orange:       { r: 255, g: 165, b: 0   },
+  DarkOrange:   { r: 255, g: 140, b: 0   },
+  Tomato:       { r: 255, g: 99,  b: 71  },
+  OrangeRed:    { r: 255, g: 69,  b: 0   },
+  Pink:         { r: 255, g: 192, b: 203 },
+  HotPink:      { r: 255, g: 105, b: 180 },
+  DeepPink:     { r: 255, g: 20,  b: 147 },
+  Gold:         { r: 255, g: 215, b: 0   },
+  Coral:        { r: 255, g: 127, b: 80  },
+  Violet:       { r: 238, g: 130, b: 238 },
+  DeepSkyBlue:  { r: 0,   g: 191, b: 255 },
+  DodgerBlue:   { r: 30,  g: 144, b: 255 },
+  SteelBlue:    { r: 70,  g: 130, b: 180 },
+  SpringGreen:  { r: 0,   g: 255, b: 127 },
+  Chartreuse:   { r: 127, g: 255, b: 0   },
+  Aquamarine:   { r: 127, g: 255, b: 212 },
+  MediumPurple: { r: 147, g: 112, b: 219 },
+  GreenYellow:  { r: 173, g: 255, b: 47  },
+  // Previously missing — standard CSS named colors
+  LemonChiffon: { r: 255, g: 250, b: 205 },
+  Ivory:        { r: 255, g: 255, b: 240 },
+  LightCyan:    { r: 224, g: 255, b: 255 },
+  MistyRose:    { r: 255, g: 228, b: 225 },
+  NavajoWhite:  { r: 255, g: 222, b: 173 },
+  Snow:         { r: 255, g: 250, b: 250 },
+  AliceBlue:    { r: 240, g: 248, b: 255 },
+  Cornsilk:     { r: 255, g: 248, b: 220 },
+  Honeydew:     { r: 240, g: 255, b: 240 },
+  LavenderBlush:{ r: 255, g: 240, b: 245 },
+  LightYellow:  { r: 255, g: 255, b: 224 },
+  Linen:        { r: 250, g: 240, b: 230 },
+  MintCream:    { r: 245, g: 255, b: 250 },
+  OldLace:      { r: 253, g: 245, b: 230 },
+  SeaShell:     { r: 255, g: 245, b: 238 },
+};
+
 export function namedColorToRgb(name: string): { r: number; g: number; b: number } | null {
-  const MAP: Record<string, { r: number; g: number; b: number }> = {
-    Red:         { r: 255, g: 0,   b: 0   },
-    Green:       { r: 0,   g: 255, b: 0   },
-    Blue:        { r: 0,   g: 0,   b: 255 },
-    Yellow:      { r: 255, g: 255, b: 0   },
-    Cyan:        { r: 0,   g: 255, b: 255 },
-    Magenta:     { r: 255, g: 0,   b: 255 },
-    White:       { r: 255, g: 255, b: 255 },
-    Black:       { r: 0,   g: 0,   b: 0   },
-    Orange:      { r: 255, g: 165, b: 0   },
-    DarkOrange:  { r: 255, g: 140, b: 0   },
-    Tomato:      { r: 255, g: 99,  b: 71  },
-    OrangeRed:   { r: 255, g: 69,  b: 0   },
-    Pink:        { r: 255, g: 192, b: 203 },
-    HotPink:     { r: 255, g: 105, b: 180 },
-    DeepPink:    { r: 255, g: 20,  b: 147 },
-    Gold:        { r: 255, g: 215, b: 0   },
-    Coral:       { r: 255, g: 127, b: 80  },
-    Violet:      { r: 238, g: 130, b: 238 },
-    DeepSkyBlue: { r: 0,   g: 191, b: 255 },
-    DodgerBlue:  { r: 30,  g: 144, b: 255 },
-    SteelBlue:   { r: 70,  g: 130, b: 180 },
-    SpringGreen: { r: 0,   g: 255, b: 127 },
-    Chartreuse:  { r: 127, g: 255, b: 0   },
-    Aquamarine:  { r: 127, g: 255, b: 212 },
-    MediumPurple:{ r: 147, g: 112, b: 219 },
-    GreenYellow: { r: 173, g: 255, b: 47  },
-  };
-  return MAP[name] ?? null;
+  return NAMED_COLOR_RGB[name] ?? null;
 }

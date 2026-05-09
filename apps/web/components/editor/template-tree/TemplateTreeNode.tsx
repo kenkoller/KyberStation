@@ -36,11 +36,16 @@ function getNodeCategory(name: string): 'color' | 'function' | 'transition' | 'w
   if (isIntegerLiteral(name)) return 'literal';
   if (isColorNode(name) || isNamedColorNode(name)) return 'color';
   if (name.startsWith('Tr')) return 'transition';
-  if (name.endsWith('L') && name !== 'AlphaL' && name.includes('Lockup') || name.includes('Blast')
-    || name.includes('Clash') || name.includes('Stab') || name.includes('Drag')
-    || name === 'AlphaL' || name === 'InOutTrL' || name === 'InOutHelperL'
+  if (name === 'AlphaL' || name === 'InOutTrL' || name === 'InOutHelperL'
     || name === 'TransitionEffectL' || name === 'MultiTransitionEffectL'
-    || name === 'OnSparkL') return 'wrapper';
+    || name === 'OnSparkL'
+    || name.includes('LockupTr') || name.includes('BlastL')
+    || name.includes('ClashL') || name.includes('StabL') || name.includes('DragL')
+    || name.includes('ResponsiveLockup') || name.includes('ResponsiveBlast')
+    || name.includes('ResponsiveClash') || name.includes('ResponsiveStab')
+    || name.includes('ResponsiveDrag') || name.includes('ResponsiveMelt')
+    || name.includes('ResponsiveLightningBlock')
+  ) return 'wrapper';
   if (['Int', 'Scale', 'InvertF', 'Sin', 'Saw', 'Bump', 'SmoothStep',
     'SwingSpeed', 'SwingAcceleration', 'ClashImpactF', 'NoisySoundLevel',
     'SmoothSoundLevel', 'Percentage', 'VolumeLevel', 'ChangeSlowly',
@@ -164,7 +169,7 @@ export function TemplateTreeNode({
             {node.args.map((a, i) => (
               <span key={i}>
                 {i > 0 && ', '}
-                {isIntegerLiteral(a.name) ? a.name : a.name}
+                {a.name}
               </span>
             ))}
             {'>'}
