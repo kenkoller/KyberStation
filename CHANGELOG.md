@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`ChangeEffect` in engine effects registry** — no-op effect entry for the `'change'` EffectType, allowing the engine's effect system to dispatch color-change meta-events to the template evaluator.
 
+- **VariantCycler UI component** — inline action-bar control (`[ ◀ ] N / M [ ▶ ]`) for cycling through ColorChange template variants. Only renders when `variantCount > 0`. 3 public accessors on `BladeEngine` (`variantCount`, `currentVariant`, `setVariant`) delegate to the template-eval bridge. Full a11y with `role="group"`, `aria-label`, `aria-live="polite"`.
+
+- **6 new template-eval classes** — `PulsingFTemplate`, `VolumeLevelTemplate`, `EffectPulseFTemplate`, `ModFTemplate`, `BendTimePowXTemplate`, `TrCenterWipeInSparkTemplate`. Closes all 7 known registry gaps from Fett263 corpus fixtures (PulsingL was already aliased). Registry count: 147 → 153.
+
+- **50 new tests** — 13 engine variant cycling integration tests (including visual output verification), 12 VariantCycler component tests, 25 template registry gap tests.
+
 ---
 
 ## [0.21.0] — 2026-05-07

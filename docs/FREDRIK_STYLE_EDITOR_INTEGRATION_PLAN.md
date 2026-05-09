@@ -35,16 +35,16 @@ test suites.
 |---|---|---|
 | Template parser | Shipped (PR #295) | `packages/template-eval/src/parser.ts` |
 | Template evaluator | Shipped (PR #295) | `packages/template-eval/src/evaluate.ts` |
-| Template registry | Shipped, 143 names | `packages/template-eval/src/registry.ts` |
+| Template registry | Shipped, 153 names | `packages/template-eval/src/registry.ts` |
 | EffectManager | Shipped (PR #295) | `packages/template-eval/src/EffectSystem.ts` |
 | TemplateEvalBridge | Shipped (PR #296) | `packages/engine/src/templateEval/TemplateEvalBridge.ts` |
 | BladeEngine render mode | Shipped (PR #296) | `packages/engine/src/BladeEngine.ts` |
-| Variant cycling | ✅ Committed on `feat/variant-cycling` | 12 files, +318/−8 lines |
+| Variant cycling | ✅ Complete (Phase 1A-1E) | BladeEngine + VariantCycler UI + 25 tests |
 | `getChildren()` tree walk | ✅ All 40+ template classes | All 6 template files + BaseStyle.ts |
 | `walkForColorChange()` | ✅ Shipped | `TemplateEvalBridge.ts` |
 | `ChangeEffect` (no-op) | ✅ Shipped | `packages/engine/src/effects/index.ts` |
-| 155 template-eval tests | Passing | `packages/template-eval/tests/` |
-| 7,540 total workspace tests | Passing | All 7 packages |
+| 180 template-eval tests | Passing | `packages/template-eval/tests/` |
+| 7,591 total workspace tests | Passing | All 7 packages |
 
 ### Variant cycling — completed (committed on `feat/variant-cycling`)
 
@@ -58,26 +58,27 @@ test suites.
 - `'change'` added to engine `EffectType` union + `ChangeEffect` no-op in registry
 - `EFFECT_CHANGE` mapped in `TemplateEvalBridge` effect mapping table
 
-### Known template registry gaps (7 templates)
+### ~~Known template registry gaps (7 templates)~~ ✅ CLOSED
 
-Found in real Fett263 import fixtures but not yet registered:
+All 7 gaps resolved. `PulsingL` was already registered as an alias;
+6 new template classes added in commit `10022e8` (2026-05-09).
 
-| Template | Category | Used in |
+| Template | Category | Status |
 |---|---|---|
-| `PulsingL` | Style (alias) | Battery charging styles |
-| `PulsingF` | Function | Time-varying alpha |
-| `VolumeLevel` | Function | Volume display effects |
-| `EffectPulseF` | Function | Cal Kestis multi-phase |
-| `ModF` | Function | Multi-phase color logic |
-| `BendTimePowX` | Function | Revan ignition/retraction |
-| `TrCenterWipeInSpark` | Transition | Corran Horn fast-on |
+| `PulsingL` | Style (alias) | Already registered (alias of PulsingTemplate) |
+| `PulsingF` | Function | ✅ `PulsingFTemplate` |
+| `VolumeLevel` | Function | ✅ `VolumeLevelTemplate` |
+| `EffectPulseF` | Function | ✅ `EffectPulseFTemplate` |
+| `ModF` | Function | ✅ `ModFTemplate` |
+| `BendTimePowX` | Function | ✅ `BendTimePowXTemplate` |
+| `TrCenterWipeInSpark` | Transition | ✅ `TrCenterWipeInSparkTemplate` |
 
 ---
 
 ## Phase 1: Complete Variant Cycling — ✅ DONE
 
-**Status:** Phases 1A + 1B committed on `feat/variant-cycling` (2026-05-08).
-Phase 1C (UI) + 1D (tests) + 1E (PR) still open.
+**Status:** All phases complete. 1A+1B committed 2026-05-08, 1C+1D committed
+2026-05-09. PR #298 open targeting main.
 
 ### ~~1A. Implement `walkForColorChange()`~~ ✅
 
@@ -90,38 +91,31 @@ Includes nullable-child patterns (conditional push) for templates like
 `SinTemplate`, `CenterDistFTemplate`. Six inline anonymous `StyleTemplate`
 fallback objects also updated.
 
-### 1C. Wire variant UI into the action bar
+### ~~1C. Wire variant UI into the action bar~~ ✅
 
-Add a variant control to the action bar (visible only when the active template
-contains ColorChange/ColorSelect):
+Shipped in commit `f1f9497`. New `VariantCycler.tsx` component mounted in
+`CanvasLayout.tsx` action bar. Shows `[ ◀ ] N / M [ ▶ ]` with wrapping
+modulo math. Only renders when `variantCount > 0`. 3 public accessors
+added to `BladeEngine` delegating to `_templateEvalBridge`. Full a11y:
+`role="group"`, `aria-label`, `aria-live="polite"`. 12 component tests.
 
-```
-[ < 0/N > ]  Variant
-```
+### ~~1D. Tests~~ ✅
 
-- Left/right arrows cycle `bridge.setVariant()`
-- Display shows `currentVariant / variantCount`
-- Color swatch previews the active variant's base color
-- Hidden when `bridge.variantCount === 0`
+Shipped in commit `f1f9497`. 13 engine integration tests covering variant
+cycling through the full BladeEngine → TemplateEvalBridge stack: defaults,
+no-ops, templates with/without ColorChange, nested/deep detection, visual
+output verification (red→green), mode switch reset.
 
-### 1D. Tests
+### ~~1E. Commit + PR~~ ✅
 
-- `walkForColorChange` unit tests: finds nested CC, returns null for no CC,
-  handles deeply nested trees
-- Variant cycling integration: evaluate template string with ColorChange,
-  verify `variantCount`, verify `setVariant` changes output colors
-- Bridge round-trip: `setTemplate` → `variantCount` → `setVariant` → `renderFrame` → verify LED buffer
-
-### 1E. Commit + PR
-
-Land on `feat/variant-cycling`, open PR targeting `main`.
+PR #298 open targeting main. Branch `feat/variant-cycling`.
 
 ---
 
-## Phase 2: Close Template Registry Gaps (M effort, ~4 hours)
+## Phase 2: Close Template Registry Gaps — ✅ DONE
 
-**Goal:** Register the 7 missing templates so 100% of Fett263 corpus fixtures
-evaluate pixel-accurately.
+**Status:** All 6 new template classes committed 2026-05-09 (commit `10022e8`).
+Registry grew from 147 to 153 entries. 25 new tests, 180 total passing.
 
 ### 2A. Function templates (4 new classes)
 
