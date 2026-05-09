@@ -40,6 +40,8 @@ export type SectionId =
   | 'routing'
   | 'motion-simulation'
   | 'gesture-controls'
+  // TEMPLATE — imported template inspection
+  | 'template-tree'
   // OUTPUT — how do you ship it?
   | 'audio'
   | 'output'
@@ -446,6 +448,8 @@ const VALID_SECTION_IDS: ReadonlyArray<SectionId> = [
   'blade-style', 'color', 'ignition-retraction', 'combat-effects', 'layer-compositor',
   // REACTIVITY
   'routing', 'motion-simulation', 'gesture-controls',
+  // TEMPLATE
+  'template-tree',
   // OUTPUT
   'audio', 'output',
   // Cross-group / legacy

@@ -47,6 +47,7 @@ import {
   XenoImportPanelConnected,
 } from '@/components/editor/xenopixel/connected';
 import { XenoConfigPreview } from '@/components/editor/xenopixel/XenoConfigPreview';
+import { TemplateTreePanel } from '@/components/editor/template-tree/TemplateTreePanel';
 
 interface MainContentProps {
   className?: string;
@@ -74,6 +75,7 @@ const SECTION_LABELS: Record<SectionId, string> = {
   'ignition-retraction': 'Ignition & Retraction',
   'combat-effects':      'Combat Effects',
   'layer-compositor':    'Layers',
+  'template-tree':       'Template',
   'routing':             'Routing',
   'motion-simulation':   'Motion Simulation',
   'gesture-controls':    'Gesture Controls',
@@ -117,6 +119,7 @@ function renderLegacySection(activeSection: SectionId, isXenopixel: boolean): Re
     case 'ignition-retraction': return <IgnitionRetractionPanel />;
     case 'combat-effects':      return <EffectPanel />;
     case 'layer-compositor':    return <LayerStack />;
+    case 'template-tree':       return <TemplateTreePanel />;
     case 'routing':             return <RoutingPanel />;
     case 'motion-simulation':   return <MotionSimPanel />;
     case 'gesture-controls':    return <GestureControlPanel />;
