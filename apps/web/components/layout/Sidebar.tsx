@@ -82,6 +82,7 @@ const GROUPS: GroupDef[] = [
       { id: 'ignition-retraction', label: 'Ignition & Retraction' },
       { id: 'combat-effects',      label: 'Combat Effects' },
       { id: 'layer-compositor',    label: 'Layers', proffieOnly: true },
+      { id: 'template-tree',      label: 'Template', proffieOnly: true, beta: true },
     ],
   },
   {

@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     globals: true,
     environment: 'node',
@@ -12,13 +14,6 @@ export default defineConfig({
     // tests headroom without affecting the well-behaved suites — the
     // overhead is bounded by actual test runtime, not the limit.
     testTimeout: 15000,
-  },
-  // Use the automatic JSX runtime in the test transformer so `.tsx`
-  // components whose source omits `import React` (the Next.js default)
-  // can still be rendered via `renderToStaticMarkup` inside tests.
-  // Matches the runtime Next.js uses at build time.
-  esbuild: {
-    jsx: 'automatic',
   },
   resolve: {
     alias: {
