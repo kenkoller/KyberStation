@@ -2,11 +2,14 @@
 //
 // Recursive tree node renderer for the ProffieOS template AST.
 // Renders template name + color swatch + annotations + collapse toggle.
-// Pure presentational — no engine deps, no store reads.
+//
+// Phase 5A: Pure read-only rendering.
+// Phase 5D: Inline editing — click-to-edit integer values, color picker
+//           on Rgb swatches. Edits flow up via onNodeChange callback.
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import type { TemplateNode } from '@kyberstation/template-eval';
 import {
   getParamAnnotation,
@@ -15,6 +18,7 @@ import {
   extractRgbFromNode,
   namedColorToRgb,
 } from '../../../lib/templateAnnotations';
+import { rgbToHex, hexToRgb } from '../../../lib/templateSerializer';
 
 // ─── Constants ─
 
@@ -73,15 +77,84 @@ interface ColorSwatchProps {
   r: number;
   g: number;
   b: number;
+  editable?: boolean;
+  onClick?: () => void;
 }
 
-function ColorSwatch({ r, g, b }: ColorSwatchProps) {
+function ColorSwatch({ r, g, b, editable, onClick }: ColorSwatchProps) {
   return (
     <span
-      className="inline-block w-3 h-3 rounded-sm border border-border-subtle align-middle ml-1.5"
+      className={[
+        'inline-block w-3 h-3 rounded-sm border border-border-subtle align-middle ml-1.5',
+        editable ? 'cursor-pointer hover:ring-1 hover:ring-accent' : '',
+      ].join(' ')}
       style={{ backgroundColor: `rgb(${r},${g},${b})` }}
-      title={`rgb(${r}, ${g}, ${b})`}
-      aria-label={`Color: rgb(${r}, ${g}, ${b})`}
+      title={`rgb(${r}, ${g}, ${b})${editable ? ' — click to edit' : ''}`}
+      aria-label={`Color: rgb(${r}, ${g}, ${b})${editable ? '. Click to edit.' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    />
+  );
+}
+
+// ─── Inline Integer Editor ─
+
+interface InlineEditorProps {
+  initialValue: string;
+  onApply: (value: string) => void;
+  onCancel: () => void;
+}
+
+function InlineEditor({ initialValue, onApply, onCancel }: InlineEditorProps) {
+  const [value, setValue] = useState(initialValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isValid = /^-?\d+$/.test(value.trim());
+
+  // Auto-focus + select on mount
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el) { el.focus(); el.select(); }
+  }, []);
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    e.stopPropagation(); // prevent global keyboard shortcuts
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isValid) onApply(value.trim());
+      else onCancel(); // revert on invalid
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onCancel();
+    }
+  }
+
+  function handleBlur() {
+    if (isValid && value.trim() !== initialValue) {
+      onApply(value.trim());
+    } else {
+      onCancel();
+    }
+  }
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="numeric"
+      className={[
+        'w-14 h-5 text-xs font-mono bg-bg-deep px-1 rounded-sm',
+        'focus:outline-none focus:ring-1',
+        isValid
+          ? 'border border-border-subtle focus:ring-accent text-orange-300'
+          : 'border border-red-500 focus:ring-red-500 text-red-400',
+      ].join(' ')}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      aria-label="Edit integer value"
+      aria-invalid={!isValid}
     />
   );
 }
@@ -93,6 +166,10 @@ export interface TemplateTreeNodeProps {
   depth?: number;
   parentName?: string;
   argIndex?: number;
+  /** Index path from the AST root, e.g. [1, 2] = root.args[1].args[2]. */
+  path?: number[];
+  /** Callback when a node is edited. Receives the path and the new node. */
+  onNodeChange?: (path: number[], newNode: TemplateNode) => void;
 }
 
 export function TemplateTreeNode({
@@ -100,12 +177,21 @@ export function TemplateTreeNode({
   depth = 0,
   parentName,
   argIndex,
+  path,
+  onNodeChange,
 }: TemplateTreeNodeProps) {
   const hasChildren = node.args.length > 0;
   const isLiteral = isIntegerLiteral(node.name);
+  const isEditable = !!onNodeChange;
 
   // Auto-collapse deep nodes; top-level nodes start expanded
   const [collapsed, setCollapsed] = useState(depth >= AUTO_COLLAPSE_DEPTH);
+
+  // Inline editing state for integer literals
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Color input ref for Rgb swatch picker
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   // Detect color nodes for swatches
   const colorRgb = useMemo(() => {
@@ -129,6 +215,43 @@ export function TemplateTreeNode({
   // Indent: 16px per depth level
   const paddingLeft = depth * 16 + 4;
 
+  // Can this node's color be edited? Only Rgb<r,g,b> nodes (not named colors).
+  const isRgbEditable = isEditable && node.name === 'Rgb' && node.args.length === 3 && colorRgb !== null;
+
+  // ─── Edit handlers ─
+
+  function handleStartEdit() {
+    if (!isEditable || !isLiteral) return;
+    setIsEditing(true);
+  }
+
+  function handleApplyEdit(newValue: string) {
+    setIsEditing(false);
+    if (newValue === node.name) return; // no change
+    onNodeChange?.(path ?? [], { name: newValue, args: [] });
+  }
+
+  function handleCancelEdit() {
+    setIsEditing(false);
+  }
+
+  function handleSwatchClick() {
+    colorInputRef.current?.click();
+  }
+
+  function handleColorChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const rgb = hexToRgb(e.target.value);
+    if (!rgb) return;
+    onNodeChange?.(path ?? [], {
+      name: 'Rgb',
+      args: [
+        { name: String(rgb.r), args: [] },
+        { name: String(rgb.g), args: [] },
+        { name: String(rgb.b), args: [] },
+      ],
+    });
+  }
+
   return (
     <div role="treeitem" aria-expanded={hasChildren ? !collapsed : undefined}>
       <div
@@ -148,9 +271,25 @@ export function TemplateTreeNode({
           <span className="w-4 shrink-0" />
         )}
 
-        {/* Node name */}
-        {isLiteral ? (
-          <span className={`text-xs font-mono ${nameClass}`}>
+        {/* Node name — editable for integer literals */}
+        {isLiteral && isEditing ? (
+          <InlineEditor
+            initialValue={node.name}
+            onApply={handleApplyEdit}
+            onCancel={handleCancelEdit}
+          />
+        ) : isLiteral ? (
+          <span
+            className={[
+              'text-xs font-mono',
+              nameClass,
+              isEditable ? 'cursor-pointer hover:bg-bg-card/60 px-0.5 rounded-sm' : '',
+            ].join(' ')}
+            onClick={isEditable ? handleStartEdit : undefined}
+            title={isEditable ? 'Click to edit' : undefined}
+            role={isEditable ? 'button' : undefined}
+            aria-label={isEditable ? `Edit value ${node.name}` : undefined}
+          >
             {node.name}
           </span>
         ) : (
@@ -160,7 +299,29 @@ export function TemplateTreeNode({
         )}
 
         {/* Color swatch for Rgb<> and named colors */}
-        {colorRgb && <ColorSwatch r={colorRgb.r} g={colorRgb.g} b={colorRgb.b} />}
+        {colorRgb && (
+          <>
+            <ColorSwatch
+              r={colorRgb.r}
+              g={colorRgb.g}
+              b={colorRgb.b}
+              editable={isRgbEditable}
+              onClick={isRgbEditable ? handleSwatchClick : undefined}
+            />
+            {/* Hidden color input — only for editable Rgb nodes */}
+            {isRgbEditable && (
+              <input
+                ref={colorInputRef}
+                type="color"
+                className="sr-only"
+                value={rgbToHex(colorRgb.r, colorRgb.g, colorRgb.b)}
+                onChange={handleColorChange}
+                aria-label="Pick color"
+                tabIndex={-1}
+              />
+            )}
+          </>
+        )}
 
         {/* Inline arg preview for leaf nodes with few children */}
         {hasChildren && collapsed && node.args.length <= 4 && (
@@ -201,6 +362,8 @@ export function TemplateTreeNode({
               depth={depth + 1}
               parentName={node.name}
               argIndex={i}
+              path={[...(path ?? []), i]}
+              onNodeChange={onNodeChange}
             />
           ))}
         </div>

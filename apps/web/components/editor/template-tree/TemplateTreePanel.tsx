@@ -1,23 +1,28 @@
 // ─── TemplateTreePanel ────────────────────────────────────────────────
 //
 // Phase 5A: Read-only template tree view for imported ProffieOS styles.
+// Phase 5D: Inline editing — integer values + Rgb color picker.
+//
 // Parses the active config's importedRawCode into a TemplateNode AST
 // and renders a collapsible tree with color swatches and annotations.
+// Edits flow back to the store: tree edit → AST update → serialize →
+// bladeStore.updateConfig({ importedRawCode }).
 //
 // Visibility gate (Phase 5E): only shown when:
 //   - The engine is in 'template-eval' render mode, OR
 //   - The config has importedRawCode
-//
-// This panel is read-only in Phase 5A. Inline editing (Phase 5D) and
-// layer controls (Phase 5C) will be added in follow-up PRs.
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { parseTemplateString } from '@kyberstation/template-eval';
 import type { TemplateNode } from '@kyberstation/template-eval';
 import { useBladeStore } from '../../../stores/bladeStore';
 import { TemplateTreeNode } from './TemplateTreeNode';
+import {
+  templateNodeToString,
+  updateNodeAtPath,
+} from '../../../lib/templateSerializer';
 
 // ─── Node statistics ─
 
@@ -102,6 +107,7 @@ export interface TemplateTreePanelProps {
 export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
   // Read importedRawCode from the active config
   const storeRawCode = useBladeStore((s) => s.config.importedRawCode);
+  const updateConfig = useBladeStore((s) => s.updateConfig);
   const rawCode = templateString ?? storeRawCode;
 
   // Parse the template string into an AST
@@ -130,6 +136,34 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
     return computeStats(parseResult.node);
   }, [parseResult.node]);
 
+  // ─── Phase 5D: edit handler ─
+  //
+  // When a node is edited in the tree (integer value changed, Rgb color
+  // picked), this callback:
+  //   1. Immutably updates the AST at the given path
+  //   2. Serializes the modified AST back to a template string
+  //   3. Writes the new string to bladeStore.importedRawCode
+  //
+  // The store update triggers a re-render → re-parse → tree updates.
+  // Only wired when NOT using the templateString prop (prop = read-only
+  // testing mode; store = live editing mode).
+  const handleNodeChange = useCallback(
+    (path: number[], newNode: TemplateNode) => {
+      const currentNode = parseResult.node;
+      if (!currentNode) return;
+
+      const updatedRoot = updateNodeAtPath(currentNode, path, () => newNode);
+      const newCode = templateNodeToString(updatedRoot);
+
+      // Write back to store — triggers re-render → re-parse → tree update
+      updateConfig({ importedRawCode: newCode });
+    },
+    [parseResult.node, updateConfig],
+  );
+
+  // Editing is only available when reading from the store (not from prop)
+  const isLiveEditable = !templateString && !!storeRawCode;
+
   // Empty state
   if (!rawCode) {
     return <EmptyState />;
@@ -152,7 +186,11 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
         role="tree"
         aria-label="ProffieOS template structure"
       >
-        <TemplateTreeNode node={node} />
+        <TemplateTreeNode
+          node={node}
+          path={[]}
+          onNodeChange={isLiveEditable ? handleNodeChange : undefined}
+        />
       </div>
     </div>
   );
