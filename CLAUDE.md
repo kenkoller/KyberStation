@@ -543,9 +543,36 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-05-09, Fredrik Style Editor Integration — Phases 1-4)
+## Current State (2026-05-10, Phase 5D merged + Visualizer Upgrade Plan)
 
-Two-session sprint implementing Phases 1–4 of the Fredrik Style Editor Integration Plan (`docs/FREDRIK_STYLE_EDITOR_INTEGRATION_PLAN.md`). PR #298 open targeting main from `feat/variant-cycling` branch. 5 commits, 12 new/modified files, +2,000 lines. Worktree at `.claude/worktrees/awesome-mclean-9bfbd5/`.
+Phase 5 template tree panel complete (PR #299 merged). Architecture audit of the dual-renderer approach completed — identified the accuracy gap between the parameter engine and template-eval paths. New `docs/VISUALIZER_UPGRADE_PLAN.md` created with 3-phase roadmap: Hardware Preview toggle (short term), 3D saber renderer with mouse interaction (medium term), template-eval as default + 3D flagship (long term). All three phases approved for development.
+
+### What shipped today (PR #299 — merged 2026-05-10)
+
+| Scope | Key files |
+|---|---|
+| **Phase 5A** Read-only template tree view | `TemplateTreePanel.tsx`, `TemplateTreeNode.tsx` — collapsible AST tree with color swatches, category color-coding, auto-collapse at depth 4 |
+| **Phase 5B** Parameter annotations | `lib/templateAnnotations.ts` — metadata registry mapping template names to per-argument descriptions (56 annotated templates) |
+| **Phase 5D** Inline editing | Click-to-edit integer values (InlineEditor with Enter/Escape/blur), hidden `<input type="color">` picker on Rgb swatches, immutable AST update via `updateNodeAtPath` |
+| **Infrastructure** vitest JSX fix | `@vitejs/plugin-react@5.2.0` added, removed stale esbuild config — fixes pre-existing `React is not defined` in all .tsx tests |
+| **Utilities** `lib/templateSerializer.ts` | `templateNodeToString`, `updateNodeAtPath` (structural sharing), `rgbToHex`, `hexToRgb` |
+
+### What's next — Visualizer Upgrade (approved, plan at `docs/VISUALIZER_UPGRADE_PLAN.md`)
+
+| Phase | Scope | Sessions | Can Parallel? |
+|---|---|---|---|
+| **1** Hardware Preview Toggle | Codegen → template-eval for exact hardware output in workbench | 1-2 | Yes (with Phase 2A) |
+| **2A** 3D Blade Mesh + LED Emissive | Per-LED emissive CylinderGeometry, R3F scene, orbit controls | 1 | Yes (with Phase 1) |
+| **2B** 3D Hilt Integration | SVG → LatheGeometry, metallic PBR, assembly composer | 1 | After 2A |
+| **2C** 3D Mouse Interaction | Orbit rotation, swing sim from drag velocity, click→clash, hold→lockup | 1 | After 2A |
+| **2D** 3D Post-Processing | UnrealBloomPass, polycarbonate diffusion, motion blur | 1 | After 2A+2B |
+| **3** Template-eval default | Template-eval as primary renderer, 3D as flagship view | 5+ | After Phase 1+2 |
+
+---
+
+## Previous State (2026-05-09, Fredrik Style Editor Integration — Phases 1-4)
+
+Two-session sprint implementing Phases 1–4 of the Fredrik Style Editor Integration Plan (`docs/FREDRIK_STYLE_EDITOR_INTEGRATION_PLAN.md`). PR #298 merged. 5 commits, 12 new/modified files, +2,000 lines. Worktree at `.claude/worktrees/awesome-mclean-9bfbd5/`.
 
 ### What shipped (PR #298 — 5 commits)
 
