@@ -22,6 +22,7 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useBladeStore } from '../../../stores/bladeStore';
+import { useMouseSwing } from '../../../hooks/useMouseSwing';
 import { createBladeGeometry, createBladeTipGeometry } from './BladeGeometry';
 import {
   createBladeMaterial,
@@ -29,6 +30,7 @@ import {
   updateLedTexture,
   getLedTextureFromMaterial,
 } from './BladeMaterial';
+import { createHiltGeometry3D, createHiltMaterial } from './HiltGeometry3D';
 
 // ─── Glow Shell ─
 // A slightly larger, more transparent copy of the blade for outer glow
@@ -99,20 +101,21 @@ function EmitterGlow({ color, intensity }: { color: THREE.Color; intensity: numb
   );
 }
 
-// ─── Simple Hilt Placeholder ─
-// A basic metallic cylinder until the real SVG→LatheGeometry hilt lands (Phase 2B)
+// ─── Hilt Mesh (Phase 2B) ─
+// LatheGeometry from SVG profile, or fallback to default cylindrical hilt.
 
-function HiltPlaceholder() {
-  return (
-    <mesh position={[0, -0.08, 0]}>
-      <cylinderGeometry args={[0.022, 0.024, 0.16, 16]} />
-      <meshStandardMaterial
-        color="#888888"
-        metalness={0.9}
-        roughness={0.3}
-      />
-    </mesh>
-  );
+function HiltMesh() {
+  const hiltGeo = useMemo(() => createHiltGeometry3D(null), []);
+  const hiltMat = useMemo(() => createHiltMaterial(), []);
+
+  useEffect(() => {
+    return () => {
+      hiltGeo.dispose();
+      hiltMat.dispose();
+    };
+  }, [hiltGeo, hiltMat]);
+
+  return <mesh geometry={hiltGeo} material={hiltMat} />;
 }
 
 // ─── Blade Mesh ─
@@ -296,8 +299,8 @@ function SceneDriver({
         />
       </group>
 
-      {/* Placeholder hilt */}
-      <HiltPlaceholder />
+      {/* Hilt mesh (LatheGeometry from SVG profile) */}
+      <HiltMesh />
 
       {/* Camera controls */}
       <OrbitControls
@@ -336,13 +339,26 @@ export function BladeScene3D({
 }: BladeScene3DProps) {
   const storeConfig = useBladeStore((s) => s.config);
   const ledCount = ledCountProp ?? storeConfig.ledCount;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Wire mouse movement on the 3D container to swing simulation.
+  // OrbitControls captures drag for rotation; useMouseSwing reads
+  // velocity from pointer movement to drive swingSpeed + bladeAngle.
+  const { handlePointerMove, handlePointerEnter, handlePointerLeave } =
+    useMouseSwing(engineRef);
 
   // Scale blade length by LED count (144 LEDs ≈ 36 inches ≈ ~0.9m)
   // Normalized to 1.0 scene unit for the default 144 LEDs
   const bladeLength = (ledCount / 144) * 1.0;
 
   return (
-    <div className={`w-full h-full ${className ?? ''}`}>
+    <div
+      ref={containerRef}
+      className={`w-full h-full ${className ?? ''}`}
+      onPointerMove={handlePointerMove as unknown as React.PointerEventHandler<HTMLDivElement>}
+      onPointerEnter={handlePointerEnter as unknown as React.PointerEventHandler<HTMLDivElement>}
+      onPointerLeave={handlePointerLeave}
+    >
       <Canvas
         camera={{
           position: [0.5, 0.4, 0.8],

@@ -19,3 +19,12 @@ export {
   getLedTextureFromMaterial,
 } from './BladeMaterial';
 export type { BladeMaterialOptions } from './BladeMaterial';
+
+export {
+  extractProfileFromPath,
+  buildHiltProfile,
+  buildDefaultHiltProfile,
+  createHiltLathGeometry,
+  createHiltGeometry3D,
+  createHiltMaterial,
+} from './HiltGeometry3D';
