@@ -34,6 +34,8 @@ import {
   HoldPeakFTemplate, EffectIncrementFTemplate, LinearSectionFTemplate,
   IsGreaterThanTemplate, SlowNoiseTemplate, SwingAccelerationTemplate,
   SparkleFTemplate, RemapTemplate,
+  IsBetweenTemplate, IncrementModuloTemplate, CircularSectionFTemplate,
+  TwistAccelerationTemplate, IntSelectTemplate, BlastFTemplate,
 } from './templates/functions.js';
 
 // Style templates
@@ -154,6 +156,7 @@ registerClass('Int', IntTemplate);
 registerClass('Scale', ScaleTemplate);
 registerClass('SwingSpeed', SwingSpeedTemplate);
 registerClass('BladeAngle', BladeAngleTemplate);
+registerClass('BladeAngleX', BladeAngleTemplate);
 registerClass('TwistAngle', TwistAngleTemplate);
 registerClass('SoundLevel', SoundLevelTemplate);
 registerClass('NoisySoundLevel', NoisySoundLevelTemplate);
@@ -199,6 +202,14 @@ registerClass('SlowNoise', SlowNoiseTemplate);
 registerClass('SwingAcceleration', SwingAccelerationTemplate);
 registerClass('SparkleF', SparkleFTemplate);
 registerClass('Remap', RemapTemplate);
+registerClass('IsBetween', IsBetweenTemplate);
+registerClass('IncrementModulo', IncrementModuloTemplate);
+registerClass('CircularSectionF', CircularSectionFTemplate);
+registerClass('TwistAcceleration', TwistAccelerationTemplate);
+registerClass('IntSelect', IntSelectTemplate);
+registerClass('IntSelectX', IntSelectTemplate);
+registerClass('BlastF', BlastFTemplate);
+registerClass('BlastFadeoutF', BlastFTemplate);
 
 // ─── Style Templates ───
 registerClass('Layers', LayersTemplate);
@@ -244,7 +255,9 @@ registerClass('StaticFire', StaticFireTemplate);
 
 // ─── Effect Templates ───
 registerClass('SimpleClashL', SimpleClashLTemplate);
+registerClass('SimpleClash', SimpleClashLTemplate);
 registerClass('ResponsiveClashL', ResponsiveClashLTemplate);
+registerClass('Blast', BlastLTemplate);
 registerClass('BlastL', BlastLTemplate);
 registerClass('BlastFadeoutL', BlastLTemplate);
 registerClass('ResponsiveBlastL', ResponsiveBlastLTemplate);
@@ -302,6 +315,8 @@ registerClass('TrWipeSparkTipX', TrWipeSparkTipXTemplate);
 // ─── Wrapper Templates ───
 registerClass('InOutTrL', InOutTrLTemplate);
 registerClass('InOutHelperL', InOutHelperLTemplate);
+registerClass('InOutHelper', InOutHelperLTemplate);
+registerClass('InOutHelperX', InOutHelperLTemplate);
 registerClass('StyleNormalPtr', StyleNormalPtrTemplate);
 registerClass('TransitionLoop', TransitionLoopTemplate);
 registerClass('SequenceL', SequenceLTemplate);
@@ -310,6 +325,7 @@ registerClass('StyleFirePtr', StyleFirePtrTemplate);
 registerClass('StyleRainbowPtr', StyleRainbowPtrTemplate);
 registerClass('StyleStrobePtr', StyleStrobePtrTemplate);
 registerClass('InOutSparkTipL', InOutSparkTipLTemplate);
+registerClass('InOutSparkTip', InOutSparkTipLTemplate);
 registerClass('TransitionEffect', TransitionEffectTemplate);
 registerClass('TransitionLoopL', TransitionLoopLTemplate);
 
