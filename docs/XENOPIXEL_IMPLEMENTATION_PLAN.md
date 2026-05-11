@@ -4,6 +4,8 @@
 > visual design, accurate previews of the real blade effects, full SD card
 > ZIP export ready to drop onto the card.
 
+**Status (2026-05-08):** Phases 1–5A shipped via PRs #287, #289, #290, #293. Phase 5B (hardware validation) and 5C (BLE integration) remain open.
+
 ## Background
 
 Xenopixel V3 (XENO3.0) boards by LGT are closed-source, fixed-firmware
@@ -33,7 +35,7 @@ blade code is possible.
 
 ---
 
-## Phase 1 — Board Profile + Emitter Rewrite (1 session)
+## Phase 1 — Board Profile + Emitter Rewrite (1 session) ✅
 
 ### 1A. Update Xenopixel board profiles
 
@@ -48,10 +50,10 @@ export const XENO_BLADE_EFFECTS = [
   { id: 1, name: 'Steady Blade',   kyberStyle: 'stable' },
   { id: 2, name: 'Unstable Blade', kyberStyle: 'unstable' },
   { id: 3, name: 'Rainbow Blade',  kyberStyle: 'rainbow' },
-  { id: 4, name: 'Candy Blade',    kyberStyle: null },      // no KS equivalent
+  { id: 4, name: 'Candy Blade',    kyberStyle: 'candy' },
   { id: 5, name: 'Crack Blade',    kyberStyle: 'crystalShatter' },
   { id: 6, name: 'Pulse Blade',    kyberStyle: 'pulse' },
-  { id: 7, name: 'Flashing Blade', kyberStyle: null },      // no KS equivalent
+  { id: 7, name: 'Flashing Blade', kyberStyle: 'flashing' },
 ] as const;
 
 export const XENO_IGNITION_STYLES = [
@@ -198,7 +200,7 @@ Update `exportType` from `'design-reference'` to `'sd-card-config'`.
 
 ---
 
-## Phase 2 — Board-Aware UI Gating (1-2 sessions)
+## Phase 2 — Board-Aware UI Gating (1-2 sessions) ✅
 
 ### 2A. Xenopixel blade effect picker
 
@@ -272,7 +274,7 @@ Maps directly to `config.ini` fields.
 
 ---
 
-## Phase 3 — Accurate Blade Effect Previews (1-2 sessions)
+## Phase 3 — Accurate Blade Effect Previews (1-2 sessions) ✅
 
 ### 3A. Xenopixel effect engine implementations
 
@@ -326,7 +328,7 @@ saber will actually look like.
 
 ---
 
-## Phase 4 — Preset Library + Import (1 session)
+## Phase 4 — Preset Library + Import (1 session) ✅
 
 ### 4A. Xenopixel-compatible preset filter
 
@@ -371,7 +373,7 @@ Read a user's existing SD card (via File System Access API):
 
 ## Phase 5 — Polish + Hardware Validation (1 session)
 
-### 5A. Firmware version awareness
+### 5A. Firmware version awareness ✅
 
 Different Xenopixel firmware versions have slightly different
 `fontconfig.ini` formats and available effects. Add a firmware version
@@ -385,7 +387,7 @@ selector:
 
 The emitter adjusts its output format based on the selected version.
 
-### 5B. Hardware validation on real Xenopixel V3
+### 5B. Hardware validation on real Xenopixel V3 ⏳
 
 - Generate a test SD card config from KyberStation
 - Flash onto a real Xenopixel V3 saber
@@ -393,7 +395,7 @@ The emitter adjusts its output format based on the selected version.
 - Document any format discrepancies
 - Fix and re-test
 
-### 5C. Xeno Configurator BLE integration (stretch goal)
+### 5C. Xeno Configurator BLE integration (stretch goal) ⏳
 
 If the BLE protocol can be reverse-engineered from the APK:
 - Push color changes directly via Bluetooth

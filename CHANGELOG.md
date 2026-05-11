@@ -27,6 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **93 new tests total** — 13 engine variant cycling, 12 VariantCycler UI, 25 template registry gaps, 22 mouse swing (net new), 9 time-scale engine, 12 TimeScaleControl UI.
 
+- **ProffieOS template interpreter — Phase 1 foundation** (PR #295) — New `packages/template-eval` workspace package implementing a direct ProffieOS style template evaluator. Parses real ProffieOS C++ template syntax into evaluable ASTs.
+
+- **ProffieOS template interpreter — Phase 2 engine bridge** (PR #296) — Wires `template-eval` into `BladeEngine` as a new `'template-eval'` render mode, enabling direct evaluation of ProffieOS style code in the visualizer.
+
+### Fixed
+
+- **Xenopixel Candy + Flashing blade effects unreachable** (PR #293) — `XENO_BLADE_EFFECTS` entries for IDs 4 (Candy) and 7 (Flashing) had `kyberStyle: null`, making them unreachable through the UI despite having complete engine implementations. Fixed to `'candy'` / `'flashing'`. Also corrected 5 documentation inaccuracies in CHANGELOG.md.
+
+- **Xenopixel 11 audit findings resolved** (PR #289) — Deleted orphaned `XenoDesignPorter.tsx`, fixed segment overflow in `XenoEffectPicker`, added missing ignition ID mappings in `XenoIgnitionPicker`, moved motion/settings panel state from inline `useState` to Zustand stores, and fixed config.ini parser + emitter round-trip for crossguard/double-blade settings.
+
+### Changed
+
+- **Xenopixel SSR contract tests** (PR #290) — Added SSR rendering tests for Batch 2+3 Xenopixel UI components ensuring server-side rendering compatibility.
+
 ---
 
 ## [0.21.0] — 2026-05-07
