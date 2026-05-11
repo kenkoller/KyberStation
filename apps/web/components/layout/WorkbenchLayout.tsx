@@ -22,6 +22,7 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { usePauseSystem } from '@/hooks/usePauseSystem';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { useHistoryTracking } from '@/hooks/useHistoryTracking';
+import { useHardwarePreview } from '@/hooks/useHardwarePreview';
 import { ShareButton } from '@/components/layout/ShareButton';
 import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 import { HeaderButton } from '@/components/layout/HeaderButton';
@@ -178,6 +179,7 @@ export function WorkbenchLayout() {
   usePauseSystem();
   usePresetListSync();
   useHistoryTracking();
+  useHardwarePreview(engineRef);
 
   // Platform-aware kbd display: Mac shows ⌘K, Windows / Linux shows Ctrl+K.
   // The keyboard event handlers read (e.metaKey || e.ctrlKey) so either
@@ -206,6 +208,8 @@ export function WorkbenchLayout() {
   const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
   const bladeView3D = useUIStore((s) => s.bladeView3D);
   const toggleBladeView3D = useUIStore((s) => s.toggleBladeView3D);
+  const hardwarePreview = useUIStore((s) => s.hardwarePreview);
+  const toggleHardwarePreview = useUIStore((s) => s.toggleHardwarePreview);
 
   // OV11: drag-to-resize slices. Each region has min/max/default in
   // REGION_LIMITS and a dedicated setter that persists to localStorage.
@@ -320,10 +324,25 @@ export function WorkbenchLayout() {
             3D
           </button>
         </div>
+        {/* Hardware Preview toggle — generates ProffieOS code from current
+            config and feeds it through template-eval for pixel-accurate
+            rendering. Lets users verify visualizer matches real hardware. */}
+        <button
+          onClick={toggleHardwarePreview}
+          className={`px-2 py-0.5 rounded text-ui-xs font-medium font-mono uppercase tracking-[0.08em] border transition-colors ${
+            hardwarePreview
+              ? 'bg-accent-dim text-accent border-accent-border/40'
+              : 'bg-transparent text-text-muted hover:text-text-secondary border-border-subtle'
+          }`}
+          title="Hardware Preview — render using real ProffieOS template evaluation"
+          aria-pressed={hardwarePreview}
+        >
+          HW
+        </button>
         <FullscreenButton className="w-5 h-5" />
       </>
     ),
-    [showStateGrid, toggleStateGrid, bladeView3D, toggleBladeView3D, kbdFor],
+    [showStateGrid, toggleStateGrid, bladeView3D, toggleBladeView3D, hardwarePreview, toggleHardwarePreview, kbdFor],
   );
 
   const tickerMessages = useMemo(() => {
