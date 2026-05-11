@@ -47,6 +47,10 @@ import {
   DivideTemplate, SubtractTemplate, ThresholdPulseFTemplate,
   RampFTemplate, LockupPulseFTemplate, IncrementFTemplate,
   SliceFTemplate, IgnitionDelayTemplate, RetractionDelayTemplate,
+  BrownNoiseFTemplate, StrobeFTemplate, BlinkingFTemplate,
+  HumpFlickerFXTemplate, OnSparkFTemplate, RandomBlinkFTemplate,
+  InOutFuncTemplate, TriggerTemplate, BulletCountFTemplate,
+  BlasterChargeFTemplate, BlasterModeFTemplate, MarbleFTemplate,
 } from './templates/functions.js';
 
 // Style templates
@@ -271,7 +275,29 @@ registerClass('IncrementF', IncrementFTemplate);
 registerClass('IncrementModuloF', IncrementFTemplate);
 registerClass('SliceF', SliceFTemplate);
 registerClass('IgnitionDelay', IgnitionDelayTemplate);
+registerClass('IgnitionDelayX', IgnitionDelayTemplate);
 registerClass('RetractionDelay', RetractionDelayTemplate);
+registerClass('RetractionDelayX', RetractionDelayTemplate);
+registerClass('BrownNoiseF', BrownNoiseFTemplate);
+registerClass('BrownNoiseFX', BrownNoiseFTemplate);
+registerClass('StrobeF', StrobeFTemplate);
+registerClass('StrobeFX', StrobeFTemplate);
+registerClass('BlinkingF', BlinkingFTemplate);
+registerClass('BlinkingFX', BlinkingFTemplate);
+registerClass('HumpFlickerFX', HumpFlickerFXTemplate);
+registerClass('HumpFlickerF', HumpFlickerFXTemplate);
+registerClass('OnSparkF', OnSparkFTemplate);
+registerClass('OnSparkFX', OnSparkFTemplate);
+registerClass('RandomBlinkF', RandomBlinkFTemplate);
+registerClass('RandomBlinkFX', RandomBlinkFTemplate);
+registerClass('InOutFunc', InOutFuncTemplate);
+registerClass('InOutFuncX', InOutFuncTemplate);
+registerClass('Trigger', TriggerTemplate);
+registerClass('TriggerX', TriggerTemplate);
+registerClass('BulletCountF', BulletCountFTemplate);
+registerClass('BlasterChargeF', BlasterChargeFTemplate);
+registerClass('BlasterModeF', BlasterModeFTemplate);
+registerClass('MarbleF', MarbleFTemplate);
 
 // ─── Style Templates ───
 registerClass('Layers', LayersTemplate);
@@ -314,6 +340,9 @@ registerClass('RandomPerLEDFlicker', RandomPerLEDFlickerTemplate);
 registerClass('Sparkle', SparkleTemplate);
 registerClass('SparkleL', SparkleTemplate);
 registerClass('StaticFire', StaticFireTemplate);
+registerClass('StaticFireL', StaticFireTemplate);
+registerClass('StaticFireX', StaticFireTemplate);
+registerClass('HardStripes', StripesXTemplate);
 
 // ─── Effect Templates ───
 registerClass('SimpleClashL', SimpleClashLTemplate);
@@ -337,6 +366,10 @@ registerClass('ResponsiveBlastFadeL', ResponsiveBlastFadeLTemplate);
 registerClass('ResponsiveBlastWaveL', ResponsiveBlastWaveLTemplate);
 registerClass('ResponsiveBlastFadeLX', ResponsiveBlastFadeLTemplate);
 registerClass('ResponsiveBlastWaveLX', ResponsiveBlastWaveLTemplate);
+registerClass('OriginalBlast', BlastLTemplate);
+registerClass('OriginalBlastL', BlastLTemplate);
+registerClass('MultiTransitionEffectLX', MultiTransitionEffectLTemplate);
+registerClass('TransitionEffectLX', TransitionEffectLTemplate);
 
 // ─── Transition Templates ───
 registerClass('TrInstant', TrInstantTemplate);
@@ -373,6 +406,14 @@ registerClass('TrSelectX', TrSelectTemplate);
 registerClass('TrSparkX', TrSparkXTemplate);
 registerClass('TrWipeSparkTip', TrWipeSparkTipTemplate);
 registerClass('TrWipeSparkTipX', TrWipeSparkTipXTemplate);
+registerClass('TrWipeInSpark', TrCenterWipeInSparkTemplate);
+registerClass('TrWipeInSparkX', TrCenterWipeInSparkTemplate);
+registerClass('TrWipeInSparkTip', TrWipeSparkTipTemplate);
+registerClass('TrWipeInSparkTipX', TrWipeSparkTipXTemplate);
+registerClass('TrColorCycle', TrColorCycleXTemplate);
+registerClass('TrLoop', TransitionLoopTemplate);
+registerClass('TrRandom', TrSelectTemplate);
+registerClass('TrRandomX', TrSelectTemplate);
 
 // ─── Wrapper Templates ───
 registerClass('InOutTrL', InOutTrLTemplate);
@@ -390,6 +431,13 @@ registerClass('InOutSparkTipL', InOutSparkTipLTemplate);
 registerClass('InOutSparkTip', InOutSparkTipLTemplate);
 registerClass('TransitionEffect', TransitionEffectTemplate);
 registerClass('TransitionLoopL', TransitionLoopLTemplate);
+registerClass('InOutTr', InOutTrLTemplate);
+registerClass('InOutHelperF', InOutHelperLTemplate);
+registerClass('InOutSparkTipLX', InOutSparkTipLTemplate);
+registerClass('ChargingStylePtr', StylePtrTemplate);
+registerClass('Sequence', EffectSequenceTemplate);
+registerClass('SequenceX', EffectSequenceTemplate);
+registerClass('ColorChangeLX', ColorChangeTemplate);
 
 /**
  * Look up a template class/factory by name.

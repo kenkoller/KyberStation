@@ -1563,3 +1563,303 @@ export class RetractionDelayTemplate extends BaseStyleTemplate {
   getColor(_led: number): Color { return BLACK; }
   getChildren(): StyleTemplate[] { return [this.delay]; }
 }
+
+// ─── BrownNoiseF<SPEED> ───
+// Brown noise function returning 0..32768. Slower random walk than white noise.
+export class BrownNoiseFTemplate extends BaseStyleTemplate {
+  private readonly speed: StyleTemplate;
+  private value = PROFFIE_MAX / 2;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.speed = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.speed.run(state, effects);
+    const speed = this.speed.getInteger(0);
+    const delta = (hashPair(state.timeMs, 0) % (speed + 1)) - speed / 2;
+    this.value = clamp(Math.round(this.value + delta * state.deltaMsF / 1000), 0, PROFFIE_MAX);
+  }
+
+  getInteger(_led: number): number { return this.value; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.speed]; }
+}
+
+// ─── StrobeF<FREQUENCY, PULSE_MILLIS> ───
+// Strobe function — MAX during pulse, 0 otherwise.
+export class StrobeFTemplate extends BaseStyleTemplate {
+  private readonly frequency: StyleTemplate;
+  private readonly pulseMs: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.frequency = args[0]!;
+    this.pulseMs = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.frequency.run(state, effects);
+    this.pulseMs.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    const freq = Math.max(1, this.frequency.getInteger(0));
+    const pulseMs = this.pulseMs.getInteger(0);
+    const periodMs = 1000000 / freq; // frequency is in mHz
+    const phase = (this.state?.timeMs ?? 0) % periodMs;
+    return phase < pulseMs ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.frequency, this.pulseMs]; }
+}
+
+// ─── BlinkingF<PERIOD, DUTY_CYCLE> ───
+// Blink function — MAX for duty_cycle portion of period, 0 otherwise.
+export class BlinkingFTemplate extends BaseStyleTemplate {
+  private readonly period: StyleTemplate;
+  private readonly dutyCycle: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.period = args[0]!;
+    this.dutyCycle = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.period.run(state, effects);
+    this.dutyCycle.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    const period = Math.max(1, this.period.getInteger(0));
+    const duty = this.dutyCycle.getInteger(0);
+    const phase = (this.state?.timeMs ?? 0) % period;
+    const threshold = period * duty / PROFFIE_MAX;
+    return phase < threshold ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.period, this.dutyCycle]; }
+}
+
+// ─── HumpFlickerFX<SPEED> ───
+// Hump flicker as a function returning 0..32768 per LED.
+export class HumpFlickerFXTemplate extends BaseStyleTemplate {
+  private readonly speed: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.speed = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.speed.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const speed = Math.max(1, this.speed.getInteger(0));
+    const t = (this.state?.timeMs ?? 0) * speed / 1000;
+    const h = hashPair(Math.floor(t), led);
+    // Smooth hump shape via sine
+    const frac = (t % 1);
+    const hump = Math.sin(frac * Math.PI);
+    return clamp(Math.round((h % PROFFIE_MAX) * hump), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.speed]; }
+}
+
+// ─── OnSparkF<MILLIS> ───
+// On-spark function — returns MAX on ignition, decays to 0 over MILLIS.
+export class OnSparkFTemplate extends BaseStyleTemplate {
+  private readonly duration: StyleTemplate;
+  private sparkStart = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.duration = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.duration.run(state, effects);
+    if (state.isOn && this.sparkStart < 0) {
+      this.sparkStart = state.timeMs;
+    } else if (!state.isOn) {
+      this.sparkStart = -1;
+    }
+  }
+
+  getInteger(_led: number): number {
+    if (this.sparkStart < 0 || !this.state) return 0;
+    const dur = Math.max(1, this.duration.getInteger(0));
+    const elapsed = this.state.timeMs - this.sparkStart;
+    if (elapsed >= dur) return 0;
+    return clamp(Math.round(PROFFIE_MAX * (1 - elapsed / dur)), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.duration]; }
+}
+
+// ─── RandomBlinkF<PERIOD> ───
+// Random blink — each LED independently blinks on/off with random phase.
+export class RandomBlinkFTemplate extends BaseStyleTemplate {
+  private readonly period: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.period = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.period.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const period = Math.max(1, this.period.getInteger(0));
+    const phase = hashPair(led, 9999) % period;
+    const t = ((this.state?.timeMs ?? 0) + phase) % period;
+    return t < period / 2 ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.period]; }
+}
+
+// ─── InOutFunc<OUT_MILLIS, IN_MILLIS> ───
+// Returns position along ignition/retraction progress as 0..32768.
+export class InOutFuncTemplate extends BaseStyleTemplate {
+  private readonly outMs: StyleTemplate;
+  private readonly inMs: StyleTemplate;
+  private progress = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.outMs = args[0]!;
+    this.inMs = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.outMs.run(state, effects);
+    this.inMs.run(state, effects);
+    const outMs = Math.max(1, this.outMs.getInteger(0));
+    const inMs = Math.max(1, this.inMs.getInteger(0));
+    if (state.isOn) {
+      this.progress = Math.min(1, this.progress + state.deltaMsF / outMs);
+    } else {
+      this.progress = Math.max(0, this.progress - state.deltaMsF / inMs);
+    }
+  }
+
+  getInteger(_led: number): number {
+    return clamp(Math.round(this.progress * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.outMs, this.inMs]; }
+}
+
+// ─── Trigger<EFFECT, MILLIS, OUT_MILLIS, OFF_MILLIS> ───
+// Returns MAX on effect trigger, ramps according to parameters.
+export class TriggerTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    // Simplified: return 0 when no effect is active
+    return 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
+
+// ─── BulletCountF<> ───
+// Returns blaster bullet count (stub for saber context).
+export class BulletCountFTemplate extends BaseStyleTemplate {
+  constructor(_args: StyleTemplate[]) { super(); }
+  run(state: BladeState, effects: EffectSystem): void { super.run(state, effects); }
+  getInteger(_led: number): number { return PROFFIE_MAX; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── BlasterChargeF<CHARGE_MILLIS> ───
+// Returns blaster charge level as 0..32768 (stub — always full).
+export class BlasterChargeFTemplate extends BaseStyleTemplate {
+  private readonly chargeMs: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.chargeMs = args[0] ?? { run() {}, getInteger() { return 2000; }, getColor() { return BLACK; }, getChildren() { return []; } } as StyleTemplate;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.chargeMs.run(state, effects);
+  }
+
+  getInteger(_led: number): number { return PROFFIE_MAX; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.chargeMs]; }
+}
+
+// ─── BlasterModeF<> ───
+// Returns blaster mode as integer (stub — always 0).
+export class BlasterModeFTemplate extends BaseStyleTemplate {
+  constructor(_args: StyleTemplate[]) { super(); }
+  run(state: BladeState, effects: EffectSystem): void { super.run(state, effects); }
+  getInteger(_led: number): number { return 0; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── MarbleF<OFFSET, FRICTION, ACCELERATION, GRAVITY> ───
+// Marble noise function — physics-based position simulation.
+export class MarbleFTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+  private position = PROFFIE_MAX / 2;
+  private velocity = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+    const friction = this.args[1]?.getInteger(0) ?? 100;
+    const accel = this.args[2]?.getInteger(0) ?? 200;
+    const gravity = this.args[3]?.getInteger(0) ?? 0;
+    const dt = state.deltaMsF / 1000;
+    // Apply physics: acceleration from swing, gravity, and friction
+    const force = (state.swingSpeed / PROFFIE_MAX) * accel - (gravity / PROFFIE_MAX) * 100;
+    this.velocity = this.velocity * (1 - friction / PROFFIE_MAX * dt) + force * dt;
+    this.position = clamp(Math.round(this.position + this.velocity * dt * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+
+  getInteger(_led: number): number { return this.position; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
