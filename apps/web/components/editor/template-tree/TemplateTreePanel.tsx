@@ -22,6 +22,11 @@ import { TemplateTreeNode } from './TemplateTreeNode';
 import {
   templateNodeToString,
   updateNodeAtPath,
+  getNodeAtPath,
+  moveChildAtPath,
+  insertChildAtPath,
+  removeChildAtPath,
+  duplicateChildAtPath,
 } from '../../../lib/templateSerializer';
 
 // ─── Node statistics ─
@@ -161,6 +166,54 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
     [parseResult.node, updateConfig],
   );
 
+  // ─── Phase 5C: layer operations ─
+  //
+  // Move, add, remove, and duplicate children within Layers<> nodes.
+  // Same flow as Phase 5D edits: AST update → serialize → store write.
+
+  const handleMoveChild = useCallback(
+    (parentPath: number[], fromIndex: number, toIndex: number) => {
+      const currentNode = parseResult.node;
+      if (!currentNode) return;
+      const updatedRoot = moveChildAtPath(currentNode, parentPath, fromIndex, toIndex);
+      updateConfig({ importedRawCode: templateNodeToString(updatedRoot) });
+    },
+    [parseResult.node, updateConfig],
+  );
+
+  const handleRemoveChild = useCallback(
+    (parentPath: number[], childIndex: number) => {
+      const currentNode = parseResult.node;
+      if (!currentNode) return;
+      const updatedRoot = removeChildAtPath(currentNode, parentPath, childIndex);
+      updateConfig({ importedRawCode: templateNodeToString(updatedRoot) });
+    },
+    [parseResult.node, updateConfig],
+  );
+
+  const handleDuplicateChild = useCallback(
+    (parentPath: number[], childIndex: number) => {
+      const currentNode = parseResult.node;
+      if (!currentNode) return;
+      const updatedRoot = duplicateChildAtPath(currentNode, parentPath, childIndex);
+      updateConfig({ importedRawCode: templateNodeToString(updatedRoot) });
+    },
+    [parseResult.node, updateConfig],
+  );
+
+  const handleAddChild = useCallback(
+    (parentPath: number[], child: TemplateNode) => {
+      const currentNode = parseResult.node;
+      if (!currentNode) return;
+      // Insert at the end (after all existing children)
+      const parent = getNodeAtPath(currentNode, parentPath);
+      const insertAt = parent ? parent.args.length : 0;
+      const updatedRoot = insertChildAtPath(currentNode, parentPath, insertAt, child);
+      updateConfig({ importedRawCode: templateNodeToString(updatedRoot) });
+    },
+    [parseResult.node, updateConfig],
+  );
+
   // Editing is only available when reading from the store (not from prop)
   const isLiveEditable = !templateString && !!storeRawCode;
 
@@ -190,6 +243,10 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
           node={node}
           path={[]}
           onNodeChange={isLiveEditable ? handleNodeChange : undefined}
+          onMoveChild={isLiveEditable ? handleMoveChild : undefined}
+          onRemoveChild={isLiveEditable ? handleRemoveChild : undefined}
+          onDuplicateChild={isLiveEditable ? handleDuplicateChild : undefined}
+          onAddChild={isLiveEditable ? handleAddChild : undefined}
         />
       </div>
     </div>
