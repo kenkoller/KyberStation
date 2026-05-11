@@ -48,6 +48,48 @@ export const Violet = namedColor(238, 130, 238);
 export const Indigo = namedColor(75, 0, 130);
 export const Turquoise = namedColor(64, 224, 208);
 
+// ─── Extended Named Colors (CSS / ProffieOS) ───
+export const AliceBlue = namedColor(240, 248, 255);
+export const Aqua = namedColor(0, 255, 255);
+export const Aquamarine = namedColor(127, 255, 212);
+export const Azure = namedColor(240, 255, 255);
+export const Bisque = namedColor(255, 228, 196);
+export const BlanchedAlmond = namedColor(255, 235, 205);
+export const Chartreuse = namedColor(127, 255, 0);
+export const Cornsilk = namedColor(255, 248, 220);
+export const DarkOrange = namedColor(255, 140, 0);
+export const DeepPink = namedColor(255, 20, 147);
+export const FloralWhite = namedColor(255, 250, 240);
+export const ForestGreen = namedColor(34, 139, 34);
+export const Fuchsia = namedColor(255, 0, 255);
+export const GhostWhite = namedColor(248, 248, 255);
+export const GreenYellow = namedColor(173, 255, 47);
+export const HoneyDew = namedColor(240, 255, 240);
+export const HotPink = namedColor(255, 105, 180);
+export const Ivory = namedColor(255, 255, 240);
+export const LavenderBlush = namedColor(255, 240, 245);
+export const LemonChiffon = namedColor(255, 250, 205);
+export const LightCyan = namedColor(224, 255, 255);
+export const LightPink = namedColor(255, 182, 193);
+export const LightSalmon = namedColor(255, 160, 122);
+export const LightSkyBlue = namedColor(135, 206, 250);
+export const LightYellow = namedColor(255, 255, 224);
+export const MintCream = namedColor(245, 255, 250);
+export const MistyRose = namedColor(255, 228, 225);
+export const Moccasin = namedColor(255, 228, 181);
+export const NavajoWhite = namedColor(255, 222, 173);
+export const PaleGreen = namedColor(152, 251, 152);
+export const PapayaWhip = namedColor(255, 239, 213);
+export const PeachPuff = namedColor(255, 218, 185);
+export const RoyalBlue = namedColor(65, 105, 225);
+export const SeaShell = namedColor(255, 245, 238);
+export const Snow = namedColor(255, 250, 250);
+export const SpringGreen = namedColor(0, 255, 127);
+export const SteelBlue = namedColor(70, 130, 180);
+
+// ─── ProffieOS Custom Named Colors ───
+export const Amber = namedColor(255, 191, 0);
+
 // ─── Rgb<r, g, b> ───
 
 export class RgbTemplate extends BaseStyleTemplate {

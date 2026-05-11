@@ -45,8 +45,8 @@ describe('registry gap templates', () => {
     }
   });
 
-  it('registry count increased by 60 (from 153 to 213)', () => {
-    expect(registrySize()).toBe(213);
+  it('registry count increased by 109 (from 153 to 262)', () => {
+    expect(registrySize()).toBe(262);
   });
 
   // ─── PulsingF ───

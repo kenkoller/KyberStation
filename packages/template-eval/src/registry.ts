@@ -11,6 +11,14 @@ import {
   DeepSkyBlue, DodgerBlue, Purple, Brown, Gray, Silver, Gold, Lime,
   Maroon, Navy, Olive, Teal, Crimson, Coral, Salmon, Tomato, Violet,
   Indigo, Turquoise,
+  // Extended CSS / ProffieOS named colors
+  AliceBlue, Aqua, Aquamarine, Azure, Bisque, BlanchedAlmond,
+  Chartreuse, Cornsilk, DarkOrange, DeepPink, FloralWhite, ForestGreen,
+  Fuchsia, GhostWhite, GreenYellow, HoneyDew, HotPink, Ivory,
+  LavenderBlush, LemonChiffon, LightCyan, LightPink, LightSalmon,
+  LightSkyBlue, LightYellow, MintCream, MistyRose, Moccasin,
+  NavajoWhite, PaleGreen, PapayaWhip, PeachPuff, RoyalBlue, SeaShell,
+  Snow, SpringGreen, SteelBlue, Amber,
   RgbTemplate, Rgb16Template, HueTemplate, MixTemplate,
   GradientTemplate, RainbowTemplate, RgbCycleTemplate,
   RotateColorsXTemplate, ColorChangeTemplate, ColorSelectTemplate,
@@ -36,6 +44,9 @@ import {
   SparkleFTemplate, RemapTemplate,
   IsBetweenTemplate, IncrementModuloTemplate, CircularSectionFTemplate,
   TwistAccelerationTemplate, IntSelectTemplate, BlastFTemplate,
+  DivideTemplate, SubtractTemplate, ThresholdPulseFTemplate,
+  RampFTemplate, LockupPulseFTemplate, IncrementFTemplate,
+  SliceFTemplate, IgnitionDelayTemplate, RetractionDelayTemplate,
 } from './templates/functions.js';
 
 // Style templates
@@ -136,6 +147,46 @@ registerNamedColor('Violet', Violet);
 registerNamedColor('Indigo', Indigo);
 registerNamedColor('Turquoise', Turquoise);
 
+// ─── Extended Named Colors (CSS / ProffieOS) ───
+registerNamedColor('AliceBlue', AliceBlue);
+registerNamedColor('Amber', Amber);
+registerNamedColor('Aqua', Aqua);
+registerNamedColor('Aquamarine', Aquamarine);
+registerNamedColor('Azure', Azure);
+registerNamedColor('Bisque', Bisque);
+registerNamedColor('BlanchedAlmond', BlanchedAlmond);
+registerNamedColor('Chartreuse', Chartreuse);
+registerNamedColor('Cornsilk', Cornsilk);
+registerNamedColor('DarkOrange', DarkOrange);
+registerNamedColor('DeepPink', DeepPink);
+registerNamedColor('FloralWhite', FloralWhite);
+registerNamedColor('ForestGreen', ForestGreen);
+registerNamedColor('Fuchsia', Fuchsia);
+registerNamedColor('GhostWhite', GhostWhite);
+registerNamedColor('GreenYellow', GreenYellow);
+registerNamedColor('HoneyDew', HoneyDew);
+registerNamedColor('HotPink', HotPink);
+registerNamedColor('Ivory', Ivory);
+registerNamedColor('LavenderBlush', LavenderBlush);
+registerNamedColor('LemonChiffon', LemonChiffon);
+registerNamedColor('LightCyan', LightCyan);
+registerNamedColor('LightPink', LightPink);
+registerNamedColor('LightSalmon', LightSalmon);
+registerNamedColor('LightSkyBlue', LightSkyBlue);
+registerNamedColor('LightYellow', LightYellow);
+registerNamedColor('MintCream', MintCream);
+registerNamedColor('MistyRose', MistyRose);
+registerNamedColor('Moccasin', Moccasin);
+registerNamedColor('NavajoWhite', NavajoWhite);
+registerNamedColor('PaleGreen', PaleGreen);
+registerNamedColor('PapayaWhip', PapayaWhip);
+registerNamedColor('PeachPuff', PeachPuff);
+registerNamedColor('RoyalBlue', RoyalBlue);
+registerNamedColor('SeaShell', SeaShell);
+registerNamedColor('Snow', Snow);
+registerNamedColor('SpringGreen', SpringGreen);
+registerNamedColor('SteelBlue', SteelBlue);
+
 // ─── Color Templates ───
 registerClass('Rgb', RgbTemplate);
 registerClass('Rgb16', Rgb16Template);
@@ -146,6 +197,7 @@ registerClass('Rainbow', RainbowTemplate);
 registerClass('RgbCycle', RgbCycleTemplate);
 registerClass('RotateColorsX', RotateColorsXTemplate);
 registerClass('ColorChange', ColorChangeTemplate);
+registerClass('ColorChangeL', ColorChangeTemplate);
 registerClass('ColorSelect', ColorSelectTemplate);
 registerClass('AlphaL', AlphaLTemplate);
 registerClass('RgbArg', RgbArgTemplate);
@@ -210,6 +262,16 @@ registerClass('IntSelect', IntSelectTemplate);
 registerClass('IntSelectX', IntSelectTemplate);
 registerClass('BlastF', BlastFTemplate);
 registerClass('BlastFadeoutF', BlastFTemplate);
+registerClass('Divide', DivideTemplate);
+registerClass('Subtract', SubtractTemplate);
+registerClass('ThresholdPulseF', ThresholdPulseFTemplate);
+registerClass('RampF', RampFTemplate);
+registerClass('LockupPulseF', LockupPulseFTemplate);
+registerClass('IncrementF', IncrementFTemplate);
+registerClass('IncrementModuloF', IncrementFTemplate);
+registerClass('SliceF', SliceFTemplate);
+registerClass('IgnitionDelay', IgnitionDelayTemplate);
+registerClass('RetractionDelay', RetractionDelayTemplate);
 
 // ─── Style Templates ───
 registerClass('Layers', LayersTemplate);
