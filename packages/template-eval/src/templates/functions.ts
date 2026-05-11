@@ -1863,3 +1863,43 @@ export class MarbleFTemplate extends BaseStyleTemplate {
   getColor(_led: number): Color { return BLACK; }
   getChildren(): StyleTemplate[] { return [...this.args]; }
 }
+
+// ─── AnalogReadPinF<PIN> ───
+// Reads an analog pin value (stub — always returns midpoint in simulator).
+export class AnalogReadPinFTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number { return PROFFIE_MAX / 2; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
+
+// ─── ReadPinF<PIN, THRESHOLD> ───
+// Reads a digital pin value (stub — always returns 0 in simulator).
+export class ReadPinFTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number { return 0; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}

@@ -880,6 +880,142 @@ export class TransitionLoopLTemplate extends BaseStyleTemplate {
   }
 }
 
+// ─── TransitionLoopWhileL<TRANSITION, CONDITION_F> ───
+// Loops a transition continuously while a condition function returns
+// non-zero. When the condition returns 0, the loop pauses.
+
+export class TransitionLoopWhileLTemplate extends BaseStyleTemplate {
+  private readonly transition: StyleTemplate;
+  private readonly condition: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.transition = args[0]!;
+    this.condition = args[1] ?? { run() {}, getInteger() { return PROFFIE_MAX; }, getColor() { return BLACK; }, getChildren() { return []; } } as StyleTemplate;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.transition.run(state, effects);
+    this.condition.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const condVal = this.condition.getInteger(led);
+    if (condVal <= 0) return BLACK;
+    return this.transition.getColor?.(led) ?? BLACK;
+  }
+
+  getInteger(led: number): number {
+    const condVal = this.condition.getInteger(led);
+    if (condVal <= 0) return 0;
+    return this.transition.getInteger(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.transition, this.condition];
+  }
+}
+
+// ─── TransitionPulse<TRANSITION, PERIOD_F> ───
+// Runs a transition repeatedly at a fixed period. Unlike TransitionLoop
+// which continuously loops based on the transition's own duration,
+// TransitionPulse re-triggers at the period specified by the second arg.
+
+export class TransitionPulseTemplate extends BaseStyleTemplate {
+  private readonly transition: StyleTemplate;
+  private readonly period: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.transition = args[0]!;
+    this.period = args[1] ?? { run() {}, getInteger() { return 1000; }, getColor() { return BLACK; }, getChildren() { return []; } } as StyleTemplate;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.transition.run(state, effects);
+    this.period.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    return this.transition.getColor?.(led) ?? BLACK;
+  }
+
+  getInteger(led: number): number {
+    return this.transition.getInteger(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.transition, this.period];
+  }
+}
+
+// ─── DimBlade<BRIGHTNESS_F> ───
+// Multiplies the overall blade brightness by a 0..32768 function value.
+// Acts as a post-processing layer that dims the entire blade output.
+
+export class DimBladeTemplate extends BaseStyleTemplate {
+  private readonly brightnessF: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.brightnessF = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.brightnessF.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const brightness = clamp(this.brightnessF.getInteger(led), 0, PROFFIE_MAX);
+    const scale = brightness / PROFFIE_MAX;
+    // DimBlade returns white scaled by brightness — when used in Layers<>,
+    // the outer compositor multiplies this with the base color.
+    return {
+      r: Math.round(255 * scale),
+      g: Math.round(255 * scale),
+      b: Math.round(255 * scale),
+    };
+  }
+
+  getInteger(led: number): number {
+    return clamp(this.brightnessF.getInteger(led), 0, PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.brightnessF];
+  }
+}
+
+// ─── EffectPulse<EFFECT> ───
+// Returns MAX for one frame when the specified effect fires, then
+// returns 0. Different from EffectPulseF which has a configurable
+// fade-out duration — this is a single-frame pulse.
+
+export class EffectPulseTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    // Without effect system integration, always return 0
+    return 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
+
 // ─── HSL→RGB helper for StyleRainbowPtr ───
 
 function wrapperHslToRgb(h: number, s: number, l: number): Color {

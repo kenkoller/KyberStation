@@ -51,6 +51,7 @@ import {
   HumpFlickerFXTemplate, OnSparkFTemplate, RandomBlinkFTemplate,
   InOutFuncTemplate, TriggerTemplate, BulletCountFTemplate,
   BlasterChargeFTemplate, BlasterModeFTemplate, MarbleFTemplate,
+  AnalogReadPinFTemplate, ReadPinFTemplate,
 } from './templates/functions.js';
 
 // Style templates
@@ -92,6 +93,7 @@ import {
   TrDelayXTemplate, TrDoEffectTemplate, TrDoEffectAlwaysXTemplate,
   TrSelectTemplate, TrSparkXTemplate, TrWipeSparkTipTemplate,
   TrWipeSparkTipXTemplate,
+  TrBlinkTemplate, TrCenterWipeSparkTemplate,
 } from './templates/transitions.js';
 
 // Wrapper templates
@@ -102,6 +104,8 @@ import {
   StylePtrTemplate, StyleFirePtrTemplate, StyleRainbowPtrTemplate,
   StyleStrobePtrTemplate, InOutSparkTipLTemplate,
   TransitionEffectTemplate, TransitionLoopLTemplate,
+  TransitionLoopWhileLTemplate, TransitionPulseTemplate,
+  DimBladeTemplate, EffectPulseTemplate,
 } from './templates/wrappers.js';
 
 type TemplateClass = new (args: StyleTemplate[]) => StyleTemplate;
@@ -298,6 +302,10 @@ registerClass('BulletCountF', BulletCountFTemplate);
 registerClass('BlasterChargeF', BlasterChargeFTemplate);
 registerClass('BlasterModeF', BlasterModeFTemplate);
 registerClass('MarbleF', MarbleFTemplate);
+registerClass('AnalogReadPinF', AnalogReadPinFTemplate);
+registerClass('ReadPinF', ReadPinFTemplate);
+registerClass('OnsparkF', OnSparkFTemplate);
+registerClass('OriginalBlastF', BlastFTemplate);
 
 // ─── Style Templates ───
 registerClass('Layers', LayersTemplate);
@@ -414,6 +422,10 @@ registerClass('TrColorCycle', TrColorCycleXTemplate);
 registerClass('TrLoop', TransitionLoopTemplate);
 registerClass('TrRandom', TrSelectTemplate);
 registerClass('TrRandomX', TrSelectTemplate);
+registerClass('TrBlink', TrBlinkTemplate);
+registerClass('TrBlinkX', TrBlinkTemplate);
+registerClass('TrCenterWipeSpark', TrCenterWipeSparkTemplate);
+registerClass('TrCenterWipeSparkX', TrCenterWipeSparkTemplate);
 
 // ─── Wrapper Templates ───
 registerClass('InOutTrL', InOutTrLTemplate);
@@ -438,6 +450,11 @@ registerClass('ChargingStylePtr', StylePtrTemplate);
 registerClass('Sequence', EffectSequenceTemplate);
 registerClass('SequenceX', EffectSequenceTemplate);
 registerClass('ColorChangeLX', ColorChangeTemplate);
+registerClass('TransitionLoopWhileL', TransitionLoopWhileLTemplate);
+registerClass('TransitionPulse', TransitionPulseTemplate);
+registerClass('TransitionPulseL', TransitionPulseTemplate);
+registerClass('DimBlade', DimBladeTemplate);
+registerClass('EffectPulse', EffectPulseTemplate);
 
 /**
  * Look up a template class/factory by name.

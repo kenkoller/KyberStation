@@ -1271,3 +1271,120 @@ export class TrWipeSparkTipXTemplate extends BaseStyleTemplate {
     return [this.durationFunc, this.sparkColor];
   }
 }
+
+// ─── TrBlink<MILLIS, ONMS, OFFMS> ───
+// Blink transition — alternates between fully transitioned and not,
+// producing a blinking on/off pattern over the transition duration.
+
+export class TrBlinkTemplate extends BaseStyleTemplate {
+  private readonly durationMs: StyleTemplate;
+  private readonly onMs: StyleTemplate;
+  private readonly offMs: StyleTemplate;
+  private startTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.durationMs = args[0]!;
+    this.onMs = args[1] ?? { run() {}, getInteger() { return 100; }, getColor() { return BLACK; }, getChildren() { return []; } } as StyleTemplate;
+    this.offMs = args[2] ?? { run() {}, getInteger() { return 100; }, getColor() { return BLACK; }, getChildren() { return []; } } as StyleTemplate;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.durationMs.run(state, effects);
+    this.onMs.run(state, effects);
+    this.offMs.run(state, effects);
+    if (this.startTime < 0) {
+      this.startTime = state.timeMs;
+    }
+  }
+
+  getInteger(led: number): number {
+    const duration = this.durationMs.getInteger(led);
+    if (duration <= 0) return PROFFIE_MAX;
+    const elapsed = this.state.timeMs - this.startTime;
+    if (elapsed >= duration) return PROFFIE_MAX;
+    const onMs = Math.max(1, this.onMs.getInteger(led));
+    const offMs = Math.max(1, this.offMs.getInteger(led));
+    const period = onMs + offMs;
+    const phase = elapsed % period;
+    return phase < onMs ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.durationMs, this.onMs, this.offMs]; }
+}
+
+// ─── TrCenterWipeSpark<MILLIS, SPARK_COLOR> ───
+// Center-out wipe transition with spark trail. Wipe starts from the
+// center of the blade and extends toward both ends simultaneously,
+// with random spark pixels near the wipe front.
+
+export class TrCenterWipeSparkTemplate extends BaseStyleTemplate {
+  private readonly durationFunc: StyleTemplate;
+  private readonly sparkColor: StyleTemplate;
+  private startTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.durationFunc = args[0]!;
+    this.sparkColor = args[1] ?? { run() {}, getColor() { return { r: 255, g: 255, b: 255 }; }, getInteger() { return PROFFIE_MAX; }, getChildren() { return []; } } as StyleTemplate;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.durationFunc.run(state, effects);
+    this.sparkColor.run(state, effects);
+    if (this.startTime < 0) {
+      this.startTime = state.timeMs;
+    }
+  }
+
+  getInteger(led: number): number {
+    const durationMs = this.durationFunc.getInteger(led);
+    if (durationMs <= 0) return PROFFIE_MAX;
+    const numLeds = this.state.numLeds || 144;
+    const elapsed = this.state.timeMs - this.startTime;
+    const progress = clamp(elapsed / durationMs, 0, 1);
+    const center = (numLeds - 1) / 2;
+    const maxDist = center;
+    const distFromCenter = Math.abs(led - center) / Math.max(1, maxDist);
+
+    // Wipe extends outward from center
+    if (distFromCenter <= progress) return PROFFIE_MAX;
+    if (distFromCenter > progress + 0.05) return 0;
+    const edge = (distFromCenter - progress) / 0.05;
+    return Math.round((1 - edge) * PROFFIE_MAX);
+  }
+
+  getColor(led: number): Color {
+    const durationMs = this.durationFunc.getInteger(led);
+    if (durationMs <= 0) return BLACK;
+    const numLeds = this.state.numLeds || 144;
+    const elapsed = this.state.timeMs - this.startTime;
+    const progress = clamp(elapsed / durationMs, 0, 1);
+    const center = (numLeds - 1) / 2;
+    const maxDist = center;
+    const distFromCenter = Math.abs(led - center) / Math.max(1, maxDist);
+
+    const sparkZoneWidth = 0.10;
+    const distFromFront = distFromCenter - progress;
+    if (distFromFront > 0 && distFromFront < sparkZoneWidth && progress < 1) {
+      const sparkHash = hashPair(led, Math.floor(this.state.timeMs / 20));
+      if (sparkHash > 0.6) {
+        const proximity = 1 - distFromFront / sparkZoneWidth;
+        const sparkC = this.sparkColor.getColor(led);
+        return {
+          r: Math.round(sparkC.r * proximity * sparkHash),
+          g: Math.round(sparkC.g * proximity * sparkHash),
+          b: Math.round(sparkC.b * proximity * sparkHash),
+        };
+      }
+    }
+    return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.durationFunc, this.sparkColor];
+  }
+}
