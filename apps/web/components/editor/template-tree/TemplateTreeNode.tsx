@@ -170,6 +170,16 @@ export interface TemplateTreeNodeProps {
   path?: number[];
   /** Callback when a node is edited. Receives the path and the new node. */
   onNodeChange?: (path: number[], newNode: TemplateNode) => void;
+  /** Move a child within a Layers<> node. parentPath + from/to indices. */
+  onMoveChild?: (parentPath: number[], fromIndex: number, toIndex: number) => void;
+  /** Remove a child from a Layers<> node. */
+  onRemoveChild?: (parentPath: number[], childIndex: number) => void;
+  /** Duplicate a child in a Layers<> node. */
+  onDuplicateChild?: (parentPath: number[], childIndex: number) => void;
+  /** Add a new child to a Layers<> node. */
+  onAddChild?: (parentPath: number[], child: TemplateNode) => void;
+  /** Total sibling count (for move up/down boundary logic). */
+  siblingCount?: number;
 }
 
 export function TemplateTreeNode({
@@ -179,10 +189,23 @@ export function TemplateTreeNode({
   argIndex,
   path,
   onNodeChange,
+  onMoveChild,
+  onRemoveChild,
+  onDuplicateChild,
+  onAddChild,
+  siblingCount,
 }: TemplateTreeNodeProps) {
   const hasChildren = node.args.length > 0;
   const isLiteral = isIntegerLiteral(node.name);
   const isEditable = !!onNodeChange;
+
+  // Is this node a Layers<> container? Show layer controls on children.
+  const isLayersNode = node.name === 'Layers';
+  // Is this node a child of a Layers<> container?
+  const isLayerChild = parentName === 'Layers' && argIndex !== undefined;
+  const canMoveUp = isLayerChild && argIndex > 0;
+  const canMoveDown = isLayerChild && siblingCount !== undefined && argIndex < siblingCount - 1;
+  const canRemove = isLayerChild && siblingCount !== undefined && siblingCount > 1;
 
   // Auto-collapse deep nodes; top-level nodes start expanded
   const [collapsed, setCollapsed] = useState(depth >= AUTO_COLLAPSE_DEPTH);
@@ -350,6 +373,50 @@ export function TemplateTreeNode({
             {annotation}
           </span>
         )}
+
+        {/* Layer child controls — shown on hover */}
+        {isLayerChild && isEditable && (
+          <span className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pr-1">
+            {canMoveUp && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveChild?.(path!.slice(0, -1), argIndex!, argIndex! - 1); }}
+                className="w-4 h-4 flex items-center justify-center text-[10px] text-text-muted hover:text-text-primary hover:bg-bg-card/60 rounded"
+                title="Move layer up"
+                aria-label="Move layer up"
+              >
+                ↑
+              </button>
+            )}
+            {canMoveDown && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveChild?.(path!.slice(0, -1), argIndex!, argIndex! + 1); }}
+                className="w-4 h-4 flex items-center justify-center text-[10px] text-text-muted hover:text-text-primary hover:bg-bg-card/60 rounded"
+                title="Move layer down"
+                aria-label="Move layer down"
+              >
+                ↓
+              </button>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicateChild?.(path!.slice(0, -1), argIndex!); }}
+              className="w-4 h-4 flex items-center justify-center text-[10px] text-text-muted hover:text-text-primary hover:bg-bg-card/60 rounded"
+              title="Duplicate layer"
+              aria-label="Duplicate layer"
+            >
+              ⊕
+            </button>
+            {canRemove && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemoveChild?.(path!.slice(0, -1), argIndex!); }}
+                className="w-4 h-4 flex items-center justify-center text-[10px] text-status-error/70 hover:text-status-error hover:bg-bg-card/60 rounded"
+                title="Remove layer"
+                aria-label="Remove layer"
+              >
+                ×
+              </button>
+            )}
+          </span>
+        )}
       </div>
 
       {/* Recursive children */}
@@ -364,8 +431,27 @@ export function TemplateTreeNode({
               argIndex={i}
               path={[...(path ?? []), i]}
               onNodeChange={onNodeChange}
+              onMoveChild={onMoveChild}
+              onRemoveChild={onRemoveChild}
+              onDuplicateChild={onDuplicateChild}
+              onAddChild={onAddChild}
+              siblingCount={node.args.length}
             />
           ))}
+          {/* Add layer button at bottom of Layers<> children */}
+          {isLayersNode && isEditable && (
+            <div style={{ paddingLeft: (depth + 1) * 16 + 4 }}>
+              <button
+                onClick={() => onAddChild?.(path ?? [], { name: 'AlphaL', args: [{ name: 'White', args: [] }, { name: 'Int', args: [{ name: '0', args: [] }] }] })}
+                className="flex items-center gap-1 text-[10px] text-text-muted hover:text-accent py-0.5 px-1 rounded hover:bg-bg-card/40 transition-colors"
+                title="Add new layer — inserts AlphaL<White, Int<0>> (transparent overlay)"
+                aria-label="Add layer"
+              >
+                <span className="text-xs">+</span>
+                <span>Add layer</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

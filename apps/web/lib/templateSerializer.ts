@@ -67,6 +67,120 @@ export function updateNodeAtPath(
   };
 }
 
+// ─── Path Navigation ─
+
+/**
+ * Retrieve a node at the given index path.
+ * Returns null if the path is invalid.
+ */
+export function getNodeAtPath(
+  root: TemplateNode,
+  path: number[],
+): TemplateNode | null {
+  let current: TemplateNode = root;
+  for (const idx of path) {
+    if (idx < 0 || idx >= current.args.length) return null;
+    current = current.args[idx];
+  }
+  return current;
+}
+
+// ─── Layer Operations (Phase 5C) ─
+
+/**
+ * Move a child of a Layers<> (or any parent) node from one position to another.
+ * Returns a new root with the child moved. If the path doesn't point to a valid
+ * parent or indices are out of bounds, returns the root unchanged.
+ *
+ * @param root       The AST root node.
+ * @param parentPath Index path to the parent node whose children to reorder.
+ * @param fromIndex  Current position of the child.
+ * @param toIndex    Target position to move the child to.
+ */
+export function moveChildAtPath(
+  root: TemplateNode,
+  parentPath: number[],
+  fromIndex: number,
+  toIndex: number,
+): TemplateNode {
+  if (fromIndex === toIndex) return root;
+  return updateNodeAtPath(root, parentPath, (parent) => {
+    const { args } = parent;
+    if (fromIndex < 0 || fromIndex >= args.length) return parent;
+    if (toIndex < 0 || toIndex >= args.length) return parent;
+    const newArgs = [...args];
+    const [moved] = newArgs.splice(fromIndex, 1);
+    newArgs.splice(toIndex, 0, moved);
+    return { ...parent, args: newArgs };
+  });
+}
+
+/**
+ * Insert a new child into a parent node at the given position.
+ *
+ * @param root       The AST root node.
+ * @param parentPath Index path to the parent node.
+ * @param insertAt   Position to insert (0 = before first, args.length = after last).
+ * @param child      The new TemplateNode to insert.
+ */
+export function insertChildAtPath(
+  root: TemplateNode,
+  parentPath: number[],
+  insertAt: number,
+  child: TemplateNode,
+): TemplateNode {
+  return updateNodeAtPath(root, parentPath, (parent) => {
+    const pos = Math.max(0, Math.min(insertAt, parent.args.length));
+    const newArgs = [...parent.args];
+    newArgs.splice(pos, 0, child);
+    return { ...parent, args: newArgs };
+  });
+}
+
+/**
+ * Remove a child from a parent node at the given index.
+ * Returns the root unchanged if the index is out of bounds.
+ *
+ * @param root       The AST root node.
+ * @param parentPath Index path to the parent node.
+ * @param childIndex Index of the child to remove.
+ */
+export function removeChildAtPath(
+  root: TemplateNode,
+  parentPath: number[],
+  childIndex: number,
+): TemplateNode {
+  return updateNodeAtPath(root, parentPath, (parent) => {
+    if (childIndex < 0 || childIndex >= parent.args.length) return parent;
+    // Layers<> must always have at least 1 child (base layer)
+    if (parent.name === 'Layers' && parent.args.length <= 1) return parent;
+    const newArgs = parent.args.filter((_, i) => i !== childIndex);
+    return { ...parent, args: newArgs };
+  });
+}
+
+/**
+ * Duplicate a child in a parent node (insert copy directly after the original).
+ *
+ * @param root       The AST root node.
+ * @param parentPath Index path to the parent node.
+ * @param childIndex Index of the child to duplicate.
+ */
+export function duplicateChildAtPath(
+  root: TemplateNode,
+  parentPath: number[],
+  childIndex: number,
+): TemplateNode {
+  return updateNodeAtPath(root, parentPath, (parent) => {
+    if (childIndex < 0 || childIndex >= parent.args.length) return parent;
+    const newArgs = [...parent.args];
+    // Deep clone the child to avoid shared references
+    const clone = JSON.parse(JSON.stringify(newArgs[childIndex]));
+    newArgs.splice(childIndex + 1, 0, clone);
+    return { ...parent, args: newArgs };
+  });
+}
+
 // ─── Color Conversion ─
 
 /**
