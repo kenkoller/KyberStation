@@ -684,6 +684,51 @@ export class EffectSequenceTemplate extends BaseStyleTemplate {
   }
 }
 
+// ─── EffectIncrement<Effect, DurationMs, MaxCycles, C1, C2, ...> ───
+// Like EffectSequence, but uses EffectIncrementF under the hood to
+// cycle through color children on each trigger of the given effect.
+// We treat it identically to EffectSequence for evaluation purposes.
+
+export class EffectIncrementTemplate extends BaseStyleTemplate {
+  private readonly colors: StyleTemplate[];
+  private currentIndex = 0;
+  private lastEventTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    // First 3 args: Effect, DurationMs, MaxCycles — skip them
+    this.colors = args.slice(3);
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const c of this.colors) c.run(state, effects);
+
+    // Advance on any effect event
+    const event = effects.getLastEffect('EFFECT_CLASH');
+    if (event && event.startTimeMs > this.lastEventTime) {
+      this.lastEventTime = event.startTimeMs;
+      if (this.colors.length > 0) {
+        this.currentIndex = (this.currentIndex + 1) % this.colors.length;
+      }
+    }
+  }
+
+  getColor(led: number): Color {
+    if (this.colors.length === 0) return BLACK;
+    return this.colors[this.currentIndex].getColor(led);
+  }
+
+  getInteger(led: number): number {
+    const c = this.getColor(led);
+    return Math.round((c.r + c.g + c.b) / 3 * PROFFIE_MAX / 255);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return this.colors;
+  }
+}
+
 // ─── MultiTransitionEffectL<...> ───
 // Convenience alias for TransitionEffectL with multiple phases.
 // For our purposes, behaves same as TransitionEffectL.

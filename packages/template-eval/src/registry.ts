@@ -85,7 +85,7 @@ import {
   ResponsiveLockupLTemplate, LockupTrLTemplate,
   ResponsiveStabLTemplate, ResponsiveDragLTemplate,
   ResponsiveLightningBlockLTemplate, ResponsiveMeltLTemplate,
-  TransitionEffectLTemplate, EffectSequenceTemplate,
+  TransitionEffectLTemplate, EffectSequenceTemplate, EffectIncrementTemplate,
   MultiTransitionEffectLTemplate,
   ResponsiveBlastFadeLTemplate, ResponsiveBlastWaveLTemplate,
 } from './templates/effects.js';
@@ -426,6 +426,7 @@ registerClass('ResponsiveMeltL', ResponsiveMeltLTemplate);
 registerClass('TransitionEffectL', TransitionEffectLTemplate);
 registerClass('MultiTransitionEffectL', MultiTransitionEffectLTemplate);
 registerClass('EffectSequence', EffectSequenceTemplate);
+registerClass('EffectIncrement', EffectIncrementTemplate);
 registerClass('ResponsiveBlastFadeL', ResponsiveBlastFadeLTemplate);
 registerClass('ResponsiveBlastWaveL', ResponsiveBlastWaveLTemplate);
 registerClass('ResponsiveBlastFadeLX', ResponsiveBlastFadeLTemplate);
