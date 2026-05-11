@@ -31,6 +31,7 @@ import {
   getLedTextureFromMaterial,
 } from './BladeMaterial';
 import { createHiltGeometry3D, createHiltMaterial } from './HiltGeometry3D';
+import { BladeBloom } from './BladeBloom';
 
 // ─── Glow Shell ─
 // A slightly larger, more transparent copy of the blade for outer glow
@@ -381,6 +382,7 @@ export function BladeScene3D({
           onBladeClick={onBladeClick}
           onBladeHold={onBladeHold}
         />
+        <BladeBloom />
       </Canvas>
     </div>
   );

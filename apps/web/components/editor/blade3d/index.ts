@@ -28,3 +28,6 @@ export {
   createHiltGeometry3D,
   createHiltMaterial,
 } from './HiltGeometry3D';
+
+export { BladeBloom } from './BladeBloom';
+export type { BladeBloomProps } from './BladeBloom';
