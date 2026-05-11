@@ -1388,3 +1388,119 @@ export class TrCenterWipeSparkTemplate extends BaseStyleTemplate {
     return [this.durationFunc, this.sparkColor];
   }
 }
+
+// ─── TrLoopN<N, TRANSITION> ───
+// Loop a transition N times, then complete.
+
+export class TrLoopNTemplate extends BaseStyleTemplate {
+  private readonly countArg: StyleTemplate;
+  private readonly transition: StyleTemplate;
+  private loopCount = 0;
+  private startTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.countArg = args[0]!;
+    this.transition = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.countArg.run(state, effects);
+    this.transition.run(state, effects);
+    if (this.startTime < 0) {
+      this.startTime = state.timeMs;
+      this.loopCount = Math.max(1, this.countArg.getInteger(0));
+    }
+  }
+
+  getInteger(led: number): number {
+    if (this.loopCount <= 0) return PROFFIE_MAX;
+    return this.transition.getInteger(led);
+  }
+
+  getColor(led: number): Color {
+    return this.transition.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.countArg, this.transition];
+  }
+}
+
+// ─── TrLoopUntil<CONDITION_F, TRANSITION, END_TRANSITION> ───
+// Loop first transition until condition is true, then run end transition.
+
+export class TrLoopUntilTemplate extends BaseStyleTemplate {
+  private readonly condition: StyleTemplate;
+  private readonly loopTr: StyleTemplate;
+  private readonly endTr: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.condition = args[0]!;
+    this.loopTr = args[1]!;
+    this.endTr = args[2] ?? args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.condition.run(state, effects);
+    this.loopTr.run(state, effects);
+    this.endTr.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const cond = this.condition.getInteger(led);
+    if (cond > 0) {
+      return this.endTr.getInteger(led);
+    }
+    return this.loopTr.getInteger(led);
+  }
+
+  getColor(led: number): Color {
+    const cond = this.condition.getInteger(led);
+    if (cond > 0) {
+      return this.endTr.getColor(led);
+    }
+    return this.loopTr.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.condition, this.loopTr, this.endTr];
+  }
+}
+
+// ─── TrSequence<TR1, TR2, ...> ───
+// Cycle through transitions in order (variadic).
+
+export class TrSequenceTemplate extends BaseStyleTemplate {
+  private readonly transitions: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.transitions = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const tr of this.transitions) tr.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    if (this.transitions.length === 0) return PROFFIE_MAX;
+    // Use time to step through transitions
+    const idx = Math.floor(this.state.timeMs / 500) % this.transitions.length;
+    return this.transitions[idx]!.getInteger(led);
+  }
+
+  getColor(led: number): Color {
+    if (this.transitions.length === 0) return BLACK;
+    const idx = Math.floor(this.state.timeMs / 500) % this.transitions.length;
+    return this.transitions[idx]!.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [...this.transitions];
+  }
+}

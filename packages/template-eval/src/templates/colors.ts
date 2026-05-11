@@ -90,6 +90,45 @@ export const SteelBlue = namedColor(70, 130, 180);
 // ─── ProffieOS Custom Named Colors ───
 export const Amber = namedColor(255, 191, 0);
 
+// ─── ProffieOS Extended Named Colors (Fett263 / ProffieOS color wheel) ───
+export const MossGreen = namedColor(138, 154, 91);
+export const ElectricPurple = namedColor(127, 0, 255);
+export const ElectricViolet = namedColor(71, 0, 255);
+export const ElectricLime = namedColor(156, 255, 0);
+export const CyberYellow = namedColor(255, 168, 0);
+export const CanaryYellow = namedColor(255, 221, 0);
+export const Flamingo = namedColor(255, 80, 154);
+export const VividViolet = namedColor(90, 0, 255);
+export const PsychedelicPurple = namedColor(186, 0, 255);
+export const HotMagenta = namedColor(255, 0, 156);
+export const BrutalPink = namedColor(255, 0, 128);
+export const NeonRose = namedColor(255, 0, 55);
+export const VividRaspberry = namedColor(255, 0, 38);
+export const HaltRed = namedColor(255, 0, 19);
+export const MoltenCore = namedColor(255, 24, 0);
+export const SafetyOrange = namedColor(255, 33, 0);
+export const OrangeJuice = namedColor(255, 55, 0);
+export const ImperialYellow = namedColor(255, 115, 0);
+export const SchoolBus = namedColor(255, 176, 0);
+export const SuperSaiyan = namedColor(255, 186, 0);
+export const Star = namedColor(255, 201, 0);
+export const Lemon = namedColor(255, 237, 0);
+export const ElectricBanana = namedColor(246, 255, 0);
+export const BusyBee = namedColor(231, 255, 0);
+export const ZeusBolt = namedColor(219, 255, 0);
+export const LimeZest = namedColor(186, 255, 0);
+export const Limoncello = namedColor(135, 255, 0);
+export const CathodeGreen = namedColor(0, 255, 22);
+export const MintyParadise = namedColor(0, 255, 128);
+export const PlungePool = namedColor(0, 255, 156);
+export const VibrantMint = namedColor(0, 255, 201);
+export const MasterSwordBlue = namedColor(0, 255, 219);
+export const BrainFreeze = namedColor(0, 219, 255);
+export const BlueRibbon = namedColor(0, 33, 255);
+export const RareBlue = namedColor(0, 13, 255);
+export const OverdueBlue = namedColor(13, 0, 255);
+export const ViolentViolet = namedColor(55, 0, 255);
+
 // ─── Rgb<r, g, b> ───
 
 export class RgbTemplate extends BaseStyleTemplate {
@@ -463,6 +502,164 @@ export class IntArgTemplate extends BaseStyleTemplate {
 
   getInteger(led: number): number {
     return this.defaultValue.getInteger(led);
+  }
+}
+
+// ─── PixelateX<F, COLOR1, COLOR2> ───
+// Pixelated mosaic between two colors. Each pixel block uses the function
+// value to decide color1 vs color2 based on position hash.
+
+export class PixelateXTemplate extends BaseStyleTemplate {
+  private readonly sizeFunc: StyleTemplate;
+  private readonly color1: StyleTemplate;
+  private readonly color2: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.sizeFunc = args[0]!;
+    this.color1 = args[1] ?? new (namedColor(255, 255, 255))();
+    this.color2 = args[2] ?? new (namedColor(0, 0, 0))();
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.sizeFunc.run(state, effects);
+    this.color1.run(state, effects);
+    this.color2.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const blockSize = Math.max(1, Math.round(this.sizeFunc.getInteger(led) * 144 / PROFFIE_MAX));
+    const blockIdx = Math.floor(led / blockSize);
+    // Simple hash to pick color per block
+    return (blockIdx % 2 === 0) ? this.color1.getColor(led) : this.color2.getColor(led);
+  }
+
+  getInteger(led: number): number {
+    const c = this.getColor(led);
+    return Math.round((c.r + c.g + c.b) / 3 * PROFFIE_MAX / 255);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.sizeFunc, this.color1, this.color2];
+  }
+}
+
+// ─── ColorSequence<MILLIS, COLOR1, COLOR2, ...> ───
+// Steps through colors in order at a fixed period.
+
+export class ColorSequenceTemplate extends BaseStyleTemplate {
+  private readonly periodMs: StyleTemplate;
+  private readonly colors: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.periodMs = args[0]!;
+    this.colors = args.slice(1);
+    if (this.colors.length === 0) {
+      this.colors = [new (namedColor(255, 255, 255))()];
+    }
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.periodMs.run(state, effects);
+    for (const c of this.colors) c.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const period = Math.max(1, this.periodMs.getInteger(led));
+    const idx = Math.floor(this.state.timeMs / period) % this.colors.length;
+    return this.colors[idx]!.getColor(led);
+  }
+
+  getInteger(led: number): number {
+    const c = this.getColor(led);
+    return Math.round((c.r + c.g + c.b) / 3 * PROFFIE_MAX / 255);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.periodMs, ...this.colors];
+  }
+}
+
+// ─── ColorCycle<COLOR, percentage, start, COLOR2, percentage2, start2, RPM> ───
+// Cycles a band of color along the blade at a given RPM.
+
+export class ColorCycleTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const color1 = this.args[0];
+    const pct1 = this.args[1]?.getInteger(0) ?? 50;
+    const color2 = this.args[3];
+    const rpm = this.args[6]?.getInteger(0) ?? 200;
+
+    // Fraction along blade
+    const pos = led / 144;
+    // Rotating phase
+    const phase = (this.state.timeMs * rpm / 60000) % 1;
+    const p = ((pos + phase) % 1);
+    const band1 = pct1 / 100;
+
+    if (p < band1) {
+      return color1 ? color1.getColor(led) : { r: 255, g: 255, b: 255 };
+    }
+    return color2 ? color2.getColor(led) : BLACK;
+  }
+
+  getInteger(led: number): number {
+    const c = this.getColor(led);
+    return Math.round((c.r + c.g + c.b) / 3 * PROFFIE_MAX / 255);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [...this.args];
+  }
+}
+
+// ─── RandomL<COLOR> ───
+// Random per-frame flicker overlay. Legacy alias for RandomFlickerL.
+
+export class RandomLTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0] ?? new (namedColor(255, 255, 255))();
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    // Random flicker: each LED has a random chance of showing the color
+    const hash = ((led * 2654435761 + Math.floor(this.state.timeMs)) & 0xFFFF) / 0xFFFF;
+    if (hash > 0.5) {
+      return this.color.getColor(led);
+    }
+    return BLACK;
+  }
+
+  getInteger(led: number): number {
+    const hash = ((led * 2654435761 + Math.floor(this.state.timeMs)) & 0xFFFF) / 0xFFFF;
+    return hash > 0.5 ? PROFFIE_MAX : 0;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
   }
 }
 

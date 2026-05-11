@@ -19,10 +19,20 @@ import {
   LightSkyBlue, LightYellow, MintCream, MistyRose, Moccasin,
   NavajoWhite, PaleGreen, PapayaWhip, PeachPuff, RoyalBlue, SeaShell,
   Snow, SpringGreen, SteelBlue, Amber,
+  // Extended ProffieOS color wheel colors
+  MossGreen, ElectricPurple, ElectricViolet, ElectricLime, CyberYellow,
+  CanaryYellow, Flamingo, VividViolet, PsychedelicPurple, HotMagenta,
+  BrutalPink, NeonRose, VividRaspberry, HaltRed, MoltenCore, SafetyOrange,
+  OrangeJuice, ImperialYellow, SchoolBus, SuperSaiyan, Star, Lemon,
+  ElectricBanana, BusyBee, ZeusBolt, LimeZest, Limoncello, CathodeGreen,
+  MintyParadise, PlungePool, VibrantMint, MasterSwordBlue, BrainFreeze,
+  BlueRibbon, RareBlue, OverdueBlue, ViolentViolet,
   RgbTemplate, Rgb16Template, HueTemplate, MixTemplate,
   GradientTemplate, RainbowTemplate, RgbCycleTemplate,
   RotateColorsXTemplate, ColorChangeTemplate, ColorSelectTemplate,
   AlphaLTemplate, RgbArgTemplate, IntArgTemplate,
+  PixelateXTemplate, ColorSequenceTemplate, ColorCycleTemplate,
+  RandomLTemplate,
 } from './templates/colors.js';
 
 // Function templates
@@ -94,6 +104,7 @@ import {
   TrSelectTemplate, TrSparkXTemplate, TrWipeSparkTipTemplate,
   TrWipeSparkTipXTemplate,
   TrBlinkTemplate, TrCenterWipeSparkTemplate,
+  TrLoopNTemplate, TrLoopUntilTemplate, TrSequenceTemplate,
 } from './templates/transitions.js';
 
 // Wrapper templates
@@ -106,6 +117,7 @@ import {
   TransitionEffectTemplate, TransitionLoopLTemplate,
   TransitionLoopWhileLTemplate, TransitionPulseTemplate,
   DimBladeTemplate, EffectPulseTemplate,
+  LengthFinderTemplate, DisplayStyleTemplate, ByteOrderStyleTemplate,
 } from './templates/wrappers.js';
 
 type TemplateClass = new (args: StyleTemplate[]) => StyleTemplate;
@@ -195,6 +207,45 @@ registerNamedColor('Snow', Snow);
 registerNamedColor('SpringGreen', SpringGreen);
 registerNamedColor('SteelBlue', SteelBlue);
 
+// ─── Extended ProffieOS Color Wheel Colors ───
+registerNamedColor('MossGreen', MossGreen);
+registerNamedColor('ElectricPurple', ElectricPurple);
+registerNamedColor('ElectricViolet', ElectricViolet);
+registerNamedColor('ElectricLime', ElectricLime);
+registerNamedColor('CyberYellow', CyberYellow);
+registerNamedColor('CanaryYellow', CanaryYellow);
+registerNamedColor('Flamingo', Flamingo);
+registerNamedColor('VividViolet', VividViolet);
+registerNamedColor('PsychedelicPurple', PsychedelicPurple);
+registerNamedColor('HotMagenta', HotMagenta);
+registerNamedColor('BrutalPink', BrutalPink);
+registerNamedColor('NeonRose', NeonRose);
+registerNamedColor('VividRaspberry', VividRaspberry);
+registerNamedColor('HaltRed', HaltRed);
+registerNamedColor('MoltenCore', MoltenCore);
+registerNamedColor('SafetyOrange', SafetyOrange);
+registerNamedColor('OrangeJuice', OrangeJuice);
+registerNamedColor('ImperialYellow', ImperialYellow);
+registerNamedColor('SchoolBus', SchoolBus);
+registerNamedColor('SuperSaiyan', SuperSaiyan);
+registerNamedColor('Star', Star);
+registerNamedColor('Lemon', Lemon);
+registerNamedColor('ElectricBanana', ElectricBanana);
+registerNamedColor('BusyBee', BusyBee);
+registerNamedColor('ZeusBolt', ZeusBolt);
+registerNamedColor('LimeZest', LimeZest);
+registerNamedColor('Limoncello', Limoncello);
+registerNamedColor('CathodeGreen', CathodeGreen);
+registerNamedColor('MintyParadise', MintyParadise);
+registerNamedColor('PlungePool', PlungePool);
+registerNamedColor('VibrantMint', VibrantMint);
+registerNamedColor('MasterSwordBlue', MasterSwordBlue);
+registerNamedColor('BrainFreeze', BrainFreeze);
+registerNamedColor('BlueRibbon', BlueRibbon);
+registerNamedColor('RareBlue', RareBlue);
+registerNamedColor('OverdueBlue', OverdueBlue);
+registerNamedColor('ViolentViolet', ViolentViolet);
+
 // ─── Color Templates ───
 registerClass('Rgb', RgbTemplate);
 registerClass('Rgb16', Rgb16Template);
@@ -210,6 +261,11 @@ registerClass('ColorSelect', ColorSelectTemplate);
 registerClass('AlphaL', AlphaLTemplate);
 registerClass('RgbArg', RgbArgTemplate);
 registerClass('IntArg', IntArgTemplate);
+registerClass('PixelateX', PixelateXTemplate);
+registerClass('Pixelate', PixelateXTemplate);
+registerClass('ColorSequence', ColorSequenceTemplate);
+registerClass('ColorCycle', ColorCycleTemplate);
+registerClass('RandomL', RandomLTemplate);
 
 // ─── Function Templates ───
 registerClass('Int', IntTemplate);
@@ -426,6 +482,11 @@ registerClass('TrBlink', TrBlinkTemplate);
 registerClass('TrBlinkX', TrBlinkTemplate);
 registerClass('TrCenterWipeSpark', TrCenterWipeSparkTemplate);
 registerClass('TrCenterWipeSparkX', TrCenterWipeSparkTemplate);
+registerClass('TrLoopN', TrLoopNTemplate);
+registerClass('TrLoopNX', TrLoopNTemplate);
+registerClass('TrLoopUntil', TrLoopUntilTemplate);
+registerClass('TrLoopUntilX', TrLoopUntilTemplate);
+registerClass('TrSequence', TrSequenceTemplate);
 
 // ─── Wrapper Templates ───
 registerClass('InOutTrL', InOutTrLTemplate);
@@ -455,6 +516,11 @@ registerClass('TransitionPulse', TransitionPulseTemplate);
 registerClass('TransitionPulseL', TransitionPulseTemplate);
 registerClass('DimBlade', DimBladeTemplate);
 registerClass('EffectPulse', EffectPulseTemplate);
+registerClass('LengthFinder', LengthFinderTemplate);
+registerClass('DisplayStyle', DisplayStyleTemplate);
+registerClass('ByteOrderStyle', ByteOrderStyleTemplate);
+registerClass('BlasterCharge', BlasterChargeFTemplate);
+registerClass('BulletCount', BulletCountFTemplate);
 
 /**
  * Look up a template class/factory by name.

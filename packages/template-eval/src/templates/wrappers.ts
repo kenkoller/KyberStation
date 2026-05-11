@@ -1016,6 +1016,99 @@ export class EffectPulseTemplate extends BaseStyleTemplate {
   getChildren(): StyleTemplate[] { return [...this.args]; }
 }
 
+// ─── LengthFinder<COLOR> ───
+// Diagnostic blade style that shows pixel count along the blade.
+// In the simulator we just pass through the color argument.
+
+export class LengthFinderTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    return this.color.getColor(led);
+  }
+
+  getInteger(led: number): number {
+    return this.color.getInteger(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
+}
+
+// ─── DisplayStyle<COLOR> ───
+// Display-only style wrapper (rare, used for OLED display).
+// Passes through the child color.
+
+export class DisplayStyleTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    return this.color.getColor(led);
+  }
+
+  getInteger(led: number): number {
+    return this.color.getInteger(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
+}
+
+// ─── ByteOrderStyle<BYTEORDER, COLOR> ───
+// Adjusts byte order for LED strip (GRB vs RGB etc).
+// In the simulator this is a no-op pass-through.
+
+export class ByteOrderStyleTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    // The actual color comes from the last arg (the style)
+    const style = this.args[this.args.length - 1];
+    return style ? style.getColor(led) : BLACK;
+  }
+
+  getInteger(led: number): number {
+    const style = this.args[this.args.length - 1];
+    return style ? style.getInteger(led) : 0;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [...this.args];
+  }
+}
+
 // ─── HSL→RGB helper for StyleRainbowPtr ───
 
 function wrapperHslToRgb(h: number, s: number, l: number): Color {
