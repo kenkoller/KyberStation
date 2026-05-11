@@ -695,7 +695,7 @@ export const useUIStore = create<UIStore>((set) => ({
   armedModulatorId: null,
   showStateGrid: false,
   bladeView3D: false,
-  hardwarePreview: false,
+  hardwarePreview: true,
   expandedAnalysisLayerId: 'rgb-luma',
   analysisRailWidth: clampRegion(
     'analysisRailWidth',
