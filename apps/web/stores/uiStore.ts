@@ -183,6 +183,22 @@ export interface UIStore {
   showStateGrid: boolean;
 
   /**
+   * Phase 2A — 3D blade view. When true, the center blade preview
+   * renders a Three.js R3F scene (`BladeScene3D`) instead of the 2D
+   * canvas (`BladeCanvas`). Both read the same engine LED buffer.
+   * Desktop only. Toggled via `[ 2D | 3D ]` pill in the view controls.
+   */
+  bladeView3D: boolean;
+
+  /**
+   * Hardware Preview mode. When true, the engine evaluates the
+   * generated ProffieOS code through template-eval for pixel-accurate
+   * rendering of what the real hardware will produce. This verifies
+   * that the codegen output matches the visualizer's approximation.
+   */
+  hardwarePreview: boolean;
+
+  /**
    * Which AnalysisRail layer is "expanded" below the pixel strip.
    * Defaults to `rgb-luma` on first load so the vertically-stacked
    * blade preview / pixel strip / detail graph reads like the prior
@@ -309,6 +325,10 @@ export interface UIStore {
   setArmedModulatorId: (id: string | null) => void;
   toggleStateGrid: () => void;
   setShowStateGrid: (on: boolean) => void;
+  toggleBladeView3D: () => void;
+  setBladeView3D: (on: boolean) => void;
+  toggleHardwarePreview: () => void;
+  setHardwarePreview: (on: boolean) => void;
   setExpandedAnalysisLayerId: (id: VisualizationLayerId | null) => void;
 
   // ── OV11 setters ──
@@ -674,6 +694,8 @@ export const useUIStore = create<UIStore>((set) => ({
   hoveredParameterPath: null,
   armedModulatorId: null,
   showStateGrid: false,
+  bladeView3D: false,
+  hardwarePreview: true,
   expandedAnalysisLayerId: 'rgb-luma',
   analysisRailWidth: clampRegion(
     'analysisRailWidth',
@@ -798,6 +820,10 @@ export const useUIStore = create<UIStore>((set) => ({
   setArmedModulatorId: (armedModulatorId) => set({ armedModulatorId }),
   toggleStateGrid: () => set((state) => ({ showStateGrid: !state.showStateGrid })),
   setShowStateGrid: (showStateGrid) => set({ showStateGrid }),
+  toggleBladeView3D: () => set((state) => ({ bladeView3D: !state.bladeView3D })),
+  setBladeView3D: (bladeView3D) => set({ bladeView3D }),
+  toggleHardwarePreview: () => set((state) => ({ hardwarePreview: !state.hardwarePreview })),
+  setHardwarePreview: (hardwarePreview) => set({ hardwarePreview }),
   setExpandedAnalysisLayerId: (expandedAnalysisLayerId) => set({ expandedAnalysisLayerId }),
 
   setAnalysisRailWidth: (w) =>

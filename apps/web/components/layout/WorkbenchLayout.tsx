@@ -22,6 +22,7 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { usePauseSystem } from '@/hooks/usePauseSystem';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { useHistoryTracking } from '@/hooks/useHistoryTracking';
+import { useHardwarePreview } from '@/hooks/useHardwarePreview';
 import { ShareButton } from '@/components/layout/ShareButton';
 import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 import { HeaderButton } from '@/components/layout/HeaderButton';
@@ -33,6 +34,7 @@ import { SaberWizard } from '@/components/onboarding/SaberWizard';
 import { VisualizationStack } from '@/components/editor/VisualizationStack';
 import { PixelDebugOverlay } from '@/components/editor/PixelDebugOverlay';
 import { CanvasLayout } from '@/components/editor/CanvasLayout';
+import { BladeScene3D } from '@/components/editor/blade3d';
 // Left-rail overhaul (v0.14.0 PR 2): DesignPanel / AudioPanel / OutputPanel
 // no longer mounted here — Sidebar + MainContent route to them via
 // `components/layout/MainContent.tsx`. DesignPanel.tsx is still alive
@@ -177,6 +179,7 @@ export function WorkbenchLayout() {
   usePauseSystem();
   usePresetListSync();
   useHistoryTracking();
+  useHardwarePreview(engineRef);
 
   // Platform-aware kbd display: Mac shows ⌘K, Windows / Linux shows Ctrl+K.
   // The keyboard event handlers read (e.metaKey || e.ctrlKey) so either
@@ -199,10 +202,14 @@ export function WorkbenchLayout() {
   const toggleEffectComparison = useUIStore((s) => s.toggleEffectComparison);
   // Phase 1.5x (2026-04-24): All States behavior reworked. The 9-state
   // stack now replaces the PIXEL STRIP + Expanded Slot regions only;
-  // BLADE PREVIEW stays visible. The 2D/3D toggle is also retired —
-  // 2D is the only mode going forward.
+  // BLADE PREVIEW stays visible. The 2D/3D toggle restored in Phase 2A
+  // of the Visualizer Upgrade Plan (3D blade renderer via R3F).
   const showStateGrid = useUIStore((s) => s.showStateGrid);
   const toggleStateGrid = useUIStore((s) => s.toggleStateGrid);
+  const bladeView3D = useUIStore((s) => s.bladeView3D);
+  const toggleBladeView3D = useUIStore((s) => s.toggleBladeView3D);
+  const hardwarePreview = useUIStore((s) => s.hardwarePreview);
+  const toggleHardwarePreview = useUIStore((s) => s.toggleHardwarePreview);
 
   // OV11: drag-to-resize slices. Each region has min/max/default in
   // REGION_LIMITS and a dedicated setter that persists to localStorage.
@@ -290,10 +297,52 @@ export function WorkbenchLayout() {
             All States
           </button>
         </div>
+        {/* Phase 2A: 2D/3D blade view toggle */}
+        <div className="flex rounded overflow-hidden border border-border-subtle">
+          <button
+            onClick={() => bladeView3D && toggleBladeView3D()}
+            className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+              !bladeView3D
+                ? 'bg-accent-dim text-accent border-r border-accent-border/40'
+                : 'bg-transparent text-text-muted hover:text-text-secondary border-r border-border-subtle'
+            }`}
+            title="2D blade preview (canvas)"
+            aria-pressed={!bladeView3D}
+          >
+            2D
+          </button>
+          <button
+            onClick={() => !bladeView3D && toggleBladeView3D()}
+            className={`px-2 py-0.5 text-ui-xs font-medium font-mono uppercase tracking-[0.08em] transition-colors ${
+              bladeView3D
+                ? 'bg-accent-dim text-accent'
+                : 'bg-transparent text-text-muted hover:text-text-secondary'
+            }`}
+            title="3D blade preview (Three.js)"
+            aria-pressed={bladeView3D}
+          >
+            3D
+          </button>
+        </div>
+        {/* Hardware Preview toggle — generates ProffieOS code from current
+            config and feeds it through template-eval for pixel-accurate
+            rendering. Lets users verify visualizer matches real hardware. */}
+        <button
+          onClick={toggleHardwarePreview}
+          className={`px-2 py-0.5 rounded text-ui-xs font-medium font-mono uppercase tracking-[0.08em] border transition-colors ${
+            hardwarePreview
+              ? 'bg-accent-dim text-accent border-accent-border/40'
+              : 'bg-transparent text-text-muted hover:text-text-secondary border-border-subtle'
+          }`}
+          title="Hardware Preview — render using real ProffieOS template evaluation"
+          aria-pressed={hardwarePreview}
+        >
+          HW
+        </button>
         <FullscreenButton className="w-5 h-5" />
       </>
     ),
-    [showStateGrid, toggleStateGrid, kbdFor],
+    [showStateGrid, toggleStateGrid, bladeView3D, toggleBladeView3D, hardwarePreview, toggleHardwarePreview, kbdFor],
   );
 
   const tickerMessages = useMemo(() => {
@@ -1119,6 +1168,17 @@ export function WorkbenchLayout() {
           <div className="h-full relative">
             {!engineReady ? (
               <CanvasSkeleton className="h-full" />
+            ) : bladeView3D ? (
+              <BladeScene3D
+                engineRef={engineRef}
+                className="h-full"
+                onBladeClick={(_ledIndex) => {
+                  triggerEffectWithAudio('clash');
+                }}
+                onBladeHold={(_ledIndex) => {
+                  triggerEffectWithAudio('lockup');
+                }}
+              />
             ) : (
               <CanvasLayout
                 engineRef={engineRef}

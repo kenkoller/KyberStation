@@ -119,6 +119,10 @@ export class BladeEngine {
 
   // ─── Template-eval bridge (pixel-accurate ProffieOS rendering) ───
   private _templateEvalBridge: TemplateEvalBridge | null = null;
+  /** Hardware Preview template code — when set, overrides importedRawCode
+   *  for template-eval rendering. Allows generated code to be previewed
+   *  through the same pixel-accurate pipeline used for imported configs. */
+  private _previewTemplateCode: string | null = null;
 
   // ─── Caches ───
   private styleCache: Map<string, BladeStyle> = new Map();
@@ -221,6 +225,31 @@ export class BladeEngine {
       this._templateEvalBridge.reset();
       this._templateEvalBridge = null;
     }
+  }
+
+  /**
+   * Set a preview template for Hardware Preview mode. When non-null,
+   * this takes priority over `config.importedRawCode` in template-eval
+   * rendering, allowing the generated code to be previewed pixel-accurately.
+   *
+   * Call with `null` to clear and revert to normal rendering.
+   */
+  setPreviewTemplate(code: string | null): void {
+    this._previewTemplateCode = code;
+    if (code && !this._templateEvalBridge) {
+      this._templateEvalBridge = new TemplateEvalBridge();
+    }
+    if (code) {
+      this._templateEvalBridge!.setTemplate(code);
+    } else if (this._templateEvalBridge && this._renderMode !== 'template-eval') {
+      this._templateEvalBridge.reset();
+      this._templateEvalBridge = null;
+    }
+  }
+
+  /** Whether a hardware-preview template is currently active. */
+  get hasPreviewTemplate(): boolean {
+    return this._previewTemplateCode !== null;
   }
 
   // ─── State machine controls ───
@@ -558,11 +587,12 @@ export class BladeEngine {
     // ProffieOS template per-LED instead of the approximation pipeline.
     // This bypasses modulation routing, segment topology, and layer
     // compositing — the template IS the complete style definition.
-    if (this._renderMode === 'template-eval' && config.importedRawCode) {
+    const templateCode = this._previewTemplateCode || config.importedRawCode;
+    if (this._renderMode === 'template-eval' && templateCode) {
       if (!this._templateEvalBridge) {
         this._templateEvalBridge = new TemplateEvalBridge();
       }
-      const ok = this._templateEvalBridge.setTemplate(config.importedRawCode);
+      const ok = this._templateEvalBridge.setTemplate(templateCode);
       if (ok) {
         this._templateEvalBridge.renderFrame(
           this.leds,
