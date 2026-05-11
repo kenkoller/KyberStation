@@ -31,6 +31,9 @@ import {
   IgnitionTimeTemplate, RetractionTimeTemplate, BendTimePowInvXTemplate,
   PulsingFTemplate, VolumeLevelTemplate, EffectPulseFTemplate,
   ModFTemplate, BendTimePowXTemplate,
+  HoldPeakFTemplate, EffectIncrementFTemplate, LinearSectionFTemplate,
+  IsGreaterThanTemplate, SlowNoiseTemplate, SwingAccelerationTemplate,
+  SparkleFTemplate, RemapTemplate,
 } from './templates/functions.js';
 
 // Style templates
@@ -41,6 +44,10 @@ import {
   BrownNoiseFlickerTemplate, BrownNoiseFlickerLTemplate,
   HumpFlickerTemplate, HumpFlickerLTemplate,
   RandomPerLEDFlickerLTemplate, StrobeTemplate, OnSparkTemplate,
+  AlphaMixLTemplate, AudioFlickerLTemplate, BlastFadeoutTemplate,
+  LockupTemplate, LocalizedClashTemplate, LocalizedClashLTemplate,
+  RandomBlinkTemplate, RandomPerLEDFlickerTemplate, SparkleTemplate,
+  StaticFireTemplate,
 } from './templates/styles.js';
 
 // Effect templates
@@ -52,6 +59,7 @@ import {
   ResponsiveLightningBlockLTemplate, ResponsiveMeltLTemplate,
   TransitionEffectLTemplate, EffectSequenceTemplate,
   MultiTransitionEffectLTemplate,
+  ResponsiveBlastFadeLTemplate, ResponsiveBlastWaveLTemplate,
 } from './templates/effects.js';
 
 // Transition templates
@@ -63,6 +71,10 @@ import {
   TrJoinTemplate, TrJoinRTemplate, TrExtendTemplate,
   TrWaveXTemplate, TrCenterWipeInTemplate, TrCenterWipeInXTemplate,
   TrCenterWipeInSparkTemplate,
+  TrBoingTemplate, TrBoingXTemplate, TrColorCycleXTemplate,
+  TrDelayXTemplate, TrDoEffectTemplate, TrDoEffectAlwaysXTemplate,
+  TrSelectTemplate, TrSparkXTemplate, TrWipeSparkTipTemplate,
+  TrWipeSparkTipXTemplate,
 } from './templates/transitions.js';
 
 // Wrapper templates
@@ -70,6 +82,9 @@ import {
   InOutTrLTemplate, InOutHelperLTemplate,
   StyleNormalPtrTemplate, TransitionLoopTemplate,
   SequenceLTemplate,
+  StylePtrTemplate, StyleFirePtrTemplate, StyleRainbowPtrTemplate,
+  StyleStrobePtrTemplate, InOutSparkTipLTemplate,
+  TransitionEffectTemplate, TransitionLoopLTemplate,
 } from './templates/wrappers.js';
 
 type TemplateClass = new (args: StyleTemplate[]) => StyleTemplate;
@@ -176,6 +191,14 @@ registerClass('VolumeLevel', VolumeLevelTemplate);
 registerClass('EffectPulseF', EffectPulseFTemplate);
 registerClass('ModF', ModFTemplate);
 registerClass('BendTimePowX', BendTimePowXTemplate);
+registerClass('HoldPeakF', HoldPeakFTemplate);
+registerClass('EffectIncrementF', EffectIncrementFTemplate);
+registerClass('LinearSectionF', LinearSectionFTemplate);
+registerClass('IsGreaterThan', IsGreaterThanTemplate);
+registerClass('SlowNoise', SlowNoiseTemplate);
+registerClass('SwingAcceleration', SwingAccelerationTemplate);
+registerClass('SparkleF', SparkleFTemplate);
+registerClass('Remap', RemapTemplate);
 
 // ─── Style Templates ───
 registerClass('Layers', LayersTemplate);
@@ -203,6 +226,21 @@ registerClass('StrobeX', StrobeTemplate);
 registerClass('OnSpark', OnSparkTemplate);
 registerClass('OnSparkL', OnSparkTemplate);
 registerClass('OnSparkX', OnSparkTemplate);
+registerClass('AlphaMixL', AlphaMixLTemplate);
+registerClass('AudioFlickerL', AudioFlickerLTemplate);
+registerClass('BlastFadeout', BlastFadeoutTemplate);
+registerClass('BlastFadeoutL', BlastFadeoutTemplate);
+registerClass('Lockup', LockupTemplate);
+registerClass('LockupL', LockupTemplate);
+registerClass('LocalizedClash', LocalizedClashTemplate);
+registerClass('LocalizedClashL', LocalizedClashLTemplate);
+registerClass('RandomBlink', RandomBlinkTemplate);
+registerClass('RandomBlinkL', RandomBlinkTemplate);
+registerClass('RandomBlinkX', RandomBlinkTemplate);
+registerClass('RandomPerLEDFlicker', RandomPerLEDFlickerTemplate);
+registerClass('Sparkle', SparkleTemplate);
+registerClass('SparkleL', SparkleTemplate);
+registerClass('StaticFire', StaticFireTemplate);
 
 // ─── Effect Templates ───
 registerClass('SimpleClashL', SimpleClashLTemplate);
@@ -220,6 +258,10 @@ registerClass('ResponsiveMeltL', ResponsiveMeltLTemplate);
 registerClass('TransitionEffectL', TransitionEffectLTemplate);
 registerClass('MultiTransitionEffectL', MultiTransitionEffectLTemplate);
 registerClass('EffectSequence', EffectSequenceTemplate);
+registerClass('ResponsiveBlastFadeL', ResponsiveBlastFadeLTemplate);
+registerClass('ResponsiveBlastWaveL', ResponsiveBlastWaveLTemplate);
+registerClass('ResponsiveBlastFadeLX', ResponsiveBlastFadeLTemplate);
+registerClass('ResponsiveBlastWaveLX', ResponsiveBlastWaveLTemplate);
 
 // ─── Transition Templates ───
 registerClass('TrInstant', TrInstantTemplate);
@@ -243,6 +285,19 @@ registerClass('TrExtend', TrExtendTemplate);
 registerClass('TrExtendX', TrExtendTemplate);
 registerClass('TrWaveX', TrWaveXTemplate);
 registerClass('TrCenterWipeInSpark', TrCenterWipeInSparkTemplate);
+registerClass('TrCenterWipeInSparkX', TrCenterWipeInSparkTemplate);
+registerClass('TrBoing', TrBoingTemplate);
+registerClass('TrBoingX', TrBoingXTemplate);
+registerClass('TrColorCycleX', TrColorCycleXTemplate);
+registerClass('TrDelayX', TrDelayXTemplate);
+registerClass('TrDoEffect', TrDoEffectTemplate);
+registerClass('TrDoEffectX', TrDoEffectTemplate);
+registerClass('TrDoEffectAlwaysX', TrDoEffectAlwaysXTemplate);
+registerClass('TrSelect', TrSelectTemplate);
+registerClass('TrSelectX', TrSelectTemplate);
+registerClass('TrSparkX', TrSparkXTemplate);
+registerClass('TrWipeSparkTip', TrWipeSparkTipTemplate);
+registerClass('TrWipeSparkTipX', TrWipeSparkTipXTemplate);
 
 // ─── Wrapper Templates ───
 registerClass('InOutTrL', InOutTrLTemplate);
@@ -250,6 +305,13 @@ registerClass('InOutHelperL', InOutHelperLTemplate);
 registerClass('StyleNormalPtr', StyleNormalPtrTemplate);
 registerClass('TransitionLoop', TransitionLoopTemplate);
 registerClass('SequenceL', SequenceLTemplate);
+registerClass('StylePtr', StylePtrTemplate);
+registerClass('StyleFirePtr', StyleFirePtrTemplate);
+registerClass('StyleRainbowPtr', StyleRainbowPtrTemplate);
+registerClass('StyleStrobePtr', StyleStrobePtrTemplate);
+registerClass('InOutSparkTipL', InOutSparkTipLTemplate);
+registerClass('TransitionEffect', TransitionEffectTemplate);
+registerClass('TransitionLoopL', TransitionLoopLTemplate);
 
 /**
  * Look up a template class/factory by name.

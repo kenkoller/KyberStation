@@ -5,7 +5,7 @@
 import { BaseStyleTemplate } from '../BaseStyle.js';
 import type { BladeState, Color, EffectSystem, StyleTemplate } from '../types.js';
 import { BLACK, clamp, colorAlpha, alphaBlend, mixColors, PROFFIE_MAX } from '../types.js';
-import { hashPair, lerp } from '../utils.js';
+import { hashPair, lerp, ledToBladePos } from '../utils.js';
 
 // ─── Layers<Base, L1, L2, ...> ───
 // THE fundamental compositor. Applies layers bottom-up.
@@ -617,5 +617,388 @@ export class OnSparkTemplate extends BaseStyleTemplate {
       g: Math.round(c.g * fade),
       b: Math.round(c.b * fade),
     };
+  }
+}
+
+// ─── AlphaMixL<Position, Shape, Color1, Color2> ───
+// Mixes two colors based on a position-aware shape function.
+// Shape provides the mix factor at each LED position.
+
+export class AlphaMixLTemplate extends BaseStyleTemplate {
+  private readonly position: StyleTemplate;
+  private readonly shape: StyleTemplate;
+  private readonly color1: StyleTemplate;
+  private readonly color2: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.position = args[0]!;
+    this.shape = args[1]!;
+    this.color1 = args[2]!;
+    this.color2 = args[3]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.position.run(state, effects);
+    this.shape.run(state, effects);
+    this.color1.run(state, effects);
+    this.color2.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const factor = clamp(this.shape.getInteger(led), 0, PROFFIE_MAX);
+    const c1 = this.color1.getColor(led);
+    const c2 = this.color2.getColor(led);
+    return mixColors(c1, c2, factor);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.position, this.shape, this.color1, this.color2];
+  }
+}
+
+// ─── AudioFlickerL<Color> ───
+// Layer version of AudioFlicker — flickers a color based on audio level.
+// As a layer, it's used inside Layers<> and blended via max-channel alpha.
+
+export class AudioFlickerLTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const audioLevel = this.state.soundLevel ?? 0;
+    const baseFlicker = 0.5 + audioLevel * 0.5;
+    const flickerHash = hashPair(led, Math.floor(this.state.timeMs / 30));
+    const flicker = baseFlicker * (0.7 + flickerHash * 0.3);
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * clamp(flicker, 0, 1)),
+      g: Math.round(c.g * clamp(flicker, 0, 1)),
+      b: Math.round(c.b * clamp(flicker, 0, 1)),
+    };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
+}
+
+// ─── BlastFadeout<Color, Ms> ───
+// Blast effect that fades out over Ms milliseconds.
+
+export class BlastFadeoutTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+  private readonly durationMs: number;
+  private blastTime = -1;
+  private blastLocation = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+    this.durationMs = args[1]?.getInteger(0) ?? 250;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+    const blast = effects.getLastEffect('EFFECT_BLAST');
+    if (blast && blast.startTimeMs > this.blastTime) {
+      this.blastTime = blast.startTimeMs;
+      this.blastLocation = blast.location ?? 0.5;
+    }
+  }
+
+  getColor(led: number): Color {
+    if (this.blastTime < 0) return BLACK;
+    const elapsed = this.state.timeMs - this.blastTime;
+    if (elapsed >= this.durationMs) return BLACK;
+
+    const fade = 1 - elapsed / this.durationMs;
+    const numLeds = this.state.numLeds || 144;
+    const ledPos = ledToBladePos(led, numLeds);
+    const dist = Math.abs(ledPos - this.blastLocation) * PROFFIE_MAX;
+    const width = PROFFIE_MAX * 0.1;
+    if (dist > width) return BLACK;
+
+    const proximity = 1 - dist / width;
+    const intensity = fade * proximity;
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * intensity),
+      g: Math.round(c.g * intensity),
+      b: Math.round(c.b * intensity),
+    };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
+}
+
+// ─── Lockup<Base, LockupColor, DragColor, LockupShape?, DragShape?> ───
+// Lockup style — shows LockupColor during lockup, DragColor during drag.
+
+export class LockupTemplate extends BaseStyleTemplate {
+  private readonly base: StyleTemplate;
+  private readonly lockupColor: StyleTemplate;
+  private readonly dragColor: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.base = args[0]!;
+    this.lockupColor = args[1]!;
+    this.dragColor = args[2] ?? args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.base.run(state, effects);
+    this.lockupColor.run(state, effects);
+    this.dragColor.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    if (this.effects?.lockupType === 'LOCKUP_DRAG') {
+      return this.dragColor.getColor(led);
+    }
+    if (this.effects?.lockupType === 'LOCKUP_NORMAL') {
+      return this.lockupColor.getColor(led);
+    }
+    return this.base.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.base, this.lockupColor, this.dragColor];
+  }
+}
+
+// ─── LocalizedClash<Color, Ms?, Width?, Top?> ───
+// Non-layer version of clash at impact location.
+
+export class LocalizedClashTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+  private readonly durationMs: number;
+  private readonly width: number;
+  private clashTime = -1;
+  private clashLocation = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+    this.durationMs = args[1]?.getInteger(0) ?? 400;
+    this.width = args[2]?.getInteger(0) ?? 16384;
+    // args[3] is top position (optional)
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+    const clash = effects.getLastEffect('EFFECT_CLASH');
+    if (clash && clash.startTimeMs > this.clashTime) {
+      this.clashTime = clash.startTimeMs;
+      this.clashLocation = clash.location ?? 0.7;
+    }
+  }
+
+  getColor(led: number): Color {
+    if (this.clashTime < 0) return BLACK;
+    const elapsed = this.state.timeMs - this.clashTime;
+    if (elapsed >= this.durationMs) return BLACK;
+
+    const fade = 1 - elapsed / this.durationMs;
+    const numLeds = this.state.numLeds || 144;
+    const ledPos = led / Math.max(1, numLeds - 1);
+    const dist = Math.abs(ledPos - this.clashLocation);
+    const halfWidth = (this.width / PROFFIE_MAX) * 0.5;
+    if (dist > halfWidth) return BLACK;
+
+    const intensity = fade * (1 - dist / halfWidth);
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * intensity),
+      g: Math.round(c.g * intensity),
+      b: Math.round(c.b * intensity),
+    };
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
+}
+
+// ─── LocalizedClashL<Color, Ms?, Width?, Top?> ───
+// Layer version of localized clash.
+
+export class LocalizedClashLTemplate extends LocalizedClashTemplate {}
+
+// ─── RandomBlink<Ms, OnMs?, OffMs?> ───
+// Random per-LED blinking with configurable timing.
+
+export class RandomBlinkTemplate extends BaseStyleTemplate {
+  private readonly periodMs: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.periodMs = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.periodMs.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const period = Math.max(10, this.periodMs.getInteger(led));
+    const phase = hashPair(led, 9999) * period;
+    const t = ((this.state.timeMs + phase) % period) / period;
+    return t < 0.5 ? PROFFIE_MAX : 0;
+  }
+
+  getColor(led: number): Color {
+    return this.getInteger(led) > 0 ? { r: 255, g: 255, b: 255 } : BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.periodMs];
+  }
+}
+
+// ─── RandomPerLEDFlicker<Color1, Color2> ───
+// Each LED randomly flickers between two colors per frame.
+
+export class RandomPerLEDFlickerTemplate extends BaseStyleTemplate {
+  private readonly colorA: StyleTemplate;
+  private readonly colorB: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.colorA = args[0]!;
+    this.colorB = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.colorA.run(state, effects);
+    this.colorB.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const rng = hashPair(led, Math.floor(this.state.timeMs / 16));
+    return rng > 0.5 ? this.colorA.getColor(led) : this.colorB.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.colorA, this.colorB];
+  }
+}
+
+// ─── Sparkle<SparkColor, SparkChance?, SparkMs?> ───
+// Random sparkle effect on top of other colors.
+
+export class SparkleTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+  private readonly chance: number;
+  private readonly durationMs: number;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+    this.chance = args[1]?.getInteger(0) ?? 3;
+    this.durationMs = args[2]?.getInteger(0) ?? 100;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    if (this.chance <= 0) return BLACK;
+    const timeSlot = Math.floor(this.state.timeMs / this.durationMs);
+    const rng = hashPair(led, timeSlot);
+    if (rng < 1 / this.chance) {
+      return this.color.getColor(led);
+    }
+    return BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color];
+  }
+}
+
+// ─── StaticFire<Color1, Color2, Delay?, Speed?, Norm?> ───
+// Static fire pattern — similar to StyleFire but with fixed parameters.
+
+export class StaticFireTemplate extends BaseStyleTemplate {
+  private readonly color1: StyleTemplate;
+  private readonly color2: StyleTemplate;
+  private heatMap: number[] = [];
+  private lastUpdate = 0;
+  private readonly delay: number;
+  private readonly speed: number;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color1 = args[0]!;
+    this.color2 = args[1]!;
+    this.delay = args[2]?.getInteger(0) ?? 0;
+    this.speed = args[3]?.getInteger(0) ?? 2;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color1.run(state, effects);
+    this.color2.run(state, effects);
+
+    const numLeds = state.numLeds || 144;
+
+    if (this.heatMap.length !== numLeds) {
+      this.heatMap = new Array(numLeds).fill(0);
+      for (let i = 0; i < numLeds; i++) {
+        this.heatMap[i] = Math.random() * 128;
+      }
+    }
+
+    const updateInterval = Math.max(10, 30 + this.delay);
+    if (state.timeMs - this.lastUpdate > updateInterval) {
+      this.lastUpdate = state.timeMs;
+
+      const coolFactor = Math.max(1, this.speed * 5);
+      for (let i = 0; i < numLeds; i++) {
+        this.heatMap[i] = Math.max(0, this.heatMap[i] - Math.random() * coolFactor);
+      }
+
+      for (let i = numLeds - 1; i >= 2; i--) {
+        this.heatMap[i] = (this.heatMap[i - 1] + this.heatMap[i - 2] * 2) / 3;
+      }
+
+      if (Math.random() < 0.5) {
+        const spark = Math.floor(Math.random() * 7);
+        this.heatMap[spark] = Math.min(255, this.heatMap[spark] + 128 + Math.random() * 128);
+      }
+    }
+  }
+
+  getColor(led: number): Color {
+    const heat = clamp(Math.round(this.heatMap[led] ?? 0), 0, 255);
+    const t = heat / 255;
+    const c1 = this.color1.getColor(led);
+    const c2 = this.color2.getColor(led);
+    return mixColors(c2, c1, Math.round(t * PROFFIE_MAX));
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.color1, this.color2];
   }
 }
