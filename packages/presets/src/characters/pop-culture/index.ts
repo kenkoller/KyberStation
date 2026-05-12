@@ -11,6 +11,8 @@ export { KIDS_CARTOONS_PRESETS } from './kids-cartoons.js';
 export { POWER_RANGERS_PRESETS } from './power-rangers.js';
 export { ADULT_ANIMATION_PRESETS } from './adult-animation.js';
 export { MASCOT_PRESETS } from './mascots.js';
+export { HARRY_POTTER_PRESETS } from './harry-potter.js';
+export { HALO_PRESETS } from './halo.js';
 
 import { LOTR_PRESETS } from './lotr.js';
 import { MYTHOLOGY_PRESETS } from './mythology.js';
@@ -23,6 +25,8 @@ import { KIDS_CARTOONS_PRESETS } from './kids-cartoons.js';
 import { POWER_RANGERS_PRESETS } from './power-rangers.js';
 import { ADULT_ANIMATION_PRESETS } from './adult-animation.js';
 import { MASCOT_PRESETS } from './mascots.js';
+import { HARRY_POTTER_PRESETS } from './harry-potter.js';
+import { HALO_PRESETS } from './halo.js';
 
 /**
  * All pop-culture presets combined into a single array.
@@ -48,4 +52,6 @@ export const POP_CULTURE_PRESETS: Preset[] = [
   ...POWER_RANGERS_PRESETS,
   ...ADULT_ANIMATION_PRESETS,
   ...MASCOT_PRESETS,
+  ...HARRY_POTTER_PRESETS,
+  ...HALO_PRESETS,
 ];

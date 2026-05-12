@@ -21,6 +21,8 @@ export {
   POWER_RANGERS_PRESETS,
   ADULT_ANIMATION_PRESETS,
   MASCOT_PRESETS,
+  HARRY_POTTER_PRESETS,
+  HALO_PRESETS,
 } from './characters/pop-culture/index.js';
 
 export type { CardTemplate, CardTemplateEntry } from './templates/card-templates.js';
