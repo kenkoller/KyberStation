@@ -227,9 +227,8 @@ export { getConnectionDisplay as getStatusBarConnectionDisplay };
  *   - presetListStore   (active preset index + name)
  *   - historyStore      (dirty flag synthesized from past.length)
  *
- * WebUSB connection is currently a TODO placeholder — the live state
- * is held inside FlashPanel's local state machine; global wiring is
- * a follow-up wave.
+ * WebUSB connection is a placeholder — the live state is held inside
+ * FlashPanel's local state machine. Tracked in POST_LAUNCH_BACKLOG.md.
  */
 interface StatusBarProps {
   /** Render mode — see StatusBarMode JSDoc above. */
@@ -447,7 +446,7 @@ export function StatusBar({ mode = 'default' }: StatusBarProps = {}) {
       <BoardSegment />
       <SegmentDivider mode={mode} />
 
-      {/* 3 — Conn (WebUSB) — TODO placeholder until global store exists */}
+      {/* 3 — Conn (WebUSB) — placeholder, see POST_LAUNCH_BACKLOG.md */}
       <Segment
         mode={mode}
         label="Conn"

@@ -1347,9 +1347,8 @@ export function WorkbenchLayout() {
        * CONN are passive readouts; PROFILE is a dropdown sharing
        * `SaberProfileSwitcher` with the header (variant='compact').
        *
-       * Gated by neither activeTab nor the `performanceStore.visible`
-       * toggle — the rail's ship-now message is universal. It sits
-       * between PerformanceBar (5b, tab-gated in OV5) and DataTicker
+       * Always visible — the rail's ship-now message is universal.
+       * It sits between the bottom chrome and DataTicker
        * (6) so the header/canvas/panels always see the same footer
        * shape regardless of which tabs or chrome toggles are active.
        * ════════════════════════════════════════════════════ */}

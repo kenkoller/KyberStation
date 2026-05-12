@@ -17,7 +17,6 @@ import { type RefObject } from 'react';
 import type { BladeEngine } from '@kyberstation/engine';
 import { useRmsLevel } from '@/hooks/useRmsLevel';
 import { shiftLedColor } from '@/lib/shiftLight';
-import { usePerformanceStore } from '@/stores/performanceStore';
 
 const SHIFT_LED_COUNT = 32;
 
@@ -26,13 +25,7 @@ export function ShiftLightRail({
 }: {
   engineRef: RefObject<BladeEngine | null>;
 }) {
-  // Keep visibility gated by the same `performanceStore.visible` toggle
-  // as the macro bar — a user who turned the perf chrome off shouldn't
-  // get the rail sneaking back in.
-  const visible = usePerformanceStore((s) => s.visible);
-  const rms = useRmsLevel(engineRef, visible);
-
-  if (!visible) return null;
+  const rms = useRmsLevel(engineRef, true);
 
   return (
     <div
