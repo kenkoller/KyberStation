@@ -10,6 +10,6 @@
  *   - `apps/web/components/landing/LandingReleaseStrip.tsx` (landing page)
  *   - `apps/web/components/layout/WorkbenchLayout.tsx` (editor header)
  */
-export const LATEST_VERSION = '0.15.0';
-export const LATEST_CODENAME = 'Modulation Routing v1.1 Core';
-export const LATEST_DATE = '2026-04-27';
+export const LATEST_VERSION = '0.21.1';
+export const LATEST_CODENAME = 'Polyglot Release';
+export const LATEST_DATE = '2026-05-12';
