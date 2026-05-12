@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+---
+
+## [0.21.1] — 2026-05-12
+
+**Polyglot Release.** 118 commits since v0.20.3 consolidate the May sprint cycle: Xenopixel V3 full board support, Fredrik Style Editor Integration Phases 1–7, the template-eval interpreter, Visualizer 3D blade + Hardware Preview, Fett263 Prop File Editor Level 1, 40 new presets, and a comprehensive 4-wave audit. KyberStation's pipeline is now multi-board, multi-engine, and multi-style-system.
+
 ### Added
 
 - **`getChildren()` tree walking on all template-eval classes** — 40+ template classes across colors, styles, effects, transitions, functions, and wrappers now expose their child `StyleTemplate` references via `getChildren()`. Enables recursive DFS through arbitrary template nesting depths for variant cycling, future AST editing, and style transforms.
@@ -31,6 +39,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **ProffieOS template interpreter — Phase 2 engine bridge** (PR #296) — Wires `template-eval` into `BladeEngine` as a new `'template-eval'` render mode, enabling direct evaluation of ProffieOS style code in the visualizer.
 
+- **Visualizer 3D blade renderer + Hardware Preview mode** (PR #301) — Three.js / React-Three-Fiber blade mesh with emissive LED material, orbit controls, and a template-eval-driven Hardware Preview pipeline. Closes Phases 1–2 of the Visualizer Upgrade Plan. Phase 2C (mouse interaction) and 2D (post-processing) remain.
+
+- **Template tree panel + inline editing** (PRs #299, #302, #304, #306) — Fredrik Style Editor Integration Phases 5A+5D (AST-to-tree renderer + inline editing), 5C (layer controls for `Layers<>` children), 5F (32 TemplateInsertionPalette test cases), Phase 6 (style transformations), and Phase 7 (template insertion palette). Closes Phases 1–7 of the integration plan.
+
+- **Template registry expansion 153 → 372 entries** (PR #303) — Waves 3–7 added 38 named colors + 9 function templates (wave 3), 12 function templates + 32 aliases (wave 4), 8 template classes + 5 aliases (wave 5), 37 named colors + 10 template classes + aliases (wave 6), and `EffectIncrement` template (wave 7). Covers the full Fett263 corpus.
+
+- **Fett263 Prop File Editor Level 1** (PR #305) — Toggle panel for ~30–40 Fett263 `#define`s. Covers ~90% of Proffie users' prop customization without authoring a full prop file. Level 2 (button routing sub-tab) and Level 3 (full custom prop generation) tracked in `docs/POST_LAUNCH_BACKLOG.md`.
+
+- **40 new presets across 4 franchises** (PR #307) — Preset Cartography wave covering KOTOR-adjacent characters, animated series deep-cuts, and creative-community designs. Brings library to 455 (`ALL_PRESETS.length`, runtime-verified).
+
+- **Renderer-level golden-hash card snapshot tests** (PR #307) — node-canvas-driven pixel regression tests for the card-snapshot drawer pipeline (`drawBladePreview`, `drawColorChip`, `drawBackdrop`). Full `BladeCanvas` pipeline coverage remains TBD — prerequisite for Visualizer Phase 2D.
+
 ### Fixed
 
 - **Xenopixel Candy + Flashing blade effects unreachable** (PR #293) — `XENO_BLADE_EFFECTS` entries for IDs 4 (Candy) and 7 (Flashing) had `kyberStyle: null`, making them unreachable through the UI despite having complete engine implementations. Fixed to `'candy'` / `'flashing'`. Also corrected 5 documentation inaccuracies in CHANGELOG.md.
@@ -40,6 +60,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Xenopixel SSR contract tests** (PR #290) — Added SSR rendering tests for Batch 2+3 Xenopixel UI components ensuring server-side rendering compatibility.
+
+- **CLAUDE.md compressed 3,043 → 573 lines** (PR #312) — Wave 4 structural audit archived 44 historical docs to `docs/archive/`, fixed 7 cross-references to relocated files, kept only current-state context. Detailed per-session history preserved in git.
+
+- **Dead code removed** (PR #311) — Wave 3 deleted `performanceStore` + its 28 tests, removed `uiStore.performanceBarHeight`, cleaned stale TODOs left from earlier refactors.
+
+- **Documentation + SSR hygiene** (PR #310) — Wave 1 fixed `HelpTooltip` SSR warning, dead doc references, and stale CLAUDE.md counts.
+
+- **Public-facing counts corrected** (PR #309) — Wave 0 fixed style/effect/preset counts on landing + features pages (33 styles, 22 effects, 455+ presets) and resolved the `metadataBase` Next.js warning.
+
+- **Backlog + handoff documentation refreshed** (PRs #297, #300, #308, #313) — Docs-only updates: Xenopixel post-audit documentation refresh, Visualizer Upgrade Plan written, backlog + handoff refreshed twice as state evolved.
+
+### Test count delta
+
+| Package | v0.20.3 | v0.21.1 | Delta |
+|---------|---------|---------|-------|
+| Web | 2,867 | 3,552 | +685 |
+| Codegen | 2,562 | 2,854 | +292 |
+| Engine | 957 | 1,219 | +262 |
+| Boards | 260 | 278 | +18 |
+| Template-eval | — (new) | 180 | +180 |
+| Presets | 138 | 138 | 0 |
+| Sound | 62 | 62 | 0 |
+| **Total** | **6,846** | **8,283** | **+1,437** |
+
+All 13 workspace packages typecheck + 7 test packages green.
 
 ---
 

@@ -542,24 +542,21 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-05-12, post-audit)
+## Current State (2026-05-12, v0.21.1 "Polyglot Release" cut)
 
-Comprehensive 8-phase audit completed. Waves 0 (accuracy), 1 (hygiene), 3 (dead code), 4 (structural) shipped as PRs #309–312. Wave 2 (Next.js 14→15 upgrade) deferred to its own session. CLAUDE.md compressed from 3,043 to 573 lines; 44 historical docs archived to `docs/archive/`.
+v0.21.1 staged — 118 commits since v0.20.3 consolidated into the "Polyglot Release" tag: Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), 40 new presets + card-snapshot regression tests (#307), comprehensive audit Waves 0–4 (#309–312). KyberStation's pipeline is now multi-board, multi-engine, and multi-style-system.
 
-**Current verified counts (2026-05-12):** 8,283 tests across 7 packages (web 3,552 / codegen 2,854 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / sound 62). 455 presets (ALL_PRESETS.length, runtime-verified). 33 blade styles, 22 effects, 30 themes.
+**Verified counts (2026-05-12):** 8,283 tests across 7 packages (web 3,552 / codegen 2,854 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / sound 62). 455 presets (`ALL_PRESETS.length`, runtime-verified). 33 blade styles, 22 effects, 30 themes.
 
-**Stock-take since v0.20.3 tag (116 commits):** Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), lexer hardening — 2 LEXER_INCOMPATIBLE fixtures closed (#279), `altPhaseColors` + `detectedEffectIds` UI surface (#281), sub-1024 tablet brand drift (#277), 40 new presets + card-snapshot regression tests (#307), comprehensive audit Waves 0–4 (#309–312).
-
-**Recommended first action next session:** cut `v0.21.1` patch tag. 116 commits past v0.20.3 — Xenopixel + template-eval + Fredrik integration + audit cleanup justify a release marker. Tag-cut is ~30 min: skim merged PR titles, draft `[Unreleased]→[0.21.1]` CHANGELOG block, bump versions, tag, push.
+See CHANGELOG.md `[0.21.1]` for the full release manifest.
 
 **Top open items** (full list + scope at [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md) §"What's open right now"):
-1. **v0.21.1 patch tag** (S)
-2. **Renderer-level golden-hash full coverage** (M) — engine + card-snapshot drawers shipped; full BladeCanvas pipeline pixel-level coverage still TBD. Prerequisite for Visualizer Phase 2D.
-3. **Wave 8 / Prop File Editor Level 2 — button routing sub-tab** (L) — all 8 aux/gesture modulators already registered; remaining is the routing-sub-tab UI + binding shape extensions.
-4. **Visualizer Phase 2C — 3D mouse interaction** (M) — orbit, drag-velocity swing sim, click→clash, hold→lockup.
-5. **Visualizer Phase 2D — 3D post-processing** (M) — UnrealBloomPass, polycarbonate diffusion, motion blur.
-6. **Crystal Vault panel + Re-attunement UI** (M-L) — long-standing design debt.
-7. **Mobile shell migration to Sidebar + MainContent** (M) — needs UX call on drawer vs bottom-sheet at 375px.
+1. **Renderer-level golden-hash full coverage** (M) — engine + card-snapshot drawers shipped; full BladeCanvas pipeline pixel-level coverage still TBD. Prerequisite for Visualizer Phase 2D.
+2. **Wave 8 / Prop File Editor Level 2 — button routing sub-tab** (L) — all 8 aux/gesture modulators already registered; remaining is the routing-sub-tab UI + binding shape extensions.
+3. **Visualizer Phase 2C — 3D mouse interaction** (M) — orbit, drag-velocity swing sim, click→clash, hold→lockup.
+4. **Visualizer Phase 2D — 3D post-processing** (M) — UnrealBloomPass, polycarbonate diffusion, motion blur.
+5. **Crystal Vault panel + Re-attunement UI** (M-L) — long-standing design debt.
+6. **Mobile shell migration to Sidebar + MainContent** (M) — needs UX call on drawer vs bottom-sheet at 375px.
 
 Full session handoff prompt at [`docs/archive/NEXT_SESSION_HANDOFF.md`](docs/archive/NEXT_SESSION_HANDOFF.md) — paste verbatim into a fresh Claude Code session.
 
