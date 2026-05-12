@@ -7,7 +7,7 @@ at `packages/engine/src/modulation/` with type contracts only.
 StylePanel, EffectPanel) + §8 open question 3 (modulation graph panel
 deferred). This doc is the engine-level primitive those surfaces will
 consume.
-**Companion docs:** `docs/UX_NORTH_STAR.md`, `docs/KYBER_CRYSTAL_VERSIONING.md`.
+**Companion docs:** `docs/archive/UX_NORTH_STAR.md`, `docs/KYBER_CRYSTAL_VERSIONING.md`.
 
 ---
 

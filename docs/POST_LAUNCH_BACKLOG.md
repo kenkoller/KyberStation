@@ -57,7 +57,7 @@ Single index of deferred work as of **2026-04-27 overnight** (post-overnight UI/
 
 ## 2026-04-27 overnight session — what shipped (14 PRs)
 
-Full archive at [`docs/SESSION_2026-04-27_OVERNIGHT.md`](SESSION_2026-04-27_OVERNIGHT.md). Handoff for next session at [`docs/NEXT_SESSION_HANDOFF.md`](NEXT_SESSION_HANDOFF.md).
+Full archive at [`docs/archive/SESSION_2026-04-27_OVERNIGHT.md`](archive/SESSION_2026-04-27_OVERNIGHT.md). Handoff for next session at [`docs/archive/NEXT_SESSION_HANDOFF.md`](archive/NEXT_SESSION_HANDOFF.md).
 
 ✅ **Closed by overnight session:**
 - Sidebar IA reorganization (PR #89) → SETUP / DESIGN / REACTIVITY / OUTPUT
@@ -178,7 +178,7 @@ Track here when surfaced; promote to a versioned sprint when bundled with relate
 - **`<HiltMesh>` extraction** from `BladeCanvas3D.tsx` (now dead). Source: `CLAUDE.md` v0.12.0 deferred items.
 - ~~**Aurebesh font variants beyond Canon**~~ — ✅ Shipped via [PR #93](https://github.com/kenkoller/KyberStation/pull/93) on 2026-04-27. 4-variant picker (Canon / CanonTech / Legends / LegendsTech) in Settings. `lib/aurebesh.ts` variant type + helpers + localStorage persistence.
 - ~~**`BladeCanvas3DWrapper` deletion**~~ — ✅ Shipped via [PR #75](https://github.com/kenkoller/KyberStation/pull/75) on 2026-04-27. Orphan file removed alongside dead `CanvasMode` type / `canvasMode` field.
-- **Mobile diagnostic-strip segment-set** — Decision 2026-05-01 evening: **ship-as-is (path a)**. The current `MobileStatusBarStrip` (PR #203, Phase 4.2) wraps the desktop `StatusBar` in `mode='scroll'` and inherits all 12 diagnostic segments (PWR · PROFILE · BOARD · CONN · PAGE · LEDS · MOD · STOR · THEME · PRESET · UTC · BUILD). Per `Claude Design Mobile handoff/HANDOFF.md` §Q3 path (b) (BLADE 36" · 144 LED · NEOPIXEL · 3.88A · 41% CHARGE · 4.2V · BT ON · PROFILE 03) needs charge / voltage / BT data sources we haven't wired yet — promote to path (c) hybrid when battery + BT surfaces land (post-v0.17 per `BLUETOOTH_FEASIBILITY.md`). Source: `docs/NEXT_SESSION_HANDOFF.md` 2026-05-01 evening + `Claude Design Mobile handoff/HANDOFF.md` §Q3.
+- **Mobile diagnostic-strip segment-set** — Decision 2026-05-01 evening: **ship-as-is (path a)**. The current `MobileStatusBarStrip` (PR #203, Phase 4.2) wraps the desktop `StatusBar` in `mode='scroll'` and inherits all 12 diagnostic segments (PWR · PROFILE · BOARD · CONN · PAGE · LEDS · MOD · STOR · THEME · PRESET · UTC · BUILD). Per `Claude Design Mobile handoff/HANDOFF.md` §Q3 path (b) (BLADE 36" · 144 LED · NEOPIXEL · 3.88A · 41% CHARGE · 4.2V · BT ON · PROFILE 03) needs charge / voltage / BT data sources we haven't wired yet — promote to path (c) hybrid when battery + BT surfaces land (post-v0.17 per `BLUETOOTH_FEASIBILITY.md`). Source: `docs/archive/NEXT_SESSION_HANDOFF.md` 2026-05-01 evening + `Claude Design Mobile handoff/HANDOFF.md` §Q3.
 
 ## 2026-04-29 session — what shipped (15 PRs by Claude + 3 by Ken = 18 total)
 
@@ -245,7 +245,7 @@ Multiple v0.15.x sprint table items had already shipped at session start (CardTh
 5. Then: Wave 8 button routing (its own focused multi-day session)
 6. Then: Item H mobile shell migration (Ken's UX call needed)
 
-See `CLAUDE.md` "Current State (2026-04-30)" entry and `docs/NEXT_SESSION_HANDOFF.md` for the full updated handoff.
+See `CLAUDE.md` and `docs/archive/NEXT_SESSION_HANDOFF.md` for the full updated handoff.
 
 ## Launch-night progress recap (2026-04-27 evening)
 

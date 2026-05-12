@@ -2,7 +2,7 @@
 
 **Status:** v1 draft · Session: 2026-04-18 onward
 **Purpose:** Full front-to-back QA sweep before public launch.
-**UX grounding:** `docs/UX_NORTH_STAR.md` (Ableton / Vital / Linear / Expanse / Mutable as primaries; SWTOR / ChatGPT / Notion / v0.dev / stock shadcn as anti-refs).
+**UX grounding:** `docs/archive/UX_NORTH_STAR.md` (Ableton / Vital / Linear / Expanse / Mutable as primaries; SWTOR / ChatGPT / Notion / v0.dev / stock shadcn as anti-refs).
 
 This doc supersedes `docs/QA_TEST_PLAN.md` for the launch sweep. The legacy doc stays for historical reference.
 
@@ -15,7 +15,7 @@ This doc supersedes `docs/QA_TEST_PLAN.md` for the launch sweep. The legacy doc 
 - **Roles:**
   - **Claude runs** automated steps and documents findings.
   - **Ken drives** UI tests, provides visual + UX observations.
-- **Bug log:** Claude appends findings to `docs/TESTING_NOTES.md` inline.
+- **Bug log:** Claude appends findings to `docs/archive/TESTING_NOTES.md` inline.
 - **Branch:** `test/launch-readiness-2026-04-18`. Fix commits land here; we split by area into PRs at session end.
 
 ## 1. Triage tiers (when a bug surfaces)
@@ -25,7 +25,7 @@ This doc supersedes `docs/QA_TEST_PLAN.md` for the launch sweep. The legacy doc 
 | **Blocker** | Crash, breaks downstream tests, data-loss | Fix immediately before continuing |
 | **Quick** | <5 min fix, mechanical | Fix inline, commit at phase end |
 | **Medium** | 5–30 min, focused scope | Batch at phase end, commit before next phase |
-| **Large** | >30 min, design decision, new scope | Log to `docs/TESTING_NOTES.md`, defer |
+| **Large** | >30 min, design decision, new scope | Log to `docs/archive/TESTING_NOTES.md`, defer |
 
 ## 2. Launch-blocker rubric
 
