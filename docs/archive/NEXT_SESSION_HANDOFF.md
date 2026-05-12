@@ -1,6 +1,6 @@
 # Next Session — Paste-Ready Handoff Prompt
 
-Refreshed **2026-05-12**. `main` is at `105cd80` (PR #307 merged), 105 commits past `v0.20.3`. Working tree clean. Major sprints since v0.20.3: Xenopixel V3 full board support, template-eval interpreter + engine bridge, Fredrik Style Editor Integration Phases 1–7, Visualizer Upgrade Plan Phases 1–2 (Hardware Preview + 3D blade), Fett263 Prop File Editor Level 1, mouse-driven swing simulation, slow-motion mode, lexer hardening, 40+ new presets.
+Refreshed **2026-05-12** (post-audit). `main` is at `81694a9` (PR #312 merged), 116 commits past `v0.20.3`. Working tree clean. Major sprints since v0.20.3: Xenopixel V3 full board support, template-eval interpreter + engine bridge, Fredrik Style Editor Integration Phases 1–7, Visualizer Upgrade Plan Phases 1–2 (Hardware Preview + 3D blade), Fett263 Prop File Editor Level 1, mouse-driven swing simulation, slow-motion mode, lexer hardening, 40+ new presets, comprehensive 8-phase audit (Waves 0–4).
 
 **Recommended first action next session: cut `v0.21.1` patch tag.**
 
@@ -20,13 +20,16 @@ deploy. Live site: https://kenkoller.github.io/KyberStation/
 
 CURRENT STATE (2026-05-12)
 --------------------------
-- main at 105cd80 (PR #307 merged), 105 commits past v0.20.3 tag
+- main at 81694a9 (PR #312 merged), 116 commits past v0.20.3 tag
 - Working tree clean
-- All 10 workspace packages typecheck + test green (3580 web tests
-  passing as of 2026-05-12)
+- All 13 workspace packages typecheck clean
+- 8,283 tests passing across 7 packages (web 3,552, codegen 2,854,
+  engine 1,219, boards 278, template-eval 180, presets 138, sound 62)
 - WebUSB FlashPanel = experimental, gated behind 3-checkbox disclaimer
 - dfu-util CLI is the recommended flash workflow
 - Branch protection ACTIVE on main; 2FA enabled
+- CLAUDE.md compressed to 573 lines (was 3,043); 44 historical docs
+  archived to docs/archive/
 
 WHAT JUST SHIPPED (May sprints, post v0.20.3)
 ---------------------------------------------
@@ -68,12 +71,23 @@ lexer hardening — 2 LEXER_INCOMPATIBLE fixtures closed (#279),
 Clone Wars Council (#307), card-snapshot golden-hash regression
 harness (#307).
 
+Comprehensive 8-phase audit (PRs #309-312):
+  Wave 0 — accuracy: fixed style/effect/preset counts on landing +
+    features pages, metadataBase warning (#309)
+  Wave 1 — hygiene: HelpTooltip SSR warning fix, dead doc refs,
+    stale CLAUDE.md counts (#310)
+  Wave 2 — skipped (Next.js 14->15 is medium-risk, own session)
+  Wave 3 — dead code: deleted performanceStore + 28 tests, removed
+    uiStore.performanceBarHeight, cleaned stale TODOs (#311)
+  Wave 4 — structural: archived 44 docs to docs/archive/, compressed
+    CLAUDE.md 3,043->573 lines, fixed 7 cross-references (#312)
+
 PRIORITY ORDER FOR THE NEXT SESSION
 -----------------------------------
-1. Cut v0.21.1 patch tag. 105 commits past v0.20.3 is substantial.
+1. Cut v0.21.1 patch tag. 116 commits past v0.20.3 is substantial.
    Tag-cut sequence:
      - Skim PR titles `gh pr list --state merged --limit 30`
-     - Draft [Unreleased] → [0.21.1] block in CHANGELOG.md
+     - Draft [Unreleased] -> [0.21.1] block in CHANGELOG.md
      - Bump apps/web/package.json + root package.json versions
      - Create the tag: git tag -a v0.21.1 -m "..."
      - Push: git push origin main v0.21.1
@@ -90,7 +104,7 @@ PRIORITY ORDER FOR THE NEXT SESSION
 
 CANDIDATE NEXT WORK
 -------------------
-After this audit, the genuinely-open delegable work, ordered by
+After the audit, the genuinely-open delegable work, ordered by
 value-per-effort:
 
   1. Wave 8 / Prop File Editor Level 2 — button routing sub-tab
@@ -101,7 +115,7 @@ value-per-effort:
 
   2. Visualizer Phase 2C — 3D mouse interaction (M). Orbit-
      rotation from drag, swing-sim from drag velocity,
-     click→clash, hold→lockup. Closes the "looks pretty but isn't
+     click->clash, hold->lockup. Closes the "looks pretty but isn't
      interactive" gap in the 3D view.
 
   3. Visualizer Phase 2D — 3D post-processing (M). UnrealBloomPass,
@@ -124,7 +138,7 @@ value-per-effort:
 
   7. Preset Cartography continued (S each). PR #307 added 40 across
      4 franchises. Next queued: KOTOR, animated series deep-cuts,
-     Visions Vol 2, cross-franchise "inspired by". Could 4-5× the
+     Visions Vol 2, cross-franchise "inspired by". Could 4-5x the
      library in one parallel-agent session.
 
   8. Real-saber demo GIFs (Ken's hardware shoot). LAUNCH_ASSETS.md
@@ -141,8 +155,9 @@ LARGER FUTURE SPRINTS (XL — multi-week, plan first)
   - Bluetooth wireless updates — v0.17 target. New BT-enabled board
     arriving per user memory; unblocks porting Fredrik's
     lightsaber-web-bluetooth POC.
-  - Next.js 14 → 15 upgrade — v0.17 stabilization slot (3-5h
-    mechanical, React 18→19 jump is the risk)
+  - Next.js 14 -> 15 upgrade — v0.17 stabilization slot (3-5h
+    mechanical, React 18->19 jump is the risk). Audit Wave 2
+    deferred this to its own session.
   - Fett263 Prop File Editor Level 3 — full custom prop file
     generation. Evaluate community demand after Wave 8.
   - Xenopixel Phase 5B/5C — hardware validation on real Xeno
@@ -154,13 +169,12 @@ VERIFICATION COMMANDS BEFORE STARTING
   git fetch origin --prune && git status && git log --oneline -10
   git worktree list
   pnpm install
-  pnpm typecheck    # should be clean across 10 packages
-  pnpm test         # 3580+ tests passing on apps/web
+  pnpm typecheck    # should be clean across 13 packages
+  pnpm test         # 8,283 tests passing across 7 packages
 
 WHERE THINGS LIVE
 -----------------
-- CLAUDE.md "Current State (2026-05-10 ...)" — Phase 5D + Visualizer
-  Plan recap; preceding entries cover Phases 1-4
+- CLAUDE.md — 573-line project context file (compressed 2026-05-12)
 - docs/POST_LAUNCH_BACKLOG.md — single source of truth for open items.
   Top "What's open right now (2026-05-12)" section refreshed.
 - docs/VISUALIZER_UPGRADE_PLAN.md — Phases 1-2 shipped; 2C/2D/3 still
@@ -174,10 +188,12 @@ WHERE THINGS LIVE
   adding any new engine style / blend mode / compositor mode
 - docs/research/BLUETOOTH_FEASIBILITY.md — v0.17 plan
 - docs/research/NEXTJS_15_UPGRADE_PLAN.md — v0.17 stabilization
+- docs/archive/ — 44 historical docs (sessions, audits, UX overhauls)
+  moved here during Wave 4 cleanup
 
 OPEN PRs
 --------
-None. PR #307 merged 2026-05-12. Older stale PRs:
+None. PRs #309-312 merged 2026-05-12. Older stale PRs:
 - PR #32 (marketing site expansion) — open since pre-launch; needs
   focused rebase. Most of its content already shipped via separate
   PRs.
@@ -207,7 +223,7 @@ File-disjoint parallel agents in isolated worktrees works when:
   - Conservative-fallback rules ("if X doesn't work, ship Y subset")
   - L-scope work split into 2-3 M-scope dispatches
 
-Cap: ≤4 concurrent agents. CLAUDE.md learnings show concurrent leak
+Cap: <=4 concurrent agents. CLAUDE.md learnings show concurrent leak
 risk compounds beyond that.
 
 KNOWN GOTCHAS

@@ -542,15 +542,15 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-05-12, post-Visualizer/Fredrik wave audit + handoff refresh)
+## Current State (2026-05-12, post-audit)
 
-Audit + planning session. No new feature code shipped today; PR #307 (card-snapshot golden-hash tests + 40 new presets across Harry Potter / Halo / SWTOR / Clone Wars Council) merged at `105cd80`. Backlog + handoff doc refreshed against current main.
+Comprehensive 8-phase audit completed. Waves 0 (accuracy), 1 (hygiene), 3 (dead code), 4 (structural) shipped as PRs #309–312. Wave 2 (Next.js 14→15 upgrade) deferred to its own session. CLAUDE.md compressed from 3,043 to 573 lines; 44 historical docs archived to `docs/archive/`.
 
-**Current verified counts (2026-05-12):** 8,311 tests across 7 packages (web 3,580 / codegen 2,854 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / sound 62). 455 presets (ALL_PRESETS.length, runtime-verified). 33 blade styles, 22 effects, 30 themes.
+**Current verified counts (2026-05-12):** 8,283 tests across 7 packages (web 3,552 / codegen 2,854 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / sound 62). 455 presets (ALL_PRESETS.length, runtime-verified). 33 blade styles, 22 effects, 30 themes.
 
-**Stock-take since v0.20.3 tag (105 commits):** Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), lexer hardening — 2 LEXER_INCOMPATIBLE fixtures closed (#279), `altPhaseColors` + `detectedEffectIds` UI surface (#281), sub-1024 tablet brand drift (#277), 40 new presets + card-snapshot regression tests (#307).
+**Stock-take since v0.20.3 tag (116 commits):** Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), lexer hardening — 2 LEXER_INCOMPATIBLE fixtures closed (#279), `altPhaseColors` + `detectedEffectIds` UI surface (#281), sub-1024 tablet brand drift (#277), 40 new presets + card-snapshot regression tests (#307), comprehensive audit Waves 0–4 (#309–312).
 
-**Recommended first action next session:** cut `v0.21.1` patch tag. Substantial functionality past v0.20.3 — Xenopixel + template-eval + Fredrik integration alone justify a release marker. Tag-cut is ~30 min: skim merged PR titles, draft `[Unreleased]→[0.21.1]` CHANGELOG block, bump versions, tag, push.
+**Recommended first action next session:** cut `v0.21.1` patch tag. 116 commits past v0.20.3 — Xenopixel + template-eval + Fredrik integration + audit cleanup justify a release marker. Tag-cut is ~30 min: skim merged PR titles, draft `[Unreleased]→[0.21.1]` CHANGELOG block, bump versions, tag, push.
 
 **Top open items** (full list + scope at [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md) §"What's open right now"):
 1. **v0.21.1 patch tag** (S)
