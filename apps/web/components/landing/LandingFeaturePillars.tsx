@@ -36,19 +36,19 @@ function Pillar({ glyph, title, description }: PillarProps) {
 const PILLARS: PillarProps[] = [
   {
     glyph: '◇',
-    title: '29 Blade Styles',
+    title: '33 Blade Styles',
     description:
-      'Stable, Unstable, Fire, Plasma, Crystal Shatter, Aurora, Helix, Candle — and 22 more. Mix layers, stack effects, build something unique.',
+      'Stable, Unstable, Fire, Plasma, Crystal Shatter, Aurora, Helix, Candle — and 25 more. Mix layers, stack effects, build something unique.',
   },
   {
     glyph: '★',
-    title: '300+ Presets',
+    title: '450+ Presets',
     description:
-      'Every Jedi, Sith, Inquisitor, plus 89 cross-franchise sabers (LOTR, Marvel, Zelda, Final Fantasy, anime). Drop in, then make it yours.',
+      'Every Jedi, Sith, Inquisitor, plus 130+ cross-franchise sabers (LOTR, Marvel, Zelda, Final Fantasy, anime). Drop in, then make it yours.',
   },
   {
     glyph: '⚡',
-    title: '21 Combat Effects',
+    title: '22 Combat Effects',
     description:
       'Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Ripple, Freeze. Each one with spatial placement on the blade.',
   },
