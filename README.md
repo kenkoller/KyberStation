@@ -16,7 +16,7 @@
 
 **Free · browser-based · MIT licensed · no accounts · no backend · hobby project · beta**
 
-> **33** styles · **22** effects · **19+13** ignition/retraction animations · **354+** presets · **16** boards · **~5,000** tests
+> **33** styles · **22** effects · **19+13** ignition/retraction animations · **455+** presets · **7** board families · **~8,300** tests
 
 Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device, phone, tablet, laptop, or desktop. Installable as a PWA.
 
@@ -26,7 +26,7 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 
 ## Features
 
-### Blade Engine (150+ source files across packages, ~5,000 tests)
+### Blade Engine (150+ source files across packages, ~8,300 tests)
 
 - **33 blade styles**, Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage, Darksaber, Sith Flicker, Blade Charge, Tempo Lock
 - **22 effect types**, Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon, Unstable Kylo

@@ -72,6 +72,7 @@ const aurebeshLegendsTech = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://kenkoller.github.io/KyberStation'),
   title: 'KyberStation — Lightsaber Style Editor',
   description:
     'Universal Saber Style Engine — Design, preview, and export lightsaber blade styles',

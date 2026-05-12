@@ -9,7 +9,7 @@ import { pageMetadata } from '@/lib/marketing/pageMetadata';
 export const metadata = pageMetadata({
   title: 'Features',
   description:
-    'Explore KyberStation feature pillars — 29 blade styles, 21 combat effects, modulation routing, ProffieOS codegen, and more.',
+    'Explore KyberStation feature pillars — 33 blade styles, 22 combat effects, modulation routing, ProffieOS codegen, and more.',
   path: '/features',
 });
 
@@ -84,7 +84,7 @@ const PILLARS: Pillar[] = [
   {
     anchor: 'blade-styles',
     glyph: '◇',
-    title: '29 Blade Styles',
+    title: '33 Blade Styles',
     intro:
       'Every base style ships as a typed engine class with codegen parity. Mix and match in the layer compositor; stack effects on top.',
     bullets: [
@@ -110,12 +110,12 @@ const PILLARS: Pillar[] = [
   {
     anchor: 'presets',
     glyph: '★',
-    title: '300+ Presets',
+    title: '450+ Presets',
     intro:
-      'Every Jedi, Sith, and Inquisitor across the canon era files plus 89 cross-franchise sabers spanning LOTR, Marvel, DC, Zelda, anime, and more. Click any card to drop into the editor and make it yours.',
+      'Every Jedi, Sith, and Inquisitor across the canon era files plus 130+ cross-franchise sabers spanning LOTR, Marvel, DC, Zelda, Halo, Harry Potter, anime, and more. Click any card to drop into the editor and make it yours.',
     bullets: [
-      '216 canonical presets (prequel, OT, sequel, animated, legends, EU)',
-      '89 pop-culture entries (LOTR, mythology, MCU, DC, Zelda, FF/KH, anime)',
+      '190+ Star Wars presets (prequel, OT, sequel, animated, legends, EU)',
+      '130+ pop-culture entries (LOTR, mythology, MCU, DC, Zelda, FF/KH, Halo, Harry Potter, anime)',
       'Hardware-fidelity audited — every preset matches what real LED strips can produce',
       'Filter by era, faction, color family, or continuity',
     ],
@@ -123,7 +123,7 @@ const PILLARS: Pillar[] = [
   {
     anchor: 'combat-effects',
     glyph: '⚡',
-    title: '21 Combat Effects',
+    title: '22 Combat Effects',
     intro:
       'Real-time effect triggers with spatial placement on the blade. Click anywhere on the visualizer to drop a Lockup, Blast, or Drag at that LED.',
     bullets: [
@@ -184,7 +184,7 @@ StylePtr<InOutTrL<
       'Real C++ output — no string concatenation, no template-bracket bugs',
       'Compiles unmodified in Arduino IDE with the Proffieboard board manager',
       'Builds the full config.h with every preset wired',
-      '1,859 codegen tests covering AST round-trip + transition mapping',
+      '2,854 codegen tests covering AST round-trip + transition mapping',
     ],
   },
   {
