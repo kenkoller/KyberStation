@@ -25,9 +25,7 @@
 //
 // v1 status logic: only `current` / `pending` are wired. The active
 // step gets `current`; everything else gets `pending`. Rich completion
-// state per step (e.g. `done` once code has been generated, `error` if
-// FlashPanel reported a flash failure) lands in a follow-up — see the
-// TODO marker on `getStepStatus()` below.
+// state per step lands in a follow-up (tracked in POST_LAUNCH_BACKLOG.md).
 
 import { useCallback, useMemo, useRef } from 'react';
 import {
@@ -46,10 +44,8 @@ export interface OutputColumnAProps {
 
 /**
  * Status resolver — currently a stub returning `current` for the active
- * step and `pending` for everything else.
- *
- * TODO(post-launch): derive real status from each step's actual state
- * once we have an output-pipeline status store. Candidates:
+ * step and `pending` for everything else. Rich per-step status tracked
+ * in POST_LAUNCH_BACKLOG.md. Candidates:
  *   - `generate-code`  : `done` once codegen has emitted text
  *                        (could probe codegen cache / generated code length)
  *   - `config-summary` : always `done` (it's a static read of bladeStore)

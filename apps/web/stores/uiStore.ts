@@ -218,8 +218,6 @@ export interface UIStore {
   inspectorWidth: number;
   /** Section 2 (blade + viz row) height in CSS pixels. Default 320. */
   section2Height: number;
-  /** PerformanceBar total height in CSS pixels. Default 158. */
-  performanceBarHeight: number;
   // ── Sidebar A/B v2 (Phase 1 — feature-flagged) ──
   /**
    * Column A width in CSS pixels for the Sidebar A/B layout. Default 280.
@@ -335,7 +333,6 @@ export interface UIStore {
   setAnalysisRailWidth: (w: number) => void;
   setInspectorWidth: (w: number) => void;
   setSection2Height: (h: number) => void;
-  setPerformanceBarHeight: (h: number) => void;
   setColumnAWidth: (w: number) => void;
   setUseABLayout: (enabled: boolean) => void;
   setPixelStripHeight: (h: number) => void;
@@ -363,7 +360,6 @@ export const REGION_LIMITS = {
   analysisRailWidth: { min: 140, max: 320, default: 200 },
   inspectorWidth:    { min: 280, max: 520, default: 400 },
   section2Height:    { min: 220, max: 520, default: 320 },
-  performanceBarHeight: { min: 48, max: 200, default: 64 },
   pixelStripHeight:  { min: 24, max: 300, default: 36 },
   expandedSlotHeight:{ min: 40, max: 400, default: 110 },
   /**
@@ -393,7 +389,6 @@ interface PersistedLayout {
   analysisRailWidth: number;
   inspectorWidth: number;
   section2Height: number;
-  performanceBarHeight: number;
   pixelStripHeight: number;
   expandedSlotHeight: number;
   bladeStartFrac: number;
@@ -709,10 +704,6 @@ export const useUIStore = create<UIStore>((set) => ({
     'section2Height',
     storedLayout.section2Height ?? REGION_LIMITS.section2Height.default,
   ),
-  performanceBarHeight: clampRegion(
-    'performanceBarHeight',
-    storedLayout.performanceBarHeight ?? REGION_LIMITS.performanceBarHeight.default,
-  ),
   pixelStripHeight: clampRegion(
     'pixelStripHeight',
     storedLayout.pixelStripHeight ?? REGION_LIMITS.pixelStripHeight.default,
@@ -844,12 +835,6 @@ export const useUIStore = create<UIStore>((set) => ({
       savePersistedLayout({ ...snapshotLayout(s), section2Height });
       return { section2Height };
     }),
-  setPerformanceBarHeight: (h) =>
-    set((s) => {
-      const performanceBarHeight = clampRegion('performanceBarHeight', h);
-      savePersistedLayout({ ...snapshotLayout(s), performanceBarHeight });
-      return { performanceBarHeight };
-    }),
   setPixelStripHeight: (h) =>
     set((s) => {
       const pixelStripHeight = clampRegion('pixelStripHeight', h);
@@ -919,7 +904,6 @@ function snapshotLayout(s: UIStore): PersistedLayout {
     analysisRailWidth: s.analysisRailWidth,
     inspectorWidth: s.inspectorWidth,
     section2Height: s.section2Height,
-    performanceBarHeight: s.performanceBarHeight,
     pixelStripHeight: s.pixelStripHeight,
     expandedSlotHeight: s.expandedSlotHeight,
     bladeStartFrac: s.bladeStartFrac,
