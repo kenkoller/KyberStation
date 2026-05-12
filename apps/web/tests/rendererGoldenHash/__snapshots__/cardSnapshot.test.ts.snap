@@ -1,0 +1,27 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`card-snapshot FNV drift sentinel > hashCanvas on a solid-fill 10×10 is stable 1`] = `"c00adf35"`;
+
+exports[`card-snapshot FNV drift sentinel > hashCanvasCoarse on a solid-fill 10×10 is stable 1`] = `"2109d845"`;
+
+exports[`drawBackdrop golden-hash > default layout × default theme 1`] = `"252989d5"`;
+
+exports[`drawBackdrop golden-hash > default layout × imperial theme 1`] = `"55524dfb"`;
+
+exports[`drawBackdrop golden-hash > default layout × jedi theme 1`] = `"d566eab4"`;
+
+exports[`drawBackdrop golden-hash > default layout × light theme 1`] = `"6fa83c9a"`;
+
+exports[`drawBackdrop golden-hash > default layout × space theme 1`] = `"aee79265"`;
+
+exports[`drawBlade golden-hash > obi-wan-blue × default theme 1`] = `"b4a6bac2"`;
+
+exports[`drawBlade golden-hash > obi-wan-blue × light theme 1`] = `"9b7164d6"`;
+
+exports[`drawBlade golden-hash > vader-red × default theme 1`] = `"4a1f41fa"`;
+
+exports[`drawBlade golden-hash > vader-red × light theme 1`] = `"b0b42472"`;
+
+exports[`drawBlade golden-hash > yoda-green × default theme 1`] = `"390e1ad2"`;
+
+exports[`drawBlade golden-hash > yoda-green × light theme 1`] = `"42af51fc"`;
