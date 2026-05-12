@@ -8,11 +8,10 @@ The app targets the Neopixel lightsaber hobbyist community (cosplay, reenactment
 
 ## Release Posture
 
-- **Launch target: as soon as ready.** Not tied to a specific date. Ship as soon as the pre-launch checklist (in `docs/LAUNCH_PLAN.md`) is clean.
-- **May 4 (Star Wars Day) is a promotion amplification beat, NOT the launch date.** Launch well before May 4 so users have time to install, design, and flash their sabers before the big day; then do a second wave of outreach in the days leading up to May 4.
+- **Launched 2026-05-01.** v1.0 shipped as a static GitHub Pages deployment. Launch summary in `docs/LAUNCH_PLAN.md`.
 - **Tone is humble.** First public programming project, first GitHub project. Acknowledge hobby status, invite feedback, don't overclaim.
-- **Contribution policy at launch:** Issues/feedback open, outside PRs not yet accepted. Revisit at 30 days post-launch.
-- **Full launch strategy lives in `docs/LAUNCH_PLAN.md`.** Reference it when asked about release plans, Reddit post content, YouTube outreach, or post-launch monitoring.
+- **Contribution policy:** Issues/feedback open, outside PRs not yet accepted. Revisit at 30 days post-launch.
+- **Post-launch backlog:** `docs/POST_LAUNCH_BACKLOG.md` is the single source of truth for remaining work.
 
 ## Tech Stack
 
@@ -546,6 +545,8 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 ## Current State (2026-05-12, post-Visualizer/Fredrik wave audit + handoff refresh)
 
 Audit + planning session. No new feature code shipped today; PR #307 (card-snapshot golden-hash tests + 40 new presets across Harry Potter / Halo / SWTOR / Clone Wars Council) merged at `105cd80`. Backlog + handoff doc refreshed against current main.
+
+**Current verified counts (2026-05-12):** 8,311 tests across 7 packages (web 3,580 / codegen 2,854 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / sound 62). 455 presets (ALL_PRESETS.length, runtime-verified). 33 blade styles, 22 effects, 30 themes.
 
 **Stock-take since v0.20.3 tag (105 commits):** Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), lexer hardening — 2 LEXER_INCOMPATIBLE fixtures closed (#279), `altPhaseColors` + `detectedEffectIds` UI surface (#281), sub-1024 tablet brand drift (#277), 40 new presets + card-snapshot regression tests (#307).
 

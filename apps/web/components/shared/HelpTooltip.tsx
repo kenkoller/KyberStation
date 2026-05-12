@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 interface HelpTooltipProps {
@@ -123,7 +123,7 @@ export function HelpTooltip({ text, proffie, position = 'top' }: HelpTooltipProp
   }, [visible, clearTimers]);
 
   // Position the tooltip in viewport coordinates whenever it becomes visible
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!visible || !tooltipRef.current || !triggerRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     setPos(calcTooltipPosition(triggerRect, tooltipRef.current, position));
