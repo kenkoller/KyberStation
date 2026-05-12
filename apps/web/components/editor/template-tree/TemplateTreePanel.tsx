@@ -2,6 +2,8 @@
 //
 // Phase 5A: Read-only template tree view for imported ProffieOS styles.
 // Phase 5D: Inline editing — integer values + Rgb color picker.
+// Phase 6:  Style Transformation Tools — Expand, Layerize, Argify, Rotate.
+// Phase 7:  Template Insertion Palette — categorized template browser.
 //
 // Parses the active config's importedRawCode into a TemplateNode AST
 // and renders a collapsible tree with color swatches and annotations.
@@ -14,11 +16,12 @@
 
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { parseTemplateString } from '@kyberstation/template-eval';
 import type { TemplateNode } from '@kyberstation/template-eval';
 import { useBladeStore } from '../../../stores/bladeStore';
 import { TemplateTreeNode } from './TemplateTreeNode';
+import { TemplateInsertionPalette } from './TemplateInsertionPalette';
 import {
   templateNodeToString,
   updateNodeAtPath,
@@ -28,6 +31,16 @@ import {
   removeChildAtPath,
   duplicateChildAtPath,
 } from '../../../lib/templateSerializer';
+import {
+  expandTemplate,
+  isExpandable,
+  layerizeTemplate,
+  isLayerizable,
+  argifyTemplate,
+  isArgifiable,
+  rotateTemplate,
+  isRotatable,
+} from '../../../lib/templateTransformations';
 
 // ─── Node statistics ─
 
@@ -102,6 +115,82 @@ function StatsBar({ stats }: { stats: TreeStats }) {
   );
 }
 
+// ─── Transformation toolbar ─
+
+interface TransformToolbarProps {
+  node: TemplateNode;
+  onTransform: (newCode: string) => void;
+}
+
+function TransformToolbar({ node, onTransform }: TransformToolbarProps) {
+  const canExpand = isExpandable(node);
+  const canLayerize = isLayerizable(node);
+  const canArgify = isArgifiable(node);
+  const canRotate = isRotatable(node);
+
+  const noneApplicable = !canExpand && !canLayerize && !canArgify && !canRotate;
+  if (noneApplicable) return null;
+
+  const handleExpand = () => {
+    onTransform(templateNodeToString(expandTemplate(node)));
+  };
+
+  const handleLayerize = () => {
+    onTransform(templateNodeToString(layerizeTemplate(node)));
+  };
+
+  const handleArgify = () => {
+    const { result } = argifyTemplate(node);
+    onTransform(templateNodeToString(result));
+  };
+
+  const handleRotate = () => {
+    onTransform(templateNodeToString(rotateTemplate(node, 1)));
+  };
+
+  return (
+    <>
+      <span className="text-[10px] text-text-muted mr-1">Transform</span>
+      {canExpand && (
+        <button
+          onClick={handleExpand}
+          className="px-2 py-0.5 text-[10px] rounded bg-bg-card/60 hover:bg-accent/20 text-text-muted hover:text-text-primary border border-border-subtle transition-colors"
+          title="Expand shorthand (StylePtr, StyleNormalPtr) to full form"
+        >
+          Expand
+        </button>
+      )}
+      {canLayerize && (
+        <button
+          onClick={handleLayerize}
+          className="px-2 py-0.5 text-[10px] rounded bg-bg-card/60 hover:bg-accent/20 text-text-muted hover:text-text-primary border border-border-subtle transition-colors"
+          title="Wrap root in Layers<> for layer editing"
+        >
+          Layerize
+        </button>
+      )}
+      {canArgify && (
+        <button
+          onClick={handleArgify}
+          className="px-2 py-0.5 text-[10px] rounded bg-bg-card/60 hover:bg-accent/20 text-text-muted hover:text-text-primary border border-border-subtle transition-colors"
+          title="Wrap values in IntArg/RgbArg for OLED editing"
+        >
+          Argify
+        </button>
+      )}
+      {canRotate && (
+        <button
+          onClick={handleRotate}
+          className="px-2 py-0.5 text-[10px] rounded bg-bg-card/60 hover:bg-accent/20 text-text-muted hover:text-text-primary border border-border-subtle transition-colors"
+          title="Rotate ColorChange color arguments"
+        >
+          Rotate
+        </button>
+      )}
+    </>
+  );
+}
+
 // ─── Main Panel ─
 
 export interface TemplateTreePanelProps {
@@ -114,6 +203,9 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
   const storeRawCode = useBladeStore((s) => s.config.importedRawCode);
   const updateConfig = useBladeStore((s) => s.updateConfig);
   const rawCode = templateString ?? storeRawCode;
+
+  // Phase 7: palette visibility toggle
+  const [showPalette, setShowPalette] = useState(false);
 
   // Parse the template string into an AST
   const parseResult = useMemo(() => {
@@ -214,6 +306,60 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
     [parseResult.node, updateConfig],
   );
 
+  // ─── Phase 6: transformation handler ─
+  const handleTransform = useCallback(
+    (newCode: string) => {
+      updateConfig({ importedRawCode: newCode });
+    },
+    [updateConfig],
+  );
+
+  // ─── Phase 7: palette insert handler ─
+  //
+  // Insert a template from the catalog. If the tree has a root node,
+  // inserts as a new child of the root (useful when root is Layers<>).
+  // Otherwise replaces the entire template string.
+  const handlePaletteInsert = useCallback(
+    (insertString: string) => {
+      if (!rawCode || !parseResult.node) {
+        // No existing tree — set the inserted template as the root
+        updateConfig({ importedRawCode: insertString });
+        return;
+      }
+
+      const currentNode = parseResult.node;
+
+      // If root is Layers<> or InOutTrL<>, insert as a child
+      if (currentNode.name === 'Layers' || currentNode.name === 'InOutTrL') {
+        try {
+          const childNode = parseTemplateString(insertString);
+          if (childNode) {
+            const insertAt = currentNode.name === 'Layers'
+              ? currentNode.args.length
+              : 1; // For InOutTrL, insert after the first arg (the Layers body)
+            const updatedRoot = insertChildAtPath(currentNode, [], insertAt, childNode);
+            updateConfig({ importedRawCode: templateNodeToString(updatedRoot) });
+            return;
+          }
+        } catch {
+          // Fall through to replace
+        }
+      }
+
+      // Fallback: wrap in Layers<existing, new>
+      updateConfig({ importedRawCode: `Layers<${rawCode},${insertString}>` });
+    },
+    [rawCode, parseResult.node, updateConfig],
+  );
+
+  // Load an example style — replaces the entire template
+  const handleLoadExample = useCallback(
+    (exampleString: string) => {
+      updateConfig({ importedRawCode: exampleString });
+    },
+    [updateConfig],
+  );
+
   // Editing is only available when reading from the store (not from prop)
   const isLiveEditable = !templateString && !!storeRawCode;
 
@@ -234,6 +380,30 @@ export function TemplateTreePanel({ templateString }: TemplateTreePanelProps) {
   return (
     <div className="flex flex-col h-full">
       {stats && <StatsBar stats={stats} />}
+      {isLiveEditable && node && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border-subtle">
+          <TransformToolbar node={node} onTransform={handleTransform} />
+          <button
+            onClick={() => setShowPalette((p) => !p)}
+            className={`ml-auto px-2 py-0.5 text-[10px] rounded border transition-colors ${
+              showPalette
+                ? 'bg-accent/20 text-accent border-accent/40'
+                : 'bg-bg-card/60 hover:bg-accent/20 text-text-muted hover:text-text-primary border-border-subtle'
+            }`}
+            title="Toggle template insertion palette"
+          >
+            + Templates
+          </button>
+        </div>
+      )}
+      {showPalette && isLiveEditable && (
+        <div className="border-b border-border-subtle max-h-[280px] overflow-hidden">
+          <TemplateInsertionPalette
+            onInsert={handlePaletteInsert}
+            onLoadExample={handleLoadExample}
+          />
+        </div>
+      )}
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden py-1"
         role="tree"
