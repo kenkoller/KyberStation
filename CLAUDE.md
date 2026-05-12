@@ -543,6 +543,27 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
+## Current State (2026-05-12, post-Visualizer/Fredrik wave audit + handoff refresh)
+
+Audit + planning session. No new feature code shipped today; PR #307 (card-snapshot golden-hash tests + 40 new presets across Harry Potter / Halo / SWTOR / Clone Wars Council) merged at `105cd80`. Backlog + handoff doc refreshed against current main.
+
+**Stock-take since v0.20.3 tag (105 commits):** Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), lexer hardening — 2 LEXER_INCOMPATIBLE fixtures closed (#279), `altPhaseColors` + `detectedEffectIds` UI surface (#281), sub-1024 tablet brand drift (#277), 40 new presets + card-snapshot regression tests (#307).
+
+**Recommended first action next session:** cut `v0.21.1` patch tag. Substantial functionality past v0.20.3 — Xenopixel + template-eval + Fredrik integration alone justify a release marker. Tag-cut is ~30 min: skim merged PR titles, draft `[Unreleased]→[0.21.1]` CHANGELOG block, bump versions, tag, push.
+
+**Top open items** (full list + scope at [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md) §"What's open right now"):
+1. **v0.21.1 patch tag** (S)
+2. **Renderer-level golden-hash full coverage** (M) — engine + card-snapshot drawers shipped; full BladeCanvas pipeline pixel-level coverage still TBD. Prerequisite for Visualizer Phase 2D.
+3. **Wave 8 / Prop File Editor Level 2 — button routing sub-tab** (L) — all 8 aux/gesture modulators already registered; remaining is the routing-sub-tab UI + binding shape extensions.
+4. **Visualizer Phase 2C — 3D mouse interaction** (M) — orbit, drag-velocity swing sim, click→clash, hold→lockup.
+5. **Visualizer Phase 2D — 3D post-processing** (M) — UnrealBloomPass, polycarbonate diffusion, motion blur.
+6. **Crystal Vault panel + Re-attunement UI** (M-L) — long-standing design debt.
+7. **Mobile shell migration to Sidebar + MainContent** (M) — needs UX call on drawer vs bottom-sheet at 375px.
+
+Full session handoff prompt at [`docs/NEXT_SESSION_HANDOFF.md`](docs/NEXT_SESSION_HANDOFF.md) — paste verbatim into a fresh Claude Code session.
+
+---
+
 ## Current State (2026-05-10, Phase 5D merged + Visualizer Upgrade Plan)
 
 Phase 5 template tree panel complete (PR #299 merged). Architecture audit of the dual-renderer approach completed — identified the accuracy gap between the parameter engine and template-eval paths. New `docs/VISUALIZER_UPGRADE_PLAN.md` created with 3-phase roadmap: Hardware Preview toggle (short term), 3D saber renderer with mouse interaction (medium term), template-eval as default + 3D flagship (long term). All three phases approved for development.

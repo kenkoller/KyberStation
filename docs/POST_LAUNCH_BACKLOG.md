@@ -4,9 +4,54 @@ Single index of deferred work as of **2026-04-27 overnight** (post-overnight UI/
 
 **Update cadence:** review at the start of every multi-PR sprint. Move items to ✅ when they ship; promote items between target versions as priorities shift.
 
-> **Last audited: 2026-05-01 evening** — ground-truth sweep against `git log --grep` + filesystem checks. Findings: `useAudioEngine` singleton shipped via PR #176; `lib/blade/*` extraction shipped via PR #177; `BLADE_LENGTHS` lift shipped via PR #99; Strip Config thickness shipped via PR #108; Topology Triple/Inquisitor shipped via PR #109; Sidebar A/B Phase 4+ confirmed 6/6 complete; Mobile Phase 4 sprint (4.1–4.5) feature-complete on main; Saber GIF Sprint 3 shipped via PR #184 + #185; Marketing site 4/5 pages shipped via PR #179 (only `/community` page remains); CANONICAL_DEFAULT_CONFIG drift-sentinel test already exists; OG hero + favicon shipped.
+> **Last audited: 2026-05-12** — ground-truth sweep against `git log v0.20.3..main` (105 commits past last tag). Closed by recent merges: Xenopixel V3 full board support (PRs #287–#296), Fett263 Prop File Editor Level 1 (#305), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge (#295, #296), template registry expansion 153→372 (#303), Visualizer Upgrade Plan Phases 1–2 (#301), mouse-driven swing simulation (#291), slow-motion mode (#294), Fett263 corpus fixtures lexer hardening (#279), `altPhaseColors`/`detectedEffectIds` UI surface (#281), sub-1024 tablet brand drift (#277), card snapshot regression tests + 40 new presets (#307).
 >
-> **Previous audit (2026-04-30):** Saber GIF Sprint 2 shipped (PR #80); UX item #16 (Figma color model) removed as superseded by PR #116; several parking-lot items already shipped; 2026-04-30 session recap (PRs #127-#138) added.
+> **Previous audits (2026-05-01 evening / 2026-04-30):** retained below in the historical session-recap sections.
+
+---
+
+## 🧭 What's open right now (2026-05-12 — paste from here)
+
+### Recommended next sequence
+
+1. **Cut `v0.21.1` patch tag.** 105 commits past `v0.20.3`. Includes Xenopixel V3 full board support, template-eval interpreter, Fredrik Style Editor Phases 1–7, 3D blade renderer + Hardware Preview, Fett263 Prop File Editor Level 1, mouse-driven swing sim, slow-mo, lexer hardening, sub-1024 polish. ~30 min sprint: draft `[Unreleased]→[0.21.1]` block in CHANGELOG, create the tag, push.
+2. **Renderer-level golden-hash full coverage.** PR #307 shipped the card-snapshot + drawBlade harness; the blade-render pipeline still needs node-canvas-driven pixel-level coverage to safely take on `lib/blade/*` follow-on extractions or Visualizer Phase 2D post-processing.
+3. **Wave 8 / Prop File Editor Level 2 — button routing sub-tab.** All 8 aux/gesture modulators already registered in `packages/engine/src/modulation/registry.ts`; `ModulatorPlateBar` already renders Button + Gesture categories. The remaining surface is the routing-sub-tab UI + binding shape extensions in `bladeStore`. Pre-shipped infrastructure makes this an L scope (~6–8h, splittable into 3 M-scope agent dispatches as proven in 2026-05-01 night session).
+4. **Visualizer Phase 2C — 3D mouse interaction.** Phase 2A+2B shipped via PR #301. Phase 2C adds orbit-rotation from drag, swing-sim from drag velocity, click→clash, hold→lockup. Closes the "looks pretty but isn't interactive" gap.
+5. **Crystal Vault panel + Re-attunement UI.** Long-standing design debt from `docs/KYBER_CRYSTAL_3D.md`. M-L scope; needs Ken's UX confirmation on entry-point shape (header button vs sidebar entry vs `/vault` route).
+6. **Mobile shell migration to Sidebar + MainContent.** Currently 4-tab swipe UI + `MergedDesignPanel`. Migration would unblock retiring `DesignPanel.tsx`, `DynamicsPanel.tsx`, `MergedDesignPanel`, and `uiStore.activeTab` together. Needs UX judgment on drawer vs bottom-sheet pattern at 375px.
+
+### Still open — full list
+
+| Item | Source | Scope | Notes |
+|---|---|---|---|
+| **v0.21.1 patch tag** | this audit | S | Draft CHANGELOG block from PR titles `#277..#307`, create tag, push. |
+| **Renderer-level golden-hash full coverage** | `HARDWARE_FIDELITY_PRINCIPLE.md` audit history | M | Engine-side (PR #112) + card-snapshot drawers (PR #307) shipped; full BladeCanvas pipeline pixel-level coverage still TBD. Prerequisite for Visualizer Phase 2D post-processing extensions. |
+| **Wave 8 / Prop File Editor Level 2 — button routing sub-tab** | [`MODULATION_ROUTING_v1.1_IMPL_PLAN.md`](MODULATION_ROUTING_v1.1_IMPL_PLAN.md) | L | Engine + UI registry already in place. Splittable into engine slot expansion + codegen templates + UI binding-shape updates. |
+| **Wave 6 follow-on — composer slot expansion** | `CLAUDE.md` overnight recap | L | Per-channel RGB (`Mix<driver, ColorLow, ColorHigh>` restructuring) + timing scalars. Deeper AST work in codegen. |
+| **Visualizer Phase 2C — 3D mouse interaction** | [`VISUALIZER_UPGRADE_PLAN.md`](VISUALIZER_UPGRADE_PLAN.md) | M | Orbit rotation, swing sim from drag velocity, click→clash, hold→lockup. |
+| **Visualizer Phase 2D — 3D post-processing** | [`VISUALIZER_UPGRADE_PLAN.md`](VISUALIZER_UPGRADE_PLAN.md) | M | UnrealBloomPass, polycarbonate diffusion, motion blur. Builds on shipped Phase 2A+2B (PR #301). |
+| **Crystal Vault panel + Re-attunement UI** | [`KYBER_CRYSTAL_3D.md`](KYBER_CRYSTAL_3D.md) | M-L | Designed, not built. Needs UX confirmation on shape. |
+| **Mobile shell migration to Sidebar + MainContent** | `CLAUDE.md` left-rail overhaul | M | Needs UX call on drawer vs bottom-sheet pattern. Unblocks 3-file retirement. |
+| **Phone-camera QR scan validation** | `CLAUDE.md` v0.12.0 deferred | S | Hardware-gated. |
+| **`<HiltMesh>` extraction from `BladeCanvas3D.tsx`** | `CLAUDE.md` v0.12.0 deferred | S | Mechanical; do as part of any 3D-renderer follow-up. |
+| **Real-saber demo GIFs (15-20s)** | [`LAUNCH_ASSETS.md`](LAUNCH_ASSETS.md) | S (Ken's hardware shoot) | "Single most impactful asset" per launch assets doc. |
+| **Cross-OS hardware sweep — Windows / Linux + V2 / V3-OLED** | [`HARDWARE_VALIDATION_TODO.md`](HARDWARE_VALIDATION_TODO.md) | M | Community-driven post-launch. |
+| **Item B Safari BladeCanvas bloom** | P31 audit 2026-04-27 | M | Bloom pipeline `lighter` composite differs subtly in Safari WebKit. Ken's hands-on debug. |
+| **Sub-1024 layout pass (full)** | `CLAUDE.md` Ken's #2 | M | PR #277 cleared brand drift + status bar BOARD-BOARD dedup; full breakpoint pass still open. |
+| **Fett263 Prop File Editor Level 3 — custom prop file generation** | [`POST_LAUNCH_BACKLOG.md`](POST_LAUNCH_BACKLOG.md) prop-editor table | XL | Visual state machine → compilable `*_buttons.h`. Evaluate community demand after Level 1 (shipped #305) + Wave 8 land. |
+| **Modulation v1.1 full feature set** | [`MODULATION_ROUTING_ROADMAP.md`](MODULATION_ROUTING_ROADMAP.md) | XL | Beyond v1.1 Core: full peggy parser surface, all 11 modulators wired, drag-to-route polish, V2.2 profile validation. |
+| **Modulation v1.2 Creative** | same | XL | Chains + macros + LFO + conditionals + snapshots + sidechain + UDFs. |
+| **Modulation v1.3 Advanced** | same | XL | Envelope followers + step sequencers + `ModulationGraphPanel` + community UDF library + gesture recording. |
+| **Sound Font Library + Custom Presets + Card Presets** | [`SOUND_FONT_LIBRARY_AND_CUSTOM_PRESETS.md`](SOUND_FONT_LIBRARY_AND_CUSTOM_PRESETS.md) | XL (3 phases) | Phase A: user preset store + save flow + browser UI. Phase B: font library directory picker. Phase C: card preset data model + composer + storage budget integration. |
+| **Multi-Blade Workbench** | [`MODULATION_ROUTING_ROADMAP.md`](MODULATION_ROUTING_ROADMAP.md) | XL | Channel-strip UI for dual-blade / saberstaff / crossguard. |
+| **Preset Cartography continued** | `CLAUDE.md` upcoming sprints | L-XL ongoing | PR #307 added 40 (Harry Potter / Halo / SWTOR / Clone Wars Council). More franchises queued: KOTOR, animated series deep-cuts, Visions Vol 2, cross-franchise. |
+| **Xenopixel Phase 5B — hardware validation** | [`XENOPIXEL_IMPLEMENTATION_PLAN.md`](XENOPIXEL_IMPLEMENTATION_PLAN.md) | M | Requires physical Xenopixel V3 hardware. |
+| **Xenopixel Phase 5C — BLE integration (stretch)** | same | XL | Depends on reverse-engineering Xeno Configurator APK. |
+| **Bluetooth wireless updates (v0.17+ target)** | [`BLUETOOTH_FEASIBILITY.md`](research/BLUETOOTH_FEASIBILITY.md) | XL | Port Fredrik's `profezzorn/lightsaber-web-bluetooth` POC. Replacement BT-enabled board arriving (per user memory `project_proffieboard_v39_replacement_2026-05-01.md`). |
+| **Next.js 14 → 15 upgrade (v0.17+ target)** | [`NEXTJS_15_UPGRADE_PLAN.md`](research/NEXTJS_15_UPGRADE_PLAN.md) | M (3-5h mechanical) | Forced React 18 → 19 jump is the main risk; deferred to stabilization slot. |
+
+---
 
 ---
 
