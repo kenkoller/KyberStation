@@ -5,7 +5,7 @@ Style Editor into KyberStation. Based on hands-on analysis of the live editor,
 source review, and gap assessment against KyberStation's existing capabilities.
 
 **Date:** 2026-05-08
-**Branch:** `feat/variant-cycling` (in-progress work already started)
+**Status (2026-05-12):** **All Phases 1–7 shipped** in `v0.21.1 "Polyglot Release"` via PRs #298 (Phases 1–4), #299 (Phase 5A+5D), #302 (Phase 5C), #304 (Phases 6+7), #306 (Phase 5F tests). The integration is complete; this doc is retained as historical reference for the design rationale.
 **Prior art:** `packages/template-eval/` (Phase 1+2 merged, PRs #295 + #296)
 
 ---
