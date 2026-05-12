@@ -88,25 +88,80 @@ interface RendererCase {
 }
 
 const CASES: RendererCase[] = [
-  // Obi-Wan blue across all four canonical states. This is the load-
-  // bearing matrix — if the workbench blade pipeline changes how it
-  // visualizes any state transition, one of these four will flip.
+  // ─── State-transition matrix (Obi-Wan blue) ──────────────────────
+  // Load-bearing four-state matrix — if the workbench blade pipeline
+  // changes how it visualizes any state transition, one of these flips.
   { id: 'obi-wan-blue :: off',           config: { ...BASE_CONFIG },                                                   state: BladeState.OFF,         progress: 0 },
   { id: 'obi-wan-blue :: igniting-50',   config: { ...BASE_CONFIG },                                                   state: BladeState.IGNITING,    progress: 0.5 },
   { id: 'obi-wan-blue :: on',            config: { ...BASE_CONFIG },                                                   state: BladeState.ON,          progress: 1 },
   { id: 'obi-wan-blue :: retracting-50', config: { ...BASE_CONFIG },                                                   state: BladeState.RETRACTING,  progress: 0.5 },
-  // Cross-color: red unstable / yellow stable / green stable. Each
-  // exercises a different `getGlowProfile` branch (red / amber-warm /
-  // green). Runs ON state only — different states aren't load-bearing
-  // for the per-color tests.
+
+  // ─── Cross-color glow profiles (stable / unstable, ON only) ──────
+  // Each exercises a different `getGlowProfile` branch (red / amber-
+  // warm / green). Runs ON state only — different states aren't load-
+  // bearing for the per-color tests.
   { id: 'vader-red-unstable :: on',      config: { ...BASE_CONFIG, baseColor: { r: 220, g: 30,  b: 10  }, style: 'unstable' }, state: BladeState.ON, progress: 1 },
   { id: 'rey-yellow-stable :: on',       config: { ...BASE_CONFIG, baseColor: { r: 255, g: 210, b: 40  } },                   state: BladeState.ON, progress: 1 },
   { id: 'yoda-green-stable :: on',       config: { ...BASE_CONFIG, baseColor: { r: 30,  g: 255, b: 30  } },                   state: BladeState.ON, progress: 1 },
+
   // Darksaber — the Gradient<White, Rgb<5,5,5>, Rgb<5,5,5>, White>
   // engine class produces a fundamentally different LED pattern. Hash
   // protects the renderer's response to the dim-body + bright-cap
   // distribution.
   { id: 'darksaber :: on',               config: { ...BASE_CONFIG, baseColor: { r: 80,  g: 80,  b: 80  }, style: 'darksaber' }, state: BladeState.ON, progress: 1 },
+
+  // ─── Additional glow-profile branches ────────────────────────────
+  // Cover colors outside the original 4-color matrix so a regression
+  // in the warm-purple / saturated-orange / cool-cyan branches doesn't
+  // slip past us. All on stable ON to isolate the color/glow path.
+  { id: 'mace-purple-stable :: on',      config: { ...BASE_CONFIG, baseColor: { r: 180, g: 80,  b: 255 } },                   state: BladeState.ON, progress: 1 },
+  { id: 'saturated-orange-stable :: on', config: { ...BASE_CONFIG, baseColor: { r: 255, g: 140, b: 30  } },                   state: BladeState.ON, progress: 1 },
+  { id: 'cyan-stable :: on',             config: { ...BASE_CONFIG, baseColor: { r: 30,  g: 220, b: 255 } },                   state: BladeState.ON, progress: 1 },
+
+  // ─── Style coverage (stable ON, blue) ────────────────────────────
+  // Each style emits a structurally distinct LED pattern, so the
+  // pipeline's rasterization + bloom response should hash differently
+  // per style. Catches drift introduced by style-side refactors that
+  // unexpectedly change LED output shape (which would cascade to the
+  // renderer).
+  { id: 'fire-style :: on',              config: { ...BASE_CONFIG, style: 'fire' },                                            state: BladeState.ON, progress: 1 },
+  { id: 'pulse-style :: on',             config: { ...BASE_CONFIG, style: 'pulse' },                                           state: BladeState.ON, progress: 1 },
+  { id: 'gradient-style :: on',          config: { ...BASE_CONFIG, style: 'gradient' },                                        state: BladeState.ON, progress: 1 },
+  { id: 'crystal-shatter-style :: on',   config: { ...BASE_CONFIG, style: 'crystalShatter' },                                  state: BladeState.ON, progress: 1 },
+  { id: 'aurora-style :: on',            config: { ...BASE_CONFIG, style: 'aurora' },                                          state: BladeState.ON, progress: 1 },
+  { id: 'helix-style :: on',             config: { ...BASE_CONFIG, style: 'helix' },                                           state: BladeState.ON, progress: 1 },
+  { id: 'candle-style :: on',            config: { ...BASE_CONFIG, baseColor: { r: 255, g: 140, b: 30 }, style: 'candle' },    state: BladeState.ON, progress: 1 },
+  { id: 'prism-style :: on',             config: { ...BASE_CONFIG, style: 'prism' },                                           state: BladeState.ON, progress: 1 },
+
+  // ─── Time-evolving styles (sample at settleMs > 0) ───────────────
+  // Rotoscope + DataStream emit time-varying patterns. settleMs=200
+  // catches them mid-animation, not at the t=0 boundary where all
+  // styles look the same.
+  { id: 'rotoscope-style :: on',         config: { ...BASE_CONFIG, style: 'rotoscope' },                                       state: BladeState.ON, progress: 1 },
+  { id: 'data-stream-style :: on',       config: { ...BASE_CONFIG, style: 'dataStream' },                                      state: BladeState.ON, progress: 1 },
+
+  // ─── State-curve coverage (vader red) ────────────────────────────
+  // 25 / 75 progress sample-points on a different color than blue.
+  // Catches asymmetries in the ignition/retraction curve that the 50%
+  // sample alone could miss.
+  { id: 'vader-red-unstable :: igniting-25',   config: { ...BASE_CONFIG, baseColor: { r: 220, g: 30, b: 10 }, style: 'unstable' }, state: BladeState.IGNITING,   progress: 0.25 },
+  { id: 'vader-red-unstable :: igniting-75',   config: { ...BASE_CONFIG, baseColor: { r: 220, g: 30, b: 10 }, style: 'unstable' }, state: BladeState.IGNITING,   progress: 0.75 },
+  { id: 'vader-red-unstable :: retracting-25', config: { ...BASE_CONFIG, baseColor: { r: 220, g: 30, b: 10 }, style: 'unstable' }, state: BladeState.RETRACTING, progress: 0.25 },
+
+  // ─── LED-count edge cases ────────────────────────────────────────
+  // 50 LEDs = shoto/dagger; 200 LEDs = staff/long blade. Verifies
+  // capsule-rasterizer behavior at the ends of the supported range.
+  // Same canvas dimensions so hashes stay apples-to-apples; the blade
+  // pixels are stretched/compressed onto the same 680px run.
+  { id: 'obi-wan-blue :: short-50-led :: on',  config: { ...BASE_CONFIG, ledCount: 50 },                                       state: BladeState.ON, progress: 1 },
+  { id: 'obi-wan-blue :: long-200-led :: on',  config: { ...BASE_CONFIG, ledCount: 200 },                                      state: BladeState.ON, progress: 1 },
+
+  // ─── Shimmer edge cases ──────────────────────────────────────────
+  // shimmer=0 (no jitter, perfectly smooth) vs shimmer=0.3 (heavy
+  // flicker). Catches accidental short-circuiting of the shimmer
+  // multiplier in StableStyle's per-LED brightness curve.
+  { id: 'obi-wan-blue :: shimmer-0 :: on',     config: { ...BASE_CONFIG, shimmer: 0 },                                         state: BladeState.ON, progress: 1 },
+  { id: 'obi-wan-blue :: shimmer-30pct :: on', config: { ...BASE_CONFIG, shimmer: 0.3 },                                       state: BladeState.ON, progress: 1 },
 ];
 
 // ─── Render harness ────────────────────────────────────────────────

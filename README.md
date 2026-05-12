@@ -79,7 +79,7 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 - The protocol is implemented and verified against a comprehensive mock test suite, but on real hardware the manifest phase has a known issue that can leave the chip stuck in DFU mode after a successful write, particularly on vendor-customized boards (89sabers, KR, Saberbay, Vader's Vault).
 - For v1.0, the FlashPanel is shipped behind an **EXPERIMENTAL** badge with a 3-checkbox disclaimer gate: you must acknowledge **(1)** responsibility for the flash, **(2)** that you have backed up your existing firmware via `dfu-util`, and **(3)** that you have a recovery plan. Proceed remains disabled until all three are checked.
 - **Use the dfu-util workflow as your reliable path; treat the FlashPanel as an experiment.** The mandatory-backup acknowledgement turns "I just bricked my saber" into "I just lost 30 seconds."
-- The manifest-phase fix is planned for v0.16+.
+- The manifest-phase fix is planned for a future stabilization release.
 
 **Help us improve hardware coverage.** If you flash your saber and hit anything unexpected, please file a [hardware report](https://github.com/kenkoller/KyberStation/issues/new?template=hardware_report.md) with your saber vendor, board variant, OS, and what happened.
 
@@ -178,6 +178,20 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 ## Status
 
 ![KyberStation editor, workbench with blade preview, sidebar, and analysis rail](apps/web/public/og-hero.png)
+
+### v0.21.1: Polyglot Release (2026-05-12)
+
+First big consolidation past launch. 118 commits since v0.20.3 spanning the May 2026 sprint cycle:
+- **Xenopixel V3 full board support** — second-board parity with Proffieboard: 8 blade effect styles, 10 ignition animations, real `fontconfig.ini` / `config.ini` generation, 5 firmware versions, SD card import, Proffie→Xenopixel compatibility analysis
+- **Fredrik Style Editor integration** — Phases 1–7: tree walking, variant cycling, AST-to-tree renderer with inline editing, layer controls, style transformations, template insertion palette
+- **Template-eval interpreter** — new `packages/template-eval` workspace parses real ProffieOS C++ template syntax into evaluable ASTs; engine bridge wires it as a new render mode; registry expanded 153 → 372 entries
+- **Visualizer 3D blade + Hardware Preview mode** — Three.js / React-Three-Fiber blade mesh with emissive LED material and orbit controls (Phases 1–2 of the Visualizer Upgrade Plan)
+- **Fett263 Prop File Editor Level 1** — toggle panel for ~30–40 Fett263 `#define`s; covers ~90% of Proffie users' prop customization without authoring a full prop file
+- **40 new Preset Cartography presets** — KOTOR-adjacent, animated series, creative-community designs; library at **455**
+- **Mouse-driven swing simulation + slow-motion playback** + **renderer-level golden-hash regression tests** for card snapshots and the workbench blade pipeline
+- **Comprehensive 4-wave audit cleanup** — accuracy, hygiene, dead code, structural; CLAUDE.md compressed 3,043 → 573 lines, 44 historical docs archived
+
+Tests: **8,283** across 7 packages. Typecheck clean across 13 workspace packages.
 
 ### v0.16.0: Launch (2026-04-30)
 
