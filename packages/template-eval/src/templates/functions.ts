@@ -858,3 +858,1048 @@ export class BendTimePowInvXTemplate extends BaseStyleTemplate {
     return [this.time, this.bend];
   }
 }
+
+// ─── HoldPeakF<Input, Delay> ───
+// Holds the peak value of Input for Delay milliseconds after it starts decreasing.
+
+export class HoldPeakFTemplate extends BaseStyleTemplate {
+  private readonly input: StyleTemplate;
+  private readonly delay: StyleTemplate;
+  private peak = 0;
+  private peakTime = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.input = args[0]!;
+    this.delay = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.input.run(state, effects);
+    this.delay.run(state, effects);
+
+    const current = this.input.getInteger(0);
+    if (current >= this.peak) {
+      this.peak = current;
+      this.peakTime = state.timeMs;
+    } else {
+      const delayMs = this.delay.getInteger(0);
+      if (state.timeMs - this.peakTime > delayMs) {
+        this.peak = current;
+        this.peakTime = state.timeMs;
+      }
+    }
+  }
+
+  getInteger(_led: number): number {
+    return clamp(this.peak, 0, PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.input, this.delay];
+  }
+}
+
+// ─── EffectIncrementF<EffectType, MaxCount, Divisor> ───
+// Counts effect occurrences, returns count/divisor as integer. Resets at MaxCount.
+
+export class EffectIncrementFTemplate extends BaseStyleTemplate {
+  private readonly effectArg: StyleTemplate;
+  private readonly maxCount: StyleTemplate;
+  private readonly divisor: StyleTemplate;
+  private count = 0;
+  private lastEventTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.effectArg = args[0]!;
+    this.maxCount = args[1]!;
+    this.divisor = args[2]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.effectArg.run(state, effects);
+    this.maxCount.run(state, effects);
+    this.divisor.run(state, effects);
+
+    // Use clash as a proxy trigger for counting
+    const event = effects.getLastEffect('EFFECT_CLASH');
+    if (event && event.startTimeMs > this.lastEventTime) {
+      this.lastEventTime = event.startTimeMs;
+      this.count++;
+      const maxC = this.maxCount.getInteger(0);
+      if (maxC > 0 && this.count >= maxC) {
+        this.count = 0;
+      }
+    }
+  }
+
+  getInteger(led: number): number {
+    const div = this.divisor.getInteger(led);
+    if (div <= 0) return 0;
+    return clamp(Math.floor(this.count / div), 0, PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.effectArg, this.maxCount, this.divisor];
+  }
+}
+
+// ─── LinearSectionF<Position, Width> ───
+// Returns PROFFIE_MAX for LEDs within a linear section, 0 otherwise.
+// Both args are 0-32768 scale.
+
+export class LinearSectionFTemplate extends BaseStyleTemplate {
+  private readonly position: StyleTemplate;
+  private readonly width: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.position = args[0]!;
+    this.width = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.position.run(state, effects);
+    this.width.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const pos = this.position.getInteger(led);
+    const width = this.width.getInteger(led);
+    const bladePos = ledToBladePos(led, this.state.numLeds);
+
+    const halfWidth = width / 2;
+    const lo = pos - halfWidth;
+    const hi = pos + halfWidth;
+
+    if (bladePos >= lo && bladePos <= hi) {
+      return PROFFIE_MAX;
+    }
+    return 0;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.position, this.width];
+  }
+}
+
+// ─── IsGreaterThan<A, B> ───
+// Returns PROFFIE_MAX if A > B, else 0.
+
+export class IsGreaterThanTemplate extends BaseStyleTemplate {
+  private readonly a: StyleTemplate;
+  private readonly b: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.a = args[0]!;
+    this.b = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.a.run(state, effects);
+    this.b.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    return this.a.getInteger(led) > this.b.getInteger(led) ? PROFFIE_MAX : 0;
+  }
+
+  getColor(led: number): Color {
+    return this.getInteger(led) > 0 ? { r: 255, g: 255, b: 255 } : BLACK;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.a, this.b];
+  }
+}
+
+// ─── SlowNoise<Speed> ───
+// Smooth noise function that changes slowly based on Speed.
+
+export class SlowNoiseTemplate extends BaseStyleTemplate {
+  private readonly speed: StyleTemplate;
+  private noiseValue = PROFFIE_MAX / 2;
+  private noiseTarget = PROFFIE_MAX / 2;
+  private targetTime = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.speed = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.speed.run(state, effects);
+
+    const speedVal = this.speed.getInteger(0);
+    // Speed controls how fast the noise changes; higher = faster transitions
+    const intervalMs = speedVal > 0 ? Math.max(50, 100000 / speedVal) : 2000;
+
+    if (state.timeMs >= this.targetTime) {
+      this.noiseTarget = Math.floor(hashPair(Math.floor(state.timeMs / intervalMs), 1337) * PROFFIE_MAX);
+      this.targetTime = state.timeMs + intervalMs;
+    }
+
+    // Smooth interpolation toward target
+    const rate = clamp(state.deltaMsF / intervalMs, 0, 1);
+    this.noiseValue += (this.noiseTarget - this.noiseValue) * rate;
+  }
+
+  getInteger(_led: number): number {
+    return clamp(Math.round(this.noiseValue), 0, PROFFIE_MAX);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.speed];
+  }
+}
+
+// ─── SwingAcceleration<> ───
+// Returns swing acceleration (rate of change of swing speed) as 0-32768.
+
+export class SwingAccelerationTemplate extends BaseStyleTemplate {
+  private prevSwingSpeed = 0;
+  private acceleration = 0;
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+
+    if (state.deltaMsF > 0) {
+      const delta = state.swingSpeed - this.prevSwingSpeed;
+      // Acceleration in units per ms, scaled to 0-32768
+      // Use absolute value — we care about magnitude of change
+      this.acceleration = Math.abs(delta);
+    }
+    this.prevSwingSpeed = state.swingSpeed;
+  }
+
+  getInteger(_led: number): number {
+    return clamp(this.acceleration, 0, PROFFIE_MAX);
+  }
+}
+
+// ─── SparkleF<SparkChance> ───
+// Per-LED random sparkle function. Returns PROFFIE_MAX with 1/SparkChance
+// probability per frame per LED, else 0.
+
+export class SparkleFTemplate extends BaseStyleTemplate {
+  private readonly chance: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.chance = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.chance.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const chance = this.chance.getInteger(led);
+    if (chance <= 0) return 0;
+
+    const rng = hashPair(led, Math.floor(this.state.timeMs / 16));
+    return rng < (1 / chance) ? PROFFIE_MAX : 0;
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.chance];
+  }
+}
+
+// ─── Remap<F, Shape> ───
+// Remaps a function using a lookup shape. F provides the x-coordinate (0-32768),
+// Shape provides the y-value at position x/32768 along the blade.
+
+export class RemapTemplate extends BaseStyleTemplate {
+  private readonly func: StyleTemplate;
+  private readonly shape: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.func = args[0]!;
+    this.shape = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.func.run(state, effects);
+    this.shape.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const x = this.func.getInteger(led);
+    // Map x from 0-32768 to a virtual LED position within numLeds
+    const numLeds = this.state.numLeds || 144;
+    const virtualLed = clamp(Math.round((x / PROFFIE_MAX) * (numLeds - 1)), 0, numLeds - 1);
+    return this.shape.getInteger(virtualLed);
+  }
+
+  getColor(led: number): Color {
+    const x = this.func.getInteger(led);
+    const numLeds = this.state.numLeds || 144;
+    const virtualLed = clamp(Math.round((x / PROFFIE_MAX) * (numLeds - 1)), 0, numLeds - 1);
+    return this.shape.getColor(virtualLed);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.func, this.shape];
+  }
+}
+
+// ─── IsBetween<F, Bottom, Top> ───
+// Returns PROFFIE_MAX if F() is between Bottom and Top, else 0.
+
+export class IsBetweenTemplate extends BaseStyleTemplate {
+  private readonly func: StyleTemplate;
+  private readonly bottom: StyleTemplate;
+  private readonly top: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.func = args[0]!;
+    this.bottom = args[1]!;
+    this.top = args[2]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.func.run(state, effects);
+    this.bottom.run(state, effects);
+    this.top.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const v = this.func.getInteger(led);
+    const lo = this.bottom.getInteger(led);
+    const hi = this.top.getInteger(led);
+    return (v >= lo && v <= hi) ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+
+  getChildren(): StyleTemplate[] {
+    return [this.func, this.bottom, this.top];
+  }
+}
+
+// ─── IncrementModulo<PulseMs, ModuloMs> ───
+// Counter that increments by one each PulseMs, wrapping at ModuloMs.
+// Returns 0..PROFFIE_MAX mapped from 0..ModuloMs.
+
+export class IncrementModuloTemplate extends BaseStyleTemplate {
+  private readonly pulseMs: StyleTemplate;
+  private readonly moduloMs: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.pulseMs = args[0]!;
+    this.moduloMs = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.pulseMs.run(state, effects);
+    this.moduloMs.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const moduloMs = Math.max(1, this.moduloMs.getInteger(led));
+    const phase = (this.state.timeMs % moduloMs) / moduloMs;
+    return Math.round(phase * PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+
+  getChildren(): StyleTemplate[] {
+    return [this.pulseMs, this.moduloMs];
+  }
+}
+
+// ─── CircularSectionF<Position, Width> ───
+// Returns PROFFIE_MAX for LEDs within a circular (wrapping) section
+// centered at Position with the given Width, else 0.
+
+export class CircularSectionFTemplate extends BaseStyleTemplate {
+  private readonly position: StyleTemplate;
+  private readonly width: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.position = args[0]!;
+    this.width = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.position.run(state, effects);
+    this.width.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const numLeds = this.state.numLeds || 144;
+    const pos = this.position.getInteger(led) / PROFFIE_MAX;
+    const width = this.width.getInteger(led) / PROFFIE_MAX;
+    const bladePos = led / Math.max(1, numLeds - 1);
+
+    // Circular distance (wrapping around)
+    let dist = Math.abs(bladePos - pos);
+    if (dist > 0.5) dist = 1 - dist;
+
+    const halfWidth = width / 2;
+    return dist <= halfWidth ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+
+  getChildren(): StyleTemplate[] {
+    return [this.position, this.width];
+  }
+}
+
+// ─── TwistAcceleration<> ───
+// Returns the rate of change of TwistAngle, 0-PROFFIE_MAX.
+
+export class TwistAccelerationTemplate extends BaseStyleTemplate {
+  private prevTwist = 0;
+
+  constructor(_args: StyleTemplate[]) {
+    super();
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    const twist = this.state.twistAngle;
+    const dt = this.state.deltaMsF || 1;
+    const accel = Math.abs(twist - this.prevTwist) / dt;
+    this.prevTwist = twist;
+    // Scale: raw delta per ms → 0..PROFFIE_MAX
+    return clamp(Math.round(accel * 200), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── IntSelect<Selection, Int1, Int2, ...> ───
+// Selects one of several integer children based on a selector value.
+
+export class IntSelectTemplate extends BaseStyleTemplate {
+  private readonly selector: StyleTemplate;
+  private readonly options: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.selector = args[0]!;
+    this.options = args.slice(1);
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.selector.run(state, effects);
+    for (const opt of this.options) opt.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    if (this.options.length === 0) return 0;
+    const sel = this.selector.getInteger(led);
+    const idx = clamp(Math.round((sel / PROFFIE_MAX) * (this.options.length - 1)), 0, this.options.length - 1);
+    return this.options[idx]!.getInteger(led);
+  }
+
+  getColor(led: number): Color {
+    if (this.options.length === 0) return BLACK;
+    const sel = this.selector.getInteger(led);
+    const idx = clamp(Math.round((sel / PROFFIE_MAX) * (this.options.length - 1)), 0, this.options.length - 1);
+    return this.options[idx]!.getColor(led);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return [this.selector, ...this.options];
+  }
+}
+
+// ─── BlastF<FadeMs?, Size?> ───
+// Function version: returns 0-PROFFIE_MAX based on blast proximity + time.
+
+export class BlastFTemplate extends BaseStyleTemplate {
+  private readonly fadeMs: number;
+  private readonly size: number;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.fadeMs = args[0]?.getInteger(0) ?? 200;
+    this.size = args[1]?.getInteger(0) ?? (PROFFIE_MAX / 4);
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const effects = this.effects;
+    if (!effects) return 0;
+
+    const blasts = effects.getEffects('EFFECT_BLAST');
+    if (blasts.length === 0) return 0;
+
+    const numLeds = this.state.numLeds || 144;
+    let maxVal = 0;
+
+    for (const event of blasts) {
+      const elapsed = this.state.timeMs - event.startTimeMs;
+      if (elapsed >= this.fadeMs || elapsed < 0) continue;
+
+      const bladePos = ledToBladePos(led, numLeds);
+      const spatial = bumpFn(bladePos, event.location, this.size) / PROFFIE_MAX;
+      const timeFade = 1 - elapsed / this.fadeMs;
+      maxVal = Math.max(maxVal, spatial * timeFade);
+    }
+
+    return clamp(Math.round(maxVal * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── Divide<F1, F2> ───
+// Returns F1 / F2, scaled in ProffieOS integer arithmetic.
+export class DivideTemplate extends BaseStyleTemplate {
+  private readonly a: StyleTemplate;
+  private readonly b: StyleTemplate;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.a = args[0]!;
+    this.b = args[1]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.a.run(state, effects);
+    this.b.run(state, effects);
+  }
+  getInteger(led: number): number {
+    const denom = this.b.getInteger(led);
+    if (denom === 0) return 0;
+    return clamp(Math.floor(this.a.getInteger(led) / denom), 0, PROFFIE_MAX);
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.a, this.b]; }
+}
+
+// ─── Subtract<F1, F2> ───
+// Returns max(F1 - F2, 0), clamped to 0..PROFFIE_MAX.
+export class SubtractTemplate extends BaseStyleTemplate {
+  private readonly a: StyleTemplate;
+  private readonly b: StyleTemplate;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.a = args[0]!;
+    this.b = args[1]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.a.run(state, effects);
+    this.b.run(state, effects);
+  }
+  getInteger(led: number): number {
+    return clamp(this.a.getInteger(led) - this.b.getInteger(led), 0, PROFFIE_MAX);
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.a, this.b]; }
+}
+
+// ─── ThresholdPulseF<F, THRESHOLD> ───
+// Returns PROFFIE_MAX when F >= THRESHOLD, else 0.
+export class ThresholdPulseFTemplate extends BaseStyleTemplate {
+  private readonly f: StyleTemplate;
+  private readonly threshold: StyleTemplate;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.f = args[0]!;
+    this.threshold = args[1]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.f.run(state, effects);
+    this.threshold.run(state, effects);
+  }
+  getInteger(led: number): number {
+    return this.f.getInteger(led) >= this.threshold.getInteger(led) ? PROFFIE_MAX : 0;
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.f, this.threshold]; }
+}
+
+// ─── RampF ───
+// Linear ramp from 0 to PROFFIE_MAX over the blade length.
+export class RampFTemplate extends BaseStyleTemplate {
+  getInteger(led: number): number {
+    const numLeds = this.state.numLeds || 144;
+    return numLeds <= 1 ? 0 : clamp(Math.round((led / (numLeds - 1)) * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── LockupPulseF<LOCKUP_TYPE> ───
+// Returns a pulsing value (0..PROFFIE_MAX) while lockup of specified type is held.
+export class LockupPulseFTemplate extends BaseStyleTemplate {
+  private readonly lockupType: StyleTemplate | undefined;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.lockupType = args[0];
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.lockupType?.run(state, effects);
+  }
+  getInteger(_led: number): number {
+    const t = this.state.timeMs ?? 0;
+    const pulse = (Math.sin(t * 0.025) + 1) * 0.5;
+    return clamp(Math.round(pulse * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return this.lockupType ? [this.lockupType] : []; }
+}
+
+// ─── IncrementF<PULSE_MILLIS, RESET_MILLIS, MAX_VALUE> ───
+// Counter wrapping at MAX_VALUE, incrementing every PULSE_MILLIS. Returns 0..PROFFIE_MAX.
+export class IncrementFTemplate extends BaseStyleTemplate {
+  private readonly pulseMs: StyleTemplate;
+  private readonly resetMs: StyleTemplate;
+  private readonly maxVal: StyleTemplate;
+  private counter = 0;
+  private lastPulse = 0;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.pulseMs = args[0]!;
+    this.resetMs = args[1]!;
+    this.maxVal = args[2] ?? args[0]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.pulseMs.run(state, effects);
+    this.resetMs.run(state, effects);
+    if (this.maxVal !== this.pulseMs) this.maxVal.run(state, effects);
+    const now = state.timeMs ?? 0;
+    const pulse = Math.max(1, this.pulseMs.getInteger(0));
+    if (now - this.lastPulse >= pulse) {
+      this.lastPulse = now;
+      const max = Math.max(1, this.maxVal.getInteger(0));
+      this.counter = (this.counter + 1) % max;
+    }
+  }
+  getInteger(_led: number): number {
+    const max = Math.max(1, this.maxVal.getInteger(0));
+    return clamp(Math.round((this.counter / max) * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.pulseMs, this.resetMs, this.maxVal]; }
+}
+
+// ─── SliceF<OFFSET> ───
+// Returns the blade position offset by OFFSET, wrapping around.
+export class SliceFTemplate extends BaseStyleTemplate {
+  private readonly offset: StyleTemplate;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.offset = args[0]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.offset.run(state, effects);
+  }
+  getInteger(led: number): number {
+    const numLeds = this.state.numLeds || 144;
+    const offset = this.offset.getInteger(0) / PROFFIE_MAX;
+    const pos = ((led / numLeds) + offset) % 1.0;
+    return clamp(Math.round(pos * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.offset]; }
+}
+
+// ─── IgnitionDelay<DELAY_MILLIS> ───
+// Ignition delay wrapper — passes through the delay value.
+export class IgnitionDelayTemplate extends BaseStyleTemplate {
+  private readonly delay: StyleTemplate;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.delay = args[0]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.delay.run(state, effects);
+  }
+  getInteger(_led: number): number { return this.delay.getInteger(0); }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.delay]; }
+}
+
+// ─── RetractionDelay<DELAY_MILLIS> ───
+// Retraction delay wrapper — passes through the delay value.
+export class RetractionDelayTemplate extends BaseStyleTemplate {
+  private readonly delay: StyleTemplate;
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.delay = args[0]!;
+  }
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.delay.run(state, effects);
+  }
+  getInteger(_led: number): number { return this.delay.getInteger(0); }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.delay]; }
+}
+
+// ─── BrownNoiseF<SPEED> ───
+// Brown noise function returning 0..32768. Slower random walk than white noise.
+export class BrownNoiseFTemplate extends BaseStyleTemplate {
+  private readonly speed: StyleTemplate;
+  private value = PROFFIE_MAX / 2;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.speed = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.speed.run(state, effects);
+    const speed = this.speed.getInteger(0);
+    const delta = (hashPair(state.timeMs, 0) % (speed + 1)) - speed / 2;
+    this.value = clamp(Math.round(this.value + delta * state.deltaMsF / 1000), 0, PROFFIE_MAX);
+  }
+
+  getInteger(_led: number): number { return this.value; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.speed]; }
+}
+
+// ─── StrobeF<FREQUENCY, PULSE_MILLIS> ───
+// Strobe function — MAX during pulse, 0 otherwise.
+export class StrobeFTemplate extends BaseStyleTemplate {
+  private readonly frequency: StyleTemplate;
+  private readonly pulseMs: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.frequency = args[0]!;
+    this.pulseMs = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.frequency.run(state, effects);
+    this.pulseMs.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    const freq = Math.max(1, this.frequency.getInteger(0));
+    const pulseMs = this.pulseMs.getInteger(0);
+    const periodMs = 1000000 / freq; // frequency is in mHz
+    const phase = (this.state?.timeMs ?? 0) % periodMs;
+    return phase < pulseMs ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.frequency, this.pulseMs]; }
+}
+
+// ─── BlinkingF<PERIOD, DUTY_CYCLE> ───
+// Blink function — MAX for duty_cycle portion of period, 0 otherwise.
+export class BlinkingFTemplate extends BaseStyleTemplate {
+  private readonly period: StyleTemplate;
+  private readonly dutyCycle: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.period = args[0]!;
+    this.dutyCycle = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.period.run(state, effects);
+    this.dutyCycle.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    const period = Math.max(1, this.period.getInteger(0));
+    const duty = this.dutyCycle.getInteger(0);
+    const phase = (this.state?.timeMs ?? 0) % period;
+    const threshold = period * duty / PROFFIE_MAX;
+    return phase < threshold ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.period, this.dutyCycle]; }
+}
+
+// ─── HumpFlickerFX<SPEED> ───
+// Hump flicker as a function returning 0..32768 per LED.
+export class HumpFlickerFXTemplate extends BaseStyleTemplate {
+  private readonly speed: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.speed = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.speed.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const speed = Math.max(1, this.speed.getInteger(0));
+    const t = (this.state?.timeMs ?? 0) * speed / 1000;
+    const h = hashPair(Math.floor(t), led);
+    // Smooth hump shape via sine
+    const frac = (t % 1);
+    const hump = Math.sin(frac * Math.PI);
+    return clamp(Math.round((h % PROFFIE_MAX) * hump), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.speed]; }
+}
+
+// ─── OnSparkF<MILLIS> ───
+// On-spark function — returns MAX on ignition, decays to 0 over MILLIS.
+export class OnSparkFTemplate extends BaseStyleTemplate {
+  private readonly duration: StyleTemplate;
+  private sparkStart = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.duration = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.duration.run(state, effects);
+    if (state.isOn && this.sparkStart < 0) {
+      this.sparkStart = state.timeMs;
+    } else if (!state.isOn) {
+      this.sparkStart = -1;
+    }
+  }
+
+  getInteger(_led: number): number {
+    if (this.sparkStart < 0 || !this.state) return 0;
+    const dur = Math.max(1, this.duration.getInteger(0));
+    const elapsed = this.state.timeMs - this.sparkStart;
+    if (elapsed >= dur) return 0;
+    return clamp(Math.round(PROFFIE_MAX * (1 - elapsed / dur)), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.duration]; }
+}
+
+// ─── RandomBlinkF<PERIOD> ───
+// Random blink — each LED independently blinks on/off with random phase.
+export class RandomBlinkFTemplate extends BaseStyleTemplate {
+  private readonly period: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.period = args[0]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.period.run(state, effects);
+  }
+
+  getInteger(led: number): number {
+    const period = Math.max(1, this.period.getInteger(0));
+    const phase = hashPair(led, 9999) % period;
+    const t = ((this.state?.timeMs ?? 0) + phase) % period;
+    return t < period / 2 ? PROFFIE_MAX : 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.period]; }
+}
+
+// ─── InOutFunc<OUT_MILLIS, IN_MILLIS> ───
+// Returns position along ignition/retraction progress as 0..32768.
+export class InOutFuncTemplate extends BaseStyleTemplate {
+  private readonly outMs: StyleTemplate;
+  private readonly inMs: StyleTemplate;
+  private progress = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.outMs = args[0]!;
+    this.inMs = args[1]!;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.outMs.run(state, effects);
+    this.inMs.run(state, effects);
+    const outMs = Math.max(1, this.outMs.getInteger(0));
+    const inMs = Math.max(1, this.inMs.getInteger(0));
+    if (state.isOn) {
+      this.progress = Math.min(1, this.progress + state.deltaMsF / outMs);
+    } else {
+      this.progress = Math.max(0, this.progress - state.deltaMsF / inMs);
+    }
+  }
+
+  getInteger(_led: number): number {
+    return clamp(Math.round(this.progress * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.outMs, this.inMs]; }
+}
+
+// ─── Trigger<EFFECT, MILLIS, OUT_MILLIS, OFF_MILLIS> ───
+// Returns MAX on effect trigger, ramps according to parameters.
+export class TriggerTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number {
+    // Simplified: return 0 when no effect is active
+    return 0;
+  }
+
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
+
+// ─── BulletCountF<> ───
+// Returns blaster bullet count (stub for saber context).
+export class BulletCountFTemplate extends BaseStyleTemplate {
+  constructor(_args: StyleTemplate[]) { super(); }
+  run(state: BladeState, effects: EffectSystem): void { super.run(state, effects); }
+  getInteger(_led: number): number { return PROFFIE_MAX; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── BlasterChargeF<CHARGE_MILLIS> ───
+// Returns blaster charge level as 0..32768 (stub — always full).
+export class BlasterChargeFTemplate extends BaseStyleTemplate {
+  private readonly chargeMs: StyleTemplate;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.chargeMs = args[0] ?? { run() {}, getInteger() { return 2000; }, getColor() { return BLACK; }, getChildren() { return []; } } as StyleTemplate;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.chargeMs.run(state, effects);
+  }
+
+  getInteger(_led: number): number { return PROFFIE_MAX; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [this.chargeMs]; }
+}
+
+// ─── BlasterModeF<> ───
+// Returns blaster mode as integer (stub — always 0).
+export class BlasterModeFTemplate extends BaseStyleTemplate {
+  constructor(_args: StyleTemplate[]) { super(); }
+  run(state: BladeState, effects: EffectSystem): void { super.run(state, effects); }
+  getInteger(_led: number): number { return 0; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return []; }
+}
+
+// ─── MarbleF<OFFSET, FRICTION, ACCELERATION, GRAVITY> ───
+// Marble noise function — physics-based position simulation.
+export class MarbleFTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+  private position = PROFFIE_MAX / 2;
+  private velocity = 0;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+    const friction = this.args[1]?.getInteger(0) ?? 100;
+    const accel = this.args[2]?.getInteger(0) ?? 200;
+    const gravity = this.args[3]?.getInteger(0) ?? 0;
+    const dt = state.deltaMsF / 1000;
+    // Apply physics: acceleration from swing, gravity, and friction
+    const force = (state.swingSpeed / PROFFIE_MAX) * accel - (gravity / PROFFIE_MAX) * 100;
+    this.velocity = this.velocity * (1 - friction / PROFFIE_MAX * dt) + force * dt;
+    this.position = clamp(Math.round(this.position + this.velocity * dt * PROFFIE_MAX), 0, PROFFIE_MAX);
+  }
+
+  getInteger(_led: number): number { return this.position; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
+
+// ─── AnalogReadPinF<PIN> ───
+// Reads an analog pin value (stub — always returns midpoint in simulator).
+export class AnalogReadPinFTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number { return PROFFIE_MAX / 2; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}
+
+// ─── ReadPinF<PIN, THRESHOLD> ───
+// Reads a digital pin value (stub — always returns 0 in simulator).
+export class ReadPinFTemplate extends BaseStyleTemplate {
+  private readonly args: StyleTemplate[];
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.args = args;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const a of this.args) a.run(state, effects);
+  }
+
+  getInteger(_led: number): number { return 0; }
+  getColor(_led: number): Color { return BLACK; }
+  getChildren(): StyleTemplate[] { return [...this.args]; }
+}

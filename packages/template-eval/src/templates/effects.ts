@@ -684,8 +684,217 @@ export class EffectSequenceTemplate extends BaseStyleTemplate {
   }
 }
 
+// ─── EffectIncrement<Effect, DurationMs, MaxCycles, C1, C2, ...> ───
+// Like EffectSequence, but uses EffectIncrementF under the hood to
+// cycle through color children on each trigger of the given effect.
+// We treat it identically to EffectSequence for evaluation purposes.
+
+export class EffectIncrementTemplate extends BaseStyleTemplate {
+  private readonly colors: StyleTemplate[];
+  private currentIndex = 0;
+  private lastEventTime = -1;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    // First 3 args: Effect, DurationMs, MaxCycles — skip them
+    this.colors = args.slice(3);
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    for (const c of this.colors) c.run(state, effects);
+
+    // Advance on any effect event
+    const event = effects.getLastEffect('EFFECT_CLASH');
+    if (event && event.startTimeMs > this.lastEventTime) {
+      this.lastEventTime = event.startTimeMs;
+      if (this.colors.length > 0) {
+        this.currentIndex = (this.currentIndex + 1) % this.colors.length;
+      }
+    }
+  }
+
+  getColor(led: number): Color {
+    if (this.colors.length === 0) return BLACK;
+    return this.colors[this.currentIndex].getColor(led);
+  }
+
+  getInteger(led: number): number {
+    const c = this.getColor(led);
+    return Math.round((c.r + c.g + c.b) / 3 * PROFFIE_MAX / 255);
+  }
+
+  getChildren(): StyleTemplate[] {
+    return this.colors;
+  }
+}
+
 // ─── MultiTransitionEffectL<...> ───
 // Convenience alias for TransitionEffectL with multiple phases.
 // For our purposes, behaves same as TransitionEffectL.
 
 export class MultiTransitionEffectLTemplate extends TransitionEffectLTemplate {}
+
+// ─── ResponsiveBlastFadeL<BlastColor, Size?, FadeMs?, Top?, Bottom?> ───
+// Blast effect with fade-out. Each blast event creates a localized color
+// flash at the event position that fades over FadeMs. Size controls the
+// spatial extent. Top/Bottom control the range of the blade affected.
+
+export class ResponsiveBlastFadeLTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+  private readonly size: StyleTemplate | null;
+  private readonly fadeMs: StyleTemplate | null;
+  private readonly top: StyleTemplate | null;
+  private readonly bottom: StyleTemplate | null;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+    this.size = args[1] ?? null;
+    this.fadeMs = args[2] ?? null;
+    this.top = args[3] ?? null;
+    this.bottom = args[4] ?? null;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+    this.size?.run(state, effects);
+    this.fadeMs?.run(state, effects);
+    this.top?.run(state, effects);
+    this.bottom?.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const effects = (this as any)._effects as EffectSystem | undefined;
+    // Access blast events via the last-effect API
+    const event = effects?.getLastEffect('EFFECT_BLAST');
+    if (!event) return BLACK;
+
+    const fadeMs = this.fadeMs?.getInteger(led) ?? 400;
+    const elapsed = this.state.timeMs - event.startTimeMs;
+    if (elapsed < 0 || elapsed >= fadeMs) return BLACK;
+
+    const numLeds = this.state.numLeds || 144;
+    const sizeVal = this.size?.getInteger(led) ?? 2000;
+    const sizeInLeds = (sizeVal / PROFFIE_MAX) * numLeds;
+    const topVal = this.top?.getInteger(led) ?? (PROFFIE_MAX * 3 / 4);
+    const bottomVal = this.bottom?.getInteger(led) ?? (PROFFIE_MAX / 4);
+    const topLed = (topVal / PROFFIE_MAX) * numLeds;
+    const bottomLed = (bottomVal / PROFFIE_MAX) * numLeds;
+
+    // Position: random based on event time, clamped to top/bottom range
+    const blastCenter = bottomLed + ((event.startTimeMs * 17) % Math.max(1, topLed - bottomLed));
+    const dist = Math.abs(led - blastCenter);
+    if (dist > sizeInLeds) return BLACK;
+
+    const spatialFade = 1 - dist / Math.max(1, sizeInLeds);
+    const timeFade = 1 - elapsed / fadeMs;
+    const alpha = clamp(spatialFade * timeFade, 0, 1);
+
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * alpha),
+      g: Math.round(c.g * alpha),
+      b: Math.round(c.b * alpha),
+    };
+  }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [this.color];
+    if (this.size) children.push(this.size);
+    if (this.fadeMs) children.push(this.fadeMs);
+    if (this.top) children.push(this.top);
+    if (this.bottom) children.push(this.bottom);
+    return children;
+  }
+}
+
+// ─── ResponsiveBlastWaveL<BlastColor, FadeMs?, Size?, WaveSize?, WaveMs?, Top?, Bottom?> ───
+// Blast effect with an expanding wave pattern. Each blast event creates
+// a ripple that expands outward from the blast position while fading.
+
+export class ResponsiveBlastWaveLTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+  private readonly fadeMs: StyleTemplate | null;
+  private readonly size: StyleTemplate | null;
+  private readonly waveSize: StyleTemplate | null;
+  private readonly waveMs: StyleTemplate | null;
+  private readonly top: StyleTemplate | null;
+  private readonly bottom: StyleTemplate | null;
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+    this.fadeMs = args[1] ?? null;
+    this.size = args[2] ?? null;
+    this.waveSize = args[3] ?? null;
+    this.waveMs = args[4] ?? null;
+    this.top = args[5] ?? null;
+    this.bottom = args[6] ?? null;
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+    this.fadeMs?.run(state, effects);
+    this.size?.run(state, effects);
+    this.waveSize?.run(state, effects);
+    this.waveMs?.run(state, effects);
+    this.top?.run(state, effects);
+    this.bottom?.run(state, effects);
+  }
+
+  getColor(led: number): Color {
+    const effects = (this as any)._effects as EffectSystem | undefined;
+    const event = effects?.getLastEffect('EFFECT_BLAST');
+    if (!event) return BLACK;
+
+    const fadeMs = this.fadeMs?.getInteger(led) ?? 400;
+    const elapsed = this.state.timeMs - event.startTimeMs;
+    if (elapsed < 0 || elapsed >= fadeMs) return BLACK;
+
+    const numLeds = this.state.numLeds || 144;
+    const sizeVal = this.size?.getInteger(led) ?? 2000;
+    const sizeInLeds = (sizeVal / PROFFIE_MAX) * numLeds;
+    const waveSizeVal = this.waveSize?.getInteger(led) ?? 1000;
+    const waveSizeLeds = (waveSizeVal / PROFFIE_MAX) * numLeds;
+    const waveMs = this.waveMs?.getInteger(led) ?? 200;
+    const topVal = this.top?.getInteger(led) ?? (PROFFIE_MAX * 3 / 4);
+    const bottomVal = this.bottom?.getInteger(led) ?? (PROFFIE_MAX / 4);
+    const topLed = (topVal / PROFFIE_MAX) * numLeds;
+    const bottomLed = (bottomVal / PROFFIE_MAX) * numLeds;
+
+    const blastCenter = bottomLed + ((event.startTimeMs * 17) % Math.max(1, topLed - bottomLed));
+    const dist = Math.abs(led - blastCenter);
+
+    // Wave expansion: ring that expands outward from center
+    const waveProgress = waveMs > 0 ? clamp(elapsed / waveMs, 0, 1) : 1;
+    const waveRadius = waveProgress * sizeInLeds;
+    const distFromWave = Math.abs(dist - waveRadius);
+
+    if (distFromWave > waveSizeLeds) return BLACK;
+
+    const waveFade = 1 - distFromWave / Math.max(1, waveSizeLeds);
+    const timeFade = 1 - elapsed / fadeMs;
+    const alpha = clamp(waveFade * timeFade, 0, 1);
+
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * alpha),
+      g: Math.round(c.g * alpha),
+      b: Math.round(c.b * alpha),
+    };
+  }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [this.color];
+    if (this.fadeMs) children.push(this.fadeMs);
+    if (this.size) children.push(this.size);
+    if (this.waveSize) children.push(this.waveSize);
+    if (this.waveMs) children.push(this.waveMs);
+    if (this.top) children.push(this.top);
+    if (this.bottom) children.push(this.bottom);
+    return children;
+  }
+}
