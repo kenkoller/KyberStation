@@ -329,7 +329,7 @@ If a community vendor (Sabertrio, 89sabers) reaches out post-launch wanting a de
 
 ## 9. Hardware verification — 89sabers V3.9-BT, 2026-05-14
 
-**Status:** _PENDING — fill in during the live BT test session._
+**Status:** _IN PROGRESS — USB CDC baseline complete; BT connect-and-command still TBD._
 
 This section captures hardware-measured BLE protocol details from the new
 89sabers V3.9-with-Bluetooth board (arrived 2026-05-14, replacing the
@@ -342,10 +342,20 @@ This section captures hardware-measured BLE protocol details from the new
 | Board vendor | 89sabers |
 | Board model | Proffieboard V3.9 BT |
 | Chassis | _TBD — fill in_ |
-| Factory firmware version (`version` over BT) | _TBD_ |
-| Factory preset count (`list_presets` line count) | _TBD_ |
-| Test client | Chrome `__.0.____.__` macOS `__.__` on Mac |
-| Test app | [Fredrik Hubinette's reference PoC](https://profezzorn.github.io/lightsaber-web-bluetooth/app.html) |
+| ProffieOS version (`version` over USB) | **v7.12** |
+| Config file in firmware | `89sabers-config.h` |
+| Prop file | `SaberFett263Buttons` |
+| Firmware compile date | Apr 21 2026 |
+| Number of buttons | 2 |
+| Factory preset count (`list_presets` over USB) | **25** |
+| Factory preset names (over USB) | Graflex, Vader, Anakin, QGJ, Windu, Rey, Rainbow, Speeder, DV3, luke5, fire, TeensySF, predator, NewSaber, Sebulba, STARGATE, Apocalypse, Decay, Evolving, Vortex, Mando, Heavy, Danger, GODZILLA, Lightsaber |
+| Battery voltage at test start | 4.17 V (fully charged) |
+| Current volume | 1200 / 2000 |
+| USB CDC serial port (macOS) | `/dev/cu.usbmodem2068308F38301` |
+| USB-MSC mount | **Not exposed** — factory firmware is CDC-only (no `usb=cdc_msc`); SD card access requires physical removal |
+| Test client (BT) | Chrome on macOS |
+| Test app (BT) | [Fredrik Hubinette's reference PoC](https://profezzorn.github.io/lightsaber-web-bluetooth/app.html) |
+| Helper script for serial commands | `scripts/hardware-test/proffie-serial.sh` |
 
 ### 9.2 — Advertising
 
@@ -353,11 +363,12 @@ Captured from `chrome://bluetooth-internals/#devices`:
 
 | Field | Value |
 |---|---|
-| Advertising name | _TBD (e.g. `89-Sabers-Saber`)_ |
-| RSSI (held 1m from laptop) | _TBD dBm_ |
-| Manufacturer data (hex) | _TBD_ |
-| Advertised service UUIDs | _TBD_ |
-| MTU (negotiated) | _TBD bytes (default 23, payload 20)_ |
+| Advertising name | **`Feasycom`** (default unconfigured FSC-BT909 module name — 89sabers did not customize) |
+| MAC address | `62:21:23:B8:9B:6B` |
+| RSSI (held ~1m from laptop) | **-63 dBm** (strong signal) |
+| Manufacturer data (hex) | _Not exposed in chrome://bluetooth-internals row_ |
+| Advertised service UUIDs | _Empty in advertising packet — typical for BLE; services discovered after GATT connection_ |
+| MTU (negotiated) | _TBD — capture after connect_ |
 
 ### 9.3 — GATT services + characteristics
 
@@ -388,20 +399,31 @@ The Hubinette PoC tries 6 known UUID families. Record which one bound:
 
 ### 9.5 — Command vocabulary verification
 
-Tested through Hubinette PoC's Send box. Round-trip latency measured as
-"time from click → blade response observed visually."
+**USB CDC baseline (proves ProffieOS responds — same protocol that BT should expose):**
 
-| Command | Response received? | Round-trip latency | Notes |
+| Command | Response over USB CDC | Notes |
+|---|---|---|
+| `version` | ✓ `v7.12 / config/89sabers-config.h / prop: SaberFett263Buttons / buttons: 2 / installed: Apr 21 2026 08:44:54` | |
+| `list_presets` | ✓ 25 preset blocks (FONT/TRACK/STYLE/NAME/VARIATION format), terminated by `Unmounting SD Card.` | |
+| `get_preset` | ✓ `0` | Current index |
+| `battery_voltage` | ✓ `4.17` | Volts |
+| `get_volume` | ✓ `1200 / Battery voltage: 4.17` | Note: ProffieOS appends async battery line after some commands |
+
+**BT round-trip (via Hubinette PoC) — TBD:**
+
+Round-trip latency measured as "time from click → blade response observed visually" (or text response received in PoC log for non-physical commands).
+
+| Command | Response over BT? | Round-trip latency | Matches USB? |
 |---|---|---|---|
-| `version` | _TBD_ | _TBD ms_ | ProffieOS version string |
-| `list_presets` | _TBD_ | _TBD ms_ | Factory preset count |
-| `get_preset` | _TBD_ | _TBD ms_ | Current preset index |
-| `on` | _TBD_ | _TBD ms_ | Blade ignites |
-| `off` | _TBD_ | _TBD ms_ | Blade retracts |
-| `set_preset 2` | _TBD_ | _TBD ms_ | Preset switch latency |
-| `battery_voltage` | _TBD_ | _TBD ms_ | Telemetry |
-| `set_blade_color 255 0 128` | _TBD_ | _TBD ms_ | Live color change |
-| `clash` | _TBD_ | _TBD ms_ | Effect trigger |
+| `version` | _TBD_ | _TBD ms_ | _TBD_ |
+| `list_presets` | _TBD_ | _TBD ms_ | _TBD_ |
+| `get_preset` | _TBD_ | _TBD ms_ | _TBD_ |
+| `on` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `off` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `set_preset 2` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `battery_voltage` | _TBD_ | _TBD ms_ | _TBD_ |
+| `set_blade_color 255 0 128` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `clash` | _TBD_ | _TBD ms_ | n/a (physical) |
 
 ### 9.6 — Observed failure modes
 
