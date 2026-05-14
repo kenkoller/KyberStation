@@ -327,6 +327,17 @@ Some saber vendors customize the Proffieboard before shipping — different boot
 
 If you have an 89sabers board: stick to flashing Bank 1 (`0x08000000:leave`) with the standard arduino-cli output. The board will tolerate this and run your config — `dfu-util` writes both banks, but the chip's BFB2 flag determines which one runs at boot. If your custom config doesn't boot, restore from your backup ([§11](#11-recovery--restoring-from-backup)) and check that you flashed the right bank.
 
+#### Known Option Byte fingerprints (89sabers V3.9 family)
+
+For sanity-checking a fresh backup against known states. SHA256 of the 64-byte Option Bytes dump from `dfu-util -a 1 -U option-bytes-pre.bin`:
+
+| SHA256 prefix | State | Origin |
+|---|---|---|
+| `5e98c71ace8fafc1…` | **Pristine factory** (BFB2=1, boot from Bank 2). Safe state. | 89sabers V3.9 board #1, 2026-04-30 pre-flash; 89sabers V3.9-BT board, 2026-05-14 (pending confirmation) |
+| `4c2b2194ca8148d1…` | **Bricked state** (BFB2=0, vendor bootloader overwritten). Chip will not boot. | 89sabers V3.9 board #1 after 2026-04-29 Option Byte clear |
+
+The helper script `scripts/hardware-test/backup-proffieboard-v3.sh` runs this comparison automatically against any board it dumps and exits non-zero on a bricked fingerprint match.
+
 ### KR Sabers, Saberbay, Vader's Vault
 
 These vendors use similar customization patterns to 89sabers — vendor splash screens, custom font selections in the default config, sometimes BFB2 set. The same rule applies: **don't touch Option Bytes**, flash Bank 1 only, keep your backup.

@@ -324,3 +324,110 @@ If a community vendor (Sabertrio, 89sabers) reaches out post-launch wanting a de
 - [Edit Mode for ProffieOS6 — Crucible](https://crucible.hubbe.net/t/edit-mode-and-other-additions-for-proffieos6/114)
 - [ColorChange in a blade style — POD](https://pod.hubbe.net/config/color-change.html)
 - [ProffieOS6 Edit Mode — Fett263](https://www.fett263.com/proffieOS6-edit-mode.html)
+
+---
+
+## 9. Hardware verification — 89sabers V3.9-BT, 2026-05-14
+
+**Status:** _PENDING — fill in during the live BT test session._
+
+This section captures hardware-measured BLE protocol details from the new
+89sabers V3.9-with-Bluetooth board (arrived 2026-05-14, replacing the
+2026-04-29-bricked board). Numbers here are the v0.17 sprint's ground truth.
+
+### 9.1 — Bench setup
+
+| Item | Value |
+|---|---|
+| Board vendor | 89sabers |
+| Board model | Proffieboard V3.9 BT |
+| Chassis | _TBD — fill in_ |
+| Factory firmware version (`version` over BT) | _TBD_ |
+| Factory preset count (`list_presets` line count) | _TBD_ |
+| Test client | Chrome `__.0.____.__` macOS `__.__` on Mac |
+| Test app | [Fredrik Hubinette's reference PoC](https://profezzorn.github.io/lightsaber-web-bluetooth/app.html) |
+
+### 9.2 — Advertising
+
+Captured from `chrome://bluetooth-internals/#devices`:
+
+| Field | Value |
+|---|---|
+| Advertising name | _TBD (e.g. `89-Sabers-Saber`)_ |
+| RSSI (held 1m from laptop) | _TBD dBm_ |
+| Manufacturer data (hex) | _TBD_ |
+| Advertised service UUIDs | _TBD_ |
+| MTU (negotiated) | _TBD bytes (default 23, payload 20)_ |
+
+### 9.3 — GATT services + characteristics
+
+The Hubinette PoC tries 6 known UUID families. Record which one bound:
+
+- [ ] `713d0000-…` — Hubinette "special blend" (BT-909 custom)
+- [ ] `6e400001-…` — Nordic UART Service (NUS)
+- [ ] `49535343-…` — ISSC / Microchip
+- [ ] `0000fff0-…` — ISSC Transparent
+- [ ] `0000ffe0-…` — HM-10 / JDY-08 / AT-09 clone
+- [ ] `0000fefb-…` — Stollmann Terminal IO
+- [ ] `569a1101-…` — Laird BL600 VSP
+
+| Role | UUID (full 128-bit) |
+|---|---|
+| Service | _TBD_ |
+| RX characteristic (PC → saber) | _TBD_ |
+| TX characteristic (saber → PC, notify) | _TBD_ |
+
+### 9.4 — Pairing
+
+| Field | Value |
+|---|---|
+| Pairing required | _TBD (Yes / No)_ |
+| Pairing type | _TBD (Just Works / Passkey / Out-of-band)_ |
+| PIN (if Passkey) | _TBD — 89sabers default is likely `000000` per ShtokCustomWorx convention_ |
+| `BLE_PASSWORD` configured in factory firmware | _TBD — confirmed by `get_ble_config` over BT_ |
+
+### 9.5 — Command vocabulary verification
+
+Tested through Hubinette PoC's Send box. Round-trip latency measured as
+"time from click → blade response observed visually."
+
+| Command | Response received? | Round-trip latency | Notes |
+|---|---|---|---|
+| `version` | _TBD_ | _TBD ms_ | ProffieOS version string |
+| `list_presets` | _TBD_ | _TBD ms_ | Factory preset count |
+| `get_preset` | _TBD_ | _TBD ms_ | Current preset index |
+| `on` | _TBD_ | _TBD ms_ | Blade ignites |
+| `off` | _TBD_ | _TBD ms_ | Blade retracts |
+| `set_preset 2` | _TBD_ | _TBD ms_ | Preset switch latency |
+| `battery_voltage` | _TBD_ | _TBD ms_ | Telemetry |
+| `set_blade_color 255 0 128` | _TBD_ | _TBD ms_ | Live color change |
+| `clash` | _TBD_ | _TBD ms_ | Effect trigger |
+
+### 9.6 — Observed failure modes
+
+Document any anomalies (advertising not seen, pairing rejects, command
+hangs, MTU caps below 20, etc.) so the v0.17 sprint can plan around them.
+
+| Mode | Trigger | Workaround |
+|---|---|---|
+| _TBD_ | _TBD_ | _TBD_ |
+
+### 9.7 — Implications for the v0.17 sprint
+
+Once §9.1–9.6 are filled in:
+
+- The verified UUIDs feed a new `VERIFIED_89SABERS_BT909` entry in
+  `apps/web/lib/webbluetooth/constants.ts` (stub TBD).
+- Pairing behavior shapes the `lib/webbluetooth/BleSerial` connect flow —
+  whether to call `bluetooth.requestDevice` with `acceptAllDevices: false`
+  + a service filter, or with a fallback "scan all services" debug mode.
+- Latency numbers calibrate the debounce on slider→`set_blade_color`
+  pushes (target ≤ measured round-trip + 33 ms display budget).
+- If `get_ble_config` requires authentication, the connect flow needs a
+  PIN-entry modal before issuing the first `version` ping.
+
+### 9.8 — Open questions for follow-up
+
+- _TBD: did 89sabers ship factory firmware with `ENABLE_SERIAL` for `Serial3` enabled?_
+- _TBD: is the BT-909 module on this board the same FSC-BT909C variant as §2.2 describes, or a vendor-firmware-flashed sibling?_
+- _TBD: does the V3.9-BT board have the missing-capacitor footprint issue from §2.3? (Crucible thread; visually inspect top of board.)_

@@ -48,7 +48,7 @@ Single index of deferred work as of **2026-04-27 overnight** (post-overnight UI/
 | **Preset Cartography continued** | `CLAUDE.md` upcoming sprints | L-XL ongoing | PR #307 added 40 (Harry Potter / Halo / SWTOR / Clone Wars Council). More franchises queued: KOTOR, animated series deep-cuts, Visions Vol 2, cross-franchise. |
 | **Xenopixel Phase 5B — hardware validation** | [`XENOPIXEL_IMPLEMENTATION_PLAN.md`](XENOPIXEL_IMPLEMENTATION_PLAN.md) | M | Requires physical Xenopixel V3 hardware. |
 | **Xenopixel Phase 5C — BLE integration (stretch)** | same | XL | Depends on reverse-engineering Xeno Configurator APK. |
-| **Bluetooth wireless updates (v0.17+ target)** | [`BLUETOOTH_FEASIBILITY.md`](research/BLUETOOTH_FEASIBILITY.md) | XL | Port Fredrik's `profezzorn/lightsaber-web-bluetooth` POC. Replacement BT-enabled board arriving (per user memory `project_proffieboard_v39_replacement_2026-05-01.md`). |
+| **Bluetooth wireless updates (v0.17+ target)** | [`BLUETOOTH_FEASIBILITY.md`](research/BLUETOOTH_FEASIBILITY.md) §9 | XL | Port Fredrik's `profezzorn/lightsaber-web-bluetooth` POC. Replacement 89sabers V3.9-BT board arrived 2026-05-14; hardware-verification template at `BLUETOOTH_FEASIBILITY.md` §9 is the v0.17 sprint's ground truth (currently _PENDING_ — filled during live BT test). Stub files to create once §9 is filled in: `apps/web/lib/webbluetooth/constants.ts` + `types.ts` (mirror `lib/webusb/` pattern). |
 | **Next.js 14 → 15 upgrade (v0.17+ target)** | [`NEXTJS_15_UPGRADE_PLAN.md`](research/NEXTJS_15_UPGRADE_PLAN.md) | M (3-5h mechanical) | Forced React 18 → 19 jump is the main risk; deferred to stabilization slot. |
 
 ---
