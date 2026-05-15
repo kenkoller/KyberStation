@@ -16,6 +16,7 @@
     "@kyberstation/boards": "workspace:*",
     "@kyberstation/codegen": "workspace:*",
     "@kyberstation/engine": "workspace:*",
+    "@kyberstation/hardware-profiles": "workspace:*",
     "@kyberstation/presets": "workspace:*",
     "@kyberstation/sound": "workspace:*",
     "@react-three/drei": "^9.122.0",

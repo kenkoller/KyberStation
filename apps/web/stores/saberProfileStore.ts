@@ -32,6 +32,19 @@ export interface SaberProfile {
   chassisType: string;
   boardType: string;
   cardSize: string;
+  /**
+   * Reference to a `HardwareProfile.id` in `@kyberstation/hardware-profiles`
+   * (e.g. `'stock-proffieboard-v3'`, `'89sabers-v3.9'`). When set, the
+   * export pipeline drives codegen from the linked HardwareProfile
+   * (`apps/web/lib/zipExporter.ts` via `profileToConfigOptions`). When
+   * undefined, the user has not yet picked a chassis — the export-time
+   * guard (Phase 2 chassis picker) prompts them before emitting.
+   *
+   * Distinct from `chassisType` (a free-form descriptive string set by
+   * the user for personal notes) and `boardType` (the firmware platform
+   * label, e.g. 'Proffie V3').
+   */
+  hardwareProfileId?: string;
   /** @deprecated Use cardConfigs instead. Kept for migration. */
   presetEntries: PresetListEntry[];
   fontAssignments: Record<string, string>;
@@ -308,6 +321,10 @@ export const useSaberProfileStore = create<SaberProfileStore>((set, get) => ({
         chassisType: typeof data.chassisType === 'string' ? data.chassisType.slice(0, 100) : '',
         boardType: typeof data.boardType === 'string' ? data.boardType.slice(0, 50) : 'Proffie V3',
         cardSize: typeof data.cardSize === 'string' ? data.cardSize : '16GB',
+        hardwareProfileId:
+          typeof data.hardwareProfileId === 'string' && data.hardwareProfileId.length <= 64
+            ? data.hardwareProfileId
+            : undefined,
         presetEntries: Array.isArray(data.presetEntries)
           ? data.presetEntries
               .filter((e: Record<string, unknown>) => typeof e === 'object' && e !== null && 'presetName' in e)

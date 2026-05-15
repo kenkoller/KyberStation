@@ -26,6 +26,9 @@ importers:
       '@kyberstation/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@kyberstation/hardware-profiles':
+        specifier: workspace:*
+        version: link:../../packages/hardware-profiles
       '@kyberstation/presets':
         specifier: workspace:*
         version: link:../../packages/presets

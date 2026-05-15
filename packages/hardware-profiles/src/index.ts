@@ -27,3 +27,11 @@ export {
 // ─── Individual Profiles ───
 export { STOCK_PROFFIEBOARD_V3 } from './profiles/stock-proffieboard-v3.js';
 export { SABERS89_V3_9 } from './profiles/89sabers-v3.9.js';
+
+// ─── Codegen Adapter ───
+export type {
+  CodegenBladeHardwareConfigLike,
+  CodegenConfigOptionsLike,
+  CodegenPresetEntryLike,
+} from './codegen-adapter.js';
+export { profileToConfigOptions } from './codegen-adapter.js';

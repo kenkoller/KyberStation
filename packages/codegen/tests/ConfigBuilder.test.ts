@@ -127,6 +127,64 @@ describe('buildConfigFile', () => {
     });
   });
 
+  describe('Hardware-profile-driven CONFIG_TOP fields', () => {
+    it('emits ENABLE_SERIAL when enableSerial is true', () => {
+      const output = buildConfigFile(makeOptions({ enableSerial: true }));
+      expect(output).toContain('#define ENABLE_SERIAL');
+    });
+
+    it('does not emit ENABLE_SERIAL when enableSerial is false', () => {
+      const output = buildConfigFile(makeOptions({ enableSerial: false }));
+      expect(output).not.toContain('#define ENABLE_SERIAL');
+    });
+
+    it('does not emit ENABLE_SERIAL when enableSerial is undefined (default)', () => {
+      const output = buildConfigFile(makeOptions());
+      expect(output).not.toContain('#define ENABLE_SERIAL');
+    });
+
+    it('emits ORIENTATION when orientation is set', () => {
+      const output = buildConfigFile(makeOptions({ orientation: 'USB_TOWARDS_BLADE' }));
+      expect(output).toContain('#define ORIENTATION ORIENTATION_USB_TOWARDS_BLADE');
+    });
+
+    it('emits ORIENTATION_USB_TOWARDS_POMMEL when specified', () => {
+      const output = buildConfigFile(makeOptions({ orientation: 'USB_TOWARDS_POMMEL' }));
+      expect(output).toContain('#define ORIENTATION ORIENTATION_USB_TOWARDS_POMMEL');
+    });
+
+    it('does not emit ORIENTATION when undefined (ProffieOS default)', () => {
+      const output = buildConfigFile(makeOptions());
+      expect(output).not.toContain('#define ORIENTATION');
+    });
+
+    it('emits MOTION_TIMEOUT when motionTimeoutMs is set', () => {
+      const output = buildConfigFile(makeOptions({ motionTimeoutMs: 144000 }));
+      expect(output).toContain('#define MOTION_TIMEOUT 144000');
+    });
+
+    it('does not emit MOTION_TIMEOUT when undefined', () => {
+      const output = buildConfigFile(makeOptions());
+      expect(output).not.toContain('#define MOTION_TIMEOUT');
+    });
+
+    it('does not emit MOTION_TIMEOUT when 0 (treated as "leave at default")', () => {
+      const output = buildConfigFile(makeOptions({ motionTimeoutMs: 0 }));
+      expect(output).not.toContain('#define MOTION_TIMEOUT');
+    });
+
+    it('emits all three together for a fully-specified vendor profile', () => {
+      const output = buildConfigFile(makeOptions({
+        enableSerial: true,
+        orientation: 'USB_TOWARDS_BLADE',
+        motionTimeoutMs: 144000,
+      }));
+      expect(output).toContain('#define ENABLE_SERIAL');
+      expect(output).toContain('#define ORIENTATION ORIENTATION_USB_TOWARDS_BLADE');
+      expect(output).toContain('#define MOTION_TIMEOUT 144000');
+    });
+  });
+
   describe('CONFIG_PRESETS section', () => {
     it('contains #ifdef CONFIG_PRESETS', () => {
       const output = buildConfigFile(makeOptions());

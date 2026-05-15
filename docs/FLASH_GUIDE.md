@@ -145,8 +145,9 @@ KyberStation's codegen targets ProffieOS 7.x. Newer 7.x point releases should wo
 ## 4. Generate your config from KyberStation
 
 1. In the KyberStation editor, design your saber.
-2. Open the **OUTPUT** panel (left sidebar → OUTPUT, or `⌘4` / `Ctrl+4`).
-3. Click **Download config.h**.
+2. Confirm the **CHASSIS** chip in the StatusBar shows your hardware vendor + model (e.g. `89SABERS · V3.9`). If it shows `NOT SET` in amber, click it and pick your chassis. Without this, codegen falls back to stock-Proffieboard defaults that won't boot on vendor hardware.
+3. Open the **OUTPUT** panel (left sidebar → OUTPUT, or `⌘4` / `Ctrl+4`).
+4. Click **Download config.h**. If you haven't picked a chassis yet, KyberStation will open the picker before downloading.
 
 > **Known v1.0 limitation:** in **single-preset mode**, the OUTPUT panel currently exports a style snippet only, not a full `config.h`. To get a complete config, add at least one entry to the preset list (My Saber → Card Preset Composer) before exporting. This is tracked as a post-launch fix.
 
@@ -402,6 +403,12 @@ That's a hardware/SD issue, not a flash issue. Confirm the SD card is seated and
 ### Saber boots, blade lights, but the wrong font plays
 
 Your config references a font directory that doesn't match the SD layout. Compare the font name in your KyberStation config to the actual folder names on the SD.
+
+### Saber boots, blade lights, but stays frozen / dim / doesn't shimmer
+
+You probably flashed before loading sound fonts onto the SD card. The default `stable`, `unstable`, and `pulse` styles emit an `AudioFlicker<>` wrapper that gates blade modulation on the current audio level. With no SD card or with an empty SD card, ProffieOS sees `audio_level = 0` and locks the wrapper to the base color — modulation can't show through.
+
+**Fix:** load your sound fonts onto the SD card first (see [README](../README.md) or your saber's font installation guide), then re-power the saber. The blade will modulate normally as soon as audio events fire. This is normal ProffieOS behavior on every Proffie-family board, not a KyberStation bug. See `docs/research/CODEGEN_CORRECTNESS_AUDIT_2026-05-15.md` Finding 2 for the technical detail.
 
 ### Chip stuck in DFU after manifest phase (`dfu-util: can't detach`)
 

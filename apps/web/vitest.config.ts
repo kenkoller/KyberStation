@@ -21,6 +21,7 @@ export default defineConfig({
       '@kyberstation/boards': path.resolve(__dirname, '../../packages/boards/src'),
       '@kyberstation/engine': path.resolve(__dirname, '../../packages/engine/src'),
       '@kyberstation/codegen': path.resolve(__dirname, '../../packages/codegen/src'),
+      '@kyberstation/hardware-profiles': path.resolve(__dirname, '../../packages/hardware-profiles/src'),
       '@kyberstation/presets': path.resolve(__dirname, '../../packages/presets/src'),
       '@kyberstation/sound': path.resolve(__dirname, '../../packages/sound/src'),
       '@kyberstation/template-eval': path.resolve(__dirname, '../../packages/template-eval/src'),

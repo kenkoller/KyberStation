@@ -93,6 +93,15 @@ function buildConfigTop(options: ConfigOptions): string {
   lines.push(`#define ENABLE_MOTION`);
   lines.push(`#define ENABLE_WS2811`);
   lines.push(`#define ENABLE_SD`);
+  if (options.enableSerial) {
+    lines.push(`#define ENABLE_SERIAL`);
+  }
+  if (options.orientation) {
+    lines.push(`#define ORIENTATION ORIENTATION_${options.orientation}`);
+  }
+  if (options.motionTimeoutMs !== undefined && options.motionTimeoutMs > 0) {
+    lines.push(`#define MOTION_TIMEOUT ${options.motionTimeoutMs}`);
+  }
 
   // Prop file
   if (options.propFile) {
