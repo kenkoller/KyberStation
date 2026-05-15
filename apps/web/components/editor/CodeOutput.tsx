@@ -22,6 +22,7 @@ import {
 } from '@/stores/chassisPickerStore';
 import { useEngineOnlyWarningStore } from '@/stores/engineOnlyWarningStore';
 import { CUSTOM_PASTE_PROFILE_ID } from '@/components/layout/ChassisPicker';
+import { ENGINE_ONLY_STYLE_IDS as ENGINE_ONLY_STYLE_IDS_LIST } from '@/lib/engineOnlyStyles';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
@@ -227,32 +228,14 @@ const BOARDS_WITH_CODEGEN = new Set([
 ]);
 
 /**
- * Engine styles with no ProffieOS codegen handler. Selecting one in the
- * editor canvas renders the visualizer animation, but on export
- * `ASTBuilder.ts` falls through to a `stable` AudioFlicker pattern (see
- * `docs/research/CODEGEN_CORRECTNESS_AUDIT_2026-05-15.md` Finding 3).
+ * Engine styles with no ProffieOS codegen handler. Loaded from
+ * `@/lib/engineOnlyStyles` so the canonical list lives next to the
+ * parity test that auto-discovers + asserts it
+ * (`apps/web/tests/engineStyleParity.test.ts`).
  *
- * Pre-export confirmation surfaces this silent data loss to the user.
- * Keep in sync with `ASTBuilder.ts` — when codegen parity lands for any
- * of these, remove it from this set.
+ * Kept as a `Set` here for O(1) lookup inside `handleDownload`.
  */
-const ENGINE_ONLY_STYLE_IDS = new Set([
-  'automata',
-  'candle',
-  'cascade',
-  'dataStream',
-  'ember',
-  'gravity',
-  'helix',
-  'mirage',
-  'moire',
-  'nebula',
-  'neutron',
-  'shatter',
-  'tidal',
-  'torrent',
-  'vortex',
-]);
+const ENGINE_ONLY_STYLE_IDS = new Set<string>(ENGINE_ONLY_STYLE_IDS_LIST);
 
 export function CodeOutput() {
   const config = useBladeStore((s) => s.config);
