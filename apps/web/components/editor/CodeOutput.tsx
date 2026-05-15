@@ -5,13 +5,22 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
-import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig } from '@kyberstation/codegen';
-import type { ConfigOptions, ReconstructedConfig } from '@kyberstation/codegen';
+import {
+  generateStyleCode,
+  buildConfigFile,
+  parseStyleCode,
+  reconstructConfig,
+  splicePresetsIntoConfig,
+} from '@kyberstation/codegen';
+import type { ConfigOptions, PresetEntry, ReconstructedConfig } from '@kyberstation/codegen';
 import {
   byId as hardwareProfileById,
   profileToConfigOptions,
 } from '@kyberstation/hardware-profiles';
-import { useChassisPickerStore } from '@/stores/chassisPickerStore';
+import {
+  useChassisPickerStore,
+} from '@/stores/chassisPickerStore';
+import { CUSTOM_PASTE_PROFILE_ID } from '@/components/layout/ChassisPicker';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
@@ -280,12 +289,13 @@ export function CodeOutput() {
   const gestureDefines = (config.gestureDefines as string[] | undefined) ?? [];
 
   const hardwareProfileId = activeProfile?.hardwareProfileId;
+  const customPasteConfig = activeProfile?.customPasteConfig;
 
   const code = useMemo(() => {
     try {
       if (presetListEntries.length > 0) {
         // Generate full config.h with all presets from the list
-        const presets = presetListEntries.map((entry) => {
+        const presets: PresetEntry[] = presetListEntries.map((entry) => {
           const styleCode = generateStyleCode(entry.config, { comments: false, editMode });
           return {
             fontName: entry.fontName,
@@ -293,6 +303,19 @@ export function CodeOutput() {
             presetName: entry.presetName,
           };
         });
+
+        // Custom-paste passthrough: the user pasted their factory
+        // config.h; splice in KyberStation's presets[] only, preserve
+        // everything else verbatim (CONFIG_TOP, BladeConfig, prop
+        // includes, BLE defines, etc.). The safe-by-default path for
+        // any vendor chassis we don't yet profile.
+        if (
+          hardwareProfileId === CUSTOM_PASTE_PROFILE_ID &&
+          customPasteConfig &&
+          customPasteConfig.trim().length > 0
+        ) {
+          return splicePresetsIntoConfig(customPasteConfig, presets);
+        }
 
         // If the saber profile has a HardwareProfile assigned, drive
         // codegen from the chassis-specific topology + defines. Phase 2
@@ -353,7 +376,7 @@ export function CodeOutput() {
     } catch {
       return '// Error generating code — check your configuration';
     }
-  }, [config, presetListEntries, editMode, gestureDefines, volume, proffieBoardType, hardwareProfileId]);
+  }, [config, presetListEntries, editMode, gestureDefines, volume, proffieBoardType, hardwareProfileId, customPasteConfig]);
 
   const lines = useMemo(() => code.split('\n'), [code]);
 
@@ -381,10 +404,13 @@ export function CodeOutput() {
   const handleDownload = useCallback(() => {
     // Phase 2 export-time guard: a multi-preset config.h needs chassis-
     // specific topology to boot on real hardware. Block until the user
-    // has picked a HardwareProfile via the ChassisPicker.
-    // Single-preset style snippets don't carry chassis info, so the
-    // guard only fires for the multi-preset config path.
-    if (isMultiPreset && !hardwareProfileId) {
+    // has picked a HardwareProfile (or saved a custom paste) via the
+    // ChassisPicker. Single-preset style snippets don't carry chassis
+    // info, so the guard only fires for the multi-preset config path.
+    const customPasteMissing =
+      hardwareProfileId === CUSTOM_PASTE_PROFILE_ID &&
+      (!customPasteConfig || customPasteConfig.trim().length === 0);
+    if (isMultiPreset && (!hardwareProfileId || customPasteMissing)) {
       openChassisPicker('export-block');
       return;
     }
@@ -422,7 +448,7 @@ export function CodeOutput() {
     a.download = isMultiPreset ? 'config.h' : `${config.name?.replace(/\s+/g, '_') || 'blade_style'}.h`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [code, config.name, isMultiPreset, hardwareProfileId, presetListEntries, openChassisPicker]);
+  }, [code, config.name, isMultiPreset, hardwareProfileId, customPasteConfig, presetListEntries, openChassisPicker]);
 
   const handleExportConfig = useCallback(() => {
     downloadConfigAsFile(config);

@@ -1,7 +1,7 @@
 // ─── Config Builder ───
 // Generates a complete ProffieOS config.h file from structured options.
 
-import type { ConfigOptions, BladeHardwareConfig } from './types.js';
+import type { ConfigOptions, BladeHardwareConfig, PresetEntry } from './types.js';
 
 /** Sanitize a string for safe interpolation into C++ string literals. */
 function sanitizeCppString(value: string, maxLen = 64): string {
@@ -19,6 +19,32 @@ function sanitizeCppPath(value: string): string {
     .replace(/[^a-zA-Z0-9_\-./]/g, '')
     .replace(/\.\./g, '')
     .slice(0, 64);
+}
+
+/**
+ * Build just the `Preset presets[] = { ... };` block.
+ *
+ * Used both by `buildConfigFile()` to assemble the full CONFIG_PRESETS
+ * section, and by the custom-paste splicer
+ * (`splicePresetsIntoConfig()`) to swap out the preset array in a
+ * user-provided factory `config.h` while preserving the surrounding
+ * BladeConfig + CONFIG_TOP intact.
+ */
+export function buildPresetsArray(presets: PresetEntry[]): string {
+  const lines: string[] = [];
+  lines.push('Preset presets[] = {');
+  for (const preset of presets) {
+    const trackPart = preset.trackFile ? `"${sanitizeCppPath(preset.trackFile)}"` : '"tracks/track.wav"';
+    lines.push(`  { "${sanitizeCppString(preset.fontName)}", ${trackPart},`);
+    for (let i = 0; i < preset.styleCodes.length; i++) {
+      const comma = i < preset.styleCodes.length - 1 ? ',' : ',';
+      lines.push(`    ${preset.styleCodes[i]}${comma}`);
+    }
+    lines.push(`    "${sanitizeCppString(preset.presetName)}"`);
+    lines.push('  },');
+  }
+  lines.push('};');
+  return lines.join('\n');
 }
 
 /**
@@ -141,19 +167,8 @@ function buildConfigPresets(options: ConfigOptions): string {
   const lines: string[] = [];
   lines.push('#ifdef CONFIG_PRESETS');
 
-  // Presets array
-  lines.push('Preset presets[] = {');
-  for (const preset of options.presets) {
-    const trackPart = preset.trackFile ? `"${sanitizeCppPath(preset.trackFile)}"` : '"tracks/track.wav"';
-    lines.push(`  { "${sanitizeCppString(preset.fontName)}", ${trackPart},`);
-    for (let i = 0; i < preset.styleCodes.length; i++) {
-      const comma = i < preset.styleCodes.length - 1 ? ',' : ',';
-      lines.push(`    ${preset.styleCodes[i]}${comma}`);
-    }
-    lines.push(`    "${sanitizeCppString(preset.presetName)}"`);
-    lines.push('  },');
-  }
-  lines.push('};');
+  // Presets array (delegated for reuse by the custom-paste splicer)
+  lines.push(buildPresetsArray(options.presets));
 
   lines.push('');
 

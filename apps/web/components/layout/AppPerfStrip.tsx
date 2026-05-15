@@ -144,6 +144,7 @@ function ChassisSegment() {
   const openPicker = useChassisPickerStore((s) => s.open);
 
   const hardwareProfileId = activeProfile?.hardwareProfileId;
+  const customPasteConfig = activeProfile?.customPasteConfig;
   const hwProfile = hardwareProfileId ? hardwareProfileById(hardwareProfileId) : undefined;
 
   let label: string;
@@ -154,6 +155,13 @@ function ChassisSegment() {
     label = 'NONE';
     valueColor = undefined;
     title = 'Create a saber profile to assign a chassis';
+  } else if (hardwareProfileId === 'custom-paste') {
+    const hasPaste = !!customPasteConfig && customPasteConfig.trim().length > 0;
+    label = hasPaste ? 'CUSTOM · CONFIG.H' : 'CUSTOM · EMPTY';
+    valueColor = hasPaste ? undefined : 'rgb(var(--status-warn))';
+    title = hasPaste
+      ? 'Chassis: custom-paste config — click to edit or replace'
+      : 'Custom paste is empty — click to paste your factory config.h';
   } else if (!hwProfile) {
     label = 'NOT SET';
     valueColor = 'rgb(var(--status-warn))';
