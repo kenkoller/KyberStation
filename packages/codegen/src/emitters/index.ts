@@ -5,17 +5,34 @@ export { CFXEmitter } from './CFXEmitter.js';
 export { GHv3Emitter } from './GHv3Emitter.js';
 export { XenopixelEmitter } from './XenopixelEmitter.js';
 export type { XenoEmitterFirmwareVersion } from './XenopixelEmitter.js';
+export {
+  ProffieRuntimeEmitter,
+  buildRuntimePresetsFile,
+} from './ProffieRuntimeEmitter.js';
+export type {
+  ProffieRuntimePresetInput,
+  ProffieRuntimeEmitOptions,
+} from './ProffieRuntimeEmitter.js';
 
 import type { BoardEmitter } from './BaseEmitter.js';
 import { CFXEmitter } from './CFXEmitter.js';
 import { GHv3Emitter } from './GHv3Emitter.js';
 import { XenopixelEmitter } from './XenopixelEmitter.js';
+import { ProffieRuntimeEmitter } from './ProffieRuntimeEmitter.js';
 import type { XenoEmitterFirmwareVersion } from './XenopixelEmitter.js';
 
-/** Options for emitter creation. Currently only Xenopixel boards use this. */
+/** Options for emitter creation. */
 export interface EmitterOptions {
   /** Firmware version for Xenopixel emitters. Default varies by board entry. */
   firmwareVersion?: XenoEmitterFirmwareVersion;
+  /**
+   * Compile-time install_time string for ProffieOS runtime emitter.
+   * Required for the emitted `presets.ini` to be accepted by firmware.
+   * Empty string emits a placeholder the user is expected to replace.
+   */
+  installTime?: string;
+  /** Compile-time NUM_BLADES for ProffieOS runtime emitter. Defaults to 1. */
+  numBlades?: 1 | 2 | 3 | 4;
 }
 
 const EMITTER_REGISTRY: Record<string, (opts?: EmitterOptions) => BoardEmitter> = {
@@ -25,6 +42,11 @@ const EMITTER_REGISTRY: Record<string, (opts?: EmitterOptions) => BoardEmitter> 
   xenopixel: (opts) => new XenopixelEmitter(opts?.firmwareVersion ?? '1.0'),
   'xenopixel-v2': (opts) => new XenopixelEmitter(opts?.firmwareVersion ?? '1.0'),
   'xenopixel-v3': (opts) => new XenopixelEmitter(opts?.firmwareVersion ?? '1.0'),
+  'proffie-runtime': (opts) =>
+    new ProffieRuntimeEmitter({
+      installTime: opts?.installTime ?? '',
+      numBlades: opts?.numBlades ?? 1,
+    }),
 };
 
 /**

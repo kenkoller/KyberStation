@@ -49,11 +49,15 @@ export type {
   BoardEmitOptions,
   EmitterOutput,
   XenoEmitterFirmwareVersion,
+  ProffieRuntimePresetInput,
+  ProffieRuntimeEmitOptions,
 } from './emitters/index.js';
 export {
   CFXEmitter,
   GHv3Emitter,
   XenopixelEmitter,
+  ProffieRuntimeEmitter,
+  buildRuntimePresetsFile,
   getEmitter,
   hasEmitter,
   listEmitterBoards,
