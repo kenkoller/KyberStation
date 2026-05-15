@@ -1,6 +1,7 @@
 import type { HardwareProfile } from '../types.js';
 import { STOCK_PROFFIEBOARD_V3 } from './stock-proffieboard-v3.js';
 import { SABERS89_V3_9 } from './89sabers-v3.9.js';
+import { SABERTRIO_STANDARD } from './sabertrio-standard.js';
 
 /**
  * All hardware profiles shipped with KyberStation, in registration order.
@@ -11,6 +12,7 @@ import { SABERS89_V3_9 } from './89sabers-v3.9.js';
 export const ALL_PROFILES: readonly HardwareProfile[] = [
   STOCK_PROFFIEBOARD_V3,
   SABERS89_V3_9,
+  SABERTRIO_STANDARD,
 ];
 
 /** Look up a profile by its stable `id`. Returns `undefined` if not found. */
@@ -34,3 +36,4 @@ export function all(): HardwareProfile[] {
 // Re-export individual profiles for direct import.
 export { STOCK_PROFFIEBOARD_V3 } from './stock-proffieboard-v3.js';
 export { SABERS89_V3_9 } from './89sabers-v3.9.js';
+export { SABERTRIO_STANDARD } from './sabertrio-standard.js';
