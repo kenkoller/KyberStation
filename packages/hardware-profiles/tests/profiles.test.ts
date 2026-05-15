@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   ALL_PROFILES,
   SABERS89_V3_9,
+  SABERTRIO_STANDARD,
   STOCK_PROFFIEBOARD_V3,
   validateProfile,
 } from '../src/index.js';
@@ -117,5 +118,47 @@ describe('SABERS89_V3_9', () => {
   it('is community-validated, not boot-confirmed by KyberStation', () => {
     expect(SABERS89_V3_9.source).toBe('community-validated');
     expect(SABERS89_V3_9.validatedBy).toEqual([]);
+  });
+});
+
+describe('SABERTRIO_STANDARD', () => {
+  it('targets the proffieboard-v2 BoardId (Sabertrio still on V2)', () => {
+    expect(SABERTRIO_STANDARD.boardId).toBe('proffieboard-v2');
+  });
+
+  it('captures the primary 115-LED blade only (Phase 1 simplification)', () => {
+    expect(SABERTRIO_STANDARD.numBlades).toBe(1);
+    expect(SABERTRIO_STANDARD.blades).toHaveLength(1);
+    const main = SABERTRIO_STANDARD.blades[0]!;
+    expect(main.ledCount).toBe(115);
+    expect(main.dataPin).toBe('bladePin');
+    expect(main.role).toBe('main');
+    expect(main.powerPins).toEqual(['bladePowerPin2', 'bladePowerPin3']);
+  });
+
+  it("uses Sabertrio's vendor-custom prop file", () => {
+    expect(SABERTRIO_STANDARD.propFile).toBe('s3button_config.h');
+  });
+
+  it('captures s3config.h CONFIG_TOP values', () => {
+    expect(SABERTRIO_STANDARD.defaultVolume).toBe(450);
+    expect(SABERTRIO_STANDARD.clashThresholdG).toBe(3.4);
+    expect(SABERTRIO_STANDARD.motionTimeoutMs).toBe(600000); // 60 * 10 * 1000
+  });
+
+  it('emits the OLED + blade-detect + power-share defines verbatim', () => {
+    expect(SABERTRIO_STANDARD.propDefines).toContain('ENABLE_SSD1306');
+    expect(SABERTRIO_STANDARD.propDefines).toContain('BLADE_DETECT_PIN 17');
+    expect(SABERTRIO_STANDARD.propDefines).toContain('SHARED_POWER_PINS');
+    expect(SABERTRIO_STANDARD.propDefines).toContain('SAVE_PRESET');
+  });
+
+  it("is provenance 'experimental' (stub for a more complex chassis)", () => {
+    expect(SABERTRIO_STANDARD.source).toBe('experimental');
+    expect(SABERTRIO_STANDARD.validatedBy).toEqual([]);
+  });
+
+  it('notes point users to custom-paste for full chassis fidelity', () => {
+    expect(SABERTRIO_STANDARD.notes).toMatch(/Custom · Paste your config\.h/);
   });
 });

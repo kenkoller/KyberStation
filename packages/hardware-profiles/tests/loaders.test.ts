@@ -6,6 +6,7 @@ import {
   byVendor,
   STOCK_PROFFIEBOARD_V3,
   SABERS89_V3_9,
+  SABERTRIO_STANDARD,
 } from '../src/index.js';
 
 describe('hardware-profiles loaders', () => {
@@ -55,9 +56,20 @@ describe('hardware-profiles loaders', () => {
     expect(unique.size).toBe(ids.length);
   });
 
-  it('Phase 1 ships exactly the two seed profiles', () => {
+  it('byId returns the Sabertrio Standard profile', () => {
+    expect(byId('sabertrio-standard')).toBe(SABERTRIO_STANDARD);
+  });
+
+  it('byVendor returns Sabertrio profiles', () => {
+    const profiles = byVendor('sabertrio');
+    expect(profiles).toHaveLength(1);
+    expect(profiles[0]).toBe(SABERTRIO_STANDARD);
+  });
+
+  it('ships three profiles after Sabertrio addition', () => {
     expect(ALL_PROFILES.map((p) => p.id).sort()).toEqual([
       '89sabers-v3.9',
+      'sabertrio-standard',
       'stock-proffieboard-v3',
     ]);
   });
