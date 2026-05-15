@@ -327,6 +327,19 @@ Some saber vendors customize the Proffieboard before shipping — different boot
 
 If you have an 89sabers board: stick to flashing Bank 1 (`0x08000000:leave`) with the standard arduino-cli output. The board will tolerate this and run your config — `dfu-util` writes both banks, but the chip's BFB2 flag determines which one runs at boot. If your custom config doesn't boot, restore from your backup ([§11](#11-recovery--restoring-from-backup)) and check that you flashed the right bank.
 
+#### Known Option Byte fingerprints (89sabers V3.9 family)
+
+For sanity-checking a fresh backup against known states. SHA256 of the 64-byte Option Bytes dump from `dfu-util -a 1 -U option-bytes-pre.bin -s 0x1FFF7800:64` (the explicit `-s` is required — without it, dfu-util pads the read to 16 KB and the SHA is meaningless):
+
+| SHA256 prefix | State | Origin |
+|---|---|---|
+| `5e98c71ace8fafc1…` | **89sabers V3.9 pristine, variant A.** Documented as "BFB2=1, boot from Bank 2" by 89sabers support, though subsequent analysis suggests this may have been variant-specific rather than universal. | 89sabers V3.9 board #1, 2026-04-30 pre-incident |
+| `4c2b2194ca8148d1…` | **89sabers V3.9-BT pristine** AND **89sabers V3.9 board #1 post-recovery-attempt**. Differs from variant A by a single bit at OPTR byte 2 bit 4. Bank 1 contains a valid ARM Cortex-M vector table and a full firmware image (~99% flash populated); chip boots normally. | 89sabers V3.9-BT board, 2026-05-14 pristine; 89sabers V3.9 board #1 after 2026-04-29 OB writes |
+
+**Key takeaway:** the fingerprint table is informational, not authoritative for brick detection. A non-matching fingerprint is **not** itself a brick signal. The actual brick signal is "chip will not boot when DFU is exited and the BOOT0 pin is released" — a runtime test, not a hash comparison. Always pair an OB hash check with a boot-test (let the saber try to boot normally; if it does, the OB state is functional regardless of fingerprint).
+
+The helper script `scripts/hardware-test/backup-proffieboard-v3.sh` runs this comparison automatically; it exits non-zero only if the dump hits the "bricked board #1 mid-recovery" fingerprint AND the chip's vector table looks invalid. For V3.9-BT the standard pristine fingerprint is `4c2b2194…`.
+
 ### KR Sabers, Saberbay, Vader's Vault
 
 These vendors use similar customization patterns to 89sabers — vendor splash screens, custom font selections in the default config, sometimes BFB2 set. The same rule applies: **don't touch Option Bytes**, flash Bank 1 only, keep your backup.

@@ -324,3 +324,132 @@ If a community vendor (Sabertrio, 89sabers) reaches out post-launch wanting a de
 - [Edit Mode for ProffieOS6 — Crucible](https://crucible.hubbe.net/t/edit-mode-and-other-additions-for-proffieos6/114)
 - [ColorChange in a blade style — POD](https://pod.hubbe.net/config/color-change.html)
 - [ProffieOS6 Edit Mode — Fett263](https://www.fett263.com/proffieOS6-edit-mode.html)
+
+---
+
+## 9. Hardware verification — 89sabers V3.9-BT, 2026-05-14
+
+**Status:** _IN PROGRESS — USB CDC baseline complete; BT connect-and-command still TBD._
+
+This section captures hardware-measured BLE protocol details from the new
+89sabers V3.9-with-Bluetooth board (arrived 2026-05-14, replacing the
+2026-04-29-bricked board). Numbers here are the v0.17 sprint's ground truth.
+
+### 9.1 — Bench setup
+
+| Item | Value |
+|---|---|
+| Board vendor | 89sabers |
+| Board model | Proffieboard V3.9 BT |
+| Chassis | _TBD — fill in_ |
+| ProffieOS version (`version` over USB) | **v7.12** |
+| Config file in firmware | `89sabers-config.h` |
+| Prop file | `SaberFett263Buttons` |
+| Firmware compile date | Apr 21 2026 |
+| Number of buttons | 2 |
+| Factory preset count (`list_presets` over USB) | **25** |
+| Factory preset names (over USB) | Graflex, Vader, Anakin, QGJ, Windu, Rey, Rainbow, Speeder, DV3, luke5, fire, TeensySF, predator, NewSaber, Sebulba, STARGATE, Apocalypse, Decay, Evolving, Vortex, Mando, Heavy, Danger, GODZILLA, Lightsaber |
+| Battery voltage at test start | 4.17 V (fully charged) |
+| Current volume | 1200 / 2000 |
+| USB CDC serial port (macOS) | `/dev/cu.usbmodem2068308F38301` |
+| USB-MSC mount | **Not exposed** — factory firmware is CDC-only (no `usb=cdc_msc`); SD card access requires physical removal |
+| Test client (BT) | Chrome on macOS |
+| Test app (BT) | [Fredrik Hubinette's reference PoC](https://profezzorn.github.io/lightsaber-web-bluetooth/app.html) |
+| Helper script for serial commands | `scripts/hardware-test/proffie-serial.sh` |
+
+### 9.2 — Advertising
+
+Captured from `chrome://bluetooth-internals/#devices`:
+
+| Field | Value |
+|---|---|
+| Advertising name | **`Feasycom`** (default unconfigured FSC-BT909 module name — 89sabers did not customize) |
+| MAC address | `62:21:23:B8:9B:6B` |
+| RSSI (held ~1m from laptop) | **-63 dBm** (strong signal) |
+| Manufacturer data (hex) | _Not exposed in chrome://bluetooth-internals row_ |
+| Advertised service UUIDs | _Empty in advertising packet — typical for BLE; services discovered after GATT connection_ |
+| MTU (negotiated) | _TBD — capture after connect_ |
+
+### 9.3 — GATT services + characteristics
+
+The Hubinette PoC tries 6 known UUID families. Record which one bound:
+
+- [ ] `713d0000-…` — Hubinette "special blend" (BT-909 custom)
+- [ ] `6e400001-…` — Nordic UART Service (NUS)
+- [ ] `49535343-…` — ISSC / Microchip
+- [ ] `0000fff0-…` — ISSC Transparent
+- [ ] `0000ffe0-…` — HM-10 / JDY-08 / AT-09 clone
+- [ ] `0000fefb-…` — Stollmann Terminal IO
+- [ ] `569a1101-…` — Laird BL600 VSP
+
+| Role | UUID (full 128-bit) |
+|---|---|
+| Service | _TBD_ |
+| RX characteristic (PC → saber) | _TBD_ |
+| TX characteristic (saber → PC, notify) | _TBD_ |
+
+### 9.4 — Pairing
+
+| Field | Value |
+|---|---|
+| Pairing required | _TBD (Yes / No)_ |
+| Pairing type | _TBD (Just Works / Passkey / Out-of-band)_ |
+| PIN (if Passkey) | _TBD — 89sabers default is likely `000000` per ShtokCustomWorx convention_ |
+| `BLE_PASSWORD` configured in factory firmware | _TBD — confirmed by `get_ble_config` over BT_ |
+
+### 9.5 — Command vocabulary verification
+
+**USB CDC baseline (proves ProffieOS responds — same protocol that BT should expose):**
+
+| Command | Response over USB CDC | Notes |
+|---|---|---|
+| `version` | ✓ `v7.12 / config/89sabers-config.h / prop: SaberFett263Buttons / buttons: 2 / installed: Apr 21 2026 08:44:54` | |
+| `list_presets` | ✓ 25 preset blocks (FONT/TRACK/STYLE/NAME/VARIATION format), terminated by `Unmounting SD Card.` | |
+| `get_preset` | ✓ `0` | Current index |
+| `battery_voltage` | ✓ `4.17` | Volts |
+| `get_volume` | ✓ `1200 / Battery voltage: 4.17` | Note: ProffieOS appends async battery line after some commands |
+
+**BT round-trip (via Hubinette PoC) — TBD:**
+
+Round-trip latency measured as "time from click → blade response observed visually" (or text response received in PoC log for non-physical commands).
+
+| Command | Response over BT? | Round-trip latency | Matches USB? |
+|---|---|---|---|
+| `version` | _TBD_ | _TBD ms_ | _TBD_ |
+| `list_presets` | _TBD_ | _TBD ms_ | _TBD_ |
+| `get_preset` | _TBD_ | _TBD ms_ | _TBD_ |
+| `on` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `off` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `set_preset 2` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `battery_voltage` | _TBD_ | _TBD ms_ | _TBD_ |
+| `set_blade_color 255 0 128` | _TBD_ | _TBD ms_ | n/a (physical) |
+| `clash` | _TBD_ | _TBD ms_ | n/a (physical) |
+
+### 9.6 — Observed failure modes
+
+Document any anomalies (advertising not seen, pairing rejects, command
+hangs, MTU caps below 20, etc.) so the v0.17 sprint can plan around them.
+
+| Mode | Trigger | Workaround |
+|---|---|---|
+| _TBD_ | _TBD_ | _TBD_ |
+
+### 9.7 — Implications for the v0.17 sprint
+
+Once §9.1–9.6 are filled in:
+
+- The verified UUIDs feed a new `VERIFIED_89SABERS_BT909` entry in
+  `apps/web/lib/webbluetooth/constants.ts` (stub TBD).
+- Pairing behavior shapes the `lib/webbluetooth/BleSerial` connect flow —
+  whether to call `bluetooth.requestDevice` with `acceptAllDevices: false`
+  + a service filter, or with a fallback "scan all services" debug mode.
+- Latency numbers calibrate the debounce on slider→`set_blade_color`
+  pushes (target ≤ measured round-trip + 33 ms display budget).
+- If `get_ble_config` requires authentication, the connect flow needs a
+  PIN-entry modal before issuing the first `version` ping.
+
+### 9.8 — Open questions for follow-up
+
+- _TBD: did 89sabers ship factory firmware with `ENABLE_SERIAL` for `Serial3` enabled?_
+- _TBD: is the BT-909 module on this board the same FSC-BT909C variant as §2.2 describes, or a vendor-firmware-flashed sibling?_
+- _TBD: does the V3.9-BT board have the missing-capacitor footprint issue from §2.3? (Crucible thread; visually inspect top of board.)_
