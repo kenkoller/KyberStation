@@ -9,9 +9,10 @@
 ## Hardware state at start of session
 
 - **89sabers V3.9-BT** (chip `2068308F3830`) restored to factory firmware. USB CDC enumerates as `Proffieboard`. Operating normally.
-- **Old 89sabers V3.9 non-BT** (chip `2081399A4B30`) flash-degraded. Don't rely on it for testing. Backup at `backups/89sabers-v39-old-2026-05-15/bank1-pre.bin`.
-- **No ST-Link clone yet** — order one ($8 Amazon V2 clone) for future deep-debug needs but not required for this session.
+- **Old 89sabers V3.9 non-BT** (chip `2081399A4B30`) flash-degraded via DFU. Recovery now possible — see Path B below. Backup at `backups/89sabers-v39-old-2026-05-15/bank1-pre.bin`.
+- **ST-Link V2 + probe kit already on hand.** Unlocks SWD/SWO boot-log capture, full chip recovery via STM32CubeProgrammer mass-erase, and the ability to read what ProffieOS is actually doing at the moment our flashed configs hang on V3.9-BT.
 - **Toolchain present**: `arduino-cli` 1.4.1, `dfu-util` 0.11, ProffieOS clone at tag `v7.12` at `~/ProffieOS/`, Proffieboard core 4.6.
+- **Toolchain to install for ST-Link path**: STM32CubeProgrammer (free from STMicro) or OpenOCD + GDB. STM32CubeProgrammer is the friendlier option for one-off recovery + boot-log work.
 
 ---
 
@@ -81,13 +82,34 @@ If this works, **the v0.17 pitch is delivered for this hardware tonight**.
 
 ---
 
-## What's explicitly out of scope for this session
+## Path B (optional, ST-Link is available): Crack the V3.9-BT firmware boot mystery
 
-- Re-flashing firmware on the V3.9-BT board. We've tried that 6× and ruled out 4 hypotheses (see SESSION log). Not on the critical path for v0.17 anymore.
-- Reverse-engineering `89sabers-config.h` source. Same reason.
-- Old V3.9 chip recovery. Needs ST-Link, not relevant to this work.
-- Stock Proffieboard V3 hardware. We don't own one.
-- New blade-style algorithms on hardware. Blocked on firmware flash, which is blocked on V3.9-BT config knowledge.
+The user has an ST-Link V2 + probe kit on hand. This unlocks options that were gated in the 2026-05-15 session. Two valuable independent tasks; do either or both after Path A is delivering value.
+
+### B.1 — Capture boot log from a failing V3.9-BT flash (~1 hour)
+
+Goal: identify what specific define / init step in `89sabers-config.h` the non-BT-aware configs are missing.
+
+Procedure:
+1. Wire ST-Link to the V3.9-BT board's SWD pads (SWDIO, SWCLK, GND, optionally NRST). On Proffieboard V3, SWD pads are exposed test points; the schematic / 89sabers documentation shows their location.
+2. With STM32CubeProgrammer or OpenOCD, attach to the running chip.
+3. Re-flash one of the disconfirmed-hypothesis configs from 2026-05-15 (`89V3_allfont.h` is the simplest — it works on non-BT V3.9 chassis per 2026-04-27 baseline). Set ITM/SWO trace via the probe.
+4. Reset the chip with the probe attached. Capture every init step ProffieOS reaches before the hang.
+5. The last successful checkpoint identifies what `89sabers-config.h` does next that we're missing.
+
+This may eliminate the need for the firmware-flash path's "ask 89sabers for source" gate. If we can identify the missing define empirically, we can ship a `89sabers-v3.9-bt` HardwareProfile with it.
+
+### B.2 — Recover the old V3.9 board (~30 min)
+
+The flash sectors on chip `2081399A4B30` started misbehaving after the 2026-04-30 Option Bytes incident. STM32CubeProgrammer over SWD can:
+1. Mass-erase the flash (resets all sectors regardless of write-protect)
+2. Reset Option Bytes to factory defaults (clears the BFB2=1 corruption)
+3. Verify chip is responsive
+4. Restore from `backups/89sabers-v39-old-2026-05-15/bank1-pre.bin` if desired, or flash fresh ProffieOS
+
+If successful, the old V3.9 chip becomes available as a second test bench for non-BT chassis validation work. Useful for future codegen testing on non-BT hardware.
+
+**Both B.1 and B.2 are valuable but neither is on the v0.17 critical path.** Phase 1–3 (runtime presets) is the user-pitch deliverable; Path B is engineering depth that future-proofs the project.
 
 ---
 
