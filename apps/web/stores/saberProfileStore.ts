@@ -34,17 +34,30 @@ export interface SaberProfile {
   cardSize: string;
   /**
    * Reference to a `HardwareProfile.id` in `@kyberstation/hardware-profiles`
-   * (e.g. `'stock-proffieboard-v3'`, `'89sabers-v3.9'`). When set, the
-   * export pipeline drives codegen from the linked HardwareProfile
-   * (`apps/web/lib/zipExporter.ts` via `profileToConfigOptions`). When
-   * undefined, the user has not yet picked a chassis — the export-time
-   * guard (Phase 2 chassis picker) prompts them before emitting.
+   * (e.g. `'stock-proffieboard-v3'`, `'89sabers-v3.9'`). Sentinel value
+   * `'custom-paste'` means "use `customPasteConfig` verbatim and only
+   * splice in KyberStation's `Preset presets[]` array on export."
+   *
+   * When undefined, the user has not yet picked a chassis — the
+   * export-time guard prompts them before emitting.
    *
    * Distinct from `chassisType` (a free-form descriptive string set by
    * the user for personal notes) and `boardType` (the firmware platform
    * label, e.g. 'Proffie V3').
    */
   hardwareProfileId?: string;
+  /**
+   * Pasted factory `config.h` text — only meaningful when
+   * `hardwareProfileId === 'custom-paste'`. Capped at ~256 KiB during
+   * import to bound localStorage growth (a typical ProffieOS config is
+   * ~20–80 KiB, so this leaves comfortable headroom).
+   *
+   * Privacy: same as `notes` / `description` — never serialized into
+   * Kyber Code share URLs or generated config.h headers. The pasted
+   * text is the user's vendor-specific hardware data and may include
+   * their BLE password, custom font references, etc.
+   */
+  customPasteConfig?: string;
   /** @deprecated Use cardConfigs instead. Kept for migration. */
   presetEntries: PresetListEntry[];
   fontAssignments: Record<string, string>;
@@ -324,6 +337,10 @@ export const useSaberProfileStore = create<SaberProfileStore>((set, get) => ({
         hardwareProfileId:
           typeof data.hardwareProfileId === 'string' && data.hardwareProfileId.length <= 64
             ? data.hardwareProfileId
+            : undefined,
+        customPasteConfig:
+          typeof data.customPasteConfig === 'string' && data.customPasteConfig.length <= 262144
+            ? data.customPasteConfig
             : undefined,
         presetEntries: Array.isArray(data.presetEntries)
           ? data.presetEntries

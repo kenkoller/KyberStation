@@ -146,6 +146,7 @@ KyberStation's codegen targets ProffieOS 7.x. Newer 7.x point releases should wo
 
 1. In the KyberStation editor, design your saber.
 2. Confirm the **CHASSIS** chip in the StatusBar shows your hardware vendor + model (e.g. `89SABERS · V3.9`). If it shows `NOT SET` in amber, click it and pick your chassis. Without this, codegen falls back to stock-Proffieboard defaults that won't boot on vendor hardware.
+   - **Vendor not listed?** Click the chip, then choose **CUSTOM · Paste your config.h**. Paste your factory `config.h` (the one your saber came with, or the one your vendor distributes). KyberStation will preserve everything except the `Preset presets[]` array on export — your `CONFIG_TOP` defines, `BladeConfig`, prop file, and BLE settings ship verbatim, and only the presets get swapped to what you designed in the editor. This is the safe-by-default path for Sabertrio, KR Sabers, Saberbay, Vader's Vault, Electrum, DIY builds, and anything else we don't yet profile.
 3. Open the **OUTPUT** panel (left sidebar → OUTPUT, or `⌘4` / `Ctrl+4`).
 4. Click **Download config.h**. If you haven't picked a chassis yet, KyberStation will open the picker before downloading.
 

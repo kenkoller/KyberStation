@@ -30,7 +30,11 @@ export { buildAST } from './ASTBuilder.js';
 export type { BladeConfig, RGB, BuildOptions } from './ASTBuilder.js';
 export { EditArgManager, STANDARD_COLOR_ARGS } from './EditArgManager.js';
 export { emitCode } from './CodeEmitter.js';
-export { buildConfigFile } from './ConfigBuilder.js';
+export { buildConfigFile, buildPresetsArray } from './ConfigBuilder.js';
+export {
+  splicePresetsIntoConfig,
+  validateFactoryConfig,
+} from './customConfigSplicer.js';
 export { validateAST } from './Validator.js';
 export {
   lookupTemplate,
