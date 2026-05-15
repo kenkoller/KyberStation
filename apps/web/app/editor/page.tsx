@@ -7,6 +7,7 @@ import { SplashScreen } from '@/components/layout/SplashScreen';
 import { OnboardingFlow, isOnboardingComplete } from '@/components/layout/OnboardingFlow';
 import ToastContainer from '@/components/layout/ToastContainer';
 import { ChassisPicker } from '@/components/layout/ChassisPicker';
+import { EngineOnlyWarningModal } from '@/components/layout/EngineOnlyWarningModal';
 import { useSharedConfig } from '@/hooks/useSharedConfig';
 import { ALL_PRESETS } from '@kyberstation/presets';
 import type { BladeConfig } from '@kyberstation/engine';
@@ -197,6 +198,9 @@ function EditorPageContent() {
 
       {/* ── Chassis picker (opens from StatusBar chip + export guard) ── */}
       {appReady && <ChassisPicker />}
+
+      {/* ── Engine-only-style warning modal (opens from export guard) ── */}
+      {appReady && <EngineOnlyWarningModal />}
     </>
   );
 }

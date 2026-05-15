@@ -20,6 +20,7 @@ import {
 import {
   useChassisPickerStore,
 } from '@/stores/chassisPickerStore';
+import { useEngineOnlyWarningStore } from '@/stores/engineOnlyWarningStore';
 import { CUSTOM_PASTE_PROFILE_ID } from '@/components/layout/ChassisPicker';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
@@ -400,8 +401,9 @@ export function CodeOutput() {
   }, [code]);
 
   const openChassisPicker = useChassisPickerStore((s) => s.open);
+  const requestEngineOnlyWarning = useEngineOnlyWarningStore((s) => s.request);
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     // Phase 2 export-time guard: a multi-preset config.h needs chassis-
     // specific topology to boot on real hardware. Block until the user
     // has picked a HardwareProfile (or saved a custom paste) via the
@@ -416,27 +418,18 @@ export function CodeOutput() {
     }
 
     // Engine-only-style warning (audit Finding 3). Some engine styles
-    // have no codegen handler and silently emit as `stable`. Warn the
-    // user before they download a config that won't match their canvas.
+    // have no codegen handler and silently emit as `stable`. Show a
+    // styled modal listing the offending presets; resolve only when
+    // the user picks Continue Anyway.
     if (isMultiPreset) {
       const offending = presetListEntries
         .filter((entry) => ENGINE_ONLY_STYLE_IDS.has(entry.config.style as string))
-        .map((entry) => `${entry.presetName} (${entry.config.style})`);
+        .map((entry) => ({
+          presetName: entry.presetName,
+          styleId: entry.config.style as string,
+        }));
       if (offending.length > 0) {
-        const lines = [
-          'These presets use blade styles without a ProffieOS codegen handler:',
-          '',
-          ...offending.map((n) => `  • ${n}`),
-          '',
-          'They will export as the "stable" fallback style on hardware — your',
-          'canvas preview will not match the flashed firmware.',
-          '',
-          'Continue anyway?',
-        ];
-        // Native confirm is intentionally simple here; a richer modal is a
-        // post-Phase-2 polish item once we have UX feedback.
-        // eslint-disable-next-line no-alert
-        const proceed = window.confirm(lines.join('\n'));
+        const proceed = await requestEngineOnlyWarning(offending);
         if (!proceed) return;
       }
     }
@@ -448,7 +441,7 @@ export function CodeOutput() {
     a.download = isMultiPreset ? 'config.h' : `${config.name?.replace(/\s+/g, '_') || 'blade_style'}.h`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [code, config.name, isMultiPreset, hardwareProfileId, customPasteConfig, presetListEntries, openChassisPicker]);
+  }, [code, config.name, isMultiPreset, hardwareProfileId, customPasteConfig, presetListEntries, openChassisPicker, requestEngineOnlyWarning]);
 
   const handleExportConfig = useCallback(() => {
     downloadConfigAsFile(config);
