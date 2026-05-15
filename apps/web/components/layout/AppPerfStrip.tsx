@@ -29,6 +29,8 @@ import {
 import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
+import { useChassisPickerStore } from '@/stores/chassisPickerStore';
+import { byId as hardwareProfileById } from '@kyberstation/hardware-profiles';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useHistoryStore } from '@/stores/historyStore';
 import { useRmsLevel } from '@/hooks/useRmsLevel';
@@ -124,6 +126,62 @@ function Divider({ wideOnly = false }: { wideOnly?: boolean }) {
         wideOnly ? 'hidden wide:inline-block' : '',
       ].filter(Boolean).join(' ')}
     />
+  );
+}
+
+/**
+ * Clickable chassis chip. Reads the active saber profile's
+ * `hardwareProfileId` and renders a button styled to match the
+ * surrounding Segment chips. Click opens the global ChassisPicker.
+ *
+ * Visual states:
+ *   - Profile + hardwareProfileId set → `VENDOR · MODEL`, normal color
+ *   - Profile + hardwareProfileId unset → `NOT SET` in `--status-warn` amber
+ *   - No active profile → `NONE` in muted color
+ */
+function ChassisSegment() {
+  const activeProfile = useSaberProfileStore((s) => s.getActiveProfile());
+  const openPicker = useChassisPickerStore((s) => s.open);
+
+  const hardwareProfileId = activeProfile?.hardwareProfileId;
+  const hwProfile = hardwareProfileId ? hardwareProfileById(hardwareProfileId) : undefined;
+
+  let label: string;
+  let valueColor: string | undefined;
+  let title: string;
+
+  if (!activeProfile) {
+    label = 'NONE';
+    valueColor = undefined;
+    title = 'Create a saber profile to assign a chassis';
+  } else if (!hwProfile) {
+    label = 'NOT SET';
+    valueColor = 'rgb(var(--status-warn))';
+    title = 'Click to pick your chassis hardware';
+  } else {
+    label = `${hwProfile.vendor.toUpperCase()} · ${hwProfile.model}`;
+    valueColor = undefined;
+    title = `Chassis: ${hwProfile.vendor} ${hwProfile.model} — click to change`;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => openPicker('manual')}
+      title={title}
+      data-statusbar-chassis
+      className="inline-flex items-center gap-1.5 text-ui-xs leading-none shrink-0 hover:text-accent transition-colors cursor-pointer"
+      style={{ background: 'transparent', border: 'none', padding: 0 }}
+    >
+      <span className="uppercase tracking-[0.08em] text-text-muted">Chassis</span>
+      <span aria-hidden="true" className="text-text-muted/50">·</span>
+      <span
+        className="tabular-nums"
+        style={valueColor ? { color: valueColor } : undefined}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -294,8 +352,10 @@ export function AppPerfStrip({ engineRef }: AppPerfStripProps) {
       </Segment>
       <Divider />
 
-      {/* Profile + Preset */}
+      {/* Profile + Chassis + Preset */}
       <Segment label="Profile">{profileName}</Segment>
+      <Divider />
+      <ChassisSegment />
       <Divider />
       <Segment
         label="Preset"

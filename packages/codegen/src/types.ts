@@ -89,6 +89,24 @@ export interface ConfigOptions {
   fett263Defines?: string[];
   presets: PresetEntry[];
   bladeConfig: BladeHardwareConfig[];
+  /**
+   * `#define ORIENTATION` value. Vendor chassis where the board is mounted
+   * USB-toward-blade need `ORIENTATION_USB_TOWARDS_BLADE` so the IMU is
+   * read with the correct axis. Omit to leave ProffieOS at its default
+   * (USB toward pommel).
+   */
+  orientation?: 'USB_TOWARDS_BLADE' | 'USB_TOWARDS_POMMEL' | 'USB_PORT_TOWARDS_BLADE';
+  /**
+   * `#define MOTION_TIMEOUT` value in milliseconds. Controls how long the
+   * IMU stays active after the saber is set down. Omit to leave at the
+   * ProffieOS default (~5 min).
+   */
+  motionTimeoutMs?: number;
+  /**
+   * Emit `#define ENABLE_SERIAL` for chassis with a Bluetooth module or
+   * external serial peripheral on UART3. Default is `false`.
+   */
+  enableSerial?: boolean;
 }
 
 export interface PresetEntry {

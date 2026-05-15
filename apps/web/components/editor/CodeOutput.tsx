@@ -6,7 +6,12 @@ import { useUIStore } from '@/stores/uiStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import { generateStyleCode, buildConfigFile, parseStyleCode, reconstructConfig } from '@kyberstation/codegen';
-import type { ReconstructedConfig } from '@kyberstation/codegen';
+import type { ConfigOptions, ReconstructedConfig } from '@kyberstation/codegen';
+import {
+  byId as hardwareProfileById,
+  profileToConfigOptions,
+} from '@kyberstation/hardware-profiles';
+import { useChassisPickerStore } from '@/stores/chassisPickerStore';
 import type { BladeConfig } from '@kyberstation/engine';
 import { downloadConfigAsFile, readConfigFromFile } from '@/lib/bladeConfigIO';
 import { encodeGlyphFromConfig } from '@/lib/sharePack/kyberGlyph';
@@ -211,6 +216,34 @@ const BOARDS_WITH_CODEGEN = new Set([
   'CFX', 'GH V4', 'GH V3', 'Xenopixel V3', 'Xenopixel V2',
 ]);
 
+/**
+ * Engine styles with no ProffieOS codegen handler. Selecting one in the
+ * editor canvas renders the visualizer animation, but on export
+ * `ASTBuilder.ts` falls through to a `stable` AudioFlicker pattern (see
+ * `docs/research/CODEGEN_CORRECTNESS_AUDIT_2026-05-15.md` Finding 3).
+ *
+ * Pre-export confirmation surfaces this silent data loss to the user.
+ * Keep in sync with `ASTBuilder.ts` — when codegen parity lands for any
+ * of these, remove it from this set.
+ */
+const ENGINE_ONLY_STYLE_IDS = new Set([
+  'automata',
+  'candle',
+  'cascade',
+  'dataStream',
+  'ember',
+  'gravity',
+  'helix',
+  'mirage',
+  'moire',
+  'nebula',
+  'neutron',
+  'shatter',
+  'tidal',
+  'torrent',
+  'vortex',
+]);
+
 export function CodeOutput() {
   const config = useBladeStore((s) => s.config);
   const loadPreset = useBladeStore((s) => s.loadPreset);
@@ -246,6 +279,8 @@ export function CodeOutput() {
   // Merge gesture defines from config with base Fett263 defines
   const gestureDefines = (config.gestureDefines as string[] | undefined) ?? [];
 
+  const hardwareProfileId = activeProfile?.hardwareProfileId;
+
   const code = useMemo(() => {
     try {
       if (presetListEntries.length > 0) {
@@ -259,7 +294,32 @@ export function CodeOutput() {
           };
         });
 
-        // Build combined Fett263 defines: base + gesture panel selections
+        // If the saber profile has a HardwareProfile assigned, drive
+        // codegen from the chassis-specific topology + defines. Phase 2
+        // wiring point — without this, defaults assume stock-Proffieboard
+        // and don't boot on vendor chassis (see SESSION_2026-05-14_V39BT_BENCH.md).
+        const hwProfile = hardwareProfileId ? hardwareProfileById(hardwareProfileId) : undefined;
+        if (hwProfile) {
+          const options: ConfigOptions = profileToConfigOptions(hwProfile, presets);
+          if (editMode && !options.fett263Defines?.includes('FETT263_EDIT_MODE_MENU')) {
+            options.fett263Defines = [
+              ...(options.fett263Defines ?? []),
+              'FETT263_EDIT_MODE_MENU',
+            ];
+          }
+          if (gestureDefines.length > 0) {
+            options.fett263Defines = [
+              ...(options.fett263Defines ?? []),
+              ...gestureDefines,
+            ];
+          }
+          return buildConfigFile(options);
+        }
+
+        // Fallback path — no HardwareProfile assigned. Preserves the
+        // pre-v0.17 hardcoded defaults so users who haven't yet picked
+        // a chassis still see a config in the panel (export-time guard
+        // in `handleDownload` blocks actual download until they pick).
         const baseDefines = [
           'MOTION_TIMEOUT 60 * 15 * 1000',
         ];
@@ -293,7 +353,7 @@ export function CodeOutput() {
     } catch {
       return '// Error generating code — check your configuration';
     }
-  }, [config, presetListEntries, editMode, gestureDefines, volume]);
+  }, [config, presetListEntries, editMode, gestureDefines, volume, proffieBoardType, hardwareProfileId]);
 
   const lines = useMemo(() => code.split('\n'), [code]);
 
@@ -316,7 +376,45 @@ export function CodeOutput() {
     }
   }, [code]);
 
+  const openChassisPicker = useChassisPickerStore((s) => s.open);
+
   const handleDownload = useCallback(() => {
+    // Phase 2 export-time guard: a multi-preset config.h needs chassis-
+    // specific topology to boot on real hardware. Block until the user
+    // has picked a HardwareProfile via the ChassisPicker.
+    // Single-preset style snippets don't carry chassis info, so the
+    // guard only fires for the multi-preset config path.
+    if (isMultiPreset && !hardwareProfileId) {
+      openChassisPicker('export-block');
+      return;
+    }
+
+    // Engine-only-style warning (audit Finding 3). Some engine styles
+    // have no codegen handler and silently emit as `stable`. Warn the
+    // user before they download a config that won't match their canvas.
+    if (isMultiPreset) {
+      const offending = presetListEntries
+        .filter((entry) => ENGINE_ONLY_STYLE_IDS.has(entry.config.style as string))
+        .map((entry) => `${entry.presetName} (${entry.config.style})`);
+      if (offending.length > 0) {
+        const lines = [
+          'These presets use blade styles without a ProffieOS codegen handler:',
+          '',
+          ...offending.map((n) => `  • ${n}`),
+          '',
+          'They will export as the "stable" fallback style on hardware — your',
+          'canvas preview will not match the flashed firmware.',
+          '',
+          'Continue anyway?',
+        ];
+        // Native confirm is intentionally simple here; a richer modal is a
+        // post-Phase-2 polish item once we have UX feedback.
+        // eslint-disable-next-line no-alert
+        const proceed = window.confirm(lines.join('\n'));
+        if (!proceed) return;
+      }
+    }
+
     const blob = new Blob([code], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -324,7 +422,7 @@ export function CodeOutput() {
     a.download = isMultiPreset ? 'config.h' : `${config.name?.replace(/\s+/g, '_') || 'blade_style'}.h`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [code, config.name]);
+  }, [code, config.name, isMultiPreset, hardwareProfileId, presetListEntries, openChassisPicker]);
 
   const handleExportConfig = useCallback(() => {
     downloadConfigAsFile(config);

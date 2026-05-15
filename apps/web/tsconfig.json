@@ -28,6 +28,9 @@
       "@kyberstation/codegen": [
         "../../packages/codegen/src"
       ],
+      "@kyberstation/hardware-profiles": [
+        "../../packages/hardware-profiles/src"
+      ],
       "@kyberstation/presets": [
         "../../packages/presets/src"
       ],
