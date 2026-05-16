@@ -42,7 +42,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Ahsoka\'s shorter yellow-green shoto saber used in her Jar\'Kai dual-wielding style.',
+      'The Clone Wars season 2 onward — Ahsoka\'s shorter shoto blade, paired with her primary green saber for Jar\'Kai dual-wielding. Slightly warmer yellow-green than the main blade, a subtle palette cue that this is the offhand weapon balancing her lead.',
     hiltNotes: 'Compact shoto hilt for reverse-grip.',
     config: {
       name: 'AhsokaCWShoto',
@@ -201,7 +201,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Caleb Dume\'s blue lightsaber, carried through the dark times and wielded throughout the Rebellion on Lothal.',
+      'Star Wars Rebels — the saber Caleb Dume buried after Order 66 and rebuilt as Kanan Jarrus. A steady deep blue with the slow summon ignition of a Knight who relearned the form in hiding, restrained for the years he spent denying it before the Ghost crew pulled him back to the fight.',
     hiltNotes: 'Two-piece modular hilt that separates for concealment.',
     config: {
       name: 'KananJarrus',
@@ -484,7 +484,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'on-screen',
     description:
-      'Cere Junda\'s blue lightsaber. A steady, resolute blade reflecting her hard-won wisdom.',
+      'Jedi: Fallen Order — Cere Junda\'s reclaimed lightsaber, dormant during her years of guilt and exile before she fights alongside Cal Kestis aboard the Stinger Mantis. A composed steady blue with minimal shimmer, befitting a former Master who has stared the dark side down and chosen to keep teaching.',
     hiltNotes: 'Restored Jedi hilt reclaimed after years in hiding.',
     config: {
       name: 'CereJunda',

@@ -10,7 +10,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     description:
-      'Cal Kestis with a vivid green kyber crystal. A classic Jedi hue for the Fallen Order survivor.',
+      'Jedi: Fallen Order / Survivor — Cal\'s green kyber crystal swap on Ilum, the moment a Padawan in hiding accepts a Knight\'s blade. Classical bright Jedi green from his Bogano-rebuilt hilt, paired with the spark ignition that has been his signature since BD-1 first booted the workbench scene.',
     hiltNotes: 'Customizable hilt rebuilt on Bogano, multiple material options.',
     config: {
       name: 'CalKestisGreen',
@@ -35,7 +35,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     description:
-      'Cal Kestis with a rare orange kyber crystal. A warm amber glow unique among Jedi.',
+      'Jedi: Survivor — Cal\'s rare orange kyber, one of the unlockable crystal swaps available after the Jedha story arc. A warm amber glow that sits between Jedi green and Inquisitor red, suiting the older, harder Cal who has spent five years running from the Empire and lost too many friends to claim the Knight\'s blue.',
     config: {
       name: 'CalKestisOrange',
       baseColor: { r: 255, g: 140, b: 0 },
@@ -59,7 +59,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     description:
-      'Cal Kestis with a purple kyber crystal. A rich violet blade — one of the rarer player-selectable kyber colors in Fallen Order / Survivor.',
+      'Jedi: Fallen Order / Survivor — Cal\'s purple kyber, the rarest player-selectable crystal across both games. A rich saturated violet without the Mace Windu reds, befitting a survivor who has come close enough to the dark to know the line. Same spark ignition as the green and blue variants — the saber\'s rhythm is Cal\'s, even when the color isn\'t.',
     config: {
       name: 'CalKestisPurple',
       baseColor: { r: 160, g: 30, b: 255 },
@@ -83,7 +83,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     description:
-      'Cal Kestis in a dark-side alternate path. Bleeding red crystal with unstable, crackling energy.',
+      'A speculative "what-if" branch — Cal Kestis if the Jedi: Survivor finale had gone the other way. Bled crimson kyber with the glitch ignition + shatter retraction of a crystal that was forced rather than tuned, the volatility of a Padawan-turned-Knight who chose Bode\'s path instead of Cere\'s. Not the game\'s canonical ending.',
     config: {
       name: 'CalKestisRed',
       baseColor: { r: 255, g: 0, b: 10 },
@@ -516,7 +516,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     era: 'expanded-universe',
     affiliation: 'jedi',
     tier: 'detailed',
-    description: 'High Republic Jedi Knight with a green blade that shimmers like the aurora borealis.',
+    description:
+      'The High Republic Phase I novels and Marvel run — Keeve Trennis, freshly knighted on Starlight Beacon during the Hetzal Emergence. A vibrant emerald blade with the aurora style\'s slow-drifting bands, evoking the Force-as-light that the High Republic Jedi felt before the Nihil shattered the era.',
     config: {
       name: 'KeeveTrennis',
       baseColor: { r: 30, g: 200, b: 80 },
@@ -542,7 +543,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     era: 'expanded-universe',
     affiliation: 'jedi',
     tier: 'base',
-    description: 'High Republic Jedi Master — a brilliant High Republic yellow blade radiating calm strength. (Canonically a yellow-bladed Jedi per Wookieepedia.)',
+    description:
+      'The High Republic novels — Loden Greatstorm, Trandoshan Jedi Master and one of the era\'s preeminent Wayfinders. A brilliant golden yellow blade that became a symbol of the era after his capture and death at Marchion Ro\'s hands; the saber outlived its wielder and now hangs on the Nihil flagship as a trophy. Photon style holds the color steady, the way Loden held the line.',
     config: {
       name: 'LodenGreatstorm',
       baseColor: { r: 255, g: 215, b: 0 },
@@ -618,7 +620,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     era: 'expanded-universe',
     affiliation: 'jedi',
     tier: 'detailed',
-    description: 'Independent Wayseeker who left the traditional Jedi path. White prismatic blade.',
+    description:
+      'The High Republic novels — Orla Jareni, the Umbaran Wayseeker who left the Coruscant Temple to walk her own path through the Force. Her saber\'s rare white kyber renders here as a faintly prismatic glow with center ignition + center retraction, the symmetry of a Jedi who answers to no Council and no fixed orthodoxy.',
     config: {
       name: 'OrlaJareni',
       baseColor: { r: 230, g: 235, b: 250 },
@@ -644,7 +647,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     era: 'expanded-universe',
     affiliation: 'jedi',
     tier: 'base',
-    description: 'Rare Wookiee Jedi of the High Republic era. Oversized green crossguard blade with slow, powerful ignition befitting his Wookiee stature.',
+    description:
+      'The High Republic novels — Burryaga Agaburry, Wookiee Padawan to Master Nib Assek and a rare Force-sensitive among his species. An oversized green crossguard blade with a slow 600 ms scroll ignition that suits a Wookiee\'s deliberate weight, the saber unfurling like a thought he\'s ready to act on rather than a switch he flipped.',
     hiltNotes: 'High Republic crossguard hilt sized for a Wookiee grip.',
     topologyNotes: 'Crossguard blade with lateral quillons.',
     config: {
