@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Format reference doc** — [`docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md) verified against ProffieOS v7.12 source. Covers schema, install_time semantics, style verb registry, `builtin N M` + `advanced` slot mapping, atomic-write contract.
 
+- **Emit ↔ parser audit doc** — [`docs/research/EMIT_PARSER_AUDIT.md`](docs/research/EMIT_PARSER_AUDIT.md) systematic catalog of every interface between KyberStation's emit code and a downstream parser (firmware, vendor app, our own persistence). For each: what we emit, what the consumer expects, status (verified / unverified / known bug), source-of-truth references. Created in response to the 2026-05-16 smoking-gun finding so future contributors can verify encoding contracts cheaply.
+
+### Fixed
+
+- **CRITICAL: Phase C runtime presets were emitting 0-255 RGB values when ProffieOS's runtime arg parser expects 0-65535.** Bench-verified on 89sabers V3.9-BT 2026-05-16: every Phase C blade was rendering at 1/257 of intended brightness (~0.4% photon output) since the feature shipped. Root cause: `RgbArg<>` parser at `~/ProffieOS/styles/rgb_arg.h:41` stores parsed values directly as `Color16(r, g, b)` which expects 16-bit channels. Compile-time `Rgb<R,G,B>` literals get the `× 0x101` (= × 257) 8→16-bit scaling automatically via the `Color16(Color8)` constructor; the runtime parser path does not. Fix: replaced `rgbCsv()` (which clamped to 0-255) with `rgbCsv16()` (which scales each channel × 257, clamps to 0-65535) in `packages/codegen/src/emitters/ProffieRuntimeEmitter.ts`. All existing users of Phase C get the fix on next deploy with no other action required. Deliverability table for `proffie_runtime` Phase C lifted: `baseColor`, `clashColor`, `lockupColor`, `blastColor`, `ignitionMs`, `retractionMs` all moved from `partial` → `deliverable`. The in-app tooltip rewritten to reflect reality.
+
 ### Changed
 
 - **Engine → codegen parity expanded** — codegen handlers added for 14 previously-engine-only styles (helix, candle, ember, dataStream, shatter, neutron, cascade, gravity, moire, torrent, vortex, tidal, mirage, nebula). Codegen coverage lifted from 18 of 33 (54%) to 32 of 33 (97%). Only `automata` (Rule 30 cellular automaton) remains engine-only. The `engineStyleParity.test.ts` regression sentinel updates 33/18/15 → 33/32/1. Deliverability rationale for `proffie` `style: partial` updated to cite the new ratio.
