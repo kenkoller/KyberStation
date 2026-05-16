@@ -2167,7 +2167,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
   },
   {
     id: 'creative-dueling-banjos',
-    name: 'Rave Stick Deluxe',
+    name: 'Dueling Banjos',
     character: 'Festival Goer',
     era: 'expanded-universe',
     affiliation: 'other',
@@ -2175,7 +2175,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     continuity: 'creative',
     description: 'UV purple nebula clouds with flash-fill white strobe clash. This is not a weapon, it is a personal dance floor beacon. Center ignition blooms outward like the bass drop. Evaporate retraction for when the DJ kills the music and the lights come on at 4 AM. Reality hurts.',
     config: {
-      name: 'RaveStickDeluxe',
+      name: 'DuelingBanjos',
       baseColor: { r: 100, g: 0, b: 255 },
       clashColor: { r: 255, g: 255, b: 255 },
       lockupColor: { r: 255, g: 0, b: 150 },
