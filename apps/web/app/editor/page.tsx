@@ -8,6 +8,7 @@ import { OnboardingFlow, isOnboardingComplete } from '@/components/layout/Onboar
 import ToastContainer from '@/components/layout/ToastContainer';
 import { ChassisPicker } from '@/components/layout/ChassisPicker';
 import { EngineOnlyWarningModal } from '@/components/layout/EngineOnlyWarningModal';
+import { SoundFontWarningModal } from '@/components/layout/SoundFontWarningModal';
 import { useSharedConfig } from '@/hooks/useSharedConfig';
 import { ALL_PRESETS } from '@kyberstation/presets';
 import type { BladeConfig } from '@kyberstation/engine';
@@ -201,6 +202,9 @@ function EditorPageContent() {
 
       {/* ── Engine-only-style warning modal (opens from export guard) ── */}
       {appReady && <EngineOnlyWarningModal />}
+
+      {/* ── Sound-font missing-folder warning modal (opens from CardWriter direct-write) ── */}
+      {appReady && <SoundFontWarningModal />}
     </>
   );
 }
