@@ -13,6 +13,103 @@ _No unreleased changes._
 
 ---
 
+## [0.22.0] — Pending date (awaits PR #325 merge)
+
+> **Pending: This block is drafted ahead of [PR #325](https://github.com/kenkoller/KyberStation/pull/325) merge.** Finalize the date, remove this note, and cut the `v0.22.0` git tag once #325 lands on `main`. The headline Runtime Presets path is the reason v0.22.0 is a minor bump rather than the originally-planned v0.21.1 patch.
+
+**Runtime Presets Release.** Replaces the originally-planned v0.21.1 "Polyglot Release" patch tag. The May–mid-May sprint cycle that landed v0.21.1 internally (Xenopixel V3, Fredrik Style Editor, template-eval, 3D blade renderer, Fett263 Prop Editor Level 1, Hardware Profiles, audit Waves 0-4) now ships alongside the **ProffieOS Runtime — SD card** export pipeline: design presets in KyberStation, drop `presets.ini` on your saber's SD card, reboot, presets appear. **No firmware flashing.** Plus a smoking-gun 1/257-brightness RGB encoding fix discovered on the bench, and an engine→ProffieOS codegen port that brings 32 of 33 engine styles to real hardware.
+
+### Runtime Presets Path (Pending PR #325 merge)
+
+- **ProffieOS Runtime — SD card export** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — New `proffie_runtime` board emitter generates `presets.ini`, the runtime preset file ProffieOS firmware with `SAVE_PRESET` enabled reads at boot. ZIP bundle is `presets.ini` + `KYBERSTATION_README.txt` at root — **no font folders** (factory firmware already has them). Phase A scope: reorder / rename / duplicate factory presets + reassign fonts. `style=builtin N M` references the firmware's compiled preset bank.
+- **`install_time` auto-discovery** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — `runtimePresetIO.parseInstallTime()` reads the SD card's existing `presets.ini` to match the firmware's compile-time install_time so the emitted file is accepted on first reboot.
+- **`detectRuntimePresetSupport()` probe** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — Separate SD-card detector (avoids conflating with `config.h` board detection) gates whether the runtime-presets export path is offered.
+- **Preset-count cap warning** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — CardWriter surfaces a warning when the user's library exceeds 16 entries (firmware limit on most chassis).
+- **Phase C "Custom styles" via `advanced` verb** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — Phase C lets users push custom color overrides through the runtime parser path (not just factory builtins). Marked deliverable after the brightness fix below.
+- **Phase B color overrides + Phase C parameterized verbs** beyond `advanced` deferred to a future release — they need per-chassis schema validation against real hardware.
+- **Format spec** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — `docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md`. Verified byte-for-byte against ProffieOS v7.12 source (`common/current_preset.h` Write / Read / CreateINI / ValidatePresets).
+
+### Xenopixel V3 Full Board Support
+
+- **Xenopixel V3 second-board support** ([#287](https://github.com/kenkoller/KyberStation/pull/287)) — 8 blade effect styles, 10 ignition animations, board-aware `renderMode` on `BladeEngine`, real `fontconfig.ini` + `config.ini` generation, firmware version awareness (5 versions: 1.0 / 1.2 / 1.2.5 / 1.3.1 / 1.4.0), Proffie→Xenopixel compat mapping, SD card import via `parseXenoFontConfig` / `parseXenoConfigIni` / `importXenoSdCard`. 60 files, +8,025 lines.
+- **Xenopixel wizard + onboarding** ([#282](https://github.com/kenkoller/KyberStation/pull/282), [#283](https://github.com/kenkoller/KyberStation/pull/283), [#286](https://github.com/kenkoller/KyberStation/pull/286)) — Xenopixel V3 + V2 added to wizard board picker, honest design-reference export with `KYBERSTATION_README.txt`, refined CFX + Golden Harvest taglines.
+- **Xenopixel coverage extensions** ([#289](https://github.com/kenkoller/KyberStation/pull/289), [#290](https://github.com/kenkoller/KyberStation/pull/290)) — Blaster / Force pickers, config preview, SD card import wiring, Scavenger / Hunter ignition coverage, ID fix, SSR contract tests for Batch 2+3 components.
+- **Xenopixel doc refresh** ([#288](https://github.com/kenkoller/KyberStation/pull/288), [#297](https://github.com/kenkoller/KyberStation/pull/297)) — README, CHANGELOG, CLAUDE.md, backlog updates after audit pass.
+
+### Fredrik Style Editor Integration (Phases 1-7)
+
+- **Variant cycling — Phases 1-4** ([#298](https://github.com/kenkoller/KyberStation/pull/298)) — `getChildren()` tree walking on all template-eval classes, `ColorChange` variant cycling with `setVariant(index)` / `variantCount` API, `VariantCycler` UI component (`[ ◀ ] N / M [ ▶ ]`), mouse swing + time-scale control integration.
+- **Template tree panel — Phase 5A + 5D** ([#299](https://github.com/kenkoller/KyberStation/pull/299)) — Read-only AST-to-tree renderer with annotations, then inline editing for template tree panel.
+- **Layer controls — Phase 5C** ([#302](https://github.com/kenkoller/KyberStation/pull/302)) — Layer controls for `Layers<>` children + 6 template-eval function additions + 8 alias registrations (199 → 213).
+- **Style transformations + insertion palette — Phase 6 + 7** ([#304](https://github.com/kenkoller/KyberStation/pull/304)) — Style transformation pipeline + template insertion palette.
+- **Phase 5F tests** ([#306](https://github.com/kenkoller/KyberStation/pull/306)) — 32 tests for `TemplateInsertionPalette`.
+
+### Template-Eval Interpreter
+
+- **Phase 1 foundation** ([#295](https://github.com/kenkoller/KyberStation/pull/295)) — New `packages/template-eval` workspace package implementing a direct ProffieOS style template evaluator. Parses real ProffieOS C++ template syntax into evaluable ASTs.
+- **Phase 2 engine bridge** ([#296](https://github.com/kenkoller/KyberStation/pull/296)) — Wires `template-eval` into `BladeEngine` as a new `'template-eval'` render mode. Enables direct evaluation of ProffieOS style code in the visualizer.
+- **Template registry expansion 153 → 372** ([#303](https://github.com/kenkoller/KyberStation/pull/303)) — Waves 3-7 added 38+37 named colors, 12+9+8+10 template classes, 32+5+aliases, plus `EffectIncrement` template. Covers the full Fett263 corpus.
+
+### Visualizer Upgrade Phase 1-2
+
+- **3D blade renderer + Hardware Preview mode** ([#301](https://github.com/kenkoller/KyberStation/pull/301)) — Three.js / React-Three-Fiber blade mesh with emissive LED material, orbit controls, 3D hilt geometry (Phase 2B), mouse swing simulation (Phase 2C), HDR bloom post-processing via EffectComposer (Phase 2D), template-eval-driven Hardware Preview pipeline. Hardware Preview enabled by default (Phase 3). Closes Phases 1-2 of the Visualizer Upgrade Plan.
+- **Visualizer Upgrade Plan doc** ([#300](https://github.com/kenkoller/KyberStation/pull/300)) — Multi-phase plan written ahead of implementation.
+
+### Fett263 Prop File Editor Level 1
+
+- **Prop file editor — Level 1** ([#305](https://github.com/kenkoller/KyberStation/pull/305)) — Toggle panel for ~30-40 Fett263 `#define`s. Covers ~90% of Proffie users' prop customization without authoring a full prop file. Level 2 (button routing sub-tab) and Level 3 (full custom prop generation) tracked in `docs/POST_LAUNCH_BACKLOG.md`.
+
+### Hardware Profiles
+
+- **Phase 1 — package scaffolding + seed profiles** ([#316](https://github.com/kenkoller/KyberStation/pull/316)) — New `@kyberstation/hardware-profiles` workspace package + 2 seed chassis profiles.
+- **Phase 2 — codegen adapter + chassis picker + export guards** ([#319](https://github.com/kenkoller/KyberStation/pull/319)) — Per-chassis pin maps wired into codegen, chassis picker in the export flow, validation guards.
+- **Custom-paste passthrough** ([#318](https://github.com/kenkoller/KyberStation/pull/318)) — Lets users paste their own pin map for unprofiled vendors so the export pipeline isn't blocked on a profile landing first.
+- **Sabertrio Standard chassis profile** ([#321](https://github.com/kenkoller/KyberStation/pull/321)) — Third built-in profile (experimental).
+- **Engine-only export warning modal** ([#320](https://github.com/kenkoller/KyberStation/pull/320)) — Styled modal replaces `window.confirm()` when exporting a config that uses engine-only style fallbacks.
+- **Engine style parity CI guard** ([#322](https://github.com/kenkoller/KyberStation/pull/322)) — Regression test that fails CI if a style without a codegen emitter is added without explicit fallback annotation.
+
+### Engine Style Codegen Parity (Pending PR #325 merge)
+
+- **32 of 33 engine styles ported to ProffieOS** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — Two waves of style emitters: 6 styles (helix / candle / ember / dataStream / shatter / neutron) + 8 more, bringing the codegen path to 32/33 engine-style parity. Closes the "blade you see is the blade you get" gap for the runtime-presets export.
+
+### Fixes (PR #325 includes the smoking-gun)
+
+- **Pending: Phase C runtime presets RGB 1/257 brightness bug** ([#325](https://github.com/kenkoller/KyberStation/pull/325) commit `45737f2`) — KyberStation's `proffie_runtime` Phase C `advanced` verb was emitting RGB color values in 0-255 (8-bit) range. ProffieOS's `RgbArg<>` runtime arg parser at `styles/rgb_arg.h:41` stores parsed values directly as `Color16(r, g, b)` — which expects 0-65535 per channel. Every Phase C blade was rendering at ~0.4% photon output. The compile-time `Rgb<R,G,B>` template auto-scaled via `Color16(Color8(R,G,B))` × `0x101`, so the compile-flash path was unaffected. Fix scales each channel × 257 and clamps to 0-65535. Empirical verification on the 89sabers V3.9-BT bench (`set_style1 advanced 60395,4626,36494` matches factory Vader luminance).
+- **Xenopixel Candy + Flashing blade effects unreachable** ([#293](https://github.com/kenkoller/KyberStation/pull/293)) — `XENO_BLADE_EFFECTS` entries for IDs 4 (Candy) and 7 (Flashing) had `kyberStyle: null`, making them unreachable through the UI despite complete engine implementations.
+- **Xenopixel 11 audit findings resolved** ([#289](https://github.com/kenkoller/KyberStation/pull/289)) — Orphaned `XenoDesignPorter.tsx` deleted, segment overflow in `XenoEffectPicker` fixed, missing ignition ID mappings, motion/settings panel state moved to Zustand, config.ini round-trip for crossguard/double-blade.
+- **Sub-1024 brand drift + status bar BOARD-BOARD dedup** ([#277](https://github.com/kenkoller/KyberStation/pull/277)) — Tablet rendering fixes.
+- **Lexer EASYBLADE + ronin under-close recovery** ([#279](https://github.com/kenkoller/KyberStation/pull/279)) — Closes 2 `LEXER_INCOMPATIBLE` fixtures.
+- **Import banner mobile vertical stack + auto-scroll** ([#280](https://github.com/kenkoller/KyberStation/pull/280)).
+- **Mobile Analyze button hide + rgb-luma rail removed on compact** ([#272](https://github.com/kenkoller/KyberStation/pull/272)).
+
+### Audit Waves 0-4
+
+- **Wave 0 — public-facing counts corrected** ([#309](https://github.com/kenkoller/KyberStation/pull/309)) — Landing + features pages now show 33 styles, 22 effects, 455+ presets. Fixes `metadataBase` Next.js warning.
+- **Wave 1 — documentation + SSR hygiene** ([#310](https://github.com/kenkoller/KyberStation/pull/310)) — `HelpTooltip` SSR warning fixed, dead doc references, stale CLAUDE.md counts.
+- **Wave 3 — dead code removed** ([#311](https://github.com/kenkoller/KyberStation/pull/311)) — `performanceStore` + 28 tests deleted, `uiStore.performanceBarHeight` removed, stale TODOs cleaned.
+- **Wave 4 — CLAUDE.md compressed 3,043 → 573 lines** ([#312](https://github.com/kenkoller/KyberStation/pull/312)) — 44 historical docs archived to `docs/archive/`, 7 cross-references fixed.
+
+### Presets
+
+- **Preset Cartography — 40 new presets across 4 franchises** ([#307](https://github.com/kenkoller/KyberStation/pull/307)) — KOTOR-adjacent, animated series deep-cuts, Halo / SWTOR / Clone Wars creative-community designs. Library at 455 (`ALL_PRESETS.length`, runtime-verified).
+- **Renderer-level golden-hash card snapshot tests** ([#307](https://github.com/kenkoller/KyberStation/pull/307)) — node-canvas-driven pixel regression tests for the card-snapshot drawer pipeline (`drawBladePreview`, `drawColorChip`, `drawBackdrop`).
+- **`import_failure` issue template + Report-a-failing-config affordance** ([#273](https://github.com/kenkoller/KyberStation/pull/273)).
+
+### Other
+
+- **Slow-motion mode** ([#294](https://github.com/kenkoller/KyberStation/pull/294)) — 1× / ½× / ¼× time scale playback toggle.
+- **Mouse-driven swing simulation** ([#291](https://github.com/kenkoller/KyberStation/pull/291)) — Pointer movement over the blade canvas drives swing speed + blade angle; one-pole low-pass filter, exponential decay on pointer leave.
+- **Inline live blade previews on `/features`** ([#276](https://github.com/kenkoller/KyberStation/pull/276)).
+- **Board compatibility roadmap doc** ([#284](https://github.com/kenkoller/KyberStation/pull/284)).
+- **Persisted `recentImportBatch` across page reloads** ([#271](https://github.com/kenkoller/KyberStation/pull/271)).
+- **Prop file editor tiered roadmap** ([#292](https://github.com/kenkoller/KyberStation/pull/292)) — backlog doc, no code.
+
+### Test count delta (post-PR-#325 merge — pending final verification)
+
+PR #325's body reports **8,434 tests passing** post-merge (web 3,588 / codegen 2,895 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / hardware-profiles 74 / sound 62). Final delta vs v0.20.3 will be tallied when the tag is cut.
+
+---
+
 ## [0.21.1] — 2026-05-12
 
 **Polyglot Release.** 118 commits since v0.20.3 consolidate the May sprint cycle: Xenopixel V3 full board support, Fredrik Style Editor Integration Phases 1–7, the template-eval interpreter, Visualizer 3D blade + Hardware Preview, Fett263 Prop File Editor Level 1, 40 new presets, and a comprehensive 4-wave audit. KyberStation's pipeline is now multi-board, multi-engine, and multi-style-system.
