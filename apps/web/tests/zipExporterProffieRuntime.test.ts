@@ -177,11 +177,16 @@ describe('ProffieOS Runtime export (proffie_runtime)', () => {
       });
 
       const content = await readZipFile(blob, 'presets.ini');
-      expect(content).toContain('style=advanced 255,0,128 255,0,128 255,0,128 ');
-      // Slot 9 (extensionMs) + Slot 10 (retractionMs) preserved
+      // ProffieOS RgbArg parser expects 0-65535 per channel (styles/rgb_arg.h:41).
+      // BladeConfig stores 0-255; emitter scales × 257. Magenta (255,0,128)
+      // becomes (65535, 0, 32896). Empirically verified on 89sabers V3.9-BT
+      // 2026-05-16: this scaling produces a bright magenta blade. Without it
+      // (the previous 0-255 emission) the blade rendered at <1% brightness.
+      expect(content).toContain('style=advanced 65535,0,32896 65535,0,32896 65535,0,32896 ');
+      // Slot 9 (extensionMs=250) + Slot 10 (retractionMs=700) — raw ms preserved
       expect(content).toContain(' 250 700 ');
-      // Slot 7 (lockupColor) preserved
-      expect(content).toContain('255,220,80');
+      // Slot 7 (lockupColor 255,220,80) → 16-bit (65535, 56540, 20560)
+      expect(content).toContain('65535,56540,20560');
       // No builtin line should be emitted in Phase C
       expect(content).not.toContain('style=builtin');
     });

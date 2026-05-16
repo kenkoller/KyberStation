@@ -143,6 +143,52 @@ Test matrix (loaded via `scripts/hardware-test/load-runtime-presets.sh` + `simpl
 
 The proper fix is an upstream contribution to ProffieOS — a new named verb (proposal: `vibrant`) with always-on AudioFlicker brightening as the top Layer, matching the canonical compile-time factory pattern. This is the work item this session pivoted toward at end-of-day 2026-05-16.
 
+### Day 2 evening (2026-05-16) — SMOKING GUN: 16-bit RGB scaling bug in KyberStation
+
+**The conclusion above was wrong.** Deeper source-level audit of the rendering pipeline revealed the actual root cause:
+
+**`~/ProffieOS/styles/rgb_arg.h:41`:**
+```cpp
+color_ = Color16(r, g, b);
+```
+
+`RgbArg<>` (used by all parser-registered verbs to accept runtime color args) stores parsed values directly as `Color16` — which expects **0-65535 per channel**, not 0-255.
+
+But the **compile-time `Rgb<R,G,B>` template** (which factory presets use) goes through `Color16(Color8(R,G,B))`:
+
+**`~/ProffieOS/common/color.h:191`:**
+```cpp
+constexpr Color16(const Color8& c) : r(c.r * 0x101), g(c.g * 0x101), b(c.b * 0x101) {}
+```
+
+The `* 0x101` (= × 257) applies the 8-bit → 16-bit scaling automatically at compile time. The runtime parser does NOT.
+
+**Implication:** KyberStation has been emitting `advanced 235,18,142 …` (0-255 values) when the parser expects `advanced 60395,4626,36494 …` (0-65535 values). Every Phase C blade has been rendering at **1/257 of intended brightness** (≈ 0.4% photon output per channel).
+
+**Bench verification 2026-05-16:** sent `set_style1 advanced 60395,4626,36494 …` directly to the V3.9-BT, ignited preset 1, observed: **bright magenta blade**, matching factory Vader's brightness. The bug was KyberStation's color encoding, not the verb template, not the ProffieOS rendering pipeline.
+
+### Updated Phase C status
+
+All earlier dim findings were caused by the wrong-scale color emission:
+- `advanced` magenta — dim → **bright after 16-bit scaling**
+- `cycle` (both slot orderings) — dim → would be **bright after 16-bit scaling**
+- `standard` — dim → would be **bright after 16-bit scaling**
+- `fire`, `unstable`, `strobe` — dim base, bright clashes → these had **clash colors emitted correctly as compile-time White (= 0xFFFF)** while bases were scaled-down user colors. The clashes WERE rendering at full brightness; the bases were at 0.4%.
+
+**The fix is a 1-line change in `packages/codegen/src/emitters/ProffieRuntimeEmitter.ts`:**
+
+```typescript
+// Before (rgbCsv): emitted 0-255 → 1/257 brightness
+// After (rgbCsv16): emitted 0-65535 by scaling × 257 → factory brightness
+function rgbCsv16(c: { r: number; g: number; b: number }): string {
+  const scale = (v: number) =>
+    Math.max(0, Math.min(65535, Math.round((Number.isFinite(v) ? v : 0) * 257)));
+  return `${scale(c.r)},${scale(c.g)},${scale(c.b)}`;
+}
+```
+
+Deliverability table for `proffie_runtime` Phase C lifted: `baseColor`, `clashColor`, `lockupColor`, `blastColor`, `ignitionMs`, `retractionMs` all moved from `partial` → `deliverable`. The "no upstream PR needed" conclusion holds: **Phase C now works correctly on existing ProffieOS firmware** — the bug was always KyberStation's color encoding. No firmware change required.
+
 ### Implications
 
 The "design preset in KyberStation → put it on saber via runtime preset" workflow can transfer:

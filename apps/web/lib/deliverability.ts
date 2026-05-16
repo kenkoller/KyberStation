@@ -248,20 +248,20 @@ const PROFFIE_RUNTIME_PHASE_C_TABLE: KnobTable = {
   presetOrder: { capability: 'deliverable', reason: 'Transfers via the order of preset blocks in `presets.ini`.' },
   variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
   baseColor: {
-    capability: 'partial',
-    reason: 'Phase C emits `advanced R,G,B …` with the base color in slots 1/2/3. Single-color blade renders correctly. CAVEAT: bench-verified 2026-05-15 + 2026-05-16 on 89sabers V3.9-BT (hilt-mounted) — Phase C blade is visibly dimmer than factory `builtin N M` presets. EXHAUSTIVE INVESTIGATION: every ProffieOS named verb tested (`standard`, `advanced`, `cycle`, `fire`, `unstable`, `strobe`) renders dim at idle hum; only `rainbow` matches factory brightness, but it lacks a base-color slot. Chromatic factor ruled out (red is also dim via `cycle`). Slot-ordering interpretations ruled out. Conclusion: the brightness gap is fundamental to the parser-verb path on current ProffieOS — no software-side fix exists against the existing named-style registry. An upstream PR for a new `vibrant` verb (always-on AudioFlicker top layer) is the proper long-term fix. For factory-equivalent brightness today, use the compile+flash path.',
+    capability: 'deliverable',
+    reason: 'Phase C emits `advanced R,G,B …` with the base color in slots 1/2/3. Single-color blade renders correctly. Empirically verified on 89sabers V3.9-BT 2026-05-16 (hilt-mounted): with proper 16-bit color scaling (each RGB channel × 257 = 0-65535 range matching ProffieOS\'s Color16 RgbArg parser in styles/rgb_arg.h:41), the blade renders at factory-equivalent brightness. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined (true for stock ProffieOS + standard Fett263 prop builds).',
   },
   clashColor: {
-    capability: 'partial',
-    reason: 'Phase C emits `advanced` slot 8 (clash color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. Brightness caveat applies (see baseColor).',
+    capability: 'deliverable',
+    reason: 'Phase C emits `advanced` slot 8 (clash color), 16-bit-scaled to match ProffieOS\'s RgbArg parser. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
   },
   lockupColor: {
-    capability: 'partial',
-    reason: 'Phase C emits `advanced` slot 7 (lockup AudioFlicker partner). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. Brightness caveat applies (see baseColor).',
+    capability: 'deliverable',
+    reason: 'Phase C emits `advanced` slot 7 (lockup AudioFlicker partner), 16-bit-scaled. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
   },
   blastColor: {
-    capability: 'partial',
-    reason: 'Phase C emits `advanced` slot 6 (blast color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. Brightness caveat applies (see baseColor).',
+    capability: 'deliverable',
+    reason: 'Phase C emits `advanced` slot 6 (blast color), 16-bit-scaled. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
   },
   style: {
     capability: 'dropped-silently',
@@ -272,7 +272,7 @@ const PROFFIE_RUNTIME_PHASE_C_TABLE: KnobTable = {
     reason: 'Phase C uses the `advanced` named verb which has a fixed InOutSparkTipX ignition; KyberStation ignition animation type is not modeled.',
   },
   ignitionMs: {
-    capability: 'partial',
+    capability: 'deliverable',
     reason: 'Phase C emits `advanced` slot 9 (extension time). Transfers as a raw millisecond value.',
   },
   retraction: {
@@ -280,7 +280,7 @@ const PROFFIE_RUNTIME_PHASE_C_TABLE: KnobTable = {
     reason: 'Phase C uses the `advanced` named verb which has a fixed retraction shape.',
   },
   retractionMs: {
-    capability: 'partial',
+    capability: 'deliverable',
     reason: 'Phase C emits `advanced` slot 10 (retraction time). Transfers as a raw millisecond value.',
   },
   shimmer: {

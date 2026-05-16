@@ -169,13 +169,42 @@ function buildBuiltinStyleString(presetIndex: number, bladeNumber: number): stri
   return `builtin ${safeIndex} ${safeBlade}`;
 }
 
-function clampU8(n: number): number {
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(255, Math.round(n)));
-}
-
-function rgbCsv(c: { r: number; g: number; b: number }): string {
-  return `${clampU8(c.r)},${clampU8(c.g)},${clampU8(c.b)}`;
+/**
+ * Format an RGB color as CSV in ProffieOS's runtime arg format.
+ *
+ * CRITICAL: ProffieOS's `RgbArg<>` parser in `styles/rgb_arg.h:41` reads
+ * runtime args via `Color16(r, g, b)` — i.e. it treats the parsed
+ * integers as Color16 16-bit values (0-65535 per channel), NOT 0-255.
+ *
+ * The compile-time `Rgb<R,G,B>` template applies an 8→16 bit scaling
+ * (× 0x101) automatically via the `Color16(Color8)` constructor in
+ * `common/color.h:191`:
+ *
+ *   constexpr Color16(const Color8& c) : r(c.r * 0x101), ...
+ *
+ * The runtime arg parser does NOT apply this scaling. So if KyberStation
+ * emits a magenta color as `235,18,142` (the natural 8-bit form), the
+ * firmware stores it as Color16(235, 18, 142) — about 1/257 of the
+ * intended brightness (~0.4% photon output per channel). That's
+ * exactly what caused the v0.17 "Phase C is dim" bench finding: it
+ * wasn't the verb template, it was emitting wrong-scale colors.
+ *
+ * Empirically verified on 89sabers V3.9-BT 2026-05-16: emitting
+ * `60395,4626,36494` (= 235,18,142 × 257) produced a vibrantly-bright
+ * magenta blade matching factory preset brightness. Emitting
+ * `235,18,142` produced a barely-visible blade.
+ *
+ * BladeConfig stores colors as 0-255 (browser/CSS convention). This
+ * function scales each channel by 257 to produce the 0-65535 format
+ * ProffieOS expects. Clamps to [0, 65535].
+ */
+function rgbCsv16(c: { r: number; g: number; b: number }): string {
+  const scale = (v: number): number => {
+    if (!Number.isFinite(v)) return 0;
+    const scaled = Math.round(v * 257);
+    return Math.max(0, Math.min(65535, scaled));
+  };
+  return `${scale(c.r)},${scale(c.g)},${scale(c.b)}`;
 }
 
 /**
@@ -195,17 +224,17 @@ function rgbCsv(c: { r: number; g: number; b: number }): string {
  */
 function buildAdvancedStyleString(p: AdvancedVerbParams): string {
   const slots = [
-    rgbCsv(p.color1),
-    rgbCsv(p.color2),
-    rgbCsv(p.color3),
-    rgbCsv(p.onSparkColor),
+    rgbCsv16(p.color1),
+    rgbCsv16(p.color2),
+    rgbCsv16(p.color3),
+    rgbCsv16(p.onSparkColor),
     String(Math.max(0, Math.floor(p.onSparkTimeMs))),
-    rgbCsv(p.blastColor),
-    rgbCsv(p.lockupColor),
-    rgbCsv(p.clashColor),
+    rgbCsv16(p.blastColor),
+    rgbCsv16(p.lockupColor),
+    rgbCsv16(p.clashColor),
     String(Math.max(0, Math.floor(p.extensionMs))),
     String(Math.max(0, Math.floor(p.retractionMs))),
-    rgbCsv(p.sparkTipColor),
+    rgbCsv16(p.sparkTipColor),
   ];
   return `advanced ${slots.join(' ')}`;
 }

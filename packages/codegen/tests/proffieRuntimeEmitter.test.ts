@@ -235,26 +235,30 @@ describe('buildRuntimePresetsFile', () => {
 });
 
 describe('buildAdvancedStyleString — Phase C (named verb)', () => {
-  it('emits the 11-slot signature in canonical order', () => {
+  it('emits the 11-slot signature in canonical order with 16-bit scaled colors', () => {
+    // BladeConfig stores colors as 0-255 (browser convention). The emitter
+    // scales each channel × 257 to produce 0-65535 values that match
+    // ProffieOS's Color16-based RgbArg parser (styles/rgb_arg.h:41).
+    // Without this scaling, runtime presets render at ~0.4% brightness.
     const out = buildAdvancedStyleString({
-      color1: { r: 0, g: 140, b: 255 },
+      color1: { r: 0, g: 140, b: 255 },     // 0, 140*257=35980, 255*257=65535
       color2: { r: 0, g: 140, b: 255 },
       color3: { r: 0, g: 140, b: 255 },
-      onSparkColor: { r: 255, g: 255, b: 255 },
+      onSparkColor: { r: 255, g: 255, b: 255 },  // 65535,65535,65535
       onSparkTimeMs: 10,
       blastColor: { r: 255, g: 255, b: 255 },
-      lockupColor: { r: 255, g: 220, b: 80 },
+      lockupColor: { r: 255, g: 220, b: 80 },  // 65535, 220*257=56540, 80*257=20560
       clashColor: { r: 255, g: 255, b: 255 },
       extensionMs: 300,
       retractionMs: 800,
       sparkTipColor: { r: 255, g: 255, b: 255 },
     });
     expect(out).toBe(
-      'advanced 0,140,255 0,140,255 0,140,255 255,255,255 10 255,255,255 255,220,80 255,255,255 300 800 255,255,255',
+      'advanced 0,35980,65535 0,35980,65535 0,35980,65535 65535,65535,65535 10 65535,65535,65535 65535,56540,20560 65535,65535,65535 300 800 65535,65535,65535',
     );
   });
 
-  it('clamps RGB values to 0-255', () => {
+  it('clamps RGB values to 0-65535 after × 257 scaling', () => {
     const out = buildAdvancedStyleString({
       color1: { r: -5, g: 300, b: 128 },
       color2: { r: 0, g: 0, b: 0 },
@@ -268,8 +272,8 @@ describe('buildAdvancedStyleString — Phase C (named verb)', () => {
       retractionMs: 0,
       sparkTipColor: { r: 0, g: 0, b: 0 },
     });
-    // -5 → 0 ; 300 → 255 ; 128 → 128
-    expect(out.startsWith('advanced 0,255,128 ')).toBe(true);
+    // -5 → 0 (clamped low); 300 × 257 = 77100 → 65535 (clamped high); 128 × 257 = 32896
+    expect(out.startsWith('advanced 0,65535,32896 ')).toBe(true);
   });
 
   it('floors fractional timing values', () => {
@@ -375,7 +379,8 @@ describe('buildRuntimePresetsFile — Phase C opt-in', () => {
         },
       ],
     });
-    expect(out).toContain('style=advanced 255,0,0 ');
+    // 16-bit scaled: 255 × 257 = 65535 (clamped to 65535 anyway)
+    expect(out).toContain('style=advanced 65535,0,0 ');
     expect(out).not.toContain('style=builtin');
   });
 

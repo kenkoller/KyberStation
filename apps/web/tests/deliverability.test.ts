@@ -107,24 +107,27 @@ describe('getDeliverability — proffie_runtime (Phase A)', () => {
 });
 
 describe('getDeliverability — proffie_runtime Phase C (advanced verb)', () => {
-  it('lifts color knobs from dropped to partial when runtimeUseAdvancedVerb=true', () => {
+  it('lifts color knobs from dropped to deliverable when runtimeUseAdvancedVerb=true', () => {
     const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
       runtimeUseAdvancedVerb: true,
     });
+    // Bench-verified 2026-05-16: with 16-bit RGB scaling fix in
+    // ProffieRuntimeEmitter (× 257), Phase C renders at factory-equivalent
+    // brightness. Colors fully transfer.
     for (const knob of ['baseColor', 'clashColor', 'lockupColor', 'blastColor'] as const) {
       const entry = report.knobs.find((k) => k.knob === knob);
-      expect(entry?.capability).toBe('partial');
+      expect(entry?.capability).toBe('deliverable');
     }
   });
 
-  it('lifts ignitionMs + retractionMs from dropped to partial', () => {
+  it('lifts ignitionMs + retractionMs from dropped to deliverable', () => {
     const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
       runtimeUseAdvancedVerb: true,
     });
     const ignitionMs = report.knobs.find((k) => k.knob === 'ignitionMs');
     const retractionMs = report.knobs.find((k) => k.knob === 'retractionMs');
-    expect(ignitionMs?.capability).toBe('partial');
-    expect(retractionMs?.capability).toBe('partial');
+    expect(ignitionMs?.capability).toBe('deliverable');
+    expect(retractionMs?.capability).toBe('deliverable');
   });
 
   it('keeps style + ignition + retraction animation type dropped (advanced verb has fixed template)', () => {
