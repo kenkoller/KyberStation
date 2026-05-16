@@ -23,8 +23,15 @@ import {
   type ExistingPreset,
 } from '@/lib/cardDetector';
 import { readExistingInstallTime } from '@/lib/runtimePresetIO';
+import {
+  getDeliverability,
+  customizedKnobs,
+  humanizeKnob,
+  type DesignKnob,
+} from '@/lib/deliverability';
 import { byId as hardwareProfileById } from '@kyberstation/hardware-profiles';
 import { generateStyleCode } from '@kyberstation/codegen';
+import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
 import { useCommitCeremony, phaseToStage } from '@/hooks/useCommitCeremony';
 
@@ -270,6 +277,36 @@ export function CardWriter() {
           text: `Detected install_time: ${discoveredInstallTime}. KyberStation will use this when writing presets.ini.`,
         });
       }
+    }
+
+    // Deliverability honesty gate — surface "your custom X won't transfer"
+    // BEFORE the user hits Export. Aggregates across all presets in the
+    // current bundle so the user sees one warning per dropped-knob type
+    // rather than N copies.
+    const droppedKnobsAcrossAll = new Set<DesignKnob>();
+    for (const p of presets) {
+      const report = getDeliverability(p.config, boardId);
+      const customized = customizedKnobs(p.config);
+      for (const k of report.knobs) {
+        if (k.capability === 'dropped-silently' && customized.has(k.knob)) {
+          droppedKnobsAcrossAll.add(k.knob);
+        }
+      }
+    }
+    if (droppedKnobsAcrossAll.size > 0) {
+      const labels = Array.from(droppedKnobsAcrossAll).map(humanizeKnob).join(', ');
+      notices.push({
+        type: 'warning',
+        text: `Your customized ${labels} will NOT transfer via this export path. Only what's listed under "Will transfer" below makes it to the saber.`,
+      });
+    }
+
+    // Design-reference gate — CFX/GH are visualizer notes, not firmware.
+    if (boardId === 'cfx' || boardId === 'golden_harvest') {
+      notices.push({
+        type: 'info',
+        text: 'This export is design-reference notes only — KyberStation cannot write flashable firmware for this board. The ZIP documents your intended values for manual configuration via the vendor app.',
+      });
     }
 
     return notices;
@@ -801,6 +838,14 @@ export function CardWriter() {
         )}
       </div>
 
+      {/* Deliverability panel — "what will actually transfer to your saber"
+          for the currently-selected board. Always rendered so users build
+          intuition; entries are color-coded by capability. */}
+      <DeliverabilityPanel
+        presets={buildExportPresets()}
+        boardId={boardId}
+      />
+
       {/* Output Files Preview — runtime path emits only presets.ini */}
       <div className="mb-4">
         <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
@@ -1323,4 +1368,165 @@ function statusColorStyle(type: StatusMessage['type']): React.CSSProperties {
     background: `rgb(var(${token}) / 0.1)`,
     borderColor: `rgb(var(${token}) / 0.3)`,
   };
+}
+
+// ─── Deliverability Panel ───
+//
+// "Honest export" — surfaces what will / won't transfer to the saber
+// for the currently-selected board, BEFORE the user hits Export. Reads
+// the deliverability table from `apps/web/lib/deliverability.ts` so the
+// data stays in one place.
+//
+// Two columns:
+//   ✅ "Will transfer" — knobs marked deliverable for this target
+//   ⚠ "Won't transfer" — knobs marked dropped-silently or design-reference
+//
+// Partial / unknown knobs roll up into a third "Partial / lossy" row
+// underneath when present.
+
+interface DeliverabilityPanelProps {
+  presets: ExportPreset[];
+  boardId: BoardId;
+}
+
+function DeliverabilityPanel({ presets, boardId }: DeliverabilityPanelProps) {
+  // Aggregate across all presets in the bundle. Even if user has a single
+  // preset selected, this resolves correctly.
+  const aggregated = useMemo(() => {
+    // Use the first preset's config as the canonical input. If user has
+    // multiple presets with different customizations, the knob TABLE is
+    // identical per target — what differs is only the "is this knob
+    // customized" detection used for the warning gate. The panel itself
+    // is target-driven and identical across presets, so first-preset is
+    // sufficient.
+    const fallbackConfig: BladeConfig = {
+      baseColor: { r: 0, g: 140, b: 255 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 220, b: 80 },
+      blastColor: { r: 255, g: 255, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 800,
+      shimmer: 0,
+      ledCount: 144,
+    };
+    const sampleConfig = presets[0]?.config ?? fallbackConfig;
+    const report = getDeliverability(sampleConfig, boardId);
+    return report;
+  }, [presets, boardId]);
+
+  const transfers = aggregated.knobs.filter((k) => k.capability === 'deliverable');
+  const doesntTransfer = aggregated.knobs.filter(
+    (k) => k.capability === 'dropped-silently' || k.capability === 'design-reference',
+  );
+  const partial = aggregated.knobs.filter(
+    (k) => k.capability === 'partial' || k.capability === 'unknown',
+  );
+
+  return (
+    <div className="mb-4">
+      <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
+        What Will Transfer to Your Saber
+      </label>
+      <div className="bg-black/30 rounded border border-border-subtle p-3 space-y-2">
+        {/* Will-transfer column */}
+        {transfers.length > 0 && (
+          <div>
+            <p className="text-ui-xs uppercase tracking-wider mb-1" style={{ color: 'rgb(var(--status-ok))' }}>
+              ✓ Transfers
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {transfers.map((k) => (
+                <span
+                  key={k.knob}
+                  className="inline-block px-1.5 py-0.5 rounded text-ui-xs"
+                  title={k.reason}
+                  style={{
+                    background: 'rgb(var(--status-ok) / 0.12)',
+                    color: 'rgb(var(--status-ok))',
+                    border: '1px solid rgb(var(--status-ok) / 0.3)',
+                  }}
+                >
+                  {humanizeKnob(k.knob)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Won't-transfer column */}
+        {doesntTransfer.length > 0 && (
+          <div>
+            <p
+              className="text-ui-xs uppercase tracking-wider mb-1"
+              style={{
+                color:
+                  aggregated.overall === 'design-only'
+                    ? 'rgb(var(--status-info))'
+                    : 'rgb(var(--status-warn))',
+              }}
+            >
+              {aggregated.overall === 'design-only' ? '📋 Documented (not flashed)' : '✗ Dropped'}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {doesntTransfer.map((k) => (
+                <span
+                  key={k.knob}
+                  className="inline-block px-1.5 py-0.5 rounded text-ui-xs"
+                  title={k.reason}
+                  style={{
+                    background:
+                      aggregated.overall === 'design-only'
+                        ? 'rgb(var(--status-info) / 0.12)'
+                        : 'rgb(var(--status-warn) / 0.12)',
+                    color:
+                      aggregated.overall === 'design-only'
+                        ? 'rgb(var(--status-info))'
+                        : 'rgb(var(--status-warn))',
+                    border:
+                      aggregated.overall === 'design-only'
+                        ? '1px solid rgb(var(--status-info) / 0.3)'
+                        : '1px solid rgb(var(--status-warn) / 0.3)',
+                  }}
+                >
+                  {humanizeKnob(k.knob)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Partial / lossy column */}
+        {partial.length > 0 && (
+          <div>
+            <p className="text-ui-xs uppercase tracking-wider mb-1" style={{ color: 'rgb(var(--accent-warm))' }}>
+              ⚠ Partial / lossy
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {partial.map((k) => (
+                <span
+                  key={k.knob}
+                  className="inline-block px-1.5 py-0.5 rounded text-ui-xs"
+                  title={k.reason}
+                  style={{
+                    background: 'rgb(var(--accent-warm) / 0.12)',
+                    color: 'rgb(var(--accent-warm))',
+                    border: '1px solid rgb(var(--accent-warm) / 0.3)',
+                  }}
+                >
+                  {humanizeKnob(k.knob)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-ui-xs text-text-muted pt-1 border-t border-border-subtle">
+          Hover any chip to see why. {aggregated.summary}
+        </p>
+      </div>
+    </div>
+  );
 }
