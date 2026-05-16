@@ -142,6 +142,65 @@ export function LandingBetaNotice() {
             </a>
           </article>
         </div>
+
+        {/* Hardware Reality callout — full-width below the two cards. The
+            in-app deliverability panel says the same thing per-export
+            target with per-knob detail; this is the landing-level
+            summary so visitors set expectations BEFORE designing. */}
+        <article
+          className="relative mt-5 md:mt-6 pt-6 pl-6 pr-6 pb-7 border bg-bg-deep/40"
+          style={{
+            borderColor: 'rgb(var(--badge-creative) / 0.35)',
+            borderRadius: 'var(--r-chrome, 2px)',
+          }}
+        >
+          <h3 className="font-sans text-[13px] tracking-[0.16em] font-semibold uppercase mb-4 text-text-primary">
+            Hardware reality — what actually transfers to your saber
+          </h3>
+          <p className="font-sans text-[14px] leading-relaxed text-text-secondary mb-4">
+            KyberStation&apos;s editor models more than any single export
+            path delivers. The in-app deliverability panel calls out exactly
+            what transfers vs what doesn&apos;t for your chassis + export
+            path before you click Export. The short version:
+          </p>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-text-secondary text-[14px] leading-relaxed">
+            <li className="flex gap-2">
+              <span aria-hidden="true" className="font-mono shrink-0 mt-[2px]" style={{ color: 'rgb(var(--status-ok))' }}>
+                ✓
+              </span>
+              <span>
+                <strong className="text-text-primary font-semibold">Proffieboard V3 compile + flash</strong> — most knobs transfer (32 of 33 styles have codegen parity; modulation bindings partial).
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true" className="font-mono shrink-0 mt-[2px]" style={{ color: 'rgb(var(--status-ok))' }}>
+                ✓
+              </span>
+              <span>
+                <strong className="text-text-primary font-semibold">ProffieOS Runtime Presets</strong> — names, fonts, tracks, order always transfer. Custom colors + timing transfer in Phase C (experimental).
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true" className="font-mono shrink-0 mt-[2px]" style={{ color: 'rgb(var(--accent-warm))' }}>
+                ⚠
+              </span>
+              <span>
+                <strong className="text-text-primary font-semibold">Xenopixel V3</strong> — real SD-card config, but only 8 of ~25 firmware effects + 12 of ~50 ignitions; clash/lockup/blast don&apos;t transfer (firmware limit, not us).
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true" className="font-mono shrink-0 mt-[2px]" style={{ color: 'rgb(var(--status-info))' }}>
+                📋
+              </span>
+              <span>
+                <strong className="text-text-primary font-semibold">CFX / Golden Harvest</strong> — design-reference notes only. KyberStation doesn&apos;t write flashable firmware for these — use the ZIP as a guide for the vendor app.
+              </span>
+            </li>
+          </ul>
+          <p className="font-sans text-[13px] leading-relaxed text-text-muted mt-4">
+            Vendor chassis (89sabers V3.9-BT, Sabertrio, KR Sabers, etc.) load runtime presets at boot — drop the file on the SD card, reboot, presets appear, no firmware flash required.
+          </p>
+        </article>
       </div>
     </section>
   );

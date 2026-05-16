@@ -161,6 +161,43 @@ describe('ProffieOS Runtime export (proffie_runtime)', () => {
       expect(content!.endsWith('end\n')).toBe(true);
     });
 
+    it('Phase C: emits `style=advanced R,G,B …` when runtimeUseAdvancedVerb is true', async () => {
+      const blob = await exportPresetZip({
+        preset: makePreset('Custom', 'custom', {
+          baseColor: { r: 255, g: 0, b: 128 },
+          clashColor: { r: 255, g: 255, b: 255 },
+          lockupColor: { r: 255, g: 220, b: 80 },
+          blastColor: { r: 255, g: 255, b: 255 },
+          ignitionMs: 250,
+          retractionMs: 700,
+        }),
+        boardId: 'proffie_runtime',
+        runtimeUseAdvancedVerb: true,
+        runtimeInstallTime: 'Apr 21 2026 08:44:54',
+      });
+
+      const content = await readZipFile(blob, 'presets.ini');
+      expect(content).toContain('style=advanced 255,0,128 255,0,128 255,0,128 ');
+      // Slot 9 (extensionMs) + Slot 10 (retractionMs) preserved
+      expect(content).toContain(' 250 700 ');
+      // Slot 7 (lockupColor) preserved
+      expect(content).toContain('255,220,80');
+      // No builtin line should be emitted in Phase C
+      expect(content).not.toContain('style=builtin');
+    });
+
+    it('Phase A default: builtin emitted when runtimeUseAdvancedVerb is omitted', async () => {
+      const blob = await exportPresetZip({
+        preset: makePreset('Stock', 'stock', { baseColor: { r: 255, g: 0, b: 128 } }),
+        boardId: 'proffie_runtime',
+        runtimeInstallTime: 'Apr 21 2026 08:44:54',
+      });
+
+      const content = await readZipFile(blob, 'presets.ini');
+      expect(content).toContain('style=builtin 0 1');
+      expect(content).not.toContain('style=advanced');
+    });
+
     it('preserves preset order from the input array', async () => {
       const blob = await exportMultiPresetZip({
         presets: [

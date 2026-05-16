@@ -99,10 +99,64 @@ describe('getDeliverability — proffie_runtime (Phase A)', () => {
     expect(report.summary).toMatch(/not customized any of the dropped knobs/i);
   });
 
-  it('reason text references Phase B for color knobs', () => {
+  it('reason text references Phase C as the lift path for color knobs', () => {
     const report = getDeliverability(defaultConfig(), 'proffie_runtime');
     const baseColor = report.knobs.find((k) => k.knob === 'baseColor');
-    expect(baseColor?.reason).toMatch(/phase b|v0\.18/i);
+    expect(baseColor?.reason).toMatch(/phase c|custom styles/i);
+  });
+});
+
+describe('getDeliverability — proffie_runtime Phase C (advanced verb)', () => {
+  it('lifts color knobs from dropped to partial when runtimeUseAdvancedVerb=true', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    for (const knob of ['baseColor', 'clashColor', 'lockupColor', 'blastColor'] as const) {
+      const entry = report.knobs.find((k) => k.knob === knob);
+      expect(entry?.capability).toBe('partial');
+    }
+  });
+
+  it('lifts ignitionMs + retractionMs from dropped to partial', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    const ignitionMs = report.knobs.find((k) => k.knob === 'ignitionMs');
+    const retractionMs = report.knobs.find((k) => k.knob === 'retractionMs');
+    expect(ignitionMs?.capability).toBe('partial');
+    expect(retractionMs?.capability).toBe('partial');
+  });
+
+  it('keeps style + ignition + retraction animation type dropped (advanced verb has fixed template)', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    for (const knob of ['style', 'ignition', 'retraction'] as const) {
+      const entry = report.knobs.find((k) => k.knob === knob);
+      expect(entry?.capability).toBe('dropped-silently');
+    }
+  });
+
+  it('rationale mentions DISABLE_BASIC_PARSER_STYLES caveat for color knobs', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    const baseColor = report.knobs.find((k) => k.knob === 'baseColor');
+    expect(baseColor?.reason).toMatch(/DISABLE_BASIC_PARSER_STYLES/);
+  });
+
+  it('Phase A behavior preserved when runtimeUseAdvancedVerb=false', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
+      runtimeUseAdvancedVerb: false,
+    });
+    const baseColor = report.knobs.find((k) => k.knob === 'baseColor');
+    expect(baseColor?.capability).toBe('dropped-silently');
+  });
+
+  it('Phase A is the default (no ctx)', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime');
+    const baseColor = report.knobs.find((k) => k.knob === 'baseColor');
+    expect(baseColor?.capability).toBe('dropped-silently');
   });
 });
 

@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildRuntimePresetsFile,
+  buildAdvancedStyleString,
   ProffieRuntimeEmitter,
 } from '../src/emitters/ProffieRuntimeEmitter.js';
 import type { BoardEmitOptions } from '../src/emitters/BaseEmitter.js';
@@ -230,6 +231,220 @@ describe('buildRuntimePresetsFile', () => {
 
       expect(out).toContain('style=builtin 0 1');
     });
+  });
+});
+
+describe('buildAdvancedStyleString — Phase C (named verb)', () => {
+  it('emits the 11-slot signature in canonical order', () => {
+    const out = buildAdvancedStyleString({
+      color1: { r: 0, g: 140, b: 255 },
+      color2: { r: 0, g: 140, b: 255 },
+      color3: { r: 0, g: 140, b: 255 },
+      onSparkColor: { r: 255, g: 255, b: 255 },
+      onSparkTimeMs: 10,
+      blastColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 220, b: 80 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      extensionMs: 300,
+      retractionMs: 800,
+      sparkTipColor: { r: 255, g: 255, b: 255 },
+    });
+    expect(out).toBe(
+      'advanced 0,140,255 0,140,255 0,140,255 255,255,255 10 255,255,255 255,220,80 255,255,255 300 800 255,255,255',
+    );
+  });
+
+  it('clamps RGB values to 0-255', () => {
+    const out = buildAdvancedStyleString({
+      color1: { r: -5, g: 300, b: 128 },
+      color2: { r: 0, g: 0, b: 0 },
+      color3: { r: 0, g: 0, b: 0 },
+      onSparkColor: { r: 0, g: 0, b: 0 },
+      onSparkTimeMs: 0,
+      blastColor: { r: 0, g: 0, b: 0 },
+      lockupColor: { r: 0, g: 0, b: 0 },
+      clashColor: { r: 0, g: 0, b: 0 },
+      extensionMs: 0,
+      retractionMs: 0,
+      sparkTipColor: { r: 0, g: 0, b: 0 },
+    });
+    // -5 → 0 ; 300 → 255 ; 128 → 128
+    expect(out.startsWith('advanced 0,255,128 ')).toBe(true);
+  });
+
+  it('floors fractional timing values', () => {
+    const out = buildAdvancedStyleString({
+      color1: { r: 0, g: 0, b: 0 },
+      color2: { r: 0, g: 0, b: 0 },
+      color3: { r: 0, g: 0, b: 0 },
+      onSparkColor: { r: 0, g: 0, b: 0 },
+      onSparkTimeMs: 10.9,
+      blastColor: { r: 0, g: 0, b: 0 },
+      lockupColor: { r: 0, g: 0, b: 0 },
+      clashColor: { r: 0, g: 0, b: 0 },
+      extensionMs: 300.6,
+      retractionMs: 800.3,
+      sparkTipColor: { r: 0, g: 0, b: 0 },
+    });
+    // 10.9 → 10 ; 300.6 → 300 ; 800.3 → 800
+    expect(out).toContain(' 10 ');
+    expect(out).toContain(' 300 ');
+    expect(out).toContain(' 800 ');
+  });
+
+  it('passes ProffieOS IsValidStyleString shape (verb + digits/commas/spaces only)', () => {
+    const out = buildAdvancedStyleString({
+      color1: { r: 12, g: 34, b: 56 },
+      color2: { r: 78, g: 90, b: 12 },
+      color3: { r: 34, g: 56, b: 78 },
+      onSparkColor: { r: 255, g: 255, b: 255 },
+      onSparkTimeMs: 10,
+      blastColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 220, b: 80 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      extensionMs: 300,
+      retractionMs: 800,
+      sparkTipColor: { r: 255, g: 255, b: 255 },
+    });
+    // Mirror IsValidStyleString from ~/ProffieOS/common/current_preset.h:38
+    // - verb: lowercase letters only until first space
+    // - args: digits, spaces, commas only after that
+    const firstSpace = out.indexOf(' ');
+    const verb = out.slice(0, firstSpace);
+    const args = out.slice(firstSpace + 1);
+    expect(verb).toMatch(/^[a-z]+$/);
+    expect(args).toMatch(/^[0-9, ]+$/);
+  });
+});
+
+describe('buildRuntimePresetsFile — Phase C opt-in', () => {
+  it('emits builtin lines when useAdvancedVerb is false (Phase A default)', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'X',
+      numBlades: 1,
+      useAdvancedVerb: false,
+      presets: [
+        {
+          presetName: 'Test',
+          fontName: 'test',
+          builtinPresetIndex: 0,
+          advanced: {
+            color1: { r: 255, g: 0, b: 0 },
+            color2: { r: 255, g: 0, b: 0 },
+            color3: { r: 255, g: 0, b: 0 },
+            onSparkColor: { r: 255, g: 255, b: 255 },
+            onSparkTimeMs: 10,
+            blastColor: { r: 255, g: 255, b: 255 },
+            lockupColor: { r: 255, g: 220, b: 80 },
+            clashColor: { r: 255, g: 255, b: 255 },
+            extensionMs: 300,
+            retractionMs: 800,
+            sparkTipColor: { r: 255, g: 255, b: 255 },
+          },
+        },
+      ],
+    });
+    // Phase A: ignores advanced field, emits builtin
+    expect(out).toContain('style=builtin 0 1');
+    expect(out).not.toContain('style=advanced');
+  });
+
+  it('emits advanced lines when useAdvancedVerb is true AND preset has advanced params', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'X',
+      numBlades: 1,
+      useAdvancedVerb: true,
+      presets: [
+        {
+          presetName: 'Test',
+          fontName: 'test',
+          builtinPresetIndex: 0,
+          advanced: {
+            color1: { r: 255, g: 0, b: 0 },
+            color2: { r: 255, g: 0, b: 0 },
+            color3: { r: 255, g: 0, b: 0 },
+            onSparkColor: { r: 255, g: 255, b: 255 },
+            onSparkTimeMs: 10,
+            blastColor: { r: 255, g: 255, b: 255 },
+            lockupColor: { r: 255, g: 220, b: 80 },
+            clashColor: { r: 255, g: 255, b: 255 },
+            extensionMs: 300,
+            retractionMs: 800,
+            sparkTipColor: { r: 255, g: 255, b: 255 },
+          },
+        },
+      ],
+    });
+    expect(out).toContain('style=advanced 255,0,0 ');
+    expect(out).not.toContain('style=builtin');
+  });
+
+  it('falls back to builtin for presets without advanced params even when useAdvancedVerb is true', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'X',
+      numBlades: 1,
+      useAdvancedVerb: true,
+      presets: [
+        // Mixed: first preset has advanced, second does not
+        {
+          presetName: 'WithAdvanced',
+          fontName: 'a',
+          builtinPresetIndex: 0,
+          advanced: {
+            color1: { r: 255, g: 0, b: 0 },
+            color2: { r: 255, g: 0, b: 0 },
+            color3: { r: 255, g: 0, b: 0 },
+            onSparkColor: { r: 255, g: 255, b: 255 },
+            onSparkTimeMs: 10,
+            blastColor: { r: 255, g: 255, b: 255 },
+            lockupColor: { r: 255, g: 220, b: 80 },
+            clashColor: { r: 255, g: 255, b: 255 },
+            extensionMs: 300,
+            retractionMs: 800,
+            sparkTipColor: { r: 255, g: 255, b: 255 },
+          },
+        },
+        {
+          presetName: 'NoAdvanced',
+          fontName: 'b',
+          builtinPresetIndex: 5,
+        },
+      ],
+    });
+    expect(out).toContain('style=advanced ');
+    expect(out).toContain('style=builtin 5 1');
+  });
+
+  it('duplicates advanced line per blade for multi-blade chassis', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'X',
+      numBlades: 3,
+      useAdvancedVerb: true,
+      presets: [
+        {
+          presetName: 'p',
+          fontName: 'p',
+          builtinPresetIndex: 0,
+          advanced: {
+            color1: { r: 10, g: 20, b: 30 },
+            color2: { r: 10, g: 20, b: 30 },
+            color3: { r: 10, g: 20, b: 30 },
+            onSparkColor: { r: 0, g: 0, b: 0 },
+            onSparkTimeMs: 0,
+            blastColor: { r: 0, g: 0, b: 0 },
+            lockupColor: { r: 0, g: 0, b: 0 },
+            clashColor: { r: 0, g: 0, b: 0 },
+            extensionMs: 100,
+            retractionMs: 200,
+            sparkTipColor: { r: 0, g: 0, b: 0 },
+          },
+        },
+      ],
+    });
+    const advancedLines = out.split('\n').filter((l) => l.startsWith('style=advanced'));
+    expect(advancedLines).toHaveLength(3);
+    expect(advancedLines[0]).toBe(advancedLines[1]);
+    expect(advancedLines[1]).toBe(advancedLines[2]);
   });
 });
 

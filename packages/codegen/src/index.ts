@@ -51,6 +51,7 @@ export type {
   XenoEmitterFirmwareVersion,
   ProffieRuntimePresetInput,
   ProffieRuntimeEmitOptions,
+  AdvancedVerbParams,
 } from './emitters/index.js';
 export {
   CFXEmitter,
@@ -58,6 +59,7 @@ export {
   XenopixelEmitter,
   ProffieRuntimeEmitter,
   buildRuntimePresetsFile,
+  buildAdvancedStyleString,
   getEmitter,
   hasEmitter,
   listEmitterBoards,

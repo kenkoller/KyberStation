@@ -175,8 +175,7 @@ interface KnobTable {
 /**
  * ProffieOS Runtime Presets Phase A — emits `style=builtin N M` only.
  * EVERY BladeConfig design choice beyond name/font/track/variation/order
- * is silently dropped. Future Phase B + C will lift some of these to
- * deliverable; for now, the table is honest.
+ * is silently dropped.
  */
 const PROFFIE_RUNTIME_PHASE_A_TABLE: KnobTable = {
   presetName: { capability: 'deliverable', reason: 'Transfers via `name=` line.' },
@@ -186,19 +185,19 @@ const PROFFIE_RUNTIME_PHASE_A_TABLE: KnobTable = {
   variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
   baseColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index (`style=builtin N M`); custom colors do not transfer. Will be supported in Phase B (v0.18).',
+    reason: 'Phase A references factory presets by index (`style=builtin N M`); custom colors do not transfer. Switch to Phase C — custom styles to lift this.',
   },
   clashColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; custom clash colors do not transfer. Will be supported in Phase B (v0.18).',
+    reason: 'Phase A references factory presets by index; custom clash colors do not transfer. Switch to Phase C to lift this.',
   },
   lockupColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; custom lockup colors do not transfer.',
+    reason: 'Phase A references factory presets by index; custom lockup colors do not transfer. Switch to Phase C to lift this.',
   },
   blastColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; custom blast colors do not transfer.',
+    reason: 'Phase A references factory presets by index; custom blast colors do not transfer. Switch to Phase C to lift this.',
   },
   style: {
     capability: 'dropped-silently',
@@ -210,7 +209,7 @@ const PROFFIE_RUNTIME_PHASE_A_TABLE: KnobTable = {
   },
   ignitionMs: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; ignition timing does not transfer.',
+    reason: 'Phase A references factory presets by index; ignition timing does not transfer. Switch to Phase C to lift this.',
   },
   retraction: {
     capability: 'dropped-silently',
@@ -218,7 +217,71 @@ const PROFFIE_RUNTIME_PHASE_A_TABLE: KnobTable = {
   },
   retractionMs: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; retraction timing does not transfer.',
+    reason: 'Phase A references factory presets by index; retraction timing does not transfer. Switch to Phase C to lift this.',
+  },
+  shimmer: {
+    capability: 'dropped-silently',
+    reason: 'Runtime preset format has no shimmer slot.',
+  },
+  modulation: {
+    capability: 'dropped-silently',
+    reason: 'Runtime preset format does not carry modulation bindings — those need compiled-in style templates (compile+flash path).',
+  },
+};
+
+/**
+ * ProffieOS Runtime Presets Phase C — emits `style=advanced R,G,B …` so
+ * colors + timing transfer to the saber without firmware flash. The
+ * 11-slot `advanced` named verb covers base / blast / lockup / clash
+ * colors plus extension + retraction timing. Style algorithm and
+ * shimmer + modulation remain firmware-compiled.
+ *
+ * Phase C is opt-in and experimental: depends on the user's firmware
+ * NOT having `DISABLE_BASIC_PARSER_STYLES` defined. Most stock
+ * ProffieOS + Fett263 prop builds satisfy this; some vendor builds
+ * may not.
+ */
+const PROFFIE_RUNTIME_PHASE_C_TABLE: KnobTable = {
+  presetName: { capability: 'deliverable', reason: 'Transfers via `name=` line.' },
+  fontName: { capability: 'deliverable', reason: 'Transfers via `font=` line.' },
+  trackFile: { capability: 'deliverable', reason: 'Transfers via `track=` line.' },
+  presetOrder: { capability: 'deliverable', reason: 'Transfers via the order of preset blocks in `presets.ini`.' },
+  variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
+  baseColor: {
+    capability: 'partial',
+    reason: 'Phase C emits `advanced R,G,B …` with the base color in slots 1/2/3 (gradient hilt→tip). Single-color blade renders correctly. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  },
+  clashColor: {
+    capability: 'partial',
+    reason: 'Phase C emits `advanced` slot 8 (clash color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  },
+  lockupColor: {
+    capability: 'partial',
+    reason: 'Phase C emits `advanced` slot 7 (lockup AudioFlicker partner). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  },
+  blastColor: {
+    capability: 'partial',
+    reason: 'Phase C emits `advanced` slot 6 (blast color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  },
+  style: {
+    capability: 'dropped-silently',
+    reason: 'Phase C uses the `advanced` named verb which is a fixed Layers<InOutSparkTipX<...>> template. The specific KyberStation style algorithm (Crystal Shatter, Aurora, etc.) is not represented; only its colors are.',
+  },
+  ignition: {
+    capability: 'dropped-silently',
+    reason: 'Phase C uses the `advanced` named verb which has a fixed InOutSparkTipX ignition; KyberStation ignition animation type is not modeled.',
+  },
+  ignitionMs: {
+    capability: 'partial',
+    reason: 'Phase C emits `advanced` slot 9 (extension time). Transfers as a raw millisecond value.',
+  },
+  retraction: {
+    capability: 'dropped-silently',
+    reason: 'Phase C uses the `advanced` named verb which has a fixed retraction shape.',
+  },
+  retractionMs: {
+    capability: 'partial',
+    reason: 'Phase C emits `advanced` slot 10 (retraction time). Transfers as a raw millisecond value.',
   },
   shimmer: {
     capability: 'dropped-silently',
@@ -300,9 +363,23 @@ const XENOPIXEL_TABLE: KnobTable = {
   modulation: { capability: 'dropped-silently', reason: 'Xenopixel firmware has no equivalent of ProffieOS modulation bindings.' },
 };
 
-function getKnobTable(target: BoardId): KnobTable {
+/**
+ * Optional context that affects deliverability for some targets. Right
+ * now only `proffie_runtime` honors it (Phase A vs Phase C). Future:
+ * `proffie` could read `validatedBoot: boolean` here so unverified
+ * chassis flip to `unknown` capability.
+ */
+export interface DeliverabilityContext {
+  /** Phase C "Custom styles" toggle for proffie_runtime. Default false. */
+  runtimeUseAdvancedVerb?: boolean;
+}
+
+function getKnobTable(target: BoardId, ctx?: DeliverabilityContext): KnobTable {
   switch (target) {
-    case 'proffie_runtime': return PROFFIE_RUNTIME_PHASE_A_TABLE;
+    case 'proffie_runtime':
+      return ctx?.runtimeUseAdvancedVerb
+        ? PROFFIE_RUNTIME_PHASE_C_TABLE
+        : PROFFIE_RUNTIME_PHASE_A_TABLE;
     case 'cfx':
     case 'golden_harvest': return DESIGN_REFERENCE_TABLE;
     case 'proffie': return PROFFIE_COMPILE_FLASH_TABLE;
@@ -342,8 +419,9 @@ const ALL_KNOBS: DesignKnob[] = [
 export function getDeliverability(
   config: BladeConfig,
   target: BoardId,
+  ctx?: DeliverabilityContext,
 ): DeliverabilityReport {
-  const table = getKnobTable(target);
+  const table = getKnobTable(target, ctx);
   const knobs: KnobDeliverability[] = ALL_KNOBS.map((knob) => ({
     knob,
     capability: table[knob].capability,

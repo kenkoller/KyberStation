@@ -8,10 +8,12 @@ export type { XenoEmitterFirmwareVersion } from './XenopixelEmitter.js';
 export {
   ProffieRuntimeEmitter,
   buildRuntimePresetsFile,
+  buildAdvancedStyleString,
 } from './ProffieRuntimeEmitter.js';
 export type {
   ProffieRuntimePresetInput,
   ProffieRuntimeEmitOptions,
+  AdvancedVerbParams,
 } from './ProffieRuntimeEmitter.js';
 
 import type { BoardEmitter } from './BaseEmitter.js';

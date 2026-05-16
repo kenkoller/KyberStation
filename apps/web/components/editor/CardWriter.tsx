@@ -139,10 +139,15 @@ export function CardWriter() {
   // user switches away from `proffie_runtime` to keep behavior obvious.
   const [discoveredInstallTime, setDiscoveredInstallTime] = useState<string | null>(null);
 
+  // Phase C opt-in for the runtime path. Off by default; reset when user
+  // switches away from `proffie_runtime` to keep the toggle scoped.
+  const [useAdvancedRuntimeVerb, setUseAdvancedRuntimeVerb] = useState(false);
+
   // Reset discovered install_time when switching boards.
   useEffect(() => {
     if (boardId !== 'proffie_runtime') {
       setDiscoveredInstallTime(null);
+      setUseAdvancedRuntimeVerb(false);
     }
   }, [boardId]);
 
@@ -285,7 +290,9 @@ export function CardWriter() {
     // rather than N copies.
     const droppedKnobsAcrossAll = new Set<DesignKnob>();
     for (const p of presets) {
-      const report = getDeliverability(p.config, boardId);
+      const report = getDeliverability(p.config, boardId, {
+        runtimeUseAdvancedVerb: useAdvancedRuntimeVerb,
+      });
       const customized = customizedKnobs(p.config);
       for (const k of report.knobs) {
         if (k.capability === 'dropped-silently' && customized.has(k.knob)) {
@@ -310,7 +317,7 @@ export function CardWriter() {
     }
 
     return notices;
-  }, [buildExportPresets, boardId, outputMethod, discoveredInstallTime]);
+  }, [buildExportPresets, boardId, outputMethod, discoveredInstallTime, useAdvancedRuntimeVerb]);
 
   // ─── Config Summary ───
 
@@ -371,6 +378,8 @@ export function CardWriter() {
         // ZIP path uses the placeholder when there's nothing discovered yet.
         runtimeInstallTime: discoveredInstallTime ?? undefined,
         runtimeNumBlades,
+        runtimeUseAdvancedVerb:
+          boardId === 'proffie_runtime' ? useAdvancedRuntimeVerb : undefined,
       });
       setProgress(80);
 
@@ -398,7 +407,7 @@ export function CardWriter() {
         text: `Failed to create ZIP: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
-  }, [buildExportPresets, boardId, addStatus, clearStatus, discoveredInstallTime, runtimeNumBlades]);
+  }, [buildExportPresets, boardId, addStatus, clearStatus, discoveredInstallTime, runtimeNumBlades, useAdvancedRuntimeVerb]);
 
   // ─── Write to Card ───
 
@@ -518,6 +527,8 @@ export function CardWriter() {
         boardId,
         runtimeInstallTime: runtimeInstallTimeToUse,
         runtimeNumBlades,
+        runtimeUseAdvancedVerb:
+          boardId === 'proffie_runtime' ? useAdvancedRuntimeVerb : undefined,
       });
       setProgress(60);
 
@@ -606,7 +617,7 @@ export function CardWriter() {
         text: `Write failed: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
-  }, [buildExportPresets, boardId, autoBackup, addStatus, clearStatus, runtimeNumBlades]);
+  }, [buildExportPresets, boardId, autoBackup, addStatus, clearStatus, runtimeNumBlades, useAdvancedRuntimeVerb]);
 
   // ─── Preset toggle ───
 
@@ -780,6 +791,58 @@ export function CardWriter() {
         </p>
       </div>
 
+      {/* Runtime-preset style mode toggle (Phase A vs Phase C). Only
+          surfaced when proffie_runtime is selected. Phase A is the safe
+          default. Phase C unlocks custom colors + timing but requires the
+          user's firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. */}
+      {boardId === 'proffie_runtime' && (
+        <div className="mb-4">
+          <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
+            Style Mode
+          </label>
+          <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1.5">
+            <label className="touch-target flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
+              <input
+                type="radio"
+                name="runtime-style-mode"
+                checked={!useAdvancedRuntimeVerb}
+                onChange={() => setUseAdvancedRuntimeVerb(false)}
+                disabled={isWorking}
+                aria-label="Phase A — factory presets (safe)"
+                className="accent-accent w-3.5 h-3.5 mt-0.5"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-ui-xs text-text-primary block">
+                  Phase A — reference factory presets <span className="text-text-muted">(safe default)</span>
+                </span>
+                <span className="text-ui-xs text-text-muted">
+                  Emits <code>style=builtin N M</code>. Reorder, rename, duplicate, reassign fonts. Custom colors / timing do NOT transfer.
+                </span>
+              </div>
+            </label>
+            <label className="touch-target flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
+              <input
+                type="radio"
+                name="runtime-style-mode"
+                checked={useAdvancedRuntimeVerb}
+                onChange={() => setUseAdvancedRuntimeVerb(true)}
+                disabled={isWorking}
+                aria-label="Phase C — custom styles (experimental)"
+                className="accent-accent w-3.5 h-3.5 mt-0.5"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-ui-xs text-text-primary block">
+                  Phase C — custom styles <span style={{ color: 'rgb(var(--accent-warm))' }}>(experimental)</span>
+                </span>
+                <span className="text-ui-xs text-text-muted">
+                  Emits <code>style=advanced R,G,B …</code>. Custom base / clash / blast / lockup colors + ignition / retraction timing all transfer. Requires firmware without <code>DISABLE_BASIC_PARSER_STYLES</code> (true for stock ProffieOS + Fett263 prop; some vendor builds disable this).
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
+
       {/* Preset Selector */}
       <div className="mb-4">
         <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
@@ -844,6 +907,7 @@ export function CardWriter() {
       <DeliverabilityPanel
         presets={buildExportPresets()}
         boardId={boardId}
+        runtimeUseAdvancedVerb={useAdvancedRuntimeVerb}
       />
 
       {/* Output Files Preview — runtime path emits only presets.ini */}
@@ -1387,9 +1451,11 @@ function statusColorStyle(type: StatusMessage['type']): React.CSSProperties {
 interface DeliverabilityPanelProps {
   presets: ExportPreset[];
   boardId: BoardId;
+  /** Phase C opt-in flag — flips proffie_runtime to the advanced table. */
+  runtimeUseAdvancedVerb?: boolean;
 }
 
-function DeliverabilityPanel({ presets, boardId }: DeliverabilityPanelProps) {
+function DeliverabilityPanel({ presets, boardId, runtimeUseAdvancedVerb }: DeliverabilityPanelProps) {
   // Aggregate across all presets in the bundle. Even if user has a single
   // preset selected, this resolves correctly.
   const aggregated = useMemo(() => {
@@ -1413,9 +1479,11 @@ function DeliverabilityPanel({ presets, boardId }: DeliverabilityPanelProps) {
       ledCount: 144,
     };
     const sampleConfig = presets[0]?.config ?? fallbackConfig;
-    const report = getDeliverability(sampleConfig, boardId);
+    const report = getDeliverability(sampleConfig, boardId, {
+      runtimeUseAdvancedVerb,
+    });
     return report;
-  }, [presets, boardId]);
+  }, [presets, boardId, runtimeUseAdvancedVerb]);
 
   const transfers = aggregated.knobs.filter((k) => k.capability === 'deliverable');
   const doesntTransfer = aggregated.knobs.filter(

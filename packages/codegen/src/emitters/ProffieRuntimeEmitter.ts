@@ -56,6 +56,57 @@ export interface ProffieRuntimePresetInput {
   builtinPresetIndex: number;
   /** ProffieOS variation seed for the preset. Defaults to 0. */
   variation?: number;
+  /**
+   * Optional Phase C / "advanced verb" parameters. When present AND the
+   * caller sets `useAdvancedVerb: true` on the emit options, the emitter
+   * outputs `style=advanced R,G,B …` (custom preset independent of the
+   * factory bank) instead of `style=builtin N M`. Maps directly to the
+   * 11-slot signature of the ProffieOS `advanced` named style declared
+   * in `~/ProffieOS/styles/style_parser.h`.
+   *
+   * Phase C is opt-in and experimental: it requires the user's firmware
+   * NOT to have `DISABLE_BASIC_PARSER_STYLES` defined (the default for
+   * stock ProffieOS + Fett263 prop builds). Vendor builds that disable
+   * the basic parser styles silently reject the style string and fall
+   * back to the firmware's compiled preset bank — surface the
+   * experimental warning at the UI level.
+   */
+  advanced?: AdvancedVerbParams;
+}
+
+/**
+ * 11-slot signature for the ProffieOS `advanced` named style:
+ *
+ *   advanced color1 color2 color3 onSparkColor onSparkTimeMs
+ *            blastColor lockupColor clashColor extensionMs retractionMs
+ *            sparkTipColor
+ *
+ * Slot semantics (from `~/ProffieOS/styles/style_parser.h` named_styles[]
+ * `"advanced"` description):
+ *   1. color at hilt (gradient start)
+ *   2. middle color
+ *   3. tip color (gradient end)
+ *   4. onspark color (briefly flashed on ignition events)
+ *   5. onspark time (ms)
+ *   6. blast color
+ *   7. lockup color (audioflicker partner)
+ *   8. clash color
+ *   9. extension time (ms) — ignition duration
+ *  10. retraction time (ms)
+ *  11. spark-tip color (tip-of-blade ignition spark)
+ */
+export interface AdvancedVerbParams {
+  color1: { r: number; g: number; b: number };
+  color2: { r: number; g: number; b: number };
+  color3: { r: number; g: number; b: number };
+  onSparkColor: { r: number; g: number; b: number };
+  onSparkTimeMs: number;
+  blastColor: { r: number; g: number; b: number };
+  lockupColor: { r: number; g: number; b: number };
+  clashColor: { r: number; g: number; b: number };
+  extensionMs: number;
+  retractionMs: number;
+  sparkTipColor: { r: number; g: number; b: number };
 }
 
 export interface ProffieRuntimeEmitOptions {
@@ -74,6 +125,19 @@ export interface ProffieRuntimeEmitOptions {
    */
   numBlades: 1 | 2 | 3 | 4;
   presets: ProffieRuntimePresetInput[];
+  /**
+   * Phase C opt-in: when true, presets with an `advanced` field on their
+   * input emit `style=advanced R,G,B …` (custom style independent of
+   * factory bank) instead of `style=builtin N M`. Presets without an
+   * `advanced` field still emit `builtin N M` regardless. Defaults to
+   * false (Phase A behavior).
+   *
+   * The platform UI should label this "experimental" because it requires
+   * the user's firmware NOT to have `DISABLE_BASIC_PARSER_STYLES`
+   * defined. Stock ProffieOS + Fett263 prop builds satisfy this; vendor
+   * builds may not.
+   */
+  useAdvancedVerb?: boolean;
 }
 
 // ─── Internal helpers ───
@@ -105,6 +169,47 @@ function buildBuiltinStyleString(presetIndex: number, bladeNumber: number): stri
   return `builtin ${safeIndex} ${safeBlade}`;
 }
 
+function clampU8(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(255, Math.round(n)));
+}
+
+function rgbCsv(c: { r: number; g: number; b: number }): string {
+  return `${clampU8(c.r)},${clampU8(c.g)},${clampU8(c.b)}`;
+}
+
+/**
+ * Build a `style=advanced ...` line using the 11-slot ProffieOS named-
+ * style signature. The verb must pass `IsValidStyleString()`: lowercase
+ * letters → space → digits/spaces/commas only. `advanced` + space-
+ * separated comma-delimited RGB triples + integers satisfies this.
+ *
+ * Layout (from style_parser.h named_styles[] `"advanced"`):
+ *   advanced  R1,G1,B1  R2,G2,B2  R3,G3,B3  R4,G4,B4
+ *             onSparkTimeMs
+ *             R6,G6,B6  R7,G7,B7  R8,G8,B8
+ *             extensionMs  retractionMs
+ *             R11,G11,B11
+ *
+ * Total 11 args following the verb.
+ */
+function buildAdvancedStyleString(p: AdvancedVerbParams): string {
+  const slots = [
+    rgbCsv(p.color1),
+    rgbCsv(p.color2),
+    rgbCsv(p.color3),
+    rgbCsv(p.onSparkColor),
+    String(Math.max(0, Math.floor(p.onSparkTimeMs))),
+    rgbCsv(p.blastColor),
+    rgbCsv(p.lockupColor),
+    rgbCsv(p.clashColor),
+    String(Math.max(0, Math.floor(p.extensionMs))),
+    String(Math.max(0, Math.floor(p.retractionMs))),
+    rgbCsv(p.sparkTipColor),
+  ];
+  return `advanced ${slots.join(' ')}`;
+}
+
 // ─── Public emitter function ───
 
 /**
@@ -118,6 +223,7 @@ function buildBuiltinStyleString(presetIndex: number, bladeNumber: number): stri
 export function buildRuntimePresetsFile(opts: ProffieRuntimeEmitOptions): string {
   const lines: string[] = [];
   lines.push(`installed=${sanitizeValue(opts.installTime)}`);
+  const useAdvanced = opts.useAdvancedVerb === true;
 
   for (const p of opts.presets) {
     const fontName = sanitizeValue(p.fontName);
@@ -128,9 +234,23 @@ export function buildRuntimePresetsFile(opts: ProffieRuntimeEmitOptions): string
     lines.push('new_preset');
     lines.push(`font=${fontName}`);
     lines.push(`track=${trackFile}`);
-    for (let blade = 1; blade <= opts.numBlades; blade++) {
-      lines.push(`style=${buildBuiltinStyleString(p.builtinPresetIndex, blade)}`);
+
+    // Per-preset style emission:
+    // - Phase C opt-in AND this preset has `advanced` params → emit
+    //   `advanced R,G,B …` (one identical line per blade; the advanced
+    //   verb doesn't take a blade index).
+    // - Otherwise → emit `builtin N M` per blade (Phase A).
+    if (useAdvanced && p.advanced) {
+      const advancedLine = buildAdvancedStyleString(p.advanced);
+      for (let blade = 1; blade <= opts.numBlades; blade++) {
+        lines.push(`style=${advancedLine}`);
+      }
+    } else {
+      for (let blade = 1; blade <= opts.numBlades; blade++) {
+        lines.push(`style=${buildBuiltinStyleString(p.builtinPresetIndex, blade)}`);
+      }
     }
+
     lines.push(`name=${presetName}`);
     lines.push(`variation=${variation}`);
   }
@@ -138,6 +258,10 @@ export function buildRuntimePresetsFile(opts: ProffieRuntimeEmitOptions): string
   lines.push('end');
   return lines.join('\n') + '\n';
 }
+
+// Export for tests + caller code that wants to build the style string
+// independently (e.g. for showing a preview to the user).
+export { buildAdvancedStyleString };
 
 // ─── BoardEmitter conformance ───
 //
