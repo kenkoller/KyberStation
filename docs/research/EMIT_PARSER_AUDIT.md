@@ -1,7 +1,14 @@
 # Emit ↔ Parser Encoding Audit
 
-**Status:** Living reference. Updated 2026-05-16 after the smoking-gun bench finding.
+**Status:** Living reference. Updated 2026-05-16 after the smoking-gun bench finding + the
+B1/B2 multi-board field-coverage audit reconciliation.
 **Why this exists:** KyberStation emits text/binary/JSON to downstream parsers (firmware, vendor apps, our own persistence). Each interface is an opportunity for unit-scale, range, ordering, or schema-version mismatches. This doc captures the contract at each boundary so future contributors don't re-discover encoding rules by trial-and-error.
+
+**Companion doc:** [`MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md`](./MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md)
+— canonical per-field coverage matrix across Proffie compile-flash / Proffie runtime
+Phase A+C / Xenopixel / CFX / Golden Harvest. Use the matrix for "does field X reach
+hardware on board Y" questions; use this audit for "what bytes do we emit at boundary Z"
+questions.
 
 ## The investigative lesson (read first)
 
@@ -47,15 +54,27 @@ Each row: what KyberStation emits, what the consumer expects, status, source-of-
 
 **Lesson learned here:** parser-verb runtime args need 16-bit color encoding. This is the bug we just fixed. Test coverage: `packages/codegen/tests/proffieRuntimeEmitter.test.ts` pins the 16-bit byte format.
 
+**Field-coverage caveats:** the encoding is correct, but Phase A delivers only 5 knobs
+(`name`, `font`, `track`, `order`, `variation`) and Phase C adds 7 more (4 colors + 2 times
++ style-stub). The remaining ~91 of 103 BladeConfig fields are DROPPED in both phases. See
+[`MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md`](./MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md) for
+the per-field matrix.
+
 ### C. Xenopixel V3 — SD card format (`zipExporter.ts` `xenopixel` board)
 
 | What we emit | Consumer expects | Status | Notes |
 |---|---|---|---|
-| `font{N}=(R,G,B),...` in `fontconfig.ini` (R,G,B in 0-255) | Xenopixel V3 firmware native format | ✅ Verified | Different firmware family; vendor docs specify 0-255 native. |
-| Blade effect IDs (0-7), ignition style IDs (0-11) | Xenopixel firmware ID enums | ✅ Verified | `XENO_STYLE_MAP` / `XENO_IGNITION_MAP` in zipExporter map KyberStation IDs to Xeno IDs. |
+| `font{N}=(R,G,B),...` in `fontconfig.ini` (R,G,B in 0-255) | Xenopixel V3 firmware native format | ✅ Verified | Different firmware family; vendor docs specify 0-255 native. B2 audit confirms format matches. |
+| Blade effect IDs (0-7), ignition style IDs (0-11) | Xenopixel firmware ID enums | ✅ Verified (encoding) — ⚠ Lossy coverage | `XENO_STYLE_MAP` / `XENO_IGNITION_MAP` in zipExporter map KyberStation IDs to Xeno IDs. **B2 audit finding (2026-05-16):** live `XENO_STYLE_MAP` covers only 6 of 33 KS styles; 27 silently degrade to Steady. Live `XENO_IGNITION_MAP` lacks fallbacks for KS-specific ignitions. See canonical matrix's Critical Structural Findings #1. Byte format is correct; field coverage is narrow. |
 | `set/config.ini` global settings | Xenopixel V3 firmware native format | ✅ Verified | One-to-one mapping from `useXenopixelSettingsStore`. |
+| `ignitionMs`/`retractionMs` raw integers | Firmware-clamped on parse | ⚠ Clamp inconsistency | **B2 audit finding (2026-05-16):** `XenopixelEmitter` (dormant class) clamps to `[100, 800]` / `[200, 1000]`; live `zipExporter.ts` pipeline emits raw. Two parallel paths disagree. Firmware likely truncates silently. See canonical matrix's P1 finding #9. |
 
 **Not yet bench-validated on real Xenopixel hardware.** Marked "verified" against vendor format docs only.
+
+**See also:** the canonical matrix [`MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md`](./MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md)
+for full per-field coverage of all 103 BladeConfig fields on Xenopixel. The dormant
+`XenopixelEmitter` class in `packages/codegen/src/emitters/` has richer coverage than the
+live `zipExporter.ts` inline pipeline — see Critical Structural Findings #1.
 
 ### D. CFX + Golden Harvest — design reference only (NOT flashable)
 
@@ -85,7 +104,7 @@ Each row: what KyberStation emits, what the consumer expects, status, source-of-
 | What we emit | Consumer expects | Status | Notes |
 |---|---|---|---|
 | JSON serialization of `SaberProfile[]` to localStorage | Same shape on next session load | ⚠ Symmetric — both ends are us | Migration logic for schema changes lives in the store. |
-| Has a `migrateImportFields` step for legacy data | Backward compat across versions | ⚠ Unverified | Should add a migration test fixture suite (load v1 → v2 state). |
+| Has a `migrateImportFields` step for legacy data | Backward compat across versions | ✅ Verified (2026-05-16) | **PR #327 shipped fixture-driven migration tests.** `apps/web/tests/saberProfileMigration.test.ts` pins v1 → v2 → v3 schemas with hand-authored fixtures (`apps/web/tests/fixtures/saberProfiles/v1.json`, `v2.json`, `v3.json`). `loadFromStorage` → `migrateProfile` path is now regression-locked. |
 
 ### H. Fett263 / OS7 import parser (`packages/codegen/src/parser/`)
 
@@ -120,7 +139,7 @@ Prioritized by how likely the row turns up another bug:
 
 3. **(I) Sound font existence pre-check** — add a "your factory SD card has these fonts, your preset references these, mismatches: …" pre-export validation. Catches the "set up the preset, forget to add the font folder" failure mode. Direct-write path can already inspect dirHandle; ZIP path could read the user's known font library from `~/SaberFonts/` reference doc.
 
-4. **(G) Saber profile migration test fixtures** — create JSON fixtures for v1, v2, v3 saber profile schemas. Test migration paths end-to-end. ~1 hour.
+4. **(G) Saber profile migration test fixtures** — ✅ **Shipped (2026-05-16, PR #327).** Fixtures live at `apps/web/tests/fixtures/saberProfiles/v{1,2,3}.json`; driven by `apps/web/tests/saberProfileMigration.test.ts`.
 
 5. **(H) Parser audit** — the import parser's template registry grew from 153 → 372 in v0.21.x. A round-trip test on the entire Fett263 stylebrary corpus would catch regressions in import fidelity. We already have `fett263Fixtures.test.ts` — extend it.
 
