@@ -5,6 +5,53 @@ flash tests on real Proffieboard hardware. Lives outside the workspace
 package graph so it doesn't ship to users — it's tooling for the
 maintainer's V3.9 validation runs.
 
+## Full bench session — three scripts
+
+For the **smoking-gun verification workflow** (validate the 16-bit RGB scaling
+fix on hardware end-to-end), run all three in sequence:
+
+```bash
+# 1. Generate the curated 15 presets.ini for the runtime-preset path
+node scripts/hardware-test/build-bench-validation-presets.mjs \
+  --install-time '<paste from `pli` over serial>' --num-blades 2 --phase c
+
+# 2. Generate 16 voice-callout font.wav files so cycling presets is
+#    audibly distinct
+scripts/hardware-test/generate-tts-prompts.sh
+
+# 3. With the saber's SD mounted on the Mac via USB SD reader, deploy
+#    both: backup + font-content upgrades (where ~/SaberFonts has KP
+#    matches) + TTS overlay.
+scripts/hardware-test/deploy-sd-bench-setup.sh /Volumes/<SD_NAME>
+```
+
+For preset-only loading via serial (no SD pull), step 1 + `load-runtime-presets.sh`
+is enough — see that script's header for the serial-command pattern.
+
+## `generate-tts-prompts.sh`
+
+macOS-only. Uses `say` + `afconvert` to produce one `font.wav` per
+saber-side font folder. The voice prompt plays when ProffieOS loads
+a preset's font, so cycling presets has an audible distinction even
+when fonts share a similar hum.
+
+Override the voice with `TTS_VOICE=Samantha scripts/.../generate-tts-prompts.sh`.
+
+## `deploy-sd-bench-setup.sh`
+
+macOS-only. With the saber's SD mounted via USB SD reader, performs:
+
+1. **Backup** — `ditto` snapshot of the entire SD to `backups/89sabers-v39bt-<date>/sdcard/`.
+   (Note: must use `ditto` not `rsync --info=progress2` because macOS
+   ships rsync 2.x which silently fails on the 3.x flag.)
+2. **Font content upgrades** — `rsync -a --delete` overlays high-quality
+   Kyberphonic fonts from `~/SaberFonts/` onto saber-side folder names
+   where a match exists (Vader_KP_R1 → Vader, Ben_KP → Ben, etc.).
+3. **TTS overlay** — copies each `font.wav` from the TTS bundle.
+4. **Verification** — counts + sizes.
+
+Idempotent. Re-running creates a fresh dated backup each time.
+
 ## `build-bench-validation-presets.mjs`
 
 Used 2026-05-16 to validate the **smoking-gun fix** (PR #325 commit
