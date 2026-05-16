@@ -284,6 +284,76 @@ Adding a new Inquisitor character means adding it to
 `INQUISITOR_CHARACTERS` in the test — that\'s the single source of
 truth for the convention.
 
+### 2026-05-16 — Encoding contracts at the emit↔parser boundary (smoking-gun saga)
+
+PR #325 (Runtime Presets v0.22.0) introduced a new emit path:
+`packages/codegen/src/emitters/ProffieRuntimeEmitter.ts` writes
+`presets.ini` lines like `style=advanced R,G,B …` for SD-card runtime
+preset loading on modern vendor sabers (89sabers V3.9-BT, Sabertrio
+`SAVE_PRESET`, KR Sabers v3+). The intent: design preset in
+KyberStation → drop it on saber → no compile-flash required.
+
+Initial bench results on 89sabers V3.9-BT (2026-05-15) showed every
+KyberStation-generated Phase C preset rendering visibly dim — roughly
+0.4% of the brightness of the factory presets running the same
+hardware. Six hours of bench investigation theorized about
+AudioFlicker semantics, ColorCycle slot wrapping, chromatic LED
+response curves, even a draft upstream PR to ProffieOS adding a new
+`vibrant` parser verb.
+
+**Actual cause:** KyberStation was emitting RGB channels in 0-255
+range; ProffieOS's `RgbArg<>` parser at `styles/rgb_arg.h:41` stores
+runtime color args as `Color16(r, g, b)` — expecting 0-65535. Every
+Phase C blade rendered at exactly `1/257` of intended brightness.
+
+Fix at commit `45737f2`: 12-line change scaling each channel × 257
+before emit. Empirically validated on V3.9-BT 2026-05-16 (hilt-mounted,
+all 15 curated presets rendering at factory-equivalent brightness).
+
+**The lesson for Hardware Fidelity:** the boundary between
+KyberStation's emit code and the consumer's parser is *itself*
+hardware. A wire-format mismatch produces the same class of user-
+visible bug as a non-existent ProffieOS template — except the
+visualizer renders correctly all the way through, so the bug only
+surfaces on real hardware.
+
+Two failure modes to internalize:
+
+1. **The compile-flash path "just works" by accident** for colors,
+   because C++ template instantiation (`Color16(Color8(R,G,B))` at
+   `common/color.h:191`) silently promotes 8-bit → 16-bit. We'd have
+   the same bug if ProffieOS exposed a non-template literal `Color16`
+   API that KyberStation called with 0-255 values.
+
+2. **The runtime path has no such safety net** — `RgbArg<>` is a
+   runtime parser that takes the bytes we write and stores them
+   directly. Anything we write is what hardware uses.
+
+The lesson for the next contributor: **when symptoms suggest a
+"fundamental limitation" or "template/firmware constraint," verify
+the exact bytes you emit match what the consumer's parser expects.
+Read the parser source. Trace one value through end-to-end before
+investigating consumer behavior.** Reading `styles/rgb_arg.h:41` on
+day 1 would have saved a session of bench time.
+
+**Test coverage:** `packages/codegen/tests/proffieRuntimeEmitter.test.ts`
+pins the 16-bit byte format — `expect(out).toContain('65535,0,32896')`
+(where 32896 = 128 × 257), not just `expect(out).toContain('255,0,128')`
+which was the original "passing" test while the blade was 0.4% dim.
+
+**Drift sentinel:** any new emit path that crosses a KyberStation →
+external-parser boundary MUST have a wire-format fixture test (clone
+the pattern at `apps/web/tests/fixtures/kyberGlyphs/v1/fixtures.json`)
+that pins the exact bytes emitted, with a comment referencing the
+consumer's parser source line. Round-trip tests alone are insufficient
+— they catch shape errors but not unit-scale mismatches that
+KyberStation's own decoder happens to invert symmetrically.
+
+**Audit doc:** every emit↔parser boundary in the codebase is now
+inventoried at `docs/research/EMIT_PARSER_AUDIT.md` (sections A-J).
+This file is the cheap-to-verify reference future contributors should
+read FIRST before bench-debugging a hardware fidelity bug.
+
 ## When to update this doc
 
 - A new style is added to the engine.
