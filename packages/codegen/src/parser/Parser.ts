@@ -184,13 +184,25 @@ class Parser {
   parseExpression(): StyleNode | null {
     const token = this.peek();
 
-    // Integer literal
+    // Integer literal.
+    //
+    // We produce the same flat shape that ASTBuilder.intNode emits:
+    //   { type: 'integer', name: '<digits>', args: [] }
+    //
+    // This is the canonical bare-integer AST shape in the codebase (see
+    // CodeEmitter.ts:57-58 and transitionMap.ts:36-49). Earlier versions
+    // emitted a nested shape `{ type: 'integer', name: 'Int', args: [raw] }`
+    // that the emitter rendered as `Int<200>`, causing each parse → emit
+    // cycle to add an extra `Int<>` wrapper around bare integer literals
+    // (the bug discovered by PR #328). The flat shape is round-trip safe:
+    // bare `200` stays bare, and explicit `Int<200>` stays explicit (it
+    // goes through the TEMPLATE_NAME branch below).
     if (token.type === 'INTEGER') {
       this.advance();
       return {
         type: 'integer',
-        name: 'Int',
-        args: [{ type: 'raw', name: token.value, args: [] }],
+        name: token.value,
+        args: [],
       };
     }
 
