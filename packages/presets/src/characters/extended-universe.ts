@@ -271,6 +271,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Kelleran Beq\'s blue lightsaber. The Sabered Hand, champion of the Jedi Temple training grounds who rescued Grogu during Order 66.',
     hiltNotes: 'Dual-wielder with standard Jedi hilts.',
@@ -299,6 +300,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Shin Hati\'s red-orange lightsaber. Dave Filoni described the Ahsoka-series saber as intentionally fluctuating between red and orange, symbolic of her dark-side-coded moral ambiguity as Baylan Skoll\'s apprentice.',
     hiltNotes: 'Simple, functional hilt reflecting her pragmatic training under Baylan.',
@@ -332,6 +334,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Marrok\'s red lightsaber. A sinister, smoky crimson wielded by the mysterious dark-side mercenary in Ahsoka. The smoldering character comes through high-shimmer cracked-kyber bleed (Inquisitor unstable convention) plus a slow stutter ignition + fadeout retraction. Upon death, green Nightsister magick was released — a one-time visual moment, not the canonical baseline blade look.',
     hiltNotes: 'Inquisitor-style hilt beneath dark armor.',
@@ -533,8 +536,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     },
   },
   {
-    id: 'eu-loden-greatstorm-blue',
-    name: 'Loden Greatstorm',
+    id: 'eu-loden-greatstorm-yellow',
+    name: 'Loden Greatstorm (Yellow)',
     character: 'Loden Greatstorm',
     era: 'expanded-universe',
     affiliation: 'jedi',
@@ -583,8 +586,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     },
   },
   {
-    id: 'eu-elzar-mann-purple',
-    name: 'Elzar Mann',
+    id: 'eu-elzar-mann-blue',
+    name: 'Elzar Mann (Blue)',
     character: 'Elzar Mann',
     era: 'expanded-universe',
     affiliation: 'jedi',
@@ -641,14 +644,14 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     era: 'expanded-universe',
     affiliation: 'jedi',
     tier: 'base',
-    description: 'Rare Wookiee Jedi of the High Republic era. Oversized blue crossguard blade with slow, powerful ignition befitting his Wookiee stature.',
+    description: 'Rare Wookiee Jedi of the High Republic era. Oversized green crossguard blade with slow, powerful ignition befitting his Wookiee stature.',
     hiltNotes: 'High Republic crossguard hilt sized for a Wookiee grip.',
     topologyNotes: 'Crossguard blade with lateral quillons.',
     config: {
       name: 'Burryaga',
-      baseColor: { r: 0, g: 120, b: 255 },
-      clashColor: { r: 200, g: 220, b: 255 },
-      lockupColor: { r: 150, g: 185, b: 255 },
+      baseColor: { r: 0, g: 255, b: 100 },
+      clashColor: { r: 200, g: 255, b: 220 },
+      lockupColor: { r: 150, g: 240, b: 185 },
       blastColor: { r: 255, g: 255, b: 255 },
       style: 'stable',
       ignition: 'scroll',
@@ -679,6 +682,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Barriss Offee post-fall, reforged as an Inquisitor. The Tales of the Empire arc shows her wielding the standard Inquisitor cracked-kyber red — the bleed of someone broken and reshaped by the Empire before she ultimately rejects the path. Uses the canonical `unstable` style shared by the rest of the Inquisitor roster.',
     hiltNotes: 'Standard Inquisitor double-bladed spinning hilt; her Mirialan tattoos visible on the grip across the show\'s flashback frames.',
@@ -719,6 +723,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Master Sol — calm, contemplative Jedi Master at the center of The Acolyte. A deep emerald-green blade befitting the Cerean-trained master who carries the weight of Brendok with him.',
     hiltNotes: 'Late-High-Republic single-emitter hilt with banded grip and leaf-engraved pommel.',
     config: {
@@ -747,6 +752,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Master Indara — composed Jedi Master killed in The Acolyte\'s opening cantina duel. Steady, measured Jedi blue from a master who deflected fire mid-conversation.',
     hiltNotes: 'High Republic two-tone hilt with chrome accent ring.',
     config: {
@@ -774,6 +780,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Yord Fandar\'s by-the-book Jedi Knight blade — bright cobalt blue from a young master who treats the Code as scaffolding. Killed by Mae in the Khofar attack.',
     hiltNotes: 'Standard High Republic Jedi Knight hilt, tightly machined.',
     config: {
@@ -801,6 +808,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Jecki Lon\'s blue Padawan blade — a cooler, more analytical shade than her master Sol. Fights with twin-blade precision before her death at Qimir\'s hands.',
     hiltNotes: 'Slim Padawan-issue hilt with a chrome activation slider.',
     config: {
@@ -828,6 +836,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Master Vernestra Rwoh\'s standard purple lightsaber — the locked-form variant of her signature lightwhip. The youngest Mirialan Jedi Master in centuries, leading the Acolyte investigation with cool detachment.',
     hiltNotes: 'Convertible hilt that locks into a standard blade or unfolds into a lightwhip; this preset is the standard configuration.',
     config: {
@@ -856,6 +865,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Master Kelnacca — Wookiee Jedi who retreated to a quiet cabin on Khofar before Qimir found him. Deep, steady Jedi blue from one of the few canonical Wookiee Jedi shown on-screen.',
     hiltNotes: 'Oversized hilt sized for a Wookiee grip, carved Mythosaur-spine motif at the pommel.',
     config: {
@@ -883,6 +893,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Torbin\'s blue blade — the Jedi who took a Barash vow on Olega and meditated for years before Mae forced him out of his silence. A calm, even tone fitting his ascetic discipline.',
     hiltNotes: 'Plain ribbed hilt with no ornamentation — befitting his vow of austerity.',
     config: {
@@ -910,6 +921,7 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'Qimir — "The Stranger" — wields a deep crimson blade beneath his cortosis-veined helmet. The Sith hunter who manipulates Mae and Osha through The Acolyte; the unstable bleed reflects a master operating outside the Rule of Two.',
     hiltNotes: 'Cortosis-armored hilt with a curved guard and helmet-tethered chain. Designed to deflect lightsaber strikes through its cortosis weave.',
     config: {

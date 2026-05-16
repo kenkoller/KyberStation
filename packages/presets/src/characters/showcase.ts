@@ -1699,7 +1699,7 @@ export const SHOWCASE_PRESETS: Preset[] = [
       blastColor: { r: 240, g: 220, b: 255 },
       style: 'plasma',
       ignition: 'glitch',
-      retraction: 'flicker-out',
+      retraction: 'flickerOut',
       ignitionMs: 380,
       retractionMs: 540,
       shimmer: 0.28,

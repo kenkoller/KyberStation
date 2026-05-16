@@ -10,6 +10,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Ahsoka\'s primary green lightsaber from The Clone Wars. Vivid emerald blade with a warm shimmer reminiscent of her early Padawan years.',
     hiltNotes: 'Custom curved hilt gifted by Anakin Skywalker.',
@@ -39,6 +40,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Ahsoka\'s shorter yellow-green shoto saber used in her Jar\'Kai dual-wielding style.',
     hiltNotes: 'Compact shoto hilt for reverse-grip.',
@@ -67,6 +69,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Purified white blades carried by Ahsoka after leaving the Jedi Order. Brilliant silver-white with a subtle cool shimmer.',
     hiltNotes: 'Curved hilts with white wrappings, based on purified kyber crystals from an Inquisitor.',
@@ -106,6 +109,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The ancient Mandalorian Darksaber. On a 1D Neopixel strip the canonical 2D-outlined blade is approximated as a bright-white emitter + tip with a near-black body — the honest hardware approximation per Fett263 conventions.',
     hiltNotes: 'Unique rectangular hilt of Mandalorian beskar, the only one of its kind.',
@@ -135,6 +139,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Ezra\'s second lightsaber — a traditional blue blade replacing his earlier blaster-saber hybrid.',
     hiltNotes: 'Cross-guard style hilt built on Atollon. First hilt was a blaster hybrid destroyed by Vader.',
@@ -165,6 +170,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Ezra\'s first lightsaber — a unique blaster-saber hybrid built from spare parts on Lothal. A scrappy, street-kid weapon.',
     hiltNotes: 'Compact blaster/saber hybrid with integrated stun blaster. Destroyed by Vader on Malachor.',
@@ -193,6 +199,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Caleb Dume\'s blue lightsaber, carried through the dark times and wielded throughout the Rebellion on Lothal.',
     hiltNotes: 'Two-piece modular hilt that separates for concealment.',
@@ -223,6 +230,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Grand Inquisitor\'s spinning double-bladed red lightsaber. Menacing crimson with aggressive flicker.',
     hiltNotes: 'Crescent-shaped spinning hilt with dual emitters. Capable of helicopter flight mode.',
@@ -254,6 +262,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Trilla Suduri as the Second Sister. Deep blood-red blade with a controlled, precise flicker.',
     hiltNotes: 'Standard Inquisitor spinning hilt.',
@@ -283,6 +292,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Reva\'s aggressive red double-bladed saber. Fierce scarlet with volatile energy matching her volatile temperament.',
     hiltNotes: 'Double-bladed Inquisitor spinning hilt, often used as a single blade.',
@@ -314,6 +324,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Fifth Brother\'s imposing red blade. A deep, powerful crimson with heavy weight.',
     hiltNotes: 'Large Inquisitor spinning hilt matching his brutish fighting style.',
@@ -345,6 +356,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Seventh Sister\'s sleek red blade. A sharp, vivid crimson with a refined, almost surgical feel.',
     hiltNotes: 'Compact Inquisitor spinning hilt suited to her agile fighting style.',
@@ -377,6 +389,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Darksaber wielded by Sabine Wren after claiming it in Mandalorian tradition. Same ancient blade, new warrior — same hardware approximation.',
     hiltNotes: 'Mandalorian Darksaber — identical hilt to Pre Vizsla\'s, passed through combat.',
@@ -406,6 +419,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Sabine\'s blue-bladed lightsaber from the Ahsoka series, trained by Ahsoka Tano. A bright azure blade in the hands of a Mandalorian learning the Jedi way.',
     hiltNotes: 'Ezra\'s lightsaber passed to Sabine. Modified with Mandalorian personal touches.',
@@ -436,6 +450,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: false,
+    author: 'on-screen',
     description:
       'Cal Kestis\'s default blue lightsaber from Jedi: Fallen Order — the blade on first ignition and in marketing/box art. A bright, hopeful blade. (Cyan is a customization unlock rather than the default.)',
     hiltNotes: 'Jaro Tapal\'s repaired hilt, later rebuilt on Bogano.',
@@ -467,6 +482,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: false,
+    author: 'on-screen',
     description:
       'Cere Junda\'s blue lightsaber. A steady, resolute blade reflecting her hard-won wisdom.',
     hiltNotes: 'Restored Jedi hilt reclaimed after years in hiding.',
@@ -495,6 +511,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Baylan Skoll\'s distinctive orange-red blade. A warm, magmatic hue between Jedi and Sith — fitting for a fallen master seeking something beyond both orders.',
     hiltNotes: 'Ornate hilt of older Jedi design, well-maintained despite years away from the Order.',
@@ -518,6 +535,12 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
   },
 
   // ── Shin Hati ──
+  // NB: A second Shin Hati preset exists in extended-universe.ts as
+  // `eu-shin-hati-orange` with a `fire` style instead of `cinder`. The
+  // two presets are intentional sibling interpretations of the same
+  // live-action Ahsoka-series character — cooler/cleaner cinder here vs.
+  // hotter/more volatile fire treatment in eu. Keep IDs distinct so the
+  // gallery can offer both. See GALLERY_AUDIT_2026-05-16_A4_canon-era.md.
   {
     id: 'animated-shin-hati-orange',
     name: 'Shin Hati (Orange)',
@@ -526,6 +549,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Shin Hati\'s orange lightsaber. A sharp, intense amber-orange blade wielded by Baylan Skoll\'s apprentice with cold precision.',
     hiltNotes: 'Simple, functional hilt reflecting her pragmatic training under Baylan.',
@@ -561,6 +585,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'The Mandalorian struggles to wield the ancient Darksaber. Same canonical Darksaber visual on hardware (bright emitter + tip, near-black body); his hesitation is captured in the slower stutter ignition rather than blade instability.',
     hiltNotes: 'Ancient Mandalorian Darksaber — flat blade, angular hilt with black finish.',
     config: {
@@ -588,6 +613,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description: 'The Ahsoka series — pure white blades with a photon particle stream effect, representing her fully realized connection to the Force.',
     hiltNotes: 'Custom curved hilts with white leather wrapping, evolved from Rebels design.',
     config: {
@@ -618,6 +644,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: false,
+    author: 'on-screen',
     description:
       'Speculative interpretation of a personal lightsaber for the ancient droid saber-architect. Huyang is not shown wielding a lightsaber in on-screen Star Wars media — he is the Jedi Order\'s saber construction expert. A clean, precise blue reflecting 25,000 years of craftsmanship.',
     hiltNotes: 'Speculative personal lightsaber for the ancient droid — canonically he is the saber architect, not a wielder.',
@@ -646,6 +673,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Grogu\'s tiny lightsaber built by the Armorer. A pure, bright green shoto blade — small but fierce, just like its wielder.',
     hiltNotes: 'Beskar-forged shoto hilt, built by the Armorer with a rancor tooth accent.',
@@ -690,6 +718,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The wandering bandit-hunter wielding a bled red kyber crystal in a katana-shape hilt. On screen the blade reads as a red core inside a pale-white energy sheath — a 2D layered effect outside what 1D Neopixel can render. The hardware approximation here uses red `unstable` with heavy white modulation through clash + lockup, capturing the bled-kyber-yearning-for-redemption character without claiming a visual the strip cannot deliver.',
     hiltNotes: 'Katana-shape hilt with a thumb-activation slider; the saber draws from a wide-tsuba scabbard mount.',
@@ -721,6 +750,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Sith twin who turns against his sister. Trigger Studio gives him a sleek, decisive crimson blade — slightly more controlled than typical Sith unstable; he\'s the half of the pair who might still walk away.',
     hiltNotes: 'Polished black-and-gold hilt mounted in a Star Destroyer-shaped lightsaber plinth he and his sister built into.',
@@ -750,6 +780,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Karre\'s twin sister and his rival. Where Karre wavers, Am commits — her blade burns hotter, more volatile, with a heavier cracked-kyber bleed. A second crimson preset paired with the same Star Destroyer mount but tuned for the opposing temperament.',
     hiltNotes: 'Identical hilt design to Karre; the pair were built as a matched set on the Star Destroyer they fight aboard.',
@@ -780,6 +811,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The lightsmith\'s daughter who builds her own blade and arrives last to the Margrave\'s summit. Her saber is a saturated yellow — the color of one who chose her own path. A clean stable Jedi yellow, slightly cooler than the Acolyte\'s Sentinel blades, befitting a brand-new construction.',
     hiltNotes: 'Compact hilt with a chrome activation collar and a kyber-window inlay; built in her father\'s workshop just days before the duel.',
@@ -809,6 +841,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Final survivor of her Order, hiding in a village under siege by raiders. Her late-master\'s blue lightsaber, kept dormant until she draws it to defend the bride. A composed, classical Jedi blue — the steadiness of someone who only ignites when there\'s no other choice.',
     hiltNotes: 'Classical Jedi-issue hilt with a pilgrim\'s wrap, weatherworn from the years she spent in hiding.',
@@ -838,6 +871,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'A Jedi Master investigating dark-side disturbances on a quiet outer-rim world. Trigger gives him a deep, unhurried Jedi blue — patient, ancient, the blade of someone who has already seen too much.',
     hiltNotes: 'Worn brass-and-leather hilt, hand-carved Jedi insignia on the pommel.',
@@ -867,6 +901,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'A rabbit-folk former-slave gifted a lightsaber by Master Yasaburo. A bright sky-blue blade — Geno Studio\'s palette runs warmer than typical Star Wars Jedi blue, befitting the family-drama heart of the episode.',
     hiltNotes: 'Slim hilt with an asymmetric activation lever, sized for a child\'s grip; engraved with the Yasaburo family crest.',
@@ -896,6 +931,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Mentor of the child-droid T0-B1. Science Saru gives her a soft purple blade — the color of a Jedi who has reconciled the Force\'s extremes, raised a robot child, and made a quiet life on a forgotten desert world.',
     hiltNotes: 'Rounded hilt with brass-tone accents and a hand-grip wrap that has been replaced too many times to count.',
@@ -934,6 +970,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The young Sith apprentice who paints emotion through color. El Estudio (Spain) gives her a vivid Sith red that pulses with her grief — by the end of the episode the kyber crystal cracks and the bleed runs even hotter. Unstable style with high shimmer matches her painter\'s volatility.',
     hiltNotes: 'A traditional saber hilt covered in handprints from the paint she uses to process her trauma — the El Estudio design is unique to this character.',
@@ -965,6 +1002,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Sith Master who keeps Lola pinned to her trauma. A more controlled crimson than his apprentice — older, slower, more certain. Still unstable per Inquisitor convention but with a tighter shimmer reflecting his discipline.',
     hiltNotes: 'A traditional Sith saber hilt; Lola\'s painted handprints are notably absent from his.',
@@ -994,6 +1032,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Older sister, survivor of an Imperial-poisoned planet. She inherited her mother\'s blue saber and uses it sparingly — water is more precious than combat in her arc. A measured Jedi blue with a slow ignition reflecting her caution.',
     hiltNotes: 'An older, well-worn hilt — the rebuild of her late mother\'s saber. Punkrobot\'s stop-motion gives it a hand-machined look.',
@@ -1023,6 +1062,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Younger sister, more reckless. Where Koten holds back, Tichina goes first. A slightly brighter blue than her sister\'s — youthful confidence that hasn\'t been tempered yet.',
     hiltNotes: 'A second saber rebuilt by Tichina from spare parts during the planet\'s long collapse; cruder than Koten\'s inherited hilt but functional.',
@@ -1052,6 +1092,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'A young Jedi-aspirant who undertakes a pilgrimage to a colossal dark-side stone head with his non-Force-sensitive friend. A standard Padawan blue saber, classical and clean — the journey itself is the point, not the weapon.',
     hiltNotes: 'Standard Studio Mir hilt design with a single emitter; Korean-aesthetic engravings along the grip per the studio\'s house style.',
@@ -1081,6 +1122,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'A young Force-sensitive girl pursued by an Inquisitor across rural India. At the climax she ignites her late mother\'s saber for the first time — a heritage Jedi blue that proves her birthright. Slightly slower ignition reflecting the awakening moment, not a trained Knight\'s reflex.',
     hiltNotes: 'A late-Republic Jedi hilt hidden in her family\'s farmhouse for years; 88 Pictures gives it a slightly weathered, dust-touched finish.',
@@ -1110,6 +1152,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Imperial Inquisitor pursuing Rani across the Golak countryside. Standard Inquisitor cracked-kyber red with the convention\'s unstable bleed — same bureaucratic-pursuit menace as the rest of the live-action / animated Inquisitor roster.',
     hiltNotes: 'A standard Inquisitor double-bladed spinning hilt, slightly travel-worn from the chase across rural farmland.',
@@ -1143,6 +1186,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Kel Dor Jedi Master and Council member known for his deep bond with clone troopers of the Wolfpack. Steady blue blade reflecting his calm, measured combat style and unwavering sense of duty.',
     hiltNotes: 'Elongated cylindrical hilt with a simple pommel, suited to his armored-gauntlet grip.',
@@ -1173,6 +1217,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Nautolan Jedi Master famous for his infectious grin and underwater combat mastery. Vibrant green blade with a lively pulsing shimmer evoking the bioluminescent depths of Glee Anselm.',
     hiltNotes: 'Waterproof hilt with twin-pronged emitter designed for aquatic combat.',
@@ -1203,6 +1248,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Twi\'lek Jedi Knight known for her graceful and acrobatic Ataru fighting style. Rich blue blade with a luminous photon quality reflecting her fluid, dance-like saber work across multiple Clone Wars campaigns.',
     hiltNotes: 'Sleek curved hilt with minimal grip texturing, suited to her flowing combat form.',
@@ -1233,6 +1279,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Mirialan Jedi Master renowned for her precise Soresu defensive form. Clean green blade with minimal shimmer, embodying her disciplined and composed approach to combat.',
     hiltNotes: 'Ornate hilt with Mirialan geometric patterns and a flared emitter shroud.',
@@ -1263,6 +1310,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Luminara Unduli\'s Padawan who grew disillusioned with the Jedi Order during the Clone Wars. Her blue blade carried a quiet intensity that foreshadowed her eventual fall from the Jedi path.',
     hiltNotes: 'Standard Padawan hilt with Mirialan accent markings matching her master\'s tradition.',
@@ -1293,6 +1341,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Togruta Jedi Master who oversaw clone trooper training on Kamino. Her blue blade carries an ethereal aurora quality befitting her role as guardian of the Republic\'s most vital asset.',
     hiltNotes: 'Curved hilt with a wide guard ring, designed for one-handed Makashi-influenced technique.',
@@ -1323,6 +1372,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Zabrak Jedi Master who served on the Council and was among the strike team that confronted Chancellor Palpatine. A no-nonsense warrior with a clean, direct blue blade.',
     hiltNotes: 'Utilitarian hilt with a ridged grip section, built for aggressive two-handed combat.',
@@ -1353,6 +1403,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Iktotchi Jedi Master, telepathic ace pilot, and Council member who joined the Palpatine arrest team. His green blade is as steady and reliable as his piloting instincts.',
     hiltNotes: 'Compact thick-bodied hilt with a conical emitter, designed for cockpit-accessible storage.',
@@ -1383,6 +1434,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Jedi Master and Council member who trained Caleb Dume (later Kanan Jarrus). A Vaapad practitioner with a vibrant green blade carrying a rhythmic pulse that hints at her connection to the aggressive Form VII.',
     hiltNotes: 'Traditional Jedi hilt with wrapped leather grip and a tapered emitter.',
@@ -1413,6 +1465,7 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Kiffar Jedi Master and undercover specialist who walked dangerously close to the dark side during his mission with Asajj Ventress. His green blade carries an unsettled, unstable edge reflecting his psychometric abilities and inner turmoil.',
     hiltNotes: 'Rugged field hilt with worn leather binding, built to survive deep-cover missions.',
