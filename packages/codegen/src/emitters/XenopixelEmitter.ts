@@ -147,8 +147,18 @@ const DEFAULT_GLOBAL_SETTINGS: XenoGlobalSettings = {
 
 // ─── Style Mapping ───
 
-/** Xenopixel V3 blade effect IDs (0-7) */
-const XENO_BLADE_EFFECTS: Record<string, number> = {
+/**
+ * Xenopixel V3 blade effect IDs (0-7), keyed by KyberStation style ID.
+ *
+ * Direct (lossless) mappings only — KyberStation styles whose visual
+ * intent exactly matches a Xenopixel firmware effect. Approximations
+ * for the remaining styles are handled in {@link mapBladeEffect}.
+ *
+ * Exported so the live SD card export path
+ * (`apps/web/lib/zipExporter.ts`) can share the same mapping as the
+ * emitter class.
+ */
+export const XENO_BLADE_EFFECTS: Record<string, number> = {
   fire: 0,
   stable: 1,        // Steady
   unstable: 2,
@@ -162,8 +172,11 @@ const XENO_BLADE_EFFECTS: Record<string, number> = {
 /**
  * Map a KyberStation style name to a Xenopixel blade effect ID.
  * Returns [effectId, degradationNote | null].
+ *
+ * Exported so the live SD card export path can produce the same
+ * degradation notes that the emitter class would have produced.
  */
-function mapBladeEffect(style: string): [number, string | null] {
+export function mapBladeEffect(style: string): [number, string | null] {
   const direct = XENO_BLADE_EFFECTS[style];
   if (direct !== undefined) {
     return [direct, null];
@@ -208,8 +221,14 @@ function mapBladeEffect(style: string): [number, string | null] {
   }
 }
 
-/** Xenopixel V3 ignition style IDs (0-11) */
-const XENO_IGNITION_STYLES: Record<string, number> = {
+/**
+ * Xenopixel V3 ignition style IDs (0-11), keyed by KyberStation
+ * ignition ID. Direct (lossless) mappings only — approximations for
+ * the remaining ignitions are handled in {@link mapIgnitionStyle}.
+ *
+ * Exported so the live SD card export path can share the same mapping.
+ */
+export const XENO_IGNITION_STYLES: Record<string, number> = {
   standard: 0,
   scroll: 1,      // Velocity
   wipe: 2,        // Torch
@@ -227,8 +246,11 @@ const XENO_IGNITION_STYLES: Record<string, number> = {
 /**
  * Map a KyberStation ignition name to a Xenopixel ignition style ID.
  * Returns [styleId, degradationNote | null].
+ *
+ * Exported so the live SD card export path can produce the same
+ * degradation notes that the emitter class would have produced.
  */
-function mapIgnitionStyle(ignition: string): [number, string | null] {
+export function mapIgnitionStyle(ignition: string): [number, string | null] {
   const direct = XENO_IGNITION_STYLES[ignition];
   if (direct !== undefined) {
     return [direct, null];
@@ -259,18 +281,30 @@ function mapIgnitionStyle(ignition: string): [number, string | null] {
 
 // ─── Speed Clamping ───
 
-const IGNITION_SPEED_MIN = 100;
-const IGNITION_SPEED_MAX = 800;
+/**
+ * Xenopixel V3 firmware-enforced ignition speed range. Values outside
+ * this range are silently truncated on the board, which can cause
+ * unpredictable behavior. Exported so the live SD card export path can
+ * apply the same clamp.
+ */
+export const XENO_IGNITION_SPEED_MIN = 100;
+export const XENO_IGNITION_SPEED_MAX = 800;
 
-const RETRACTION_SPEED_MIN = 200;
-const RETRACTION_SPEED_MAX = 1000;
+/**
+ * Xenopixel V3 firmware-enforced retraction speed range. See
+ * {@link XENO_IGNITION_SPEED_MIN} for context.
+ */
+export const XENO_RETRACTION_SPEED_MIN = 200;
+export const XENO_RETRACTION_SPEED_MAX = 1000;
 
-function clampIgnitionSpeed(ms: number): number {
-  return Math.max(IGNITION_SPEED_MIN, Math.min(IGNITION_SPEED_MAX, ms));
+/** Clamp an ignition speed to the Xenopixel V3 firmware-supported range. */
+export function clampIgnitionSpeed(ms: number): number {
+  return Math.max(XENO_IGNITION_SPEED_MIN, Math.min(XENO_IGNITION_SPEED_MAX, ms));
 }
 
-function clampRetractionSpeed(ms: number): number {
-  return Math.max(RETRACTION_SPEED_MIN, Math.min(RETRACTION_SPEED_MAX, ms));
+/** Clamp a retraction speed to the Xenopixel V3 firmware-supported range. */
+export function clampRetractionSpeed(ms: number): number {
+  return Math.max(XENO_RETRACTION_SPEED_MIN, Math.min(XENO_RETRACTION_SPEED_MAX, ms));
 }
 
 // ─── Formatting ───
@@ -328,10 +362,10 @@ export class XenopixelEmitter implements BoardEmitter {
     const retractionSpeed = clampRetractionSpeed(options.retractionMs);
 
     if (ignitionSpeed !== options.ignitionMs) {
-      notes.push(`Preset "${options.presetName}": Ignition speed ${options.ignitionMs}ms clamped to ${ignitionSpeed}ms (range ${IGNITION_SPEED_MIN}-${IGNITION_SPEED_MAX})`);
+      notes.push(`Preset "${options.presetName}": Ignition speed ${options.ignitionMs}ms clamped to ${ignitionSpeed}ms (range ${XENO_IGNITION_SPEED_MIN}-${XENO_IGNITION_SPEED_MAX})`);
     }
     if (retractionSpeed !== options.retractionMs) {
-      notes.push(`Preset "${options.presetName}": Retraction speed ${options.retractionMs}ms clamped to ${retractionSpeed}ms (range ${RETRACTION_SPEED_MIN}-${RETRACTION_SPEED_MAX})`);
+      notes.push(`Preset "${options.presetName}": Retraction speed ${options.retractionMs}ms clamped to ${retractionSpeed}ms (range ${XENO_RETRACTION_SPEED_MIN}-${XENO_RETRACTION_SPEED_MAX})`);
     }
 
     // Defaults for fields not directly mapped from BoardEmitOptions
