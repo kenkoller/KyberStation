@@ -5,6 +5,69 @@ flash tests on real Proffieboard hardware. Lives outside the workspace
 package graph so it doesn't ship to users — it's tooling for the
 maintainer's V3.9 validation runs.
 
+## `build-bench-validation-presets.mjs`
+
+Used 2026-05-16 to validate the **smoking-gun fix** (PR #325 commit
+`45737f2`) end-to-end on real hardware: 15 curated presets emitted via
+the `proffie_runtime` Phase C path, dropped on the saber's SD card,
+brightness verified blade-by-blade.
+
+**What it does**: imports `buildRuntimePresetsFile` from
+`@kyberstation/codegen` and `ALL_PRESETS` from `@kyberstation/presets`,
+picks 15 iconic canon presets spanning the color wheel (red / orange /
+yellow / green / blue / purple / magenta / white) and the style mix
+(stable / rotoscope / unstable), and emits a `presets.ini` that
+exercises the 16-bit RGB scaling fix on every preset.
+
+```bash
+# Default: Phase C (advanced verb), 2 blades, placeholder install_time
+node scripts/hardware-test/build-bench-validation-presets.mjs
+# → scripts/hardware-test/bench-output/curated-15.ini
+```
+
+```bash
+# With real install_time from your saber (run `pli` over serial first):
+node scripts/hardware-test/build-bench-validation-presets.mjs \
+  --install-time '2026-05-16T12:34:56' \
+  --num-blades 2 --phase c
+```
+
+**Bench workflow** (89sabers V3.9-BT or compatible SAVE_PRESET firmware):
+
+```bash
+# 1. Capture your firmware's install_time
+scripts/hardware-test/proffie-serial.sh
+# At the > prompt, type: pli
+# Note the `installed=...` value.
+
+# 2. Generate presets.ini matching your firmware
+node scripts/hardware-test/build-bench-validation-presets.mjs \
+  --install-time '<paste>' --num-blades 2 --phase c
+
+# 3a. SD-card path (preferred — closer to user flow):
+#     Switch saber to USB MSC mode, drop curated-15.ini at SD root,
+#     safely eject, reboot saber.
+
+# 3b. Serial path (no install_time match required):
+scripts/hardware-test/load-runtime-presets.sh \
+  scripts/hardware-test/bench-output/curated-15.ini
+
+# 4. Verify: cycle through all 15 presets via main button.
+#    Each blade should render at FULL brightness. If any preset is dim,
+#    that's a smoking-gun regression — investigate the emit-to-parser
+#    encoding first per docs/research/EMIT_PARSER_AUDIT.md.
+```
+
+**Phase A vs Phase C**:
+- `--phase a` → `style=builtin N M` (factory-bank references). Validates
+  preset ordering / font assignment / install_time matching. Does NOT
+  exercise the smoking-gun fix path.
+- `--phase c` → `style=advanced R,G,B …` (16-bit-scaled custom colors).
+  EXERCISES the smoking-gun fix. Use for brightness validation.
+
+Output dir `scripts/hardware-test/bench-output/` is gitignored so each
+bench run produces a fresh artifact tied to the user's install_time.
+
 ## `build-modulation-test-config.mjs`
 
 Used 2026-04-27 evening to validate v1.1 Core's live AST-level modulation
