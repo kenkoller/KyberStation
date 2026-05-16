@@ -107,7 +107,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Anakin\'s second lightsaber, later passed to Luke. The most iconic hilt in Star Wars.',
+      'Revenge of the Sith — Anakin\'s second lightsaber, built between Geonosis and the Outer Rim Sieges, lost on Mustafar\'s lava banks and kept for years in Obi-Wan\'s hut before passing to Luke. A confident, saturated blue with the steady core of a Knight at the height of his power.',
     hiltNotes:
       'Graflex-style hilt with black grips, red activation button, and D-ring pommel.',
     config: {
@@ -235,7 +235,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Darth Maul\'s iconic double-bladed lightsaber, a weapon of terror and acrobatic combat.',
+      'The Phantom Menace — Maul\'s saberstaff revealed in the Theed power plant, hurling Qui-Gon down the reactor shaft before Obi-Wan severed it in two. Twin blood-red blades with the prowling, weighted hum of a Sith apprentice unleashed for the first time in a thousand years.',
     hiltNotes: 'Long staff hilt with emitters on both ends. Can be split into two single sabers.',
     topologyNotes: 'Double-bladed staff saber. Each blade is 144 LEDs.',
     config: {
@@ -361,7 +361,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Jedi Master Plo Koon\'s lightsaber, wielded by the Kel Dor pilot and Council member.',
+      'Clone Wars era — the Kel Dor Council master\'s blade, carried through countless starfighter sorties with the 104th Battalion until his Jedi interceptor was shot down at Order 66 over Cato Neimoidia. A cool, deep blue as steady as the calm voice that first named Ahsoka "Little Soka".',
     hiltNotes: 'Gauntlet-style hilt adapted for his clawed Kel Dor hands.',
     config: {
       name: 'PloKoon',
@@ -421,7 +421,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Mirialan Jedi Master Luminara Unduli\'s lightsaber, reflecting her disciplined and graceful combat style.',
+      'Attack of the Clones onward — the Mirialan master\'s blade, drawn beside her Padawan Barriss in the Geonosis arena and across countless Clone Wars campaigns before her capture and execution at Stygeon Prime. A bright, clean green moved with the meticulous precision of her Mirialan tradition.',
     hiltNotes: 'Ornate hilt with stepped emitter and decorative grip patterns.',
     config: {
       name: 'Luminara',
@@ -696,7 +696,7 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Anakin\'s first lightsaber, destroyed in the Geonosis droid factory. A youthful, slightly brighter blue than his later saber.',
+      'Attack of the Clones — Anakin\'s first lightsaber, built as Obi-Wan\'s Padawan and severed by a battle droid in the Geonosis foundry. A youthful, slightly brighter blue than the Episode III blade, with the faintly impatient hum of a Padawan still learning the weight of his weapon.',
     hiltNotes: 'Wider, bulkier hilt with visible green and red wiring. Built as a Padawan.',
     config: {
       name: 'AnakinEp2',
@@ -783,7 +783,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Zabrak Jedi Master Eeth Koth\'s green lightsaber. Known for his exceptional resilience and pain tolerance.',
+      'Clone Wars era — the Zabrak master\'s green blade, briefly captured by General Grievous aboard the Steadfast and recovered intact. A clean, steady green with a measured tempo that mirrors his famous endurance under torture.',
+    hiltNotes: 'Slim, ridged hilt with a flared emitter, designed for the strong overhand strikes of his Zabrak frame.',
     config: {
       name: 'EethKoth',
       baseColor: { r: 0, g: 210, b: 30 },
@@ -811,7 +812,8 @@ export const PREQUEL_ERA_PRESETS: Preset[] = [
     screenAccurate: true,
     author: 'on-screen',
     description:
-      'Jedi Master Stass Allie\'s green lightsaber. A healer and Council member killed during Order 66 on Saleucami.',
+      'Revenge of the Sith — the Tholothian healer-knight\'s green blade, carried on speeder-bike patrol over Saleucami until her clone escort turned and fired at Order 66. A warm, evenly-paced green befitting a Council healer who saved more lives than she ever took.',
+    hiltNotes: 'Curved-grip hilt with a tapered emitter, similar in profile to her late cousin Adi Gallia\'s saber.',
     config: {
       name: 'StassAllie',
       baseColor: { r: 0, g: 220, b: 35 },
