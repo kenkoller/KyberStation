@@ -139,6 +139,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'The Lord of Pain\'s red lightsaber. A harsh, angry crimson — cracked and raw like Sion\'s own shattered body held together by sheer rage.',
+    hiltNotes: 'Crooked, scarred hilt mirroring his body\'s broken state. Recovered from his fallen Sith Lord predecessors during the KOTOR II Trayus Academy era.',
     config: {
       name: 'DarthSion',
       baseColor: { r: 200, g: 10, b: 0 },
@@ -388,6 +389,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Jaina Solo\'s purple lightsaber. The Sword of the Jedi — daughter of Han and Leia, twin of Jacen, ace pilot, and the one who brought down Darth Caedus.',
+    hiltNotes: 'Inherited Mara Jade\'s lightsaber after Mara\'s death — slim, formal Jedi hilt with a curved emitter shroud. NJO / Legacy of the Force novels.',
     config: {
       name: 'JainaSolo',
       baseColor: { r: 150, g: 30, b: 255 },
@@ -447,6 +449,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Darth Caedus\'s red lightsaber. Once Jacen Solo with a blue blade, now the Sith Lord whose fall echoes Anakin\'s — a deep arterial red reflecting his tragic descent.',
+    hiltNotes: 'Rebuilt from his Jedi hilt after his fall, with Sith modifications and a bled crystal. Described in the Legacy of the Force novels.',
     config: {
       name: 'DarthCaedus',
       baseColor: { r: 220, g: 0, b: 15 },
@@ -569,6 +572,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Nomi Sunrider\'s green lightsaber. Grand Master of the Jedi Order during the Great Sith War, her verdant blade symbolizes her reluctant but powerful rise to leadership.',
+    hiltNotes: 'Andur Sunrider\'s lightsaber, inherited after her husband\'s murder — Nomi reluctantly took it up to defend their daughter Vima. Tales of the Jedi comics.',
     config: {
       name: 'NomiSunrider',
       baseColor: { r: 0, g: 200, b: 30 },
@@ -598,6 +602,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Ulic Qel-Droma\'s blue lightsaber. The tragic Jedi Knight who fell to the dark side as Exar Kun\'s Sith apprentice before redeeming himself.',
+    hiltNotes: 'Old-Republic-era Jedi hilt, ornate and ancestral — built during his apprenticeship under Arca Jeth. Tales of the Jedi comics.',
     config: {
       name: 'UlicQelDroma',
       baseColor: { r: 40, g: 100, b: 255 },
@@ -627,6 +632,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Ulic Qel-Droma\'s red lightsaber during his tenure as Exar Kun\'s Sith apprentice. A deep, mournful crimson wielded before his redemption — the tragic weapon of the Fallen Jedi.',
+    hiltNotes: 'Same Jedi-era hilt rebled with a Sith crystal during the Krath War. Tales of the Jedi: The Sith War comics.',
     config: {
       name: 'UlicQelDromaSith',
       baseColor: { r: 210, g: 10, b: 10 },
@@ -721,6 +727,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Darth Talon\'s red lightsaber. The Twi\'lek Sith Lady from the Legacy era — a fierce, vivid scarlet blade matching her striking tattooed appearance.',
+    hiltNotes: 'Slim, ornate One Sith hilt with curved emitter and dark-metal grip — built during her training under Darth Krayt. Star Wars: Legacy comics.',
     config: {
       name: 'DarthTalon',
       baseColor: { r: 255, g: 15, b: 10 },
@@ -781,6 +788,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'Cade Skywalker\'s blue lightsaber. The reluctant Legacy-era descendant of Luke Skywalker — a rough-edged blue blade.',
+    hiltNotes: 'Skywalker-family hilt, weathered and unkempt from years of bounty-hunting before Cade reclaimed his Jedi heritage. Star Wars: Legacy comics.',
     config: {
       name: 'CadeSkywalker',
       baseColor: { r: 30, g: 90, b: 255 },
@@ -997,6 +1005,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     screenAccurate: false,
     description:
       'The Sith Emperor who lived for over a thousand years. A blade of ancient, terrifying power — deep blood-red, wielded by the consumer of worlds.',
+    hiltNotes: 'Ancient Sith hilt of pre-Republic design, maintained for over a millennium across his many host bodies. SWTOR / The Old Republic novels.',
     config: {
       name: 'DarthVitiate',
       baseColor: { r: 180, g: 0, b: 0 },
