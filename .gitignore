@@ -66,3 +66,6 @@ Claude Design Mobile handoff/
 backups/
 voice-packs/
 test-fonts/
+
+# Bench-test generated artifacts — tied to user's hardware install_time
+scripts/hardware-test/bench-output/
