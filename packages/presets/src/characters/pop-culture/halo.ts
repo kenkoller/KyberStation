@@ -273,7 +273,7 @@ export const HALO_PRESETS: Preset[] = [
       blastColor: { r: 255, g: 200, b: 120 },
       dragColor: { r: 200, g: 50, b: 10 },
       style: 'pulse',
-      ignition: 'pulseWave',
+      ignition: 'pulse-wave',
       retraction: 'flickerOut',
       ignitionMs: 500,
       retractionMs: 350,
