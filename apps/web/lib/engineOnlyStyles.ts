@@ -42,17 +42,11 @@
  */
 export const ENGINE_ONLY_STYLE_IDS: readonly string[] = [
   'automata',
-  'candle',
   'cascade',
-  'dataStream',
-  'ember',
   'gravity',
-  'helix',
   'mirage',
   'moire',
   'nebula',
-  'neutron',
-  'shatter',
   'tidal',
   'torrent',
   'vortex',
@@ -89,4 +83,10 @@ export const CODEGEN_SUPPORTED_STYLE_IDS: readonly string[] = [
   'prism',
   'imageScroll',
   'painted',
+  'helix',
+  'candle',
+  'ember',
+  'dataStream',
+  'shatter',
+  'neutron',
 ] as const;

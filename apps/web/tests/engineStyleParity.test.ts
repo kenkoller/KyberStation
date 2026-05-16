@@ -133,14 +133,16 @@ describe('engine-style ↔ codegen-handler parity (audit Finding 3 regression gu
     expect(new Set(ENGINE_ONLY_STYLE_IDS)).toEqual(new Set(computedEngineOnly));
   });
 
-  it('regression sentinel: 33 engine styles / 18 codegen-supported / 15 engine-only', () => {
-    // Pinned counts from 2026-05-15 (audit doc Finding 3). When a new
-    // engine style or codegen handler lands, these numbers move and
-    // this test fails to force a deliberate update — at which point
+  it('regression sentinel: 33 engine styles / 24 codegen-supported / 9 engine-only', () => {
+    // Pinned counts as of the 2026-05-15 parity push that added codegen
+    // handlers for helix, candle, ember, dataStream, shatter, neutron
+    // (lifting codegen coverage from 18 → 24 of 33). When a new engine
+    // style or codegen handler lands, these numbers move and this test
+    // fails to force a deliberate update — at which point
     // ENGINE_ONLY_STYLE_IDS / CODEGEN_SUPPORTED_STYLE_IDS in
     // `lib/engineOnlyStyles.ts` should also be updated in the same PR.
     expect(engineIds.length).toBe(33);
-    expect(codegenIds.length).toBe(18);
-    expect(computedEngineOnly.length).toBe(15);
+    expect(codegenIds.length).toBe(24);
+    expect(computedEngineOnly.length).toBe(9);
   });
 });

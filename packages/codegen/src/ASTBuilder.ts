@@ -447,6 +447,139 @@ function buildBaseStyle(config: BladeConfig): StyleNode {
       return templateNode('color', 'Gradient', ...gradientArgs);
     }
 
+    case 'helix':
+      // Helix — two interleaved color strands spiraling along the blade.
+      // ProffieOS shape (1D-hardware-accurate approximation of the 2D
+      // canvas helix per docs/HARDWARE_FIDELITY_PRINCIPLE.md):
+      //   Stripes<3500, 1000, baseColor, brightenedBase>
+      // 3500 px stripe period scrolling at +1000 ms/cycle creates the
+      // primary strand. The brightened base color forms the secondary
+      // strand; the negative-vs-positive direction would split them
+      // visually, but real Proffie's Stripes<> is single-direction —
+      // this is the honest approximation.
+      return templateNode(
+        'color',
+        'Stripes',
+        intNode(3500),
+        intNode(1000),
+        base,
+        rgbNode(brighten(config.baseColor, 0.5)),
+      );
+
+    case 'candle':
+      // Candle — warm gradient with per-pixel noise flicker that
+      // intensifies near the tip. ProffieOS shape:
+      //   BrownNoiseFlicker<
+      //     Gradient<Rgb<255,140,40>, Rgb<255,80,10>>,  // base candle gradient
+      //     White,                                       // flicker top
+      //     50>                                          // intensity
+      // BrownNoiseFlicker<> is a documented ProffieOS template that
+      // produces 1/f-style "brown-noise" intensity wobble — perfect
+      // candle-flame proxy on real hardware. Color hardcodes warm
+      // candle palette (the canvas style does the same internally).
+      return templateNode(
+        'color',
+        'BrownNoiseFlicker',
+        templateNode(
+          'color',
+          'Gradient',
+          rgbNode({ r: 255, g: 140, b: 40 }),
+          rgbNode({ r: 255, g: 80, b: 10 }),
+        ),
+        rawNode('White'),
+        intNode(50),
+      );
+
+    case 'ember':
+      // Ember — glowing embers drifting up a dying fire. ProffieOS
+      // shape uses StyleFire with low intensity + warm gradient:
+      //   StyleFire<Rgb<30,5,0>, Rgb<255,80,20>, 0, 1, FireConfig<2,1000,4>>
+      // StyleFire<base, hot, low_brightness, high_brightness, FireConfig>
+      // is the documented ember/glow idiom in the Fett263 prop library.
+      // Low brightness values + slow drift give the smoldering effect.
+      return templateNode(
+        'color',
+        'StyleFire',
+        rgbNode({ r: 30, g: 5, b: 0 }),
+        rgbNode({ r: 255, g: 80, b: 20 }),
+        intNode(0),
+        intNode(1),
+        templateNode('template', 'FireConfig', intNode(2), intNode(1000), intNode(4)),
+      );
+
+    case 'dataStream':
+      // Data Stream — pseudo-random packets racing hilt→tip over a dim
+      // base. ProffieOS shape:
+      //   Stripes<2000, -3000, Mix<Int<8000>, Black, baseColor>, brightAccent>
+      // 2000-pixel stripe period scrolling at -3000 ms/cycle (negative =
+      // hilt-to-tip direction) creates the packet effect. Dim base
+      // (8000/32768 ≈ 25% brightness) over the accent stripes gives the
+      // characteristic "data flowing on a faded backbone" look.
+      return templateNode(
+        'color',
+        'Stripes',
+        intNode(2000),
+        intNode(-3000),
+        templateNode(
+          'mix',
+          'Mix',
+          intTemplateNode(8000),
+          rawNode('Black'),
+          rgbNode(config.baseColor),
+        ),
+        rgbNode(brighten(config.baseColor, 0.7)),
+      );
+
+    case 'shatter':
+      // Shatter — blade split into independent pulsing segments with
+      // bright crack lines at boundaries. ProffieOS shape (similar to
+      // CrystalShatter but with longer period + sin-gated brightness
+      // instead of static-white crack):
+      //   Stripes<2000,-1500, baseColor,
+      //          Mix<Sin<Int<3>>, baseColor, brightenedBase>,
+      //          baseColor>
+      // 3-second sin period synchronously pulses every "shard" segment;
+      // negative scroll direction gives the crack-lines-at-boundaries
+      // look without needing per-segment noise.
+      return templateNode(
+        'color',
+        'Stripes',
+        intNode(2000),
+        intNode(-1500),
+        base,
+        templateNode(
+          'mix',
+          'Mix',
+          templateNode('function', 'Sin', intTemplateNode(3)),
+          rgbNode(config.baseColor),
+          rgbNode(brighten(config.baseColor, 0.7)),
+        ),
+        rgbNode(config.baseColor),
+      );
+
+    case 'neutron':
+      // Neutron — fast bright point bouncing along the blade with
+      // phosphor-persistence trail. ProffieOS shape:
+      //   Mix<Sin<Int<800>>, Mix<Int<8000>, Black, baseColor>, White>
+      // 800ms sin period gives the bounce timing; outer Mix toggles
+      // between dim base (8000/32768 ≈ 25%) and white at sin peaks
+      // for the "neutron passing through" highlight. Real-hardware
+      // approximation of the 1D-canvas neutron — the canvas style's
+      // moving "point" maps to the sin-driven brightness peak.
+      return templateNode(
+        'mix',
+        'Mix',
+        templateNode('function', 'Sin', intTemplateNode(800)),
+        templateNode(
+          'mix',
+          'Mix',
+          intTemplateNode(8000),
+          rawNode('Black'),
+          rgbNode(config.baseColor),
+        ),
+        rawNode('White'),
+      );
+
     default:
       // Default to stable style
       return templateNode(
