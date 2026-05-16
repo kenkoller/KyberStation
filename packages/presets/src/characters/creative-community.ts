@@ -299,7 +299,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'UV purple with strobe-on-swing. High shimmer creates relentless pulse. Bring glow sticks.',
+    description: 'Blacklight UV purple soaked in 0.85 shimmer, pulsing fast enough to feel the bassline through your wrist. Spark ignition fires like a strobe hit, clash whites out the dancefloor, and the blast snaps to cyan-green like a glowstick cracked open mid-swing. Bring water; you will need it.',
     config: {
       name: 'RaveSaber',
       baseColor: { r: 120, g: 0, b: 255 },
@@ -371,7 +371,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'Alternating red and green with gold lockup like tinsel. Blast sends snowflakes. Festive and aggressive.',
+    description: 'A candy-cane gradient that scrolls cranberry red against pine green from hilt to tip. Lockup blooms tinsel gold; blast spits a sudden white burst like a flashbulb on the family photo. Tasteful enough for a kid\'s pageant, aggressive enough to threaten the inflatable yard Santa.',
     config: {
       name: 'ChristmasClassic',
       baseColor: { r: 200, g: 0, b: 0 },
@@ -520,7 +520,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'Cascading green data stream down the blade like falling code. There is no spoon, but there is this saber.',
+    description: 'Cascading green dataStream packets fall downward through the blade in uneven katakana columns — the bottom of the 1999 monitor escaping into a saber. Scroll ignition loads the rain from emitter to tip; clash burns the column white-green before the code resumes; fadeout retraction lets the last few characters drip away. There is no spoon, but there is this saber.',
     config: {
       name: 'DigitalRain',
       baseColor: { r: 0, g: 180, b: 0 },
@@ -592,7 +592,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'pop-culture',
-    description: 'Regal gold with silver clash. Dual-tone heroic blade. Simple, bold, legendary.',
+    description: 'A regal old-gold blade with the steady, almost ceremonial pulse of a sword raised skyward in 1983 Filmation cel animation. Clash flashes brushed silver like crossed steel; lockup deepens to molten gold while the blast pops to ivory-white. Hold it aloft and you can almost hear "By the power of Grayskull" cue up.',
     config: {
       name: 'PowerGrayskull',
       baseColor: { r: 220, g: 190, b: 50 },
@@ -616,7 +616,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'pop-culture',
-    description: 'Soft pink heart-light on a metallic gray body. The cake is a lie but the style is real.',
+    description: 'A brushed-aluminum gray body with a single soft pink heart-light pulsing from the center, like the Companion Cube\'s glowing core trying very hard to be reassuring. Center ignition swells outward in time with the pulse; clash kicks the pink to neon as if the cube has noticed the incinerator. The cake is a lie but this style is real.',
     config: {
       name: 'CompanionCube',
       baseColor: { r: 180, g: 180, b: 190 },
@@ -640,7 +640,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'Aqua diamond crystal shatter pattern. Blocky, chunky, satisfying. Blast sparkles like dropped XP.',
+    description: 'Diamond-ore aqua broken into chunky crystalShatter segments so each LED reads as one voxel — a pickaxe-and-block-world blade rendered in 2010 nostalgia palette. Scroll ignition fills the blade column by column like a chunk loading in; shatter retraction breaks it apart into bright green particle drops on blast. Satisfying in a way that does not require explanation.',
     config: {
       name: 'PixelMiner',
       baseColor: { r: 0, g: 200, b: 200 },
@@ -986,7 +986,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'base',
     continuity: 'creative',
-    description: 'Maximum prismatic refraction — a blade of pure light split into every color, spinning wildly.',
+    description: 'Twelve prism facets rotate three times faster than the eye expects, splitting a cyan core into a full-spectrum smear that never sits still. Glitch ignition pops it into existence one shard at a time; shatter retraction tosses the spectrum apart like a kaleidoscope dropped on tile. Built for the wielder who wants every color at once and refuses to choose.',
     config: {
       name: 'QuantumFlux',
       baseColor: { r: 0, g: 200, b: 220 },
@@ -1012,7 +1012,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     continuity: 'creative',
-    description: 'Chaotic plasma energy from a dying star. Deep purple arcs crackle unpredictably.',
+    description: 'Where creative-nebula sweeps soft cosmic clouds, the Core punches harder — deep purple plasma at 2.5x frequency snaps and flares like the volatile heart of a dying star instead of its outer veil. Spark ignition lights a single hotspot that propagates outward; clash flashes lavender; fadeout retraction lets the plasma collapse inward. Less meditation, more catastrophe.',
     config: {
       name: 'NebulaCore',
       baseColor: { r: 100, g: 30, b: 180 },
@@ -1038,7 +1038,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'base',
     continuity: 'creative',
-    description: 'An ethereal blade that flickers in and out of existence, like a transmission from another dimension.',
+    description: 'Pale phosphor green that holds steady, then drops out for a frame, then resumes — a photon style at low shimmer reading like a transmission almost-locked from another dimension. Glitch ignition stutters the blade into being one segment at a time, clash whites the whole thing out as if the carrier reasserts itself, and fadeout retraction lets the signal slip back into static. Tune the antenna; something is trying to talk.',
     config: {
       name: 'GhostSignal',
       baseColor: { r: 120, g: 220, b: 160 },
@@ -1062,7 +1062,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     continuity: 'creative',
-    description: 'A blade that could explode at any moment. Maximum fire intensity — blindingly hot orange-yellow.',
+    description: 'Fire style at maximum heatSpread, sparkRate near saturation, painted in the same incandescent orange-yellow as a class-A detonator about to cook off. Spark ignition snaps it to life in 200ms; shatter retraction at 250ms feels less like turning off a saber and more like throwing the device before the timer hits zero. Hold this blade like it owes you an apology.',
     config: {
       name: 'ThermalDetonator',
       baseColor: { r: 255, g: 180, b: 30 },
@@ -1089,7 +1089,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     continuity: 'creative',
-    description: 'Deep ocean energy captured in blade form. Slow, mesmerizing aurora waves in deep blue-teal.',
+    description: 'Where creative-tidal-force rolls a single cresting wavefront with motion, Tidal Wave is the ambient cousin — seven slow aurora bands of deep blue-teal drifting end-to-end on a 0.8x rotation, with no swing required. Scroll ignition fills the blade like the tide coming in; fadeout retraction is the long, hypnotic outwash. The blade you light when you do not actually want to fight anyone.',
     config: {
       name: 'TidalWave',
       baseColor: { r: 10, g: 60, b: 180 },
@@ -1115,7 +1115,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'detailed',
     continuity: 'creative',
-    description: 'A deep crimson blade that pulses like a heartbeat — slow, rhythmic, almost alive.',
+    description: 'Deep arterial crimson at 0.6 pulseSpeed dipping to 10% brightness on each beat — a blade that breathes. Drip-up ignition fills the channel like blood pressuring into a chamber; clash spikes to bright pink as if the rhythm just skipped; fadeout retraction is the long flatline. Sit with it long enough and you will hear it.',
     config: {
       name: 'Heartbeat',
       baseColor: { r: 180, g: 10, b: 20 },
@@ -1141,7 +1141,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     continuity: 'creative',
-    description: 'A pure white blade that fractures into crystalline segments, each twinkling like distant stars.',
+    description: 'Cool white crystalShatter segments scintillate independently along the blade, each LED twinkling at its own random phase like a deep-field exposure of the Milky Way held in your hand. Wipe ignition draws the sky in one clean sweep from emitter to tip; shatter retraction lets the stars scatter back into the dark. Looks like you brought a planetarium to a duel.',
     config: {
       name: 'Starfield',
       baseColor: { r: 220, g: 230, b: 255 },
@@ -1165,7 +1165,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'base',
     continuity: 'creative',
-    description: 'Dying ember blade — dark with glowing hot spots that shift like molten magma.',
+    description: 'Cinder style on a dark red-orange base, with brighter molten hotspots wandering up and down the blade like flow lines crawling across a cooling lava sheet. Stutter ignition catches in fits, the way a furnace fights to relight; fadeout retraction dims it to charcoal embers. Quieter cousin to creative-magma-core: less eruption, more slow burn.',
     config: {
       name: 'MoltenCore',
       baseColor: { r: 200, g: 60, b: 10 },
@@ -1189,7 +1189,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'neutral',
     tier: 'base',
     continuity: 'creative',
-    description: 'Old-school green phosphor display effect — the original rotoscope look from 1977, cranked up.',
+    description: 'P1-phosphor green at saturation 100% running through the rotoscope style, so the blade ripples with that 1977-cathode-ray scanline jitter Lucasfilm hand-painted frame-by-frame. Scroll ignition is the screen warming up to operating voltage; scroll retraction collapses it to a horizontal line and then a single decaying dot. The original lightsaber look, cranked up.',
     config: {
       name: 'RetroCRT',
       baseColor: { r: 30, g: 255, b: 50 },
