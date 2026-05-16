@@ -1,0 +1,409 @@
+{
+  "schemaVersion": 1,
+  "description": "Pre-cardConfigs era saber profiles (Phase 3 → pre-Phase 7). Profiles in this shape stored their preset list as a flat `presetEntries[]` array with a sibling `fontAssignments` map. There were NO `cardConfigs`, NO `activeCardConfigId`, NO `description`, and (in the earliest builds) NO `notes`. Loading any of these profiles must run through `migrateProfile()` which: (a) folds `presetEntries` into a single auto-generated `cardConfigs[0]` named 'Default', (b) sets `activeCardConfigId` to that new card config's id, and (c) default-fills `notes` + `description` to ''. The new card config + entry IDs are generated via `crypto.randomUUID()`, so the test harness mocks that to produce deterministic 'uuid-1', 'uuid-2', ... values. UUID call order in migrateProfile: each entry's id (in presetEntries order) first, THEN the card config's id last. So for N preset entries, entries get uuid-1..uuid-N and the card config gets uuid-(N+1). For empty presetEntries, the card config alone gets uuid-1. If a fixture starts failing, the migration path has drifted — either the migration logic changed or a new required field was added without a default in the migration.",
+  "fixtures": [
+    {
+      "name": "empty-legacy-profile",
+      "description": "The minimum-viable v1 shape: a freshly-created profile with no presets, no notes, no description. Migration must produce a profile with cardConfigs=[{Default}] and notes/description defaulted to ''. UUID order: cardConfig alone = uuid-1 (no entries consume earlier UUIDs).",
+      "input": {
+        "id": "profile-empty",
+        "name": "Empty Saber",
+        "chassisType": "",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "createdAt": "2026-01-15T10:00:00.000Z",
+        "updatedAt": "2026-01-15T10:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-empty",
+        "name": "Empty Saber",
+        "chassisType": "",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "uuid-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-01-15T10:00:00.000Z",
+            "updatedAt": "2026-01-15T10:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "uuid-1",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-01-15T10:00:00.000Z",
+        "updatedAt": "2026-01-15T10:00:00.000Z"
+      }
+    },
+    {
+      "name": "single-preset-entry-with-source-id",
+      "description": "A v1 profile with one preset entry from the built-in library. The legacy `sourcePresetId` flag means the resulting card entry source must be `{type:'builtin',presetId:...}` rather than `{type:'inline'}`. The user's color customizations on the embedded BladeConfig must survive the migration unmodified. UUID order: entry id = uuid-1, cardConfig id = uuid-2.",
+      "input": {
+        "id": "profile-obi",
+        "name": "Obi-Wan ANH",
+        "chassisType": "Graflex",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [
+          {
+            "id": "entry-obi-1",
+            "presetName": "Obi-Wan ANH",
+            "fontName": "obiwan_anh",
+            "sourcePresetId": "obiwan-anh-canonical",
+            "config": {
+              "name": "Obi-Wan ANH",
+              "baseColor": { "r": 0, "g": 140, "b": 255 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0.1,
+              "ledCount": 144
+            }
+          }
+        ],
+        "fontAssignments": { "entry-obi-1": "obiwan_anh" },
+        "createdAt": "2026-02-01T12:00:00.000Z",
+        "updatedAt": "2026-02-01T12:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-obi",
+        "name": "Obi-Wan ANH",
+        "chassisType": "Graflex",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [
+          {
+            "id": "entry-obi-1",
+            "presetName": "Obi-Wan ANH",
+            "fontName": "obiwan_anh",
+            "sourcePresetId": "obiwan-anh-canonical",
+            "config": {
+              "name": "Obi-Wan ANH",
+              "baseColor": { "r": 0, "g": 140, "b": 255 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0.1,
+              "ledCount": 144
+            }
+          }
+        ],
+        "fontAssignments": { "entry-obi-1": "obiwan_anh" },
+        "cardConfigs": [
+          {
+            "id": "uuid-2",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "uuid-1",
+                "order": 0,
+                "presetName": "Obi-Wan ANH",
+                "fontName": "obiwan_anh",
+                "source": { "type": "builtin", "presetId": "obiwan-anh-canonical" },
+                "config": {
+                  "name": "Obi-Wan ANH",
+                  "baseColor": { "r": 0, "g": 140, "b": 255 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 300,
+                  "retractionMs": 800,
+                  "shimmer": 0.1,
+                  "ledCount": 144
+                },
+                "fontAssociation": "obiwan_anh"
+              }
+            ],
+            "createdAt": "2026-02-01T12:00:00.000Z",
+            "updatedAt": "2026-02-01T12:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "uuid-2",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-02-01T12:00:00.000Z",
+        "updatedAt": "2026-02-01T12:00:00.000Z"
+      }
+    },
+    {
+      "name": "multi-preset-inline-no-source",
+      "description": "Two preset entries WITHOUT `sourcePresetId` — these were authored from scratch in the workbench rather than copied from the built-in library. Each entry must become an inline-source card entry. Order must be preserved (entry index → cardEntry.order). UUID order: entry-1 = uuid-1, entry-2 = uuid-2, cardConfig = uuid-3.",
+      "input": {
+        "id": "profile-revan",
+        "name": "Revan Twin Set",
+        "chassisType": "Custom",
+        "boardType": "Proffie V3",
+        "cardSize": "32GB",
+        "presetEntries": [
+          {
+            "id": "entry-revan-1",
+            "presetName": "Revan Red",
+            "fontName": "revan_red",
+            "config": {
+              "name": "Revan Red",
+              "baseColor": { "r": 255, "g": 30, "b": 20 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "unstable",
+              "ignition": "spark",
+              "retraction": "standard",
+              "ignitionMs": 350,
+              "retractionMs": 750,
+              "shimmer": 0.25,
+              "ledCount": 144
+            }
+          },
+          {
+            "id": "entry-revan-2",
+            "presetName": "Revan Purple",
+            "fontName": "revan_purple",
+            "config": {
+              "name": "Revan Purple",
+              "baseColor": { "r": 160, "g": 50, "b": 220 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0.1,
+              "ledCount": 144
+            }
+          }
+        ],
+        "fontAssignments": {},
+        "createdAt": "2026-02-10T09:30:00.000Z",
+        "updatedAt": "2026-02-10T09:30:00.000Z"
+      },
+      "expected": {
+        "id": "profile-revan",
+        "name": "Revan Twin Set",
+        "chassisType": "Custom",
+        "boardType": "Proffie V3",
+        "cardSize": "32GB",
+        "presetEntries": [
+          {
+            "id": "entry-revan-1",
+            "presetName": "Revan Red",
+            "fontName": "revan_red",
+            "config": {
+              "name": "Revan Red",
+              "baseColor": { "r": 255, "g": 30, "b": 20 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "unstable",
+              "ignition": "spark",
+              "retraction": "standard",
+              "ignitionMs": 350,
+              "retractionMs": 750,
+              "shimmer": 0.25,
+              "ledCount": 144
+            }
+          },
+          {
+            "id": "entry-revan-2",
+            "presetName": "Revan Purple",
+            "fontName": "revan_purple",
+            "config": {
+              "name": "Revan Purple",
+              "baseColor": { "r": 160, "g": 50, "b": 220 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0.1,
+              "ledCount": 144
+            }
+          }
+        ],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "uuid-3",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "uuid-1",
+                "order": 0,
+                "presetName": "Revan Red",
+                "fontName": "revan_red",
+                "source": { "type": "inline" },
+                "config": {
+                  "name": "Revan Red",
+                  "baseColor": { "r": 255, "g": 30, "b": 20 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "unstable",
+                  "ignition": "spark",
+                  "retraction": "standard",
+                  "ignitionMs": 350,
+                  "retractionMs": 750,
+                  "shimmer": 0.25,
+                  "ledCount": 144
+                }
+              },
+              {
+                "id": "uuid-2",
+                "order": 1,
+                "presetName": "Revan Purple",
+                "fontName": "revan_purple",
+                "source": { "type": "inline" },
+                "config": {
+                  "name": "Revan Purple",
+                  "baseColor": { "r": 160, "g": 50, "b": 220 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 300,
+                  "retractionMs": 800,
+                  "shimmer": 0.1,
+                  "ledCount": 144
+                }
+              }
+            ],
+            "createdAt": "2026-02-10T09:30:00.000Z",
+            "updatedAt": "2026-02-10T09:30:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "uuid-3",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-02-10T09:30:00.000Z",
+        "updatedAt": "2026-02-10T09:30:00.000Z"
+      }
+    },
+    {
+      "name": "font-assignments-fallback",
+      "description": "Entry with empty `fontName` but a matching key in `fontAssignments` — the migration must pull the font name from `fontAssignments[entry.id]` and also set `fontAssociation` to that value. Older builds split the font reference across two locations; the migration unifies them. UUID order: entry = uuid-1, cardConfig = uuid-2.",
+      "input": {
+        "id": "profile-yoda",
+        "name": "Yoda",
+        "chassisType": "Custom Tiny",
+        "boardType": "Proffie V3",
+        "cardSize": "8GB",
+        "presetEntries": [
+          {
+            "id": "entry-yoda-1",
+            "presetName": "Yoda",
+            "fontName": "",
+            "sourcePresetId": "yoda-canonical",
+            "config": {
+              "name": "Yoda",
+              "baseColor": { "r": 0, "g": 200, "b": 100 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 250,
+              "retractionMs": 600,
+              "shimmer": 0.08,
+              "ledCount": 64
+            }
+          }
+        ],
+        "fontAssignments": { "entry-yoda-1": "yoda_voice" },
+        "createdAt": "2026-03-01T08:00:00.000Z",
+        "updatedAt": "2026-03-01T08:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-yoda",
+        "name": "Yoda",
+        "chassisType": "Custom Tiny",
+        "boardType": "Proffie V3",
+        "cardSize": "8GB",
+        "presetEntries": [
+          {
+            "id": "entry-yoda-1",
+            "presetName": "Yoda",
+            "fontName": "",
+            "sourcePresetId": "yoda-canonical",
+            "config": {
+              "name": "Yoda",
+              "baseColor": { "r": 0, "g": 200, "b": 100 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 200, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 250,
+              "retractionMs": 600,
+              "shimmer": 0.08,
+              "ledCount": 64
+            }
+          }
+        ],
+        "fontAssignments": { "entry-yoda-1": "yoda_voice" },
+        "cardConfigs": [
+          {
+            "id": "uuid-2",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "uuid-1",
+                "order": 0,
+                "presetName": "Yoda",
+                "fontName": "yoda_voice",
+                "source": { "type": "builtin", "presetId": "yoda-canonical" },
+                "config": {
+                  "name": "Yoda",
+                  "baseColor": { "r": 0, "g": 200, "b": 100 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 250,
+                  "retractionMs": 600,
+                  "shimmer": 0.08,
+                  "ledCount": 64
+                },
+                "fontAssociation": "yoda_voice"
+              }
+            ],
+            "createdAt": "2026-03-01T08:00:00.000Z",
+            "updatedAt": "2026-03-01T08:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "uuid-2",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-03-01T08:00:00.000Z",
+        "updatedAt": "2026-03-01T08:00:00.000Z"
+      }
+    }
+  ]
+}
