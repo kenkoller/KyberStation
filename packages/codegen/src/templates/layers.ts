@@ -106,9 +106,19 @@ export const layerTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'ResponsiveLightningBlockL',
     {
+      // Per ProffieOS styles/responsive_styles.h:71:
+      //   template<class COLOR, class TR1 = TrInstant, class TR2 = TrInstant,
+      //            class CONDITION = Int<1>>
+      //   using ResponsiveLightningBlockL = LockupTrL<...>;
+      // Documented as ResponsiveLightningBlockL<COLOR, TR1, TR2>; the 4th
+      // CONDITION arg defaults to Int<1> and is rarely user-supplied.
+      // Registering as 3 args (the documented signature) matches the
+      // dominant Fett263 OS6/OS7 emission pattern. The previous 1-arg
+      // registration ['COLOR'] caused arg-count warnings on the common
+      // 3-arg form (8 fixtures in tests/fixtures/fett263-imports affected).
       name: 'ResponsiveLightningBlockL',
-      argTypes: ['COLOR'],
-      description: 'Force-Lightning block layer with begin/end transitions and condition',
+      argTypes: ['COLOR', 'TRANSITION', 'TRANSITION'],
+      description: 'Force-Lightning block layer with begin/end transitions and optional condition.',
     },
   ],
   [
@@ -193,9 +203,15 @@ export const layerTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'TransitionLoopL',
     {
+      // Per ProffieOS styles/transition_loop.h:
+      //   template<class TRANSITION>
+      //   class TransitionLoopL { ... };
+      // Documented as TransitionLoopL<TRANSITION> — 1 arg, not 2.
+      // The non-L sister `TransitionLoop<COLOR, TRANSITION>` (2 args) is
+      // a separate template; that registration is correct and unchanged.
       name: 'TransitionLoopL',
-      argTypes: ['COLOR', 'TRANSITION'],
-      description: 'Looping transition layer (overlay form)',
+      argTypes: ['TRANSITION'],
+      description: 'Looping transition layer (overlay form) — runs the transition continuously.',
     },
   ],
   [
@@ -209,9 +225,15 @@ export const layerTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'TransitionPulseL',
     {
+      // Per ProffieOS styles/transition_pulse.h:
+      //   template<class TRANSITION, class PULSE>
+      //   class TransitionPulseL { ... };
+      // Documented as TransitionPulseL<TRANSITION, PULSE> — 2 args, not 3.
+      // The previous 3-arg registration ['COLOR', 'TRANSITION', 'FUNCTION']
+      // was a registry transcription bug surfaced by PR #328 fixtures.
       name: 'TransitionPulseL',
-      argTypes: ['COLOR', 'TRANSITION', 'FUNCTION'],
-      description: 'Pulsing transition layer driven by a Trigger<> function',
+      argTypes: ['TRANSITION', 'FUNCTION'],
+      description: 'Pulsing transition layer driven by a Trigger<> function (transition + pulse function).',
     },
   ],
   [
@@ -302,11 +324,17 @@ export const layerTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'TransitionLoopWhileL',
     {
-      // Per ProffieOS transition_loop.h:
-      //   TransitionLoopWhileL<LOOP_TRANSITION, END_TRANSITION, CONDITION>
+      // KyberStation Fett263 stylebrary helper — not a stock ProffieOS template.
+      // Per packages/template-eval/src/templates/wrappers.ts:887:
+      //   TransitionLoopWhileLTemplate constructor takes:
+      //     args[0] = transition
+      //     args[1] = condition (function returning 0..PROFFIE_MAX)
+      // Signature: TransitionLoopWhileL<TRANSITION, CONDITION_F> — 2 args.
+      // The previous 3-arg comment incorrectly cited "ProffieOS transition_loop.h"
+      // which only defines TransitionLoopL<TRANSITION> (1 arg).
       name: 'TransitionLoopWhileL',
-      argTypes: ['TRANSITION', 'TRANSITION', 'FUNCTION'],
-      description: 'Loop a transition while a condition is true; END_TRANSITION runs when condition flips',
+      argTypes: ['TRANSITION', 'FUNCTION'],
+      description: 'Loop a transition while a condition function is non-zero (pauses when condition returns 0).',
     },
   ],
   [

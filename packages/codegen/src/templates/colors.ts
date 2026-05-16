@@ -246,9 +246,16 @@ export const colorTemplates: Map<string, TemplateDefinition> = new Map([
   [
     'Pixelate',
     {
+      // Sister-form of PixelateX with constant-int size. Follows the
+      // PulsingL → PulsingX → Pulsing 3-form family pattern:
+      //   PixelateX<F, COLOR1, COLOR2>     — function-driven size (3 args)
+      //   Pixelate<COLOR1, COLOR2, INT>     — constant-int size (3 args)
+      // The previous 2-arg registration ['COLOR', 'INTEGER'] was inconsistent
+      // with the matching PixelateXTemplate impl (3 args: size, color1, color2).
+      // Surfaced by PR #328 audit.
       name: 'Pixelate',
-      argTypes: ['COLOR', 'INTEGER'],
-      description: 'Pixelated mosaic between two colors with constant N (sister of PixelateX)',
+      argTypes: ['COLOR', 'COLOR', 'INTEGER'],
+      description: 'Pixelated mosaic between two colors with constant size N (sister of PixelateX).',
     },
   ],
   [
