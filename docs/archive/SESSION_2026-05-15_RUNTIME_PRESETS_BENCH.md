@@ -109,6 +109,40 @@ Result: **still dim**, same as `advanced`. Confirmed above — `standard`'s Audi
 
 After the on-bench A/B tests, the saber was reduced to exactly 2 presets (Vader factory at position 0, Cal Kestis Phase C at position 1) and the chassis was installed into the hilt with the blade attached for a real-world side-by-side test. User confirmed: **Cal Kestis (Phase C) is still very dim compared to Vader (factory)** under proper full-power hilt-mounted conditions. The brightness gap is not a bench artifact, not a battery sag effect, not a result of partial LED current — it is the structural limitation of the parser-verb template path.
 
+### Day 2 (2026-05-16) — `cycle` verb exhaustive test, conclusive parser-verb gap
+
+Hypothesis: ProffieOS's `cycle` named verb has `AudioFlicker<>` as its top Layer (verified from `style_parser.h:88-96`) — unlike `advanced` and `standard` — so it should produce factory-equivalent brightness if used with correct slot ordering.
+
+Test matrix (loaded via `scripts/hardware-test/load-runtime-presets.sh` + `simplify-to-cycle-test.sh`):
+
+| Pos | Name | Style | Verdict |
+|---|---|---|---|
+| 0 | Vader (factory) | `builtin 1 1/2` | **Bright reference** |
+| — | — | first cycle test, original slot order | dim |
+| — | — | first cycle test, white-flicker variant | dim |
+| 1 | T01 Cycle Mag | `cycle 235,18,142 245,136,198 235,18,142 250,208,174 125,86,215` (corrected slot order: slot 2 = bright-mix, slot 3 = magenta) | **dim** |
+| 2 | T02 Cycle Red | `cycle 255,0,0 255,128,128 255,0,0 255,255,255 255,255,0` (chromatic isolation: RED, not magenta, with corrected slot order) | **dim** |
+| — | T05 Magenta fire | `fire 235,18,142 255,100,200` | dim base, bright clashes |
+| — | T06 Warm unstable | `unstable 150,0,0 ...` | dim base, bright clashes |
+| — | T07 Magenta strobe | `strobe ...` | dim base, bright flashes |
+| — | T08 Rainbow | `rainbow 200 800` | **BRIGHT** — matches Vader |
+
+**Empirical conclusions:**
+
+1. **Every parser-registered named verb in this firmware renders dimmer than `builtin N M`, except `rainbow`.** Tested: `standard`, `advanced`, `cycle` (both slot orderings), `fire`, `unstable`, `strobe`. All dim at idle hum. Only `rainbow` matches factory brightness — and it renders full-saturation rotating colors, not a chosen base color.
+
+2. **Chromatic factor ruled out.** RED (255,0,0) via `cycle` is also dim. Same red is bright via factory `builtin 1 1` (Vader). So the chromatic LED response is fine; the template path is the issue.
+
+3. **AudioFlicker top-layer presence in `cycle` is insufficient.** The `cycle` template has `Layers<AudioFlicker<slot3, slot2>, BlastL, LockupL, SimpleClashL>` as the inner layer of `ColorCycle<...>`. Even with corrected slot ordering so the brightened color is in the appropriate "loud audio" position, the rendered blade is dim.
+
+4. **The brightness gap is fundamental to the parser-verb path.** No combination of arguments to any existing parser-registered verb produces factory brightness. This is not fixable by changing how KyberStation emits style strings — the verbs themselves don't support what we need.
+
+### What this means
+
+**Phase C runtime presets cannot achieve factory brightness in this firmware, period.** The deliverability table's "partial / lossy" status for Phase C colors needs to be honest: colors transfer correctly but at visibly reduced brightness with no software-side fix possible against the current ProffieOS named-verb registry.
+
+The proper fix is an upstream contribution to ProffieOS — a new named verb (proposal: `vibrant`) with always-on AudioFlicker brightening as the top Layer, matching the canonical compile-time factory pattern. This is the work item this session pivoted toward at end-of-day 2026-05-16.
+
 ### Implications
 
 The "design preset in KyberStation → put it on saber via runtime preset" workflow can transfer:
