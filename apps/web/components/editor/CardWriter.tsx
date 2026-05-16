@@ -24,6 +24,12 @@ import {
 } from '@/lib/cardDetector';
 import { readExistingInstallTime } from '@/lib/runtimePresetIO';
 import {
+  listAvailableFonts,
+  findMissingFontReferences,
+  type FontReference,
+} from '@/lib/soundFontValidation';
+import { useSoundFontWarningStore } from '@/stores/soundFontWarningStore';
+import {
   getDeliverability,
   customizedKnobs,
   humanizeKnob,
@@ -432,6 +438,39 @@ export function CardWriter() {
       setPhase('idle');
       addStatus({ type: 'info', text: 'Directory selection cancelled.' });
       return;
+    }
+
+    // Step 1.5: Sound-font pre-flash validation. Catches the silent-
+    // failure mode where a preset references a font folder that isn't
+    // on the card — ProffieOS would activate to the default font with
+    // no surfaced error. See `docs/research/EMIT_PARSER_AUDIT.md` § I.
+    try {
+      const availableFonts = await listAvailableFonts(dirHandle);
+      const fontRefs: FontReference[] = presets
+        .filter((p) => typeof p.fontName === 'string' && p.fontName!.trim().length > 0)
+        .map((p) => ({ presetName: p.name, fontName: p.fontName as string }));
+      const missing = findMissingFontReferences(fontRefs, availableFonts);
+      if (missing.length > 0) {
+        const proceed = await useSoundFontWarningStore
+          .getState()
+          .request(missing, availableFonts);
+        if (!proceed) {
+          setPhase('idle');
+          addStatus({
+            type: 'info',
+            text: 'Write cancelled — add missing font folders to the card and try again.',
+          });
+          return;
+        }
+        addStatus({
+          type: 'warning',
+          text: `Proceeding despite ${missing.length} missing font folder(s). Copy them to the card before booting the saber.`,
+        });
+      }
+    } catch {
+      // listAvailableFonts can fail on permission edge-cases — fall
+      // through rather than block the write. Detect step below will
+      // surface the issue if the directory is unreadable.
     }
 
     // Step 2: Detect existing board
@@ -1592,7 +1631,15 @@ function DeliverabilityPanel({ presets, boardId, runtimeUseAdvancedVerb }: Deliv
         )}
 
         <p className="text-ui-xs text-text-muted pt-1 border-t border-border-subtle">
-          Hover any chip to see why. {aggregated.summary}
+          Hover any chip to see why. {aggregated.summary}{' '}
+          <a
+            href="https://github.com/kenkoller/KyberStation/blob/main/docs/research/EMIT_PARSER_AUDIT.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-text-muted hover:text-text-secondary"
+          >
+            Encoding-contracts audit ↗
+          </a>
         </p>
       </div>
     </div>
