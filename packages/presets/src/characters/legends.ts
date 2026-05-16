@@ -1799,7 +1799,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Arcann',
     era: 'expanded-universe',
     continuity: 'legends',
-    affiliation: 'neutral',
+    affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: false,
     description:
@@ -1956,7 +1956,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     character: 'Thexan',
     era: 'expanded-universe',
     continuity: 'legends',
-    affiliation: 'neutral',
+    affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: false,
     description:
