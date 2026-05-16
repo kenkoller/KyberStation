@@ -583,8 +583,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     },
   },
   {
-    id: 'eu-elzar-mann-purple',
-    name: 'Elzar Mann',
+    id: 'eu-elzar-mann-blue',
+    name: 'Elzar Mann (Blue)',
     character: 'Elzar Mann',
     era: 'expanded-universe',
     affiliation: 'jedi',
