@@ -17,6 +17,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Cracked kyber crystal producing an unstable, flickering blade with a slightly orange-red tint. The crossguard vents excess energy through lateral quillons.',
     hiltNotes:
@@ -57,6 +58,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Anakin\'s original Graflex, called to Rey on Takodana. Bright blue blade faithful to the cooler color grading of the sequel trilogy.',
     hiltNotes:
@@ -89,6 +91,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Rey\'s self-built saber revealed at the end of TROS. A warm gold-yellow blade — the color of the Jedi Sentinel tradition — symbolizing a new beginning.',
     hiltNotes:
@@ -122,6 +125,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Last Jedi — Luke\'s green saber from the Crait Force projection and the flashback at Ben Solo\'s hut. Same ROTJ blade color, rendered with sequel-era lighting.',
     hiltNotes:
@@ -152,6 +156,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Leia\'s saber as wielded by Rey on Ajan Kloss and Exegol. A deep royal blue, slightly more saturated than the Skywalker saber.',
     hiltNotes:
@@ -182,6 +187,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Ben Solo redeemed — wielding the Skywalker saber on Exegol after turning back to the light. Same blue blade as Rey\'s Skywalker saber, representing his return to the Jedi legacy.',
     hiltNotes:
@@ -212,6 +218,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: false,
+    author: 'on-screen',
     description:
       'The resurrected Emperor on Exegol. Palpatine never ignites a saber on-screen in TROS — this is a Legends-era / speculative-canon interpretation based on supplementary material, showing a deep blood-red blade befitting the Sith Eternal.',
     hiltNotes:
@@ -245,6 +252,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'jedi',
     tier: 'base',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Finn wielding the Skywalker saber against Kylo Ren on Starkiller Base. The same blue blade, but Finn\'s untrained swings give the ignition a slightly desperate quality.',
     hiltNotes: 'Graflex / Skywalker saber, first wielded by Finn before Rey claims it.',
@@ -274,6 +282,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'The Praetorian Guard\'s vibro-blade weapons glow with a fierce crimson. Not lightsabers, but high-powered energy weapons with a similar visual intensity.',
     hiltNotes: 'Various weapon forms: dual blades, chain whip, pole-arm. All with red energy edges.',
@@ -305,6 +314,7 @@ export const SEQUEL_ERA_PRESETS: Preset[] = [
     affiliation: 'sith',
     tier: 'detailed',
     screenAccurate: true,
+    author: 'on-screen',
     description:
       'Dark Rey from the TROS Force vision on Kef Bir. A hinged double-bladed red lightsaber with an aggressive, menacing presence.',
     hiltNotes: 'Hinged double-bladed hilt that unfolds from a single grip, similar to her yellow saber design but corrupted.',
