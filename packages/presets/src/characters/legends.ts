@@ -10,6 +10,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'neutral',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Revan\'s iconic purple lightsaber. The blade of the Prodigal Knight straddles light and dark — a deep, regal violet that has become one of the most recognized sabers in all of Star Wars.',
     hiltNotes: 'Distinctive hilt with angled emitter shroud, often paired with his Mandalorian mask.',
@@ -40,6 +41,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Revan as Sith Lord during the Jedi Civil War. A deep, commanding crimson blade wielded by the Dark Lord before his redemption.',
     hiltNotes: 'Same distinctive hilt, now with a bled kyber crystal.',
@@ -70,6 +72,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Bastila Shan\'s golden yellow double-bladed lightsaber. The warm, radiant blade of the Jedi Sentinel who wielded Battle Meditation.',
     hiltNotes: 'Long double-bladed hilt, saberstaff configuration.',
@@ -100,6 +103,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The Lord of Hunger\'s red lightsaber. A deep, consuming crimson that seems to devour the light around it, mirroring Nihilus\'s insatiable hunger through the Force. Cracked-crystal lore from KOTOR II justifies the unstable shimmer — his blade drinks the life around it.',
     hiltNotes: 'Standard Sith hilt, though Nihilus rarely relied on his saber over his devastating Force drain.',
@@ -132,6 +136,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The Lord of Pain\'s red lightsaber. A harsh, angry crimson — cracked and raw like Sion\'s own shattered body held together by sheer rage.',
     config: {
@@ -163,6 +168,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Darth Malak\'s red lightsaber. A bold, domineering scarlet wielded by Revan\'s fallen apprentice and the Dark Lord of the Sith during the Jedi Civil War.',
     hiltNotes: 'Large hilt matching Malak\'s imposing stature.',
@@ -193,6 +199,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'The Jedi Exile\'s cyan lightsaber. A tranquil, piercing icy-blue blade rebuilt after the Mandalorian Wars. Color is configurable in-game — cyan is the canonical default.',
     hiltNotes: 'Rebuilt hilt after years without a lightsaber following Malachor V.',
@@ -222,6 +229,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Starkiller\'s blue lightsaber after turning to the light. A brilliant cobalt blade wielded with raw, unbridled power by Vader\'s secret apprentice turned rebel hero.',
     hiltNotes: 'Compact hilt with reverse grip. Kento Marek\'s original lightsaber.',
@@ -253,6 +261,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Starkiller\'s red lightsabers from the dark-side path. Dual-wielded crimson blades burning with unchecked fury — the canonical unstable blade of Force Unleashed, cracked-crystal dark-side corruption made visible.',
     hiltNotes: 'Dual reverse-grip hilts for the Sith Stalker armor configuration.',
@@ -285,6 +294,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Mara Jade\'s purple lightsaber. The Emperor\'s Hand turned Jedi Master and wife of Luke Skywalker. A magenta-tinged violet reflecting her complex journey.',
     hiltNotes: 'Sleek, functional hilt. Later used Luke\'s spare blue saber as well.',
@@ -315,6 +325,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Kyle Katarn\'s blue lightsaber from the Dark Forces / Jedi Knight games — his most canonically recognized blade (Jedi Outcast, Jedi Academy). The dependable cobalt blade of the mercenary-turned-Jedi Battlemaster.',
     hiltNotes: 'Rahn\'s lightsaber, passed to Kyle. Simple, rugged design befitting a soldier.',
@@ -344,6 +355,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Kyle Katarn\'s later green lightsaber from Legacy-era appearances. A dependable emerald blade wielded by the Jedi Battlemaster of the New Jedi Order.',
     hiltNotes: 'Rahn\'s lightsaber, passed to Kyle. Simple, rugged design befitting a soldier.',
@@ -373,6 +385,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Jaina Solo\'s purple lightsaber. The Sword of the Jedi — daughter of Han and Leia, twin of Jacen, ace pilot, and the one who brought down Darth Caedus.',
     config: {
@@ -401,6 +414,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Jacen Solo\'s blue lightsaber from his Jedi years. The son of Han and Leia, twin of Jaina, wielded this cerulean blade through the New Jedi Order era before his tragic descent into Darth Caedus.',
     hiltNotes: 'Standard Jedi hilt, plain and functional.',
@@ -430,6 +444,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Darth Caedus\'s red lightsaber. Once Jacen Solo with a blue blade, now the Sith Lord whose fall echoes Anakin\'s — a deep arterial red reflecting his tragic descent.',
     config: {
@@ -458,6 +473,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Corran Horn\'s distinctive silver-white lightsaber, unique among Jedi. Built from a speeder bike throttle with a dual-phase mechanism.',
     hiltNotes: 'Constructed from a speeder bike throttle. Dual-phase: standard and extended reach.',
@@ -488,6 +504,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Exar Kun\'s blue lightsaber from his Jedi apprenticeship under Vodo-Siosk Baas. A vivid azure blade — wielded before his descent into Sith lore and the Great Sith War.',
     hiltNotes: 'Standard Jedi hilt, before its later modification into the first known double-bladed saber.',
@@ -518,6 +535,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Exar Kun\'s red double-bladed lightsaber as Dark Lord of the Sith — the first known saberstaff in canon. A vivid, sinister crimson wielded by the Sith who nearly destroyed the Jedi 4,000 years before Yavin in the Great Sith War.',
     hiltNotes: 'The original double-bladed lightsaber design, modified from a standard Jedi hilt using Sith knowledge.',
@@ -548,6 +566,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Nomi Sunrider\'s green lightsaber. Grand Master of the Jedi Order during the Great Sith War, her verdant blade symbolizes her reluctant but powerful rise to leadership.',
     config: {
@@ -576,6 +595,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Ulic Qel-Droma\'s blue lightsaber. The tragic Jedi Knight who fell to the dark side as Exar Kun\'s Sith apprentice before redeeming himself.',
     config: {
@@ -604,6 +624,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Ulic Qel-Droma\'s red lightsaber during his tenure as Exar Kun\'s Sith apprentice. A deep, mournful crimson wielded before his redemption — the tragic weapon of the Fallen Jedi.',
     config: {
@@ -632,6 +653,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Darth Bane\'s red lightsaber. The creator of the Rule of Two — a deep, menacing crimson blade wielded by the Sith who reshaped the dark side forever.',
     hiltNotes: 'Curved hilt design. Bane later encased himself in orbalisks that served as living armor.',
@@ -662,6 +684,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Darth Plagueis\'s red lightsaber. The Wise — Sidious\'s master who could manipulate midi-chlorians to create life. The slow pulse evokes the life-giving, life-taking rhythm of his forbidden art.',
     hiltNotes: 'Elegant Muun-proportioned hilt.',
@@ -695,6 +718,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Darth Talon\'s red lightsaber. The Twi\'lek Sith Lady from the Legacy era — a fierce, vivid scarlet blade matching her striking tattooed appearance.',
     config: {
@@ -723,6 +747,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Darth Krayt\'s red lightsaber. Once A\'Sharad Hett the Tusken Jedi, now the founder of the One Sith.',
     hiltNotes: 'Dual lightsabers, coral-encrusted Yuuzhan Vong-influenced hilts.',
@@ -753,6 +778,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Cade Skywalker\'s blue lightsaber. The reluctant Legacy-era descendant of Luke Skywalker — a rough-edged blue blade.',
     config: {
@@ -781,6 +807,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Maris Brood\'s red tonfa-style lightsabers. Unique guard shoto configuration — the Zabrak Padawan fell to the dark side on Felucia.',
     hiltNotes: 'Paired tonfa-grip lightsabers with perpendicular handles.',
@@ -810,6 +837,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'General Rahm Kota\'s green lightsaber. The grizzled Clone Wars veteran and militia leader — a weathered, battle-hardened emerald blade.',
     hiltNotes: 'Katana-inspired hilt with wrapped grip.',
@@ -839,6 +867,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'other',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'PROXY\'s holographic lightsaber — constantly shifting color and form as the droid mimics various Jedi and Sith combatants.',
     hiltNotes: 'Holographic projection, changes to match whatever combatant PROXY is imitating.',
@@ -871,6 +900,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'neutral',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Darth Traya\'s purple lightsaber — or rather, lightsabers, as she wielded three simultaneously through the Force. The archetypal grey character of Legends, teaching her student to question both Jedi and Sith dogma.',
     hiltNotes: 'Three lightsabers controlled telekinetically.',
@@ -904,6 +934,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Visas Marr\'s red lightsaber. The blind Miraluka Sith assassin bound to Darth Nihilus — wielded for most of her career before finding redemption through the Jedi Exile.',
     hiltNotes: 'Standard Sith hilt, later swapped for a Jedi crystal if redeemed.',
@@ -933,6 +964,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Visas Marr\'s blue lightsaber after her redemption through the Jedi Exile. The blind Miraluka refitted her hilt with a Jedi crystal, symbolizing the light she never physically saw but always sensed.',
     hiltNotes: 'Reconstructed hilt with Jedi crystal after her redemption.',
@@ -962,6 +994,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The Sith Emperor who lived for over a thousand years. A blade of ancient, terrifying power — deep blood-red, wielded by the consumer of worlds.',
     config: {
@@ -991,6 +1024,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Darth Malgus\'s red lightsaber. The cybernetic Sith Lord of the SWTOR era — wielder of the deep crimson blade that sacked the Jedi Temple on Coruscant.',
     hiltNotes: 'Imposing Sith-era hilt, matched to his heavy armored physique.',
@@ -1025,6 +1059,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Han and Leia\'s youngest, named for his grandfather. A bright Jedi blue with quick ignition reflecting his prodigious raw talent. Killed at Myrkr in the Yuuzhan Vong war — a generation\'s loss.',
     hiltNotes: 'Skywalker-lineage hilt with embedded chrysopaz crystal — built by Anakin during his time as Luke\'s apprentice.',
@@ -1054,6 +1089,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Luke and Mara Jade\'s son. The Skywalker line continued through Legacy of the Force and the Fate of the Jedi novels. A clean Jedi blue with steady measured shimmer reflecting his thoughtful, watchful temperament.',
     hiltNotes: 'A streamlined Skywalker-pattern hilt; built under his father\'s instruction.',
@@ -1083,6 +1119,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Hapan princess and Jedi Knight, eventually Queen Mother of the Hapes Consortium. Her unique turquoise blade reflects the rancor-tooth crystal she crafted from her single-armed combat training arc.',
     hiltNotes: 'Single-handed grip optimized after her left arm was lost in a Force training accident. Hapan royal accents along the pommel.',
@@ -1112,6 +1149,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Chewbacca\'s nephew and a member of Luke\'s academy. A rare Wookiee Jedi who built a single-bladed saber with a rich amber-bronze crystal — the warm earth-tones of Kashyyyk distilled into a blade.',
     hiltNotes: 'Wookiee-sized hilt forged from Kashyyyk metals; bandolier mount for hands-free carry. Often paired with his miniature droid Em Teedee.',
@@ -1141,6 +1179,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Insane clone of Jedi Master Jorus C\'baoth, ally to Grand Admiral Thrawn during the Heir to the Empire trilogy. A corrupted forest-green blade with high shimmer — the Jedi color worn over a fractured mind. Light-side affiliation by lineage but his actions were Sith-aligned.',
     hiltNotes: 'A pre-Empire Jedi Master\'s hilt, dented and worn from his decades on Wayland.',
@@ -1171,6 +1210,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'neutral',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Fosh Jedi who served the Old Republic, taught Jacen Solo unconventional Force philosophy, and may have been Sith all along. A vibrant gold-yellow blade with warm shimmer — the color of someone who walked between light and dark for centuries.',
     hiltNotes: 'Slim ancient hilt with avian-feathered grip; predates the Clone Wars by decades.',
@@ -1204,6 +1244,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'The grouchy hermit Jedi from Kashyyyk who joined Revan\'s party in KOTOR. A muted older-Jedi blue with steady, unhurried ignition — the blade of someone who has stopped trying to prove anything.',
     hiltNotes: 'Old Republic Jedi hilt, worn pommel, hand-wrapped grip showing decades of use.',
@@ -1233,6 +1274,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'The Cathar Jedi Padawan in Revan\'s KOTOR party. Cyan-blue blade reflecting her blue kyber crystal — earned after rejecting the dark side temptation on Dantooine.',
     hiltNotes: 'Slim hilt sized for Cathar grip; integrated crystal-window viewport along the throat.',
@@ -1262,6 +1304,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The dogmatic Jedi historian from KOTOR 2 who isolates herself on Telos with the Holocron Vault. A pale Jedi blue, almost grey-blue — the color of someone whose connection to the living Force has gone cold.',
     hiltNotes: 'Long ornate hilt with antique Jedi heraldry; collected from the Vault rather than personally crafted.',
@@ -1295,6 +1338,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Grand Master of the Jedi Order during the SWTOR era. Descendant of Bastila Shan and Revan. A clean Jedi blue with a quiet authority — the leader of a Jedi Order that survived the Sith Empire\'s return.',
     hiltNotes: 'A long, elegant hilt of Mandalorian-influenced design — Satele\'s mother trained her with the heritage of the Mandalorian Wars.',
@@ -1324,6 +1368,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'SWTOR Sith Lord, member of the Empire\'s Sith Intelligence and (eventually) ally of the Outlander. A controlled, deep red — Lana favors precision over spectacle. The Sith who would rather negotiate than destroy.',
     hiltNotes: 'Polished gold-and-black Sith hilt; engraved reliefs of Korriban tomb statuary along the throat.',
@@ -1353,6 +1398,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'SWTOR Jedi Knight\'s primary companion, secret Child of the Emperor. A bright Jedi blue with quick energetic ignition matching her impulsive Knight-class temperament.',
     hiltNotes: 'Standard SWTOR-era Jedi Knight hilt with Padawan-engraved Pyrian wave crystal.',
@@ -1382,6 +1428,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Member of the Dark Council in SWTOR, eventual leader of the Sith Empire who unites with the Republic against Vitiate. A heavy, warm crimson — Marr\'s lightsaber carries the weight of millennia of Sith tradition without the volatility of younger Lords.',
     hiltNotes: 'Massive armored hilt of black duranium and tempered red glass; Marr\'s helmet visible reflected in the saber\'s polished crossguard.',
@@ -1412,6 +1459,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Sith Warrior class storyline antagonist in SWTOR. A heavy, bloodthirsty red — Baras is the manipulator who outlived smarter Sith because he never trusted anyone, including himself.',
     hiltNotes: 'Massive armored hilt with corpulent grip; engraved with Sith heraldry from his stint on the Dark Council.',
@@ -1446,6 +1494,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Bane\'s apprentice, the second Sith Lord of the Banite Rule of Two. Wields a double-bladed lightsaber inherited from her early Jedi-Padawan training. A vivid blood-red with the patient instability of a Sith who spent years learning before striking.',
     hiltNotes: 'Saberstaff hilt — rebuilt from a Jedi double-blade design she trained on as a Padawan, repurposed after her fall to the Sith.',
@@ -1480,6 +1529,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The deranged Aleena Jedi Master who rebuilt the Jedi Temple in scrap on Raxus Prime. Battles Starkiller in The Force Unleashed. A bright Jedi blue, but with the uneasy shimmer of someone whose Force connection broke alongside his sanity.',
     hiltNotes: 'A Frankenstein hilt assembled from junkyard parts after Order 66; the original was lost on Coruscant.',
@@ -1514,6 +1564,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The blind Miraluka Dark Jedi from Jedi Knight: Dark Forces 2. Hunted Kyle Katarn for the Valley of the Jedi\'s power. A volatile crimson blade with frequent flicker — the unsteady gait of a man ruling by ambition rather than wisdom.',
     hiltNotes: 'Imperial Inquisitor-style hilt with a chrome activation collar; Jerec wields it through Force-sight rather than visual aim.',
@@ -1544,6 +1595,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Chistori Reborn warlord from Jedi Outcast — Dark Jedi sentenced for Padawan-killing, escaped Jedi prison, came back with an army. A toxic green blade — corrupted Jedi green now bled through with Sith intent.',
     hiltNotes: 'A salvaged Jedi-era hilt with Reborn-faction modifications; Desann was a Jedi student before his fall.',
@@ -1574,6 +1626,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'base',
+    screenAccurate: false,
     description:
       'Female Reborn-cult Sith from Jedi Academy — apprentice to Desann and later cult leader hunting the Scepter of Ragnos. Crimson red with quick, agile flicker reflecting her duelist combat style.',
     hiltNotes: 'A slender hilt rebuilt during her cult-leader era with Sith-glyph etching.',
@@ -1607,6 +1660,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Plagueis\'s Master, a Bith Sith Lord from the Plagueis novel. Crimson with the cool, calculated stability of a scientist-Sith — Tenebrous saw the Force as an equation to solve, not a passion to embrace.',
     hiltNotes: 'A precision-engineered hilt of polished durasteel and lab-glass viewport — built more like a scientific instrument than a weapon.',
@@ -1636,6 +1690,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'General of the Army of Light during the New Sith Wars; the Jedi who defeated Lord Kaan\'s Brotherhood at the Seventh Battle of Ruusan. A deep, commanding Jedi blue — the color of a thousand-year war\'s end.',
     hiltNotes: 'Old-Republic-era Jedi General hilt; ornate quillon-style guards rare for the period.',
@@ -1669,6 +1724,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Shira Brie / Lumiya, Marvel-era Star Wars comics Sith and Vader\'s secret apprentice. Wields a flexible lightwhip — represented here as a single-blade with high shimmer to evoke the whip\'s coiling motion (true lightwhip topology is post-launch engine work).',
     hiltNotes: 'Sith-Marvel-era hilt with multiple flexible filament emitters; the whip extends and coils on activation.',
@@ -1703,6 +1759,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The Jedi Exile\'s roguish pilot companion in KOTOR II. A former Sith assassin trained to resist Force techniques, Atton constructs a yellow-green blade late in his journey — the color of a reluctant convert who never fully trusted the Force.',
     hiltNotes: 'Improvised hilt built from salvaged parts aboard the Ebon Hawk; functional over elegant.',
@@ -1733,6 +1790,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'neutral',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Prince of the Eternal Empire in SWTOR, son of Valkorion. Arcann\'s golden-white blade reflects the Zakuulan tradition — neither Jedi nor Sith, but something older and more regal. His arc spans patricide, tyranny, and eventual redemption.',
     hiltNotes: 'Zakuulan royal lightsaber pike with ornate gold inlay; wielded one-handed after losing his left arm.',
@@ -1764,6 +1822,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'High Justice of the Eternal Empire, Arcann\'s sister and Valkorion\'s most powerful child. Vaylin\'s amber lightsaber pike crackles with barely contained rage — her immense Force power was shackled by conditioning on Nathema, and the blade mirrors that volatility.',
     hiltNotes: 'Zakuulan lightsaber pike, shorter and more aggressive than Arcann\'s; scarred from battlefield use.',
@@ -1795,6 +1854,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The Emperor\'s Wrath in SWTOR, a Sith Pureblood who served Vitiate for three centuries before betraying him to aid the Jedi Knight. His deep crimson blade carries the weight of immortality — granted by the Emperor, it preserved Scourge but stripped him of all feeling.',
     hiltNotes: 'Ancient Sith hilt of Pureblood design, maintained across centuries of service to the Emperor.',
@@ -1825,6 +1885,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Dark Council member and primary antagonist of the SWTOR Imperial Agent storyline. Considered second only to the Emperor in power, Jadus is the masked phantom of Sith Intelligence. His blade is a controlled, almost elegant crimson — terrifying precisely because of how calm he is while wielding it.',
     hiltNotes: 'Minimalist dark-metal hilt; Jadus values function over Sith ornamentation.',
@@ -1855,6 +1916,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'SWTOR Jedi Consular\'s final companion and Padawan, daughter of Senator Tobas Grell of Sarkhai. Nadia is raw Force potential barely tempered by training — her emerald blade pulses with untamed energy that the Consular helps her channel.',
     hiltNotes: 'Standard SWTOR-era Jedi hilt; Nadia built hers under the Consular\'s guidance on Tython.',
@@ -1885,6 +1947,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'neutral',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Arcann\'s twin brother and fellow prince of the Eternal Empire, killed by Arcann in a rage during the SWTOR "Sacrifice" cinematic. Thexan\'s golden blade is identical to his brother\'s — the tragedy is that they were mirror images until jealousy shattered the pair.',
     hiltNotes: 'Zakuulan royal lightsaber pike, twin to Arcann\'s; recovered after Thexan\'s death.',
@@ -1915,6 +1978,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'Self-proclaimed Sith Empress after the fall of the Eternal Empire in SWTOR. Acina survived the Dark Council purges through cunning rather than raw power. Her blade is a refined, imperial red — the color of someone who clawed her way to the throne over the corpses of more powerful Sith.',
     hiltNotes: 'Ornate imperial hilt with Sith Empire insignia; befitting her claimed station as Empress.',
@@ -1945,6 +2009,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'sith',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'SWTOR Sith Warrior companion, a former Jedi Padawan with the unique ability to see the true nature of any Force user. Turned to the dark side, Jaesa embraces the Sith path with zealous abandon — her red blade burns with a convert\'s fervor that unsettles even her master.',
     hiltNotes: 'Rebuilt from her Jedi hilt with Sith modifications; the transition marks are still visible.',
@@ -1975,6 +2040,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The Last Handmaiden, secret daughter of Jedi Master Arren Kae, and companion of the Jedi Exile in KOTOR II. Trained as an Echani warrior first and a Jedi second, Brianna\'s icy cyan blade reflects her disciplined martial heritage — every strike is precise, every form textbook.',
     hiltNotes: 'Sleek hilt built on Telos, blending Echani martial aesthetics with Jedi construction.',
@@ -2005,6 +2071,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'detailed',
+    screenAccurate: false,
     description:
       'The quiet Zabrak technician from KOTOR II who helped build the Mass Shadow Generator at Malachor V. Bao-Dur constructs his lightsaber under the Jedi Exile\'s guidance — a blue blade with the steady precision of an engineer who understands every component inside the hilt he assembled.',
     hiltNotes: 'Custom-machined hilt built with Bao-Dur\'s technical expertise; integrated with his cybernetic arm\'s power cell.',
@@ -2035,6 +2102,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     continuity: 'legends',
     affiliation: 'jedi',
     tier: 'base',
+    screenAccurate: false,
     description:
       'The Disciple, a former Jedi hopeful turned Republic historian who joins the Jedi Exile in KOTOR II. Mical\'s blue blade is earnest and unadorned — the lightsaber of a scholar who always believed he was meant to be a Jedi, finally given the chance.',
     hiltNotes: 'Standard Jedi hilt built from archived schematics Mical studied during his years as a Republic historian.',
