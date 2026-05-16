@@ -249,19 +249,19 @@ const PROFFIE_RUNTIME_PHASE_C_TABLE: KnobTable = {
   variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
   baseColor: {
     capability: 'partial',
-    reason: 'Phase C emits `advanced R,G,B …` with the base color in slots 1/2/3 (gradient hilt→tip). Single-color blade renders correctly. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+    reason: 'Phase C emits `advanced R,G,B …` with the base color in slots 1/2/3 (gradient hilt→tip). Single-color blade renders correctly. CAVEAT: bench-verified 2026-05-15 on 89sabers V3.9-BT, confirmed hilt-mounted with blade attached — Phase C blade is visibly dimmer than factory `builtin N M` presets, NOT a bench artifact. Root cause: the ProffieOS `advanced` named verb wraps the base in `Gradient<>` with no always-on AudioFlicker brightening layer, while factory presets compile in `Layers<AudioFlicker<base, Mix<base, White>>, ...>` as the top layer. Color transfers; visceral brightness does not. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. For factory-equivalent brightness, use the compile+flash path.',
   },
   clashColor: {
     capability: 'partial',
-    reason: 'Phase C emits `advanced` slot 8 (clash color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+    reason: 'Phase C emits `advanced` slot 8 (clash color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. Brightness caveat applies (see baseColor).',
   },
   lockupColor: {
     capability: 'partial',
-    reason: 'Phase C emits `advanced` slot 7 (lockup AudioFlicker partner). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+    reason: 'Phase C emits `advanced` slot 7 (lockup AudioFlicker partner). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. Brightness caveat applies (see baseColor).',
   },
   blastColor: {
     capability: 'partial',
-    reason: 'Phase C emits `advanced` slot 6 (blast color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+    reason: 'Phase C emits `advanced` slot 6 (blast color). Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. Brightness caveat applies (see baseColor).',
   },
   style: {
     capability: 'dropped-silently',
