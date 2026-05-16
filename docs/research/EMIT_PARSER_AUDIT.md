@@ -1,7 +1,6 @@
 # Emit ↔ Parser Encoding Audit
 
-**Status:** Living reference. Updated 2026-05-16 after the smoking-gun bench finding + the
-B1/B2 multi-board field-coverage audit reconciliation.
+**Status:** Living reference. Updated 2026-05-16 (audit-closeout pass) after the smoking-gun bench finding + the B1/B2 multi-board field-coverage audit reconciliation. Sections F (share URL), G (saber profile migration), and I (sound-font existence pre-check) flipped from ⚠ Unverified → ✅ Verified after PR #327, #332, and #340 landed. Sections H (Fett263 parser surface) and J (image sampling math) carry informational ⚠ marks rather than blocking gaps.
 **Why this exists:** KyberStation emits text/binary/JSON to downstream parsers (firmware, vendor apps, our own persistence). Each interface is an opportunity for unit-scale, range, ordering, or schema-version mismatches. This doc captures the contract at each boundary so future contributors don't re-discover encoding rules by trial-and-error.
 
 **Companion doc:** [`MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md`](./MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md)
@@ -95,9 +94,9 @@ live `zipExporter.ts` inline pipeline — see Critical Structural Findings #1.
 | What we emit | Consumer expects | Status | Notes |
 |---|---|---|---|
 | Compressed binary payload base64-encoded in URL | KyberStation's own decoder | ⚠ Symmetric — both ends are us | Internal contract. Versioning is the main risk (we change schema; old URLs break). |
-| Preset list state in payload | Same shape as runtime `BladeConfig` + `PresetListEntry` | ⚠ Unverified | Should add tests pinning byte-exact serialization for known inputs. |
+| Single-preset config in payload | Same shape as runtime `BladeConfig` | ✅ Verified | **Wire-format fixtures at `apps/web/tests/fixtures/kyberGlyphs/v1/fixtures.json`** pin byte-exact emit output; `apps/web/tests/kyberGlyph.test.ts:432-453` asserts `expect(encoded).toBe(fixture.glyph)`. Schema breaks fail the fixture round-trip. v2 (modulation) covered separately at `apps/web/tests/kyberGlyphV2Modulation.test.ts`. |
 
-**Audit work needed:** add a round-trip test that creates a known preset list, generates a share URL, decodes it, and asserts byte-identical state. Catches accidental schema breaks.
+**Note:** the audit originally posited a "preset list state in payload" row, but the actual format encodes a single `BladeConfig`. Preset-list serialization is not yet a shipped feature; it would land as a v3 schema bump and require new fixtures.
 
 ### G. Saber Profile / IndexedDB persistence (`apps/web/stores/saberProfileStore.ts`)
 
@@ -120,7 +119,7 @@ live `zipExporter.ts` inline pipeline — see Critical Structural Findings #1.
 
 | What we emit | Consumer expects | Status | Notes |
 |---|---|---|---|
-| `font=<folder>` / `track=tracks/<name>.wav` | Folder/file presence on SD card | ⚠ Unverified | We don't validate that the referenced folder/file actually exists on the user's card before emit. UI warning in CardWriter mentions "factory firmware has fonts." |
+| `font=<folder>` / `track=tracks/<name>.wav` | Folder/file presence on SD card | ✅ Verified (2026-05-16) | **PR #340 shipped pre-flash validation.** `apps/web/lib/soundFontValidation.ts` enumerates the immediate-child directories on the user's selected SD card and cross-references against each preset's `fontName` (case-insensitive, mirroring ProffieOS firmware). Mismatches raise `SoundFontWarningModal` listing missing folders + a "did you mean?" prefix hint. User can Cancel write or Continue anyway. Direct-write path only — ZIP export users get a general "copy your fonts in after extracting" notice (no enumeration without a dirHandle). |
 
 ### J. Image import → ImageScroll style codegen (`apps/web/lib/import/`, `packages/codegen/src/ASTBuilder.ts:410`)
 
@@ -133,15 +132,17 @@ live `zipExporter.ts` inline pipeline — see Critical Structural Findings #1.
 
 Prioritized by how likely the row turns up another bug:
 
-1. **(F) Share URL round-trip test** — both ends are us, but schema evolves. Pin byte-exact serialization for ~5 representative preset configs. Catches accidental schema breaks. ~1 hour.
+1. ~~**(F) Share URL round-trip test**~~ — ✅ **Already shipped.** `apps/web/tests/fixtures/kyberGlyphs/v1/fixtures.json` + `apps/web/tests/kyberGlyph.test.ts` pin byte-exact wire-format serialization for v1 schema. v2 (modulation) at `kyberGlyphV2Modulation.test.ts`. Single-config payload only — preset-list serialization is future v3 work.
 
 2. **(C) Xenopixel V3 hardware validation** — we've never bench-tested a Xenopixel saber with KyberStation-emitted files. Format is correct in theory; in practice unverified. Needs a Xenopixel V3 board + bench session. **Out of scope for software-only work.**
 
-3. **(I) Sound font existence pre-check** — add a "your factory SD card has these fonts, your preset references these, mismatches: …" pre-export validation. Catches the "set up the preset, forget to add the font folder" failure mode. Direct-write path can already inspect dirHandle; ZIP path could read the user's known font library from `~/SaberFonts/` reference doc.
+3. ~~**(I) Sound font existence pre-check**~~ — ✅ **Shipped (2026-05-16, PR #340).** Live in `apps/web/lib/soundFontValidation.ts` + `SoundFontWarningModal`. Direct-write path enumerates SD card font folders + raises modal on mismatch.
 
-4. **(G) Saber profile migration test fixtures** — ✅ **Shipped (2026-05-16, PR #327).** Fixtures live at `apps/web/tests/fixtures/saberProfiles/v{1,2,3}.json`; driven by `apps/web/tests/saberProfileMigration.test.ts`.
+4. ~~**(G) Saber profile migration test fixtures**~~ — ✅ **Shipped (2026-05-16, PR #327).** Fixtures live at `apps/web/tests/fixtures/saberProfiles/v{1,2,3}.json`; driven by `apps/web/tests/saberProfileMigration.test.ts`.
 
 5. **(H) Parser audit** — the import parser's template registry grew from 153 → 372 in v0.21.x. A round-trip test on the entire Fett263 stylebrary corpus would catch regressions in import fidelity. We already have `fett263Fixtures.test.ts` — extend it.
+
+6. **(J) Image sampling math fixture** — `ASTBuilder.ts:410-433` samples 12 columns from a Uint8Array at the midrow. Pin the sampled colors for a known image input (e.g., a 12×12 known-color test image) to catch accidental changes to the sampling algorithm. ~30 min. **Low priority** — sampling output is symmetric (both KyberStation's emit and the test would change together) so the value is mostly preventing accidental regressions during refactors.
 
 6. **(B) Phase C `builtin N M color args` follow-up** — we proved factory Vader template hardcodes `Red` (no `RgbArg<>`), so `builtin 1 1 R,G,B` color override doesn't work for that specific preset. But OTHER factory presets might use `RgbArg<>` — particularly the Vortex template we saw in `89V3_allfont.h` uses `RotateColorsX<Variation, RgbArg<>>` patterns. **Bench test**: send `builtin N M <16-bit colors>` for various N and see which factory presets accept color overrides. Would expand Phase A's customization surface without changing emitter shape.
 
