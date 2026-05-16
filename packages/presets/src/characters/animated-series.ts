@@ -535,6 +535,12 @@ export const ANIMATED_SERIES_PRESETS: Preset[] = [
   },
 
   // ── Shin Hati ──
+  // NB: A second Shin Hati preset exists in extended-universe.ts as
+  // `eu-shin-hati-orange` with a `fire` style instead of `cinder`. The
+  // two presets are intentional sibling interpretations of the same
+  // live-action Ahsoka-series character — cooler/cleaner cinder here vs.
+  // hotter/more volatile fire treatment in eu. Keep IDs distinct so the
+  // gallery can offer both. See GALLERY_AUDIT_2026-05-16_A4_canon-era.md.
   {
     id: 'animated-shin-hati-orange',
     name: 'Shin Hati (Orange)',
