@@ -25,7 +25,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "Thor's hammer, forged in the heart of a dying star. A crackling lightning-blue blade haloed by arcing Asgardian energy.",
+      "Thor's hammer Mjolnir, forged in the heart of a dying star and inscribed with the worthiness enchantment of Odin. Crackling lightning-blue blade haloed by arcing Asgardian thunder, unstable shimmer at high noise — the hammer never quite contains the storm it carries. Lift it if you can.",
     hiltNotes: 'Short, heavy grip terminating in the iconic square-faced hammer head.',
     config: {
       name: 'Mjolnir',
@@ -116,7 +116,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Spear of Odin, symbol of Asgardian royalty. Deep royal purple carved by golden runes of the Allfather.",
+      "Odin's spear Gungnir, the regal sigil of Asgard's throne and the weapon that finally fell against the Goddess of Death. Deep royal purple body carved by golden Allfather runes that brighten on each clash, stable in the hand of any king who has truly earned it. The blade of sovereignty rather than war.",
     hiltNotes: 'Long ceremonial shaft, ornate golden spearhead with rune etchings.',
     config: {
       name: 'Gungnir',
@@ -148,7 +148,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Tesseract. Electric blue, housing dominion over space itself — a steady current with a hidden teleportation pulse.",
+      "The Tesseract — a cube of cobalt energy that has bounced through Asgardian vaults, Red Skull's bunker, and the underbelly of S.H.I.E.L.D. Electric sapphire blue with a hidden teleportation pulse beneath the steady current, the rhythm of a doorway that opens to anywhere in the universe.",
     hiltNotes: 'Cubic blue housing, containment chamber exposed.',
     config: {
       name: 'SpaceStone',
@@ -177,7 +177,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "Vision's forehead, Loki's scepter. A warm steady yellow-gold glow — thought given form.",
+      "The gem at the heart of Loki's scepter, later set into the synthezoid Vision's brow. A warm steady amber-gold glow with the slow pulse of pure cognition — thought rendered as light. Calmer than the Power Stone, sharper than the Soul Stone, the Stone whose touch unlocks any mind.",
     hiltNotes: 'Prismatic yellow gem set in a sleek golden frame.',
     config: {
       name: 'MindStone',
@@ -206,7 +206,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Aether, drawn from the Dark World. A liquid blood-red flicker that bends truth around it.",
+      "The Aether — the Stone that took liquid form when the Dark Elves first tried to claim it, the only Stone that flows. Blood-red unstable flicker, the color of arterial wine in motion; each frame bends slightly, as if reality is taking a half-step sideways. The blade isn't quite where you expect it to be.",
     hiltNotes: 'Free-flowing crimson liquid in a containment vessel.',
     config: {
       name: 'RealityStone',
@@ -236,7 +236,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Orb of Morag. A vibrant violet blade laced with chaotic lavender arcs — raw destructive potential held barely in check.",
+      "Sealed inside the Orb of Morag for centuries, the Stone that pulverized planets in a single touch. Vibrant violet body laced with chaotic lavender arcs — raw destructive potential held barely in check. Unstable shimmer at maximum settings represents a containment field one bad day from giving way.",
     hiltNotes: 'Spherical containment orb, purple energy visible within.',
     config: {
       name: 'PowerStone',
@@ -267,7 +267,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Eye of Agamotto. Emerald green, steady but breathing with the slow rhythm of a clockwork universe.",
+      "Set into the Eye of Agamotto, kept by the Masters of the Mystic Arts in the Sanctum Sanctorum. Emerald green with a slow even pulse — the rhythm of a clockwork universe spinning its gears, the Stone that lets a sorcerer rewind every wound. Calm at its surface, infinite underneath.",
     hiltNotes: 'Hinged amulet around the Sanctum Sanctorum aesthetic.',
     config: {
       name: 'TimeStone',
@@ -296,7 +296,7 @@ export const MARVEL_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "A sacrifice on Vormir. Deep calm orange — the quietest of the Stones, holding the weight of every soul ever forfeit.",
+      "Claimed only at the price of a loved one, hidden on Vormir at the edge of all reality. Deep calm orange with the slowest pulse of any Stone — the quietest of the six, holding the weight of every soul ever forfeit to reach it. Stable, ceremonial, mournful. The Stone whose color is the color of grief.",
     hiltNotes: 'Simple amber housing. No ornament. The cost is enough.',
     config: {
       name: 'SoulStone',

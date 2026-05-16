@@ -23,7 +23,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Willpower, channeled by the Guardians of Oa. A warm confident emerald green — the will to act despite fear.",
+      "The emerald-green core of the emotional spectrum — Willpower, the will to act despite fear. Issued from Oa's Central Power Battery to every Green Lantern sworn to the Corps' oath, in the brightest day and the blackest night. A confident saturated emerald, stable as a held breath at the moment before commitment.",
     hiltNotes: 'Power ring emblem embedded in the pommel; lantern battery grip.',
     config: {
       name: 'Willpower',
@@ -53,7 +53,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Fear, weaponized by Sinestro. A sickly yellow-gold, corrupted at its edges — power that knows how to hurt.",
+      "Fear given form — the yellow light of Parallax, weaponized by Sinestro after his exile from the Green Lantern Corps. Sickly yellow-gold with an unstable flicker that brightens around stronger willpower, the way nightmare gathers around someone with the most to lose. The chevron-edged Sinestro Corps oath made luminous.",
     hiltNotes: 'Sinestro Corps insignia; black-and-yellow chevron grip.',
     config: {
       name: 'Fear',
@@ -84,7 +84,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Rage, burning in the hearts of those with cause for vengeance. Molten blood-red with flickering coronal flares.",
+      "Rage given form — the Red Light born of Atrocitus' grief on Ryut, the spectrum's first true weapon. Molten blood-red with coronal fire-flares licking off the edge; the Red Lantern ring replaces its bearer's heart with burning rage-plasma, and the blade carries that bargain through every swing. Vengeance as luminous element.",
     hiltNotes: 'Skull-and-crossbones Red Lantern emblem; vein-etched crimson grip.',
     config: {
       name: 'Rage',
@@ -115,7 +115,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Avarice, hoarded by a single greedy bearer. A harsh bright orange — the color of mine, mine, mine.",
+      "Avarice given form — the Orange Light hoarded by Larfleeze on the planet Okaara, a Corps of one because the bearer refuses to share. Harsh saturated orange, stable on the surface but tense underneath; every captured soul of every previous owner glimmers at the edges as a half-conjured Identity Construct. The Light that means only mine.",
     hiltNotes: 'Over-ornate hoarded-treasure grip; orange Lantern emblem.',
     config: {
       name: 'Avarice',
@@ -145,7 +145,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Hope, brightest in the darkest hour. Clear optimistic sky-blue haloed by the gentle light of dawn.",
+      "Hope given form — the Blue Light worn by Saint Walker and the pilgrim Corps of Odym, the spectrum's most fragile and most stubborn band. A clear optimistic sky-blue with a soft aurora halo of dawn-rose at the edges; the Blue ring's power only ignites alongside a Green Lantern's. Hope alone won't save you, but it makes Willpower stronger.",
     hiltNotes: 'Sunrise-blue Lantern emblem; simple pilgrim grip.',
     config: {
       name: 'Hope',
@@ -175,7 +175,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Compassion, wielded by the penitent. A deep steady indigo-violet — empathy rendered into light.",
+      "Compassion given form — the Indigo Light wielded by the Indigo Tribe of Nok, a Corps drafted from the spectrum's worst offenders, their crimes overwritten by empathy. Deep steady indigo-violet with a slow stable pulse, the rhythm of penitent breath. The Light that walks in another's footprints before it strikes.",
     hiltNotes: 'Staff-like tribal grip, sigil of the Indigo Tribe.',
     config: {
       name: 'Compassion',
@@ -205,7 +205,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The light of Love, bonded in the Zamaron crystal. A warm pulsing pink-magenta — the heart's own spectrum.",
+      "Love given form — the Violet Light wielded by the Star Sapphires of Zamaron, who recruit by encasing the truly-bonded heart in living crystal. Warm pulsing pink-magenta on the slow rhythm of a held lover's heartbeat; gentle at rest, devastating in defense of the one the bearer cannot bear to lose. The heart's own spectrum.",
     hiltNotes: 'Heart-cut Zamaron crystal in the emitter; rose-tinted grip.',
     config: {
       name: 'Love',
@@ -237,7 +237,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The sword forged by Hephaestus to slay gods. Silver-steel blade edged by the divine gold of Themyscira.",
+      "The God Killer — forged by Hephaestus at the request of Zeus, kept on Themyscira against the prophesied return of Ares. Silver-steel base flashing into divine Olympian gold on clash; stable in the hand of the rare wielder strong enough to lift it. A blade meant to end immortals rather than humble them.",
     hiltNotes: 'Long-handled Amazonian longsword, gold-wrapped grip, winged crossguard.',
     config: {
       name: 'Godkiller',
@@ -267,7 +267,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Helm of Nabu given edge. Ancient Egyptian gold pulsing with the arcane rhythm of Lords of Order.",
+      "The Helm of Nabu given an edge — the bearer's body lent out to the Lord of Order who has worn the Helm since the First Dynasty. Ancient Egyptian gold with an aurora halo that pulses on the slow rhythm of arcane mathematics rather than mortal pulse. The hieroglyphs on the shaft are not decoration — they are the spell, currently being cast.",
     hiltNotes: 'Ankh-shaped pommel, hieroglyph-etched shaft, golden emitter.',
     config: {
       name: 'AnkhOfFate',
@@ -297,7 +297,7 @@ export const DC_PRESETS: Preset[] = [
     screenAccurate: false,
     author: 'KyberStation',
     description:
-      "The Green itself, manifest. A mossy deep-green blade breathing in the slow rhythm of the Parliament of Trees.",
+      "The Green itself — every chlorophyll cell on Earth, networked through the Parliament of Trees and given a human-shaped avatar. A mossy deep-green blade breathing on a slow circadian pulse, the rhythm of photosynthesis instead of pulse. Cool at rest, deeply alive in motion — the Swamp Thing's stewardship of the Green made visible.",
     hiltNotes: 'Bark-textured grip, root-wrapped emitter, living moss accents.',
     config: {
       name: 'SwampThing',
