@@ -299,7 +299,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'UV purple with strobe-on-swing. High shimmer creates relentless pulse. Bring glow sticks.',
+    description: 'Blacklight UV purple soaked in 0.85 shimmer, pulsing fast enough to feel the bassline through your wrist. Spark ignition fires like a strobe hit, clash whites out the dancefloor, and the blast snaps to cyan-green like a glowstick cracked open mid-swing. Bring water; you will need it.',
     config: {
       name: 'RaveSaber',
       baseColor: { r: 120, g: 0, b: 255 },
@@ -371,7 +371,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'Alternating red and green with gold lockup like tinsel. Blast sends snowflakes. Festive and aggressive.',
+    description: 'A candy-cane gradient that scrolls cranberry red against pine green from hilt to tip. Lockup blooms tinsel gold; blast spits a sudden white burst like a flashbulb on the family photo. Tasteful enough for a kid\'s pageant, aggressive enough to threaten the inflatable yard Santa.',
     config: {
       name: 'ChristmasClassic',
       baseColor: { r: 200, g: 0, b: 0 },
@@ -520,7 +520,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'Cascading green data stream down the blade like falling code. There is no spoon, but there is this saber.',
+    description: 'Cascading green dataStream packets fall downward through the blade in uneven katakana columns — the bottom of the 1999 monitor escaping into a saber. Scroll ignition loads the rain from emitter to tip; clash burns the column white-green before the code resumes; fadeout retraction lets the last few characters drip away. There is no spoon, but there is this saber.',
     config: {
       name: 'DigitalRain',
       baseColor: { r: 0, g: 180, b: 0 },
@@ -592,7 +592,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'pop-culture',
-    description: 'Regal gold with silver clash. Dual-tone heroic blade. Simple, bold, legendary.',
+    description: 'A regal old-gold blade with the steady, almost ceremonial pulse of a sword raised skyward in 1983 Filmation cel animation. Clash flashes brushed silver like crossed steel; lockup deepens to molten gold while the blast pops to ivory-white. Hold it aloft and you can almost hear "By the power of Grayskull" cue up.',
     config: {
       name: 'PowerGrayskull',
       baseColor: { r: 220, g: 190, b: 50 },
@@ -616,7 +616,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'pop-culture',
-    description: 'Soft pink heart-light on a metallic gray body. The cake is a lie but the style is real.',
+    description: 'A brushed-aluminum gray body with a single soft pink heart-light pulsing from the center, like the Companion Cube\'s glowing core trying very hard to be reassuring. Center ignition swells outward in time with the pulse; clash kicks the pink to neon as if the cube has noticed the incinerator. The cake is a lie but this style is real.',
     config: {
       name: 'CompanionCube',
       baseColor: { r: 180, g: 180, b: 190 },
@@ -640,7 +640,7 @@ export const CREATIVE_COMMUNITY_PRESETS: Preset[] = [
     affiliation: 'other',
     tier: 'base',
     continuity: 'creative',
-    description: 'Aqua diamond crystal shatter pattern. Blocky, chunky, satisfying. Blast sparkles like dropped XP.',
+    description: 'Diamond-ore aqua broken into chunky crystalShatter segments so each LED reads as one voxel — a pickaxe-and-block-world blade rendered in 2010 nostalgia palette. Scroll ignition fills the blade column by column like a chunk loading in; shatter retraction breaks it apart into bright green particle drops on blast. Satisfying in a way that does not require explanation.',
     config: {
       name: 'PixelMiner',
       baseColor: { r: 0, g: 200, b: 200 },
