@@ -285,7 +285,7 @@ export const MASCOT_PRESETS: Preset[] = [
       clashColor: { r: 255, g: 255, b: 200 },
       lockupColor: { r: 255, g: 220, b: 100 },
       blastColor: { r: 255, g: 240, b: 160 },
-      style: 'aurora',
+      style: 'gradient',
       ignition: 'scroll',
       retraction: 'standard',
       ignitionMs: 500,
