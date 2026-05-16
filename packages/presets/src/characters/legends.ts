@@ -1132,8 +1132,8 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Hapan princess and Jedi Knight, eventually Queen Mother of the Hapes Consortium. Her unique turquoise blade reflects the rancor-tooth crystal she crafted from her single-armed combat training arc.',
-    hiltNotes: 'Single-handed grip optimized after her left arm was lost in a Force training accident. Hapan royal accents along the pommel.',
+      'Hapan princess and Jedi Knight, eventually Queen Mother of the Hapes Consortium. Her unique turquoise blade is focused through a rancor tooth instead of a kyber crystal — a Dathomiri spiritual choice. The tooth\'s flaw cost her an arm during a training accident with Jacen Solo.',
+    hiltNotes: 'Single-handed grip rebuilt after her left arm was lost when the rancor-tooth focuser cracked mid-spar with Jacen. Hapan royal accents along the pommel.',
     config: {
       name: 'TenelKa',
       baseColor: { r: 50, g: 200, b: 220 },
