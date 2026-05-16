@@ -43,7 +43,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Revan as Sith Lord during the Jedi Civil War. A deep, commanding crimson blade wielded by the Dark Lord before his redemption.',
+      'KOTOR — Revan as Dark Lord of the Sith during the Jedi Civil War, before the mindwipe that erased a galaxy\'s conqueror. A deep, commanding crimson burning through the same angled-shroud hilt as his Jedi blade, the kyber now bled to a vivid arterial red with a sharp spark-ignition.',
     hiltNotes: 'Same distinctive hilt, now with a bled kyber crystal.',
     config: {
       name: 'RevanSith',
@@ -74,7 +74,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Bastila Shan\'s golden yellow double-bladed lightsaber. The warm, radiant blade of the Jedi Sentinel who wielded Battle Meditation.',
+      'KOTOR — Bastila Shan\'s golden saberstaff, the Jedi Sentinel whose Battle Meditation turned the tide of the Jedi Civil War. A warm, radiant amber-yellow with a center-out ignition that mirrors the dual-emitter hilt, evoking the rare saberstaff form she wielded against Malak\'s fleet.',
     hiltNotes: 'Long double-bladed hilt, saberstaff configuration.',
     config: {
       name: 'BastilaYellow',
@@ -138,7 +138,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'The Lord of Pain\'s red lightsaber. A harsh, angry crimson — cracked and raw like Sion\'s own shattered body held together by sheer rage.',
+      'KOTOR II — the Lord of Pain, the Sith assassin who could not die because hatred refused to let him. A harsh, angry crimson driven by the shatter style and fracture ignition, the blade visually cracked and re-knit frame by frame like Sion\'s own ruined body held together by sheer will.',
     hiltNotes: 'Crooked, scarred hilt mirroring his body\'s broken state. Recovered from his fallen Sith Lord predecessors during the KOTOR II Trayus Academy era.',
     config: {
       name: 'DarthSion',
@@ -171,7 +171,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Darth Malak\'s red lightsaber. A bold, domineering scarlet wielded by Revan\'s fallen apprentice and the Dark Lord of the Sith during the Jedi Civil War.',
+      'KOTOR — Darth Malak, Revan\'s apprentice and the second Dark Lord of the Jedi Civil War, his face a chrome jaw-prosthetic after Revan took the rest. A bold, domineering scarlet with a scroll ignition that suits the heavy hilt and his crushing duelist style atop the Star Forge.',
     hiltNotes: 'Large hilt matching Malak\'s imposing stature.',
     config: {
       name: 'DarthMalak',
@@ -297,7 +297,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Mara Jade\'s purple lightsaber. The Emperor\'s Hand turned Jedi Master and wife of Luke Skywalker. A magenta-tinged violet reflecting her complex journey.',
+      'Heir to the Empire and beyond — Mara Jade Skywalker, the Emperor\'s Hand who became a Jedi Master and Luke\'s wife. A magenta-tinged violet built between Palpatine\'s shadow and the New Jedi Order, the warm-leaning purple split between the red she once wielded and the blue of the man she loved.',
     hiltNotes: 'Sleek, functional hilt. Later used Luke\'s spare blue saber as well.',
     config: {
       name: 'MaraJadePurple',
@@ -358,7 +358,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Kyle Katarn\'s later green lightsaber from Legacy-era appearances. A dependable emerald blade wielded by the Jedi Battlemaster of the New Jedi Order.',
+      'Kyle\'s green-bladed Jedi Academy era — the mercenary-turned-Battlemaster training the next generation of the New Jedi Order. A dependable, slightly darker emerald than the Council greens, scroll-ignited tip-to-emitter as Kyle picks up where Luke leaves the day-to-day of the Order behind.',
     hiltNotes: 'Rahn\'s lightsaber, passed to Kyle. Simple, rugged design befitting a soldier.',
     config: {
       name: 'KyleKatarnGreen',
@@ -388,7 +388,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Jaina Solo\'s purple lightsaber. The Sword of the Jedi — daughter of Han and Leia, twin of Jacen, ace pilot, and the one who brought down Darth Caedus.',
+      'Legacy of the Force — Jaina Solo, the Sword of the Jedi, daughter of Han and Leia and the one who finally cut down her own twin to end the Caedus war. A clear bright violet inherited from Mara Jade\'s saber after her aunt\'s death, the warmer pink-leaning purple matching Jaina\'s blunt-edged combat style.',
     hiltNotes: 'Inherited Mara Jade\'s lightsaber after Mara\'s death — slim, formal Jedi hilt with a curved emitter shroud. NJO / Legacy of the Force novels.',
     config: {
       name: 'JainaSolo',
@@ -478,7 +478,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Corran Horn\'s distinctive silver-white lightsaber, unique among Jedi. Built from a speeder bike throttle with a dual-phase mechanism.',
+      'I, Jedi — Corran Horn\'s silver-white blade, hand-built from a hijacked speeder-bike throttle while he infiltrated Luke\'s academy as the Rogue Squadron pilot turned reluctant Jedi. The blade is near-white with a barely-warm tint, dual-phase capable, and pushes a faint rotoscope shimmer rather than a flat saturated color — a one-of-one signature among the New Jedi Order.',
     hiltNotes: 'Constructed from a speeder bike throttle. Dual-phase: standard and extended reach.',
     config: {
       name: 'CorranHorn',
@@ -571,7 +571,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Nomi Sunrider\'s green lightsaber. Grand Master of the Jedi Order during the Great Sith War, her verdant blade symbolizes her reluctant but powerful rise to leadership.',
+      'Tales of the Jedi — Nomi Sunrider, the housewife who became Grand Master of the Jedi Order during the Great Sith War. A verdant Jedi green ignited from Andur Sunrider\'s inherited hilt after her husband\'s murder, the steady shimmer suiting a Battle Meditation savant who never wanted the saber she still picked up to defend her daughter.',
     hiltNotes: 'Andur Sunrider\'s lightsaber, inherited after her husband\'s murder — Nomi reluctantly took it up to defend their daughter Vima. Tales of the Jedi comics.',
     config: {
       name: 'NomiSunrider',
@@ -601,7 +601,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Ulic Qel-Droma\'s blue lightsaber. The tragic Jedi Knight who fell to the dark side as Exar Kun\'s Sith apprentice before redeeming himself.',
+      'Tales of the Jedi — Ulic Qel-Droma\'s pre-fall blue, the Jedi Knight and Krath infiltrator before Aleema Keto seduced him and Exar Kun chained him to the Sith. A bright Old-Republic cobalt with a fadeout retraction that hints at the man\'s slow disappearance into the dark before redemption.',
     hiltNotes: 'Old-Republic-era Jedi hilt, ornate and ancestral — built during his apprenticeship under Arca Jeth. Tales of the Jedi comics.',
     config: {
       name: 'UlicQelDroma',
@@ -661,7 +661,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Darth Bane\'s red lightsaber. The creator of the Rule of Two — a deep, menacing crimson blade wielded by the Sith who reshaped the dark side forever.',
+      'Path of Destruction — Darth Bane, the architect of the Rule of Two and the orbalisk-armored Sith Lord who hid his order in the shadows for a thousand years. A deep menacing crimson run through the unstable style with audible flicker, evoking the rage-fueled combat that defined the Bane trilogy before the orbalisks finally ate him alive.',
     hiltNotes: 'Curved hilt design. Bane later encased himself in orbalisks that served as living armor.',
     config: {
       name: 'DarthBane',
@@ -728,7 +728,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Darth Talon\'s red lightsaber. The Twi\'lek Sith Lady from the Legacy era — a fierce, vivid scarlet blade matching her striking tattooed appearance.',
+      'Star Wars: Legacy — Darth Talon, the Twi\'lek Hand of Darth Krayt and one of his deadliest hunters more than a century after the Battle of Endor. A fierce, vivid scarlet over a slim One Sith hilt, the wipe ignition snapping out fast enough to match her Vaapad-trained acrobatic combat.',
     hiltNotes: 'Slim, ornate One Sith hilt with curved emitter and dark-metal grip — built during her training under Darth Krayt. Star Wars: Legacy comics.',
     config: {
       name: 'DarthTalon',
@@ -758,7 +758,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'detailed',
     screenAccurate: false,
     description:
-      'Darth Krayt\'s red lightsaber. Once A\'Sharad Hett the Tusken Jedi, now the founder of the One Sith.',
+      'Star Wars: Legacy — Darth Krayt, once A\'Sharad Hett the Tusken Jedi Master, now the immortal Yuuzhan-Vong-corrupted founder of the One Sith Empire that toppled the Fels. A deep crimson burning across dual Vong-coral hilts, the fracture ignition and dissolve retraction evoking the unstable Vongspawn flesh keeping him alive.',
     hiltNotes: 'Dual lightsabers, coral-encrusted Yuuzhan Vong-influenced hilts.',
     config: {
       name: 'DarthKrayt',
@@ -789,7 +789,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Cade Skywalker\'s blue lightsaber. The reluctant Legacy-era descendant of Luke Skywalker — a rough-edged blue blade.',
+      'Star Wars: Legacy — Cade Skywalker, the bounty-hunter great-great-grandson of Luke who buried his name and his lightsaber after his father\'s murder. A rough-edged blue with a sharp spark ignition, the slightly darker tone reflecting the years Cade spent hiding from the Skywalker legacy before reclaiming it against Krayt\'s Sith.',
     hiltNotes: 'Skywalker-family hilt, weathered and unkempt from years of bounty-hunting before Cade reclaimed his Jedi heritage. Star Wars: Legacy comics.',
     config: {
       name: 'CadeSkywalker',
@@ -819,7 +819,7 @@ export const LEGENDS_PRESETS: Preset[] = [
     tier: 'base',
     screenAccurate: false,
     description:
-      'Maris Brood\'s red tonfa-style lightsabers. Unique guard shoto configuration — the Zabrak Padawan fell to the dark side on Felucia.',
+      'The Force Unleashed — Maris Brood, Shaak Ti\'s Zabrak Padawan who survived the Jedi Purge only to fall to Felucia\'s feral wilds. Paired tonfa-grip shoto blades in fierce scarlet, the wipe ignition snapping out fast enough to suit her acrobatic claw-and-strike combat against Starkiller.',
     hiltNotes: 'Paired tonfa-grip lightsabers with perpendicular handles.',
     config: {
       name: 'MarisBrood',
