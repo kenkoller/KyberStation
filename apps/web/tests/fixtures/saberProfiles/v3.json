@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 3,
+  "description": "Current-version (v0.18+) saber profiles. Includes `description` (added commit 4aa0146), optional `hardwareProfileId` (commit a2d47ed), and optional `customPasteConfig` (commit 7430966). Running `migrateProfile` on these MUST be a no-op — the contract this set pins is idempotency. If a future schema change accidentally touches v3-shaped data, one of these fixtures fails loud. The `??` operator in the migration is the critical line: it preserves empty strings ('') and only default-fills when the field is undefined.",
+  "fixtures": [
+    {
+      "name": "minimal-current-shape",
+      "description": "The minimum-viable current-shape profile: empty card config, empty notes + description, no hardware profile. Round-tripping this must produce byte-identical output.",
+      "input": {
+        "id": "profile-minimal",
+        "name": "Minimal",
+        "chassisType": "",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "minimal-cc-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-05-10T10:00:00.000Z",
+            "updatedAt": "2026-05-10T10:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "minimal-cc-1",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-05-10T10:00:00.000Z",
+        "updatedAt": "2026-05-10T10:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-minimal",
+        "name": "Minimal",
+        "chassisType": "",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "minimal-cc-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-05-10T10:00:00.000Z",
+            "updatedAt": "2026-05-10T10:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "minimal-cc-1",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-05-10T10:00:00.000Z",
+        "updatedAt": "2026-05-10T10:00:00.000Z"
+      }
+    },
+    {
+      "name": "full-current-shape-with-hardware-profile",
+      "description": "A fully-populated current-shape profile: HardwareProfile id set to '89sabers-v3.9', non-empty notes + description, populated card entries. This pins that hardwareProfileId is preserved through migration when present.",
+      "input": {
+        "id": "profile-89s",
+        "name": "89Sabers ROTS",
+        "chassisType": "ROTS Hilt",
+        "boardType": "Proffie V3",
+        "cardSize": "32GB",
+        "hardwareProfileId": "89sabers-v3.9",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "89s-cc-1",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "89s-entry-1",
+                "order": 0,
+                "presetName": "Anakin ROTS",
+                "fontName": "anakin_rots",
+                "source": { "type": "builtin", "presetId": "anakin-rots-canonical" },
+                "config": {
+                  "name": "Anakin ROTS",
+                  "baseColor": { "r": 0, "g": 140, "b": 255 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 300,
+                  "retractionMs": 800,
+                  "shimmer": 0.1,
+                  "ledCount": 144
+                }
+              }
+            ],
+            "createdAt": "2026-05-15T16:00:00.000Z",
+            "updatedAt": "2026-05-15T16:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "89s-cc-1",
+        "notes": "Bench-verified config from 89sabers V3.9 with BT board.",
+        "description": "Anakin's ROTS-era saber as it appeared on Mustafar — pre-recovery, before becoming Vader.",
+        "createdAt": "2026-05-15T16:00:00.000Z",
+        "updatedAt": "2026-05-15T16:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-89s",
+        "name": "89Sabers ROTS",
+        "chassisType": "ROTS Hilt",
+        "boardType": "Proffie V3",
+        "cardSize": "32GB",
+        "hardwareProfileId": "89sabers-v3.9",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "89s-cc-1",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "89s-entry-1",
+                "order": 0,
+                "presetName": "Anakin ROTS",
+                "fontName": "anakin_rots",
+                "source": { "type": "builtin", "presetId": "anakin-rots-canonical" },
+                "config": {
+                  "name": "Anakin ROTS",
+                  "baseColor": { "r": 0, "g": 140, "b": 255 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 300,
+                  "retractionMs": 800,
+                  "shimmer": 0.1,
+                  "ledCount": 144
+                }
+              }
+            ],
+            "createdAt": "2026-05-15T16:00:00.000Z",
+            "updatedAt": "2026-05-15T16:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "89s-cc-1",
+        "notes": "Bench-verified config from 89sabers V3.9 with BT board.",
+        "description": "Anakin's ROTS-era saber as it appeared on Mustafar — pre-recovery, before becoming Vader.",
+        "createdAt": "2026-05-15T16:00:00.000Z",
+        "updatedAt": "2026-05-15T16:00:00.000Z"
+      }
+    },
+    {
+      "name": "custom-paste-sentinel",
+      "description": "The custom-paste passthrough sentinel: hardwareProfileId='custom-paste' + customPasteConfig holding the user's pasted factory config.h text. Both fields must survive migration verbatim. This pins the v0.18 paste-your-config escape hatch.",
+      "input": {
+        "id": "profile-sabertrio",
+        "name": "Sabertrio Aegis",
+        "chassisType": "Sabertrio Aegis",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "hardwareProfileId": "custom-paste",
+        "customPasteConfig": "#ifdef CONFIG_TOP\n#define FETT263_USE_BC_MELT_STAB\n#endif\n\n#ifdef CONFIG_PRESETS\nPreset presets[] = { };\n#endif\n\n#ifdef CONFIG_BLADES\nBladeConfig blades[] = { };\n#endif\n",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "sabertrio-cc-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-05-15T17:00:00.000Z",
+            "updatedAt": "2026-05-15T17:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "sabertrio-cc-1",
+        "notes": "",
+        "description": "Vendor-tested factory config; KyberStation only splices Preset[] on export.",
+        "createdAt": "2026-05-15T17:00:00.000Z",
+        "updatedAt": "2026-05-15T17:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-sabertrio",
+        "name": "Sabertrio Aegis",
+        "chassisType": "Sabertrio Aegis",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "hardwareProfileId": "custom-paste",
+        "customPasteConfig": "#ifdef CONFIG_TOP\n#define FETT263_USE_BC_MELT_STAB\n#endif\n\n#ifdef CONFIG_PRESETS\nPreset presets[] = { };\n#endif\n\n#ifdef CONFIG_BLADES\nBladeConfig blades[] = { };\n#endif\n",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "sabertrio-cc-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-05-15T17:00:00.000Z",
+            "updatedAt": "2026-05-15T17:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "sabertrio-cc-1",
+        "notes": "",
+        "description": "Vendor-tested factory config; KyberStation only splices Preset[] on export.",
+        "createdAt": "2026-05-15T17:00:00.000Z",
+        "updatedAt": "2026-05-15T17:00:00.000Z"
+      }
+    }
+  ]
+}

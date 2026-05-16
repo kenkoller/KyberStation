@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 2,
+  "description": "Post-cardConfigs, pre-description era saber profiles (commit 8b4baaf KyberStation Phase 7 → commit 4aa0146 description field). Profiles in this shape have a populated `cardConfigs[]` with `activeCardConfigId` and a `notes` field, but predate the `description` field (added 2026-04-29) and predate the optional `hardwareProfileId` (2026-05-15) + `customPasteConfig` (2026-05-15). The migration must (a) skip the legacy `presetEntries`-to-`cardConfigs` rebuild because `cardConfigs` is already non-empty, and (b) default-fill `description` to ''. The `notes` field is preserved when present and default-filled to '' when absent. The optional `hardwareProfileId` / `customPasteConfig` fields must remain absent (undefined) in the migrated output rather than being defaulted to anything else — JSON.stringify omits undefined keys, which is the contract the share-encoder + storage rely on.",
+  "fixtures": [
+    {
+      "name": "full-card-config-with-notes",
+      "description": "A v2 profile with a populated card config, an inline+builtin mixed entry list, and a non-empty `notes` field. Migration is a near no-op: only `description` gets default-filled. Every existing field — including the card entries with their `fontAssociation` strings — survives untouched.",
+      "input": {
+        "id": "profile-vader",
+        "name": "Darth Vader",
+        "chassisType": "ROTJ Hilt",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "vader-cc-1",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "vader-entry-1",
+                "order": 0,
+                "presetName": "Vader ANH",
+                "fontName": "vader_anh",
+                "source": { "type": "builtin", "presetId": "vader-anh-canonical" },
+                "config": {
+                  "name": "Vader ANH",
+                  "baseColor": { "r": 255, "g": 40, "b": 20 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "unstable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 400,
+                  "retractionMs": 900,
+                  "shimmer": 0.18,
+                  "ledCount": 144
+                },
+                "fontAssociation": "vader_anh"
+              }
+            ],
+            "createdAt": "2026-04-01T15:00:00.000Z",
+            "updatedAt": "2026-04-15T09:30:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "vader-cc-1",
+        "notes": "Bass speaker. Crystal needs re-attunement.",
+        "createdAt": "2026-04-01T15:00:00.000Z",
+        "updatedAt": "2026-04-15T09:30:00.000Z"
+      },
+      "expected": {
+        "id": "profile-vader",
+        "name": "Darth Vader",
+        "chassisType": "ROTJ Hilt",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "vader-cc-1",
+            "name": "Default",
+            "entries": [
+              {
+                "id": "vader-entry-1",
+                "order": 0,
+                "presetName": "Vader ANH",
+                "fontName": "vader_anh",
+                "source": { "type": "builtin", "presetId": "vader-anh-canonical" },
+                "config": {
+                  "name": "Vader ANH",
+                  "baseColor": { "r": 255, "g": 40, "b": 20 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "unstable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 400,
+                  "retractionMs": 900,
+                  "shimmer": 0.18,
+                  "ledCount": 144
+                },
+                "fontAssociation": "vader_anh"
+              }
+            ],
+            "createdAt": "2026-04-01T15:00:00.000Z",
+            "updatedAt": "2026-04-15T09:30:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "vader-cc-1",
+        "notes": "Bass speaker. Crystal needs re-attunement.",
+        "description": "",
+        "createdAt": "2026-04-01T15:00:00.000Z",
+        "updatedAt": "2026-04-15T09:30:00.000Z"
+      }
+    },
+    {
+      "name": "card-config-missing-notes-field",
+      "description": "Edge case: a v2 profile loaded from an even-older release that lacked `notes` entirely. The migration default-fills BOTH `notes` and `description` to '' (the `??` operator handles missing/undefined; an existing empty string is preserved).",
+      "input": {
+        "id": "profile-luke",
+        "name": "Luke ROTJ",
+        "chassisType": "ROTJ Hilt",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "luke-cc-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-03-20T11:00:00.000Z",
+            "updatedAt": "2026-03-20T11:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "luke-cc-1",
+        "createdAt": "2026-03-20T11:00:00.000Z",
+        "updatedAt": "2026-03-20T11:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-luke",
+        "name": "Luke ROTJ",
+        "chassisType": "ROTJ Hilt",
+        "boardType": "Proffie V3",
+        "cardSize": "16GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "luke-cc-1",
+            "name": "Default",
+            "entries": [],
+            "createdAt": "2026-03-20T11:00:00.000Z",
+            "updatedAt": "2026-03-20T11:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "luke-cc-1",
+        "notes": "",
+        "description": "",
+        "createdAt": "2026-03-20T11:00:00.000Z",
+        "updatedAt": "2026-03-20T11:00:00.000Z"
+      }
+    },
+    {
+      "name": "multiple-card-configs",
+      "description": "A v2 profile with multiple card configs (the user organized presets into 'Light Side' and 'Dark Side' SD card images). Each card config's id, name, createdAt, updatedAt, and entries[] must survive migration unchanged. activeCardConfigId stays pinned to the user's selection. This pins the contract that the migration never touches non-Default card configs.",
+      "input": {
+        "id": "profile-ahsoka",
+        "name": "Ahsoka Tano",
+        "chassisType": "Curved Hilt Twin",
+        "boardType": "Proffie V3",
+        "cardSize": "32GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "ahsoka-cc-1",
+            "name": "White Sabers",
+            "entries": [
+              {
+                "id": "ahsoka-entry-1",
+                "order": 0,
+                "presetName": "Ahsoka White",
+                "fontName": "ahsoka_white",
+                "source": { "type": "builtin", "presetId": "ahsoka-rebels" },
+                "config": {
+                  "name": "Ahsoka White",
+                  "baseColor": { "r": 240, "g": 250, "b": 255 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 300,
+                  "retractionMs": 800,
+                  "shimmer": 0.05,
+                  "ledCount": 132
+                }
+              }
+            ],
+            "createdAt": "2026-04-10T10:00:00.000Z",
+            "updatedAt": "2026-04-10T10:00:00.000Z"
+          },
+          {
+            "id": "ahsoka-cc-2",
+            "name": "Green Sabers (Padawan era)",
+            "entries": [],
+            "createdAt": "2026-04-12T14:00:00.000Z",
+            "updatedAt": "2026-04-12T14:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "ahsoka-cc-2",
+        "notes": "Two-card swap workflow.",
+        "createdAt": "2026-04-10T10:00:00.000Z",
+        "updatedAt": "2026-04-12T14:00:00.000Z"
+      },
+      "expected": {
+        "id": "profile-ahsoka",
+        "name": "Ahsoka Tano",
+        "chassisType": "Curved Hilt Twin",
+        "boardType": "Proffie V3",
+        "cardSize": "32GB",
+        "presetEntries": [],
+        "fontAssignments": {},
+        "cardConfigs": [
+          {
+            "id": "ahsoka-cc-1",
+            "name": "White Sabers",
+            "entries": [
+              {
+                "id": "ahsoka-entry-1",
+                "order": 0,
+                "presetName": "Ahsoka White",
+                "fontName": "ahsoka_white",
+                "source": { "type": "builtin", "presetId": "ahsoka-rebels" },
+                "config": {
+                  "name": "Ahsoka White",
+                  "baseColor": { "r": 240, "g": 250, "b": 255 },
+                  "clashColor": { "r": 255, "g": 255, "b": 255 },
+                  "lockupColor": { "r": 255, "g": 200, "b": 80 },
+                  "blastColor": { "r": 255, "g": 255, "b": 255 },
+                  "style": "stable",
+                  "ignition": "standard",
+                  "retraction": "standard",
+                  "ignitionMs": 300,
+                  "retractionMs": 800,
+                  "shimmer": 0.05,
+                  "ledCount": 132
+                }
+              }
+            ],
+            "createdAt": "2026-04-10T10:00:00.000Z",
+            "updatedAt": "2026-04-10T10:00:00.000Z"
+          },
+          {
+            "id": "ahsoka-cc-2",
+            "name": "Green Sabers (Padawan era)",
+            "entries": [],
+            "createdAt": "2026-04-12T14:00:00.000Z",
+            "updatedAt": "2026-04-12T14:00:00.000Z"
+          }
+        ],
+        "activeCardConfigId": "ahsoka-cc-2",
+        "notes": "Two-card swap workflow.",
+        "description": "",
+        "createdAt": "2026-04-10T10:00:00.000Z",
+        "updatedAt": "2026-04-12T14:00:00.000Z"
+      }
+    }
+  ]
+}
