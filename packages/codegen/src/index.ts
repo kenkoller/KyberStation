@@ -63,6 +63,18 @@ export {
   getEmitter,
   hasEmitter,
   listEmitterBoards,
+  // Xenopixel V3 — mapping + clamping helpers shared with the live
+  // SD card export path in apps/web/lib/zipExporter.ts.
+  XENO_BLADE_EFFECTS,
+  XENO_IGNITION_STYLES,
+  XENO_IGNITION_SPEED_MIN,
+  XENO_IGNITION_SPEED_MAX,
+  XENO_RETRACTION_SPEED_MIN,
+  XENO_RETRACTION_SPEED_MAX,
+  mapBladeEffect,
+  mapIgnitionStyle,
+  clampIgnitionSpeed,
+  clampRetractionSpeed,
 } from './emitters/index.js';
 
 // ─── C++ Style Parser ───

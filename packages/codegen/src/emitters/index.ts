@@ -6,6 +6,18 @@ export { GHv3Emitter } from './GHv3Emitter.js';
 export { XenopixelEmitter } from './XenopixelEmitter.js';
 export type { XenoEmitterFirmwareVersion } from './XenopixelEmitter.js';
 export {
+  XENO_BLADE_EFFECTS,
+  XENO_IGNITION_STYLES,
+  XENO_IGNITION_SPEED_MIN,
+  XENO_IGNITION_SPEED_MAX,
+  XENO_RETRACTION_SPEED_MIN,
+  XENO_RETRACTION_SPEED_MAX,
+  mapBladeEffect,
+  mapIgnitionStyle,
+  clampIgnitionSpeed,
+  clampRetractionSpeed,
+} from './XenopixelEmitter.js';
+export {
   ProffieRuntimeEmitter,
   buildRuntimePresetsFile,
   buildAdvancedStyleString,
