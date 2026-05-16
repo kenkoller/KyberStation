@@ -263,7 +263,7 @@ const PROFFIE_COMPILE_FLASH_TABLE: KnobTable = {
   blastColor: { capability: 'deliverable', reason: 'Emitted in the BlastL<>/Blast<> color slot.' },
   style: {
     capability: 'partial',
-    reason: '24 of 33 KyberStation styles have ProffieOS codegen parity (helix, candle, ember, dataStream, shatter, neutron added 2026-05-15). The remaining 9 (automata, cascade, gravity, mirage, moire, nebula, tidal, torrent, vortex) fall back to a closest-match style. See engine-style-parity-check CI guard.',
+    reason: '32 of 33 KyberStation styles have ProffieOS codegen parity. Only `automata` (Rule 30 cellular automaton) lacks an honest template approximation and silently falls back to a stable style. See engine-style-parity-check CI guard.',
   },
   ignition: { capability: 'deliverable', reason: 'Emitted as an InOutTrL<>/InOutFunc<> ignition template.' },
   ignitionMs: { capability: 'deliverable', reason: 'Emitted as Int<N> argument to the ignition template.' },

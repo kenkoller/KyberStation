@@ -580,6 +580,227 @@ function buildBaseStyle(config: BladeConfig): StyleNode {
         rawNode('White'),
       );
 
+    case 'cascade':
+      // Cascade — waterfall of bright bands flowing tip-to-hilt over a
+      // dim base. The canvas style runs 8 random gravity-accelerated
+      // Gaussians; the 1D-Neopixel approximation is a scrolling stripe
+      // pattern with negative direction (= tip-to-hilt motion):
+      //   Stripes<2500, -2000, Mix<Int<3300>, Black, base>, brightenedBase>
+      // 2500-pixel stripe period; dim-base background (3300/32768 ≈ 10%)
+      // mirrors the canvas's 10% dim BG; -2000 scroll = waterfall direction.
+      return templateNode(
+        'color',
+        'Stripes',
+        intNode(2500),
+        intNode(-2000),
+        templateNode(
+          'mix',
+          'Mix',
+          intTemplateNode(3300),
+          rawNode('Black'),
+          rgbNode(config.baseColor),
+        ),
+        rgbNode(brighten(config.baseColor, 0.7)),
+      );
+
+    case 'gravity':
+      // Gravity — color pools toward the down-pointing end of the blade.
+      // ProffieOS shape uses BladeAngle<> as the modulator:
+      //   Mix<BladeAngle<>, GradientHiltBright, GradientTipBright>
+      // BladeAngle<> outputs 0..32768 based on tilt (0 = pommel up,
+      // 32768 = blade tip up). When blade points down, BladeAngle is
+      // high so Mix favors the GradientTipBright side (pool at tip);
+      // when blade points up, BladeAngle is low so Mix favors
+      // GradientHiltBright. This is the same composer pattern used by
+      // `bladeCharge`. Sigma + EMA smoothing in the canvas style aren't
+      // representable here; the approximation is "directional pool"
+      // without the smoothing.
+      {
+        const bright = brighten(config.baseColor, 0.6);
+        const dim = {
+          r: Math.round(config.baseColor.r * 0.3),
+          g: Math.round(config.baseColor.g * 0.3),
+          b: Math.round(config.baseColor.b * 0.3),
+        };
+        return templateNode(
+          'mix',
+          'Mix',
+          templateNode('function', 'BladeAngle'),
+          templateNode('color', 'Gradient', rgbNode(bright), rgbNode(dim)),
+          templateNode('color', 'Gradient', rgbNode(dim), rgbNode(bright)),
+        );
+      }
+
+    case 'moire':
+      // Moiré — interference pattern from two overlapping frequency
+      // grids. The canvas style multiplies two sines at slightly
+      // different frequencies. ProffieOS shape:
+      //   Mix<Sin<Int<5000>>, dimBase, Mix<Sin<Int<4500>>, base, brightenedBase>>
+      // Two sin periods (5000 + 4500 ms) yield slow beating interference.
+      // The nested Mix multiplies (not literally — ProffieOS Mix is
+      // linear) but the resulting visual pattern is the honest moiré
+      // approximation for 1D Neopixel hardware.
+      {
+        const dim = {
+          r: Math.round(config.baseColor.r * 0.06),
+          g: Math.round(config.baseColor.g * 0.06),
+          b: Math.round(config.baseColor.b * 0.06),
+        };
+        return templateNode(
+          'mix',
+          'Mix',
+          templateNode('function', 'Sin', intTemplateNode(5000)),
+          rgbNode(dim),
+          templateNode(
+            'mix',
+            'Mix',
+            templateNode('function', 'Sin', intTemplateNode(4500)),
+            rgbNode(config.baseColor),
+            rgbNode(brighten(config.baseColor, 0.5)),
+          ),
+        );
+      }
+
+    case 'torrent':
+      // Torrent — rapid cascading streams of light, hilt-to-tip with
+      // swing modulation. ProffieOS shape uses Stripes<> + SwingSpeed
+      // for the swing-boosted speed:
+      //   Mix<SwingSpeed<400>,
+      //       Stripes<1500, 1500, dimBase, base>,
+      //       Stripes<800, 3000, dimBase, brightenedBase>>
+      // Slow stream at idle (1500-period scrolling 1500 ms/cycle)
+      // morphs to fast stream on swing (800-period at 3000 ms/cycle).
+      // SwingSpeed<400> = 400-ms decay window — same as `cinder`.
+      {
+        const dim = {
+          r: Math.round(config.baseColor.r * 0.08),
+          g: Math.round(config.baseColor.g * 0.08),
+          b: Math.round(config.baseColor.b * 0.08),
+        };
+        return templateNode(
+          'mix',
+          'Mix',
+          templateNode('function', 'SwingSpeed', intNode(400)),
+          templateNode(
+            'color',
+            'Stripes',
+            intNode(1500),
+            intNode(1500),
+            rgbNode(dim),
+            rgbNode(config.baseColor),
+          ),
+          templateNode(
+            'color',
+            'Stripes',
+            intNode(800),
+            intNode(3000),
+            rgbNode(dim),
+            rgbNode(brighten(config.baseColor, 0.6)),
+          ),
+        );
+      }
+
+    case 'vortex':
+      // Vortex — swirling spiral with two interlocked helices, twist-
+      // modulated rotation. ProffieOS shape uses Stripes<> with the
+      // edge color (defaulting to a brightened base) as the secondary
+      // strand. The canvas's two 180°-offset spirals reduce on 1D
+      // hardware to a two-color stripe alternation:
+      //   Stripes<1800, 1500, base, edgeColor>
+      // Twist-modulated speed isn't representable here without a
+      // TwistAngle wrapper — left as constant 1500 ms/cycle.
+      return templateNode(
+        'color',
+        'Stripes',
+        intNode(1800),
+        intNode(1500),
+        base,
+        edge,
+      );
+
+    case 'tidal':
+      // Tidal — ocean waves with foam crests, swing-modulated wave
+      // behavior. ProffieOS shape uses Mix<SwingSpeed,...> to switch
+      // between calm and choppy stripes, with white "foam" peaks:
+      //   Mix<SwingSpeed<500>,
+      //       Stripes<6000, 2500, base, Mix<Int<24000>, base, White>>,
+      //       Stripes<2500, 4000, base, White>>
+      // Calm (idle): long 6000-pixel wave period scrolling 2500 ms,
+      // foam peaks at 75% white (24000/32768). Choppy (high swing):
+      // short 2500-pixel period at 4000 ms with full white crests.
+      return templateNode(
+        'mix',
+        'Mix',
+        templateNode('function', 'SwingSpeed', intNode(500)),
+        templateNode(
+          'color',
+          'Stripes',
+          intNode(6000),
+          intNode(2500),
+          base,
+          templateNode(
+            'mix',
+            'Mix',
+            intTemplateNode(24000),
+            rgbNode(config.baseColor),
+            rawNode('White'),
+          ),
+        ),
+        templateNode(
+          'color',
+          'Stripes',
+          intNode(2500),
+          intNode(4000),
+          base,
+          rawNode('White'),
+        ),
+      );
+
+    case 'mirage':
+      // Mirage — desert heat haze with shimmering distortion. The canvas
+      // style multiplies two perpendicular noise fields. ProffieOS shape
+      // approximates the shimmer with BrownNoiseFlicker<> over a warm
+      // gradient:
+      //   BrownNoiseFlicker<Gradient<baseColor, brightenedBase>, White, 30>
+      // 30/255 intensity gives the subtle wobble characteristic of heat
+      // haze without overwhelming the base color.
+      return templateNode(
+        'color',
+        'BrownNoiseFlicker',
+        templateNode(
+          'color',
+          'Gradient',
+          base,
+          rgbNode(brighten(config.baseColor, 0.4)),
+        ),
+        rawNode('White'),
+        intNode(30),
+      );
+
+    case 'nebula':
+      // Nebula — churning interstellar gas with star-birth flares. The
+      // canvas style multi-layers noise + sparkle. ProffieOS shape:
+      //   AudioFlicker<
+      //     Mix<Int<16000>, baseColor, brightenedBase>,
+      //     White>
+      // Audio-driven flicker over a mid-bright nebula base color gives
+      // the "churning gas" feel; AudioFlicker<>'s default behavior
+      // sparkles brighter peaks (the star-birth flares) when sound is
+      // active. 1D-Neopixel-accurate approximation of the canvas
+      // 2D-cloud illusion.
+      return templateNode(
+        'color',
+        'AudioFlicker',
+        templateNode(
+          'mix',
+          'Mix',
+          intTemplateNode(16000),
+          rgbNode(config.baseColor),
+          rgbNode(brighten(config.baseColor, 0.6)),
+        ),
+        rawNode('White'),
+      );
+
     default:
       // Default to stable style
       return templateNode(
