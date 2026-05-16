@@ -533,8 +533,8 @@ export const EXTENDED_UNIVERSE_PRESETS: Preset[] = [
     },
   },
   {
-    id: 'eu-loden-greatstorm-blue',
-    name: 'Loden Greatstorm',
+    id: 'eu-loden-greatstorm-yellow',
+    name: 'Loden Greatstorm (Yellow)',
     character: 'Loden Greatstorm',
     era: 'expanded-universe',
     affiliation: 'jedi',
