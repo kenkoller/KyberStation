@@ -9,7 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- **ProffieOS Runtime Presets export** — new `ProffieOS Runtime (SD card)` target in the Card Writer that emits `presets.ini` directly. Two style modes selectable via radio toggle:
+  - **Phase A (default, safe):** emits `style=builtin N M` lines that reorder, rename, duplicate, and reassign fonts on the user's factory firmware preset bank. No custom colors transfer; rock-solid on any saber with `SAVE_PRESET` enabled.
+  - **Phase C (experimental):** emits `style=advanced R,G,B …` lines using ProffieOS's 11-slot named verb. Custom base / clash / blast / lockup colors and ignition / retraction timing transfer to the saber without firmware flash. Requires the user's firmware to NOT have `DISABLE_BASIC_PARSER_STYLES` defined (true for stock ProffieOS + standard Fett263 prop builds).
+  - Pivots the v0.17 narrative — modern vendor sabers (89sabers, Sabertrio, KR Sabers) no longer need their factory `config.h` cracked. Drop the file on the SD card, reboot, presets appear.
+
+- **Deliverability framework** — new `apps/web/lib/deliverability.ts` is the single source of truth for "what transfers from editor to saber" per export target. Per-knob × per-target table (deliverable / dropped-silently / partial / design-reference / unknown) with rationale strings. New "What Will Transfer to Your Saber" panel in CardWriter, always visible, three color-coded sections (✓ Transfers / ✗ Dropped or 📋 Documented / ⚠ Partial), every chip has a hover tooltip with the per-knob reason. Dynamic validation notice fires when the user has customized a knob that the current target silently drops.
+
+- **Hardware test plan doc** — [`docs/research/RUNTIME_PRESETS_HARDWARE_TEST_PLAN.md`](docs/research/RUNTIME_PRESETS_HARDWARE_TEST_PLAN.md) gives a step-by-step bench validation procedure for Phase A + Phase C + install_time round-trip + Phase C fallback. Designed for 89sabers V3.9-BT but applicable to any chassis with `SAVE_PRESET`.
+
+- **Format reference doc** — [`docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md) verified against ProffieOS v7.12 source. Covers schema, install_time semantics, style verb registry, `builtin N M` + `advanced` slot mapping, atomic-write contract.
+
+- **Emit ↔ parser audit doc** — [`docs/research/EMIT_PARSER_AUDIT.md`](docs/research/EMIT_PARSER_AUDIT.md) systematic catalog of every interface between KyberStation's emit code and a downstream parser (firmware, vendor app, our own persistence). For each: what we emit, what the consumer expects, status (verified / unverified / known bug), source-of-truth references. Created in response to the 2026-05-16 smoking-gun finding so future contributors can verify encoding contracts cheaply.
+
+### Fixed
+
+- **CRITICAL: Phase C runtime presets were emitting 0-255 RGB values when ProffieOS's runtime arg parser expects 0-65535.** Bench-verified on 89sabers V3.9-BT 2026-05-16: every Phase C blade was rendering at 1/257 of intended brightness (~0.4% photon output) since the feature shipped. Root cause: `RgbArg<>` parser at `~/ProffieOS/styles/rgb_arg.h:41` stores parsed values directly as `Color16(r, g, b)` which expects 16-bit channels. Compile-time `Rgb<R,G,B>` literals get the `× 0x101` (= × 257) 8→16-bit scaling automatically via the `Color16(Color8)` constructor; the runtime parser path does not. Fix: replaced `rgbCsv()` (which clamped to 0-255) with `rgbCsv16()` (which scales each channel × 257, clamps to 0-65535) in `packages/codegen/src/emitters/ProffieRuntimeEmitter.ts`. All existing users of Phase C get the fix on next deploy with no other action required. Deliverability table for `proffie_runtime` Phase C lifted: `baseColor`, `clashColor`, `lockupColor`, `blastColor`, `ignitionMs`, `retractionMs` all moved from `partial` → `deliverable`. The in-app tooltip rewritten to reflect reality.
+
+### Changed
+
+- **Engine → codegen parity expanded** — codegen handlers added for 14 previously-engine-only styles (helix, candle, ember, dataStream, shatter, neutron, cascade, gravity, moire, torrent, vortex, tidal, mirage, nebula). Codegen coverage lifted from 18 of 33 (54%) to 32 of 33 (97%). Only `automata` (Rule 30 cellular automaton) remains engine-only. The `engineStyleParity.test.ts` regression sentinel updates 33/18/15 → 33/32/1. Deliverability rationale for `proffie` `style: partial` updated to cite the new ratio.
+
+- **Marketing copy honesty pass** — five customer-facing strings narrowed to match shipping reality. `LandingValueStrip` third cell retitled "Compiles clean. Writes the card." → "Honest about what transfers" with explicit scope. `LandingFeaturePillars` "Modulation Routing" pillar no longer implies live hardware adaptability for unmappable bindings; "ProffieOS Codegen" pillar adds chassis caveat (validated on stock V3; vendor chassis need chassis profile or custom-paste). `README.md` headline export claim now names supported paths and tiers (V3 validated, Xenopixel constrained, Runtime Presets Phase A/C, CFX/GH design-ref only) instead of flattening all boards as peers. `README.md` Xenopixel section qualifies the 8-effect constraint explicitly. Features page hardware-fidelity claim narrowed to "audited in the visualizer" with a pointer to the in-app deliverability panel.
+
+- **POST_LAUNCH_BACKLOG.md re-prioritized** — ProffieOS Runtime Presets promoted to #1 v0.17 workflow; Hardware Profiles MVP demoted to #2 (still relevant for older DIY builds without `SAVE_PRESET`). Phase B + import-existing-presets.ini queued for v0.18+.
 
 ---
 

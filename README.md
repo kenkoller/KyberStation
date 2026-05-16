@@ -18,7 +18,7 @@
 
 > **33** styles · **22** effects · **19+13** ignition/retraction animations · **455+** presets · **7** board families · **~8,300** tests
 
-Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, Verso, Xenopixel, and more. Works on any device, phone, tablet, laptop, or desktop. Installable as a PWA.
+Design and visualize blade styles for many boards. Export flashable ProffieOS firmware for **Proffieboard V3** (validated end-to-end) and real SD-card files for **Xenopixel V3** (constrained effect subset) and **ProffieOS Runtime Presets** (SAVE_PRESET sabers like 89sabers, Sabertrio, KR Sabers — Phase A: reorder/rename/duplicate factory presets). For **CFX**, **Golden Harvest**, and other boards, KyberStation generates design-reference notes only — not flashable firmware. KyberStation's in-app deliverability panel tells you exactly what transfers to your saber before you export. Works on any device, phone, tablet, laptop, or desktop. Installable as a PWA.
 
 > Think "DAW for lightsabers", if GarageBand let you design blade animations instead of music tracks.
 
@@ -55,7 +55,7 @@ Design, preview, and export blade styles for Proffieboard, CFX, Golden Harvest, 
 - CFX, Golden Harvest V3/V4, Verso
 - Xenopixel V2/V3, LGT, Asteria, Darkwolf, DamienSaber
 - Board capability matrices with compatibility scoring per preset
-- **Full Xenopixel V3 configuration mode** — visual blade effect picker (8 effects), ignition style picker (12 styles), motion control panel, global settings panel, live config preview, and SD card ZIP export
+- **Xenopixel V3 configuration mode (constrained 8-effect subset)** — visual blade effect picker (8 of ~25 firmware effects: Fire, Steady, Unstable, Rainbow, Candy, Crack, Pulse, Flashing), ignition style picker (12 of ~50 firmware ignitions), motion control panel, global settings panel, live config preview, and SD card ZIP export. Clash/lockup/blast colors and shimmer don't transfer to Xenopixel firmware (limitation of the format, not KyberStation).
 - **Accurate Xenopixel blade previews** — 8 engine style implementations + 10 ignition animations that approximate what real Xenopixel V3 firmware produces on hardware
 - **Proffie-to-Xenopixel compatibility dialog** — switch boards and see which Xenopixel effect best matches your current ProffieOS style, with human-readable degradation notes (automatic config conversion planned for a future release)
 - **Xenopixel SD card import** — parse existing `fontconfig.ini` + `config.ini` files to reconstruct editable presets in KyberStation

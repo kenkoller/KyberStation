@@ -62,13 +62,13 @@ const PILLARS: PillarProps[] = [
     glyph: '◈',
     title: 'Modulation Routing',
     description:
-      'Wire any swing, sound, angle, twist, or clash signal to any parameter. Live driver evaluation in the visualizer; AST injection in the codegen.',
+      'Wire swing, sound, angle, twist, or clash signals to design parameters. Live driver evaluation in the visualizer; a subset map to live ProffieOS templates in codegen, the rest snapshot as static values (see deliverability panel before export).',
   },
   {
     glyph: '∷',
     title: 'ProffieOS Codegen',
     description:
-      'Real C++ output, validated against ProffieOS 7.x. Compiles clean with arduino-cli. Builds the full config.h with every preset wired.',
+      'Real C++ output, validated against ProffieOS 7.x. Builds the full config.h with every preset wired. Compile validated on stock Proffieboard V3; vendor chassis (89sabers, Sabertrio, KR Sabers) require chassis profile or custom-paste of factory config.',
   },
   {
     glyph: '♪',

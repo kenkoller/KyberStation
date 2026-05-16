@@ -33,7 +33,7 @@ export function LandingValueStrip() {
         <ValueCell
           index="01 / DESIGN"
           title="WYSIWYG, not config editing"
-          detail="29 blade styles, 21 effects, 19 ignition animations. Click the blade to place spatial effects. Everything round-trips through ProffieOS-compatible C++."
+          detail="33 blade styles, 21 effects, 19 ignition animations. Click the blade to place spatial effects. Most styles round-trip through ProffieOS-compatible C++ (1 fallback)."
         />
         <ValueCell
           index="02 / SIMULATE"
@@ -42,8 +42,8 @@ export function LandingValueStrip() {
         />
         <ValueCell
           index="03 / EXPORT"
-          title="Compiles clean. Writes the card."
-          detail="Generated code drops into Arduino IDE with no edits. One-click SD card write. Share builds as URL seeds, no account required."
+          title="Honest about what transfers"
+          detail="Proffieboard V3 generated config.h compiles in Arduino IDE. Vendor chassis + runtime presets supported with explicit deliverability gating — KyberStation tells you what will transfer to your saber and what won't before you export."
         />
       </div>
     </section>

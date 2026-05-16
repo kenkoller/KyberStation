@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useBladeStore } from '@/stores/bladeStore';
 import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import {
   exportMultiPresetZip,
   BOARDS,
+  PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER,
   type BoardId,
   type ExportPreset,
 } from '@/lib/zipExporter';
 import {
   detectBoardFromDirectory,
+  detectRuntimePresetSupport,
   listExistingPresets,
   backupConfig,
   writeFileToDirectory,
@@ -20,7 +22,16 @@ import {
   type DetectedBoard,
   type ExistingPreset,
 } from '@/lib/cardDetector';
+import { readExistingInstallTime } from '@/lib/runtimePresetIO';
+import {
+  getDeliverability,
+  customizedKnobs,
+  humanizeKnob,
+  type DesignKnob,
+} from '@/lib/deliverability';
+import { byId as hardwareProfileById } from '@kyberstation/hardware-profiles';
 import { generateStyleCode } from '@kyberstation/codegen';
+import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
 import { useCommitCeremony, phaseToStage } from '@/hooks/useCommitCeremony';
 
@@ -123,6 +134,37 @@ export function CardWriter() {
   const activeProfileId = useSaberProfileStore((s) => s.activeProfileId);
   const profiles = useSaberProfileStore((s) => s.profiles);
 
+  // Runtime-preset path: install_time discovered from SD card (direct-write
+  // mode) or null when the user hasn't connected a card yet. Reset when the
+  // user switches away from `proffie_runtime` to keep behavior obvious.
+  const [discoveredInstallTime, setDiscoveredInstallTime] = useState<string | null>(null);
+
+  // Phase C opt-in for the runtime path. Off by default; reset when user
+  // switches away from `proffie_runtime` to keep the toggle scoped.
+  const [useAdvancedRuntimeVerb, setUseAdvancedRuntimeVerb] = useState(false);
+
+  // Reset discovered install_time when switching boards.
+  useEffect(() => {
+    if (boardId !== 'proffie_runtime') {
+      setDiscoveredInstallTime(null);
+      setUseAdvancedRuntimeVerb(false);
+    }
+  }, [boardId]);
+
+  // Resolve numBlades from the active hardware profile when emitting a
+  // runtime preset file. Falls back to 1 when no profile is selected or
+  // the profile uses `custom-paste` (we have no way to know NUM_BLADES
+  // without parsing the pasted config).
+  const runtimeNumBlades = useMemo<1 | 2 | 3 | 4>(() => {
+    const profile = activeProfileId
+      ? profiles.find((p) => p.id === activeProfileId)
+      : undefined;
+    const hpId = profile?.hardwareProfileId;
+    if (!hpId || hpId === 'custom-paste') return 1;
+    const hp = hardwareProfileById(hpId);
+    return hp?.numBlades ?? 1;
+  }, [activeProfileId, profiles]);
+
   // Resolve which entries to use: active card config > preset list > current editor config
   const resolvedEntries = useMemo(() => {
     // Prefer active profile's active card config
@@ -203,17 +245,79 @@ export function CardWriter() {
       }
     }
 
-    // Empty sound fonts
-    const hasAnySoundFiles = presets.some((p) => p.soundFiles && p.soundFiles.length > 0);
-    if (!hasAnySoundFiles) {
+    // Empty sound fonts — only relevant for boards that emit font folders.
+    // The proffie_runtime path emits ONLY presets.ini (no font folders),
+    // so this info doesn't apply there.
+    if (boardId !== 'proffie_runtime') {
+      const hasAnySoundFiles = presets.some((p) => p.soundFiles && p.soundFiles.length > 0);
+      if (!hasAnySoundFiles) {
+        notices.push({
+          type: 'info',
+          text: 'Sound font folders will contain placeholder files. Copy your sound font files (e.g., from your SD card backup) into each font folder after extracting.',
+        });
+      }
+    }
+
+    // Runtime-preset-specific notices.
+    if (boardId === 'proffie_runtime') {
+      // Preset count cap: factory firmware compiles a fixed bank of
+      // presets. `style=builtin N M` references an index in that bank;
+      // out-of-range N returns null in ProffieOS. Most vendor sabers
+      // ship with 16-28 factory presets. Warn above 16 as a sane
+      // default — users with bigger banks can ignore the warning.
+      if (presets.length > 16) {
+        notices.push({
+          type: 'warning',
+          text: `${presets.length} presets requested. Most factory firmware compiles in 16-28 presets — presets beyond your firmware's built-in bank will show as blank. Check 'pli' output over USB serial for your firmware's preset count.`,
+        });
+      }
+      if (outputMethod === 'zip') {
+        notices.push({
+          type: 'info',
+          text: `ZIP export uses an install_time placeholder. Open the resulting presets.ini and replace "${PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER}" with your firmware's install_time string (run "pli" over USB serial to find it). Direct "Write to Card" reads this automatically.`,
+        });
+      } else if (outputMethod === 'card' && discoveredInstallTime) {
+        notices.push({
+          type: 'info',
+          text: `Detected install_time: ${discoveredInstallTime}. KyberStation will use this when writing presets.ini.`,
+        });
+      }
+    }
+
+    // Deliverability honesty gate — surface "your custom X won't transfer"
+    // BEFORE the user hits Export. Aggregates across all presets in the
+    // current bundle so the user sees one warning per dropped-knob type
+    // rather than N copies.
+    const droppedKnobsAcrossAll = new Set<DesignKnob>();
+    for (const p of presets) {
+      const report = getDeliverability(p.config, boardId, {
+        runtimeUseAdvancedVerb: useAdvancedRuntimeVerb,
+      });
+      const customized = customizedKnobs(p.config);
+      for (const k of report.knobs) {
+        if (k.capability === 'dropped-silently' && customized.has(k.knob)) {
+          droppedKnobsAcrossAll.add(k.knob);
+        }
+      }
+    }
+    if (droppedKnobsAcrossAll.size > 0) {
+      const labels = Array.from(droppedKnobsAcrossAll).map(humanizeKnob).join(', ');
+      notices.push({
+        type: 'warning',
+        text: `Your customized ${labels} will NOT transfer via this export path. Only what's listed under "Will transfer" below makes it to the saber.`,
+      });
+    }
+
+    // Design-reference gate — CFX/GH are visualizer notes, not firmware.
+    if (boardId === 'cfx' || boardId === 'golden_harvest') {
       notices.push({
         type: 'info',
-        text: 'Sound font folders will contain placeholder files. Copy your sound font files (e.g., from your SD card backup) into each font folder after extracting.',
+        text: 'This export is design-reference notes only — KyberStation cannot write flashable firmware for this board. The ZIP documents your intended values for manual configuration via the vendor app.',
       });
     }
 
     return notices;
-  }, [buildExportPresets, boardId]);
+  }, [buildExportPresets, boardId, outputMethod, discoveredInstallTime, useAdvancedRuntimeVerb]);
 
   // ─── Config Summary ───
 
@@ -268,7 +372,15 @@ export function CardWriter() {
     addStatus({ type: 'info', text: `Building ${BOARDS[boardId].label} ZIP archive...` });
 
     try {
-      const blob = await exportMultiPresetZip({ presets, boardId });
+      const blob = await exportMultiPresetZip({
+        presets,
+        boardId,
+        // ZIP path uses the placeholder when there's nothing discovered yet.
+        runtimeInstallTime: discoveredInstallTime ?? undefined,
+        runtimeNumBlades,
+        runtimeUseAdvancedVerb:
+          boardId === 'proffie_runtime' ? useAdvancedRuntimeVerb : undefined,
+      });
       setProgress(80);
 
       // Trigger download
@@ -295,7 +407,7 @@ export function CardWriter() {
         text: `Failed to create ZIP: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
-  }, [buildExportPresets, boardId, addStatus, clearStatus]);
+  }, [buildExportPresets, boardId, addStatus, clearStatus, discoveredInstallTime, runtimeNumBlades, useAdvancedRuntimeVerb]);
 
   // ─── Write to Card ───
 
@@ -326,6 +438,34 @@ export function CardWriter() {
     setPhase('detecting');
     setProgress(10);
     addStatus({ type: 'info', text: 'Scanning directory for existing configuration...' });
+
+    // Probe for runtime preset support up front so we can auto-discover
+    // the firmware's install_time when the user is using proffie_runtime.
+    let runtimeInstallTimeToUse: string | undefined;
+    if (boardId === 'proffie_runtime') {
+      const runtimeSupport = await detectRuntimePresetSupport(dirHandle);
+      if (runtimeSupport.hasPresetsIni) {
+        const existing = await readExistingInstallTime(dirHandle);
+        if (existing) {
+          runtimeInstallTimeToUse = existing;
+          setDiscoveredInstallTime(existing);
+          addStatus({
+            type: 'success',
+            text: `Found existing presets.ini. Using install_time: ${existing}`,
+          });
+        } else {
+          addStatus({
+            type: 'warning',
+            text: 'Existing presets.ini found but install_time could not be parsed. Placeholder will be used — ProffieOS may reject the file.',
+          });
+        }
+      } else {
+        addStatus({
+          type: 'warning',
+          text: 'No existing presets.ini on this card. Boot the saber once with its factory SD card so ProffieOS generates one, then retry. A placeholder install_time will be used otherwise.',
+        });
+      }
+    }
 
     try {
       const detected = await detectBoardFromDirectory(dirHandle);
@@ -382,7 +522,14 @@ export function CardWriter() {
       addStatus({ type: 'info', text: `Writing ${BOARDS[boardId].label} configuration...` });
 
       // Generate the ZIP and extract contents to write directly
-      const blob = await exportMultiPresetZip({ presets, boardId });
+      const blob = await exportMultiPresetZip({
+        presets,
+        boardId,
+        runtimeInstallTime: runtimeInstallTimeToUse,
+        runtimeNumBlades,
+        runtimeUseAdvancedVerb:
+          boardId === 'proffie_runtime' ? useAdvancedRuntimeVerb : undefined,
+      });
       setProgress(60);
 
       // We need to unzip and write files individually using File System Access API.
@@ -470,7 +617,7 @@ export function CardWriter() {
         text: `Write failed: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
-  }, [buildExportPresets, boardId, autoBackup, addStatus, clearStatus]);
+  }, [buildExportPresets, boardId, autoBackup, addStatus, clearStatus, runtimeNumBlades, useAdvancedRuntimeVerb]);
 
   // ─── Preset toggle ───
 
@@ -644,6 +791,58 @@ export function CardWriter() {
         </p>
       </div>
 
+      {/* Runtime-preset style mode toggle (Phase A vs Phase C). Only
+          surfaced when proffie_runtime is selected. Phase A is the safe
+          default. Phase C unlocks custom colors + timing but requires the
+          user's firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. */}
+      {boardId === 'proffie_runtime' && (
+        <div className="mb-4">
+          <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
+            Style Mode
+          </label>
+          <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1.5">
+            <label className="touch-target flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
+              <input
+                type="radio"
+                name="runtime-style-mode"
+                checked={!useAdvancedRuntimeVerb}
+                onChange={() => setUseAdvancedRuntimeVerb(false)}
+                disabled={isWorking}
+                aria-label="Phase A — factory presets (safe)"
+                className="accent-accent w-3.5 h-3.5 mt-0.5"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-ui-xs text-text-primary block">
+                  Phase A — reference factory presets <span className="text-text-muted">(safe default)</span>
+                </span>
+                <span className="text-ui-xs text-text-muted">
+                  Emits <code>style=builtin N M</code>. Reorder, rename, duplicate, reassign fonts. Custom colors / timing do NOT transfer.
+                </span>
+              </div>
+            </label>
+            <label className="touch-target flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
+              <input
+                type="radio"
+                name="runtime-style-mode"
+                checked={useAdvancedRuntimeVerb}
+                onChange={() => setUseAdvancedRuntimeVerb(true)}
+                disabled={isWorking}
+                aria-label="Phase C — custom styles (experimental)"
+                className="accent-accent w-3.5 h-3.5 mt-0.5"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-ui-xs text-text-primary block">
+                  Phase C — custom styles <span style={{ color: 'rgb(var(--accent-warm))' }}>(experimental)</span>
+                </span>
+                <span className="text-ui-xs text-text-muted">
+                  Emits <code>style=advanced R,G,B …</code>. Custom base / clash / blast / lockup colors + ignition / retraction timing all transfer. Requires firmware without <code>DISABLE_BASIC_PARSER_STYLES</code> (true for stock ProffieOS + Fett263 prop; some vendor builds disable this).
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
+
       {/* Preset Selector */}
       <div className="mb-4">
         <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
@@ -702,37 +901,65 @@ export function CardWriter() {
         )}
       </div>
 
-      {/* Font Folder Preview */}
+      {/* Deliverability panel — "what will actually transfer to your saber"
+          for the currently-selected board. Always rendered so users build
+          intuition; entries are color-coded by capability. */}
+      <DeliverabilityPanel
+        presets={buildExportPresets()}
+        boardId={boardId}
+        runtimeUseAdvancedVerb={useAdvancedRuntimeVerb}
+      />
+
+      {/* Output Files Preview — runtime path emits only presets.ini */}
       <div className="mb-4">
         <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
-          Font Folders
+          {boardId === 'proffie_runtime' ? 'Output Files' : 'Font Folders'}
         </label>
         <div className="bg-black/30 rounded border border-border-subtle p-3">
-          {(() => {
-            const exportPresets = resolvedEntries
-              ? resolvedEntries.map((e) => ({ id: e.id, name: e.fontName }))
-              : selectedPresets.has('current')
-                ? [{ id: 'current', name: (config.name ?? 'custom').replace(/\s+/g, '_').toLowerCase() }]
-                : [];
-            if (exportPresets.length === 0) {
-              return <p className="text-ui-sm text-text-muted italic">No presets selected</p>;
-            }
-            return (
-              <div className="space-y-1">
-                {exportPresets.map((p) => (
-                  <div key={p.id} className="flex items-center gap-2 text-ui-sm font-mono">
-                    <span className="text-text-muted">/</span>
-                    <span className="text-text-secondary">{p.name}/</span>
-                    <span className="text-text-muted">sound font folder</span>
-                  </div>
-                ))}
-                <div className="flex items-center gap-2 text-ui-sm font-mono mt-1 pt-1 border-t border-border-subtle">
-                  <span className="text-text-muted">/</span>
-                  <span className="text-accent">{BOARDS[boardId].configFileName}</span>
-                </div>
+          {boardId === 'proffie_runtime' ? (
+            <div className="space-y-1 text-ui-sm font-mono">
+              <div className="flex items-center gap-2">
+                <span className="text-text-muted">/</span>
+                <span className="text-accent">presets.ini</span>
+                <span className="text-text-muted">runtime preset list</span>
               </div>
-            );
-          })()}
+              <div className="flex items-center gap-2">
+                <span className="text-text-muted">/</span>
+                <span className="text-text-secondary">KYBERSTATION_README.txt</span>
+                <span className="text-text-muted">install instructions</span>
+              </div>
+              <p className="text-ui-xs text-text-muted mt-2 px-1 font-sans">
+                No font folders emitted — your saber&apos;s factory firmware already
+                has the sound fonts. {runtimeNumBlades > 1 && `Each preset emits ${runtimeNumBlades} style lines (one per blade).`}
+              </p>
+            </div>
+          ) : (
+            (() => {
+              const exportPresets = resolvedEntries
+                ? resolvedEntries.map((e) => ({ id: e.id, name: e.fontName }))
+                : selectedPresets.has('current')
+                  ? [{ id: 'current', name: (config.name ?? 'custom').replace(/\s+/g, '_').toLowerCase() }]
+                  : [];
+              if (exportPresets.length === 0) {
+                return <p className="text-ui-sm text-text-muted italic">No presets selected</p>;
+              }
+              return (
+                <div className="space-y-1">
+                  {exportPresets.map((p) => (
+                    <div key={p.id} className="flex items-center gap-2 text-ui-sm font-mono">
+                      <span className="text-text-muted">/</span>
+                      <span className="text-text-secondary">{p.name}/</span>
+                      <span className="text-text-muted">sound font folder</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 text-ui-sm font-mono mt-1 pt-1 border-t border-border-subtle">
+                    <span className="text-text-muted">/</span>
+                    <span className="text-accent">{BOARDS[boardId].configFileName}</span>
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </div>
       </div>
 
@@ -1205,4 +1432,169 @@ function statusColorStyle(type: StatusMessage['type']): React.CSSProperties {
     background: `rgb(var(${token}) / 0.1)`,
     borderColor: `rgb(var(${token}) / 0.3)`,
   };
+}
+
+// ─── Deliverability Panel ───
+//
+// "Honest export" — surfaces what will / won't transfer to the saber
+// for the currently-selected board, BEFORE the user hits Export. Reads
+// the deliverability table from `apps/web/lib/deliverability.ts` so the
+// data stays in one place.
+//
+// Two columns:
+//   ✅ "Will transfer" — knobs marked deliverable for this target
+//   ⚠ "Won't transfer" — knobs marked dropped-silently or design-reference
+//
+// Partial / unknown knobs roll up into a third "Partial / lossy" row
+// underneath when present.
+
+interface DeliverabilityPanelProps {
+  presets: ExportPreset[];
+  boardId: BoardId;
+  /** Phase C opt-in flag — flips proffie_runtime to the advanced table. */
+  runtimeUseAdvancedVerb?: boolean;
+}
+
+function DeliverabilityPanel({ presets, boardId, runtimeUseAdvancedVerb }: DeliverabilityPanelProps) {
+  // Aggregate across all presets in the bundle. Even if user has a single
+  // preset selected, this resolves correctly.
+  const aggregated = useMemo(() => {
+    // Use the first preset's config as the canonical input. If user has
+    // multiple presets with different customizations, the knob TABLE is
+    // identical per target — what differs is only the "is this knob
+    // customized" detection used for the warning gate. The panel itself
+    // is target-driven and identical across presets, so first-preset is
+    // sufficient.
+    const fallbackConfig: BladeConfig = {
+      baseColor: { r: 0, g: 140, b: 255 },
+      clashColor: { r: 255, g: 255, b: 255 },
+      lockupColor: { r: 255, g: 220, b: 80 },
+      blastColor: { r: 255, g: 255, b: 255 },
+      style: 'stable',
+      ignition: 'standard',
+      retraction: 'standard',
+      ignitionMs: 300,
+      retractionMs: 800,
+      shimmer: 0,
+      ledCount: 144,
+    };
+    const sampleConfig = presets[0]?.config ?? fallbackConfig;
+    const report = getDeliverability(sampleConfig, boardId, {
+      runtimeUseAdvancedVerb,
+    });
+    return report;
+  }, [presets, boardId, runtimeUseAdvancedVerb]);
+
+  const transfers = aggregated.knobs.filter((k) => k.capability === 'deliverable');
+  const doesntTransfer = aggregated.knobs.filter(
+    (k) => k.capability === 'dropped-silently' || k.capability === 'design-reference',
+  );
+  const partial = aggregated.knobs.filter(
+    (k) => k.capability === 'partial' || k.capability === 'unknown',
+  );
+
+  return (
+    <div className="mb-4">
+      <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
+        What Will Transfer to Your Saber
+      </label>
+      <div className="bg-black/30 rounded border border-border-subtle p-3 space-y-2">
+        {/* Will-transfer column */}
+        {transfers.length > 0 && (
+          <div>
+            <p className="text-ui-xs uppercase tracking-wider mb-1" style={{ color: 'rgb(var(--status-ok))' }}>
+              ✓ Transfers
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {transfers.map((k) => (
+                <span
+                  key={k.knob}
+                  className="inline-block px-1.5 py-0.5 rounded text-ui-xs"
+                  title={k.reason}
+                  style={{
+                    background: 'rgb(var(--status-ok) / 0.12)',
+                    color: 'rgb(var(--status-ok))',
+                    border: '1px solid rgb(var(--status-ok) / 0.3)',
+                  }}
+                >
+                  {humanizeKnob(k.knob)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Won't-transfer column */}
+        {doesntTransfer.length > 0 && (
+          <div>
+            <p
+              className="text-ui-xs uppercase tracking-wider mb-1"
+              style={{
+                color:
+                  aggregated.overall === 'design-only'
+                    ? 'rgb(var(--status-info))'
+                    : 'rgb(var(--status-warn))',
+              }}
+            >
+              {aggregated.overall === 'design-only' ? '📋 Documented (not flashed)' : '✗ Dropped'}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {doesntTransfer.map((k) => (
+                <span
+                  key={k.knob}
+                  className="inline-block px-1.5 py-0.5 rounded text-ui-xs"
+                  title={k.reason}
+                  style={{
+                    background:
+                      aggregated.overall === 'design-only'
+                        ? 'rgb(var(--status-info) / 0.12)'
+                        : 'rgb(var(--status-warn) / 0.12)',
+                    color:
+                      aggregated.overall === 'design-only'
+                        ? 'rgb(var(--status-info))'
+                        : 'rgb(var(--status-warn))',
+                    border:
+                      aggregated.overall === 'design-only'
+                        ? '1px solid rgb(var(--status-info) / 0.3)'
+                        : '1px solid rgb(var(--status-warn) / 0.3)',
+                  }}
+                >
+                  {humanizeKnob(k.knob)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Partial / lossy column */}
+        {partial.length > 0 && (
+          <div>
+            <p className="text-ui-xs uppercase tracking-wider mb-1" style={{ color: 'rgb(var(--accent-warm))' }}>
+              ⚠ Partial / lossy
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {partial.map((k) => (
+                <span
+                  key={k.knob}
+                  className="inline-block px-1.5 py-0.5 rounded text-ui-xs"
+                  title={k.reason}
+                  style={{
+                    background: 'rgb(var(--accent-warm) / 0.12)',
+                    color: 'rgb(var(--accent-warm))',
+                    border: '1px solid rgb(var(--accent-warm) / 0.3)',
+                  }}
+                >
+                  {humanizeKnob(k.knob)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-ui-xs text-text-muted pt-1 border-t border-border-subtle">
+          Hover any chip to see why. {aggregated.summary}
+        </p>
+      </div>
+    </div>
+  );
 }

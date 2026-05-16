@@ -116,7 +116,7 @@ const PILLARS: Pillar[] = [
     bullets: [
       '190+ Star Wars presets (prequel, OT, sequel, animated, legends, EU)',
       '130+ pop-culture entries (LOTR, mythology, MCU, DC, Zelda, FF/KH, Halo, Harry Potter, anime)',
-      'Hardware-fidelity audited — every preset matches what real LED strips can produce',
+      'Hardware-fidelity audited in the visualizer — colors and motion accurate for what 1D Neopixel strips can render (real-saber transfer depends on chassis + export path; see deliverability panel)',
       'Filter by era, faction, color family, or continuity',
     ],
   },

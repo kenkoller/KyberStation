@@ -182,6 +182,53 @@ export async function detectBoardFromDirectory(
   return null;
 }
 
+// ─── Runtime preset support detection ───
+
+export interface RuntimePresetSupport {
+  /** True if `presets.ini` exists at the SD card root. */
+  hasPresetsIni: boolean;
+  /**
+   * The first non-empty line of `presets.ini`, if present. Used by
+   * CardWriter to display "your firmware's install_time is X" feedback
+   * and to source the install_time substitution at write time. Null
+   * means the file is missing or its first line isn't a valid
+   * `installed=` line.
+   */
+  installedLine: string | null;
+}
+
+/**
+ * Probe whether the directory looks like an SD card for a saber that
+ * uses ProffieOS runtime presets (any board compiled with
+ * `SAVE_PRESET`). Kept separate from `detectBoardFromDirectory` because
+ * the SD card of a ProffieOS saber typically has BOTH config.h
+ * (compiled-in) AND presets.ini (runtime-loaded) — conflating them
+ * would obscure the runtime path's availability.
+ */
+export async function detectRuntimePresetSupport(
+  dirHandle: FileSystemDirectoryHandle,
+): Promise<RuntimePresetSupport> {
+  const content = await readFileText(dirHandle, 'presets.ini');
+  if (content === null) {
+    return { hasPresetsIni: false, installedLine: null };
+  }
+
+  // Find the first non-empty, non-comment line.
+  const lines = content.split(/\r?\n/);
+  for (const raw of lines) {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) continue;
+    if (trimmed.startsWith('#')) continue;
+    if (trimmed.startsWith('installed=')) {
+      return { hasPresetsIni: true, installedLine: trimmed };
+    }
+    // File exists but doesn't start with installed= → not a valid
+    // presets.ini per ProffieOS's ValidatePresets().
+    return { hasPresetsIni: true, installedLine: null };
+  }
+  return { hasPresetsIni: true, installedLine: null };
+}
+
 // ─── Preset Listing ───
 
 /**

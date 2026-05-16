@@ -42,20 +42,6 @@
  */
 export const ENGINE_ONLY_STYLE_IDS: readonly string[] = [
   'automata',
-  'candle',
-  'cascade',
-  'dataStream',
-  'ember',
-  'gravity',
-  'helix',
-  'mirage',
-  'moire',
-  'nebula',
-  'neutron',
-  'shatter',
-  'tidal',
-  'torrent',
-  'vortex',
 ] as const;
 
 /**
@@ -89,4 +75,18 @@ export const CODEGEN_SUPPORTED_STYLE_IDS: readonly string[] = [
   'prism',
   'imageScroll',
   'painted',
+  'helix',
+  'candle',
+  'ember',
+  'dataStream',
+  'shatter',
+  'neutron',
+  'cascade',
+  'gravity',
+  'moire',
+  'torrent',
+  'vortex',
+  'tidal',
+  'mirage',
+  'nebula',
 ] as const;
