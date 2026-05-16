@@ -2,9 +2,29 @@
 
 exports[`renderer golden hash — drawWorkbenchBlade > FNV-1a hash function is stable for a known input 1`] = `"163e4e7b"`;
 
+exports[`renderer golden hash — drawWorkbenchBlade > aurora-style :: on 1`] = `"9d45fedc"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > candle-style :: on 1`] = `"177d8b33"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > crystal-shatter-style :: on 1`] = `"5e0610b3"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > cyan-stable :: on 1`] = `"221f5d3a"`;
+
 exports[`renderer golden hash — drawWorkbenchBlade > darksaber :: on 1`] = `"0767f62b"`;
 
+exports[`renderer golden hash — drawWorkbenchBlade > data-stream-style :: on 1`] = `"ab9d9455"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > fire-style :: on 1`] = `"a1aa149f"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > gradient-style :: on 1`] = `"7638ede3"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > helix-style :: on 1`] = `"1d266484"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > mace-purple-stable :: on 1`] = `"77fdd53a"`;
+
 exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: igniting-50 1`] = `"ad34bb23"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: long-200-led :: on 1`] = `"ad34bb23"`;
 
 exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: off 1`] = `"209d87c5"`;
 
@@ -12,8 +32,28 @@ exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: on 1`] = 
 
 exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: retracting-50 1`] = `"209d87c5"`;
 
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: shimmer-0 :: on 1`] = `"6eaa5161"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: shimmer-30pct :: on 1`] = `"c9058a30"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > obi-wan-blue :: short-50-led :: on 1`] = `"ad34bb23"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > prism-style :: on 1`] = `"274e7491"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > pulse-style :: on 1`] = `"278c9f86"`;
+
 exports[`renderer golden hash — drawWorkbenchBlade > rey-yellow-stable :: on 1`] = `"2fe2296e"`;
 
+exports[`renderer golden hash — drawWorkbenchBlade > rotoscope-style :: on 1`] = `"000cee13"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > saturated-orange-stable :: on 1`] = `"4ab9c964"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > vader-red-unstable :: igniting-25 1`] = `"f5b97e9a"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > vader-red-unstable :: igniting-75 1`] = `"60d3efef"`;
+
 exports[`renderer golden hash — drawWorkbenchBlade > vader-red-unstable :: on 1`] = `"60d3efef"`;
+
+exports[`renderer golden hash — drawWorkbenchBlade > vader-red-unstable :: retracting-25 1`] = `"bdf1e4f3"`;
 
 exports[`renderer golden hash — drawWorkbenchBlade > yoda-green-stable :: on 1`] = `"b8a49961"`;

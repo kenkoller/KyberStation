@@ -1,7 +1,7 @@
 # Visualizer Upgrade Plan — Hardware-Accurate Preview + 3D Saber
 
 **Created:** 2026-05-10
-**Status:** Approved — all three phases greenlit for development
+**Status (2026-05-12):** Phases 1 + 2A + 2B **shipped via PR #301** in `v0.21.1 "Polyglot Release"`. Phase 2C (3D mouse interaction), Phase 2D (3D post-processing — UnrealBloomPass + polycarbonate diffusion + motion blur), and Phase 3 remain open. See [`POST_LAUNCH_BACKLOG.md`](POST_LAUNCH_BACKLOG.md) for current priority order.
 **Motivation:** Close the accuracy gap between KyberStation's preview and real hardware output, and build a flagship 3D saber visualizer with full mouse interaction (matching/exceeding Fredrik's Style Editor).
 
 ---
