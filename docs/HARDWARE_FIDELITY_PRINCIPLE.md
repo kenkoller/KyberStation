@@ -354,6 +354,44 @@ inventoried at `docs/research/EMIT_PARSER_AUDIT.md` (sections A-J).
 This file is the cheap-to-verify reference future contributors should
 read FIRST before bench-debugging a hardware fidelity bug.
 
+### 2026-05-16 — Template-eval becomes the default render path (closes the "what you see ≠ what hardware does" drift gap)
+
+`BladeEngine.renderMode` default flipped from `'proffie'` (parameter
+engine — hand-written TypeScript style classes that approximate
+ProffieOS behavior) to `'template-eval'` (interpreter that evaluates
+the same ProffieOS C++ template string the firmware uses). The flip
+closes the structural drift between "what the visualizer shows" and
+"what real hardware does" — they're now the same render path for any
+preset where codegen emits a complete template (455/455 gallery
+presets after PR #352).
+
+**Why this matters for hardware fidelity:** previously the engine had
+two render paths in production — approximation (parameter engine) and
+pixel-accurate (template-eval), used only for imported Fett263 styles
+via `importedRawCode`. Bugs in the parameter engine could drift away
+from the codegen output without anyone noticing — the parameter
+engine renders one thing, the user flashes the codegen output, real
+hardware does something subtly different. Template-eval-as-default
+eliminates that drift class for any preset codegen handles end-to-end.
+
+The parameter engine is preserved as a **safety net** when template
+parse fails or no template code is supplied (legacy / partial-config
+edge cases). Hardware Fidelity Principle's "fake it honestly" clause
+still applies for engine-only style implementations that don't have a
+codegen path — but those are now the exception, not the default.
+
+**Bench results:** `pnpm bench:template-eval` shows 455/455 gallery
+presets render via template-eval with worst-case p95 = 0.062 ms (~260×
+under the 16.67 ms / 60fps budget). No perf gate blocking the flip.
+Full benchmark at [`docs/research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md`](research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md).
+
+**Test coverage:** `packages/template-eval/tests/lockupTypes.test.ts`
+(50 new tests) exercises the registry-gap closure (LockupType tags,
+EffectType tags, FireConfig structured leaf) and codegen→template-eval
+round-trip on representative preset shapes. `packages/engine/tests/`
+existing 1219 tests remain green with the default flip (parameter
+engine still runs for engine-only test fixtures).
+
 ## When to update this doc
 
 - A new style is added to the engine.
