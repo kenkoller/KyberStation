@@ -5,9 +5,10 @@
 // Clean-room implementations based on ProffieOS documented behavior.
 
 import { BaseStyleTemplate } from '../BaseStyle.js';
-import type { BladeState, Color, EffectSystem, EffectType, StyleTemplate } from '../types.js';
+import type { BladeState, Color, EffectSystem, EffectType, LockupType, StyleTemplate } from '../types.js';
 import { BLACK, clamp, PROFFIE_MAX } from '../types.js';
 import { bump, ledToBladePos } from '../utils.js';
+import { isLockupTypeTag } from './tags.js';
 
 // ─── SimpleClashL<ClashColor, Ms?, WidthPct?> ───
 // Simple clash flash at impact point.
@@ -302,13 +303,19 @@ export class ResponsiveLockupLTemplate extends BaseStyleTemplate {
 }
 
 // ─── LockupTrL<Color, TrBegin, TrHold, TrEnd, LockupType> ───
-// More flexible lockup with explicit transition phases.
+// More flexible lockup with explicit transition phases. The trailing
+// `LockupType` arg (e.g. `SaberBase::LOCKUP_NORMAL`) constrains which
+// `effects.lockupType` values activate this layer. When the trailing
+// arg is absent (older 4-arg shape), the layer activates on any
+// non-`LOCKUP_NONE` lockup — preserves prior behavior.
 
 export class LockupTrLTemplate extends BaseStyleTemplate {
   private readonly color: StyleTemplate;
   private readonly trBegin: StyleTemplate;
   private readonly trHold: StyleTemplate;
   private readonly trEnd: StyleTemplate;
+  /** Lockup type this layer activates for, or null to match any non-NONE lockup. */
+  private readonly matchType: LockupType | null;
   private lockupActive = false;
   private lockupEndTime = -1;
 
@@ -318,6 +325,11 @@ export class LockupTrLTemplate extends BaseStyleTemplate {
     this.trBegin = args[1]!;
     this.trHold = args[2]!;
     this.trEnd = args[3]!;
+    // 5th arg: lockup-type tag (e.g. SaberBase::LOCKUP_NORMAL). When the
+    // tag isn't present or isn't a recognized LockupTypeTag, we treat it
+    // as "match any" so 4-arg callers and unknown variants both render.
+    const trailing = args[4];
+    this.matchType = isLockupTypeTag(trailing) ? trailing.getTag() : null;
   }
 
   run(state: BladeState, effects: EffectSystem): void {
@@ -327,7 +339,11 @@ export class LockupTrLTemplate extends BaseStyleTemplate {
     this.trHold.run(state, effects);
     this.trEnd.run(state, effects);
 
-    if (effects.lockupType !== 'LOCKUP_NONE') {
+    const activeNow = this.matchType === null
+      ? effects.lockupType !== 'LOCKUP_NONE'
+      : effects.lockupType === this.matchType;
+
+    if (activeNow) {
       if (!this.lockupActive) {
         this.lockupActive = true;
       }

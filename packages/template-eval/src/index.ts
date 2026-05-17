@@ -58,5 +58,14 @@ export {
 // Transition templates (for registry gap coverage)
 export { TrCenterWipeInSparkTemplate } from './templates/transitions.js';
 
+// Tag templates (constant enum / structured-leaf payloads)
+export {
+  LockupTypeTagTemplate,
+  EffectTypeTagTemplate,
+  FireConfigTemplate,
+  isLockupTypeTag,
+  isFireConfig,
+} from './templates/tags.js';
+
 // Registry introspection
 export { isRegistered, registrySize, registeredNames } from './registry.js';
