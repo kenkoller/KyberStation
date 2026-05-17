@@ -46,3 +46,17 @@ export type {
   UnaryOp,
   BuiltInFnId,
 } from './mapBindings.js';
+
+export {
+  BUTTON_EVENT_EMIT_MAP,
+  lookupButtonEventEmit,
+  buildButtonEventWrapper,
+  isValidEffectConstant,
+} from './buttonEventMap.js';
+export type {
+  ButtonEventEmitSpec,
+  ButtonEventWrapper,
+  ButtonEvent,
+  GestureEvent,
+  PropFileEvent,
+} from './buttonEventMap.js';
