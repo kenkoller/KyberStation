@@ -5,6 +5,19 @@
 export { BladeScene3D } from './BladeScene3D';
 export type { BladeScene3DProps } from './BladeScene3D';
 
+// Phase 2C interaction helpers (exported for tests + downstream tuning).
+export {
+  uvYToLedIndex,
+  createDragAccumulator,
+  updateDragAccumulator,
+  resetDragAccumulator,
+  DRAG_RETRACT_UV_THRESHOLD,
+  DRAG_RETRACT_RESET_GAP_MS,
+  HOLD_LOCKUP_MS,
+  ORBIT_ROTATE_SPEED,
+} from './BladeScene3D';
+export type { DragAccumulator } from './BladeScene3D';
+
 export {
   createBladeGeometry,
   createBladeTipGeometry,

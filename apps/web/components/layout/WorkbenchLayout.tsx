@@ -1172,11 +1172,29 @@ export function WorkbenchLayout() {
               <BladeScene3D
                 engineRef={engineRef}
                 className="h-full"
-                onBladeClick={(_ledIndex) => {
-                  triggerEffectWithAudio('clash');
+                // Phase 2C — engine.triggerEffect is fired inside SceneDriver
+                // with a precise blade-position. These callbacks only play
+                // the audio side-effect + emit an effect-log entry, so we
+                // call the bare audio helper instead of triggerEffectWithAudio
+                // (which would double-trigger the engine effect).
+                onBladeClick={(_ledIndex, _position) => {
+                  audio.playClash();
+                  useBladeStore.getState().addEffectLog(
+                    `${new Date().toLocaleTimeString()}: CLASH`,
+                  );
                 }}
-                onBladeHold={(_ledIndex) => {
-                  triggerEffectWithAudio('lockup');
+                onBladeHold={(_ledIndex, _position) => {
+                  audio.playLockup();
+                  useBladeStore.getState().addEffectLog(
+                    `${new Date().toLocaleTimeString()}: LOCKUP`,
+                  );
+                }}
+                onDragRetract={() => {
+                  audio.playRetraction();
+                  useBladeStore.getState().setIsOn(false);
+                  useBladeStore.getState().addEffectLog(
+                    `${new Date().toLocaleTimeString()}: RETRACTION (drag)`,
+                  );
                 }}
               />
             ) : (
