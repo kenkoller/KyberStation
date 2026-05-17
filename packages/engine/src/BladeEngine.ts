@@ -98,7 +98,17 @@ export class BladeEngine {
   private _state: BladeState = BladeState.OFF;
   private _extendProgress: number = 0;
   private _topology: BladeTopology;
-  private _renderMode: RenderMode = 'proffie';
+  // ─── Visualizer Phase 3 Step 2 (2026-05-16) ───
+  // Default render mode is now 'template-eval' — codegen→template-eval
+  // round-trip covers 455/455 gallery presets after the registry gap
+  // fix in PR #352, and per-preset p95 stays under 0.07ms (250×
+  // headroom vs the 16.67ms / 60fps budget). When the engine is in
+  // 'template-eval' mode but no template code is available (neither
+  // `config.importedRawCode` nor a preview template), the render path
+  // at update() falls through to the parameter-engine pipeline —
+  // preserving the original behavior as a safety net.
+  // See docs/research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md.
+  private _renderMode: RenderMode = 'template-eval';
   private _elapsedTime: number = 0;
   /** Preon elapsed ms — counts up while in PREON state, resets on leave. */
   private _preonElapsed: number = 0;
