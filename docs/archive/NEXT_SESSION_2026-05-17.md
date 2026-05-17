@@ -28,6 +28,19 @@
 
 ---
 
+## ⚠ Hardware access constraint (added 2026-05-17 post-handoff)
+
+**Ken only has easy access to the FRONT side of the 89sabers V3.9-BT board (USB-C port side).** The backside requires chassis disassembly to reach. This has hard implications for any flash / bench / recovery work:
+
+- **DFU recovery via USB is the only viable failure-recovery path** without disassembly. ST-Link header (typically backside) is NOT available as a fallback.
+- **BOOT0 / BFB2 pins are unreachable.** Any procedure requiring physical pin toggling blocks Ken until the next chassis-open session.
+- **Prefer runtime-presets path for ALL bench work going forward.** It writes `presets.ini` to the SD card — no flash, no DFU risk, no bricking possibility. The 89sabers V3.9-BT profile (PR #360) bench validation should start with config-shape diff against the vendor-source SD card, NOT with a flash-and-pray attempt.
+- **Don't propose any hardware testing strategies that assume ST-Link or BOOT0 access.**
+
+This constraint should be re-checked when Ken opens the chassis or gets a second test board.
+
+---
+
 ## Pending — needs YOUR physical involvement
 
 ### 1. 89sabers V3.9-BT bench validation
