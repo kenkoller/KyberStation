@@ -13,6 +13,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.23.0] — 2026-05-16
+
+**Visualizer Upgrade Release.** Closes the entire `docs/VISUALIZER_UPGRADE_PLAN.md` Phases 2C, 2D, and 3 in a single sprint. The headline change is **the default render mode flips from the hand-written parameter engine to the template-eval interpreter** — what users see in the visualizer now is, by construction, the exact LED output their saber will produce when running KyberStation's codegen-emitted ProffieOS template. 5 PRs landed across two sub-areas: 3D scene polish (mouse interaction + post-processing) and the render pipeline architectural shift.
+
+### 3D scene completion
+
+- **Phase 2C — 3D mouse interaction** ([#348](https://github.com/kenkoller/KyberStation/pull/348)) — All 4 gestures wired on the 3D blade renderer shipped in PR #301. Click on blade → `engine.triggerEffect('clash', { position: ledIndex / ledCount })`. Pointer-down + hold 400ms → `engine.triggerEffect('lockup')` (releases on pointer-up). Drag tip→hilt with sustained 0.25 UV-Y delta → `engine.retract()` (with 0.05 tip-bounce reset so zig-zags don't accidentally retract). OrbitControls `rotateSpeed: 0.7`, swing-velocity feed verified through the existing `useMouseSwing` hook. +28 tests.
+
+- **Phase 2D — 3D post-processing** ([#349](https://github.com/kenkoller/KyberStation/pull/349)) — 3 post-processing passes added under `apps/web/components/editor/blade3d/postprocessing/`:
+  - **UnrealBloom** — HDR halo via `@react-three/postprocessing` Bloom, polycarbonate-tuned (intensity 1.8, threshold 0.1, 6 mip levels)
+  - **PolycarbonateDiffusion** — custom `postprocessing.Effect` with luminance-thresholded 9-tap Gaussian blur (diffuses bright LED pixels only; hilt + non-emissive geometry stays sharp)
+  - **BladeMotionBlur** — custom `postprocessing.Effect` with directional 7-tap streak driven by `engine.motion.swingSpeed` + `engine.motion.bladeAngle` each frame
+  - **Perf gating:** centralized in `resolvePostProcessingConfig`. Low quality → composer unmounted; medium / mobile (&lt; 600px) → motion blur off + diffusion halved; `prefers-reduced-motion` → motion blur off + bloom 40%; `reduceBloom` user pref → bloom 40%
+  - Legacy `BladeBloom.tsx` preserved for backward compat (deprecate in a follow-up after soak). +40 tests.
+
+### Render pipeline architectural shift
+
+- **Phase 3 Step 1 — perf benchmark + gallery coverage check** ([#351](https://github.com/kenkoller/KyberStation/pull/351)) — Built `packages/engine/perf/templateEvalBench.mjs` (`pnpm bench:template-eval`). Initial results: **template-eval runs at ~78,000 fps** (Apple Silicon Node v24.11.1), ~400× headroom over the 60fps target. **But 0 of 455 gallery presets parsed cleanly** — three missing template-name registrations (`SaberBase::LOCKUP_NORMAL`, `FireConfig`, `SaberBase::LOCKUP_DRAG`) blocked the entire library. Findings at `docs/research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md`.
+
+- **Phase 3 Step 2 — register missing names + flip default** ([#352](https://github.com/kenkoller/KyberStation/pull/352)) — Closes the 0/455 gap and ships the architectural shift:
+  - **36 new template entries registered** in `packages/template-eval/src/registry.ts`: 14 lockup-type tags (7 `SaberBase::LOCKUP_*` + 7 unqualified aliases), 21 effect-type tags (`EFFECT_CLASH`, `EFFECT_PREON`, `EFFECT_STAB`, etc.), and 1 `FireConfig` structured leaf
+  - `LockupTrLTemplate` constructor extended to accept optional 5th arg (lockup-type tag) — filters activation by matching `effects.lockupType`. 4-arg shape preserved.
+  - `StyleFireTemplate` constructor extended to accept optional 5th arg (FireConfig) — scales the heat-map simulation by the supplied Cooling/Heating/IntensityBase triple. 4-arg shape preserved.
+  - **`BladeEngine.renderMode` default flipped to `'template-eval'`** (was `'proffie'` = parameter engine). Parameter-engine fall-through preserved as safety net when no template code is supplied — never silently breaks an in-flight design.
+  - **Gallery coverage: 0/455 → 455/455** parse cleanly through codegen → template-eval → renderFrame
+  - **Bench results post-fix:** worst-case p95 = 0.062 ms (~260× under the 16.67ms budget) on the slowest real preset (Obi-Wan Padawan stable with full LockupTrL × 4 + InOutTrL wrap). 40/40 measured templates pass 60fps p95.
+  - +50 tests (template-eval 180 → 230)
+
+### Renderer foundation work
+
+- **Inline render path extraction** ([#350](https://github.com/kenkoller/KyberStation/pull/350)) — Four regions of inline render logic extracted from `BladeCanvas.tsx` into testable modules under `apps/web/lib/blade/`:
+  - `ignitionFlash.ts` (ignition radial burst, was BladeCanvas L1320-1331)
+  - `motionGhost.ts` (motion-trail ghosting, was L1210-1273)
+  - `topologyOverlay.ts` (crossguard + triple-fan side blades, was L1561-1686)
+  - `ambientLumaCoupling.ts` (mip-2 luma → halo brightness, was L1346-1383)
+  - Net 113 lines removed from BladeCanvas (3026 → 2913). Pure refactor — existing 29 renderer-golden-hash cases pass byte-identical. +25 new pixel tests, expanding the suite from 29 → 54 cases.
+
+### Engine impact
+
+- `BladeEngine.renderMode` default change is the most behaviorally meaningful entry in this release. For users who never touched `renderMode`: every preset now renders through template-eval by default, which means **visualizer output = expected hardware output by construction** for the codegen → template-eval round-trip path. Parameter-engine fall-through preserved when a preset arrives without a codegen-emittable representation.
+
+### What was deliberately deferred to a future release
+
+- **Visualizer Phase 3 perceptual validation:** the bench proves codegen → template-eval works for all 455 gallery presets at 60fps, but a per-frame perceptual diff between parameter-engine and template-eval render is not yet automated. Eyeball-level testing in dev passed; rigorous diff pinning is a follow-up.
+- **`BladeBloom.tsx` deprecation:** replaced by `BladePostProcessing.tsx`; legacy component kept in place during soak.
+- **Mobile-shell migration to Sidebar + MainContent:** still open per `POST_LAUNCH_BACKLOG.md`.
+
+---
+
 ## [0.22.1] — 2026-05-16
 
 **Polyglot Audit Sprint.** A single-session audit pass that lifted three downstream surfaces to the rigor standard the v0.22.0 emit↔parser audit doc set: gallery preset accuracy, multi-board codegen field coverage, and editor messaging integration. Shipped 16 PRs in one session ([#331](https://github.com/kenkoller/KyberStation/pull/331)–[#346](https://github.com/kenkoller/KyberStation/pull/346)). Test count went from 3565 → 8605+ across the workspace.
