@@ -161,3 +161,35 @@ describe('AddBindingForm — source dropdown population', () => {
     }
   });
 });
+
+// ── Wave 8 A3 — optional triggerEvent dropdown gating ─────────────────
+//
+// The triggerEvent dropdown is conditional: it only renders when the
+// active source is one of the aux/gesture event modulators AND the
+// active prop file exposes events. Default source is `swing` (a
+// continuous motion modulator), so the dropdown stays hidden by
+// default and the form preserves its pre-Wave-8 shape.
+
+describe('AddBindingForm — Wave 8 A3 triggerEvent dropdown', () => {
+  beforeEach(() => {
+    setBoardId('proffieboard-v3');
+  });
+
+  it('does NOT render the trigger-event dropdown when source is continuous (default state)', () => {
+    // Default source = 'swing' which is NOT an event modulator.
+    const markup = html();
+    expect(markup).not.toContain('data-testid="binding-trigger-event-select"');
+    expect(markup).not.toContain('id="binding-trigger-event"');
+  });
+
+  it('preserves the existing form shape (no trigger event = pre-Wave-8 binding)', () => {
+    // Drift sentinel — the form must still surface Source/Target/
+    // Combinator/Amount in their existing positions regardless of the
+    // new optional dropdown.
+    const markup = html();
+    expect(markup).toContain('id="binding-source"');
+    expect(markup).toContain('id="binding-target"');
+    expect(markup).toContain('id="binding-combinator"');
+    expect(markup).toContain('id="binding-amount"');
+  });
+});
