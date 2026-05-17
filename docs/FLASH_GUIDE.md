@@ -1,6 +1,6 @@
 # Flashing Your Saber — KyberStation FLASH_GUIDE
 
-> **KyberStation v1.0 is a design tool first.** This guide walks you through compiling and flashing a KyberStation-generated config to a Proffieboard using the `dfu-util` command-line workflow. The in-browser WebUSB FlashPanel is **experimental** in v1.0 — see [§9](#9-the-webusb-flashpanel-is-experimental) below.
+> **KyberStation v1.0 is a design tool first.** This guide walks you through compiling and flashing a KyberStation-generated config to a Proffieboard using the `dfu-util` command-line workflow. The in-browser WebUSB FlashPanel is **experimental** in v1.0 — see [§10](#10-the-webusb-flashpanel-is-experimental) below.
 
 > **Audience:** Proffieboard owners on macOS, Linux, or Windows (WSL or MSYS2). You'll spend ~10 minutes the first time you set this up. After that, every reflash is two commands.
 
@@ -41,7 +41,7 @@ dfu-util -d 0x0483:0xdf11 -a 0 -s 0x08000000:leave \
   -D /tmp/proffie-build/firmware.bin
 ```
 
-If the new firmware doesn't boot, jump to [§8 Recovery](#8-recovery--restoring-from-backup) and flash the backup.
+If the new firmware doesn't boot, jump to [§12 Recovery](#12-recovery--restoring-from-backup) and flash the backup. To diagnose *why* it didn't boot before reflashing (e.g. so you can file a useful bug report), see [§9 If the flash fails — capture boot logs](#9-if-the-flash-fails--capture-boot-logs) first.
 
 ---
 
@@ -55,11 +55,12 @@ If the new firmware doesn't boot, jump to [§8 Recovery](#8-recovery--restoring-
 6. [Enter DFU mode](#6-enter-dfu-mode)
 7. [⚠ Mandatory: back up your existing firmware](#7--mandatory-back-up-your-existing-firmware)
 8. [Flash](#8-flash)
-9. [The WebUSB FlashPanel is experimental](#9-the-webusb-flashpanel-is-experimental)
-10. [Vendor-customized boards (89sabers, KR, Saberbay, etc.)](#10-vendor-customized-boards)
-11. [Recovery — restoring from backup](#11-recovery--restoring-from-backup)
-12. [Troubleshooting](#12-troubleshooting)
-13. [FAQ](#13-faq)
+9. [If the flash fails — capture boot logs](#9-if-the-flash-fails--capture-boot-logs)
+10. [The WebUSB FlashPanel is experimental](#10-the-webusb-flashpanel-is-experimental)
+11. [Vendor-customized boards (89sabers, KR, Saberbay, etc.)](#11-vendor-customized-boards)
+12. [Recovery — restoring from backup](#12-recovery--restoring-from-backup)
+13. [Troubleshooting](#13-troubleshooting)
+14. [FAQ](#14-faq)
 
 ---
 
@@ -71,7 +72,7 @@ If the new firmware doesn't boot, jump to [§8 Recovery](#8-recovery--restoring-
 - ~150 MB of disk for the ProffieOS source + Proffieboard board package.
 - Comfort with a terminal. If `cd ~/Downloads` and `which python3` are familiar, you're set.
 
-If any of those make you uneasy: **don't flash today.** Read this guide end to end first. Skim [§7 backup](#7--mandatory-back-up-your-existing-firmware) and [§11 recovery](#11-recovery--restoring-from-backup) — those two steps are the safety net.
+If any of those make you uneasy: **don't flash today.** Read this guide end to end first. Skim [§7 backup](#7--mandatory-back-up-your-existing-firmware) and [§12 recovery](#12-recovery--restoring-from-backup) — those two steps are the safety net.
 
 ---
 
@@ -268,7 +269,7 @@ ls -la ~/my-saber-backup-*.bin
 
 **Store this somewhere safe** — same folder as your config, a Dropbox/iCloud sync folder, a tagged Git repo, whatever you'll be able to find in 6 months. If your saber came from a vendor with a custom bootloader (89sabers, KR, Saberbay), this backup is **the only copy** of that bootloader you control. Don't lose it.
 
-> **Vendor-customized boards have a second alternate.** If your saber came pre-flashed by a vendor, run `dfu-util -l` and look for `alt=1` (Option Bytes). Some vendors set custom Option Bytes (notably 89sabers's `BFB2=1`, "Boot from Bank 2"). Read [§10](#10-vendor-customized-boards) before flashing those boards.
+> **Vendor-customized boards have a second alternate.** If your saber came pre-flashed by a vendor, run `dfu-util -l` and look for `alt=1` (Option Bytes). Some vendors set custom Option Bytes (notably 89sabers's `BFB2=1`, "Boot from Bank 2"). Read [§11](#11-vendor-customized-boards) before flashing those boards.
 
 ---
 
@@ -303,11 +304,99 @@ Transitioning to dfuMANIFEST state
 
 Then the saber should restart, the LEDs should respond, and the audio should announce your active font (or "font not found"/"SD card not found" if the SD isn't seated).
 
-If the saber does **not** boot — LEDs dark, no audio, USB does not re-enumerate — go straight to [§11 Recovery](#11-recovery--restoring-from-backup).
+If the saber does **not** boot — LEDs dark, no audio, USB does not re-enumerate — you have two options:
+
+- **Just want your saber working again?** Skip straight to [§12 Recovery](#12-recovery--restoring-from-backup) and flash your backup.
+- **Want to know *why* it didn't boot** (so you can fix the config, file a useful bug report, or update the [hardware compatibility matrix](HARDWARE_COMPATIBILITY.md))? Capture the boot log first — see [§9](#9-if-the-flash-fails--capture-boot-logs) — then recover.
 
 ---
 
-## 9. The WebUSB FlashPanel is experimental
+## 9. If the flash fails — capture boot logs
+
+When a fresh flash produces a saber that won't boot — LEDs dark, no audio, USB doesn't re-enumerate as a CDC device, or the chip falls back to DFU mode within seconds of leaving the bootloader — the most useful thing you can do (before reflashing your backup) is **capture the ProffieOS init log over USB serial**. The chip is alive long enough to print some output even when init crashes; that output usually identifies the exact failure.
+
+A boot log makes the difference between "my flash failed" (which is unactionable) and "my flash failed at the `WS281XBlade::Setup()` step on a 89sabers V3.9-BT" (which is actionable). KyberStation maintainers can use the log to diagnose your issue from a GitHub issue without needing physical access to your chassis.
+
+### When to use this
+
+Capture a boot log any time:
+
+- You flash a KyberStation export and the saber doesn't come up.
+- The saber boots once and then immediately falls back to DFU mode (visible as `0483:df11` re-appearing in `dfu-util -l`).
+- The saber boots but immediately crashes / reboots in a loop.
+- You flash a *vendor* chassis (89sabers, KR, Saberbay, Sabertrio, Vader's Vault, Electrum) for the first time — even if it works, the boot log confirms which prop file, blade count, and ProffieOS version are actually running.
+
+You don't need this for an SD-card or font issue (the saber boots, you just see "font not found"). Those are diagnosed differently — see [§13 Troubleshooting](#13-troubleshooting).
+
+### How to attach serial
+
+ProffieOS prints init progress over USB CDC at 115200 8N1. Connect a serial terminal before resetting the board so you catch the first few seconds of output.
+
+#### macOS
+
+```bash
+# Find the device — boards enumerate as /dev/cu.usbmodem* (note: cu, not tty)
+ls /dev/cu.usbmodem*
+
+# Attach screen at 115200 baud
+screen /dev/cu.usbmodem* 115200
+```
+
+If `ls /dev/cu.usbmodem*` returns nothing, the chip isn't enumerating as a serial device — that itself is a useful data point (init crashed before USB CDC came up). Note it in your bug report.
+
+The KyberStation repo includes [`scripts/hardware-test/proffie-serial.sh`](../scripts/hardware-test/proffie-serial.sh) as a one-shot alternative: it auto-detects the port, sends a single command, captures ~1.5 seconds of response, and exits. Useful for `version` / `pli` checks after the saber is healthy, but for boot-log capture you want the always-attached behavior of `screen`.
+
+#### Linux
+
+```bash
+# Find the device — typically /dev/ttyUSB0 or /dev/ttyACM0 depending on distro + udev
+ls /dev/ttyUSB* /dev/ttyACM*
+
+# Attach screen at 115200 baud (substitute the actual device)
+screen /dev/ttyACM0 115200
+```
+
+If your user can't open the device without `sudo`, you're missing the udev rule from [§2](#2-install-dfu-util-and-arduino-cli). The same rule that makes `dfu-util` work without `sudo` also handles the CDC serial side.
+
+#### Windows
+
+- **Native:** download [PuTTY](https://www.putty.org/), pick **Serial** as the connection type, set the serial line to the `COM` port from Device Manager (look under **Ports (COM & LPT)** → **STMicroelectronics Virtual COM Port** or similar), speed 115200, then connect.
+- **Arduino IDE:** if you already have Arduino IDE installed, **Tools → Serial Monitor** at 115200 baud works.
+- **WSL2:** the [`scripts/hardware-test/proffie-serial.sh`](../scripts/hardware-test/proffie-serial.sh) helper works under WSL2 once you've enabled USB device passthrough via [`usbipd-win`](https://github.com/dorssel/usbipd-win) — see Microsoft's [Connect USB devices](https://learn.microsoft.com/en-us/windows/wsl/connect-usb) guide. Otherwise stick to native PuTTY.
+
+### What to capture
+
+1. **Open the serial terminal first** (so it's already listening when the chip starts).
+2. **Reset the board** — either by tapping the **RESET** (SW2) on-board button, by power-cycling (unplug USB + remove battery + replug), or by issuing `reboot` over the same serial terminal if the saber is alive enough to accept the command. The point is to force a fresh boot with your terminal already attached.
+3. **Capture at least the first ~5 seconds of output.** ProffieOS's init runs through prop registration, board configuration, blade configuration, font scan, and battery telemetry in that span; whichever step the crash happens at will be visible.
+4. **If the chip falls back to DFU mid-boot** (you see the saber's LED stay dark and `dfu-util -l` shows `0483:df11`), capture whatever output appeared before the fallback. Even one or two lines is useful.
+
+### How to detach screen cleanly
+
+On macOS / Linux, exit `screen` with **Ctrl-A** then **K**, confirm with **y**. Leaving an old `screen` session attached to the device will block future serial connections (the next `screen` invocation will silently hang). If you forget and get stuck, run `screen -ls` to list orphaned sessions and `screen -X -S <session-id> quit` to kill them.
+
+### What to paste in your GitHub issue
+
+File at [github.com/kenkoller/KyberStation/issues/new](https://github.com/kenkoller/KyberStation/issues/new) (use the **Hardware report** template if it offers one) and include:
+
+1. **Full boot log** — paste between triple-backticks so the formatting is preserved. Include the entire output from your `screen` session: the lines before the crash, the crash itself (often a stack-trace-like dump), and any output after. Don't trim — the full sequence is what identifies the failure mode.
+2. **Vendor and chassis** — e.g. "89sabers V3.9-BT (Feasycom BT module)", "stock Proffieboard V3.9 from Hubbe", "DIY build, custom pinout (described below)". Match the rows in [`HARDWARE_COMPATIBILITY.md`](HARDWARE_COMPATIBILITY.md) if your chassis is listed.
+3. **KyberStation version** — run `git describe --tags` in your KyberStation checkout, or note the version shown in the editor's About panel. If you used the live `kyberstation.app` instead of a local clone, note the date you exported the config.
+4. **Path used** — pick one:
+   - **Compile + flash (default)** — used KyberStation's default `config.h`, compiled with `arduino-cli`, flashed via `dfu-util`. Note: this path is known to fail on vendor chassis without a vendor profile — see [`HARDWARE_COMPATIBILITY.md`](HARDWARE_COMPATIBILITY.md).
+   - **Vendor profile + compile + flash** — picked a chassis profile in the editor before exporting. Note which profile (`89sabers-v3.9`, `sabertrio-standard`, etc.).
+   - **Custom-paste + compile + flash** — pasted your factory `config.h` into the **CUSTOM · Paste your config.h** chassis option. Attach the sanitized version of the pasted config.
+   - **Runtime presets (SD card)** — wrote `presets.ini` to the SD card instead of flashing firmware. Include the saber's `pli` output if you can capture it.
+5. **Expected vs actual behavior** — one or two sentences. Example: "Expected: saber boots, font announces. Actual: USB doesn't re-enumerate after `:leave` completes; chip falls back to DFU within ~2 seconds."
+6. **Recovery status** — confirm you've successfully reflashed your backup from [§7](#7--mandatory-back-up-your-existing-firmware) (or note that you skipped the backup and now need help). Recovery first, debugging second — the saber being functional makes everything easier.
+
+### Then recover
+
+Once the log is captured: detach `screen`, enter DFU mode again, and follow [§12 Recovery](#12-recovery--restoring-from-backup) to flash your backup. The captured log is what you needed; the saber should be back to its original firmware in ~30 seconds.
+
+---
+
+## 10. The WebUSB FlashPanel is experimental
 
 KyberStation's in-browser FlashPanel (the FLASH button on the bottom Delivery rail) is shipped as **experimental** in v1.0. The protocol is implemented and verified against a comprehensive mock test suite, but on real hardware the manifest phase has a known bug that can leave the chip stuck in DFU mode after a successful write.
 
@@ -317,7 +406,7 @@ The FlashPanel will be revisited in v0.16+ once we've root-caused the manifest-p
 
 ---
 
-## 10. Vendor-customized boards
+## 11. Vendor-customized boards
 
 Some saber vendors customize the Proffieboard before shipping — different bootloader, different Option Bytes, different memory layout. **A stock ProffieOS firmware compiled with default settings may not boot on a vendor-customized board.**
 
@@ -327,7 +416,7 @@ Some saber vendors customize the Proffieboard before shipping — different boot
 
 **Do not write to alt=1 (Option Bytes) on an 89sabers board** unless you have an ST-Link wired up and STM32CubeProgrammer ready as a recovery path. Clearing BFB2 makes the standard ProffieOS Bank 1 layout work but **also overwrites their bootloader stage**, and the chip will refuse to boot until the bootloader is restored.
 
-If you have an 89sabers board: stick to flashing Bank 1 (`0x08000000:leave`) with the standard arduino-cli output. The board will tolerate this and run your config — `dfu-util` writes both banks, but the chip's BFB2 flag determines which one runs at boot. If your custom config doesn't boot, restore from your backup ([§11](#11-recovery--restoring-from-backup)) and check that you flashed the right bank.
+If you have an 89sabers board: stick to flashing Bank 1 (`0x08000000:leave`) with the standard arduino-cli output. The board will tolerate this and run your config — `dfu-util` writes both banks, but the chip's BFB2 flag determines which one runs at boot. If your custom config doesn't boot, capture a boot log first ([§9](#9-if-the-flash-fails--capture-boot-logs)) so you have a useful bug report, then restore from your backup ([§12](#12-recovery--restoring-from-backup)) and check that you flashed the right bank.
 
 #### Known Option Byte fingerprints (89sabers V3.9 family)
 
@@ -352,7 +441,7 @@ If you bought your Proffieboard directly from [fredrik.hubbe.net](https://fredri
 
 ---
 
-## 11. Recovery — restoring from backup
+## 12. Recovery — restoring from backup
 
 If your new firmware doesn't boot, you can always restore the backup you took in [§7](#7--mandatory-back-up-your-existing-firmware):
 
@@ -371,12 +460,16 @@ This restores your saber to exactly the state it was in before you started. Orig
 If the backup file restore also fails to boot:
 
 - Double-check the file size matches the board's flash (524288 bytes for V3, 262144 bytes for V2).
-- Try a stock ProffieOS binary from the [Crucible forum](https://crucible.hubbe.net/) as a fallback "is the chip alive?" check. If a stock binary boots, your backup file is corrupted; if a stock binary also doesn't boot, you have a different problem (see [§12](#12-troubleshooting)).
-- File a GitHub Issue with the output of `dfu-util -l` and a description of what you flashed.
+- Try a stock ProffieOS binary from the [Crucible forum](https://crucible.hubbe.net/) as a fallback "is the chip alive?" check. If a stock binary boots, your backup file is corrupted; if a stock binary also doesn't boot, you have a different problem (see [§13](#13-troubleshooting)).
+- File a GitHub Issue with the output of `dfu-util -l`, a description of what you flashed, and the boot log captured per [§9](#9-if-the-flash-fails--capture-boot-logs).
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
+
+### Saber doesn't boot after flashing — diagnosing it
+
+This is the first thing to check whenever a fresh flash produces a non-booting saber. Capture the boot log over USB serial per [§9 If the flash fails — capture boot logs](#9-if-the-flash-fails--capture-boot-logs) before reflashing your backup — the log usually identifies the exact failure step (wrong `NUM_BLADES`, missing prop define, BT-variant chassis mismatch, etc.) and turns "my flash failed" into an actionable bug report. Then recover via [§12](#12-recovery--restoring-from-backup).
 
 ### `dfu-util: No DFU capable USB device available`
 
@@ -413,11 +506,11 @@ You probably flashed before loading sound fonts onto the SD card. The default `s
 
 ### Chip stuck in DFU after manifest phase (`dfu-util: can't detach`)
 
-Known issue with certain board firmware combinations — particularly seen on 89sabers V3.9 with BFB2=1 after an Option Byte clear. The chip is alive but won't run the new firmware. Restore from backup ([§11](#11-recovery--restoring-from-backup)) — if you cleared Option Bytes, you may need ST-Link for full recovery.
+Known issue with certain board firmware combinations — particularly seen on 89sabers V3.9 with BFB2=1 after an Option Byte clear. The chip is alive but won't run the new firmware. Restore from backup ([§12](#12-recovery--restoring-from-backup)) — if you cleared Option Bytes, you may need ST-Link for full recovery.
 
 ---
 
-## 13. FAQ
+## 14. FAQ
 
 ### "Can I just use Arduino IDE instead of arduino-cli?"
 
@@ -425,7 +518,7 @@ Yes. Open `~/ProffieOS/ProffieOS.ino` in Arduino IDE, select **Tools → Board �
 
 ### "Why not let KyberStation flash directly from the browser?"
 
-We do — there's a WebUSB FlashPanel inside the editor. But on real hardware its manifest phase has a known bug, so for v1.0 it's labeled experimental and we recommend the dfu-util workflow as the validated path. See [§9](#9-the-webusb-flashpanel-is-experimental).
+We do — there's a WebUSB FlashPanel inside the editor. But on real hardware its manifest phase has a known bug, so for v1.0 it's labeled experimental and we recommend the dfu-util workflow as the validated path. See [§10](#10-the-webusb-flashpanel-is-experimental).
 
 ### "Do I really have to back up every time?"
 
@@ -447,6 +540,7 @@ KyberStation's editor and visualizer work for any Neopixel saber, but the **flas
 
 ## See also
 
+- [`docs/HARDWARE_COMPATIBILITY.md`](HARDWARE_COMPATIBILITY.md) — public compatibility matrix: which vendor chassis have been tested, by which path, and what's known to work or not. Check before flashing a vendor chassis for the first time.
 - [`docs/WEBUSB_FLASH.md`](WEBUSB_FLASH.md) — protocol details for the (experimental) in-browser flasher.
 - [`docs/PROFFIE_REFERENCE.md`](PROFFIE_REFERENCE.md) — ProffieOS template reference, useful when debugging config errors.
 - [Fredrik Hubbe's Proffieboard docs](https://fredrik.hubbe.net/lightsaber/v3/) — upstream hardware documentation.
