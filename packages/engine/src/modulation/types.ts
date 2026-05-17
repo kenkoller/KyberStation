@@ -62,6 +62,73 @@ export type BuiltInModulatorId =
 
 export type ModulatorId = BuiltInModulatorId | (string & { readonly __custom?: unique symbol });
 
+// ─── Prop-file event vocabulary (Wave 8 — button routing) ───────────
+//
+// Discrete events the firmware emits — distinct from the continuous
+// `ModulatorId` signals above. A `SerializedBinding` may optionally
+// declare which prop-file event it reacts to via {@link SerializedBinding.triggerEvent},
+// in which case the binding only fires when that event is observed.
+//
+// The vocabulary mirrors `apps/web/lib/propFileProfiles.ts` exactly —
+// that file is the source of truth for which events each prop file
+// (Fett263, SA22C, BC Button Controls, Default Fett) supports. Adding
+// a new event here means the UI side (Agent 3) extends the prop-file
+// profile registry to match, and codegen (Agent 2) wires it through.
+//
+// NOTE: These types deliberately use the bare event names from
+// propFileProfiles (`click`, `swing`, `twist`) — NOT the longer-form
+// `aux-click` / `gesture-twist` modulator IDs. The two vocabularies
+// are related but distinct:
+//
+//   - ButtonEvent / GestureEvent (here)     — discrete firmware events
+//                                             that the prop file emits
+//                                             on physical input
+//   - aux-click / gesture-twist (registry)  — continuous modulators that
+//                                             latch+decay when those
+//                                             events fire
+//
+// A binding with `triggerEvent: 'click'` + `source: 'aux-click'` means
+// "fire on the click button event, using the aux-click latched
+// envelope as the driver value". The validation pass in
+// `applyBindings.ts` enforces the source-must-be-aux-or-gesture rule
+// when triggerEvent is set; see §6.4 of the design doc.
+
+/**
+ * Discrete button events emitted by the prop file on physical input.
+ * Mirrors `apps/web/lib/propFileProfiles.ts` ButtonEvent union exactly.
+ *
+ * Not every prop file emits every event — the UI gates available
+ * events by the active prop file's `buttonEvents` array.
+ */
+export type ButtonEvent =
+  | 'click'
+  | 'long-press'
+  | 'hold'
+  | 'double-click'
+  | 'triple-click'
+  | 'click-and-hold'
+  | 'held-plus-other-click';
+
+/**
+ * Discrete gesture events emitted by the prop file on IMU detection.
+ * Mirrors `apps/web/lib/propFileProfiles.ts` GestureEvent union exactly.
+ *
+ * As with ButtonEvent, the active prop file's `gestureEvents` array
+ * determines which entries are surfaced in the UI.
+ */
+export type GestureEvent = 'swing' | 'stab' | 'thrust' | 'twist' | 'shake';
+
+/**
+ * Union of all prop-file events a binding can be coupled to.
+ *
+ * Stored on `SerializedBinding.triggerEvent` (optional) as a plain
+ * string — the type-level distinction between button and gesture is
+ * preserved by the union but the wire form is a single field. Consumers
+ * that want to branch on category can use string-prefix or membership
+ * checks against the relevant subset.
+ */
+export type PropFileEvent = ButtonEvent | GestureEvent;
+
 /**
  * Metadata that drives the UI (name, color-identity for wire-coloring
  * in LayerStack + StylePanel, display-unit for scrub labels) and the
@@ -130,6 +197,30 @@ export interface ModulationBinding {
   colorVar?: string;
   /** Rendered as a dashed wire in the UI when true. */
   bypassed?: boolean;
+  /**
+   * Wave 8 (button routing) — optional prop-file event coupling.
+   *
+   * When set, the binding only fires when the engine reports that
+   * specific prop-file event (e.g. `'double-click'`, `'twist'`) was
+   * observed this frame. When `undefined`, the binding's `source`
+   * modulator drives the binding on every frame (the legacy
+   * pre-Wave-8 behavior).
+   *
+   * **Validation:** when `triggerEvent` is set, `source` MUST be one
+   * of the 8 aux/gesture event modulators (`aux-click`, `aux-hold`,
+   * `aux-double-click`, `gesture-twist`, `gesture-stab`,
+   * `gesture-swing`, `gesture-clash`, `gesture-shake`). Bindings that
+   * declare `triggerEvent` with a non-event source are filtered out
+   * by `applyBindings` — see `isValidTriggerEventBinding` in
+   * `./applyBindings.ts`.
+   *
+   * **Source of truth for valid event ids:**
+   * `apps/web/lib/propFileProfiles.ts`. The type-level union
+   * {@link PropFileEvent} mirrors that file. The wire format is a
+   * plain string because future prop files may extend the vocabulary
+   * without requiring an engine release.
+   */
+  triggerEvent?: string;
 }
 
 // ─── Expression AST ─────────────────────────────────────────────────
@@ -247,6 +338,24 @@ export interface SerializedBinding {
   label?: string;
   colorVar?: string;
   bypassed?: boolean;
+  /**
+   * Wave 8 (button routing) — optional prop-file event coupling. Wire
+   * form mirror of {@link ModulationBinding.triggerEvent}. See that
+   * field's docstring for validation rules + the prop-file event
+   * vocabulary source-of-truth (`apps/web/lib/propFileProfiles.ts`).
+   *
+   * Stored as a plain string for forward-compatibility — prop files
+   * may extend their event vocabulary out-of-band without requiring
+   * an engine release. The {@link PropFileEvent} union is the
+   * type-level mirror for the current vocabulary; consumers that want
+   * compile-time narrowing can cast through it.
+   *
+   * Round-trips losslessly through Kyber Glyph v2 — if the field is
+   * absent from the payload (e.g. a legacy v1.0 binding), it stays
+   * `undefined` and the binding behaves as it did pre-Wave-8 (fires
+   * every frame the source modulator is non-zero).
+   */
+  triggerEvent?: string;
 }
 
 /**

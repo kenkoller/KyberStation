@@ -119,6 +119,10 @@ export type {
   SamplerState,
   ParameterClampRange,
   ParameterClampRanges,
+  // Wave 8 — prop-file event types (consumed by codegen / UI).
+  ButtonEvent,
+  GestureEvent,
+  PropFileEvent,
 } from './modulation/index.js';
 export {
   BUILT_IN_MODULATORS,

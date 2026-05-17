@@ -30,6 +30,13 @@ export type {
   SerializedBinding,
   ModulationPayload,
   BladeConfigWithModulation,
+  // Wave 8 (button routing) — prop-file event vocabulary used by
+  // `SerializedBinding.triggerEvent`. The unions mirror
+  // `apps/web/lib/propFileProfiles.ts` exactly. See `types.ts` for
+  // the docstring on coupling semantics.
+  ButtonEvent,
+  GestureEvent,
+  PropFileEvent,
 } from './types.js';
 
 // ── Registry ────────────────────────────────────────────────────────
