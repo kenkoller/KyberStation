@@ -195,4 +195,123 @@ describe('BladeEngine hardware preview', () => {
       engine.update(16, config);
     });
   });
+
+  // ─── Regression: white-out blade canvas (fix/blade-canvas-render-loop-regression) ──
+  //
+  // Bug summary: when the editor loaded any preset OR clicked "Surprise Me",
+  // the blade canvas turned pure white regardless of the configured colors.
+  // Root cause: the template-eval `InOutTrL` template returned `{255,255,255}`
+  // (WHITE) when the blade was on and stable. Because the codegen emits
+  // `Layers<base, ..., InOutTrL>` as the canonical style shape and the
+  // `Layers` compositor alpha-blends each upper layer onto the base using
+  // the layer's max channel as alpha, a WHITE upper-layer with alpha=255
+  // obliterated the underlying base color for every LED, every frame.
+  //
+  // Once Hardware Preview was enabled by default (PR #285) AND template-eval
+  // was promoted to the engine's default render mode (PR #352), every
+  // codegen → engine pipeline hit this path on the first frame — the
+  // ignition wipe's TrWipeIn returns PROFFIE_MAX for tip LEDs immediately,
+  // which flipped `isIgniting` to false and let the stable-on branch latch
+  // for all subsequent frames.
+  //
+  // This test pins the engine's pixel buffer after a few frames at a known
+  // BLUE base color (RGB 22, 114, 243). Any future regression that lets
+  // the layer compositor wash the base color to white will fail this test
+  // before it ships.
+
+  describe('white-out regression', () => {
+    it('renders the configured base color (not white) when running through template-eval with HW Preview style', async () => {
+      // Late import — generateStyleCode lives in @kyberstation/codegen which
+      // depends on @kyberstation/engine; importing eagerly at file scope
+      // would create a cycle.
+      const { generateStyleCode } = await import('@kyberstation/codegen');
+
+      const config = makeTestConfig({
+        baseColor: { r: 22, g: 114, b: 243 },
+        ledCount: 132, // matches DEFAULT_TOPOLOGY for the default engine
+      });
+
+      // Reproduce the same setup useHardwarePreview / useBladeEngine do
+      // in the web layer: generate the ProffieOS code for the current
+      // config, switch to template-eval mode, set the preview template,
+      // then ignite + tick the engine.
+      const code = generateStyleCode(config, { comments: false });
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      engine.setPreviewTemplate(code);
+      engine.ignite(config);
+
+      // Tick past the ignition window (config.ignitionMs = 300 ms) to
+      // reach a stable-on state where the bug manifests.
+      for (let i = 0; i < 30; i++) engine.update(16, config);
+
+      const pixels = engine.getPixels();
+      expect(pixels.length).toBeGreaterThan(0);
+
+      // ── The actual regression assertion ──
+      // Sample a few LEDs and check none of them are pure white. The
+      // AudioFlicker base modulates per-LED random factors per frame so
+      // some LEDs may be flicker-shifted toward white; instead we count
+      // how many of the sampled LEDs are within ±10 channel of pure
+      // white. Pre-fix this would be 100% of LEDs every frame.
+      const sampleCount = Math.min(20, Math.floor(pixels.length / 3));
+      let whiteish = 0;
+      for (let i = 0; i < sampleCount; i++) {
+        const r = pixels[i * 3] ?? 0;
+        const g = pixels[i * 3 + 1] ?? 0;
+        const b = pixels[i * 3 + 2] ?? 0;
+        if (r >= 245 && g >= 245 && b >= 245) whiteish++;
+      }
+      // Allow up to ~2 flickering whites out of 20 sampled LEDs — the
+      // base color is bright blue so the flicker can momentarily push
+      // some LEDs near white. Pre-fix this count was 20/20 every frame.
+      expect(whiteish).toBeLessThan(sampleCount / 4);
+
+      // Also check the engine settled at a state where the base color
+      // dominates: at least one LED should be very close to the
+      // configured base RGB (22, 114, 243).
+      let basishLeds = 0;
+      for (let i = 0; i < sampleCount; i++) {
+        const r = pixels[i * 3] ?? 0;
+        const g = pixels[i * 3 + 1] ?? 0;
+        const b = pixels[i * 3 + 2] ?? 0;
+        if (
+          Math.abs(r - 22) <= 30 &&
+          Math.abs(g - 114) <= 30 &&
+          Math.abs(b - 243) <= 30
+        ) {
+          basishLeds++;
+        }
+      }
+      expect(basishLeds).toBeGreaterThan(0);
+    });
+
+    it('paint loop: per-frame output remains stable (not stuck on a single colour)', async () => {
+      // The white-out bug also presented as the blade canvas paint loop
+      // appearing "stuck" — FPS counter at 0 and the canvas not
+      // re-painting. The underlying cause was the same template-eval
+      // bug, but the symptom was visible as "every frame paints the same
+      // white pixels". This test pins per-frame variance to prevent
+      // re-regression: across multiple frames, the engine's LED 0 must
+      // produce at least 2 distinct (r, g, b) tuples, proving the
+      // pipeline is animating.
+      const { generateStyleCode } = await import('@kyberstation/codegen');
+      const config = makeTestConfig({ ledCount: 132 });
+      const code = generateStyleCode(config, { comments: false });
+      const engine = new BladeEngine();
+      engine.setRenderMode('template-eval');
+      engine.setPreviewTemplate(code);
+      engine.ignite(config);
+
+      const triples = new Set<string>();
+      for (let i = 0; i < 30; i++) {
+        engine.update(16, config);
+        const pixels = engine.getPixels();
+        triples.add(`${pixels[0]},${pixels[1]},${pixels[2]}`);
+      }
+      // AudioFlicker varies per frame — should see multiple distinct
+      // colour tuples. Pre-fix every frame produced (255,255,255).
+      expect(triples.size).toBeGreaterThan(1);
+    });
+  });
 });

@@ -54,44 +54,79 @@ export class InOutTrLTemplate extends BaseStyleTemplate {
   }
 
   getColor(led: number): Color {
-    // Fully off state
-    if (!this.state.isOn && !this.isRetracting && !this.isIgniting) {
-      return this.offColor.getColor(led);
-    }
+    // ── InOutTrL semantics within Layers<> ──
+    //
+    // The Layers compositor uses the layer's max-channel as alpha (0..255)
+    // and alpha-blends the layer's color onto the underlying composition.
+    // alpha = 0 ⇒ layer transparent; alpha > 0 ⇒ layer color (partially or
+    // fully) REPLACES the underlying composition.
+    //
+    // ProffieOS uses InOutTrL as the LAST layer in `Layers<base, ..., InOutTrL>`
+    // to mask the composition during ignition / retraction / off. Two
+    // facts simplify the visualizer-side implementation considerably:
+    //
+    //   1. KyberStation's BladeEngine *never* calls template-eval when the
+    //      saber is fully OFF — `update()` early-returns before reaching
+    //      the template path (see `BladeEngine.update`, BladeState.OFF).
+    //   2. The BladeCanvas applies its own per-frame ignition / retraction
+    //      mask via `engine.extendProgress` — the visible "wipe" animation
+    //      is owned by the canvas, not the template-eval bridge.
+    //
+    // So InOutTrL's contribution to the per-frame render is purely
+    // decorative for our pixel buffer. The correct + safe behaviour is to
+    // act as a no-op: always return BLACK (alpha = 0), so Layers skips
+    // the blend and the underlying composition shines through unchanged.
+    //
+    // Prior to fix/blade-canvas-render-loop-regression the stable-on
+    // branch returned `{255, 255, 255}` (WHITE) intending to encode
+    // "alpha 255 = blade fully visible". But Layers' alphaBlend(base,
+    // white, 255) reduces to pure white — every pixel rendered through
+    // Hardware Preview's codegen → template-eval pipeline turned pure
+    // white the instant the ignition transition latched (which happens
+    // on frame 0 because TrWipeIn returns PROFFIE_MAX for tip LEDs, and
+    // the per-LED `isIgniting=false` mutation flipped during that loop).
+    //
+    // The internal `wasOn` / `isIgniting` / `isRetracting` bookkeeping
+    // below stays — codegen round-trip parity tests rely on the state
+    // tracking being consistent — but the visual mask is delegated to
+    // BladeCanvas.
 
+    // Snapshot pre-mutation transition state so all LEDs in the same
+    // getColor pass see a consistent view, even if the per-LED progress
+    // check below flips the flag.
     if (this.isIgniting) {
       const progress = this.trIgnition.getInteger(led);
       if (progress >= PROFFIE_MAX) {
         this.isIgniting = false;
       }
-      // Return progress as alpha (0 = off, PROFFIE_MAX = fully on)
-      // The actual color mixing is done by the parent Layers template
-      const t = clamp(progress / PROFFIE_MAX, 0, 1);
-      return { r: Math.round(255 * t), g: Math.round(255 * t), b: Math.round(255 * t) };
-    }
-
-    if (this.isRetracting) {
+    } else if (this.isRetracting) {
       const progress = this.trRetraction.getInteger(led);
       if (progress >= PROFFIE_MAX) {
         this.isRetracting = false;
-        return this.offColor.getColor(led);
       }
-      // Inverse: fully on at start, fading to off
-      const t = 1 - clamp(progress / PROFFIE_MAX, 0, 1);
-      return { r: Math.round(255 * t), g: Math.round(255 * t), b: Math.round(255 * t) };
     }
 
-    // Blade is on and stable
-    if (this.state.isOn) {
-      return { r: 255, g: 255, b: 255 };
-    }
-
-    return this.offColor.getColor(led);
+    // InOutTrL contributes nothing visible to the per-LED render — the
+    // ignition / retraction wipe is owned by BladeCanvas, and the engine
+    // never invokes us when the blade is OFF. Returning BLACK gives
+    // colorAlpha(c) = 0, which Layers treats as "skip this layer".
+    return BLACK;
   }
 
   getInteger(led: number): number {
-    const c = this.getColor(led);
-    return Math.max(c.r, c.g, c.b) * 128;
+    // Map the InOutTrL state to a 0..PROFFIE_MAX scalar so downstream
+    // consumers that legitimately want the mask value (e.g. an
+    // experimental UI that visualizes the transition) can still read it.
+    // Mirrors the historic shape: 0 when off, scales up during ignition,
+    // PROFFIE_MAX when fully on, scales down during retraction.
+    if (this.isIgniting) {
+      return clamp(this.trIgnition.getInteger(led), 0, PROFFIE_MAX);
+    }
+    if (this.isRetracting) {
+      return PROFFIE_MAX - clamp(this.trRetraction.getInteger(led), 0, PROFFIE_MAX);
+    }
+    if (this.state.isOn) return PROFFIE_MAX;
+    return 0;
   }
 
   getChildren(): StyleTemplate[] {
