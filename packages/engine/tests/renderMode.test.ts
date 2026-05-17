@@ -48,9 +48,15 @@ describe('BladeEngine renderMode', () => {
   // ─── Default mode ──────────────────────────────────────────────
 
   describe('default mode', () => {
-    it('defaults to proffie render mode', () => {
+    // Phase 3 Step 2 (2026-05-16): default flipped from 'proffie' to
+    // 'template-eval' once codegen→template-eval round-trip covered
+    // 455/455 gallery presets. When no template code is supplied,
+    // the engine still falls through to the parameter-engine pipeline
+    // as a safety net — covered by the "falls back to approximation"
+    // test in the 'template-eval mode' block below.
+    it('defaults to template-eval render mode', () => {
       const engine = new BladeEngine();
-      expect(engine.renderMode).toBe('proffie');
+      expect(engine.renderMode).toBe('template-eval');
     });
   });
 
@@ -73,6 +79,12 @@ describe('BladeEngine renderMode', () => {
     it('is idempotent — same mode does not clear caches needlessly', () => {
       const engine = new BladeEngine();
       const config = makeTestConfig();
+
+      // Engine default is 'template-eval' (Phase 3 Step 2); drop to
+      // 'proffie' so the cache-warming below populates the proffie
+      // style/ignition caches we want to check are NOT cleared by
+      // the idempotent re-set below.
+      engine.setRenderMode('proffie');
 
       // Warm the cache by running a frame
       engine.ignite();

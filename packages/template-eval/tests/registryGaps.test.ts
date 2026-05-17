@@ -45,8 +45,10 @@ describe('registry gap templates', () => {
     }
   });
 
-  it('registry count increased (from 153 to 372)', () => {
-    expect(registrySize()).toBe(372);
+  it('registry count increased (from 153 to 408)', () => {
+    // Phase 3 Step 2 added 36 entries: 7 SaberBase::LOCKUP_* tags +
+    // 7 unqualified LOCKUP_* aliases + 21 EFFECT_* tags + 1 FireConfig.
+    expect(registrySize()).toBe(408);
   });
 
   // ─── PulsingF ───

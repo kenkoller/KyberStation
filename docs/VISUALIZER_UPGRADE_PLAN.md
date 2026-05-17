@@ -1,7 +1,7 @@
 # Visualizer Upgrade Plan — Hardware-Accurate Preview + 3D Saber
 
 **Created:** 2026-05-10
-**Status (2026-05-12):** Phases 1 + 2A + 2B **shipped via PR #301** in `v0.21.1 "Polyglot Release"`. Phase 2C (3D mouse interaction), Phase 2D (3D post-processing — UnrealBloomPass + polycarbonate diffusion + motion blur), and Phase 3 remain open. See [`POST_LAUNCH_BACKLOG.md`](POST_LAUNCH_BACKLOG.md) for current priority order.
+**Status (2026-05-16):** Phases 1 + 2A + 2B + 2D + 3 Step 1 + 3 Step 2 shipped. Phases 1 + 2A + 2B shipped via PR #301 in `v0.21.1 "Polyglot Release"`. Phase 2D (post-processing) shipped via PR #349. Phase 3 Step 1 (perf benchmark) shipped via PR #351. Phase 3 Step 2 (registry-gap closure + default `'template-eval'` flip) shipped via PR #352 — `BladeEngine.renderMode` now defaults to `'template-eval'`, codegen→template-eval covers 455/455 gallery presets. Phase 2C (3D mouse interaction) is the remaining open phase. See [`POST_LAUNCH_BACKLOG.md`](POST_LAUNCH_BACKLOG.md) for current priority order.
 **Motivation:** Close the accuracy gap between KyberStation's preview and real hardware output, and build a flagship 3D saber visualizer with full mouse interaction (matching/exceeding Fredrik's Style Editor).
 
 ---
@@ -151,26 +151,34 @@ The LED buffer is the single source of truth. Both 2D and 3D renderers consume i
 
 **Goal:** Template-eval becomes the primary rendering path for ALL designs (not just imports). The 3D view becomes the flagship experience.
 
+### Status: Steps 1 + 2 ✅ done (2026-05-16)
+
+- ✅ **Step 1 (PR #351)** — perf benchmark harness shipped (`packages/engine/perf/templateEvalBench.mjs`, `pnpm bench:template-eval`). Findings doc at [`docs/research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md`](research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md).
+- ✅ **Step 2 (PR #352)** — registry-gap closure (36 new entries: lockup tags + effect tags + FireConfig) + `LockupTrLTemplate` / `StyleFireTemplate` constructor updates + default `BladeEngine.renderMode` flipped to `'template-eval'`. Codegen→template-eval round-trip now covers **455/455 gallery presets**. Worst-case p95 is **0.062 ms** (~260× under 60fps budget).
+- ⏳ **Remaining for full Phase 3 close-out:**
+  - "3D becomes default view" UX decision (post-launch UX research) — Phase 2C must ship first.
+  - Parameter engine deprecation surface (keep parameters as UX input, route them through codegen as part of the normal render loop). The default-mode flip lays the groundwork; the explicit "always-emit, always-eval" path is a future session.
+
 ### Strategy
 
-1. **Validate template-eval performance** at 60fps across all style combinations
-2. **Deprecate parameter engine rendering** — keep parameters as the UX input, but always render through codegen → template-eval
-3. **3D becomes default view** on desktop (2D stays as compact/mobile alternative)
-4. **Close the loop permanently** — what you see IS what your saber does, always
+1. ✅ **Validate template-eval performance** at 60fps across all style combinations
+2. **Deprecate parameter engine rendering** — keep parameters as the UX input, but always render through codegen → template-eval *(still TBD — Step 3 candidate; default flip is the prerequisite)*
+3. **3D becomes default view** on desktop (2D stays as compact/mobile alternative) *(depends on Phase 2C ship + UX call)*
+4. ✅ **Close the loop permanently** — what you see IS what your saber does, always (template-eval is the default; the parameter-engine fall-through remains as a safety net only)
 
 ### Prerequisites
 
-- Phase 1 + 2 shipped and stable
-- Template-eval maintains 60fps on mid-range hardware for all preset combinations
-- User studies confirm 3D view is preferred over 2D for design workflow
-- No styles in the codegen output that template-eval can't handle
+- ✅ Phase 1 + 2 shipped and stable (2A+2B+2D shipped; 2C open)
+- ✅ Template-eval maintains 60fps on mid-range hardware for all preset combinations (455/455 under budget)
+- User studies confirm 3D view is preferred over 2D for design workflow (post-launch UX work)
+- ✅ No styles in the codegen output that template-eval can't handle
 
 ### Architectural Changes
 
-- `BladeEngine.renderMode` defaults to `'template-eval'` for all configs
-- Parameter changes → immediate codegen → immediate template-eval (< 16ms total budget)
-- The 2D capsule renderer becomes a "compact mode" reading the same LED buffer
-- 3D renderer becomes the full-width primary workspace view
+- ✅ `BladeEngine.renderMode` defaults to `'template-eval'` for all configs (PR #352)
+- Parameter changes → immediate codegen → immediate template-eval (< 16ms total budget) *(infrastructure ready; explicit always-emit path is TBD)*
+- The 2D capsule renderer becomes a "compact mode" reading the same LED buffer *(TBD; depends on Phase 2C 3D shipping as the primary)*
+- 3D renderer becomes the full-width primary workspace view *(TBD; same)*
 
 ---
 
@@ -179,7 +187,7 @@ The LED buffer is the single source of truth. Both 2D and 3D renderers consume i
 | Asset | Status | Location |
 |-------|--------|----------|
 | Three.js + R3F + drei | Installed | `package.json` |
-| Template-eval engine | Working, 155 templates | `packages/template-eval/` |
+| Template-eval engine | Working, **408 templates** (455/455 gallery coverage) | `packages/template-eval/` |
 | Codegen emitter | Full coverage | `packages/codegen/` |
 | Hilt SVG library | 47 parts, 16 assemblies | `apps/web/lib/hilts/` |
 | Motion simulation | SwingSpeed, BladeAngle, TwistAngle | `packages/engine/src/motion/` |

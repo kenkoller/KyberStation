@@ -6,6 +6,7 @@ import { BaseStyleTemplate } from '../BaseStyle.js';
 import type { BladeState, Color, EffectSystem, StyleTemplate } from '../types.js';
 import { BLACK, clamp, colorAlpha, alphaBlend, mixColors, PROFFIE_MAX } from '../types.js';
 import { hashPair, lerp, ledToBladePos } from '../utils.js';
+import { isFireConfig } from './tags.js';
 
 // ─── Layers<Base, L1, L2, ...> ───
 // THE fundamental compositor. Applies layers bottom-up.
@@ -88,14 +89,23 @@ export class AudioFlickerTemplate extends BaseStyleTemplate {
   }
 }
 
-// ─── StyleFire<Color1, Color2, Delay?, Speed?, Norm?> ───
-// Fire simulation along the blade.
+// ─── StyleFire<Color1, Color2, Delay?, Speed?, FireConfig?> ───
+// Fire simulation along the blade. The optional trailing `FireConfig`
+// arg carries three integers — Cooling, Heating, IntensityBase — that
+// tune the heat-map simulation. When absent, falls back to defaults
+// that match the original (pre-FireConfig) ProffieOS behavior.
 
 export class StyleFireTemplate extends BaseStyleTemplate {
   private readonly color1: StyleTemplate;
   private readonly color2: StyleTemplate;
   private readonly delay: number;
   private readonly speed: number;
+  /** FireConfig Cooling — higher values dissipate heat faster (default 3). */
+  private readonly cooling: number;
+  /** FireConfig Heating — spark intensity at the base (default 2000). */
+  private readonly heating: number;
+  /** FireConfig IntensityBase — heat persistence per frame (default 5). */
+  private readonly intensityBase: number;
   private heatMap: number[] = [];
   private lastUpdate = 0;
 
@@ -105,6 +115,20 @@ export class StyleFireTemplate extends BaseStyleTemplate {
     this.color2 = args[1]!;
     this.delay = args[2]?.getInteger(0) ?? 0;
     this.speed = args[3]?.getInteger(0) ?? 2;
+    // 5th arg: FireConfig<Cooling, Heating, IntensityBase>. The codegen
+    // emits this for the `unstable` and `fire` style families; the
+    // older `cinder` shape (4-arg) doesn't pass it, in which case we
+    // use defaults that match the pre-FireConfig simulation.
+    const fireConfig = args[4];
+    if (isFireConfig(fireConfig)) {
+      this.cooling = fireConfig.cooling;
+      this.heating = fireConfig.heating;
+      this.intensityBase = fireConfig.intensityBase;
+    } else {
+      this.cooling = 3;
+      this.heating = 2000;
+      this.intensityBase = 5;
+    }
   }
 
   run(state: BladeState, effects: EffectSystem): void {
@@ -126,7 +150,9 @@ export class StyleFireTemplate extends BaseStyleTemplate {
     if (state.timeMs - this.lastUpdate > updateInterval) {
       this.lastUpdate = state.timeMs;
 
-      const coolFactor = Math.max(1, this.speed * 5);
+      // Cooling per-step is scaled by both the legacy `speed` arg and
+      // the FireConfig Cooling param. Higher product = faster decay.
+      const coolFactor = Math.max(1, this.speed * 5 * (this.cooling / 3));
       for (let i = 0; i < numLeds; i++) {
         this.heatMap[i] = Math.max(0, this.heatMap[i] - Math.random() * coolFactor);
       }
@@ -136,10 +162,17 @@ export class StyleFireTemplate extends BaseStyleTemplate {
         this.heatMap[i] = (this.heatMap[i - 1] + this.heatMap[i - 2] * 2) / 3;
       }
 
-      // Spark at base
+      // Spark at base — scaled by FireConfig Heating relative to default
+      // 2000. Higher heating = brighter sparks. IntensityBase contributes
+      // an always-on floor for the base region.
       if (Math.random() < 0.5) {
         const spark = Math.floor(Math.random() * 7);
-        this.heatMap[spark] = Math.min(255, this.heatMap[spark] + 128 + Math.random() * 128);
+        const heatScale = this.heating / 2000;
+        const baseFloor = this.intensityBase * 3;
+        this.heatMap[spark] = Math.min(
+          255,
+          this.heatMap[spark] + baseFloor + (128 + Math.random() * 128) * heatScale,
+        );
       }
     }
   }

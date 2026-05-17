@@ -90,6 +90,10 @@ describe('BladeEngine hardware preview', () => {
   describe('render mode interaction', () => {
     it('does not change renderMode when setting preview template', () => {
       const engine = new BladeEngine();
+      // Default flipped to 'template-eval' in Phase 3 Step 2 — drop
+      // back to 'proffie' first to isolate the contract under test:
+      // setPreviewTemplate must not mutate renderMode.
+      engine.setRenderMode('proffie');
       expect(engine.renderMode).toBe('proffie');
       engine.setPreviewTemplate('StylePtr<Blue>()');
       // The hook (useHardwarePreview) is responsible for setting

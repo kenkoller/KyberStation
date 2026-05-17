@@ -120,6 +120,12 @@ import {
   LengthFinderTemplate, DisplayStyleTemplate, ByteOrderStyleTemplate,
 } from './templates/wrappers.js';
 
+// Tag templates (constant enum / structured-leaf payloads)
+import {
+  LockupTypeTagTemplate, EffectTypeTagTemplate, FireConfigTemplate,
+} from './templates/tags.js';
+import type { EffectType, LockupType } from './types.js';
+
 type TemplateClass = new (args: StyleTemplate[]) => StyleTemplate;
 
 const REGISTRY = new Map<string, TemplateClass | (() => StyleTemplate)>();
@@ -130,6 +136,16 @@ function registerClass(name: string, cls: TemplateClass): void {
 
 function registerNamedColor(name: string, cls: new () => StyleTemplate): void {
   REGISTRY.set(name, () => new cls());
+}
+
+/** Register a constant-tag template that carries a fixed LockupType payload. */
+function registerLockupTag(name: string, tag: LockupType): void {
+  REGISTRY.set(name, () => new LockupTypeTagTemplate(tag));
+}
+
+/** Register a constant-tag template that carries a fixed EffectType payload. */
+function registerEffectTag(name: string, tag: EffectType): void {
+  REGISTRY.set(name, () => new EffectTypeTagTemplate(tag));
 }
 
 // ─── Named Colors ───
@@ -522,6 +538,61 @@ registerClass('DisplayStyle', DisplayStyleTemplate);
 registerClass('ByteOrderStyle', ByteOrderStyleTemplate);
 registerClass('BlasterCharge', BlasterChargeFTemplate);
 registerClass('BulletCount', BulletCountFTemplate);
+
+// ─── Lockup Type Tags ───
+// Bare identifiers emitted by codegen as the 5th arg of LockupTrL<>.
+// Each tag is a no-op leaf template carrying its LockupType payload
+// — the parent LockupTrL reads the tag and filters activation by it.
+registerLockupTag('SaberBase::LOCKUP_NORMAL', 'LOCKUP_NORMAL');
+registerLockupTag('SaberBase::LOCKUP_DRAG', 'LOCKUP_DRAG');
+registerLockupTag('SaberBase::LOCKUP_LIGHTNING_BLOCK', 'LOCKUP_LIGHTNING_BLOCK');
+registerLockupTag('SaberBase::LOCKUP_MELT', 'LOCKUP_MELT');
+registerLockupTag('SaberBase::LOCKUP_ARMED', 'LOCKUP_ARMED');
+registerLockupTag('SaberBase::LOCKUP_AUTOFIRE', 'LOCKUP_AUTOFIRE');
+registerLockupTag('SaberBase::LOCKUP_NONE', 'LOCKUP_NONE');
+// Also register unqualified forms — some Fett263 imports use them.
+registerLockupTag('LOCKUP_NORMAL', 'LOCKUP_NORMAL');
+registerLockupTag('LOCKUP_DRAG', 'LOCKUP_DRAG');
+registerLockupTag('LOCKUP_LIGHTNING_BLOCK', 'LOCKUP_LIGHTNING_BLOCK');
+registerLockupTag('LOCKUP_MELT', 'LOCKUP_MELT');
+registerLockupTag('LOCKUP_ARMED', 'LOCKUP_ARMED');
+registerLockupTag('LOCKUP_AUTOFIRE', 'LOCKUP_AUTOFIRE');
+registerLockupTag('LOCKUP_NONE', 'LOCKUP_NONE');
+
+// ─── Effect Type Tags ───
+// Bare identifiers emitted by codegen as the trailing arg of
+// TransitionEffectL<> / MultiTransitionEffectL<>. The parent ignores
+// them for rendering (the wrapped transition just plays), but they
+// must be registered for `evaluateTemplate` to walk every arg without
+// blowing up.
+registerEffectTag('EFFECT_CLASH', 'EFFECT_CLASH');
+registerEffectTag('EFFECT_BLAST', 'EFFECT_BLAST');
+registerEffectTag('EFFECT_LOCKUP_BEGIN', 'EFFECT_LOCKUP_BEGIN');
+registerEffectTag('EFFECT_LOCKUP_END', 'EFFECT_LOCKUP_END');
+registerEffectTag('EFFECT_DRAG_BEGIN', 'EFFECT_DRAG_BEGIN');
+registerEffectTag('EFFECT_DRAG_END', 'EFFECT_DRAG_END');
+registerEffectTag('EFFECT_STAB', 'EFFECT_STAB');
+registerEffectTag('EFFECT_FORCE', 'EFFECT_FORCE');
+registerEffectTag('EFFECT_PREON', 'EFFECT_PREON');
+registerEffectTag('EFFECT_IGNITION', 'EFFECT_IGNITION');
+registerEffectTag('EFFECT_RETRACTION', 'EFFECT_RETRACTION');
+registerEffectTag('EFFECT_POSTOFF', 'EFFECT_POSTOFF');
+registerEffectTag('EFFECT_NEWFONT', 'EFFECT_NEWFONT');
+registerEffectTag('EFFECT_BOOT', 'EFFECT_BOOT');
+registerEffectTag('EFFECT_MELT', 'EFFECT_MELT');
+registerEffectTag('EFFECT_USER1', 'EFFECT_USER1');
+registerEffectTag('EFFECT_USER2', 'EFFECT_USER2');
+registerEffectTag('EFFECT_USER3', 'EFFECT_USER3');
+registerEffectTag('EFFECT_USER4', 'EFFECT_USER4');
+registerEffectTag('EFFECT_USER5', 'EFFECT_USER5');
+registerEffectTag('EFFECT_CHANGE', 'EFFECT_CHANGE');
+
+// ─── Structured Leaf Templates ───
+// FireConfig<Cooling, Heating, IntensityBase> — trailing arg of
+// StyleFire<> for the `unstable` and `fire` style families. Carries
+// three integer params that the parent StyleFire reads to tune its
+// heat-map simulation.
+registerClass('FireConfig', FireConfigTemplate);
 
 /**
  * Look up a template class/factory by name.
