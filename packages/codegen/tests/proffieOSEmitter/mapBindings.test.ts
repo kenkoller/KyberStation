@@ -68,6 +68,7 @@ function makeBinding(overrides: Partial<ModulationBinding> = {}): ModulationBind
     label: overrides.label,
     colorVar: overrides.colorVar,
     bypassed: overrides.bypassed,
+    triggerEvent: overrides.triggerEvent,
   };
 }
 
@@ -103,6 +104,15 @@ function makeEvalCtx(
     preon: 0.0,
     ignition: 0.0,
     retraction: 0.0,
+    // Wave 8 — event modulators default to 0 (no event firing).
+    'aux-click': 0.0,
+    'aux-hold': 0.0,
+    'aux-double-click': 0.0,
+    'gesture-twist': 0.0,
+    'gesture-stab': 0.0,
+    'gesture-swing': 0.0,
+    'gesture-clash': 0.0,
+    'gesture-shake': 0.0,
   };
   const merged = { ...defaults, ...(overrides.modulatorValues ?? {}) };
   const map = new Map<ModulatorId, number>();
@@ -626,5 +636,195 @@ describe('computeSnapshotValue — public pure helper', () => {
     );
     // clamp(0.4 * 3, 0, 1) = clamp(1.2, 0, 1) = 1
     expect(snap).toBeCloseTo(1, 5);
+  });
+});
+
+// ─── Wave 8 — triggerEvent emit path ─────────────────────────────────
+
+describe('mapBindings — Wave 8 triggerEvent emit path', () => {
+  it('emits EffectPulseF<EFFECT_BLAST> wrapper for aux-click + click trigger', () => {
+    const binding = makeBinding({
+      source: 'aux-click',
+      triggerEvent: 'click',
+      target: 'shimmer',
+      amount: 1.0,
+      combinator: 'add',
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(1);
+    expect(result.unmappable.length).toBe(0);
+
+    // Outer: Scale<EffectPulseF<EFFECT_BLAST>, Int<0>, Int<32768>>
+    const patch = result.mappable[0].astPatch;
+    expect(patch.name).toBe('Scale');
+    expect(patch.args).toHaveLength(3);
+
+    // Driver: EffectPulseF<EFFECT_BLAST>
+    const driver = patch.args[0];
+    expect(driver.name).toBe('EffectPulseF');
+    expect(driver.args).toHaveLength(1);
+    expect(driver.args[0].name).toBe('EFFECT_BLAST');
+    expect(driver.args[0].type).toBe('raw');
+
+    // Note carries the (event → EFFECT_*) mapping.
+    expect(result.mappable[0].note).toMatch(/click.*EFFECT_BLAST/);
+  });
+
+  it('emits TransitionEffectL<TrInstant, ..., EFFECT_FORCE> wrapper for aux-hold + long-press trigger', () => {
+    const binding = makeBinding({
+      source: 'aux-hold',
+      triggerEvent: 'long-press',
+      target: 'shimmer',
+      amount: 0.5,
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(1);
+    const driver = result.mappable[0].astPatch.args[0];
+    expect(driver.name).toBe('TransitionEffectL');
+    expect(driver.args).toHaveLength(3);
+    expect(driver.args[0].name).toBe('TrInstant');
+    expect(driver.args[2].name).toBe('EFFECT_FORCE');
+  });
+
+  it('emits Trigger<EFFECT_USER6, ...> wrapper for gesture-shake + shake trigger', () => {
+    const binding = makeBinding({
+      source: 'gesture-shake',
+      triggerEvent: 'shake',
+      target: 'shimmer',
+      amount: 1.0,
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(1);
+    const driver = result.mappable[0].astPatch.args[0];
+    expect(driver.name).toBe('Trigger');
+    expect(driver.args[0].name).toBe('EFFECT_USER6');
+  });
+
+  it('routes gesture-stab + stab trigger to EFFECT_STAB', () => {
+    const binding = makeBinding({
+      source: 'gesture-stab',
+      triggerEvent: 'stab',
+      target: 'shimmer',
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(1);
+    const driver = result.mappable[0].astPatch.args[0];
+    expect(driver.args[0].name).toBe('EFFECT_STAB');
+  });
+
+  it('drops triggerEvent when source is a continuous (non-event) modulator', () => {
+    // `triggerEvent: 'click'` with `source: 'swing'` is invalid per the
+    // engine's isValidTriggerEventBinding rules. Codegen mirrors the
+    // rejection and routes to the snapshot path.
+    const binding = makeBinding({
+      source: 'swing',
+      triggerEvent: 'click',
+      target: 'shimmer',
+      combinator: 'add',
+      amount: 1,
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(0);
+    expect(result.unmappable.length).toBe(1);
+    expect(result.unmappable[0].reason).toBe(
+      MAP_BINDINGS_REASONS.TRIGGER_EVENT_NON_EVENT_SOURCE,
+    );
+  });
+
+  it('falls aux/gesture source without triggerEvent through to snapshot', () => {
+    // A bare event modulator with no `triggerEvent` has no canonical
+    // ProffieOS template — the engine's latch+decay value doesn't
+    // round-trip to firmware. Snapshot fallback is the correct emit
+    // path; today's behavior (pre-Wave-8 mapBindings would have hit
+    // this with UNKNOWN_SOURCE) is preserved as snapshot fallback now
+    // that the IDs are in BUILTIN_MODULATORS.
+    const binding = makeBinding({
+      source: 'aux-click',
+      // No triggerEvent.
+      target: 'shimmer',
+      combinator: 'add',
+      amount: 1,
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(0);
+    expect(result.unmappable.length).toBe(1);
+    expect(result.unmappable[0].reason).toBe(
+      MAP_BINDINGS_REASONS.EVENT_SOURCE_WITHOUT_TRIGGER,
+    );
+  });
+
+  it('falls unknown triggerEvent through to snapshot with the event name in the reason', () => {
+    const binding = makeBinding({
+      source: 'aux-click',
+      triggerEvent: 'quadruple-click', // Not in PropFileEvent vocabulary.
+      target: 'shimmer',
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(0);
+    expect(result.unmappable.length).toBe(1);
+    expect(result.unmappable[0].reason).toContain('quadruple-click');
+  });
+
+  it('preserves legacy behavior (no triggerEvent + continuous source) unchanged', () => {
+    // Regression-lock: a continuous source binding without triggerEvent
+    // MUST emit the same Scale<SwingSpeed<400>, Int<0>, Int<hi>> shape
+    // as pre-Wave-8 — this is the additive-emit-path invariant.
+    const binding = makeBinding({
+      source: 'swing',
+      target: 'shimmer',
+      amount: 0.6,
+      combinator: 'add',
+      // No triggerEvent.
+    });
+    const result = mapBindings([binding], makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(1);
+    const patch = result.mappable[0].astPatch;
+    expect(patch.name).toBe('Scale');
+    expect(patch.args[0].name).toBe('SwingSpeed');
+    // Confirm there's no EFFECT_* wrapper introduced.
+    expect(patch.args[0].args[0].name).toBe('400');
+  });
+
+  it('every PropFileEvent + valid event-source pair emits a mappable shape', () => {
+    // Walk the (event, source) cross-product where source is an event
+    // modulator — every pair should map. Picks aux-click as the
+    // representative source for all events; the source is decorative
+    // for the EFFECT_* mapping (the table keys on triggerEvent only).
+    const events: string[] = [
+      'click', 'long-press', 'hold', 'double-click', 'triple-click',
+      'click-and-hold', 'held-plus-other-click',
+      'swing', 'stab', 'thrust', 'twist', 'shake',
+    ];
+    const bindings = events.map((ev) =>
+      makeBinding({
+        id: `b-${ev}`,
+        source: 'aux-click',
+        triggerEvent: ev,
+        target: 'shimmer',
+      }),
+    );
+    const result = mapBindings(bindings, makeConfig(), makeEvalCtx());
+
+    expect(result.mappable.length).toBe(events.length);
+    expect(result.unmappable.length).toBe(0);
+
+    // Every emitted patch wraps a known ProffieOS effect constant.
+    for (const m of result.mappable) {
+      const driver = m.astPatch.args[0];
+      // Either driver.args[0] (EffectPulseF / Trigger) or driver.args[2]
+      // (TransitionEffectL) holds the EFFECT_* constant.
+      const effectArg =
+        driver.name === 'TransitionEffectL' ? driver.args[2] : driver.args[0];
+      expect(effectArg.type).toBe('raw');
+      expect(effectArg.name).toMatch(/^EFFECT_[A-Z0-9_]+$/);
+    }
   });
 });
