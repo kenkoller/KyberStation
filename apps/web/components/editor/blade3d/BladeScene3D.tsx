@@ -10,9 +10,14 @@
 //   - Ignition/retraction animation via extendProgress uniform
 //   - Additive bloom glow via HDR emissive intensity
 //   - Orbit controls for rotation (click + drag)
-//   - Mouse interaction: click on blade → clash, hold → lockup
+//   - Mouse interaction (Phase 2C):
+//     - Click on blade → clash at that LED position
+//     - Hold (400ms+) on blade → lockup at that position
+//     - Sustained tip→hilt drag → retract the blade
+//     - Pointer move velocity → swing simulation via useMouseSwing
 //
-// Phase 2A of the Visualizer Upgrade Plan.
+// Phase 2A scaffold + Phase 2C interaction wiring of the Visualizer
+// Upgrade Plan.
 
 'use client';
 
@@ -32,6 +37,119 @@ import {
 } from './BladeMaterial';
 import { createHiltGeometry3D, createHiltMaterial } from './HiltGeometry3D';
 import { BladeBloom } from './BladeBloom';
+
+// ─── Phase 2C Interaction Helpers (exported for tests) ─
+
+/**
+ * Threshold (in normalized UV-Y units, range 0..1) of accumulated tip→hilt
+ * drag motion that triggers blade retraction. 0.25 = drag covers a quarter
+ * of the blade length over the active drag window.
+ */
+export const DRAG_RETRACT_UV_THRESHOLD = 0.25;
+
+/**
+ * Maximum gap (ms) between pointer-move samples before the drag accumulator
+ * is reset. Prevents stale state from leaking across separate drag gestures.
+ */
+export const DRAG_RETRACT_RESET_GAP_MS = 200;
+
+/**
+ * Minimum hold duration (ms) before a pointer-down on the blade promotes
+ * from "pending clash" to a sustained lockup.
+ */
+export const HOLD_LOCKUP_MS = 400;
+
+/**
+ * OrbitControls rotation sensitivity. The drei default is 1.0; we lower it
+ * slightly so a casual click+drag rotates the saber a tame amount, matching
+ * the existing 2D canvas's "drag = swing" muscle memory rather than fighting
+ * it. Pinch-zoom + two-finger rotate still work on touch devices.
+ */
+export const ORBIT_ROTATE_SPEED = 0.7;
+
+/**
+ * Convert a UV-Y value (0 at hilt, 1 at tip) plus an LED count into the
+ * nearest LED index. Clamped to [0, ledCount - 1].
+ */
+export function uvYToLedIndex(uvY: number, ledCount: number): number {
+  if (ledCount <= 0) return 0;
+  const idx = Math.floor(uvY * ledCount);
+  return Math.max(0, Math.min(ledCount - 1, idx));
+}
+
+/**
+ * Internal accumulator for tip→hilt drag detection. Tracks the last
+ * sample's UV-Y + timestamp and a running sum of negative ΔUV-Y deltas
+ * (i.e. motion toward the hilt). A click+release without sustained
+ * downward motion never triggers retraction.
+ *
+ * The accumulator is reset by:
+ *   - `resetDragAccumulator()` on pointer-down/up
+ *   - A sample whose Δt exceeds `DRAG_RETRACT_RESET_GAP_MS`
+ *   - The retract trigger firing (so a second retract requires fresh motion)
+ */
+export interface DragAccumulator {
+  lastUvY: number;
+  lastTime: number;
+  accumulated: number;
+}
+
+export function createDragAccumulator(): DragAccumulator {
+  return { lastUvY: -1, lastTime: 0, accumulated: 0 };
+}
+
+export function resetDragAccumulator(acc: DragAccumulator): void {
+  acc.lastUvY = -1;
+  acc.lastTime = 0;
+  acc.accumulated = 0;
+}
+
+/**
+ * Feed a new pointer-move sample into the drag accumulator. Returns `true`
+ * if the accumulated tip→hilt motion crossed `DRAG_RETRACT_UV_THRESHOLD`
+ * on this sample (in which case the accumulator is reset and the caller
+ * should fire the retract trigger). Otherwise returns `false`.
+ */
+export function updateDragAccumulator(
+  acc: DragAccumulator,
+  uvY: number,
+  timeMs: number,
+  threshold: number = DRAG_RETRACT_UV_THRESHOLD,
+  resetGapMs: number = DRAG_RETRACT_RESET_GAP_MS,
+): boolean {
+  // First sample of a drag — just record state.
+  if (acc.lastUvY < 0) {
+    acc.lastUvY = uvY;
+    acc.lastTime = timeMs;
+    acc.accumulated = 0;
+    return false;
+  }
+  // Gap too large — treat as a new gesture.
+  if (timeMs - acc.lastTime > resetGapMs) {
+    acc.lastUvY = uvY;
+    acc.lastTime = timeMs;
+    acc.accumulated = 0;
+    return false;
+  }
+  const delta = uvY - acc.lastUvY;
+  acc.lastUvY = uvY;
+  acc.lastTime = timeMs;
+  // Negative delta = motion toward hilt (lower UV-Y). We accumulate the
+  // magnitude of tip→hilt motion only; tip-ward motion resets progress
+  // (e.g. zig-zag drags shouldn't accidentally retract).
+  if (delta < 0) {
+    acc.accumulated += -delta;
+  } else if (delta > 0.05) {
+    // Significant tip-ward motion — reset the toward-hilt counter so
+    // back-and-forth wiggling never triggers retraction.
+    acc.accumulated = 0;
+  }
+  if (acc.accumulated >= threshold) {
+    acc.accumulated = 0;
+    return true;
+  }
+  return false;
+}
 
 // ─── Glow Shell ─
 // A slightly larger, more transparent copy of the blade for outer glow
@@ -223,8 +341,17 @@ interface SceneDriverProps {
   engineRef: React.RefObject<BladeEngine | null>;
   ledCount: number;
   bladeLength: number;
-  onBladeClick?: (ledIndex: number) => void;
-  onBladeHold?: (ledIndex: number) => void;
+  /** Optional auxiliary callback fired on click (engine.triggerEffect is
+   *  already called inline by SceneDriver — callbacks are for audio /
+   *  logging side-effects only). */
+  onBladeClick?: (ledIndex: number, position: number) => void;
+  /** Optional auxiliary callback fired on hold (engine.triggerEffect is
+   *  already called inline by SceneDriver — callbacks are for audio /
+   *  logging side-effects only). */
+  onBladeHold?: (ledIndex: number, position: number) => void;
+  /** Optional auxiliary callback fired when a tip→hilt drag retracts the
+   *  blade. The engine retract() is already called inline. */
+  onDragRetract?: () => void;
 }
 
 function SceneDriver({
@@ -233,10 +360,12 @@ function SceneDriver({
   bladeLength,
   onBladeClick,
   onBladeHold,
+  onDragRetract,
 }: SceneDriverProps) {
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerDownRef = useRef(false);
-  const pointerPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const holdFiredRef = useRef(false);
+  const dragAccRef = useRef<DragAccumulator>(createDragAccumulator());
 
   // Click handler — converts 3D intersection to LED index.
   // R3F pointer events carry `uv` from the mesh intersection.
@@ -245,36 +374,69 @@ function SceneDriver({
       if (!e.uv) return;
       e.stopPropagation();
       pointerDownRef.current = true;
-      pointerPosRef.current = { x: e.uv.x, y: e.uv.y };
+      holdFiredRef.current = false;
+      resetDragAccumulator(dragAccRef.current);
 
       const uvY = e.uv.y;
-      // Start hold timer for lockup
+      const ledIndex = uvYToLedIndex(uvY, ledCount);
+      const position = ledIndex / Math.max(1, ledCount);
+
+      // Start hold timer for lockup — fires only if pointer is still down
+      // after HOLD_LOCKUP_MS without an intervening pointer-up.
       holdTimerRef.current = setTimeout(() => {
         if (pointerDownRef.current) {
-          const ledIndex = Math.floor(uvY * ledCount);
-          onBladeHold?.(Math.min(ledIndex, ledCount - 1));
+          holdFiredRef.current = true;
+          engineRef.current?.triggerEffect('lockup', { position });
+          onBladeHold?.(ledIndex, position);
         }
-      }, 400);
+      }, HOLD_LOCKUP_MS);
     },
-    [ledCount, onBladeHold],
+    [ledCount, onBladeHold, engineRef],
   );
 
   const handlePointerUp = useCallback(
     (e: { uv?: THREE.Vector2; stopPropagation: () => void }) => {
       e.stopPropagation();
+      const wasDown = pointerDownRef.current;
       pointerDownRef.current = false;
       if (holdTimerRef.current) {
         clearTimeout(holdTimerRef.current);
         holdTimerRef.current = null;
+      }
+      // If lockup already fired on this gesture, release it on pointer-up
+      // so the lockup doesn't get stuck on after the user lifts.
+      if (holdFiredRef.current) {
+        engineRef.current?.releaseEffect('lockup');
+        holdFiredRef.current = false;
+        return;
+      }
+      // Short click → clash. Only fire if pointer-down originated on the
+      // blade (wasDown guards against pointer-up bubbling from elsewhere).
+      if (wasDown && e.uv) {
+        const ledIndex = uvYToLedIndex(e.uv.y, ledCount);
+        const position = ledIndex / Math.max(1, ledCount);
+        engineRef.current?.triggerEffect('clash', { position });
+        onBladeClick?.(ledIndex, position);
+      }
+      resetDragAccumulator(dragAccRef.current);
+    },
+    [ledCount, onBladeClick, engineRef],
+  );
 
-        // Short click → clash
-        if (e.uv) {
-          const ledIndex = Math.floor(e.uv.y * ledCount);
-          onBladeClick?.(Math.min(ledIndex, ledCount - 1));
-        }
+  // Pointer-move on the blade mesh — feeds the tip→hilt drag accumulator.
+  // Swing-from-velocity is handled by useMouseSwing on the outer container;
+  // this handler is only responsible for the retract-on-drag-down gesture.
+  const handlePointerMove = useCallback(
+    (e: { uv?: THREE.Vector2; stopPropagation: () => void; nativeEvent?: { timeStamp?: number } }) => {
+      if (!pointerDownRef.current || !e.uv) return;
+      const now = e.nativeEvent?.timeStamp ?? (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const triggered = updateDragAccumulator(dragAccRef.current, e.uv.y, now);
+      if (triggered) {
+        engineRef.current?.retract();
+        onDragRetract?.();
       }
     },
-    [ledCount, onBladeClick],
+    [engineRef, onDragRetract],
   );
 
   useEffect(() => {
@@ -292,6 +454,7 @@ function SceneDriver({
       <group
         onPointerDown={handlePointerDown as unknown as (e: unknown) => void}
         onPointerUp={handlePointerUp as unknown as (e: unknown) => void}
+        onPointerMove={handlePointerMove as unknown as (e: unknown) => void}
       >
         <BladeMesh
           engineRef={engineRef}
@@ -303,7 +466,11 @@ function SceneDriver({
       {/* Hilt mesh (LatheGeometry from SVG profile) */}
       <HiltMesh />
 
-      {/* Camera controls */}
+      {/* Camera controls — Phase 2C: rotateSpeed tuned slightly below the
+          drei default of 1.0 so casual drags don't whip the camera around
+          past the swing-velocity reading window. Pan disabled (the saber
+          is the subject); pinch-zoom + two-finger rotate route through
+          OrbitControls's native pointer-event handling. */}
       <OrbitControls
         enablePan={false}
         enableZoom={true}
@@ -311,6 +478,7 @@ function SceneDriver({
         maxDistance={3.0}
         target={[0, bladeLength * 0.4, 0]}
         autoRotate={false}
+        rotateSpeed={ORBIT_ROTATE_SPEED}
       />
     </>
   );
@@ -325,10 +493,15 @@ export interface BladeScene3DProps {
   ledCount?: number;
   /** Additional CSS class for the container. */
   className?: string;
-  /** Callback when user clicks the blade (clash trigger). */
-  onBladeClick?: (ledIndex: number) => void;
-  /** Callback when user holds the blade (lockup trigger). */
-  onBladeHold?: (ledIndex: number) => void;
+  /** Auxiliary callback when user clicks the blade — clash effect is
+   *  already triggered on the engine; this is for audio / logging. */
+  onBladeClick?: (ledIndex: number, position: number) => void;
+  /** Auxiliary callback when user holds the blade — lockup effect is
+   *  already triggered on the engine; this is for audio / logging. */
+  onBladeHold?: (ledIndex: number, position: number) => void;
+  /** Auxiliary callback when a sustained tip→hilt drag retracts the
+   *  blade — engine.retract() is already called inline. */
+  onDragRetract?: () => void;
 }
 
 export function BladeScene3D({
@@ -337,6 +510,7 @@ export function BladeScene3D({
   className,
   onBladeClick,
   onBladeHold,
+  onDragRetract,
 }: BladeScene3DProps) {
   const storeConfig = useBladeStore((s) => s.config);
   const ledCount = ledCountProp ?? storeConfig.ledCount;
@@ -381,6 +555,7 @@ export function BladeScene3D({
           bladeLength={bladeLength}
           onBladeClick={onBladeClick}
           onBladeHold={onBladeHold}
+          onDragRetract={onDragRetract}
         />
         <BladeBloom />
       </Canvas>
