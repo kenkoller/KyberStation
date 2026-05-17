@@ -9,42 +9,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **ProffieOS Runtime Presets export** — new `ProffieOS Runtime (SD card)` target in the Card Writer that emits `presets.ini` directly. Two style modes selectable via radio toggle:
-  - **Phase A (default, safe):** emits `style=builtin N M` lines that reorder, rename, duplicate, and reassign fonts on the user's factory firmware preset bank. No custom colors transfer; rock-solid on any saber with `SAVE_PRESET` enabled.
-  - **Phase C (experimental):** emits `style=advanced R,G,B …` lines using ProffieOS's 11-slot named verb. Custom base / clash / blast / lockup colors and ignition / retraction timing transfer to the saber without firmware flash. Requires the user's firmware to NOT have `DISABLE_BASIC_PARSER_STYLES` defined (true for stock ProffieOS + standard Fett263 prop builds).
-  - Pivots the v0.17 narrative — modern vendor sabers (89sabers, Sabertrio, KR Sabers) no longer need their factory `config.h` cracked. Drop the file on the SD card, reboot, presets appear.
-
-- **Deliverability framework** — new `apps/web/lib/deliverability.ts` is the single source of truth for "what transfers from editor to saber" per export target. Per-knob × per-target table (deliverable / dropped-silently / partial / design-reference / unknown) with rationale strings. New "What Will Transfer to Your Saber" panel in CardWriter, always visible, three color-coded sections (✓ Transfers / ✗ Dropped or 📋 Documented / ⚠ Partial), every chip has a hover tooltip with the per-knob reason. Dynamic validation notice fires when the user has customized a knob that the current target silently drops.
-
-- **Hardware test plan doc** — [`docs/research/RUNTIME_PRESETS_HARDWARE_TEST_PLAN.md`](docs/research/RUNTIME_PRESETS_HARDWARE_TEST_PLAN.md) gives a step-by-step bench validation procedure for Phase A + Phase C + install_time round-trip + Phase C fallback. Designed for 89sabers V3.9-BT but applicable to any chassis with `SAVE_PRESET`.
-
-- **Format reference doc** — [`docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md) verified against ProffieOS v7.12 source. Covers schema, install_time semantics, style verb registry, `builtin N M` + `advanced` slot mapping, atomic-write contract.
-
-- **Emit ↔ parser audit doc** — [`docs/research/EMIT_PARSER_AUDIT.md`](docs/research/EMIT_PARSER_AUDIT.md) systematic catalog of every interface between KyberStation's emit code and a downstream parser (firmware, vendor app, our own persistence). For each: what we emit, what the consumer expects, status (verified / unverified / known bug), source-of-truth references. Created in response to the 2026-05-16 smoking-gun finding so future contributors can verify encoding contracts cheaply.
-
-### Fixed
-
-- **CRITICAL: Phase C runtime presets were emitting 0-255 RGB values when ProffieOS's runtime arg parser expects 0-65535.** Bench-verified on 89sabers V3.9-BT 2026-05-16: every Phase C blade was rendering at 1/257 of intended brightness (~0.4% photon output) since the feature shipped. Root cause: `RgbArg<>` parser at `~/ProffieOS/styles/rgb_arg.h:41` stores parsed values directly as `Color16(r, g, b)` which expects 16-bit channels. Compile-time `Rgb<R,G,B>` literals get the `× 0x101` (= × 257) 8→16-bit scaling automatically via the `Color16(Color8)` constructor; the runtime parser path does not. Fix: replaced `rgbCsv()` (which clamped to 0-255) with `rgbCsv16()` (which scales each channel × 257, clamps to 0-65535) in `packages/codegen/src/emitters/ProffieRuntimeEmitter.ts`. All existing users of Phase C get the fix on next deploy with no other action required. Deliverability table for `proffie_runtime` Phase C lifted: `baseColor`, `clashColor`, `lockupColor`, `blastColor`, `ignitionMs`, `retractionMs` all moved from `partial` → `deliverable`. The in-app tooltip rewritten to reflect reality.
-
-### Changed
-
-- **Engine → codegen parity expanded** — codegen handlers added for 14 previously-engine-only styles (helix, candle, ember, dataStream, shatter, neutron, cascade, gravity, moire, torrent, vortex, tidal, mirage, nebula). Codegen coverage lifted from 18 of 33 (54%) to 32 of 33 (97%). Only `automata` (Rule 30 cellular automaton) remains engine-only. The `engineStyleParity.test.ts` regression sentinel updates 33/18/15 → 33/32/1. Deliverability rationale for `proffie` `style: partial` updated to cite the new ratio.
-
-- **Marketing copy honesty pass** — five customer-facing strings narrowed to match shipping reality. `LandingValueStrip` third cell retitled "Compiles clean. Writes the card." → "Honest about what transfers" with explicit scope. `LandingFeaturePillars` "Modulation Routing" pillar no longer implies live hardware adaptability for unmappable bindings; "ProffieOS Codegen" pillar adds chassis caveat (validated on stock V3; vendor chassis need chassis profile or custom-paste). `README.md` headline export claim now names supported paths and tiers (V3 validated, Xenopixel constrained, Runtime Presets Phase A/C, CFX/GH design-ref only) instead of flattening all boards as peers. `README.md` Xenopixel section qualifies the 8-effect constraint explicitly. Features page hardware-fidelity claim narrowed to "audited in the visualizer" with a pointer to the in-app deliverability panel.
-
-- **POST_LAUNCH_BACKLOG.md re-prioritized** — ProffieOS Runtime Presets promoted to #1 v0.17 workflow; Hardware Profiles MVP demoted to #2 (still relevant for older DIY builds without `SAVE_PRESET`). Phase B + import-existing-presets.ini queued for v0.18+.
+(nothing yet — next entries go here)
 
 ---
 
-## [0.22.0] — Pending date (awaits PR #325 merge)
+## [0.22.1] — 2026-05-16
 
-> **Pending: This block is drafted ahead of [PR #325](https://github.com/kenkoller/KyberStation/pull/325) merge.** Finalize the date, remove this note, and cut the `v0.22.0` git tag once #325 lands on `main`. The headline Runtime Presets path is the reason v0.22.0 is a minor bump rather than the originally-planned v0.21.1 patch.
+**Polyglot Audit Sprint.** A single-session audit pass that lifted three downstream surfaces to the rigor standard the v0.22.0 emit↔parser audit doc set: gallery preset accuracy, multi-board codegen field coverage, and editor messaging integration. Shipped 16 PRs in one session ([#331](https://github.com/kenkoller/KyberStation/pull/331)–[#346](https://github.com/kenkoller/KyberStation/pull/346)). Test count went from 3565 → 8605+ across the workspace.
+
+### Gallery accuracy + description quality (455 presets)
+
+- **Audit** ([#332](https://github.com/kenkoller/KyberStation/pull/332)) — 4 parallel audit agents enumerated PASS / FLAG status for every preset in `packages/presets/src/characters/*`. Output: 296 PASS / 159 FLAG across the 455-preset library. Audit docs landed at `docs/research/GALLERY_AUDIT_2026-05-16_*.md`.
+
+- **6 real bugs fixed** across 4 era files:
+  - [#333](https://github.com/kenkoller/KyberStation/pull/333) creative-community.ts: Companion Cube colors (orange/blue → pink/gray; Portal *portal* colors had been used by mistake); Dueling Banjos ID/name realignment; 4 affiliation corrections (edgelord concepts → `neutral`).
+  - [#335](https://github.com/kenkoller/KyberStation/pull/335) pop-culture: Spartan Laser `ignition: 'pulseWave'` → `'pulse-wave'` (registry uses dash-case; camelCase was silently falling back); Lucky the Leprechaun `style: 'aurora'` → `'gradient'` (gradientStops only renders on the gradient style).
+  - [#336](https://github.com/kenkoller/KyberStation/pull/336) legends.ts: bulk `screenAccurate: false` pass (68 presets had it unset); 9 missing `hiltNotes` added (Sion, Jaina Solo, Caedus, Nomi Sunrider, both Ulic Qel-Dromas, Talon, Cade Skywalker, Vitiate); Darth Bane style→unstable per canon; Atris violet per KOTOR II; Arcann + Thexan affiliation→sith.
+  - [#338](https://github.com/kenkoller/KyberStation/pull/338) canon-era: `showcase-plasma-coil` retraction `'flicker-out'` → `'flickerOut'` (registry camelCase); `eu-loden-greatstorm-blue` → `-yellow` (config was canonical yellow); `eu-elzar-mann-purple` → `-blue` (config was canonical blue); `eu-burryaga-green` blade recolored to canonical green; 69-line `author: 'on-screen'` bulk pass across animated + ext-univ + sequel-era.
+
+- **60+ stub descriptions enriched** to the Obi-Wan Kenobi (ANH) voice anchor across 5 parallel PRs:
+  - [#341](https://github.com/kenkoller/KyberStation/pull/341) canon-era trilogy (7 prequel: Anakin EP I+II, Eeth Koth, Stass Allie, Darth Maul, Plo Koon, Luminara)
+  - [#343](https://github.com/kenkoller/KyberStation/pull/343) animated + ext-univ (3 animated + 8 ext-univ including all 4 Cal Kestis variants, Keeve Trennis, Loden Greatstorm, Orla Jareni, Burryaga)
+  - [#344](https://github.com/kenkoller/KyberStation/pull/344) creative-community (15: rave/Christmas/Power-Grayskull/Companion Cube/Pixel Miner/Digital Rain + Custom cluster)
+  - [#345](https://github.com/kenkoller/KyberStation/pull/345) pop-culture (18: 8 Marvel — all 6 Infinity Stones + Mjolnir + Gungnir; 10 DC — 7 Lantern Corps emotional-spectrum + Godkiller + Doctor Fate's Ankh + Swamp Thing Green)
+  - [#346](https://github.com/kenkoller/KyberStation/pull/346) legends (15: Revan/Bastila/Sion/Malak/Mara Jade/Kyle Katarn/etc., all KOTOR-era + NJO + Legacy lore-anchored)
+
+### Multi-board codegen field coverage
+
+- **Audit** ([#332](https://github.com/kenkoller/KyberStation/pull/332), [#337](https://github.com/kenkoller/KyberStation/pull/337)) — 2 parallel agents (B1 Proffie compile-flash + runtime; B2 Xenopixel + CFX + Golden Harvest) traced every BladeConfig field through every emitter and catalogued PRESERVED / LOSSY / N/A / UNVERIFIED per cell. Reconciled into `docs/research/MULTI_BOARD_FIELD_COVERAGE_2026-05-16.md` — the authoritative matrix for 103 BladeConfig fields × 5 boards.
+
+- **Xenopixel emitter-class adoption** ([#339](https://github.com/kenkoller/KyberStation/pull/339)) — The dormant `XenopixelEmitter.ts` class had superior style/ignition mappings, but the live ZIP export path used inline generators with weaker coverage. **27 of 33 KyberStation styles silently degraded to Steady (1); 8 ignitions silently fell back to Standard (0).** The fix wires the class's mappings into the live path: 21 explicit style mappings (5 direct + 16 explicit degradation arms with notes), 20 ignition mappings (12 direct + 8 explicit degradation arms), `ignitionMs`/`retractionMs` clamping (100-800 / 200-1000), optional `XENOPIXEL_NOTES.txt` at ZIP root listing degradations. **71 new tests** in `packages/codegen/tests/xenopixelLivePathCoverage.test.ts`.
+
+### Editor learnings integration
+
+- **Renderer-level golden-hash coverage** ([#334](https://github.com/kenkoller/KyberStation/pull/334)) — `drawWorkbenchBlade` test matrix expanded from 9 to 29 cases (more styles, colors, state transitions, LED-count edge cases, shimmer extremes). Plus `docs/QA_TESTING_CHECKLIST.md` (476-line manual QA checklist for post-release polish). Rebased replacement for the original PR #315 which had unresolvable conflicts after the backlog restructure.
+
+- **Sound-font silent-failure pre-flash check** ([#340](https://github.com/kenkoller/KyberStation/pull/340)) — Closes `EMIT_PARSER_AUDIT` §I. Before: a preset referencing `font=mace_v2` could silently fall back to default font on activation if the folder wasn't on the card. After: CardWriter's direct-write path now enumerates SD card font folders, cross-references against preset `fontName` (case-insensitive, mirroring ProffieOS firmware), and raises `SoundFontWarningModal` listing missing folders + a "did you mean?" prefix hint. User can Cancel write or Continue anyway. Mirrors the `EngineOnlyWarningModal` pattern from PR #320.
+
+- **HARDWARE_FIDELITY_PRINCIPLE.md** ([#332](https://github.com/kenkoller/KyberStation/pull/332)) — New audit-history entry "Encoding contracts at the emit↔parser boundary (smoking-gun saga)" capturing the 6h bench session, the actual cause (Color16 vs Color8 mismatch in `RgbArg<>` parser at `styles/rgb_arg.h:41`), and the drift sentinel (any new emit path crossing a parser boundary needs wire-format fixture tests).
+
+- **POST_LAUNCH_BACKLOG.md re-prioritization** ([#332](https://github.com/kenkoller/KyberStation/pull/332)) — Runtime Presets demoted from "open #1" to "shipped/validated." New top priorities: multi-board codegen matrix completion, sound-font pre-check, gallery accuracy. Hardware Profiles MVP retained as v0.17 fallback path for DIY builds.
+
+- **EMIT_PARSER_AUDIT.md closeout** ([#342](https://github.com/kenkoller/KyberStation/pull/342)) — Sections F (share URL), G (saber profile migration), and I (sound-font existence pre-check) flipped from ⚠ Unverified → ✅ Verified. Suggested follow-up section refreshed.
+
+- **CardWriter audit-doc cross-reference** ([#340](https://github.com/kenkoller/KyberStation/pull/340)) — Added user-visible link to `EMIT_PARSER_AUDIT.md` at the bottom of the DeliverabilityPanel. Closes the C2 "cross-references in UI" plan item.
+
+### Bench validation tooling
+
+- **Curated 15-preset bench validation generator** ([#331](https://github.com/kenkoller/KyberStation/pull/331)) — `scripts/hardware-test/build-bench-validation-presets.mjs` + TTS callout generator + SD deploy script. Empirically validated 15 Phase C presets at full brightness on 89sabers V3.9-BT 2026-05-16 (hilt-mounted).
+
+---
+
+## [0.22.0] — 2026-05-16
 
 **Runtime Presets Release.** Replaces the originally-planned v0.21.1 "Polyglot Release" patch tag. The May–mid-May sprint cycle that landed v0.21.1 internally (Xenopixel V3, Fredrik Style Editor, template-eval, 3D blade renderer, Fett263 Prop Editor Level 1, Hardware Profiles, audit Waves 0-4) now ships alongside the **ProffieOS Runtime — SD card** export pipeline: design presets in KyberStation, drop `presets.ini` on your saber's SD card, reboot, presets appear. **No firmware flashing.** Plus a smoking-gun 1/257-brightness RGB encoding fix discovered on the bench, and an engine→ProffieOS codegen port that brings 32 of 33 engine styles to real hardware.
 
-### Runtime Presets Path (Pending PR #325 merge)
+### Runtime Presets Path
 
 - **ProffieOS Runtime — SD card export** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — New `proffie_runtime` board emitter generates `presets.ini`, the runtime preset file ProffieOS firmware with `SAVE_PRESET` enabled reads at boot. ZIP bundle is `presets.ini` + `KYBERSTATION_README.txt` at root — **no font folders** (factory firmware already has them). Phase A scope: reorder / rename / duplicate factory presets + reassign fonts. `style=builtin N M` references the firmware's compiled preset bank.
 - **`install_time` auto-discovery** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — `runtimePresetIO.parseInstallTime()` reads the SD card's existing `presets.ini` to match the firmware's compile-time install_time so the emitted file is accepted on first reboot.
@@ -93,13 +113,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Engine-only export warning modal** ([#320](https://github.com/kenkoller/KyberStation/pull/320)) — Styled modal replaces `window.confirm()` when exporting a config that uses engine-only style fallbacks.
 - **Engine style parity CI guard** ([#322](https://github.com/kenkoller/KyberStation/pull/322)) — Regression test that fails CI if a style without a codegen emitter is added without explicit fallback annotation.
 
-### Engine Style Codegen Parity (Pending PR #325 merge)
+### Engine Style Codegen Parity
 
 - **32 of 33 engine styles ported to ProffieOS** ([#325](https://github.com/kenkoller/KyberStation/pull/325)) — Two waves of style emitters: 6 styles (helix / candle / ember / dataStream / shatter / neutron) + 8 more, bringing the codegen path to 32/33 engine-style parity. Closes the "blade you see is the blade you get" gap for the runtime-presets export.
 
 ### Fixes (PR #325 includes the smoking-gun)
 
-- **Pending: Phase C runtime presets RGB 1/257 brightness bug** ([#325](https://github.com/kenkoller/KyberStation/pull/325) commit `45737f2`) — KyberStation's `proffie_runtime` Phase C `advanced` verb was emitting RGB color values in 0-255 (8-bit) range. ProffieOS's `RgbArg<>` runtime arg parser at `styles/rgb_arg.h:41` stores parsed values directly as `Color16(r, g, b)` — which expects 0-65535 per channel. Every Phase C blade was rendering at ~0.4% photon output. The compile-time `Rgb<R,G,B>` template auto-scaled via `Color16(Color8(R,G,B))` × `0x101`, so the compile-flash path was unaffected. Fix scales each channel × 257 and clamps to 0-65535. Empirical verification on the 89sabers V3.9-BT bench (`set_style1 advanced 60395,4626,36494` matches factory Vader luminance).
+- **Phase C runtime presets RGB 1/257 brightness bug** ([#325](https://github.com/kenkoller/KyberStation/pull/325) commit `45737f2`) — KyberStation's `proffie_runtime` Phase C `advanced` verb was emitting RGB color values in 0-255 (8-bit) range. ProffieOS's `RgbArg<>` runtime arg parser at `styles/rgb_arg.h:41` stores parsed values directly as `Color16(r, g, b)` — which expects 0-65535 per channel. Every Phase C blade was rendering at ~0.4% photon output. The compile-time `Rgb<R,G,B>` template auto-scaled via `Color16(Color8(R,G,B))` × `0x101`, so the compile-flash path was unaffected. Fix scales each channel × 257 and clamps to 0-65535. Empirical verification on the 89sabers V3.9-BT bench (`set_style1 advanced 60395,4626,36494` matches factory Vader luminance).
 - **Xenopixel Candy + Flashing blade effects unreachable** ([#293](https://github.com/kenkoller/KyberStation/pull/293)) — `XENO_BLADE_EFFECTS` entries for IDs 4 (Candy) and 7 (Flashing) had `kyberStyle: null`, making them unreachable through the UI despite complete engine implementations.
 - **Xenopixel 11 audit findings resolved** ([#289](https://github.com/kenkoller/KyberStation/pull/289)) — Orphaned `XenoDesignPorter.tsx` deleted, segment overflow in `XenoEffectPicker` fixed, missing ignition ID mappings, motion/settings panel state moved to Zustand, config.ini round-trip for crossguard/double-blade.
 - **Sub-1024 brand drift + status bar BOARD-BOARD dedup** ([#277](https://github.com/kenkoller/KyberStation/pull/277)) — Tablet rendering fixes.
