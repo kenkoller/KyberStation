@@ -34,6 +34,10 @@ import {
 } from '@/lib/parameterGroups';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
 import { canBoardModulate } from '@/lib/boardProfiles';
+import {
+  getPropFileProfile,
+  type PropFileProfile,
+} from '@/lib/propFileProfiles';
 
 const COMBINATORS: readonly BindingCombinator[] = [
   'add',
@@ -78,6 +82,38 @@ const DEFAULT_TARGET = 'shimmer';
 const DEFAULT_COMBINATOR: BindingCombinator = 'add';
 const DEFAULT_AMOUNT = 0.6;
 
+// ─── Wave 8 — triggerEvent coupling ──────────────────────────────────
+//
+// When the source is one of the 8 aux/gesture event modulators, an
+// optional `triggerEvent` dropdown surfaces so the user can couple the
+// binding to a specific prop-file event (e.g. "fire on double-click,
+// not every aux-click decay frame"). For non-event sources the
+// dropdown is hidden — the engine validation in
+// `applyBindings.isValidTriggerEventBinding` requires
+// source ∈ {aux-*, gesture-*} when triggerEvent is set.
+const EVENT_SOURCE_PREFIXES = ['aux-', 'gesture-'] as const;
+
+function isEventSource(sourceId: string): boolean {
+  return EVENT_SOURCE_PREFIXES.some((p) => sourceId.startsWith(p));
+}
+
+function getActivePropFileProfile(propFileId: string | undefined): PropFileProfile | undefined {
+  if (!propFileId) return undefined;
+  // Bridge from the short local ids stored on bladeStore (`bc`, `default`)
+  // to the longer propFileProfiles ids (`bc-button-controls`, `default-fett`).
+  // Mirrors `GestureControlPanel.PROFILE_ID_BY_PROP_FILE_ID`.
+  const mapping: Record<string, string | undefined> = {
+    fett263: 'fett263',
+    sa22c: 'sa22c',
+    bc: 'bc-button-controls',
+    shtok: undefined,
+    default: 'default-fett',
+  };
+  const registryId = mapping[propFileId];
+  if (!registryId) return undefined;
+  return getPropFileProfile(registryId);
+}
+
 function newBindingId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -88,11 +124,21 @@ function newBindingId(): string {
 export function AddBindingForm() {
   const boardId = useBoardProfile().boardId;
   const addBinding = useBladeStore((s) => s.addBinding);
+  // `config` may be absent in some mocked or partial-store scenarios —
+  // guard so the form still renders when the test/mock harness doesn't
+  // populate it. Production always supplies the full store shape.
+  const propFileId = useBladeStore(
+    (s) => (s.config as { propFileId?: string } | undefined)?.propFileId,
+  );
 
   const [source, setSource] = useState<string>(DEFAULT_SOURCE);
   const [target, setTarget] = useState<string>(DEFAULT_TARGET);
   const [combinator, setCombinator] = useState<BindingCombinator>(DEFAULT_COMBINATOR);
   const [amount, setAmount] = useState<number>(DEFAULT_AMOUNT);
+  // Wave 8 — optional prop-file event coupling. Empty string = "no
+  // coupling, drive every frame" (the legacy behavior). Non-empty is
+  // a prop-file event id from the active profile's vocabulary.
+  const [triggerEvent, setTriggerEvent] = useState<string>('');
 
   if (!canBoardModulate(boardId)) {
     return null;
@@ -106,6 +152,14 @@ export function AddBindingForm() {
   );
   const parameters = getModulatableParameters();
 
+  // Wave 8 — surface the prop-file event vocabulary when the source
+  // is an aux/gesture event modulator.
+  const sourceIsEvent = isEventSource(source);
+  const propProfile = getActivePropFileProfile(propFileId);
+  const availableEvents: readonly string[] = sourceIsEvent && propProfile
+    ? [...propProfile.buttonEvents, ...propProfile.gestureEvents]
+    : [];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const binding: SerializedBinding = {
@@ -117,6 +171,13 @@ export function AddBindingForm() {
       amount,
       bypassed: false,
       label: `${source} → ${target}`,
+      // Only attach triggerEvent when (a) the source is an event
+      // modulator and (b) the user picked a specific event. Otherwise
+      // leave the field absent so the binding fires every frame as
+      // before — round-trip-safe with pre-Wave-8 storage.
+      ...(sourceIsEvent && triggerEvent
+        ? { triggerEvent }
+        : {}),
     };
     addBinding(binding);
     // Keep the form values as-is so users can iterate quickly on the
@@ -161,6 +222,38 @@ export function AddBindingForm() {
             );
           })}
         </select>
+
+        {/* Wave 8 — Optional prop-file event coupling.
+            Only rendered when the source is an aux/gesture event
+            modulator AND the active prop file exposes events. The
+            engine's `isValidTriggerEventBinding` enforces source ∈
+            {aux-*, gesture-*} when triggerEvent is set; this UI gate
+            mirrors that contract. */}
+        {sourceIsEvent && availableEvents.length > 0 && (
+          <>
+            <label
+              htmlFor="binding-trigger-event"
+              className="text-ui-xs font-mono uppercase text-text-muted"
+            >
+              Event
+            </label>
+            <select
+              id="binding-trigger-event"
+              data-testid="binding-trigger-event-select"
+              value={triggerEvent}
+              onChange={(e) => setTriggerEvent(e.target.value)}
+              className="bg-bg-surface border border-border-subtle rounded px-2 py-1 text-ui-xs focus:outline-none focus:border-accent"
+              title="Fire only when the prop file emits this exact event (optional)."
+            >
+              <option value="">(every frame)</option>
+              {availableEvents.map((ev) => (
+                <option key={ev} value={ev}>
+                  {ev}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
 
         <label htmlFor="binding-target" className="text-ui-xs font-mono uppercase text-text-muted">
           Target
