@@ -35,6 +35,23 @@ import {
   populateBloomMip,
   compositeBloomMips,
 } from '@/lib/blade/bloom';
+import { drawIgnitionFlash } from '@/lib/blade/ignitionFlash';
+import {
+  applyMotionGhost,
+  clearGhost,
+  motionGhostCompositeAlpha,
+  MOTION_GHOST_SWING_THRESHOLD,
+} from '@/lib/blade/motionGhost';
+import {
+  sampleMip2Luma,
+  ambientTintAlpha,
+  paintAmbientTint,
+} from '@/lib/blade/ambientLumaCoupling';
+import {
+  averageHeadLedColor,
+  drawCrossguardOverlay,
+  drawTripleFanOverlay,
+} from '@/lib/blade/topologyOverlay';
 import type { LedBufferLike } from '@/lib/blade/types';
 import { HiltRenderer } from '@/components/hilt/HiltRenderer';
 import { BladeLayersDebugOverlay, type DebugLayerCapture } from './BladeLayersDebugOverlay';
@@ -1224,59 +1241,33 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
 
       // Phase 3 motion blur: persistent ghost buffer at mip 0 dims
       // composites current mip 0 each frame with `(1 - swing * 0.3)`
-      // persistence. When the user's swing is fast, a blade trail
-      // lags visibly; at rest the ghost fades to nothing so there
-      // is zero visual cost. Gated on !reducedMotion so vestibular-
-      // sensitive users don't get streaks. Ghost buffer is separate
-      // from bloomMipsRef so the trail survives across frames
-      // independently of the current bloom chain.
+      // persistence. Module extracted to `lib/blade/motionGhost.ts` —
+      // see header there for the full lifecycle + composite math. The
+      // ref-managed persistent canvas stays here because it's React
+      // state; everything pixel-touching is in the module.
       if (!reducedMotion) {
         const swing = Math.max(0, Math.min(1, useBladeStore.getState().motionSim.swing / 100));
-        if (swing > 0.02) {
+        if (swing > MOTION_GHOST_SWING_THRESHOLD) {
           const ghost = motionGhostRef.current ?? document.createElement('canvas');
           if (!motionGhostRef.current) motionGhostRef.current = ghost;
-          // Mip 0 carries the tightest near-core glow and is the shape
-          // the motion ghost integrates over time. After Item K
-          // extraction, mip dims live on `mipDefs[0]` and the live
-          // pixel buffer lives on `mipCanvases[0]` — paired by index.
           const def0 = mipDefs[0];
           const mip0Canvas = mipCanvases[0];
-          if (ghost.width !== def0.w || ghost.height !== def0.h) {
-            ghost.width = def0.w;
-            ghost.height = def0.h;
-          }
-          const gCtx = ghost.getContext('2d')!;
-          // Fade the existing ghost by `swing * 0.3` of its own
-          // opacity, then paint the current mip 0 on top — that's
-          // the temporal integration the trail uses.
-          gCtx.save();
-          gCtx.globalCompositeOperation = 'destination-in';
-          gCtx.globalAlpha = Math.max(0, 1 - swing * 0.3);
-          gCtx.fillStyle = '#fff';
-          gCtx.fillRect(0, 0, def0.w, def0.h);
-          gCtx.restore();
-          gCtx.save();
-          gCtx.globalCompositeOperation = 'lighter';
-          gCtx.globalAlpha = 1;
-          gCtx.drawImage(mip0Canvas, 0, 0);
-          gCtx.restore();
-          // Composite the trail back onto main. Upscaled with
-          // `lighter` so it stacks on top of the fresh bloom.
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.globalAlpha = Math.min(0.5, swing * 0.5) * bloomAlphaScale;
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(ghost, 0, 0, def0.w, def0.h, 0, 0, cw, ch);
-          ctx.restore();
+          applyMotionGhost(ctx, {
+            swing,
+            mip0Canvas,
+            mip0Def: { w: def0.w, h: def0.h },
+            bloomAlphaScale,
+            cw,
+            ch,
+            ghost,
+          });
           captureBufferAsLayer(ghost, '11a. Motion ghost — raw buffer', `Persistent mip-0-sized ghost buffer integrating mip 0 across frames with (1 - swing × 0.3) persistence. Current swing: ${(swing * 100).toFixed(1)}%. Empty when swing < 2%.`, cw, ch);
-          captureDeltaAsLayer(ctx, '11b. Motion ghost — composited trail', `Ghost buffer composited additively at α=${(Math.min(0.5, swing * 0.5) * bloomAlphaScale).toFixed(3)}. The blade trail you see at high swing speeds.`, cw, ch);
-        } else if (motionGhostRef.current) {
+          captureDeltaAsLayer(ctx, '11b. Motion ghost — composited trail', `Ghost buffer composited additively at α=${motionGhostCompositeAlpha(swing, bloomAlphaScale).toFixed(3)}. The blade trail you see at high swing speeds.`, cw, ch);
+        } else {
           // Below the swing threshold — clear the ghost so the next
           // swing starts from a clean buffer, not stale last-swing
           // residual.
-          const g = motionGhostRef.current;
-          g.getContext('2d')?.clearRect(0, 0, g.width, g.height);
+          clearGhost(motionGhostRef.current);
         }
       }
     }
@@ -1317,53 +1308,27 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     captureDeltaAsLayer(ctx, '12. Capsule body composited (additive) from offscreen', `The offscreen capsule (Pass 01) added on top of the bloom via 'lighter' blend, clipped to x ≥ bladeStartPx so it doesn't paint over the hilt. Body brightness ADDS to bloom rather than replacing it — natural HDR-style compositing, no visible seam between body silhouette and surrounding halo. Bloom mips above already sampled the full extended capsule, so halo on the hilt is preserved by the bloom's own additive composite (Passes 08/09/10).`, cw, ch);
 
     // ── Ignition flash burst ──
-    if (ignitionFlashRef.current > 0.01) {
-      const flashAlpha = ignitionFlashRef.current * 0.7;
-      const flashR = 60 * scale * glow.bloomRadius;
-      const flashGrad = ctx.createRadialGradient(bladeStartPx, bladeYPx, 0, bladeStartPx, bladeYPx, flashR);
-      flashGrad.addColorStop(0, `rgba(255,255,255,${flashAlpha})`);
-      flashGrad.addColorStop(0.3, rgbStr(satR, satG, satB, flashAlpha * 0.5));
-      flashGrad.addColorStop(1, rgbStr(satR, satG, satB, 0));
-      ctx.fillStyle = flashGrad;
-      ctx.beginPath();
-      ctx.arc(bladeStartPx, bladeYPx, flashR, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // Module extracted to `lib/blade/ignitionFlash.ts` — see header
+    // there for the gradient stop / radius / α formula.
+    drawIgnitionFlash(ctx, {
+      flashIntensity: ignitionFlashRef.current,
+      bladeStartPx,
+      bladeYPx,
+      scale,
+      bloomRadius: glow.bloomRadius,
+      bladeColor: { r: satR, g: satG, b: satB },
+    });
     captureDeltaAsLayer(ctx, '17. Ignition flash burst', `Bright white radial centered at the emitter, decaying quickly via ignitionFlashRef (current value: ${ignitionFlashRef.current.toFixed(3)}). Empty unless mid-ignition.`, cw, ch);
 
     // ── Phase 4: ambient wash driven by mip 2 buffer luma ──
-    // Sample the bloom mip-2 buffer's average green-channel value
-    // as a luma proxy. This value tracks the blade's overall
-    // brightness automatically — ignitions pulse it, clash flashes
-    // spike it, retraction fades it — so the floor / ceiling /
-    // ambient-tint / hilt-wash alphas track the blade state without
-    // manual `* glow.bloomIntensity` multipliers. Falls back to the
-    // prior static formula when mip 2 hasn't been populated yet
-    // (first frame before bloom runs).
-    //
-    // Sampling mip 2 is cheap: at canvas 980×295 dim, mip 2 is
-    // ~123×37 = 4500 pixels. getImageData reads ~18 KB/frame.
-    let avgBloomLum = 0;
-    if (bloomActive && bloomMipsRef.current) {
-      const m2 = bloomMipsRef.current.mip2;
-      if (m2.width > 0 && m2.height > 0) {
-        try {
-          const m2Ctx = m2.getContext('2d')!;
-          const data = m2Ctx.getImageData(0, 0, m2.width, m2.height).data;
-          let sum = 0;
-          const count = data.length / 4;
-          for (let i = 0; i < data.length; i += 4) sum += data[i + 1];
-          avgBloomLum = count > 0 ? sum / (count * 255) : 0;
-        } catch {
-          // Cross-origin-tainted canvas or 0-size — skip coupling.
-          avgBloomLum = 0;
-        }
-      }
-    }
-    // Publish to ref for downstream wash + tint passes.
+    // Module extracted to `lib/blade/ambientLumaCoupling.ts` — the
+    // mip-2 green-channel sample + the α formulas live there. The
+    // ref publish-step stays here because it's React state read by
+    // the dormant Layer 18 / 20 paths in case they ever re-enable.
+    const avgBloomLum = bloomActive && bloomMipsRef.current
+      ? sampleMip2Luma(bloomMipsRef.current.mip2)
+      : 0;
     avgBloomLumRef.current = avgBloomLum;
-    // Coupling coefficient: 0.5 avg luma → back to prior 0.08 alpha.
-    const lumaWash = Math.max(0.005, avgBloomLum * 0.18) * (reduceBloom ? 0.4 : 1);
 
     // Layer 18 (Floor + ceiling wash) removed in v0.14.x pipeline cleanup.
     // The wash was a vertical gradient above + below the blade body that
@@ -1371,16 +1336,17 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
     // blade tip horizontally, leaving the tip with no surrounding glow.
     // Bumping the bloom mip alphas (above) replaces the missing brightness
     // with a more uniform halo that wraps the blade including its tip.
-    // `lumaWash` stays computed because Layer 19 (background tint) and
-    // Layer 20 (hilt wash, when re-enabled) read avgBloomLum directly.
-    void lumaWash;
 
     // ── Background ambient tint (blade color bleeds into dark background) ──
-    if (activeCount > 0) {
-      ctx.fillStyle = rgbStr(satR, satG, satB, Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1));
-      ctx.fillRect(0, 0, cw, ch);
-    }
-    captureDeltaAsLayer(ctx, '19. Background ambient tint', `Full-canvas color tint at α=${(Math.max(0.003, avgBloomLum * 0.04) * (reduceBloom ? 0.4 : 1)).toFixed(4)}. Pulls the dark surroundings toward the blade hue.`, cw, ch);
+    paintAmbientTint(ctx, {
+      avgBloomLum,
+      activeCount,
+      bladeColor: { r: satR, g: satG, b: satB },
+      cw,
+      ch,
+      reduceBloom,
+    });
+    captureDeltaAsLayer(ctx, '19. Background ambient tint', `Full-canvas color tint at α=${ambientTintAlpha(avgBloomLum, reduceBloom).toFixed(4)}. Pulls the dark surroundings toward the blade hue.`, cw, ch);
 
     // Layer 20 (Hilt illumination wash) removed in v0.14.x pipeline
     // cleanup. The softened bloom threshold (1.4 → 1.15) now bleeds onto
@@ -1559,50 +1525,20 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       drawBlade(ctx, engine);
       ctx.restore();
     } else if (topoId === 'crossguard') {
-      // Crossguard: main blade + two short perpendicular quillon blades at emitter
+      // Crossguard: main blade + two short perpendicular quillon
+      // blades at the emitter. Overlay extracted to
+      // `lib/blade/topologyOverlay.ts` — see header there for the
+      // halo / core / white-hot-center geometry.
       drawBlade(ctx, engine);
-
       const scale = getScale();
-      const emitterX = getBladeStartPx();
-      const bladeY = getBladeCenterY();
-      const quillonLen = 60 * scale; // short quillon blades
-      const quillonH = 6 * scale;
-
-      // Get average blade color for quillon glow
-      const leds = engine.leds;
-      const bri = brightness / 100;
-      let avgR = 0, avgG = 0, avgB = 0, count = 0;
-      for (let i = 0; i < Math.min(6, leds.count); i++) {
-        avgR += leds.getR(i); avgG += leds.getG(i); avgB += leds.getB(i); count++;
-      }
-      if (count > 0) { avgR = (avgR / count) * bri; avgG = (avgG / count) * bri; avgB = (avgB / count) * bri; }
-
-      if (engine.extendProgress > 0) {
-        const qProgress = Math.min(1, Math.max(0, (engine.extendProgress - 0.1) / 0.3));
-        if (qProgress > 0) {
-          // Quillon glow (bloom)
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.filter = `blur(${12 * scale}px)`;
-          ctx.globalAlpha = 0.3 * qProgress;
-          ctx.fillStyle = `rgb(${Math.round(avgR)},${Math.round(avgG)},${Math.round(avgB)})`;
-          // Upper quillon
-          ctx.fillRect(emitterX - quillonH / 2, bladeY - quillonLen * qProgress, quillonH, quillonLen * qProgress);
-          // Lower quillon
-          ctx.fillRect(emitterX - quillonH / 2, bladeY, quillonH, quillonLen * qProgress);
-          ctx.restore();
-
-          // Quillon core
-          ctx.fillStyle = `rgba(${Math.round(Math.min(255, avgR * 1.5))},${Math.round(Math.min(255, avgG * 1.5))},${Math.round(Math.min(255, avgB * 1.5))},${0.9 * qProgress})`;
-          ctx.fillRect(emitterX - quillonH / 4, bladeY - quillonLen * qProgress, quillonH / 2, quillonLen * qProgress);
-          ctx.fillRect(emitterX - quillonH / 4, bladeY, quillonH / 2, quillonLen * qProgress);
-
-          // White-hot center
-          ctx.fillStyle = `rgba(255,255,255,${0.6 * qProgress})`;
-          ctx.fillRect(emitterX - 1 * scale, bladeY - quillonLen * qProgress, 2 * scale, quillonLen * qProgress);
-          ctx.fillRect(emitterX - 1 * scale, bladeY, 2 * scale, quillonLen * qProgress);
-        }
-      }
+      const avgColor = averageHeadLedColor(engine.leds, brightness / 100, 6);
+      drawCrossguardOverlay(ctx, {
+        scale,
+        emitterX: getBladeStartPx(),
+        bladeY: getBladeCenterY(),
+        extendProgress: engine.extendProgress,
+        avgColor,
+      });
     } else if (topoId === 'triple') {
       // Triple: main blade extending forward + 2 secondary blades
       // fanning forward at ±30° from the emitter, forming a trident
@@ -1617,73 +1553,24 @@ export function BladeCanvas({ engineRef, vertical = true, mobileFullscreen = fal
       // semantics still drive effect scoping + per-segment LED
       // routing internally.
       //
-      // Secondary blades use a schematic representation (average
-      // blade color + halo + bright core) similar to the crossguard
-      // quillons. Per-LED fidelity stays on the main blade only.
+      // Overlay extracted to `lib/blade/topologyOverlay.ts` — per-LED
+      // fidelity stays on the main blade; the schematic secondaries
+      // live in the module.
       drawBlade(ctx, engine);
-
       const scale = getScale();
-      const emitterX = getBladeStartPx();
-      const bladeY = getBladeCenterY();
-
-      // Secondary blade length — engine spec says 0.35 vs main 0.5,
-      // so 70% of the visible main blade length on screen. Capped to
-      // the diagonal that fits in canvas height so the tip never
-      // clips off the bottom.
       const scaledMainLenDS = BLADE_LEN * (bladeLength / MAX_BLADE_INCHES);
       const mainLenPx = scaledMainLenDS * scale;
-      const desiredSecondaryLen = mainLenPx * 0.7;
-      const fanAngleRad = (30 * Math.PI) / 180;
       const { h: canvasCssH, dpr } = sizeRef.current;
-      const canvasPxH = canvasCssH * dpr;
-      const verticalFitLen = (canvasPxH * 0.45) / Math.sin(fanAngleRad);
-      const secondaryLenPx = Math.min(desiredSecondaryLen, verticalFitLen);
-      const secondaryH = 7 * scale;
-
-      // Average blade color for halo
-      const leds = engine.leds;
-      const bri = brightness / 100;
-      let avgR = 0, avgG = 0, avgB = 0, count = 0;
-      for (let i = 0; i < Math.min(8, leds.count); i++) {
-        avgR += leds.getR(i); avgG += leds.getG(i); avgB += leds.getB(i); count++;
-      }
-      if (count > 0) { avgR = (avgR / count) * bri; avgG = (avgG / count) * bri; avgB = (avgB / count) * bri; }
-
-      if (engine.extendProgress > 0) {
-        const sProgress = Math.min(1, Math.max(0, (engine.extendProgress - 0.1) / 0.4));
-        if (sProgress > 0) {
-          // Forward-fan: blade-2 angled up-forward, blade-3 angled
-          // down-forward. Origin at emitter so the trident's three
-          // prongs all start at the same point.
-          const angles = [-fanAngleRad, fanAngleRad];
-
-          for (const a of angles) {
-            const len = secondaryLenPx * sProgress;
-            ctx.save();
-            ctx.translate(emitterX, bladeY);
-            ctx.rotate(a);
-
-            // Outer halo (blurred + additive)
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.filter = `blur(${10 * scale}px)`;
-            ctx.globalAlpha = 0.32;
-            ctx.fillStyle = `rgb(${Math.round(avgR)},${Math.round(avgG)},${Math.round(avgB)})`;
-            ctx.fillRect(0, -secondaryH / 2, len, secondaryH);
-            ctx.restore();
-
-            // Saturated core
-            ctx.fillStyle = `rgba(${Math.round(Math.min(255, avgR * 1.4))},${Math.round(Math.min(255, avgG * 1.4))},${Math.round(Math.min(255, avgB * 1.4))},0.9)`;
-            ctx.fillRect(0, -secondaryH / 3, len, (secondaryH * 2) / 3);
-
-            // White-hot center stripe
-            ctx.fillStyle = `rgba(255,255,255,0.55)`;
-            ctx.fillRect(0, -1 * scale, len, 2 * scale);
-
-            ctx.restore();
-          }
-        }
-      }
+      const avgColor = averageHeadLedColor(engine.leds, brightness / 100, 8);
+      drawTripleFanOverlay(ctx, {
+        scale,
+        emitterX: getBladeStartPx(),
+        bladeY: getBladeCenterY(),
+        extendProgress: engine.extendProgress,
+        avgColor,
+        mainLenPx,
+        canvasPxH: canvasCssH * dpr,
+      });
     } else if (topoId === 'inquisitor') {
       // Inquisitor: main blade + a spinning ring at the emitter. Per
       // INQUISITOR_TOPOLOGY (`packages/engine/src/types.ts`), the ring

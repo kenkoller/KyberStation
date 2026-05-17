@@ -1,0 +1,43 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderer golden hash — applyMotionGhost > early-returns at swing ≤ threshold (no paint) 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — applyMotionGhost > swing = 0.3 1`] = `"4ddd9725"`;
+
+exports[`renderer golden hash — applyMotionGhost > swing = 0.7 1`] = `"a1e0013d"`;
+
+exports[`renderer golden hash — applyMotionGhost > swing = 1 1`] = `"a7d6fe15"`;
+
+exports[`renderer golden hash — drawCrossguardOverlay > fully-extended :: extendProgress 1.0 1`] = `"82641ee5"`;
+
+exports[`renderer golden hash — drawCrossguardOverlay > mid-extend :: extendProgress 0.25 1`] = `"2bc30a15"`;
+
+exports[`renderer golden hash — drawCrossguardOverlay > pre-gate :: extendProgress 0.05 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — drawIgnitionFlash > early-returns at intensity ≤ 0.01 (no paint) 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — drawIgnitionFlash > flash intensity = 0.05 1`] = `"7e39f05d"`;
+
+exports[`renderer golden hash — drawIgnitionFlash > flash intensity = 0.5 1`] = `"2dd3b371"`;
+
+exports[`renderer golden hash — drawIgnitionFlash > flash intensity = 0.25 1`] = `"0e49ef31"`;
+
+exports[`renderer golden hash — drawIgnitionFlash > flash intensity = 0.75 1`] = `"69b3b351"`;
+
+exports[`renderer golden hash — drawIgnitionFlash > flash intensity = 1 1`] = `"f913d4f9"`;
+
+exports[`renderer golden hash — drawTripleFanOverlay > fully-extended :: extendProgress 1.0 1`] = `"ee8e72fd"`;
+
+exports[`renderer golden hash — drawTripleFanOverlay > mid-extend :: extendProgress 0.3 1`] = `"8eb81ee3"`;
+
+exports[`renderer golden hash — drawTripleFanOverlay > pre-gate :: extendProgress 0.05 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — paintAmbientTint > high luma 1.0 1`] = `"2ec765c5"`;
+
+exports[`renderer golden hash — paintAmbientTint > low luma 0.1 1`] = `"2c57adc5"`;
+
+exports[`renderer golden hash — paintAmbientTint > mid luma 0.5 1`] = `"81235dc5"`;
+
+exports[`renderer golden hash — paintAmbientTint > no-active-LED → no paint 1`] = `"209d87c5"`;
+
+exports[`renderer golden hash — paintAmbientTint > reduceBloom = true scales α by 0.4 1`] = `"9d8a9fc5"`;
