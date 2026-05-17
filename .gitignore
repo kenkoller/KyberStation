@@ -69,3 +69,6 @@ test-fonts/
 
 # Bench-test generated artifacts — tied to user's hardware install_time
 scripts/hardware-test/bench-output/
+
+# Perf bench reports — tied to user's hardware (timing data per machine)
+packages/engine/perf/results/

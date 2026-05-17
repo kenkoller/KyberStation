@@ -11,6 +11,7 @@
     "test": "turbo test",
     "test:engine": "turbo test --filter=@kyberstation/engine",
     "test:codegen": "turbo test --filter=@kyberstation/codegen",
+    "bench:template-eval": "pnpm --filter @kyberstation/engine bench:template-eval",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "clean": "turbo clean",
