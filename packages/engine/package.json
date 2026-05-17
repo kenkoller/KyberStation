@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "echo 'lint: placeholder — eslint not yet configured'",
     "clean": "rm -rf dist",
-    "gif:pickers": "tsx scripts/generate-picker-gifs.mjs"
+    "gif:pickers": "tsx scripts/generate-picker-gifs.mjs",
+    "bench:template-eval": "node --import=./perf/registerLoader.mjs perf/templateEvalBench.mjs"
   },
   "dependencies": {
     "@kyberstation/template-eval": "workspace:*",
