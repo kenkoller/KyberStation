@@ -44,3 +44,30 @@ export {
 
 export { BladeBloom } from './BladeBloom';
 export type { BladeBloomProps } from './BladeBloom';
+
+// Phase 2D — post-processing pipeline (bloom + diffusion + motion blur).
+export {
+  BladePostProcessing,
+  resolvePostProcessingConfig,
+  UnrealBloom,
+  resolveBloomIntensity,
+  PolycarbonateDiffusion,
+  PolycarbonateDiffusionEffect,
+  BladeMotionBlur,
+  BladeMotionBlurEffect,
+  swingSpeedToBlurStrength,
+  bladeAngleToBlurDirection,
+  BASE_BLOOM_INTENSITY,
+  BASE_DIFFUSION_INTENSITY,
+  MOTION_BLUR_DEAD_ZONE,
+  MOTION_BLUR_MAX_STRENGTH,
+} from './postprocessing';
+export type {
+  BladePostProcessingProps,
+  PostProcessingConfig,
+  UnrealBloomProps,
+  PolycarbonateDiffusionProps,
+  PolycarbonateDiffusionEffectOptions,
+  BladeMotionBlurProps,
+  BladeMotionBlurEffectOptions,
+} from './postprocessing';

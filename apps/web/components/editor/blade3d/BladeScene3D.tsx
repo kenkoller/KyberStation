@@ -36,7 +36,9 @@ import {
   getLedTextureFromMaterial,
 } from './BladeMaterial';
 import { createHiltGeometry3D, createHiltMaterial } from './HiltGeometry3D';
-import { BladeBloom } from './BladeBloom';
+import { BladePostProcessing } from './postprocessing';
+import { useAccessibilityStore } from '../../../stores/accessibilityStore';
+import { useBreakpoint } from '../../../hooks/useBreakpoint';
 
 // ─── Phase 2C Interaction Helpers (exported for tests) ─
 
@@ -516,6 +518,13 @@ export function BladeScene3D({
   const ledCount = ledCountProp ?? storeConfig.ledCount;
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Phase 2D — pull a11y prefs + breakpoint so the post-processing
+  // pipeline can gate motion blur + halve diffusion on mobile.
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+  const reduceBloom = useAccessibilityStore((s) => s.reduceBloom);
+  const graphicsQuality = useAccessibilityStore((s) => s.graphicsQuality);
+  const { isMobile } = useBreakpoint();
+
   // Wire mouse movement on the 3D container to swing simulation.
   // OrbitControls captures drag for rotation; useMouseSwing reads
   // velocity from pointer movement to drive swingSpeed + bladeAngle.
@@ -557,7 +566,18 @@ export function BladeScene3D({
           onBladeHold={onBladeHold}
           onDragRetract={onDragRetract}
         />
-        <BladeBloom />
+        {/* Phase 2D — bloom + diffusion + motion-blur composer.
+            Replaces the standalone <BladeBloom /> from Phase 2A. The
+            composer auto-skips itself when graphicsQuality === 'low'
+            so low-tier devices render with the in-shader diffusion
+            only (still looks decent, just no halo or motion streak). */}
+        <BladePostProcessing
+          engineRef={engineRef}
+          reducedMotion={reducedMotion}
+          reduceBloom={reduceBloom}
+          graphicsQuality={graphicsQuality}
+          isMobile={isMobile}
+        />
       </Canvas>
     </div>
   );
