@@ -29,6 +29,11 @@
 //   retraction  → UNMAPPABLE                (InOutTrL owns this)
 
 import type { StyleNode } from '../types.js';
+import {
+  buildButtonEventWrapper,
+  lookupButtonEventEmit,
+  type ButtonEventEmitSpec,
+} from './buttonEventMap.js';
 
 // ─── Mirrored types ──────────────────────────────────────────────────
 //
@@ -44,6 +49,7 @@ import type { StyleNode } from '../types.js';
 // needs it, add it to the mirror too or the sentinel test fails.
 
 export type BuiltInModulatorId =
+  // ─── v1.1 Core modulators (continuous + latched-effect signals) ───
   | 'swing'
   | 'angle'
   | 'twist'
@@ -54,7 +60,17 @@ export type BuiltInModulatorId =
   | 'lockup'
   | 'preon'
   | 'ignition'
-  | 'retraction';
+  | 'retraction'
+  // ─── Wave 8 LITE — aux button events ───
+  | 'aux-click'
+  | 'aux-hold'
+  | 'aux-double-click'
+  // ─── Wave 8 LITE — gesture events ───
+  | 'gesture-twist'
+  | 'gesture-stab'
+  | 'gesture-swing'
+  | 'gesture-clash'
+  | 'gesture-shake';
 
 export type ModulatorId = BuiltInModulatorId | string;
 
@@ -107,6 +123,21 @@ export interface ModulationBinding {
   label?: string;
   colorVar?: string;
   bypassed?: boolean;
+  /**
+   * Wave 8 (button routing) — optional prop-file event coupling.
+   * Wire form mirror of `SerializedBinding.triggerEvent` from the
+   * engine. Stored as `string` to forward-compat prop files that
+   * extend the event vocabulary out-of-band; runtime narrowing
+   * happens via `lookupButtonEventEmit` in `./buttonEventMap.ts`.
+   *
+   * When set, the emit path wraps the binding's driver sub-AST in
+   * a ProffieOS `EFFECT_*` template per `BUTTON_EVENT_EMIT_MAP`.
+   * Bindings with `triggerEvent` set MUST also have `source` set
+   * to one of the 8 aux/gesture event modulators (validated by the
+   * engine's `applyBindings.ts`); codegen mirrors the validation
+   * and falls non-event sources through to the snapshot path.
+   */
+  triggerEvent?: string;
 }
 
 export interface RGB {
@@ -200,6 +231,13 @@ const REASON = {
     `Unknown modulator source "${id}" — no ProffieOS template maps to it`,
   INVALID_BINDING:
     'Binding has neither `source` nor `expression` set (invariant violation)',
+  // ─── Wave 8 — event/triggerEvent fallbacks ─────────────────────────
+  EVENT_SOURCE_WITHOUT_TRIGGER:
+    'Aux/gesture event source without a `triggerEvent` field — emits as snapshot (no template maps a bare event modulator)',
+  TRIGGER_EVENT_NON_EVENT_SOURCE:
+    'Binding has `triggerEvent` set but `source` is not an aux/gesture event modulator — `triggerEvent` dropped, falls back to snapshot',
+  UNKNOWN_TRIGGER_EVENT: (event: string) =>
+    `Unknown prop-file event "${event}" — no EFFECT_* mapping (snapshot value frozen at export)`,
 } as const;
 
 // ─── AST helpers (mirrors of ASTBuilder's private helpers) ────────────
@@ -476,6 +514,23 @@ function buildSourceDriver(source: BuiltInModulatorId): StyleNode | null {
     case 'ignition':
     case 'retraction':
       return null;
+    // ─── Wave 8 — aux/gesture event modulators ───────────────────────
+    //
+    // A bare aux/gesture source (no `triggerEvent`) has no canonical
+    // ProffieOS template — its "current value" comes from the
+    // engine's latch+decay sampler, which lives outside ProffieOS.
+    // Return null so the caller routes to the snapshot path with the
+    // EVENT_SOURCE_WITHOUT_TRIGGER reason. The `triggerEvent` branch
+    // upstream handles event-driven bindings before this falls.
+    case 'aux-click':
+    case 'aux-hold':
+    case 'aux-double-click':
+    case 'gesture-twist':
+    case 'gesture-stab':
+    case 'gesture-swing':
+    case 'gesture-clash':
+    case 'gesture-shake':
+      return null;
   }
 }
 
@@ -498,6 +553,33 @@ const BUILTIN_MODULATORS: ReadonlySet<ModulatorId> = new Set<ModulatorId>([
   'preon',
   'ignition',
   'retraction',
+  // Wave 8 — aux/gesture event modulators.
+  'aux-click',
+  'aux-hold',
+  'aux-double-click',
+  'gesture-twist',
+  'gesture-stab',
+  'gesture-swing',
+  'gesture-clash',
+  'gesture-shake',
+]);
+
+/**
+ * The 8 Wave 8 aux/gesture event modulators — these are valid `source`
+ * values for a binding that also sets `triggerEvent`. Bindings with
+ * `triggerEvent` + non-event source fall through to the snapshot path
+ * with the TRIGGER_EVENT_NON_EVENT_SOURCE reason, mirroring the
+ * engine's `isValidTriggerEventBinding` rejection rules.
+ */
+const EVENT_MODULATORS: ReadonlySet<ModulatorId> = new Set<ModulatorId>([
+  'aux-click',
+  'aux-hold',
+  'aux-double-click',
+  'gesture-twist',
+  'gesture-stab',
+  'gesture-swing',
+  'gesture-clash',
+  'gesture-shake',
 ]);
 
 const UNMAPPABLE_BUILTINS: Partial<Record<BuiltInModulatorId, string>> = {
@@ -600,6 +682,61 @@ export function mapBindings(
 
     const builtIn = source as BuiltInModulatorId;
 
+    // ─── Wave 8 — triggerEvent emit path ─────────────────────────────
+    //
+    // `triggerEvent` couples a binding to a discrete prop-file event
+    // (e.g. `'click'`, `'twist'`). The emit shape is
+    // `<wrapper>< EFFECT_X, ... >` per `BUTTON_EVENT_EMIT_MAP`. The
+    // engine's `isValidTriggerEventBinding` already enforces that
+    // `triggerEvent` + source must be an event modulator; we mirror
+    // that here so a mismatched binding falls into the snapshot path
+    // rather than emitting a malformed wrapper.
+    if (binding.triggerEvent !== undefined) {
+      // triggerEvent set + source is non-event modulator → fall through.
+      if (!EVENT_MODULATORS.has(builtIn)) {
+        unmappable.push({
+          binding,
+          reason: REASON.TRIGGER_EVENT_NON_EVENT_SOURCE,
+          snapshotValue: computeSnapshotValue(binding, config, evalCtx),
+        });
+        continue;
+      }
+
+      // triggerEvent set + source is event modulator → look up the
+      // EFFECT_* mapping and emit the wrapper.
+      const eventSpec = lookupButtonEventEmit(binding.triggerEvent);
+      if (eventSpec === null) {
+        unmappable.push({
+          binding,
+          reason: REASON.UNKNOWN_TRIGGER_EVENT(binding.triggerEvent),
+          snapshotValue: computeSnapshotValue(binding, config, evalCtx),
+        });
+        continue;
+      }
+
+      mappable.push({
+        binding,
+        targetPath: binding.target,
+        astPatch: buildButtonEventAstPatch(eventSpec, binding.amount),
+        note: `Triggered on ${binding.triggerEvent} → ${eventSpec.effectConstant}`,
+      });
+      continue;
+    }
+
+    // ─── Wave 8 — bare event source (no triggerEvent) ───────────────
+    //
+    // An aux/gesture source without `triggerEvent` has no canonical
+    // ProffieOS template — the latched-envelope value lives in the
+    // engine's sampler, which doesn't ship to firmware. Snapshot it.
+    if (EVENT_MODULATORS.has(builtIn)) {
+      unmappable.push({
+        binding,
+        reason: REASON.EVENT_SOURCE_WITHOUT_TRIGGER,
+        snapshotValue: computeSnapshotValue(binding, config, evalCtx),
+      });
+      continue;
+    }
+
     // Built-ins that are fundamentally unmappable.
     const bannedReason = UNMAPPABLE_BUILTINS[builtIn];
     if (bannedReason) {
@@ -631,6 +768,40 @@ export function mapBindings(
   }
 
   return { mappable, unmappable };
+}
+
+// ─── Wave 8 — button-event AST patch builder ─────────────────────────
+//
+// Wrap a button-event spec's driver in `Scale<>` so the result fits
+// the same `Scale<driver, Int<0>, Int<hi>>` shape every other mappable
+// binding produces. Downstream composers (`composeBindings.ts`) only
+// understand the Scale<>-wrapped shape; matching the shape lets the
+// shimmer-mix slot resolver graft event-triggered drivers into the
+// AST with zero additional logic.
+//
+// For `EffectPulseF`-wrapped events the driver is the bare pulse:
+//   Scale<EffectPulseF<EFFECT_X>, Int<0>, Int<hi>>
+//
+// For `TransitionEffectL`-wrapped events the inner becomes an `Int<hi>`
+// placeholder so the wrapper is well-formed:
+//   Scale<TransitionEffectL<TrInstant, Int<hi>, EFFECT_X>, Int<0>, Int<hi>>
+//
+// For `Trigger`-wrapped events the inner is the `Int<hi>` placeholder:
+//   Scale<Trigger<EFFECT_X, Int<hi>>, Int<0>, Int<hi>>
+//
+// The placeholder shape lets the composer / consumer round-trip the
+// binding without crashing on a missing inner; a future wave may pipe
+// per-binding inner expressions through the UI when the routing
+// sub-tab exposes that knob.
+function buildButtonEventAstPatch(
+  spec: ButtonEventEmitSpec,
+  amount: number,
+): StyleNode {
+  const clamped = Math.max(0, Math.min(1, amount));
+  const hi = Math.round(clamped * 32768);
+  const innerPlaceholder = intTemplateNode(hi);
+  const driver = buildButtonEventWrapper(spec, innerPlaceholder);
+  return wrapInScale(driver, amount);
 }
 
 // ─── Re-exports for convenience ──────────────────────────────────────
