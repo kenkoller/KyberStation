@@ -12,6 +12,7 @@
 
 import type { BladeConfig } from '../types.js';
 import { evaluate } from './evaluator.js';
+import { EVENT_MODULATOR_DECAY } from './registry.js';
 import type {
   BindingCombinator,
   EvalContext,
@@ -155,6 +156,48 @@ function sanitize(
 }
 
 /**
+ * Wave 8 — validate a binding's optional `triggerEvent` field.
+ *
+ * Returns `true` when the binding is either:
+ *   - Without `triggerEvent` set (legacy / continuous binding), or
+ *   - With `triggerEvent` set AND `source` is one of the 8 aux/gesture
+ *     event modulators (i.e. its ID is a key in `EVENT_MODULATOR_DECAY`).
+ *
+ * Returns `false` for the rejection case:
+ *   - `triggerEvent` set, but `source` is null (expression binding) OR
+ *     `source` is a continuous modulator like `swing` or `sound`.
+ *
+ * Rationale: a binding that says "fire on the click button event" only
+ * makes sense if the source modulator carries the event's latched
+ * envelope (i.e. one of the 8 aux/gesture event modulators in the
+ * registry). Pairing `triggerEvent` with `swing` or `sound` would be
+ * a UI authoring error — silently dropping the binding rather than
+ * crashing the render loop matches the existing §3.3 "enum-valued
+ * fields silently dropped" pattern in this file.
+ *
+ * Expression bindings (source: null) are also rejected because
+ * `triggerEvent` couples to the event modulator's latch+decay
+ * envelope, which doesn't have a meaningful expression equivalent.
+ * If a future use case wants `triggerEvent` + expression, that's a
+ * follow-up extension; for Wave 8 v1, the simple coupling is enough.
+ */
+function isValidTriggerEventBinding(binding: ModulationBinding): boolean {
+  if (binding.triggerEvent === undefined) {
+    // Legacy / continuous binding — no extra validation needed. The
+    // source-XOR-expression invariant is enforced by other parts of
+    // the pipeline (typegen + UI).
+    return true;
+  }
+  if (binding.source === null) {
+    // triggerEvent set but no source modulator. Rejected.
+    return false;
+  }
+  // triggerEvent + source: source must be one of the 8 aux/gesture
+  // event modulators. The registry is the source of truth.
+  return EVENT_MODULATOR_DECAY[binding.source as string] !== undefined;
+}
+
+/**
  * Resolve a binding's driver value.
  *
  * Simple-route bindings read the modulator value directly from the
@@ -219,6 +262,13 @@ export function applyBindings(
   for (const binding of bindings) {
     if (binding.bypassed === true) continue;
 
+    // Wave 8 (button routing) — drop bindings with an invalid
+    // triggerEvent / source combination. See `isValidTriggerEventBinding`
+    // for the rejection rules. Silently skipped to match the existing
+    // §3.3 "enum-valued fields silently dropped" semantics elsewhere
+    // in this file.
+    if (!isValidTriggerEventBinding(binding)) continue;
+
     const clampRange = parameterClampRanges.get(binding.target);
 
     // `staticValue` comes from the current in-progress accumulator —
@@ -256,10 +306,12 @@ export const _internal: {
   readonly readPath: typeof readPath;
   readonly writePath: typeof writePath;
   readonly resolveDriver: typeof resolveDriver;
+  readonly isValidTriggerEventBinding: typeof isValidTriggerEventBinding;
 } = {
   combine,
   sanitize,
   readPath,
   writePath,
   resolveDriver,
+  isValidTriggerEventBinding,
 };

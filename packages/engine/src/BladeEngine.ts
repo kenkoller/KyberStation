@@ -482,6 +482,12 @@ export class BladeEngine {
     // For v1.0 Preview every binding has expression: null, so the
     // structural shapes are identical and conversion is a pass-through
     // rename. v1.1 will extract the `.ast` from SerializedExpression.
+    //
+    // Wave 8 (button routing) — `triggerEvent` is a plain string on
+    // both sides of the conversion; the binding pipeline only consults
+    // it during `applyBindings`'s validation pass (rejection of
+    // triggerEvent + non-aux-or-gesture source). Carried through
+    // verbatim here so the validation has the data it needs.
     const bindings = payload.bindings.map<ModulationBinding>((sb) => ({
       id: sb.id,
       source: sb.source,
@@ -492,6 +498,7 @@ export class BladeEngine {
       label: sb.label,
       colorVar: sb.colorVar,
       bypassed: sb.bypassed,
+      triggerEvent: sb.triggerEvent,
     }));
 
     return applyBindings(
