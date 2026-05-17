@@ -142,7 +142,24 @@ describe('end-to-end template evaluation', () => {
   });
 
   describe('InOutTrL ignition/retraction wrapper', () => {
-    it('returns white (fully on) when blade is on and stable', () => {
+    // ── Regression test for fix/blade-canvas-render-loop-regression ──
+    //
+    // Pre-fix this test expected `{255, 255, 255}` because InOutTrL's
+    // stable-on branch returned WHITE intending to encode "alpha = 255 =
+    // blade fully visible". But the Layers compositor uses
+    // alphaBlend(base, layer, alpha) which reduces to pure WHITE when
+    // layer color is white and alpha is 255 — so every blade rendered
+    // through `Layers<base, ..., InOutTrL>` turned pure white the moment
+    // the ignition transition latched. Hardware Preview (codegen →
+    // template-eval) hit this path on every preset.
+    //
+    // The fix makes InOutTrL a no-op in the per-frame render — the
+    // visible ignition / retraction wipe is owned by BladeCanvas via
+    // `engine.extendProgress`, and the engine never invokes template-eval
+    // when the blade is fully OFF. So the correct stable-on output is
+    // BLACK (colorAlpha = 0 → Layers skips the blend → composition below
+    // shines through unchanged).
+    it('returns transparent (BLACK with alpha 0) when blade is on and stable', () => {
       const tmpl = evaluateTemplateString('InOutTrL<TrInstant, TrInstant>');
       const effects = new EffectManager();
 
@@ -151,9 +168,8 @@ describe('end-to-end template evaluation', () => {
       tmpl.run(makeState({ isOn: true, timeMs: 200 }), effects);
 
       const c = tmpl.getColor(72);
-      expect(c.r).toBe(255);
-      expect(c.g).toBe(255);
-      expect(c.b).toBe(255);
+      // BLACK so colorAlpha(c) = 0 → Layers skips this layer.
+      expect(c).toEqual({ r: 0, g: 0, b: 0 });
     });
 
     it('returns black when blade is off', () => {
@@ -164,6 +180,24 @@ describe('end-to-end template evaluation', () => {
 
       const c = tmpl.getColor(72);
       expect(c).toEqual({ r: 0, g: 0, b: 0 });
+    });
+
+    it('does NOT obliterate the underlying base color when used as the last layer in Layers<>', () => {
+      // The actual on-fire bug: when InOutTrL was the last layer of a
+      // Layers<> composition (the shape KyberStation's codegen emits for
+      // every preset), the stable-on WHITE return caused
+      // alphaBlend(blue-base, WHITE, 255) → pure white for every LED.
+      // Pin the composite output here so regressions surface immediately.
+      const tmpl = evaluateTemplateString(
+        'Layers<Rgb<22,114,243>, InOutTrL<TrInstant, TrInstant>>',
+      );
+      const effects = new EffectManager();
+      tmpl.run(makeState({ isOn: false, timeMs: 0 }), effects);
+      tmpl.run(makeState({ isOn: true, timeMs: 100 }), effects);
+      tmpl.run(makeState({ isOn: true, timeMs: 500 }), effects);
+
+      const c = tmpl.getColor(72);
+      expect(c).toEqual({ r: 22, g: 114, b: 243 });
     });
   });
 

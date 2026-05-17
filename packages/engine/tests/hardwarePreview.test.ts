@@ -195,4 +195,11 @@ describe('BladeEngine hardware preview', () => {
       engine.update(16, config);
     });
   });
+
+  // The full end-to-end "codegen → template-eval → pixel buffer" regression
+  // test (the one that catches the white-out blade canvas bug from
+  // fix/blade-canvas-render-loop-regression) lives in the web package:
+  // `apps/web/tests/bladeCanvasWhiteOutRegression.test.ts`. It needs
+  // both @kyberstation/codegen and @kyberstation/engine in the same test
+  // process, which the engine package cannot do (circular dep).
 });
