@@ -164,6 +164,28 @@ function readRawModulator(
  *                           decay per `EVENT_MODULATOR_DECAY[id]`.
  *                           Defaults to an empty set.
  *
+ *                           **Wave 8 / Agent A1 note:** the sampler is
+ *                           agnostic to a binding's optional
+ *                           `triggerEvent` field — that lives on
+ *                           `SerializedBinding` and `ModulationBinding`,
+ *                           not on the modulator descriptor. The
+ *                           current minimal honoring of `triggerEvent`
+ *                           is via the binding's `source` ID: if the
+ *                           source is `aux-click` and the matching
+ *                           `'click'` ButtonEvent fires, the modulator
+ *                           latches and the binding sees a non-zero
+ *                           driver. Decoupling "which firmware event
+ *                           was just observed" from "which modulator
+ *                           envelope is driving the binding" is a
+ *                           follow-up — A3 (UI sub-tab) will wire the
+ *                           prop-file event → event-modulator-ID
+ *                           mapping at the visualizer/editor layer
+ *                           when constructing the `events` set, and a
+ *                           later PR can add a per-binding rising-edge
+ *                           gate keyed on `triggerEvent` directly if
+ *                           the latch+decay envelope proves too
+ *                           coarse.
+ *
  * Evaluation order matches §6.1 of the design doc:
  *
  *   1. read raw values off the context + previous clash
