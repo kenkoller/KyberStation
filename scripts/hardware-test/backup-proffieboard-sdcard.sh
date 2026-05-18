@@ -37,9 +37,14 @@ echo "==> Destination: $OUTPUT_DIR"
 echo
 
 echo "==> Source content summary:"
-du -sh "$SD_MOUNT" 2>/dev/null | sed 's/^/    /'
+# `du` and `find` against an SD mount commonly fail with permission-denied
+# on macOS Spotlight metadata (.Spotlight-V100/, .fseventsd/). Their stderr
+# is silenced, but pipefail would otherwise abort the whole script silently
+# right here, before rsync ever runs. Tolerate a non-zero exit on these
+# informational pipelines only.
+du -sh "$SD_MOUNT" 2>/dev/null | sed 's/^/    /' || true
 echo "    Top-level entries:"
-find "$SD_MOUNT" -maxdepth 1 -mindepth 1 | sort | sed 's/^/      /'
+find "$SD_MOUNT" -maxdepth 1 -mindepth 1 2>/dev/null | sort | sed 's/^/      /' || true
 echo
 
 mkdir -p "$OUTPUT_DIR"
