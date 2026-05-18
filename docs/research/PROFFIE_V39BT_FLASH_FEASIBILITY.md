@@ -188,16 +188,14 @@ The 5 % that runtime presets cannot deliver — new blade-style algorithms beyon
 
 ### If a future session must flash the V3.9-BT (against this recommendation)
 
-If ST-Link arrives and validation work is unblocked, the **only** flash protocol that has any evidence of safety is:
+If ST-Link arrives and validation work is unblocked — or earlier, if 89Sabers shares the factory source and you want to compile-and-attempt without ST-Link — the **only** flash protocol that has any evidence of safety is:
 
 1. **Capture a fresh dual-bank backup** before doing anything. Even if we already have May 14's dump, take a same-day one — the SHA must match `4c2b2194…` on OB and `d881a8e7…/61d9f615…` on banks. If it doesn't match, abort.
 2. **Verify the current state boots** by exiting DFU (BOOT + replug → release immediately) and confirming the saber ignites. Do this *before* writing anything custom. If the board is already in a broken state, custom flashing is not the diagnosis to start with.
 3. **Strip the `.iap` DFU suffix** (16 trailing bytes) and verify the stripped binary's length matches what the linker reported.
-4. **Write to Bank 2 only** (`0x08040000:leave`) — Bank 2 is where the factory ProffieOS lives, so a recompile of `89sabers-bt-2026-05-14.h` belongs there. Never write custom firmware to Bank 1; that overwrites the loader.
-5. **Pre-stage the restore command** in a separate terminal before issuing `:leave`. The hardware DFU recovery (BOOT + replug) always works, but having `dfu-util -d 0x0483:0xdf11 -a 0 -s 0x08000000 -D bank1-pre.bin && dfu-util -d 0x0483:0xdf11 -a 0 -s 0x08040000:leave -D bank2-pre.bin` ready to paste is the difference between a 30-second recovery and a 5-minute scramble.
+4. **Default to Bank 1 (`0x08000000:leave`) — this matches the standard ProffieOS workflow and `FLASH_GUIDE.md` §10's assertion that Bank 1 has a valid Cortex-M vector table and the chip boots normally.** The audit's evidence section infers from string density that ProffieOS lives in Bank 2, which would argue for flashing to `0x08040000:leave` — but FLASH_GUIDE §10's vector-table forensics + the standard arduino-cli linker output disagree. **We do not have ST-Link evidence to resolve this definitively.** Default to the standard Bank 1 workflow because (a) it matches every other ProffieOS doc, (b) arduino-cli's `.iap` is linked for `0x08000000`, (c) the worst case if Bank 2 is actually the boot bank is "the write is a no-op and the saber keeps running the factory firmware in Bank 2" — not a brick. **An earlier version of this audit (and `scripts/hardware-test/safe-flash.sh`) said the opposite — disregard that. See the 2026-05-18 postscript at the bottom for the reconciliation.**
+5. **Pre-stage the restore command** in a separate terminal before issuing `:leave`. The hardware DFU recovery (BOOT + replug) always works, but having `dfu-util -d 0x0483:0xdf11 -a 0 -s 0x08000000 -D bank1-pre.bin && dfu-util -d 0x0483:0xdf11 -a 0 -s 0x08040000:leave -D bank2-pre.bin` ready to paste is the difference between a 30-second recovery and a 5-minute scramble. Or use [`scripts/hardware-test/restore-factory.sh`](../../scripts/hardware-test/restore-factory.sh) — same effect, plus SHA verification.
 6. **Stop after one attempt.** If the saber doesn't boot, restore from backup and don't retry with the same binary. The 2026-05-15 and 2026-05-17 sessions both demonstrate that repeated attempts on the BT board don't converge to success — they just consume bench time. Each failed attempt is data; collect what was different and try a *different* hypothesis next, not the same one again.
-
-This protocol is encoded in `scripts/hardware-test/safe-flash.sh` (proposed below). It refuses to flash unless a fresh backup matching the May 14 fingerprint succeeds.
 
 ### Recovery protocol (always-works fallback)
 
@@ -341,9 +339,24 @@ What this changes:
 - This is an operational detail, not a posture change. Affects: the CardWriter UI (should write both files automatically), `docs/research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md` (should document the rule), and any deploy script.
 - The audit's "runtime presets path is validated" claim is unchanged — the 2026-05-16 bench validation went via the serial command path (which routes through ProffieOS's own atomic save logic), not direct SD writes, so it wasn't subject to this bug.
 
+### 5. Bank-selection reconciliation — flash to Bank 1, not Bank 2
+
+The audit body ("Forensic analysis" §) infers from string density that ProffieOS lives in **Bank 2** (78 KiB with "ProffieOS" / "89sabers-config.h" / font names), and on that basis the audit's original recommended-protocol step #4 said "write to Bank 2 only (`0x08040000:leave`); never Bank 1."
+
+This recommendation contradicts:
+- **`FLASH_GUIDE.md` §10's existing fingerprint-table entry**, which states: *"Bank 1 contains a valid ARM Cortex-M vector table and a full firmware image (~99% flash populated); chip boots normally"* — i.e., Bank 1 is the boot source.
+- **The standard ProffieOS arduino-cli workflow**, where the `.iap` output is linked for `0x08000000` (Bank 1) by default.
+- **Every other documented Proffieboard flash workflow.**
+
+The string-density argument was a reasonable inference but is not definitive — Bank 1's 256 KiB could be the actual ProffieOS application with strings deduplicated / packed differently than Bank 2, or could be a custom 89sabers loader that calls into Bank 2. We don't know which without ST-Link.
+
+**Reconciliation: default to flashing Bank 1 (`0x08000000:leave`).** This matches the standard workflow and FLASH_GUIDE §10's empirical observation. If Bank 1 truly is the boot source, the flash replaces the running firmware. If Bank 2 is the boot source (the audit's interpretation), the flash is a no-op (writes to a bank the chip doesn't execute from) — *not a brick*. The risk profile is strictly lower than flashing Bank 2 first.
+
+The recommended-protocol section in the audit body has been updated 2026-05-18 to reflect this. [`scripts/hardware-test/safe-flash.sh`](../../scripts/hardware-test/safe-flash.sh) has been updated 2026-05-18: previous version warned against `--bank 1` and defaulted to Bank 2; new version flips the default to Bank 1 (matching standard workflow) and the warning text on either bank no longer prescribes which is "correct."
+
 ### Bottom line
 
-The audit's core recommendation stands: **runtime presets is the sanctioned path on the V3.9-BT; do not flash custom firmware on this chassis under current bench conditions.** The 2026-05-18 developments narrow the gap (more runtime-preset verbs covered, factory source now in hand, deploy detail clarified) and shift the next-steps plan (compile-factory-source becomes the new W2 entry point, ST-Link is blocked until chassis-open). Updated plan: [`V39BT_FLASH_NEXT_STEPS.md`](V39BT_FLASH_NEXT_STEPS.md) (the document was edited 2026-05-18 to reflect these constraints).
+The audit's core recommendation stands: **runtime presets is the sanctioned path on the V3.9-BT; do not flash custom firmware on this chassis under current bench conditions.** The 2026-05-18 developments narrow the gap (more runtime-preset verbs covered, factory source now in hand, deploy detail clarified, bank-selection reconciled toward the standard workflow) and shift the next-steps plan (compile-factory-source becomes the new W2 entry point, ST-Link is blocked until chassis-open). Updated plan: [`V39BT_FLASH_NEXT_STEPS.md`](V39BT_FLASH_NEXT_STEPS.md) (the document was edited 2026-05-18 to reflect these constraints).
 
 ---
 

@@ -81,8 +81,9 @@ The R&D plan at [`docs/research/V39BT_FLASH_NEXT_STEPS.md`](../research/V39BT_FL
 - **Branch `claude/relaxed-kirch-ab37ca`** — pushed to origin at session end. 11 commits behind `origin/main` at session start; not rebased. (No conflicts expected — the audit work doesn't overlap with main's recent merges, but a `git pull --rebase` or merge from main is recommended before turning this into a PR.)
 - **Worktree path:** `/Users/KK/Development/KyberStation/.claude/worktrees/relaxed-kirch-ab37ca/`
 - **No PR opened.** Per the user's intent for this session ("make ready to be archived"), the work is pushed but not promoted to a merge-ready PR. The next session can pick up from the branch, rebase, and open a PR when ready.
-- **Bench board state:** factory firmware restored, healthy (per the 2026-05-17 session end-state in [`SESSION_2026-05-15_V39BT_BENCH.md`](SESSION_2026-05-15_V39BT_BENCH.md) end-state).
+- **Bench board state:** factory firmware restored AND a 95-preset curated deck currently loaded on a fresh SD card via the runtime-presets path. Saber boots cleanly. This is the known-good restore target if the next session's flash attempts go sideways: full factory restore is via [`scripts/hardware-test/restore-factory.sh`](../../scripts/hardware-test/restore-factory.sh), then re-deploy the curated 95-preset deck to the SD.
 - **`backups/89sabers-v39bt-factory-2026-05-14/`** — the only known recovery image for this board. Lives in the main checkout, not the worktree (worktree git status doesn't see it).
+- **Bank-selection recommendation reconciled 2026-05-18.** The audit body's original step #4 said "flash to Bank 2 (`0x08040000:leave`); never Bank 1." This contradicted FLASH_GUIDE.md §10's empirical Bank-1-is-boot-source assertion + the standard arduino-cli workflow. Reconciliation: **default to Bank 1 (`0x08000000:leave`).** Both the audit's recommended-protocol section and [`scripts/hardware-test/safe-flash.sh`](../../scripts/hardware-test/safe-flash.sh) were updated 2026-05-18 to reflect this. See the audit's "2026-05-18 postscript" §5 ("Bank-selection reconciliation") for the full reasoning.
 
 ---
 

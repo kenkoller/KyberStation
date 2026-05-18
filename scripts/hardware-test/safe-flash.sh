@@ -18,8 +18,16 @@
 # Required flags:
 #   --firmware PATH   path to the compiled .iap (suffix auto-stripped)
 #                     or already-stripped .bin
-#   --bank N          1 or 2; physical flash bank to write to
-#                     (V3.9-BT factory ProffieOS lives in Bank 2)
+#   --bank N          1 or 2; physical flash bank to write to.
+#                     DEFAULT is Bank 1 (0x08000000), matching the
+#                     standard arduino-cli .iap link address and
+#                     FLASH_GUIDE.md §10's "Bank 1 boots normally"
+#                     assertion. The audit's earlier "Bank 2" guidance
+#                     was based on a string-density inference that is
+#                     not corroborated by FLASH_GUIDE §10's vector-table
+#                     forensics; see the 2026-05-18 postscript in
+#                     docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md
+#                     §"Bank-selection reconciliation."
 #   --backup-dir DIR  factory-state backup dir to verify against;
 #                     this script will NOT proceed without it
 #   --i-know-this-is-experimental
@@ -44,18 +52,24 @@
 #   5. Prints the restore command to keep ready in another terminal.
 #
 # What this script does NOT do:
-#   - Write to Bank 1 by default. Bank 1 on the V3.9-BT contains a custom
-#     89sabers loader; overwriting it with stock ProffieOS firmware has
-#     never produced a booting saber in our testing. Passing --bank 1
-#     is allowed but emits a strong warning.
-#   - Touch Option Bytes. Don't even ask.
+#   - Touch Option Bytes. Don't even ask. The 2026-04-29 OB incident
+#     bricked the original V3.9 board; we don't go near alt=1.
 #   - Touch OTP.
+#
+# What the audit can NOT yet tell you:
+#   - Which bank is the actual boot bank on the V3.9-BT. The audit body
+#     argues Bank 2 (string density); FLASH_GUIDE.md §10's existing
+#     fingerprint-table entry argues Bank 1 (valid vector table at offset
+#     0; chip boots normally). The standard ProffieOS workflow flashes
+#     Bank 1, so that's the default here. If Bank 1 turns out to be
+#     wrong, the worst case is a no-op write — not a brick. ST-Link
+#     analysis is the only way to resolve definitively.
 
 set -euo pipefail
 
 # --- defaults ---
 FIRMWARE=""
-BANK=""
+BANK="1"            # Bank 1 — matches standard ProffieOS workflow (FLASH_GUIDE §10)
 BACKUP_DIR=""
 ACK=0
 SKIP_FINGERPRINT=0
@@ -102,8 +116,8 @@ EOF
     exit 2
 fi
 
-if [ -z "$FIRMWARE" ] || [ -z "$BANK" ] || [ -z "$BACKUP_DIR" ]; then
-    echo "ERROR: --firmware, --bank, and --backup-dir are required." >&2
+if [ -z "$FIRMWARE" ] || [ -z "$BACKUP_DIR" ]; then
+    echo "ERROR: --firmware and --backup-dir are required." >&2
     echo "Run with --help for usage." >&2
     exit 1
 fi
@@ -116,24 +130,29 @@ fi
 case "$BANK" in
     1)
         ADDR="0x08000000"
+        echo "==> Target: Bank 1 @ $ADDR (standard ProffieOS workflow)" >&2
+        ;;
+    2)
+        ADDR="0x08040000"
         cat >&2 <<'EOF'
-WARNING: --bank 1 selected.
+NOTE: --bank 2 selected (0x08040000).
 
-Bank 1 on the 89sabers V3.9-BT contains a custom vendor loader (256 KiB
-of dense binary, no ProffieOS strings). Overwriting it with stock
-ProffieOS firmware has never produced a booting saber in our testing.
+Bank 2 is NOT the standard ProffieOS link address. The arduino-cli .iap
+output is linked for Bank 1 (0x08000000); flashing it to Bank 2 lands
+the vector table at the wrong offset and may not boot even if Bank 2 is
+the boot bank.
 
-If you flash here and the saber doesn't boot, the only recovery is the
-full dual-bank restore from the May 14 backup. Have:
-  scripts/hardware-test/restore-factory.sh
-ready before you proceed.
+The audit considered this target because string analysis of bank2-pre.bin
+suggested ProffieOS lives in Bank 2 — but FLASH_GUIDE.md §10 says Bank 1
+contains the valid Cortex-M vector table and the chip boots normally.
+Without ST-Link analysis we can't resolve which is correct.
+
+If you mean to do this anyway, make sure the firmware was linked for
+0x08040000, not the default. Otherwise prefer Bank 1.
 
 Sleeping 5 seconds — Ctrl-C now if you didn't mean this.
 EOF
         sleep 5
-        ;;
-    2)
-        ADDR="0x08040000"
         ;;
     *)
         echo "ERROR: --bank must be 1 or 2, got: $BANK" >&2
