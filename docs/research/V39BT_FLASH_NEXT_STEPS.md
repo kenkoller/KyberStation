@@ -1,8 +1,31 @@
 # 89sabers V3.9-BT — Custom-Flash R&D Next Steps
 
-**Status:** Active plan. Living document. **Updated 2026-05-18** to reflect new constraints (front-side-only hardware access) and new openings (89Sabers shared factory source). See "2026-05-18 update" section below for the deltas to the original 2026-05-17 plan.
-**Companion docs:** [`PROFFIE_V39BT_FLASH_FEASIBILITY.md`](PROFFIE_V39BT_FLASH_FEASIBILITY.md) (the audit), [`PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](PROFFIEOS_RUNTIME_PRESET_FORMAT.md) (the working alternative), [`HARDWARE_COMPATIBILITY_STRATEGY.md`](HARDWARE_COMPATIBILITY_STRATEGY.md) (the broader Hardware Profiles direction).
-**Owner:** Ken Koller. Plan author: 2026-05-17. Last revision: 2026-05-18.
+**Status:** Active plan. Living document. **Updated 2026-05-18 (afternoon)** with the W2-prime experimental result — see "2026-05-18 W2-prime result" section below.
+**Companion docs:** [`PROFFIE_V39BT_FLASH_FEASIBILITY.md`](PROFFIE_V39BT_FLASH_FEASIBILITY.md) (the audit, including §6 postscript with the full W2-prime forensic write-up), [`PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](PROFFIEOS_RUNTIME_PRESET_FORMAT.md) (the working alternative), [`HARDWARE_COMPATIBILITY_STRATEGY.md`](HARDWARE_COMPATIBILITY_STRATEGY.md) (the broader Hardware Profiles direction).
+**Owner:** Ken Koller. Plan author: 2026-05-17. Last revision: 2026-05-18 (W2-prime executed).
+
+---
+
+## 2026-05-18 W2-prime result — H4-alone ruled out, H1 leading, runtime path validated end-to-end
+
+**W2-prime executed and complete.** Full write-up: [`PROFFIE_V39BT_FLASH_FEASIBILITY.md` §6](PROFFIE_V39BT_FLASH_FEASIBILITY.md). Headline:
+
+- **Custom flash of 89Sabers' actual factory source FAILED with the same silent-hang failure mode as the prior 8 attempts.** Compiled cleanly with `arduino-cli 1.4.1` + `proffieboard:stm32l4 4.6`; flashed to Bank 1 with `:leave`; no USB enumeration of any kind for 30+ seconds. The byte-for-byte factory source produces the same dead-saber result as our hand-crafted approximation.
+- **H4 (toolchain skew at the config level) is largely ruled out.** Either the toolchain divergence runs deeper than the config file, or a vendor mechanism (H1 / H2 / H3) is real.
+- **H1 (Bank-1 vendor-loader gate) is now the leading hypothesis.** Definitively resolving it still requires ST-Link analysis blocked on chassis access.
+- **USB-only recovery via [`restore-factory.sh`](../../scripts/hardware-test/restore-factory.sh) works end-to-end on the front-side-only chassis.** Critical safety-net validation — confirmed twice this session (rehearsal in Gate 3, real recovery in Gate 8).
+- **Runtime preset path validated end-to-end, smoking-gun fix proven on real hardware.** 4-preset test deck via direct SD write (both `presets.ini` AND `presets.tmp`); KS Test Red/Green presets via `advanced 65535,0,0…` and `0,65535,0…` rendered correctly — first hardware confirmation that PR #325's 16-bit RGB encoding fix produces correct visual output on the V3.9-BT.
+
+**Updated priorities (supersedes the priorities in the 2026-05-18-morning section below):**
+
+1. **W1.1 — preset coverage analysis** — *no priority change, now highest-priority active work*. With the runtime path validated end-to-end including the 16-bit RGB fix, the gallery-to-verb coverage analysis is the load-bearing product question.
+2. **W2.3 — stock Proffieboard reference run** — *promoted from "lower priority" to "next hardware experiment"*. If a stock board flashes successfully with our exact toolchain, that rules out the toolchain itself as a confound and strengthens the H1 (vendor-specific) case. Cheap; requires a bare Proffieboard but no chassis disassembly.
+3. **NEW W2-prime-bis — try Bank 2 with custom-linked firmware** — would discriminate between H1 and H3. Requires building ProffieOS with `0x08040000` link address (not arduino-cli default). Cheap to set up but real brick risk — requires same recovery rehearsal as W2-prime.
+4. **W2.2 — ST-Link bench session** — *unchanged: blocked on chassis access*. With H4-alone ruled out, ST-Link becomes the only path to definitively resolve H1 vs H2 vs H3.
+
+**For users on V3.9-BT chassis:** posture unchanged and re-confirmed by experimental data. Do not attempt custom firmware flashing on the V3.9-BT. Use the runtime-preset path via SD card (writing both `presets.ini` and `presets.tmp`).
+
+---
 
 ---
 
