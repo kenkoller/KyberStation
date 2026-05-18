@@ -1,6 +1,7 @@
 import type { HardwareProfile } from '../types.js';
 import { STOCK_PROFFIEBOARD_V3 } from './stock-proffieboard-v3.js';
 import { SABERS89_V3_9 } from './89sabers-v3.9.js';
+import { SABERS89_V3_9_BT } from './89sabers-v3.9-bt.js';
 import { SABERTRIO_STANDARD } from './sabertrio-standard.js';
 
 /**
@@ -12,6 +13,7 @@ import { SABERTRIO_STANDARD } from './sabertrio-standard.js';
 export const ALL_PROFILES: readonly HardwareProfile[] = [
   STOCK_PROFFIEBOARD_V3,
   SABERS89_V3_9,
+  SABERS89_V3_9_BT,
   SABERTRIO_STANDARD,
 ];
 
@@ -36,4 +38,5 @@ export function all(): HardwareProfile[] {
 // Re-export individual profiles for direct import.
 export { STOCK_PROFFIEBOARD_V3 } from './stock-proffieboard-v3.js';
 export { SABERS89_V3_9 } from './89sabers-v3.9.js';
+export { SABERS89_V3_9_BT } from './89sabers-v3.9-bt.js';
 export { SABERTRIO_STANDARD } from './sabertrio-standard.js';

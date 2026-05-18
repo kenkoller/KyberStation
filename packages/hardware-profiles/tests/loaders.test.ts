@@ -22,10 +22,10 @@ describe('hardware-profiles loaders', () => {
     expect(byId('does-not-exist')).toBeUndefined();
   });
 
-  it('byVendor returns 89sabers profiles', () => {
+  it('byVendor returns 89sabers profiles (V3.9 + V3.9-BT)', () => {
     const profiles = byVendor('89sabers');
-    expect(profiles).toHaveLength(1);
-    expect(profiles[0]).toBe(SABERS89_V3_9);
+    expect(profiles).toHaveLength(2);
+    expect(profiles).toContain(SABERS89_V3_9);
   });
 
   it('byVendor returns hubbe profile for the stock board', () => {
@@ -66,9 +66,10 @@ describe('hardware-profiles loaders', () => {
     expect(profiles[0]).toBe(SABERTRIO_STANDARD);
   });
 
-  it('ships three profiles after Sabertrio addition', () => {
+  it('ships four profiles after 89sabers V3.9-BT addition', () => {
     expect(ALL_PROFILES.map((p) => p.id).sort()).toEqual([
       '89sabers-v3.9',
+      '89sabers-v3.9-bt',
       'sabertrio-standard',
       'stock-proffieboard-v3',
     ]);

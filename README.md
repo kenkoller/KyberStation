@@ -72,7 +72,7 @@ Design and visualize blade styles for many boards. Export flashable ProffieOS fi
 2. Drop it into a ProffieOS source tree, point `ProffieOS.ino` at it, compile with `arduino-cli`.
 3. Strip the `.iap` DFU suffix, enter DFU mode, **back up your existing firmware**, flash with `dfu-util`.
 
-Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, Saberbay), and recovery procedure live in [FLASH_GUIDE.md](docs/FLASH_GUIDE.md). **89sabers V3.9-BT owners:** see [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) — custom-firmware flashing on this chassis has not produced a booting saber across 8 bench attempts; the runtime-preset Card Writer is the recommended workflow.
+Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, Saberbay), and recovery procedure live in [FLASH_GUIDE.md](docs/FLASH_GUIDE.md). For per-chassis compatibility status (which vendor sabers are bench-confirmed vs TBD vs known-not-working under each delivery path), see the public [hardware compatibility matrix](docs/HARDWARE_COMPATIBILITY.md) — community-PR-able as more boards get tested. **89sabers V3.9-BT owners:** see [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) — custom-firmware flashing on this chassis has not produced a booting saber across 9 bench attempts (including W2-prime with 89Sabers' actual factory source); the runtime-preset Card Writer is the recommended workflow.
 
 **WebUSB FlashPanel (experimental, v1.0):**
 - KyberStation also includes a one-click in-browser WebUSB FlashPanel.

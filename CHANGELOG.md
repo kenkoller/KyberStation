@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.23.1] — 2026-05-17
+
+**P0 patch.** Fixes a critical white-out regression in the blade visualizer that landed silently with v0.23.0's default render-mode flip.
+
+### Fixed
+
+- **CRITICAL: Blade canvas rendered pure white regardless of preset color** ([#357](https://github.com/kenkoller/KyberStation/pull/357)) — every preset load and every "Surprise Me" generation produced a max-white blade in the editor after v0.23.0 shipped. Root cause: `InOutTrLTemplate.getColor()` in `@kyberstation/template-eval` returned `{255, 255, 255}` (WHITE) for the stable-on branch, intending to encode "alpha = 255 = blade fully visible." The Layers compositor uses each upper layer's max-channel as an alpha mask and alpha-blends downward, so `alphaBlend(base, WHITE, 255)` reduced every LED to pure white as soon as ignition latched. The bug was dormant while parameter-engine was the default render mode; PR #352's flip to `template-eval` as default in v0.23.0 exposed it on every preset every frame. Fix: make `InOutTrL` a no-op in the per-frame render (return BLACK, alpha 0) — the visible ignition / retraction wipe is owned by `BladeCanvas` via `engine.extendProgress`, and `BladeEngine.update()` never invokes template-eval when the blade is OFF, so the layer is structurally redundant at the per-LED level. Internal `isIgniting` / `isRetracting` / `wasOn` state tracking stays intact; `getInteger()` returns the proper 0..PROFFIE_MAX mask scalar for any debug / UI consumer that wants the transition progress. **4 new regression tests** pin the full codegen → engine → LED-buffer pipeline (configured base color must dominate, per-frame variance proves animation) plus a `Layers<Rgb<base>, InOutTrL<>>` composite test that catches the exact failure mode.
+
+---
+
 ## [0.23.0] — 2026-05-16
 
 **Visualizer Upgrade Release.** Closes the entire `docs/VISUALIZER_UPGRADE_PLAN.md` Phases 2C, 2D, and 3 in a single sprint. The headline change is **the default render mode flips from the hand-written parameter engine to the template-eval interpreter** — what users see in the visualizer now is, by construction, the exact LED output their saber will produce when running KyberStation's codegen-emitted ProffieOS template. 5 PRs landed across two sub-areas: 3D scene polish (mouse interaction + post-processing) and the render pipeline architectural shift.
