@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-(nothing yet — next entries go here)
+### Documentation
+
+- **89sabers V3.9-BT custom-flash feasibility audit** ([`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md)). 8 custom-firmware flash attempts across 2 bench sessions (2026-05-15 and 2026-05-17) failed to produce a booting saber; only full dual-bank factory restores work. Forensic analysis of the May 14 backup confirms physical Bank 2 holds factory ProffieOS but physical Bank 1 contains 256 KB of vendor-specific content (no ProffieOS strings — likely a custom 89sabers loader) that the boot chain requires. Custom flash on this chassis is currently **not a sanctioned workflow**; ProffieOS Runtime Presets (`proffie_runtime` board mode, shipped 2026-05-16 in PR #325) is the recommended preset-loading path. Audit covers root-cause hypotheses, recommended protocol, decision matrix, and open experiments.
+- **Doc + UI claim updates** to match the audit posture: README, FLASH_GUIDE §10, HARDWARE_VALIDATION_TODO, PROFFIEOS_FLASHING_GUIDE, WEBUSB_FLASH validated-hardware table, BOARD_COMPATIBILITY_ROADMAP, POST_LAUNCH_BACKLOG, plus app UI surfaces (`FlashPanel.tsx` vendor warning, `LandingBetaNotice.tsx`, `CompatibilityPanel.tsx`). The 2026-04-20 "WebUSB validated on 89sabers V3.9 + macOS + Brave" claim is now correctly footnoted as **historical** — that board was retired 2026-05-01 after the Option Bytes incident, so the result is no longer reproducible against current bench hardware.
+- **R&D next-steps plan** for unblocking V3.9-BT custom flash ([`docs/research/V39BT_FLASH_NEXT_STEPS.md`](docs/research/V39BT_FLASH_NEXT_STEPS.md)) — ST-Link bench session, vendor outreach, stock-Proffieboard reference validation, preset-coverage analysis.
+- **Helper scripts** for the bench workflow:
+  - `scripts/hardware-test/restore-factory.sh` — verified dual-bank factory restore from the 2026-05-14 backup; SHA256 gate refuses to write unverified data.
+  - `scripts/hardware-test/safe-flash.sh` — guarded custom-flash wrapper that refuses to run without `--i-know-this-is-experimental`, requires a fingerprint-matched backup, defaults to Bank 2 (where factory ProffieOS lives), and prints the recovery command before touching anything.
 
 ---
 

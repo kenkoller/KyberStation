@@ -542,7 +542,11 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-05-12, v0.21.1 "Polyglot Release" cut)
+## Current State (2026-05-17, post V3.9-BT flash audit)
+
+**2026-05-17 — V3.9-BT custom-firmware flash audit complete.** Eight custom-flash attempts across two bench sessions (2026-05-15 and 2026-05-17) all failed on the 89sabers V3.9-BT chassis. Forensic dual-bank analysis of `backups/89sabers-v39bt-factory-2026-05-14/` confirms factory ProffieOS lives in physical Bank 2 (78 KB of code + strings) but physical Bank 1 holds 256 KB of dense vendor-specific content (no ProffieOS strings — likely a custom 89sabers loader / coprocessor blob / BT firmware blob) that the boot chain requires; we cannot reproduce Bank 1 from public sources without ST-Link. Conclusion: **custom-firmware flashing on the V3.9-BT is not a sanctioned workflow.** The runtime-preset SD-card path (`proffie_runtime` board mode, PR #325, bench-validated 2026-05-16) is the recommended preset-loading workflow for this chassis and the BT-equipped vendor family. Full audit: [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md). R&D next-steps: [`docs/research/V39BT_FLASH_NEXT_STEPS.md`](docs/research/V39BT_FLASH_NEXT_STEPS.md). Helper scripts: `scripts/hardware-test/restore-factory.sh`, `scripts/hardware-test/safe-flash.sh`.
+
+## Prior State (2026-05-12, v0.21.1 "Polyglot Release" cut)
 
 v0.21.1 staged — 118 commits since v0.20.3 consolidated into the "Polyglot Release" tag: Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), 40 new presets + card-snapshot regression tests (#307), comprehensive audit Waves 0–4 (#309–312). KyberStation's pipeline is now multi-board, multi-engine, and multi-style-system.
 

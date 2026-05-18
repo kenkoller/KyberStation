@@ -147,7 +147,7 @@ export function CompatibilityPanel() {
     <div className="space-y-3">
       <h3 className="text-ui-sm text-accent uppercase tracking-widest font-semibold flex items-center gap-1">
         Board Compatibility
-        <HelpTooltip text="Feature support across lightsaber soundboard platforms. KyberStation generates flashable ProffieOS code for Proffieboard, and design-reference exports (not flashable firmware) for CFX, Golden Harvest, and Xenopixel. Budget boards show what KyberStation features apply to your hardware." />
+        <HelpTooltip text="Feature support across lightsaber soundboard platforms. KyberStation generates flashable ProffieOS code for stock Proffieboards (compile + flash), plus runtime-preset SD-card files for SAVE_PRESET sabers like 89sabers V3.9-BT (no flash needed). Custom-firmware flashing on the 89sabers V3.9-BT is currently unreliable — use the runtime-preset Card Writer for those chassis. Design-reference exports (not flashable firmware) for CFX, Golden Harvest, and Xenopixel. Budget boards show what KyberStation features apply to your hardware." />
       </h3>
 
       {/* Filters */}
@@ -237,7 +237,9 @@ export function CompatibilityPanel() {
       </div>
 
       <p className="text-ui-xs text-text-muted">
-        KyberStation generates native ProffieOS C++ code with full config.h export — flashable on Proffieboard V2/V3 hardware.
+        KyberStation generates native ProffieOS C++ code with full config.h export — flashable on stock Proffieboard V2/V3 hardware.
+        For SAVE_PRESET-equipped vendor sabers (89sabers V3.9-BT, Sabertrio, KR Sabers v3+), KyberStation emits a <code>presets.ini</code> runtime-preset file you drop on the SD card — no firmware flash required.
+        <strong>Custom-firmware flashing on the 89sabers V3.9-BT is currently unreliable</strong>; the runtime-preset path is the recommended workflow for that chassis (and likely other BT-equipped vendor variants — see <code>docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md</code>).
         CFX, Golden Harvest, and Xenopixel boards get a <em>design-reference</em> export only: a structured config file documenting your colors, ignition timing, and style choices that you can use as a guide when configuring presets via your saber's button menu, vendor app, or SD card workflow.
         These exports are not flashable firmware — Xenopixel's preloaded-effect architecture in particular precludes external configuration.
         Budget boards (Asteria, SN-Pixel, S-RGB) show which KyberStation features apply to your hardware. Baselit boards support color selection only.

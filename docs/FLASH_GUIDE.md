@@ -321,13 +321,21 @@ The FlashPanel will be revisited in v0.16+ once we've root-caused the manifest-p
 
 Some saber vendors customize the Proffieboard before shipping — different bootloader, different Option Bytes, different memory layout. **A stock ProffieOS firmware compiled with default settings may not boot on a vendor-customized board.**
 
-### 89sabers
+### 89sabers V3.9-BT — **custom flashing is currently not reliable**
 
-89sabers ships V3.9 boards with **BFB2=1** in Option Bytes — "boot from Bank 2" — meaning their factory firmware lives at `0x08040000`, not the standard `0x08000000`. They also use a 4-config layout (`89V3_OBI.h`, `89V3_Purple.h`, `89V3_green.h`, `89V3_allfont.h`); the four configs are functionally identical, differing only in the first preset's blade color.
+The 89sabers Proffieboard V3.9-BT (the BT-enabled variant, shipping 2026-05+) has resisted every custom-firmware flash attempt across two bench sessions (4 configs tested 2026-05-15, 5 more 2026-05-17 — 8 total, 0 booting sabers produced). The board boots only when **both** physical flash banks are restored to factory contents byte-for-byte; single-bank custom writes — even of byte-for-byte recompilations of the vendor's published `89V3_allfont.h` — produce a chip that disappears from USB after `:leave` and requires a hardware DFU recovery + full factory restore.
 
-**Do not write to alt=1 (Option Bytes) on an 89sabers board** unless you have an ST-Link wired up and STM32CubeProgrammer ready as a recovery path. Clearing BFB2 makes the standard ProffieOS Bank 1 layout work but **also overwrites their bootloader stage**, and the chip will refuse to boot until the bootloader is restored.
+Forensic analysis: factory ProffieOS lives in physical Bank 2 (BFB2 set, 78 KB of code + strings at `0x08040000`), but physical Bank 1 also contains 256 KB of dense vendor data (no ProffieOS strings, looks like a custom 89sabers loader / coprocessor blob) that the boot chain requires. We can't reproduce Bank 1 from public sources, and we can't validate hypotheses without ST-Link/SWD on the board's debug pads.
 
-If you have an 89sabers board: stick to flashing Bank 1 (`0x08000000:leave`) with the standard arduino-cli output. The board will tolerate this and run your config — `dfu-util` writes both banks, but the chip's BFB2 flag determines which one runs at boot. If your custom config doesn't boot, restore from your backup ([§11](#11-recovery--restoring-from-backup)) and check that you flashed the right bank.
+**Recommendation:** do not flash custom firmware on the V3.9-BT. Use the ProffieOS Runtime Presets path instead — KyberStation emits a `presets.ini` you drop on the SD card, no firmware flash required, bench-validated 2026-05-16. See [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) for the full audit, decision matrix, and recovery scripts (`scripts/hardware-test/restore-factory.sh`, `scripts/hardware-test/safe-flash.sh`).
+
+### 89sabers V3.9 (non-BT, retired variant)
+
+The non-BT 89sabers V3.9 ships V3.9 boards with **BFB2=1** in Option Bytes — "boot from Bank 2" — meaning their factory firmware lives at `0x08040000`, not the standard `0x08000000`. They also use a 4-config layout (`89V3_OBI.h`, `89V3_Purple.h`, `89V3_green.h`, `89V3_allfont.h`); the four configs are functionally identical, differing only in the first preset's blade color.
+
+**Do not write to alt=1 (Option Bytes) on an 89sabers board** unless you have an ST-Link wired up and STM32CubeProgrammer ready as a recovery path. Clearing BFB2 makes the standard ProffieOS Bank 1 layout work but **also overwrites their bootloader stage**, and the chip will refuse to boot until the bootloader is restored — the original validation board was bricked this way 2026-04-29 and retired 2026-05-01.
+
+If you have a non-BT 89sabers board: stick to flashing Bank 1 (`0x08000000:leave`) with the standard arduino-cli output. The board will tolerate this and run your config — `dfu-util` writes both banks, but the chip's BFB2 flag determines which one runs at boot. If your custom config doesn't boot, restore from your backup ([§11](#11-recovery--restoring-from-backup)) and check that you flashed the right bank. **The original 2026-04-20 WebUSB validation cited elsewhere in these docs was on this non-BT variant board, which is now retired**; treat that prior "validated" status as historical until a fresh non-BT board is re-validated.
 
 #### Known Option Byte fingerprints (89sabers V3.9 family)
 

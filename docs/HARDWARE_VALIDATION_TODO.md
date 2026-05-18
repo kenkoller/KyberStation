@@ -1,8 +1,19 @@
 # Hardware validation TODO — v0.11.0 WebUSB flash
 
-**Status**: Phases A + B + C ✅ **all complete on 2026-04-20 (89sabers Proffieboard V3.9, macOS + Brave)**, including recovery re-flash. Three real DFU protocol bugs caught + fixed. Brave is Chromium-based; Chrome/Edge/Arc should behave identically but are not independently verified. Cross-platform (Windows/Linux) and cross-board (V2, V3-OLED) still pending.
+**Status (2026-05-17 update)**: The 2026-04-20 Phases A + B + C green pass was done on the **non-BT 89sabers Proffieboard V3.9** that was subsequently bricked 2026-04-29 (Option Bytes incident) and retired 2026-05-01. That board's WebUSB validation result no longer represents a board we can re-test against.
 
-Everything in this checklist requires the 89sabers Proffieboard V3.9 to be plugged in. The WebUSB flasher has passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
+The replacement **89sabers V3.9-BT** (the BT-enabled variant, on bench 2026-05-14 onward) has its own validation profile: 8 custom-firmware flash attempts across 2 bench sessions (2026-05-15 and 2026-05-17) have **all failed** — `dfu-util` reports success but the chip never re-enumerates after `:leave`. Only full dual-bank restores from the factory backup at `backups/89sabers-v39bt-factory-2026-05-14/` produce a booting saber. Custom flash is currently **not a sanctioned workflow** for this chassis; see [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](research/PROFFIE_V39BT_FLASH_FEASIBILITY.md). The runtime-preset path (PR #325, `proffie_runtime` board mode) **is** validated on this chassis (2026-05-16 bench, 15 custom presets loaded end-to-end without flashing).
+
+**Remaining validation surface for the WebUSB FlashPanel:**
+- ST-Link/SWD bench session on the V3.9-BT to characterize the Bank 1 boot dependency and unblock custom flash (highest priority)
+- Stock Proffieboard V3.9 from Fredrik direct — confirms WebUSB FlashPanel works on a non-vendor-customized board
+- Windows / Linux cross-platform sweep (community-driven, post-launch)
+- Proffieboard V2.2 (STM32L433CC, different memory layout)
+- Proffieboard V3 + OLED (same chip as V3 standard; cosmetic feature)
+
+The historical 2026-04-20 session captured below remains useful for the protocol-bug record (3 DFU state-machine bugs caught + fixed) and the cross-platform plan, but should not be cited as "WebUSB flash is validated on current bench hardware" — that statement is only currently true for the SD-card runtime-preset path.
+
+Everything in the original checklist below required the (now-retired) 89sabers V3.9 to be plugged in. Treat it as historical until a fresh V3.9 non-BT or stock Proffieboard V3 is re-validated. The WebUSB flasher has passing tests against a pure-TypeScript DfuSe mock, but the mock is our interpretation of the protocol — not a substitute for the real STM32L452RE bootloader.
 
 ## Phase A findings — macOS fallback (2026-04-20)
 
