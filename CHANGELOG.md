@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-(nothing yet — next entries go here)
+### Fixed
+
+- **`scripts/hardware-test/backup-proffieboard-sdcard.sh` aborted silently on macOS SDs with Spotlight metadata** — `du -sh "$SD_MOUNT" | sed …` exited non-zero (via `set -o pipefail`) when `du` hit permission-denied on `.Spotlight-V100/`, terminating the script after the source-size summary and before rsync ever ran. Output looked like a normal start; no error was printed. Fixed by tolerating non-zero exits on the two informational `| sed` pipelines that walk `$SD_MOUNT` (the `du -sh` summary and the `find -maxdepth 1` top-level listing). The rsync, SHA256 manifest, and tree generation are unaffected.
 
 ---
 
