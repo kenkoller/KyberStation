@@ -542,21 +542,33 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-05-12, v0.21.1 "Polyglot Release" cut)
+## Current State (2026-05-18, post-v0.23.1 + V3.9-BT W2-prime audit merged)
 
-v0.21.1 staged — 118 commits since v0.20.3 consolidated into the "Polyglot Release" tag: Xenopixel V3 full board support (PR #287), Fredrik Style Editor Integration Phases 1–7 (#298, #299, #302, #304, #306), template-eval interpreter + engine bridge + registry 153→372 (#295, #296, #303), Visualizer Upgrade Plan Phases 1–2 — Hardware Preview + 3D blade renderer (#301), Fett263 Prop File Editor Level 1 (#305), mouse-driven swing simulation (#291), slow-motion mode (#294), 40 new presets + card-snapshot regression tests (#307), comprehensive audit Waves 0–4 (#309–312). KyberStation's pipeline is now multi-board, multi-engine, and multi-style-system.
+Since v0.21.1 "Polyglot Release" (2026-05-12), four release cuts have shipped:
+- **v0.22.0 / v0.22.1** (2026-05-16) — Polyglot Audit Sprint: 16 PRs ([#331](https://github.com/kenkoller/KyberStation/pull/331)–[#346](https://github.com/kenkoller/KyberStation/pull/346)) lifting gallery preset accuracy, multi-board codegen field coverage, and editor messaging integration. Test count moved 3565 → 8605+ across the workspace.
+- **v0.23.0** (2026-05-16) — Visualizer Upgrade Release. Closes `docs/VISUALIZER_UPGRADE_PLAN.md` Phases 2C ([#348](https://github.com/kenkoller/KyberStation/pull/348) — 3D mouse interaction: orbit / click→clash / hold→lockup / drag→retract), 2D ([#349](https://github.com/kenkoller/KyberStation/pull/349) — UnrealBloom + polycarbonate diffusion + directional motion blur, with perf gating), and 3 ([#351](https://github.com/kenkoller/KyberStation/pull/351), [#352](https://github.com/kenkoller/KyberStation/pull/352)). **The headline architectural shift: `BladeEngine.renderMode` default flipped from `'proffie'` parameter-engine to `'template-eval'` interpreter.** What the visualizer renders is now, by construction, the exact LED output codegen-emitted ProffieOS templates will produce on real hardware. Gallery coverage: 0/455 → 455/455 parse cleanly; worst-case p95 = 0.062ms (~260× under 16.67ms budget). Inline render path extraction at [#350](https://github.com/kenkoller/KyberStation/pull/350) is a pure refactor (29 → 54 renderer-golden-hash cases).
+- **v0.23.1** (2026-05-17) — P0 patch ([#357](https://github.com/kenkoller/KyberStation/pull/357)) fixing a CRITICAL blade-canvas white-out regression: `InOutTrLTemplate.getColor()` returned `{255,255,255}` thinking it was encoding alpha, but the Layers compositor reads max-channel as alpha mask and alpha-blended every LED to pure white. Dormant under parameter-engine; v0.23.0's render-mode default flip exposed it on every preset. Fix: `InOutTrL` is a no-op in per-frame render — the visible ignition/retraction wipe is owned by `BladeCanvas` via `engine.extendProgress`. +4 regression tests pin the composite case.
 
-**Verified counts (2026-05-12):** 8,283 tests across 7 packages (web 3,552 / codegen 2,854 / engine 1,219 / boards 278 / template-eval 180 / presets 138 / sound 62). 455 presets (`ALL_PRESETS.length`, runtime-verified). 33 blade styles, 22 effects, 30 themes.
+**Post-release docs/research arcs (2026-05-17 → 2026-05-18):**
+- [#359](https://github.com/kenkoller/KyberStation/pull/359) Boot-diagnostic flash workflow added to FLASH_GUIDE.md; public hardware compatibility matrix at `docs/HARDWARE_COMPATIBILITY.md`.
+- [#360](https://github.com/kenkoller/KyberStation/pull/360) 89sabers V3.9-BT hardware profile registered (`packages/hardware-profiles/src/profiles/89sabers-v3.9-bt.ts`); vendor profile selector closed.
+- [#361](https://github.com/kenkoller/KyberStation/pull/361), [#362](https://github.com/kenkoller/KyberStation/pull/362) Next-session handoff docs + board-access-constraint note.
+- [#364](https://github.com/kenkoller/KyberStation/pull/364) (2026-05-18) V3.9-BT custom-flash feasibility audit + W2-prime findings + SHA-gated recovery scripts (`restore-factory.sh`, `safe-flash.sh`) + 5 verbatim bench logs.
 
-See CHANGELOG.md `[0.21.1]` for the full release manifest.
+**Hardware delivery status (2026-05-18):**
+- **Proffieboard V3.9 non-BT** (retired 89sabers chassis): bench DFU recovery is reliable; USB application-mode damage diagnosed (BootROM USB works, app-mode silent). R&D testbed only.
+- **Proffieboard V3.9-BT** (89sabers chassis, current bench saber): custom-firmware flashing blocked 9/9 attempts including 2026-05-18 W2-prime with 89Sabers' actual factory source (H4 toolchain-skew-alone ruled out; H1 Bank-1 vendor-loader gate is the leading hypothesis). **ProffieOS Runtime Presets via PR #325 (SD-card `.ini` + `.tmp` double-buffer) is the sanctioned path** for this chassis. Hardware-validated 2026-05-18 with mixed `builtin` + `advanced` verbs + 16-bit RGB encoding. See [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) for the full audit; experiments A–E proposed in [`docs/research/V39BT_FLASH_NEXT_STEPS.md`](docs/research/V39BT_FLASH_NEXT_STEPS.md).
 
-**Top open items** (full list + scope at [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md) §"What's open right now"):
-1. **Renderer-level golden-hash full coverage** (M) — engine + card-snapshot drawers shipped; full BladeCanvas pipeline pixel-level coverage still TBD. Prerequisite for Visualizer Phase 2D.
+**Verified counts (2026-05-18):** ~8,750+ tests across 7 packages (8605+ in v0.22.1; +28 in #348, +40 in #349, +50 in #352, +25 in #350, +4 in #357). 455 presets (`ALL_PRESETS.length`). 33 blade styles, 22 effects, 30 themes. See CHANGELOG.md for per-release manifests.
+
+**Top open items** (full list at [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md)):
+1. **Renderer-level golden-hash full BladeCanvas coverage** (M) — engine + card-snapshot drawers shipped, 4 inline render paths extracted via #350 (54 cases); full BladeCanvas pipeline pixel-level coverage still TBD.
 2. **Wave 8 / Prop File Editor Level 2 — button routing sub-tab** (L) — all 8 aux/gesture modulators already registered; remaining is the routing-sub-tab UI + binding shape extensions.
-3. **Visualizer Phase 2C — 3D mouse interaction** (M) — orbit, drag-velocity swing sim, click→clash, hold→lockup.
-4. **Visualizer Phase 2D — 3D post-processing** (M) — UnrealBloomPass, polycarbonate diffusion, motion blur.
+3. **Visualizer Phase 3 perceptual validation** (S-M) — bench proves codegen → template-eval works at 60fps for all 455 presets; per-frame perceptual diff between parameter-engine and template-eval render not yet automated.
+4. **V3.9-BT W2.2 ST-Link characterization** — BLOCKED on chassis access (board is front-side-only; ST-Link / BOOT0 pads are backside-only). Remaining experimental approach to determine if the H1 vendor-loader gate is real.
 5. **Crystal Vault panel + Re-attunement UI** (M-L) — long-standing design debt.
 6. **Mobile shell migration to Sidebar + MainContent** (M) — needs UX call on drawer vs bottom-sheet at 375px.
+7. **`BladeBloom.tsx` deprecation** (S) — replaced by `BladePostProcessing.tsx` in #349; legacy component soaking.
 
 Full session handoff prompt at [`docs/archive/NEXT_SESSION_HANDOFF.md`](docs/archive/NEXT_SESSION_HANDOFF.md) — paste verbatim into a fresh Claude Code session.
 
