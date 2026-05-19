@@ -1,6 +1,6 @@
 # Board Compatibility Roadmap
 
-Living document. Last updated: **2026-05-03**.
+Living document. Last updated: **2026-05-17**.
 
 KyberStation was originally designed as a Proffieboard tool — the only
 saber platform with full programmatic control via ProffieOS. Around v1.0
@@ -8,18 +8,23 @@ the editor + visualizer were extended to every major saber board, but
 the **export** path stayed Proffieboard-shaped. This roadmap tracks the
 work to make non-Proffie support genuinely useful.
 
-## Current status (post-2026-05-03)
+## Current status (post-2026-05-17)
 
 | Board | Editor | Visualizer | Export | Flash | Status |
 |---|---|---|---|---|---|
-| **Proffieboard V3** | ✅ full | ✅ full | ✅ flashable `config.h` | ✅ verified on hardware | **TIER 1** |
+| **Stock Proffieboard V3** (Fredrik direct, DIY) | ✅ full | ✅ full | ✅ flashable `config.h` | 🟡 historically validated on a since-retired vendor board; no current stock bench reference | **TIER 1** (pending stock-board re-validation) |
+| **89sabers V3.9-BT** (current bench chassis) | ✅ full | ✅ full | ✅ `presets.ini` runtime-preset path validated 2026-05-16 | ❌ custom-firmware flash unreliable (audit: [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](research/PROFFIE_V39BT_FLASH_FEASIBILITY.md)) | **TIER 1** (runtime-preset path only) |
+| **89sabers V3.9** (non-BT, original validation board, **retired 2026-05-01**) | ✅ full | ✅ full | ✅ flashable `config.h` | ✅ historically verified on hardware 2026-04-20 (board no longer in service) | TIER 1 (historical) |
 | **Proffieboard V2** | ✅ full | ✅ full | ✅ flashable `config.h` | 🟡 untested on hardware | TIER 1 (pending validation) |
+| **Sabertrio / KR Sabers v3+** (BT-equipped vendor chassis, untested in bench) | ✅ full | ✅ full | 🟡 runtime-preset path expected to apply (same `SAVE_PRESET` pattern); custom flash likely subject to same V3.9-BT-style boot-chain constraint | 🟡 untested — runtime-preset path is the recommended default | TIER 1 (pending validation) |
 | **Golden Harvest V3/V4** | ✅ full | ✅ full | 🟡 design-reference `config.ini` | ❌ requires Proffie | TIER 2 |
 | **CFX (Crystal Focus X)** | ✅ full | ✅ full | 🟡 design-reference `config.txt` | ❌ requires Proffie | TIER 2 |
 | **Xenopixel V3** | ✅ full | ✅ full | 🟡 design-reference `config.json` (PR #283) | ❌ preloaded effects | TIER 2 |
 | **Xenopixel V2** | ✅ full | ✅ full | 🟡 design-reference `config.json` | ❌ preloaded effects | TIER 2 |
 | **Verso** | ✅ preview | ✅ full | ❌ none | ❌ requires Proffie | TIER 3 |
 | **Asteria / SN-Pixel V4 / S-RGB / LGT Baselit** | ✅ preview | ✅ partial | ❌ none | ❌ different ecosystem | TIER 3 |
+
+**2026-05-17 — V3.9-BT flash audit:** Eight custom-firmware flash attempts across 2 bench sessions (2026-05-15 and 2026-05-17) have failed on the 89sabers V3.9-BT. The board's factory firmware lives in physical Bank 2 but the boot chain also depends on 256 KB of vendor-specific content in Bank 1 that public sources can't reproduce. Until ST-Link/SWD is wired up to debug the boot handoff, **custom firmware flash on this chassis is not a sanctioned path**. The runtime-preset SD-card workflow (PR #325, `proffie_runtime` board mode) is validated on the same hardware and is the recommended default. Full audit + decision matrix + recovery scripts at [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](research/PROFFIE_V39BT_FLASH_FEASIBILITY.md).
 
 **Status legend:**
 - ✅ full = honest end-to-end support

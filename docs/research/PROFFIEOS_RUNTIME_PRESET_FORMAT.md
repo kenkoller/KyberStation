@@ -126,6 +126,30 @@ That's the in-memory representation displayed over serial. The on-disk format is
 - **Load:** `Load(int preset)` (L318) reads the active file via `OpenPresets()` which picks the valid copy with the higher iteration. `SetPreset()` (L413) is called on button cycle or boot.
 - **When changes are picked up:** at next reboot, or sooner if the prop file calls `SetPreset()` after the user triggers a preset-change button combo. KyberStation users should expect to power-cycle.
 
+### ⚠ External writers MUST write both `.ini` and `.tmp`
+
+**Real bug observed 2026-05-17:** writing only `presets.ini` to the SD card from a host (via direct file write, KyberStation CardWriter ZIP, or any external tool) produced silent reversion to factory presets after the next power cycle. Root cause: `OpenPresets()` picks whichever of `presets.ini` / `presets.tmp` has the higher `iteration` counter in its `SafeFileHeader`. A stale `.tmp` from a prior on-device save can win against a fresh `.ini`.
+
+**The rule for external writers:** when deploying a new preset set to the SD card from outside ProffieOS's own save logic, write **identical content** to both `presets.ini` AND `presets.tmp`. ProffieOS will then pick whichever it likes — both have the same content, so it doesn't matter.
+
+```bash
+SD="/Volumes/<sd-mountpoint>"
+cp my-presets.ini "$SD/presets.ini"
+cp my-presets.ini "$SD/presets.tmp"           # CRITICAL — without this, stale .tmp may win
+rm -f "$SD/._presets.ini" "$SD/._presets.tmp" # macOS metadata cleanup
+diskutil eject "$SD"
+```
+
+This applies to:
+- KyberStation's CardWriter "Write to SD" path (currently under audit — needs to be verified that both files are written)
+- KyberStation's ZIP export (the user extracts to SD)
+- Hand-deploys via `cp` on the user's terminal
+- Any third-party script that drops a `presets.ini` on the card
+
+The serial-command-based deploy path (`scripts/hardware-test/load-runtime-presets.sh` → ProffieOS's own `set_*` / `duplicate_preset` flow) routes through `SaveAtLocked()` and handles the double-buffer correctly. Only external file writes need this rule.
+
+Memory: [`reference_runtime_preset_double_buffer.md`](/Users/KK/.claude/projects/-Users-KK-Development-KyberStation/memory/reference_runtime_preset_double_buffer.md) for the original incident.
+
 ## KyberStation emitter
 
 [`buildRuntimePresetsFile`](../../packages/codegen/src/emitters/ProffieRuntimeEmitter.ts) is a pure function that takes a list of preset inputs + `installTime` + `numBlades` and returns the literal file content. Platform-side I/O for discovering `installTime` lives in `apps/web/lib/runtimePresetIO.ts` so the codegen package stays pure.

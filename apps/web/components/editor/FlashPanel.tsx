@@ -486,6 +486,42 @@ function DisclaimerCard({
       <div
         className="rounded p-3 mb-3"
         style={{
+          background: 'rgb(var(--status-error) / 0.10)',
+          border: '1px solid rgb(var(--status-error) / 0.30)',
+        }}
+      >
+        <p
+          className="text-ui-xs font-semibold mb-2"
+          style={{ color: 'rgb(var(--status-error))' }}
+        >
+          89sabers V3.9-BT owners — please read
+        </p>
+        <p className="text-ui-xs text-text-primary leading-relaxed mb-2">
+          Eight custom-firmware flash attempts across two bench sessions (2026-05-15,
+          2026-05-17) have all failed on the 89sabers V3.9-BT chassis. <code>dfu-util</code>
+          reports success, but the saber will not boot afterward and requires a full
+          dual-bank factory restore. <strong>We do not currently recommend flashing
+          custom firmware on the V3.9-BT.</strong>
+        </p>
+        <p className="text-ui-xs text-text-primary leading-relaxed">
+          Use the <strong>Card Writer</strong> panel instead — KyberStation emits a{' '}
+          <code>presets.ini</code> file you drop on the SD card. No firmware flash
+          required, bench-validated on V3.9-BT 2026-05-16. See the{' '}
+          <a
+            href="https://github.com/kenkoller/KyberStation/blob/main/docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md"
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent underline hover:no-underline"
+          >
+            V3.9-BT flash feasibility audit
+          </a>{' '}
+          for the full story.
+        </p>
+      </div>
+
+      <div
+        className="rounded p-3 mb-3"
+        style={{
           background: 'rgb(var(--status-warn) / 0.10)',
           border: '1px solid rgb(var(--status-warn) / 0.30)',
         }}
@@ -494,14 +530,16 @@ function DisclaimerCard({
           className="text-ui-xs font-semibold mb-2"
           style={{ color: 'rgb(var(--status-warn))' }}
         >
-          Vendor-customized board warning
+          Other vendor-customized boards
         </p>
         <p className="text-ui-xs text-text-primary leading-relaxed">
-          If your saber came pre-flashed by 89sabers, KR Sabers, Saberbay, Vader's Vault,
-          or any other vendor: those boards may have custom Option Bytes (notably 89sabers
-          uses <code>BFB2=1</code>, "boot from Bank 2"). Read the FLASH_GUIDE's
-          vendor-board section before proceeding. <strong>Do not</strong> let any tool
-          modify Option Bytes (alt=1) without an ST-Link recovery path ready.
+          If your saber came pre-flashed by KR Sabers, Saberbay, Vader's Vault, or any
+          other vendor (and especially any BT-equipped variant): those boards may have
+          custom Option Bytes and vendor loaders we haven't characterized. Read the
+          FLASH_GUIDE's vendor-board section before proceeding. <strong>Do not</strong>{' '}
+          let any tool modify Option Bytes (alt=1) without an ST-Link recovery path ready.
+          For BT-equipped vendor sabers, prefer the runtime-preset Card Writer path until
+          we have independent flash validation on your specific chassis.
         </p>
       </div>
 
