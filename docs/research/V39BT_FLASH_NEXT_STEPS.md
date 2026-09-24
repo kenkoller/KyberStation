@@ -1,8 +1,37 @@
 # 89sabers V3.9-BT — Custom-Flash R&D Next Steps
 
-**Status:** Active plan. Living document. **Updated 2026-05-18 (afternoon)** with the W2-prime experimental result — see "2026-05-18 W2-prime result" section below.
-**Companion docs:** [`PROFFIE_V39BT_FLASH_FEASIBILITY.md`](PROFFIE_V39BT_FLASH_FEASIBILITY.md) (the audit, including §6 postscript with the full W2-prime forensic write-up), [`PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](PROFFIEOS_RUNTIME_PRESET_FORMAT.md) (the working alternative), [`HARDWARE_COMPATIBILITY_STRATEGY.md`](HARDWARE_COMPATIBILITY_STRATEGY.md) (the broader Hardware Profiles direction).
-**Owner:** Ken Koller. Plan author: 2026-05-17. Last revision: 2026-05-18 (W2-prime executed).
+**Status:** Active plan. Living document. **Updated 2026-05-19** with the W2-prime-bis + W2-prime-tris results and the new L7 hypothesis — see "2026-05-19 Deep dive" section below.
+**Companion docs:** [`PROFFIE_V39BT_FLASH_FEASIBILITY.md`](PROFFIE_V39BT_FLASH_FEASIBILITY.md) (the audit, including §7 postscript with the 2026-05-19 deep dive), [`SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md`](SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md) (full session writeup), [`PROFFIEOS_RUNTIME_PRESET_FORMAT.md`](PROFFIEOS_RUNTIME_PRESET_FORMAT.md) (the working alternative), [`HARDWARE_COMPATIBILITY_STRATEGY.md`](HARDWARE_COMPATIBILITY_STRATEGY.md) (the broader Hardware Profiles direction).
+**Owner:** Ken Koller. Plan author: 2026-05-17. Last revision: 2026-05-19 (deep dive complete).
+
+---
+
+## 2026-05-19 Deep dive — W2-prime-bis + W2-prime-tris ruled out, L7 (Reset_Handler init) identified
+
+**Three additional flash experiments on the gray board, all silent-hang.** Full writeup: [`SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md`](SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md). Headlines:
+
+- **W2-prime-bis (Bank 2 only flash)**: Custom firmware linked for `0x08040000` (FLASH=256K), flashed to Bank 2 with `:leave`, Bank 1 untouched. Silent hang. **Rules out H3 (Bank 2 sole boot source).**
+- **W2-prime-tris (Bank 1 constrained FLASH=256K)**: Custom firmware linked for `0x08000000` with linker FLASH=256K (instead of 512K). Silent hang. Confirms the FLASH constraint doesn't change runtime behavior for a 206KB binary that already fits in Bank 1.
+- **All three variants (W2-prime, -bis, -tris) produce identical silent-hang.** Only byte-perfect dual-bank factory restore boots. The chip's V3.9-BT lockdown rejects any single-bank modification.
+
+**Path C deployment (gray board production win, parallel to flash work):** 22-preset runtime deck deployed via SD card (4 W2-prime test presets + 18 KS showcase color-only versions + Factory Vader mis-indexing fix `builtin 2 1` → `builtin 1 1`). User-verified all 18 showcase preset colors render correctly. Vader now ignites red.
+
+**Blackboard outcome:** Silicon damage confirmed broader than USB peripheral. Three firmware variants tested produce identical green-LED-only behavior. Likely HSE crystal / clock circuit damage. R&D-testbed only.
+
+**NEW HIGHEST-LEVERAGE HYPOTHESIS — L7: Reset_Handler initialization mismatch.** Factory Bank 1's Reset_Handler at offset 0x40 does extensive hardware init (RCC clock enable for PWR, FLASH ACR config, SYSCFG memory remap, PWR enable + wait, backup domain reset, RTC unlock + init) BEFORE branching anywhere. Standard proffieboard-core Reset_Handler does ONLY data section copy + BSS zero + branch to main — defers all hardware init to SystemInit called from main downstream. **The V3.9-BT chassis may REQUIRE the aggressive hardware init in Reset_Handler before `main()` can safely run.** Testable in a future session by writing a custom assembly Reset_Handler mimicking factory's sequence.
+
+**False positives identified (lesson learned this session):** Naive 4-byte little-endian scans for cross-bank pointers give MANY false positives — ARM Thumb-2 instructions like `mvn.w r8, r7` and `sub.w r8, r6, r7` byte-decode to look like Bank-2 addresses. Use `movw`+`movt` pair detection from disassembly instead. See memory entry [`feedback_movw_movt_for_cross_bank_pointer_detection.md`](/Users/KK/.claude/projects/-Users-KK-Development-KyberStation/memory/feedback_movw_movt_for_cross_bank_pointer_detection.md).
+
+**Revised priorities (supersedes the priorities in the 2026-05-18-afternoon section below):**
+
+1. **NEW L7 — Custom Reset_Handler experiment** (highest leverage, software-mostly with one flash test). Modify `startup_stm32l452xx.S` to do factory-style hardware init in Reset_Handler, compile, flash, observe. ~2 hours total work. Low brick risk (recovery proven).
+2. **W2.3 — Stock Proffieboard reference run** — *unchanged: would rule out toolchain itself as confound*. Cheap; requires bare board purchase.
+3. **W2.2 — ST-Link bench session** — *unchanged: blocked on chassis backside access*. Definitive resolution of H1 vs all alternative hypotheses.
+4. **Codegen extension (NEW low-risk software direction)** — Extend ProffieRuntimeEmitter to emit `cycle` / `unstable` / `fire` / `strobe` / `rainbow` verbs for matching showcase preset styles, improving visual fidelity on the existing factory firmware.
+
+**For users on V3.9-BT chassis:** posture unchanged. Do not attempt custom firmware flashing on V3.9-BT. Use the runtime-preset path via SD card.
+
+---
 
 ---
 
