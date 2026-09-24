@@ -9,6 +9,18 @@ import type { BladeState, Color, EffectSystem, EffectType, LockupType, StyleTemp
 import { BLACK, clamp, PROFFIE_MAX } from '../types.js';
 import { bump, ledToBladePos } from '../utils.js';
 import { isLockupTypeTag } from './tags.js';
+import { restartTransition } from './transitions.js';
+
+/** Stand-in for an omitted transition argument — behaves like `TrInstant`. */
+const INSTANT: StyleTemplate = {
+  run() { /* stateless */ },
+  getColor() { return BLACK; },
+  getInteger() { return PROFFIE_MAX; },
+  getChildren() { return []; },
+};
+
+/** Lifecycle of a lockup layer: dormant → held (BeginTr) → released (EndTr). */
+type LockupPhase = 'idle' | 'active' | 'ending';
 
 // ─── SimpleClashL<ClashColor, Ms?, WidthPct?> ───
 // Simple clash flash at impact point.
@@ -212,178 +224,209 @@ export class ResponsiveBlastLTemplate extends BlastLTemplate {
   // is a visual enhancement we can add later.
 }
 
-// ─── ResponsiveLockupL<LockupColor, TrBegin, TrEnd, Position, Size> ───
-// Lockup effect — sustained hold at a position on the blade.
+// ─── ResponsiveLockupL<Color, TR1, TR2, TOP, BOTTOM, SIZE> ───
+// Spatial lockup. ProffieOS defines it as
+//
+//   LockupTrL<AlphaL<COLOR, Bump<Scale<BladeAngle<>, TOP, BOTTOM>, SIZE>>,
+//             TR1, TR2, SaberBase::LOCKUP_NORMAL>
+//
+// so it only reacts to a NORMAL lockup (not drag / melt / lightning
+// block), the bump centre slides between TOP and BOTTOM with the blade
+// angle, and TR1 / TR2 are the begin / end transitions. KyberStation's
+// codegen emits TOP / BOTTOM symmetrically around the placed lockup
+// position, so at a level blade the bump sits exactly on that position.
+
+/** ProffieOS defaults (TOP varies 4000–26000 with angle upstream; BOTTOM 6000; SIZE 9000–14000 with swing). */
+const RESPONSIVE_LOCKUP_DEFAULT_TOP = 26000;
+const RESPONSIVE_LOCKUP_DEFAULT_BOTTOM = 6000;
+const RESPONSIVE_LOCKUP_DEFAULT_SIZE = 9000;
 
 export class ResponsiveLockupLTemplate extends BaseStyleTemplate {
   private readonly color: StyleTemplate;
-  private readonly trBegin: StyleTemplate | null;
-  private readonly trEnd: StyleTemplate | null;
-  private readonly position: StyleTemplate | null;
-  private readonly size: StyleTemplate | null;
-  private lockupActive = false;
-  private lockupStartTime = -1;
-  private lockupEndTime = -1;
-
-  constructor(args: StyleTemplate[]) {
-    super();
-    this.color = args[0]!;
-    this.trBegin = args[1] ?? null;
-    this.trEnd = args[2] ?? null;
-    this.position = args[3] ?? null;
-    this.size = args[4] ?? null;
-  }
-
-  run(state: BladeState, effects: EffectSystem): void {
-    super.run(state, effects);
-    this.color.run(state, effects);
-    this.trBegin?.run(state, effects);
-    this.trEnd?.run(state, effects);
-    this.position?.run(state, effects);
-    this.size?.run(state, effects);
-
-    // Track lockup state
-    const beginEvent = effects.getLastEffect('EFFECT_LOCKUP_BEGIN');
-    const endEvent = effects.getLastEffect('EFFECT_LOCKUP_END');
-
-    if (beginEvent && beginEvent.startTimeMs > this.lockupStartTime) {
-      this.lockupStartTime = beginEvent.startTimeMs;
-      this.lockupActive = true;
-    }
-    if (endEvent && endEvent.startTimeMs > this.lockupEndTime) {
-      this.lockupEndTime = endEvent.startTimeMs;
-      if (this.lockupEndTime > this.lockupStartTime) {
-        this.lockupActive = false;
-      }
-    }
-  }
-
-  getColor(led: number): Color {
-    if (!this.lockupActive) {
-      // Fade out after lockup ends
-      if (this.lockupEndTime > 0) {
-        const elapsed = this.state.timeMs - this.lockupEndTime;
-        if (elapsed >= 200) return BLACK;
-        const fade = 1 - elapsed / 200;
-        return this._getLockedColor(led, fade);
-      }
-      return BLACK;
-    }
-
-    return this._getLockedColor(led, 1.0);
-  }
-
-  private _getLockedColor(led: number, intensity: number): Color {
-    const numLeds = this.state.numLeds || 144;
-    const lockPos = this.position?.getInteger(led) ?? (PROFFIE_MAX * 3 / 4);
-    const lockSize = this.size?.getInteger(led) ?? (PROFFIE_MAX / 4);
-
-    const bladePos = ledToBladePos(led, numLeds);
-    const bumpVal = bump(bladePos, lockPos, lockSize);
-    const alpha = (bumpVal / PROFFIE_MAX) * intensity;
-
-    if (alpha < 0.01) return BLACK;
-
-    const c = this.color.getColor(led);
-    return {
-      r: Math.round(c.r * clamp(alpha, 0, 1)),
-      g: Math.round(c.g * clamp(alpha, 0, 1)),
-      b: Math.round(c.b * clamp(alpha, 0, 1)),
-    };
-  }
-
-  getChildren(): StyleTemplate[] {
-    const children: StyleTemplate[] = [this.color];
-    if (this.trBegin) children.push(this.trBegin);
-    if (this.trEnd) children.push(this.trEnd);
-    if (this.position) children.push(this.position);
-    if (this.size) children.push(this.size);
-    return children;
-  }
-}
-
-// ─── LockupTrL<Color, TrBegin, TrHold, TrEnd, LockupType> ───
-// More flexible lockup with explicit transition phases. The trailing
-// `LockupType` arg (e.g. `SaberBase::LOCKUP_NORMAL`) constrains which
-// `effects.lockupType` values activate this layer. When the trailing
-// arg is absent (older 4-arg shape), the layer activates on any
-// non-`LOCKUP_NONE` lockup — preserves prior behavior.
-
-export class LockupTrLTemplate extends BaseStyleTemplate {
-  private readonly color: StyleTemplate;
   private readonly trBegin: StyleTemplate;
-  private readonly trHold: StyleTemplate;
   private readonly trEnd: StyleTemplate;
-  /** Lockup type this layer activates for, or null to match any non-NONE lockup. */
-  private readonly matchType: LockupType | null;
-  private lockupActive = false;
-  private lockupEndTime = -1;
+  private readonly top: StyleTemplate | null;
+  private readonly bottom: StyleTemplate | null;
+  private readonly size: StyleTemplate | null;
+  private phase: LockupPhase = 'idle';
 
   constructor(args: StyleTemplate[]) {
     super();
     this.color = args[0]!;
-    this.trBegin = args[1]!;
-    this.trHold = args[2]!;
-    this.trEnd = args[3]!;
-    // 5th arg: lockup-type tag (e.g. SaberBase::LOCKUP_NORMAL). When the
-    // tag isn't present or isn't a recognized LockupTypeTag, we treat it
-    // as "match any" so 4-arg callers and unknown variants both render.
-    const trailing = args[4];
-    this.matchType = isLockupTypeTag(trailing) ? trailing.getTag() : null;
+    this.trBegin = args[1] ?? INSTANT;
+    this.trEnd = args[2] ?? INSTANT;
+    this.top = args[3] ?? null;
+    this.bottom = args[4] ?? null;
+    this.size = args[5] ?? null;
   }
 
   run(state: BladeState, effects: EffectSystem): void {
     super.run(state, effects);
     this.color.run(state, effects);
     this.trBegin.run(state, effects);
-    this.trHold.run(state, effects);
     this.trEnd.run(state, effects);
+    this.top?.run(state, effects);
+    this.bottom?.run(state, effects);
+    this.size?.run(state, effects);
 
-    const activeNow = this.matchType === null
-      ? effects.lockupType !== 'LOCKUP_NONE'
-      : effects.lockupType === this.matchType;
-
-    if (activeNow) {
-      if (!this.lockupActive) {
-        this.lockupActive = true;
-      }
-    } else if (this.lockupActive) {
-      this.lockupActive = false;
-      this.lockupEndTime = state.timeMs;
+    const held = effects.lockupType === 'LOCKUP_NORMAL';
+    if (held && this.phase !== 'active') {
+      this.phase = 'active';
+      restartTransition(this.trBegin, state.timeMs);
+    } else if (!held && this.phase === 'active') {
+      this.phase = 'ending';
+      restartTransition(this.trEnd, state.timeMs);
     }
   }
 
   getColor(led: number): Color {
-    if (this.lockupActive) {
-      // During lockup, show the lockup color modulated by the hold transition
-      const c = this.color.getColor(led);
-      const holdAlpha = this.trHold.getInteger(led) / PROFFIE_MAX;
-      return {
-        r: Math.round(c.r * clamp(holdAlpha, 0, 1)),
-        g: Math.round(c.g * clamp(holdAlpha, 0, 1)),
-        b: Math.round(c.b * clamp(holdAlpha, 0, 1)),
-      };
-    }
+    if (this.phase === 'idle') return BLACK;
+    const trAlpha = this.phase === 'active'
+      ? this.trBegin.getInteger(led) / PROFFIE_MAX
+      : 1 - this.trEnd.getInteger(led) / PROFFIE_MAX;
+    if (trAlpha <= 0) return BLACK;
 
-    // Fade out
-    if (this.lockupEndTime > 0) {
-      const endProgress = this.trEnd.getInteger(led) / PROFFIE_MAX;
-      if (endProgress >= 1) return BLACK;
+    const numLeds = this.state.numLeds || 144;
+    const top = this.top?.getInteger(led) ?? RESPONSIVE_LOCKUP_DEFAULT_TOP;
+    const bottom = this.bottom?.getInteger(led) ?? RESPONSIVE_LOCKUP_DEFAULT_BOTTOM;
+    // Scale<BladeAngle<>, TOP, BOTTOM>
+    const lockPos = top + ((bottom - top) * this.state.bladeAngle) / PROFFIE_MAX;
+    const lockSize = this.size?.getInteger(led) ?? RESPONSIVE_LOCKUP_DEFAULT_SIZE;
 
-      const c = this.color.getColor(led);
-      const fade = 1 - endProgress;
-      return {
-        r: Math.round(c.r * fade),
-        g: Math.round(c.g * fade),
-        b: Math.round(c.b * fade),
-      };
-    }
+    const bladePos = ledToBladePos(led, numLeds);
+    const bumpVal = bump(bladePos, lockPos, lockSize);
+    const alpha = clamp((bumpVal / PROFFIE_MAX) * trAlpha, 0, 1);
+    if (alpha < 0.01) return BLACK;
 
-    return BLACK;
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * alpha),
+      g: Math.round(c.g * alpha),
+      b: Math.round(c.b * alpha),
+    };
   }
 
   getChildren(): StyleTemplate[] {
-    return [this.color, this.trBegin, this.trHold, this.trEnd];
+    const children: StyleTemplate[] = [this.color, this.trBegin, this.trEnd];
+    if (this.top) children.push(this.top);
+    if (this.bottom) children.push(this.bottom);
+    if (this.size) children.push(this.size);
+    return children;
+  }
+}
+
+// ─── LockupTrL<Color, BeginTr, EndTr, LockupType, Condition?> ───
+// The canonical ProffieOS signature (styles/lockup_tr.h) — and the shape
+// KyberStation's codegen emits:
+//
+//   LockupTrL<COLOR, BeginTr, EndTr, SaberBase::LOCKUP_*, CONDITION = Int<1>>
+//
+// When a lockup of the matching type begins (and CONDITION is non-zero at
+// that moment) the layer runs BeginTr from transparent → COLOR, holds
+// COLOR while the lockup is held, then runs EndTr from COLOR →
+// transparent when the lockup ends. Both transitions restart on their
+// trigger, exactly like ProffieOS calls `begin()` on them.
+//
+// Legacy shape: early template-eval tests used a non-ProffieOS 5-arg form
+// `<COLOR, BeginTr, HoldTr, EndTr, LOCKUP_TYPE?>` where the lockup tag
+// sits in slot 4 (or is absent → match any non-NONE lockup). It is still
+// accepted so hand-written fixtures keep rendering; it is detected by the
+// tag NOT being in slot 3.
+//
+// Before 2026-09 the class only understood the legacy layout, so the real
+// 4-arg codegen shape was misread: every LockupTrL matched ANY lockup
+// type (tag landed in the "EndTr" slot) and the lockup colour never faded
+// out (the tag's getInteger() is 0 → "end progress" stuck at 0).
+
+export class LockupTrLTemplate extends BaseStyleTemplate {
+  private readonly color: StyleTemplate;
+  private readonly trBegin: StyleTemplate;
+  /** Legacy-shape hold transition. Always null for the canonical shape. */
+  private readonly trHold: StyleTemplate | null;
+  private readonly trEnd: StyleTemplate;
+  /** Canonical-shape CONDITION function, or null (≡ Int<1>). */
+  private readonly condition: StyleTemplate | null;
+  /** Lockup type this layer activates for, or null to match any non-NONE lockup. */
+  private readonly matchType: LockupType | null;
+  private phase: LockupPhase = 'idle';
+
+  constructor(args: StyleTemplate[]) {
+    super();
+    this.color = args[0]!;
+    const slot3 = args[3];
+    if (isLockupTypeTag(slot3)) {
+      // Canonical ProffieOS layout.
+      this.trBegin = args[1] ?? INSTANT;
+      this.trEnd = args[2] ?? INSTANT;
+      this.trHold = null;
+      this.matchType = slot3.getTag();
+      this.condition = args[4] ?? null;
+    } else {
+      // Legacy 5-arg layout (tag in slot 4, or no tag at all).
+      this.trBegin = args[1] ?? INSTANT;
+      this.trHold = args[2] ?? INSTANT;
+      this.trEnd = slot3 ?? INSTANT;
+      const trailing = args[4];
+      this.matchType = isLockupTypeTag(trailing) ? trailing.getTag() : null;
+      this.condition = null;
+    }
+  }
+
+  run(state: BladeState, effects: EffectSystem): void {
+    super.run(state, effects);
+    this.color.run(state, effects);
+    this.trBegin.run(state, effects);
+    this.trHold?.run(state, effects);
+    this.trEnd.run(state, effects);
+    this.condition?.run(state, effects);
+
+    const matches = this.matchType === null
+      ? effects.lockupType !== 'LOCKUP_NONE'
+      : effects.lockupType === this.matchType;
+
+    if (matches && this.phase !== 'active') {
+      // ProffieOS evaluates CONDITION when the lockup begins; a zero
+      // condition leaves this layer dormant for the whole lockup.
+      if (this.condition && this.condition.getInteger(0) === 0) return;
+      this.phase = 'active';
+      restartTransition(this.trBegin, state.timeMs);
+      if (this.trHold) restartTransition(this.trHold, state.timeMs);
+    } else if (!matches && this.phase === 'active') {
+      this.phase = 'ending';
+      restartTransition(this.trEnd, state.timeMs);
+    }
+  }
+
+  getColor(led: number): Color {
+    if (this.phase === 'idle') return BLACK;
+
+    let alpha: number;
+    if (this.phase === 'active') {
+      // BeginTr ramps transparent → COLOR (legacy shape: the hold
+      // transition carries the alpha, as it always did).
+      const tr = this.trHold ?? this.trBegin;
+      alpha = tr.getInteger(led) / PROFFIE_MAX;
+    } else {
+      // EndTr ramps COLOR → transparent.
+      alpha = 1 - this.trEnd.getInteger(led) / PROFFIE_MAX;
+    }
+    alpha = clamp(alpha, 0, 1);
+    if (alpha <= 0) return BLACK;
+
+    const c = this.color.getColor(led);
+    return {
+      r: Math.round(c.r * alpha),
+      g: Math.round(c.g * alpha),
+      b: Math.round(c.b * alpha),
+    };
+  }
+
+  getChildren(): StyleTemplate[] {
+    const children: StyleTemplate[] = [this.color, this.trBegin];
+    if (this.trHold) children.push(this.trHold);
+    children.push(this.trEnd);
+    if (this.condition) children.push(this.condition);
+    return children;
   }
 }
 

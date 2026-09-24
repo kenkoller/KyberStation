@@ -137,7 +137,11 @@ export {
 } from './modulation/index.js';
 
 // ─── Template Eval Bridge (pixel-accurate ProffieOS rendering) ───
-export { TemplateEvalBridge } from './templateEval/TemplateEvalBridge.js';
+export {
+  TemplateEvalBridge,
+  ENGINE_EFFECT_TO_TEMPLATE,
+  type TemplateEffectBinding,
+} from './templateEval/TemplateEvalBridge.js';
 
 // ─── Xenopixel Style Registry ───
 export {
