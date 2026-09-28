@@ -8,7 +8,6 @@
 // styles (StyleFire's heat map, …) draw from Math.random, so every run
 // installs a seeded generator and reseeds it at known points.
 
-import { vi } from 'vitest';
 import type { Preset } from '@kyberstation/presets';
 import {
   DEFAULT_TOPOLOGY,
@@ -33,11 +32,23 @@ export class SeededRandom {
   }
 }
 
-/** Route Math.random through a SeededRandom until `restore()` is called. */
+/**
+ * Route Math.random through a SeededRandom until `restore()` is called.
+ *
+ * Deliberately a plain replacement rather than `vi.spyOn`: a spy records
+ * every call, and the fire-based presets make millions of Math.random
+ * calls over a full-gallery sweep.
+ */
 export function installSeededRandom(): { rng: SeededRandom; restore: () => void } {
   const rng = new SeededRandom();
-  const spy = vi.spyOn(Math, 'random').mockImplementation(() => rng.next());
-  return { rng, restore: () => spy.mockRestore() };
+  const original = Math.random;
+  Math.random = () => rng.next();
+  return {
+    rng,
+    restore: () => {
+      Math.random = original;
+    },
+  };
 }
 
 /**

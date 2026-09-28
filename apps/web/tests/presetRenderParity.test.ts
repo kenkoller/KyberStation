@@ -282,11 +282,13 @@ let measurements: Measurement[] = [];
 const parameterMeans = new Map<string, [number, number, number]>();
 let restoreRandom: (() => void) | null = null;
 let sweepMs = 0;
+let sweepCpuMs = 0;
 
 beforeAll(() => {
   const { rng, restore } = installSeededRandom();
   restoreRandom = restore;
   const t0 = performance.now();
+  const cpu0 = process.cpuUsage();
   measurements = ALL_PRESETS.map((preset, i) => measure(preset, i, rng));
   measurements.forEach((m, i) => {
     if (m.config.style === 'stable' && m.onMean) {
@@ -294,6 +296,8 @@ beforeAll(() => {
     }
   });
   sweepMs = performance.now() - t0;
+  const cpu = process.cpuUsage(cpu0);
+  sweepCpuMs = (cpu.user + cpu.system) / 1000;
 }, 120_000);
 
 afterAll(() => {
@@ -317,7 +321,10 @@ describe(`preset render gate â€” ${ALL_PRESETS.length} presets through codegen â
   it('swept every preset', () => {
     expect(measurements.length).toBe(ALL_PRESETS.length);
     // Visible in the test output for CI-time tracking.
-    console.info(`[presetRenderParity] swept ${measurements.length} presets in ${sweepMs.toFixed(0)} ms`);
+    console.info(
+      `[presetRenderParity] swept ${measurements.length} presets in ${sweepMs.toFixed(0)} ms ` +
+        `(${sweepCpuMs.toFixed(0)} ms CPU)`,
+    );
   });
 
   it('every preset generates code that parses and renders through template-eval', () => {
