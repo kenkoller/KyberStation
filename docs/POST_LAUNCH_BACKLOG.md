@@ -18,7 +18,7 @@ Sequencing and the decisions waiting on Ken live in [`DEVELOPMENT_PLAN_2026-09.m
 
 | Item | Size | Notes |
 |---|---|---|
-| **config.h ignition runs tip → hilt** (`TrWipeIn` in `InOutTrL`'s ignition slot for `standard`) | M | In progress as plan Lane F; needs fixture regeneration and a bench check on a stock board. |
+| ✅ **config.h ignition ran tip → hilt** — fixed in [#373](https://github.com/kenkoller/KyberStation/pull/373) | — | Bench check on a stock board still pending (see the stock-board row). |
 | **Bench-validate runtime verbs + `.tmp` fix** on the V3.9-BT | S (Ken, ~1 h) | Only `advanced` + `builtin` are validated on the SD path. Checklist in [#369](https://github.com/kenkoller/KyberStation/pull/369). |
 | **Shimmer never reaches generated code** | M | `ASTBuilder` ignores `shimmer`; needs a ProffieOS construct choice, fixture regeneration, bench check. |
 | **Aurora / Prism emit plain `Rainbow`** in config.h codegen, ignoring the base color | S–M | Runtime mapper keeps Aurora's hue (#369), so the paths disagree. |
