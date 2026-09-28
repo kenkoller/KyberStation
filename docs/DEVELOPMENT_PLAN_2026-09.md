@@ -1,6 +1,6 @@
 # KyberStation Development Plan — Fall 2026
 
-**Written:** 2026-09-24 · **Owner:** Ken Koller · **Status:** Phase 1 in progress
+**Written:** 2026-09-24 · **Updated:** 2026-09-28 · **Owner:** Ken Koller · **Status:** Phase 1 nearly done (Lane C in review)
 
 **Inputs:** the [2026-09-24 whole-repo audit](research/AUDIT_2026-09-24_FABLE.md) (claims re-verified against the code, see its §5), the [2026-05-19 V3.9-BT session record](research/SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md), and [`POST_LAUNCH_BACKLOG.md`](POST_LAUNCH_BACKLOG.md).
 
@@ -32,11 +32,21 @@ Five lanes. B, C and D run in parallel worktrees with disjoint file ownership; A
 
 | Lane | Branch | Scope | Status |
 |---|---|---|---|
-| **A** Hygiene + docs truth | `docs/reentry-hygiene-2026-09` | Compatibility-matrix safety fix; README / FLASH_GUIDE / docs index / CLAUDE.md / backlog refresh; recover the uncommitted 05-19 session record; this plan; CI honesty (drop the no-op lint step, Node 20 → 24); untrack the localhost TLS key | In progress |
-| **B** Runtime presets | `feat/runtime-presets-tmp-and-verbs` | Write `presets.tmp` identical to `presets.ini` (ZIP + Write to Card); map blade styles to all ProffieOS 7.12 runtime verbs (`advanced` with real gradients, `unstable`, `fire`, `cycle`, `rainbow`, …) with byte-exact tests; show per-preset fidelity (faithful / approximate / colors only) in CardWriter; measured coverage report | In progress |
-| **C** Render parity | `fix/template-eval-render-parity` | Set lockup type on lockup/drag/melt/lightning; map every effect with a ProffieOS equivalent; draw the chosen ignition/retraction under template-eval; one source of truth for render mode; effects on the simulated clock; one engine on desktop; a CI gate rendering every gallery preset under template-eval | In progress |
-| **D** Dead code + real gates | `refactor/dead-code-and-codegen-gates` | Remove superseded orphan components (keep and report any worth wiring); make the validator able to fail and run it over all presets; compare the golden `.cpp` fixtures; tighten `synthetic.test.ts` | In progress |
-| **E** Usability pass | TBD | Hands-on walkthrough of the main flows (gallery → edit → export to card); fix the friction found, in files no other lane owns | In progress |
+| **A** Hygiene + docs truth | `docs/reentry-hygiene-2026-09` | Compatibility-matrix safety fix; README / FLASH_GUIDE / docs index / CLAUDE.md / backlog refresh; recover the uncommitted 05-19 session record; this plan; CI honesty (drop the no-op lint step, Node 20 → 24); untrack the localhost TLS key. Also merged the stale SD-backup fix #363. | ✅ [#366](https://github.com/kenkoller/KyberStation/pull/366), [#363](https://github.com/kenkoller/KyberStation/pull/363) |
+| **B** Runtime presets | `feat/runtime-presets-tmp-and-verbs` | Write `presets.tmp` identical to `presets.ini` (ZIP + Write to Card); map blade styles to all ProffieOS 7.12 runtime verbs with byte-exact tests; per-preset fidelity in CardWriter; coverage report (246 faithful / 114 approximate / 95 colors only). Also fixed Write to Card's `install_time` discovery on saber-written files. | ✅ [#369](https://github.com/kenkoller/KyberStation/pull/369) |
+| **C** Render parity | `fix/template-eval-render-parity` | Set lockup type on lockup/drag/melt/lightning; map every effect with a ProffieOS equivalent; draw the chosen ignition/retraction under template-eval; one source of truth for render mode; effects on the simulated clock; one engine on desktop; a CI gate rendering every gallery preset under template-eval | In review |
+| **D** Dead code + real gates | `refactor/dead-code-and-codegen-gates` | Removed six superseded orphan components (kept `OLEDEditor` and `ThemePickerPanel`, which work); the validator can fail and runs over all presets (0 findings); golden `.cpp` fixtures are a byte-exact gate; `synthetic.test.ts` asserts what it claims | ✅ [#367](https://github.com/kenkoller/KyberStation/pull/367) |
+| **E** Usability pass | `feat/saber-aware-delivery`, `feat/chassis-aware-export-default` | Walkthrough found nothing connected the user's saber to its delivery path. Chassis profiles record their delivery path; YOUR SABER onboarding step; chassis picker no longer dead-ends; Flash panel chassis gate + Card Writer shortcut; Card Writer opens on runtime presets for the V3.9-BT | ✅ [#368](https://github.com/kenkoller/KyberStation/pull/368), [#370](https://github.com/kenkoller/KyberStation/pull/370) |
+
+### Found during Phase 1 (not yet fixed)
+
+- **Shimmer never reaches generated code.** The editor's Shimmer slider changes the preview, but `ASTBuilder` doesn't read it, so config.h and runtime exports drop it. The deliverability table now says so (#369). Fixing it changes codegen output, so it needs a ProffieOS construct choice, regenerated golden fixtures, and a bench check.
+- **Aurora and Prism presets emit plain `Rainbow`** in config.h codegen, ignoring the base color. The runtime mapper keeps Aurora's hue (#369), so the two paths now disagree.
+- **Gradient stops are ignored by config.h codegen**; the runtime `advanced` verb uses them (#369).
+- **Mobile header clips the Retract button** at 375px wide (~26px, `AppShell.tsx`).
+- **Two working but unreachable panels** could be wired in: `OLEDEditor` (OLED frame + animation editor with BMP import/export → Output → Preview OLED) and `ThemePickerPanel` (visual browser for all 30 themes → Settings → Appearance).
+- **Runtime-mapping judgment calls to review:** `unstable` uses ProffieOS's own `unstable` verb although Hardware Preview shows a fire-style flicker for that style; `aurora` → audio-reactive `cycle`; `sithFlicker` / `tempoLock` → `strobe` (no gallery preset uses them).
+- **Fixture rule:** any change to generated config.h code or to presets must regenerate the golden fixtures (`KYBERSTATION_WRITE_FIXTURES=1`) or CI fails.
 
 **Phase 1 is done when:** all lanes are merged with green CI, the visual changes are checked in a browser, CHANGELOG `[Unreleased]` describes them, CLAUDE.md Current State is re-verified, and v0.24.0 is ready to tag (tagging waits for Ken's OK).
 
@@ -46,7 +56,7 @@ Five lanes. B, C and D run in parallel worktrees with disjoint file ownership; A
 
 Ordered by leverage. **Ken** marks items that need Ken's hands, money, or decision.
 
-1. **Bench session for the runtime path** (**Ken**, ~1 h). One preset per runtime verb on the gray board, plus confirming the `.tmp` fix through the app's Write to Card. Closes Phase 1's hardware loop; the checklist will be in the Lane B PR.
+1. **Bench session for the runtime path** (**Ken**, ~1 h). One preset per runtime verb on the gray board (only `advanced` and `builtin` are validated on the SD path so far), plus the `.tmp` fix end to end: let the saber write a `presets.tmp`, then Write to Card from the app, power-cycle, confirm no reversion. Checklist in [#369](https://github.com/kenkoller/KyberStation/pull/369).
 2. **Stock Proffieboard V3.9** (**Ken**, ~$80 + 1 h). Workstream W2.3 in [`V39BT_FLASH_NEXT_STEPS.md`](research/V39BT_FLASH_NEXT_STEPS.md). The only experiment that can make the compile + flash promise true or false without opening a chassis. On success: add a CI job that compiles a generated `config.h` against a pinned ProffieOS tag (the arduino-cli steps already exist in `firmware-build.yml`) and flip the matrix row. On failure: retract the compile + flash headline until it's fixed.
 3. **Web stack upgrade as its own release** (L, **Ken** to approve). Next 14 → 16, React 18 → 19, `@react-three/fiber` 9, `drei` 10, and a current Vitest. Next 14 is past its last release with eight open advisories. Rewrite [`NEXTJS_15_UPGRADE_PLAN.md`](research/NEXTJS_15_UPGRADE_PLAN.md) for the 16 jump first, and pause feature work while it's in flight.
 4. **Lint + dependency hygiene** (S, **Ken** to approve the lockfile change). Adopt ESLint with the existing `.eslintrc.js` and put `pnpm lint` back in CI; add Dependabot; re-enable CodeQL; turn on strict status checks in the `main` ruleset so a PR green on a stale base can't merge.
