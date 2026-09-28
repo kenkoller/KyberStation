@@ -11,7 +11,7 @@ import {
   lookupTemplate,
   getAllTemplates,
 } from '../src/index.js';
-import type { StyleNode, ValidationResult } from '../src/index.js';
+import type { StyleNode } from '../src/index.js';
 import type { BladeConfig } from '../src/index.js';
 
 // ─── Helpers ───
