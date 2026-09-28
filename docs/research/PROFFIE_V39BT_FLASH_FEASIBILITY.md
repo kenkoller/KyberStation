@@ -396,6 +396,59 @@ The audit's core recommendation **stands and is now reinforced by experimental d
 
 ---
 
+## 2026-05-19 postscript §7 — deep dive ruled out H3 + L1 + L2; new L7 hypothesis identified
+
+Full session writeup: [`SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md`](SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md). The 2026-05-18 evening → 2026-05-19 ~03:30 PDT bench session ran three additional flash experiments + extensive offline forensic analysis. Headlines:
+
+**Three new flash experiments, all silent-hang:**
+- **W2-prime-bis** — Custom firmware linked for Bank 2 (`0x08040000`, FLASH=256K), flashed to Bank 2 only, Bank 1 untouched. Predicted by H1; confirmed. **Definitively rules out H3 (Bank 2 sole boot source)** — chip will not boot from custom Bank 2 even if Bank 2's vector table is valid.
+- **W2-prime-tris** — Custom firmware linked for Bank 1 with FLASH=256K constrained linker (vs the standard FLASH=512K). Identical silent-hang to W2-prime. Confirms the FLASH constraint makes no runtime difference for a 206KB binary that already fits in Bank 1.
+- **Net empirical result:** three independent variants of "which bank gets custom content" all silent. Only byte-perfect dual-bank factory restore boots. The V3.9-BT lockdown rejects any single-bank modification.
+
+**Forensic analysis findings:**
+- Factory Bank 1 is 256KB FULL (0xFF padding starts at the last byte). Factory firmware spans both banks.
+- Factory Bank 2 contains 78KB of RODATA + strings — voice-pack filenames, ProffieOS messages, jump tables.
+- Bank 1 has GENUINE `movw`+`movt` cross-bank pointers into Bank 2 (e.g., `0x0804C5DC` references the string `"on, retraction blend option"`). Verified via disassembly, NOT naive byte scanning.
+- Bank 1's chain-load handoff (sets VTOR=0, reads SP+PC from address 0, jumps) terminates somewhere we can't follow offline — depends on BootROM's UFB-swap state which only ST-Link can characterize.
+
+**False positives identified (lessons for future forensic work):**
+- **Naive 4-byte little-endian scans for cross-bank pointers give MANY false positives.** Many ARM Thumb-2 instruction encodings byte-decode to look like 0x0807XXXX Bank-2 addresses when read as little-endian. The correct method is `movw`+`movt` pair detection from disassembly. See memory entry [`feedback_movw_movt_for_cross_bank_pointer_detection.md`](/Users/KK/.claude/projects/-Users-KK-Development-KyberStation/memory/feedback_movw_movt_for_cross_bank_pointer_detection.md).
+- Bank 2 offset 0x13348 "looks like" a vector table but is actually a data table containing the ASCII string `"Charger"`. SP/PC byte patterns happened to match valid signatures by coincidence.
+
+**Hypotheses now ruled out (in addition to H4):**
+- **H3** (Bank 2 sole boot source) — W2-prime-bis empirically refutes it.
+- **L1** (older proffieboard core) — only 4.6 distributed publicly via arduino-cli search.
+- **L2** (SRAM2 sections missing) — linker references SRAM2 but no code in factory OR our build actually targets it; warning is benign.
+- **Cross-bank pointer linkage explaining silent boot** — our custom builds have ZERO real Bank-2 cross-bank pointers (verified via `movw`+`movt` pair scan, not raw byte scan).
+
+**NEW HIGHEST-LEVERAGE HYPOTHESIS — L7: Reset_Handler initialization mismatch.** Factory Bank 1's Reset_Handler at offset 0x40 does extensive hardware init before branching anywhere:
+- RCC clock enable for PWR peripheral
+- FLASH ACR configuration (latency)
+- SYSCFG memory remap zero
+- PWR enable + wait for ready
+- Backup domain reset
+- RTC unlock (write 0xCA, 0x53 to RTC_WPR) + init
+
+**Standard proffieboard-core Reset_Handler does ONLY:**
+- Copy `__copy_table` data sections from FLASH to RAM
+- Zero `__zero_table` BSS sections
+- Branch to `main` (SystemInit deferred)
+
+**Hypothesis:** V3.9-BT chassis requires the aggressive hardware init in Reset_Handler before `main()` can safely run. Our deferred-init approach fails because something has already gone wrong with peripheral state by the time SystemInit is reached. Test plan: write a custom assembly Reset_Handler mimicking factory's offset-0x40 sequence, replace proffieboard-core's stock Reset_Handler in `startup_stm32l452xx.S`, compile, flash, observe. Low brick risk (recovery proven). **This is the most actionable next-session direction.**
+
+**Path C win (parallel production track):** 22-preset runtime deck deployed via SD card on the gray board. 4 W2-prime test presets + 18 KS showcase color-only versions + Factory Vader mis-indexing fix (`builtin 2 1` → `builtin 1 1`). User confirmed all 18 showcase colors render correctly on hardware + Vader now ignites red. Dynamic style algorithms NOT preserved (advanced verb is color-only on factory firmware) but color identity transfers.
+
+**Blackboard final state:** Silicon damage confirmed broader than USB peripheral. Three firmware variants tested produce identical green-LED-only behavior. Likely HSE crystal / clock circuit damage. R&D-testbed only; cannot serve as runtime demo platform.
+
+**Updated next-step priorities (supersedes the 2026-05-18 priorities above):**
+1. **L7 — Custom Reset_Handler experiment** — software-mostly, ~2 hours, highest leverage NEW direction. Promote from "future work" to "next session priority."
+2. **W2.3 stock Proffieboard reference run** — unchanged.
+3. **W2.2 ST-Link bench session** — unchanged (blocked on chassis access).
+4. **NEW codegen extension** — Extend ProffieRuntimeEmitter to emit `cycle`/`unstable`/`fire`/`strobe`/`rainbow` verbs (not just `advanced`+`builtin`). Software-only, zero hardware risk. Improves visual fidelity on existing factory firmware.
+5. **Vendor outreach** — request 89Sabers Bank-1 boot loader source. Async.
+
+---
+
 ## See also
 
 - [`docs/FLASH_GUIDE.md`](../FLASH_GUIDE.md) — user-facing flash workflow; §10 covers vendor-customized boards and §11 covers recovery

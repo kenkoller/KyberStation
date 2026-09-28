@@ -5,6 +5,10 @@ reference for what you're doing.
 
 ## Start here
 
+- [DEVELOPMENT_PLAN_2026-09.md](./DEVELOPMENT_PLAN_2026-09.md) — Current
+  plan: what's in flight, what's next, and the decisions it's waiting on.
+- [POST_LAUNCH_BACKLOG.md](./POST_LAUNCH_BACKLOG.md) — Single source of truth
+  for open work.
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — How the codebase is organized:
   engine, codegen, UI, and how they fit together.
 - [DEVELOPMENT.md](./DEVELOPMENT.md) — Local dev setup, prerequisites,
@@ -12,6 +16,22 @@ reference for what you're doing.
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — Contribution policy and the
   step-by-step for adding new styles, effects, boards, or presets. **Note:
   outside PRs are not currently accepted** — see the top of that file.
+
+## Getting a design onto a saber
+
+- [HARDWARE_COMPATIBILITY.md](./HARDWARE_COMPATIBILITY.md) — Per-chassis
+  matrix: which delivery path works on which saber. Check this first.
+- [FLASH_GUIDE.md](./FLASH_GUIDE.md) — Compile + flash walkthrough, mandatory
+  backup step, vendor-board warnings, recovery.
+- [research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md](./research/PROFFIEOS_RUNTIME_PRESET_FORMAT.md)
+  — The SD-card runtime presets format (`presets.ini` / `presets.tmp`).
+- [HARDWARE_FIDELITY_PRINCIPLE.md](./HARDWARE_FIDELITY_PRINCIPLE.md) — The
+  rule that visualizer output must match what real hardware does.
+
+## User guide
+
+- [user-guide/](./user-guide/README.md) — Walkthroughs for modulation
+  routing and ignition styles.
 
 ## Reference guides
 
@@ -41,12 +61,12 @@ reference for what you're doing.
 ## Launch + release planning
 
 - [LAUNCH_PLAN.md](./LAUNCH_PLAN.md) — Release strategy, Reddit/YouTube
-  outreach, post-launch monitoring. Frozen pending launch.
+  outreach, post-launch monitoring (launched 2026-05-01).
 - [LAUNCH_ASSETS.md](./LAUNCH_ASSETS.md) — Copy-paste-ready Reddit post
   drafts, outreach templates, screenshot shot list, response templates.
-  Frozen pending launch.
-- [HARDWARE_VALIDATION_TODO.md](./HARDWARE_VALIDATION_TODO.md) — Pending
-  hardware-validation checklist for WebUSB flash (blocks `v0.11.x` tag).
+- [HARDWARE_VALIDATION_TODO.md](./HARDWARE_VALIDATION_TODO.md) — WebUSB flash
+  hardware-validation checklist (the 2026-04-20 pass is historical — that board
+  is retired).
 - [BRANCH_PROTECTION.md](./BRANCH_PROTECTION.md) — Branch-protection
   setup notes.
 
@@ -61,17 +81,21 @@ reference for what you're doing.
 These are session summaries and proposal docs that are useful as reference but
 may not reflect current state. Check dates before acting on them.
 
-- [SESSION_2026-04-17.md](./SESSION_2026-04-17.md) — Long session summary
+- [SESSION_2026-04-17.md](./archive/SESSION_2026-04-17.md) — Long session summary
   spanning multiple feature sprints.
-- [TESTING_NOTES.md](./TESTING_NOTES.md) — Testing feedback log from
+- [TESTING_NOTES.md](./archive/TESTING_NOTES.md) — Testing feedback log from
   2026-04-14/15. Most items resolved.
-- [NEW_EFFECTS_ROADMAP.md](./NEW_EFFECTS_ROADMAP.md) — Pre-implementation
+- [NEW_EFFECTS_ROADMAP.md](./archive/NEW_EFFECTS_ROADMAP.md) — Pre-implementation
   design for the Phase 4–6 engine expansion (all items now shipped).
-- [UI_REDESIGN_RECOMMENDATIONS.md](./UI_REDESIGN_RECOMMENDATIONS.md) —
+- [UI_REDESIGN_RECOMMENDATIONS.md](./archive/UI_REDESIGN_RECOMMENDATIONS.md) —
   Research-phase proposal for scaling the UI to 82+ animation components
   (Workbench Layout has since shipped).
 - [VISUAL_LAYER_INTEGRATION.md](./VISUAL_LAYER_INTEGRATION.md) — Meta-prompt
   for a past session that integrated the visual design layer.
+- [research/](./research/) — Audits and investigations, including the
+  [2026-09-24 whole-repo audit](./research/AUDIT_2026-09-24_FABLE.md) and the
+  V3.9-BT custom-flash R&D record. Dated; check before acting on them.
+- [archive/](./archive/) — Superseded plans, handoffs, and session logs.
 
 ## Assets
 

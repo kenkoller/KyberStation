@@ -16,17 +16,19 @@
 
 **Free · browser-based · MIT licensed · no accounts · no backend · hobby project · beta**
 
-> **33** styles · **22** effects · **19+13** ignition/retraction animations · **455+** presets · **7** board families · **~8,300** tests
+> **33** styles · **22** effects · **19+13** ignition/retraction animations · **455+** presets · **7** board families · **~8,900** tests
 
-Design and visualize blade styles for many boards. Export flashable ProffieOS firmware for **stock Proffieboard V3** (the compile-and-flash path, documented in [`docs/FLASH_GUIDE.md`](docs/FLASH_GUIDE.md)) and **ProffieOS Runtime Presets** for SAVE_PRESET sabers like 89sabers, Sabertrio, KR Sabers — Phase A (reorder/rename/duplicate factory presets) + Phase C (custom colors and timing via the `advanced` verb), no firmware flash required and bench-validated 2026-05-16 on the 89sabers V3.9-BT. Also: real SD-card files for **Xenopixel V3** (constrained effect subset). For **CFX**, **Golden Harvest**, and other boards, KyberStation generates design-reference notes only — not flashable firmware. **Note:** custom firmware flashing on the 89sabers V3.9-BT (and likely peer BT-equipped vendor chassis) is **not currently reliable** — see [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) for the audit; runtime presets is the sanctioned path for those chassis. KyberStation's in-app deliverability panel tells you exactly what transfers to your saber before you export. Works on any device, phone, tablet, laptop, or desktop. Installable as a PWA.
+Design and visualize blade styles for many boards. Export ProffieOS `config.h` firmware for **stock Proffieboard V3** (the compile-and-flash path, documented in [`docs/FLASH_GUIDE.md`](docs/FLASH_GUIDE.md); not yet bench-confirmed on a stock board, see the [compatibility matrix](docs/HARDWARE_COMPATIBILITY.md)) and **ProffieOS Runtime Presets** for SAVE_PRESET sabers like 89sabers, Sabertrio, KR Sabers — Phase A (reorder/rename/duplicate factory presets) + Phase C (custom colors and timing via the `advanced` verb), no firmware flash required and bench-validated on the 89sabers V3.9-BT (2026-05-16 through 05-19). Also: real SD-card files for **Xenopixel V3** (constrained effect subset). For **CFX**, **Golden Harvest**, and other boards, KyberStation generates design-reference notes only — not flashable firmware. **Note:** custom firmware flashing on the 89sabers V3.9-BT (and likely peer BT-equipped vendor chassis) is **not currently reliable** — see [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) for the audit; runtime presets is the sanctioned path for those chassis. KyberStation's in-app deliverability panel tells you exactly what transfers to your saber before you export. Works on any device, phone, tablet, laptop, or desktop. Installable as a PWA.
 
 > Think "DAW for lightsabers", if GarageBand let you design blade animations instead of music tracks.
 
 > **Beta posture:** This is the first public release. KyberStation v1.0 is a **design tool first**, visual editor + simulator + ProffieOS code generator. To flash a generated config to a real Proffieboard, use the documented `dfu-util` workflow in [`docs/FLASH_GUIDE.md`](docs/FLASH_GUIDE.md). The in-browser WebUSB FlashPanel is shipped as experimental in v1.0; see the Flash section below.
 
+**Docs:** [User Guide](docs/user-guide/README.md) · [Flash Guide](docs/FLASH_GUIDE.md) · [Hardware compatibility](docs/HARDWARE_COMPATIBILITY.md) · [Changelog](CHANGELOG.md)
+
 ## Features
 
-### Blade Engine (150+ source files across packages, ~8,300 tests)
+### Blade Engine (150+ source files across packages, ~8,900 tests)
 
 - **33 blade styles**, Stable, Unstable, Fire, Pulse, Rotoscope, Gradient, Photon, Plasma, Crystal Shatter, Aurora, Cinder, Prism, Painted, Image Scroll, Gravity, Data Stream, Ember, Automata, Helix, Candle, Shatter, Neutron, Torrent, Moire, Cascade, Vortex, Nebula, Tidal, Mirage, Darksaber, Sith Flicker, Blade Charge, Tempo Lock
 - **22 effect types**, Clash, Lockup, Blast, Drag, Melt, Lightning, Stab, Force, Shockwave, Scatter, Fragment, Ripple, Freeze, Overcharge, Bifurcate, Invert, Ghost Echo, Splinter, Coronary, Glitch Matrix, Siphon, Unstable Kylo
@@ -179,6 +181,21 @@ Full step-by-step instructions, vendor-customized-board warnings (89sabers, KR, 
 
 ![KyberStation editor, workbench with blade preview, sidebar, and analysis rail](apps/web/public/og-hero.png)
 
+### v0.23.1: White-out patch (2026-05-17)
+
+Fixes a blade-canvas regression from v0.23.0 where every preset rendered pure white in the editor. See [CHANGELOG](CHANGELOG.md#0231--2026-05-17).
+
+### v0.23.0: Visualizer Upgrade (2026-05-16)
+
+- **3D blade interaction** — orbit the hilt, click to clash, hold for lockup, drag to retract
+- **Post-processing** — bloom, polycarbonate diffusion, and directional motion blur, with performance gating
+- **Hardware Preview on by default** — the editor renders your blade through the template-eval interpreter, which evaluates the same ProffieOS template code the export produces; all 455 gallery presets parse
+
+### v0.22.0 / v0.22.1: Runtime Presets + Polyglot Audit (2026-05-16)
+
+- **ProffieOS Runtime Presets (SD card)** — design presets, write `presets.ini` to your saber's SD card, reboot; no firmware flash. Includes `install_time` auto-discovery and a 16-bit RGB encoding fix found on the bench
+- **Audit sprint** — gallery preset accuracy, multi-board codegen field coverage, and editor messaging, across 16 PRs
+
 ### v0.21.1: Polyglot Release (2026-05-12)
 
 First big consolidation past launch. 118 commits since v0.20.3 spanning the May 2026 sprint cycle:
@@ -292,24 +309,27 @@ Monorepo powered by pnpm workspaces. Engine-first design, the simulation engine 
 
 ```
 kyberstation/
-├── apps/web/              # Next.js 14 web application (App Router)
-│   ├── app/               # Pages: landing, editor, share link handler
-│   ├── components/        # Editor panels, shared UI, layout
-│   ├── hooks/             # useBladeEngine, useAnimationFrame, etc.
-│   ├── stores/            # Zustand stores (13 total: blade, ui, layout, layer, visualization, history, userPreset, presetList, saberProfile, audioFont, audioMixer, accessibility, timeline)
-│   └── lib/               # Config I/O, Kyber Code encoding, IndexedDB
-├── packages/engine/       # Headless blade simulation engine
-│   ├── styles/            # 29 style implementations
-│   ├── effects/           # 21 effect types
-│   ├── ignition/          # 19 ignition + 13 retraction animations
-│   ├── functions/         # ProffieOS function emulators
-│   └── motion/            # IMU/motion simulation
-├── packages/codegen/      # AST-based ProffieOS C++ code generator
-├── packages/presets/      # Character preset library (all eras)
-├── packages/sound/        # Sound font parser, player, filter chain
-├── packages/boards/       # 16 board profiles + compatibility scoring
-├── scripts/               # local-build.mjs, local-dev.mjs (no-Turbo runners)
-└── docs/                  # Architecture, contributing, ProffieOS reference
+├── apps/web/                   # Next.js 14 web application (App Router, static export)
+│   ├── app/                    # Pages: landing, editor, docs, share-link handler
+│   ├── components/             # Editor panels, shared UI, layout shells
+│   ├── hooks/                  # useBladeEngine, useHardwarePreview, useAnimationFrame, etc.
+│   ├── stores/                 # Zustand stores (blade, ui, layout, history, presets, audio, …)
+│   └── lib/                    # Config I/O, Kyber Code encoding, SD-card export, WebUSB flash
+├── packages/engine/            # Headless blade simulation engine
+│   ├── styles/                 # 33 style implementations
+│   ├── effects/                # 22 effect types
+│   ├── ignition/               # 19 ignition + 13 retraction animations
+│   ├── modulation/             # Modulation routing (modulators, bindings, sampler)
+│   ├── templateEval/           # Bridge to the ProffieOS template interpreter
+│   └── motion/                 # Motion simulation
+├── packages/template-eval/     # ProffieOS C++ template parser + per-LED interpreter
+├── packages/codegen/           # AST-based ProffieOS C++ generator, runtime presets.ini + Xenopixel emitters
+├── packages/presets/           # Character preset library (455 presets, all eras)
+├── packages/sound/             # Sound font parser, player, filter chain
+├── packages/boards/            # 16 board profiles + compatibility scoring
+├── packages/hardware-profiles/ # Vendor chassis profiles (pin maps, blade topology, prop defines)
+├── scripts/                    # Local build/dev runners, hardware-test bench scripts
+└── docs/                       # Flash guide, compatibility matrix, user guide, research
 ```
 
 ## Tech Stack

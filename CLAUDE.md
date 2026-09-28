@@ -30,259 +30,48 @@ The app targets the Neopixel lightsaber hobbyist community (cosplay, reenactment
 
 ## Repository Structure
 
+Condensed and generated from the real tree on 2026-09-24. Use `ls` / Glob for file-level detail — per-file listings in this doc went stale fast.
+
 ```
 kyberstation/
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml
-│   │   ├── release.yml
-│   │   └── lint.yml
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   ├── feature_request.md
-│   │   └── style_request.md
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   └── CODEOWNERS
-├── apps/
-│   ├── web/                          # Next.js web app
-│   │   ├── app/
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx              # Landing / app shell
-│   │   │   ├── editor/
-│   │   │   │   └── page.tsx          # Main editor workspace
-│   │   │   ├── gallery/
-│   │   │   │   └── page.tsx          # Redirect stub → /editor?tab=gallery
-│   │   │   └── docs/
-│   │   │       └── page.tsx          # Built-in ProffieOS reference
-│   │   ├── components/
-│   │   │   ├── editor/
-│   │   │   │   ├── BladeCanvas.tsx         # Main visualizer canvas (auto-fit scale)
-│   │   │   │   ├── BladeCanvas3D.tsx       # Three.js 3D hilt + blade
-│   │   │   │   ├── StylePanel.tsx          # Style selection + config
-│   │   │   │   ├── EffectPanel.tsx         # Effect triggers + config
-│   │   │   │   ├── ColorPanel.tsx          # Color picker + palette
-│   │   │   │   ├── MotionSimPanel.tsx      # Swing/angle/twist simulation
-│   │   │   │   ├── TimelinePanel.tsx       # Effect timeline / sequencer
-│   │   │   │   ├── LayerStack.tsx          # Visual layer compositor
-│   │   │   │   ├── CodeOutput.tsx          # Generated code + export (volume default 1500)
-│   │   │   │   ├── PresetGallery.tsx       # Preset gallery + user presets (My Presets)
-│   │   │   │   ├── SoundFontPanel.tsx      # Sound font preview + font library
-│   │   │   │   ├── SaberProfileManager.tsx # Saber profiles + card preset composer
-│   │   │   │   ├── CardWriter.tsx          # SD card ZIP generation + writer
-│   │   │   │   ├── StorageBudgetPanel.tsx  # Flash memory budget estimation
-│   │   │   │   ├── OLEDPreview.tsx         # OLED display preview
-│   │   │   │   ├── VisualizationStack.tsx  # Canvas-based analysis layers
-│   │   │   │   ├── VisualizationToolbar.tsx # Layer toggle icons
-│   │   │   │   ├── PixelDebugOverlay.tsx   # Per-pixel hover/pin/range debug
-│   │   │   │   ├── FullscreenPreview.tsx   # Immersive blade + device motion
-│   │   │   │   └── SmoothSwingPanel.tsx    # V1/V2 SmoothSwing config
-│   │   │   ├── hilt/
-│   │   │   │   ├── HiltSelector.tsx        # Hilt model picker
-│   │   │   │   └── HiltViewer3D.tsx        # 3D hilt renderer
-│   │   │   ├── shared/
-│   │   │   │   ├── Slider.tsx
-│   │   │   │   ├── Select.tsx
-│   │   │   │   ├── Toggle.tsx
-│   │   │   │   ├── Tooltip.tsx
-│   │   │   │   ├── HelpTooltip.tsx         # Hover tooltip for feature help
-│   │   │   │   ├── CollapsibleSection.tsx  # Collapsible panel wrapper
-│   │   │   │   ├── Modal.tsx
-│   │   │   │   ├── Tabs.tsx
-│   │   │   │   ├── Toast.tsx
-│   │   │   │   └── Skeleton.tsx            # Loading skeleton components
-│   │   │   └── layout/
-│   │   │       ├── AppShell.tsx            # Desktop→WorkbenchLayout, mobile/tablet shells
-│   │   │       ├── WorkbenchLayout.tsx     # Desktop horizontal workbench
-│   │   │       ├── ColumnGrid.tsx          # 1-4 col CSS grid + HTML5 DnD
-│   │   │       ├── DraggablePanel.tsx      # Panel wrapper with drag handle
-│   │   │       ├── TabColumnContent.tsx    # 29 panel ID → component mapping
-│   │   │       ├── Toolbar.tsx
-│   │   │       ├── StatusBar.tsx           # Power draw, storage budget, LED count
-│   │   │       ├── PanelLayout.tsx
-│   │   │       ├── UndoRedoButtons.tsx     # Cmd+Z / Cmd+Shift+Z
-│   │   │       ├── ShareButton.tsx         # Kyber Code URL copy
-│   │   │       ├── FPSCounter.tsx          # Color-coded FPS display
-│   │   │       ├── PauseButton.tsx         # Global animation pause toggle
-│   │   │       ├── SettingsModal.tsx       # Perf tiers, Aurebesh, sounds, layouts
-│   │   │       └── ToastContainer.tsx      # Toast notification wrapper
-│   │   ├── hooks/
-│   │   │   ├── useBladeEngine.ts
-│   │   │   ├── useAnimationFrame.ts
-│   │   │   ├── useAudioEngine.ts
-│   │   │   ├── useKeyboardShortcuts.ts
-│   │   │   ├── useDeviceMotion.ts
-│   │   │   ├── useSharedConfig.ts          # Kyber Code share link handler
-│   │   │   ├── useAccessibilityApplier.ts  # OS reduced-motion sync
-│   │   │   ├── useResponsiveColumns.ts     # matchMedia 1440/1200/1024 breakpoints
-│   │   │   ├── usePauseSystem.ts           # isPaused → CSS class + Space key
-│   │   │   ├── useHistoryTracking.ts       # bladeStore → historyStore debounced
-│   │   │   └── useThemeApplier.ts          # CSS custom property theme application
-│   │   ├── stores/
-│   │   │   ├── bladeStore.ts               # Blade config, topology, state (LED default: 144)
-│   │   │   ├── uiStore.ts                  # View mode, tabs, canvas theme, pause, fullscreen
-│   │   │   ├── userPresetStore.ts          # User preset CRUD + IndexedDB
-│   │   │   ├── saberProfileStore.ts        # Saber profiles + card configs
-│   │   │   ├── presetListStore.ts          # Legacy preset list
-│   │   │   ├── audioFontStore.ts           # Sound fonts + library
-│   │   │   ├── audioMixerStore.ts          # EQ/effects mixer state
-│   │   │   ├── accessibilityStore.ts       # A11y settings + OS sync
-│   │   │   ├── layoutStore.ts              # Workbench columns, presets, collapsed panels
-│   │   │   ├── visualizationStore.ts       # 13 analysis layers, debug mode, pins
-│   │   │   └── historyStore.ts             # Undo/redo (50 entries, session-only)
-│   │   ├── lib/
-│   │   │   ├── bladeConfigIO.ts            # Config/collection/card template I/O
-│   │   │   ├── configUrl.ts                # Kyber Code URL encoding
-│   │   │   ├── fontDB.ts                   # IndexedDB schema (Dexie v3)
-│   │   │   ├── cardDetector.ts             # SD card detection
-│   │   │   ├── themeDefinitions.ts         # 30 themes (9 base + 21 extended)
-│   │   │   └── visualizationTypes.ts       # 13 visualization layer definitions
-│   │   └── styles/
-│   │       └── globals.css
-│   └── electron/                     # Future: Electron shell
-│       ├── main.ts
-│       ├── preload.ts
-│       └── serial.ts                 # USB serial to Proffieboard
+├── .github/workflows/        # ci, deploy (GitHub Pages), release, firmware-build, codeql, stale
+├── apps/web/                 # Next.js 14 app (App Router, static export) — the only app today
+│   ├── app/                  # Routes: / (landing), editor, gallery (→ editor tab), docs, features,
+│   │                         #   faq, changelog, community, showcase, s/ + m/ (share links)
+│   ├── components/
+│   │   ├── editor/           # ~70 panels (BladeCanvas, CardWriter, CodeOutput, …) + subdirs:
+│   │   │                     #   audio, blade-style, blade3d, color, combat-effects,
+│   │   │                     #   ignition-retraction, layerstack, my-saber, output, quick,
+│   │   │                     #   routing, template-tree, xenopixel
+│   │   ├── layout/           # AppShell, WorkbenchLayout, Toolbar, StatusBar, …
+│   │   └── gallery/ hilt/ hud/ landing/ marketing/ onboarding/ shared/
+│   ├── hooks/                # useBladeEngine, useHardwarePreview, useAnimationFrame, … (~36)
+│   ├── stores/               # ~27 Zustand stores (bladeStore, uiStore, layoutStore, historyStore, …)
+│   ├── lib/                  # zipExporter, deliverability, bladeConfigIO, configUrl, fontDB,
+│   │                         #   webusb/, sharePack/, crystal/, import/, …
+│   └── tests/                # Vitest + React Testing Library suites
 ├── packages/
-│   ├── engine/                       # Core blade simulation engine
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   ├── BladeEngine.ts        # Main engine class
-│   │   │   ├── LEDArray.ts           # LED buffer management
-│   │   │   ├── styles/               # 29 style implementations
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── StableStyle.ts
-│   │   │   │   ├── UnstableStyle.ts
-│   │   │   │   ├── FireStyle.ts
-│   │   │   │   ├── RotoscopeStyle.ts
-│   │   │   │   ├── PulseStyle.ts
-│   │   │   │   ├── GradientStyle.ts
-│   │   │   │   ├── PhotonStyle.ts
-│   │   │   │   ├── PlasmaStyle.ts
-│   │   │   │   ├── CrystalShatterStyle.ts
-│   │   │   │   ├── AuroraStyle.ts
-│   │   │   │   ├── CinderStyle.ts
-│   │   │   │   ├── PrismStyle.ts
-│   │   │   │   ├── GravityStyle.ts       # Accelerometer-driven pooling
-│   │   │   │   ├── DataStreamStyle.ts    # Traveling data packets
-│   │   │   │   ├── EmberStyle.ts         # Rising ember particles
-│   │   │   │   ├── AutomataStyle.ts      # Rule 30 cellular automaton
-│   │   │   │   ├── HelixStyle.ts         # Double helix sine waves
-│   │   │   │   ├── CandleStyle.ts        # fbm flicker + gust events
-│   │   │   │   ├── ShatterStyle.ts       # Independent shard pulses
-│   │   │   │   ├── NeutronStyle.ts       # Bouncing particle + trail
-│   │   │   │   └── BaseStyle.ts          # Abstract style interface
-│   │   │   ├── effects/              # 21 effect implementations
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── ClashEffect.ts
-│   │   │   │   ├── LockupEffect.ts
-│   │   │   │   ├── BlastEffect.ts
-│   │   │   │   ├── DragEffect.ts
-│   │   │   │   ├── MeltEffect.ts
-│   │   │   │   ├── LightningEffect.ts
-│   │   │   │   ├── StabEffect.ts
-│   │   │   │   ├── ForceEffect.ts
-│   │   │   │   ├── ShockwaveEffect.ts    # Dual Gaussian wavefronts
-│   │   │   │   ├── ScatterEffect.ts      # Random pixel flash burst
-│   │   │   │   ├── FragmentEffect.ts     # Expanding segment gaps
-│   │   │   │   ├── RippleEffect.ts       # Concentric ring waves
-│   │   │   │   ├── FreezeEffect.ts       # Icy crystal spread
-│   │   │   │   ├── OverchargeEffect.ts   # Power surge + flicker
-│   │   │   │   ├── BifurcateEffect.ts    # Warm/cool color split
-│   │   │   │   └── BaseEffect.ts         # Abstract effect interface
-│   │   │   ├── ignition/             # 19 ignition + 13 retraction anims
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── StandardIgnition.ts
-│   │   │   │   ├── ScrollIgnition.ts
-│   │   │   │   ├── SparkIgnition.ts
-│   │   │   │   ├── CenterIgnition.ts
-│   │   │   │   ├── WipeIgnition.ts
-│   │   │   │   ├── StutterIgnition.ts
-│   │   │   │   ├── GlitchIgnition.ts
-│   │   │   │   ├── CrackleIgnition.ts    # Random segment flicker fill
-│   │   │   │   ├── FractureIgnition.ts   # Radiating crack points
-│   │   │   │   ├── FlashFillIgnition.ts  # White flash → color wipe
-│   │   │   │   ├── PulseWaveIgnition.ts  # Sequential building waves
-│   │   │   │   ├── DripUpIgnition.ts     # Fluid upward flow
-│   │   │   │   ├── DissolveRetraction.ts # Random shuffle turn-off
-│   │   │   │   ├── FlickerOutRetraction.ts # Tip-to-base flicker band
-│   │   │   │   ├── UnravelRetraction.ts  # Sinusoidal thread unwind
-│   │   │   │   ├── DrainRetraction.ts    # Gravity drain + meniscus
-│   │   │   │   └── BaseIgnition.ts
-│   │   │   ├── functions/            # ProffieOS function emulators
-│   │   │   │   ├── SwingSpeed.ts
-│   │   │   │   ├── BladeAngle.ts
-│   │   │   │   ├── TwistAngle.ts
-│   │   │   │   ├── SoundLevel.ts
-│   │   │   │   ├── BatteryLevel.ts
-│   │   │   │   ├── Bump.ts
-│   │   │   │   ├── SmoothStep.ts
-│   │   │   │   ├── Sin.ts
-│   │   │   │   ├── Scale.ts
-│   │   │   │   └── Noise.ts
-│   │   │   ├── motion/               # Motion simulation
-│   │   │   │   ├── MotionSimulator.ts
-│   │   │   │   └── IMUEmulator.ts
-│   │   │   └── types.ts
-│   │   ├── tests/
-│   │   └── package.json
-│   ├── codegen/                      # ProffieOS code generator
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   ├── StyleAST.ts           # AST node types
-│   │   │   ├── ASTBuilder.ts         # Config → AST
-│   │   │   ├── CodeEmitter.ts        # AST → ProffieOS C++ code
-│   │   │   ├── ConfigBuilder.ts      # Full config.h generator
-│   │   │   ├── Validator.ts          # Validates generated code
-│   │   │   ├── templates/
-│   │   │   │   ├── colors.ts         # Rgb<>, Mix<>, etc.
-│   │   │   │   ├── layers.ts         # Layers<>, BlastL<>, etc.
-│   │   │   │   ├── transitions.ts    # TrWipe<>, TrFade<>, etc.
-│   │   │   │   ├── functions.ts      # Int<>, Scale<>, etc.
-│   │   │   │   └── wrappers.ts       # StylePtr<>, InOutTrL<>
-│   │   │   └── types.ts
-│   │   ├── tests/
-│   │   └── package.json
-│   ├── presets/                      # Preset library
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   ├── characters/           # Film-accurate character presets
-│   │   │   │   ├── prequel-era.ts
-│   │   │   │   ├── original-trilogy.ts
-│   │   │   │   ├── sequel-era.ts
-│   │   │   │   ├── animated-series.ts
-│   │   │   │   ├── extended-universe.ts
-│   │   │   │   ├── legends.ts
-│   │   │   │   └── creative-community.ts
-│   │   │   ├── templates/
-│   │   │   │   └── card-templates.ts # 4 built-in card preset templates
-│   │   │   └── types.ts
-│   │   └── package.json
-│   └── sound/                        # Sound font utilities
-│       ├── src/
-│       │   ├── index.ts
-│       │   ├── FontParser.ts         # Parse font folder structure
-│       │   ├── FontPlayer.ts         # Web Audio playback engine
-│       │   ├── SmoothSwingEngine.ts  # SmoothSwing pair crossfade sim
-│       │   └── types.ts
-│       ├── tests/
-│       └── package.json
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── CONTRIBUTING.md
-│   ├── DEVELOPMENT.md
-│   ├── PROFFIE_REFERENCE.md          # ProffieOS template reference
-│   └── STYLE_AUTHORING.md            # How to add new styles
-├── turbo.json
-├── pnpm-workspace.yaml
-├── package.json
-├── tsconfig.base.json
-├── .eslintrc.js
-├── .prettierrc
-├── tailwind.config.ts
-├── LICENSE                           # MIT
-├── README.md
-└── CLAUDE.md                         # This file
+│   ├── engine/               # Headless simulation: BladeEngine, LEDArray, styles/ (33),
+│   │                         #   effects/ (22), ignition/ (19 ignition + 13 retraction),
+│   │                         #   modulation/, motion/, templateEval/ (bridge), oled/, storage/
+│   ├── template-eval/        # ProffieOS C++ template parser + per-LED interpreter (Hardware Preview)
+│   ├── codegen/              # ASTBuilder → CodeEmitter → ConfigBuilder (config.h), Validator,
+│   │                         #   emitters/ (runtime presets.ini, Xenopixel, CFX, GH),
+│   │                         #   proffieOSEmitter/ (modulation + button bindings),
+│   │                         #   parser/ (import existing ProffieOS code)
+│   ├── presets/              # 455 gallery presets (characters/, recipes/, templates/)
+│   ├── sound/                # FontParser, FontPlayer, SmoothSwingEngine, filters/
+│   ├── boards/               # 16 board profiles + compatibility scoring
+│   └── hardware-profiles/    # Vendor chassis profiles (89sabers, Sabertrio, …) + codegen adapter
+├── scripts/                  # Local build/serve runners; hardware-test/ bench + recovery scripts
+├── docs/                     # FLASH_GUIDE, HARDWARE_COMPATIBILITY, POST_LAUNCH_BACKLOG,
+│                             #   DEVELOPMENT_PLAN_2026-09, user-guide/, research/, archive/
+├── turbo.json · pnpm-workspace.yaml · tsconfig.base.json · package.json
+├── README.md · CHANGELOG.md · LICENSE (MIT)
+└── CLAUDE.md                 # This file
 ```
+
+There is no Electron app yet; `apps/electron` was a scaffold plan (see memory: Electron companion deferred).
 
 ## Architecture Principles
 
@@ -349,13 +138,13 @@ interface BladeConfig {
   retractionMs: number;
   shimmer: number;       // 0-1
   ledCount: number;      // typically 144
-  [key: string]: any;    // style-specific params
+  [key: string]: unknown; // style-specific params (was `any`; narrowed)
 }
 ```
 
 ## ProffieOS Compatibility Target
 
-- ProffieOS 7.x (latest stable)
+- ProffieOS 7.x (7.12 verified against source; upstream is at 8.x, not yet evaluated)
 - Proffieboard V2.2 and V3.9
 - Fett263 prop file (saber_fett263_buttons.h)
 - Generated code must compile without modification in Arduino IDE with Proffieboard board manager installed
@@ -433,7 +222,7 @@ pnpm build                      # Build all packages + app
 pnpm test                       # Run all tests
 pnpm test:engine                # Engine tests only
 pnpm test:codegen               # Codegen tests only
-pnpm lint                       # ESLint + Prettier check
+pnpm lint                       # placeholder — ESLint not configured yet (plan Phase 2)
 pnpm typecheck                  # TypeScript strict check
 ```
 
@@ -542,35 +331,26 @@ repo (modulation + UI + preset work in separate worktrees, etc.):
 
 ---
 
-## Current State (2026-05-18, post-v0.23.1 + V3.9-BT W2-prime audit merged)
+## Current State (2026-09-24 — re-entry sprint in progress)
 
-Since v0.21.1 "Polyglot Release" (2026-05-12), four release cuts have shipped:
-- **v0.22.0 / v0.22.1** (2026-05-16) — Polyglot Audit Sprint: 16 PRs ([#331](https://github.com/kenkoller/KyberStation/pull/331)–[#346](https://github.com/kenkoller/KyberStation/pull/346)) lifting gallery preset accuracy, multi-board codegen field coverage, and editor messaging integration. Test count moved 3565 → 8605+ across the workspace.
-- **v0.23.0** (2026-05-16) — Visualizer Upgrade Release. Closes `docs/VISUALIZER_UPGRADE_PLAN.md` Phases 2C ([#348](https://github.com/kenkoller/KyberStation/pull/348) — 3D mouse interaction: orbit / click→clash / hold→lockup / drag→retract), 2D ([#349](https://github.com/kenkoller/KyberStation/pull/349) — UnrealBloom + polycarbonate diffusion + directional motion blur, with perf gating), and 3 ([#351](https://github.com/kenkoller/KyberStation/pull/351), [#352](https://github.com/kenkoller/KyberStation/pull/352)). **The headline architectural shift: `BladeEngine.renderMode` default flipped from `'proffie'` parameter-engine to `'template-eval'` interpreter.** What the visualizer renders is now, by construction, the exact LED output codegen-emitted ProffieOS templates will produce on real hardware. Gallery coverage: 0/455 → 455/455 parse cleanly; worst-case p95 = 0.062ms (~260× under 16.67ms budget). Inline render path extraction at [#350](https://github.com/kenkoller/KyberStation/pull/350) is a pure refactor (29 → 54 renderer-golden-hash cases).
-- **v0.23.1** (2026-05-17) — P0 patch ([#357](https://github.com/kenkoller/KyberStation/pull/357)) fixing a CRITICAL blade-canvas white-out regression: `InOutTrLTemplate.getColor()` returned `{255,255,255}` thinking it was encoding alpha, but the Layers compositor reads max-channel as alpha mask and alpha-blended every LED to pure white. Dormant under parameter-engine; v0.23.0's render-mode default flip exposed it on every preset. Fix: `InOutTrL` is a no-op in per-frame render — the visible ignition/retraction wipe is owned by `BladeCanvas` via `engine.extendProgress`. +4 regression tests pin the composite case.
+**Start with [`docs/DEVELOPMENT_PLAN_2026-09.md`](docs/DEVELOPMENT_PLAN_2026-09.md)** — active plan, lane status, and the decisions waiting on Ken. The audit behind it: [`docs/research/AUDIT_2026-09-24_FABLE.md`](docs/research/AUDIT_2026-09-24_FABLE.md). Treat this section as a snapshot and re-verify against the code before relying on it — a shipped feature (Wave 8) stayed listed as "open" here for four months.
 
-**Post-release docs/research arcs (2026-05-17 → 2026-05-18):**
-- [#359](https://github.com/kenkoller/KyberStation/pull/359) Boot-diagnostic flash workflow added to FLASH_GUIDE.md; public hardware compatibility matrix at `docs/HARDWARE_COMPATIBILITY.md`.
-- [#360](https://github.com/kenkoller/KyberStation/pull/360) 89sabers V3.9-BT hardware profile registered (`packages/hardware-profiles/src/profiles/89sabers-v3.9-bt.ts`); vendor profile selector closed.
-- [#361](https://github.com/kenkoller/KyberStation/pull/361), [#362](https://github.com/kenkoller/KyberStation/pull/362) Next-session handoff docs + board-access-constraint note.
-- [#364](https://github.com/kenkoller/KyberStation/pull/364) (2026-05-18) V3.9-BT custom-flash feasibility audit + W2-prime findings + SHA-gated recovery scripts (`restore-factory.sh`, `safe-flash.sh`) + 5 verbatim bench logs.
+**Releases** (detail in CHANGELOG.md). Latest is **v0.23.1** (2026-05-17); no commits between 2026-05-18 and 2026-09-24.
+- **v0.22.0 / v0.22.1** (2026-05-16) — ProffieOS Runtime Presets path ([#325](https://github.com/kenkoller/KyberStation/pull/325)) + Polyglot Audit Sprint ([#331](https://github.com/kenkoller/KyberStation/pull/331)–[#346](https://github.com/kenkoller/KyberStation/pull/346)).
+- **v0.23.0** (2026-05-16) — Visualizer Upgrade: 3D mouse interaction ([#348](https://github.com/kenkoller/KyberStation/pull/348)), post-processing ([#349](https://github.com/kenkoller/KyberStation/pull/349)), render-path extraction ([#350](https://github.com/kenkoller/KyberStation/pull/350)), Hardware Preview default ([#351](https://github.com/kenkoller/KyberStation/pull/351), [#352](https://github.com/kenkoller/KyberStation/pull/352)). The engine constant defaults to `template-eval`, but the app picks the mode in `useBladeEngine` / `useHardwarePreview`; template-eval is reached through the Hardware Preview toggle (default on). Plan Lane C consolidates this.
+- **v0.23.1** (2026-05-17) — P0 white-out fix ([#357](https://github.com/kenkoller/KyberStation/pull/357)).
+- **Wave 8 button-routing sub-tab shipped** 2026-05-16/17 ([#354](https://github.com/kenkoller/KyberStation/pull/354)–[#356](https://github.com/kenkoller/KyberStation/pull/356)) — `apps/web/components/editor/routing/ButtonRoutingSubTab.tsx`, mounted in `GestureControlPanel`.
 
-**Hardware delivery status (2026-05-18):**
-- **Proffieboard V3.9 non-BT** (retired 89sabers chassis): bench DFU recovery is reliable; USB application-mode damage diagnosed (BootROM USB works, app-mode silent). R&D testbed only.
-- **Proffieboard V3.9-BT** (89sabers chassis, current bench saber): custom-firmware flashing blocked 9/9 attempts including 2026-05-18 W2-prime with 89Sabers' actual factory source (H4 toolchain-skew-alone ruled out; H1 Bank-1 vendor-loader gate is the leading hypothesis). **ProffieOS Runtime Presets via PR #325 (SD-card `.ini` + `.tmp` double-buffer) is the sanctioned path** for this chassis. Hardware-validated 2026-05-18 with mixed `builtin` + `advanced` verbs + 16-bit RGB encoding. See [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) for the full audit; experiments A–E proposed in [`docs/research/V39BT_FLASH_NEXT_STEPS.md`](docs/research/V39BT_FLASH_NEXT_STEPS.md).
+**Hardware delivery status:**
+- **Proffieboard V3.9-BT** ("gray board", 89sabers, current bench saber): custom firmware failed **11/11** (2026-05-14 → 05-19) — including 89sabers' own factory source, and custom images on Bank 1, Bank 2 only, and Bank 1 with a 256K link. Only a byte-perfect dual-bank factory restore boots it. **Runtime presets (SD card: `presets.ini` + an identical `presets.tmp`) is the only supported path** — validated with a 22-preset deck on 2026-05-19. R&D record: [`PROFFIE_V39BT_FLASH_FEASIBILITY.md`](docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md) and [`SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md`](docs/research/SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md). Recovery: `scripts/hardware-test/restore-factory.sh` or `backups/w2prime-bis-prep-2026-05-18/recover-grayboard.sh`.
+- **Proffieboard V3.9 non-BT** ("blackboard", retired): DFU works, but no firmware boots in application mode (likely clock-circuit damage). Flash-pipeline test bench only.
+- **Stock Hubbe boards:** untested. No unmodified KyberStation `config.h` export has been bench-confirmed to boot on any board.
 
-**Verified counts (2026-05-18):** ~8,750+ tests across 7 packages (8605+ in v0.22.1; +28 in #348, +40 in #349, +50 in #352, +25 in #350, +4 in #357). 455 presets (`ALL_PRESETS.length`). 33 blade styles, 22 effects, 30 themes. See CHANGELOG.md for per-release manifests.
+**Verified counts (2026-09-24):** 8,909 tests in 256 files, all green (web 3,802 · codegen 3,045 · engine 1,244 · boards 278 · template-eval 231 · presets 138 · hardware-profiles 109 · sound 62); roughly half come from `.each` expansion. 455 presets (`ALL_PRESETS.length`). 33 blade styles, 22 effects, 30 themes. Seven packages under `packages/` plus `apps/web`.
 
-**Top open items** (full list at [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md)):
-1. **Renderer-level golden-hash full BladeCanvas coverage** (M) — engine + card-snapshot drawers shipped, 4 inline render paths extracted via #350 (54 cases); full BladeCanvas pipeline pixel-level coverage still TBD.
-2. **Wave 8 / Prop File Editor Level 2 — button routing sub-tab** (L) — all 8 aux/gesture modulators already registered; remaining is the routing-sub-tab UI + binding shape extensions.
-3. **Visualizer Phase 3 perceptual validation** (S-M) — bench proves codegen → template-eval works at 60fps for all 455 presets; per-frame perceptual diff between parameter-engine and template-eval render not yet automated.
-4. **V3.9-BT W2.2 ST-Link characterization** — BLOCKED on chassis access (board is front-side-only; ST-Link / BOOT0 pads are backside-only). Remaining experimental approach to determine if the H1 vendor-loader gate is real.
-5. **Crystal Vault panel + Re-attunement UI** (M-L) — long-standing design debt.
-6. **Mobile shell migration to Sidebar + MainContent** (M) — needs UX call on drawer vs bottom-sheet at 375px.
-7. **`BladeBloom.tsx` deprecation** (S) — replaced by `BladePostProcessing.tsx` in #349; legacy component soaking.
+**Known gaps being fixed in Phase 1** (see the plan): the app never writes `presets.tmp`; the runtime export ignores blade style (every preset lands as a flat color); lockups render nothing and chosen ignition styles aren't drawn under template-eval; codegen `validateAST` never runs; `pnpm lint` is a placeholder.
 
-Full session handoff prompt at [`docs/archive/NEXT_SESSION_HANDOFF.md`](docs/archive/NEXT_SESSION_HANDOFF.md) — paste verbatim into a fresh Claude Code session.
+**Open work:** Phase 2/3 of the plan, and [`docs/POST_LAUNCH_BACKLOG.md`](docs/POST_LAUNCH_BACKLOG.md).
 
 ---
 

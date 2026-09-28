@@ -72,3 +72,15 @@ scripts/hardware-test/bench-output/
 
 # Perf bench reports — tied to user's hardware (timing data per machine)
 packages/engine/perf/results/
+
+# Local-only material that lives in the main checkout — never publish.
+# (89sabers shared their factory config privately.)
+89sabers Config File/
+Kyberstation Stills and Screengrabs/
+Lightsaber Painter Tests/
+kyberstation-launch/
+builds/
+
+# Self-signed localhost TLS cert for `pnpm serve` (phone motion-sensor testing).
+# Regenerate with scripts/gen-local-certs.sh; certs/openssl.cnf stays tracked.
+certs/*.pem

@@ -14,10 +14,12 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm lint
+      # No lint step: every package's `lint` script is a placeholder echo, so running it
+      # only made CI look like it linted. Restore once ESLint is adopted
+      # (docs/DEVELOPMENT_PLAN_2026-09.md, Phase 2 item 4).
       - run: pnpm test
       - run: pnpm build

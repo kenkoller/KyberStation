@@ -142,6 +142,7 @@ async function main() {
     });
   } else {
     console.log(`\n   No certs found — HTTPS disabled.`);
+    console.log(`   Run \`bash scripts/gen-local-certs.sh\` to enable HTTPS (needed for phone motion sensors).`);
     console.log(`   HTTP only: http://localhost:${port}\n`);
   }
 

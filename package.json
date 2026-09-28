@@ -24,15 +24,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "b",
       "canvas",
-      "d",
-      "e",
-      "esbuild",
-      "i",
-      "l",
-      "s",
-      "u"
+      "esbuild"
     ]
   },
   "devDependencies": {
