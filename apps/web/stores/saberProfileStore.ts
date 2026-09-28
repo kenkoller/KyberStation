@@ -90,6 +90,14 @@ interface SaberProfileStore {
   switchProfile: (id: string) => void;
   updateProfile: (id: string, updates: Partial<Omit<SaberProfile, 'id' | 'createdAt'>>) => void;
   /**
+   * Set the chassis (`hardwareProfileId`) on the active saber profile.
+   * With no active profile yet, first create one named `newProfileName`
+   * and make it active — so the chassis picker and onboarding never
+   * dead-end on "create a profile, then come back". Returns the profile
+   * that now carries the chassis.
+   */
+  assignChassis: (hardwareProfileId: string, newProfileName: string) => SaberProfile;
+  /**
    * Rename a saber profile. Trims whitespace + caps at 100 chars to match
    * the importProfile guard. No-op if the trimmed name is empty (the UI
    * should revert to the previous name in that case).
@@ -286,6 +294,18 @@ export const useSaberProfileStore = create<SaberProfileStore>((set, get) => ({
       saveToStorage(profiles, state.activeProfileId);
       return { profiles };
     }),
+
+  assignChassis: (hardwareProfileId, newProfileName) => {
+    let target = get().getActiveProfile();
+    if (!target) {
+      target = get().createProfile(newProfileName);
+      // createProfile only activates the new profile when no id is set; a
+      // stale activeProfileId (deleted profile) would otherwise win.
+      if (get().activeProfileId !== target.id) get().switchProfile(target.id);
+    }
+    get().updateProfile(target.id, { hardwareProfileId });
+    return get().profiles.find((p) => p.id === target!.id) ?? { ...target, hardwareProfileId };
+  },
 
   renameProfile: (id, name) =>
     set((state) => {

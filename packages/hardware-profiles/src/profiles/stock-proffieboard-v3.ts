@@ -45,6 +45,8 @@ export const STOCK_PROFFIEBOARD_V3: HardwareProfile = {
 
   source: 'vendor-confirmed',
   validatedBy: [],
+  recommendedDelivery: 'compile-flash',
+  customFirmware: 'untested',
   notes:
     "Reference design matching Hubbe's stock Proffieboard V3 dev board. " +
     "KyberStation's hardcoded defaults derive from this profile. " +

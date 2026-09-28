@@ -352,7 +352,14 @@ export function DeliveryRail() {
       </section>
 
       <CardWriterModal isOpen={exportOpen} onClose={() => setExportOpen(false)} />
-      <FlashPanelModal isOpen={flashOpen} onClose={() => setFlashOpen(false)} />
+      <FlashPanelModal
+        isOpen={flashOpen}
+        onClose={() => setFlashOpen(false)}
+        onOpenCardWriter={() => {
+          setFlashOpen(false);
+          setExportOpen(true);
+        }}
+      />
     </>
   );
 }
