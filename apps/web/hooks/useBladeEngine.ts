@@ -6,12 +6,14 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { PARAMETER_DESCRIPTORS } from '@/lib/parameterGroups';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
+import { applyEngineRenderPlan, planEngineRender } from '@/lib/engineRenderMode';
 
 export function useBladeEngine() {
   const engineRef = useRef<BladeEngine | null>(null);
   const config = useBladeStore((s) => s.config);
   const topology = useBladeStore((s) => s.topology);
   const motionSim = useBladeStore((s) => s.motionSim);
+  const hardwarePreview = useUIStore((s) => s.hardwarePreview);
   const { boardId } = useBoardProfile();
 
   // Track previous ignition/retraction/style to detect changes
@@ -82,28 +84,20 @@ export function useBladeEngine() {
     };
   }, []);
 
-  // ── Sync engine render mode when board changes ──
+  // ── Render mode + Hardware Preview template (single source of truth) ──
   //
-  // Xenopixel V3 uses a simplified rendering pipeline: single-style per
-  // blade effect, no multi-layer compositing, no modulation routing, and a
-  // fixed set of 8 blade effects + 10 ignition styles. When the user
-  // switches to a Xenopixel board, the engine resolves styles/ignitions
-  // from the Xeno registries instead of the ProffieOS ones.
+  // `planEngineRender` derives BOTH the render mode and the generated
+  // ProffieOS template from the current board, the HW toggle and the
+  // config; `applyEngineRenderPlan` applies it idempotently. See
+  // `lib/engineRenderMode.ts` for the precedence rules and for the
+  // board-switch race this replaced (the old split between this hook and
+  // `useHardwarePreview` dropped the canvas to the approximation whenever
+  // the user switched between two Proffie boards).
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
-    // Template-eval mode takes priority when the config carries raw
-    // ProffieOS template code (from a Fett263 import or paste). The
-    // engine evaluates the real template per-LED for pixel-accurate
-    // rendering. Falls back to board-based mode when no raw code.
-    const hasRawTemplate = !!config.importedRawCode;
-    const mode = hasRawTemplate
-      ? 'template-eval'
-      : boardId === 'xenopixel'
-        ? 'xenopixel'
-        : 'proffie';
-    engine.setRenderMode(mode);
-  }, [boardId, config.importedRawCode]);
+    applyEngineRenderPlan(engine, planEngineRender(config, { boardId, hardwarePreview }));
+  }, [boardId, hardwarePreview, config]);
 
   // Sync engine topology when store topology changes (e.g. preset load with different ledCount)
   useEffect(() => {

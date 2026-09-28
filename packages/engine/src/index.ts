@@ -1,5 +1,5 @@
 // ─── Core engine ───
-export { BladeEngine } from './BladeEngine.js';
+export { BladeEngine, type EngineRenderPath } from './BladeEngine.js';
 export {
   captureSequence,
   captureSequenceWithStates,

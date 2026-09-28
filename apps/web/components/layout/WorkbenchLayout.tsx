@@ -22,7 +22,6 @@ import { useAurebesh } from '@/hooks/useAurebesh';
 import { usePauseSystem } from '@/hooks/usePauseSystem';
 import { usePresetListSync } from '@/hooks/usePresetListSync';
 import { useHistoryTracking } from '@/hooks/useHistoryTracking';
-import { useHardwarePreview } from '@/hooks/useHardwarePreview';
 import { ShareButton } from '@/components/layout/ShareButton';
 import { UndoRedoButtons } from '@/components/layout/UndoRedoButtons';
 import { HeaderButton } from '@/components/layout/HeaderButton';
@@ -179,7 +178,8 @@ export function WorkbenchLayout() {
   usePauseSystem();
   usePresetListSync();
   useHistoryTracking();
-  useHardwarePreview(engineRef);
+  // Hardware Preview (the "HW" toggle) is resolved inside useBladeEngine
+  // together with the board-driven render mode — see lib/engineRenderMode.
 
   // Platform-aware kbd display: Mac shows ⌘K, Windows / Linux shows Ctrl+K.
   // The keyboard event handlers read (e.metaKey || e.ctrlKey) so either

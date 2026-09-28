@@ -75,6 +75,19 @@ function applyBlendMode(base: RGB, overlay: RGB, opacity: number, _mode: BlendMo
 }
 
 /**
+ * Which pipeline produced the engine's current LED buffer.
+ *
+ * - `'off'`           — blade fully off, buffer cleared
+ * - `'preon'`         — preon flash tint
+ * - `'template-eval'` — the ProffieOS template interpreter
+ * - `'parameter'`     — the parameter-engine approximation (also the
+ *                       fallback when template-eval has no / an
+ *                       unparseable template)
+ * - `'xenopixel'`     — the Xenopixel registries
+ */
+export type EngineRenderPath = 'off' | 'preon' | 'template-eval' | 'parameter' | 'xenopixel';
+
+/**
  * BladeEngine — the core simulation engine for KyberStation.
  *
  * Manages the full blade lifecycle: ignition/retraction state machine,
@@ -109,6 +122,7 @@ export class BladeEngine {
   // preserving the original behavior as a safety net.
   // See docs/research/TEMPLATE_EVAL_PERF_BENCHMARK_2026-05-16.md.
   private _renderMode: RenderMode = 'template-eval';
+  private _lastRenderPath: EngineRenderPath = 'off';
   private _elapsedTime: number = 0;
   /** Preon elapsed ms — counts up while in PREON state, resets on leave. */
   private _preonElapsed: number = 0;
@@ -174,6 +188,16 @@ export class BladeEngine {
 
   get renderMode(): RenderMode {
     return this._renderMode;
+  }
+
+  /**
+   * The pipeline that produced the current LED buffer. Unlike
+   * `renderMode` (the requested mode) this reports what actually ran —
+   * e.g. `'parameter'` when template-eval is requested but no template
+   * is available or it failed to parse.
+   */
+  get lastRenderPath(): EngineRenderPath {
+    return this._lastRenderPath;
   }
 
   /**
@@ -581,6 +605,7 @@ export class BladeEngine {
         }
         // Skip the normal render pipeline — blade is "off" electrically
         // but showing the preon tint.
+        this._lastRenderPath = 'preon';
         return;
       }
     }
@@ -594,6 +619,7 @@ export class BladeEngine {
     // If blade is fully off, just clear and return early
     if (this._state === BladeState.OFF) {
       this.leds.clear();
+      this._lastRenderPath = 'off';
       return;
     }
 
@@ -623,11 +649,14 @@ export class BladeEngine {
           1.0, // batteryLevel — simulated, always full
           0,   // variation — default 0
         );
+        this._lastRenderPath = 'template-eval';
         this.cleanupEffects();
         return;
       }
       // Template parse failed — fall through to approximation pipeline
     }
+
+    this._lastRenderPath = this._renderMode === 'xenopixel' ? 'xenopixel' : 'parameter';
 
     // (d.5) Modulation routing — v1.0 Preview
     //
@@ -775,6 +804,7 @@ export class BladeEngine {
     this._elapsedTime = 0;
     this._timeScale = 1.0;
     this.leds.clear();
+    this._lastRenderPath = 'off';
     this.motion.reset();
     this.segmentDelayProgress.clear();
     // Reset all active effects
