@@ -1,26 +1,26 @@
 {
   "baseColor": {
-    "b": 0,
-    "g": 120,
-    "r": 255
+    "b": 190,
+    "g": 180,
+    "r": 180
   },
   "blastColor": {
-    "b": 255,
+    "b": 180,
     "g": 150,
-    "r": 0
+    "r": 255
   },
   "clashColor": {
-    "b": 255,
+    "b": 150,
     "g": 100,
-    "r": 0
+    "r": 255
   },
   "ignition": "center",
   "ignitionMs": 500,
   "ledCount": 144,
   "lockupColor": {
-    "b": 0,
+    "b": 130,
     "g": 80,
-    "r": 255
+    "r": 220
   },
   "name": "CompanionCube",
   "retraction": "center",

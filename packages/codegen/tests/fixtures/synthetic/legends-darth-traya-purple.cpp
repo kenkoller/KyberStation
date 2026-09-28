@@ -18,7 +18,7 @@ StylePtr<
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<100,20,150>
+        Rgb<255,180,80>
       >,
       TrInstant,
       TrFade<400>,
@@ -54,8 +54,8 @@ StylePtr<
       SaberBase::LOCKUP_MELT
     >,
     InOutTrL<
-      TrWipeIn<400>,
-      TrWipeIn<550>
+      TrFade<400>,
+      TrFade<550>
     >
   >
 >()

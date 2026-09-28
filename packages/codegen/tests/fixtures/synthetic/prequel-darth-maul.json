@@ -1,7 +1,7 @@
 {
   "baseColor": {
-    "b": 0,
-    "g": 0,
+    "b": 5,
+    "g": 15,
     "r": 255
   },
   "blastColor": {
@@ -19,10 +19,8 @@
     "g": 80,
     "r": 255
   },
-  "fireSize": 0.6,
-  "heatSpread": 0.7,
-  "ignition": "center",
-  "ignitionMs": 300,
+  "ignition": "standard",
+  "ignitionMs": 280,
   "ledCount": 144,
   "lockupColor": {
     "b": 0,
@@ -30,10 +28,9 @@
     "r": 255
   },
   "name": "DarthMaul",
-  "retraction": "center",
-  "retractionMs": 350,
-  "shimmer": 0.15,
-  "sparkRate": 0.5,
-  "style": "fire",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.05,
+  "style": "stable",
   "swingFxIntensity": 0.45
 }

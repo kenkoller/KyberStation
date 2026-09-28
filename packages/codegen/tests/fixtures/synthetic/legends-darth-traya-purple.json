@@ -15,9 +15,9 @@
     "r": 200
   },
   "dragColor": {
-    "b": 150,
-    "g": 20,
-    "r": 100
+    "b": 80,
+    "g": 180,
+    "r": 255
   },
   "driftSpeed": 0.4,
   "ignition": "drip-up",
@@ -35,6 +35,5 @@
   "shimmer": 0.25,
   "style": "aurora",
   "swingFxIntensity": 0.3,
-  "telekinetic": true,
   "waveCount": 6
 }

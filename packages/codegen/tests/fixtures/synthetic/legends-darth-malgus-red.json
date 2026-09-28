@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 5,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 25,
+    "g": 55,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 140,
+    "g": 180,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 120,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 45,
+    "g": 80,
+    "r": 250
+  },
+  "name": "DarthMalgus",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.14,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 210,
+    "r": 160
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "name": "Mjolnir",
+  "noiseLevel": 0.3,
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.5,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

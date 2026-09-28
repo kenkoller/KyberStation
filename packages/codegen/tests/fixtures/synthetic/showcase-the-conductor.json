@@ -1,0 +1,181 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 200,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 250,
+    "r": 255
+  },
+  "colorHueShiftSpeed": 0.4,
+  "dragColor": {
+    "b": 240,
+    "g": 220,
+    "r": 100
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 220,
+        "g": 80,
+        "r": 0
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 200,
+        "r": 0
+      },
+      "position": 0.25
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 240,
+        "r": 200
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 250,
+        "g": 220,
+        "r": 100
+      },
+      "position": 0.75
+    },
+    {
+      "color": {
+        "b": 230,
+        "g": 100,
+        "r": 0
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "summon",
+  "ignitionMs": 540,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 200
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-conductor-binding-1",
+        "label": "sound → hue cycle (primary)",
+        "source": "sound",
+        "target": "colorHueShiftSpeed"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-conductor-binding-2",
+        "label": "sound → saturation pulse",
+        "source": "sound",
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-conductor-binding-3",
+        "label": "sound → shimmer overlay",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-conductor-binding-4",
+        "label": "sound → base.b cyan flash",
+        "source": "sound",
+        "target": "baseColor.b"
+      },
+      {
+        "amount": 0.2,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0003
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.4
+            }
+          },
+          "source": "sin(time * 0.0003) * 0.3 + 0.4"
+        },
+        "id": "showcase-conductor-binding-5",
+        "label": "fx: 21s baseline drift",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-conductor-binding-6",
+        "label": "swing → hue accelerate",
+        "source": "swing",
+        "target": "colorHueShiftSpeed"
+      }
+    ],
+    "version": 1
+  },
+  "name": "TheConductor",
+  "retraction": "unravel",
+  "retractionMs": 680,
+  "shimmer": 0.18,
+  "style": "aurora",
+  "swingFxIntensity": 0.55
+}

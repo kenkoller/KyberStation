@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 20,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 80,
+    "g": 140,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 60,
+    "r": 255
+  },
+  "name": "Rage",
+  "noiseLevel": 0.4,
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.6,
+  "style": "fire",
+  "swingFxIntensity": 0.6
+}

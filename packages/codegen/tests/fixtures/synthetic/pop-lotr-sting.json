@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 210,
+    "r": 150
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 220,
+  "ledCount": 72,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "name": "Sting",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.1,
+  "style": "pulse",
+  "swingFxIntensity": 0.25
+}

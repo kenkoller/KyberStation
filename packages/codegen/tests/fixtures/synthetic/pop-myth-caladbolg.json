@@ -1,0 +1,90 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 180,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 50,
+        "g": 50,
+        "r": 255
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 40,
+        "g": 160,
+        "r": 255
+      },
+      "position": 0.17
+    },
+    {
+      "color": {
+        "b": 60,
+        "g": 240,
+        "r": 255
+      },
+      "position": 0.34
+    },
+    {
+      "color": {
+        "b": 80,
+        "g": 220,
+        "r": 60
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 160,
+        "r": 60
+      },
+      "position": 0.67
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 80,
+        "r": 140
+      },
+      "position": 0.84
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 80,
+        "r": 220
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "wipe",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 220,
+    "r": 255
+  },
+  "name": "Caladbolg",
+  "noiseLevel": 0.05,
+  "retraction": "unravel",
+  "retractionMs": 700,
+  "shimmer": 0.18,
+  "style": "gradient",
+  "swingFxIntensity": 0.4
+}

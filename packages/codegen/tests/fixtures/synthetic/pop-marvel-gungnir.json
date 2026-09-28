@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 60,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 120,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 80,
+    "g": 215,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 160,
+    "r": 200
+  },
+  "name": "Gungnir",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.25
+}

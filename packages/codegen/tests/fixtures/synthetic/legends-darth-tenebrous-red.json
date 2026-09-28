@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 60,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 255
+  },
+  "name": "DarthTenebrous",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.07,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

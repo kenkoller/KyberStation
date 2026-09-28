@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 5
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 200,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 180,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 340,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 60,
+    "r": 80
+  },
+  "name": "BlackRanger",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 440,
+  "shimmer": 0,
+  "style": "darksaber",
+  "swingFxIntensity": 0.25
+}

@@ -14,7 +14,7 @@
     "g": 100,
     "r": 0
   },
-  "ignition": "center",
+  "ignition": "scroll",
   "ignitionMs": 500,
   "ledCount": 144,
   "lockupColor": {
@@ -23,7 +23,7 @@
     "r": 150
   },
   "name": "FireAndIce",
-  "retraction": "center",
+  "retraction": "fadeout",
   "retractionMs": 500,
   "shimmer": 0.3,
   "style": "gradient"

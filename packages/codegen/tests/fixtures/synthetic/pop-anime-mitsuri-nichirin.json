@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 210,
+    "g": 170,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 250,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 230,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 180,
+    "g": 130,
+    "r": 240
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 200,
+    "r": 255
+  },
+  "name": "MitsuriNichirin",
+  "noiseLevel": 0.05,
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.55
+}

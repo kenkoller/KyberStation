@@ -15,11 +15,10 @@
     "r": 230
   },
   "dragColor": {
-    "b": 180,
-    "g": 0,
-    "r": 150
+    "b": 100,
+    "g": 200,
+    "r": 255
   },
-  "facets": 6,
   "ignition": "spark",
   "ignitionMs": 300,
   "ledCount": 144,
@@ -31,8 +30,7 @@
   "name": "MaraJadePurple",
   "retraction": "standard",
   "retractionMs": 360,
-  "rotationSpeed": 1.5,
   "shimmer": 0.1,
-  "style": "prism",
+  "style": "stable",
   "swingFxIntensity": 0.35
 }

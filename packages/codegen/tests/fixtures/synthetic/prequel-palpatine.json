@@ -1,7 +1,7 @@
 {
   "baseColor": {
-    "b": 0,
-    "g": 0,
+    "b": 15,
+    "g": 25,
     "r": 255
   },
   "blastColor": {
@@ -15,12 +15,12 @@
     "r": 255
   },
   "dragColor": {
-    "b": 200,
-    "g": 0,
-    "r": 200
+    "b": 0,
+    "g": 80,
+    "r": 255
   },
-  "ignition": "crackle",
-  "ignitionMs": 220,
+  "ignition": "standard",
+  "ignitionMs": 260,
   "ledCount": 144,
   "lockupColor": {
     "b": 0,
@@ -28,10 +28,10 @@
     "r": 255
   },
   "name": "Sidious",
-  "noiseLevel": 0.08,
-  "retraction": "drain",
-  "retractionMs": 260,
-  "shimmer": 0.18,
-  "style": "cinder",
-  "swingFxIntensity": 0.35
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 280,
+  "shimmer": 0.04,
+  "style": "stable",
+  "swingFxIntensity": 0.25
 }

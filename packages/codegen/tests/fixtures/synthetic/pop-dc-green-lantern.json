@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 100,
+    "g": 255,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 255,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 255,
+    "r": 150
+  },
+  "name": "Willpower",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.25
+}

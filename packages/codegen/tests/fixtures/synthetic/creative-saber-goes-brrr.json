@@ -10,9 +10,9 @@
     "r": 100
   },
   "clashColor": {
-    "b": 0,
+    "b": 100,
     "g": 255,
-    "r": 0
+    "r": 255
   },
   "ignition": "crackle",
   "ignitionMs": 150,

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 70,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 255
+  },
+  "name": "DarthBaras",
+  "noiseLevel": 0.08,
+  "retraction": "fadeout",
+  "retractionMs": 480,
+  "shimmer": 0.2,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

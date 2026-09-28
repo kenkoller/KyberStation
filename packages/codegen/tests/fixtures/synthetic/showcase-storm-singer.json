@@ -1,0 +1,138 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 200,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "colorHueShiftSpeed": 0.3,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 220,
+        "g": 80,
+        "r": 0
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 200,
+        "r": 0
+      },
+      "position": 0.3
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 240,
+        "r": 200
+      },
+      "position": 0.7
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 200,
+        "r": 80
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "summon",
+  "ignitionMs": 480,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-storm-singer-binding-1",
+        "label": "sound → hue cycle speed",
+        "source": "sound",
+        "target": "colorHueShiftSpeed"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0003
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.5
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.5
+            }
+          },
+          "source": "sin(time * 0.0003) * 0.5 + 0.5"
+        },
+        "id": "showcase-storm-singer-binding-2",
+        "label": "fx: slow background hue drift (~21s)",
+        "source": null,
+        "target": "colorHueShiftSpeed"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-storm-singer-binding-3",
+        "label": "swing → shimmer",
+        "source": "swing",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "StormSinger",
+  "retraction": "unravel",
+  "retractionMs": 600,
+  "shimmer": 0.18,
+  "style": "aurora",
+  "swingFxIntensity": 0.55
+}

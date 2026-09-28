@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 220,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "name": "NeutronDrift",
+  "retraction": "fadeout",
+  "retractionMs": 500,
+  "shimmer": 0.1,
+  "style": "neutron",
+  "swingFxIntensity": 0.65
+}

@@ -26,5 +26,5 @@
   "retraction": "fadeout",
   "retractionMs": 800,
   "shimmer": 0.45,
-  "style": "aurora"
+  "style": "dataStream"
 }

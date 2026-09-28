@@ -1,6 +1,16 @@
 StylePtr<
   Layers<
-    Rainbow,
+    Stripes<
+      3000,
+      -2000,
+      Rgb<220,220,255>,
+      Mix<
+        Sin<Int<5>>,
+        Rgb<220,220,255>,
+        White
+      >,
+      Rgb<220,220,255>
+    >,
     BlastL<
       Rgb<255,200,255>
     >,

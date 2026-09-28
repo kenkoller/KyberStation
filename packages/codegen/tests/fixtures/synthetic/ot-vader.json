@@ -1,8 +1,8 @@
 {
   "baseColor": {
-    "b": 0,
-    "g": 0,
-    "r": 200
+    "b": 10,
+    "g": 10,
+    "r": 230
   },
   "blastColor": {
     "b": 200,
@@ -29,9 +29,9 @@
   },
   "name": "Vader",
   "noiseLevel": 0.03,
-  "retraction": "drain",
-  "retractionMs": 500,
+  "retraction": "standard",
+  "retractionMs": 400,
   "shimmer": 0.06,
-  "style": "stable",
+  "style": "rotoscope",
   "swingFxIntensity": 0.2
 }

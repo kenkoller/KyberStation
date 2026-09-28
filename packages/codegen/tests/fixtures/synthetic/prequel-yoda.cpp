@@ -1,13 +1,12 @@
 StylePtr<
   Layers<
-    Pulsing<
-      Rgb<0,235,20>,
+    AudioFlicker<
+      Rgb<50,230,20>,
       Mix<
-        Int<8000>,
-        Rgb<0,235,20>,
+        Int<16384>,
+        Rgb<50,230,20>,
         White
-      >,
-      3000
+      >
     >,
     BlastL<
       Rgb<200,255,200>

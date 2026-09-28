@@ -1,8 +1,8 @@
 {
   "baseColor": {
     "b": 255,
-    "g": 160,
-    "r": 0
+    "g": 100,
+    "r": 30
   },
   "blastColor": {
     "b": 255,
@@ -27,7 +27,7 @@
     "g": 200,
     "r": 140
   },
-  "name": "CalKestisCyan",
+  "name": "CalKestisBlue",
   "retraction": "standard",
   "retractionMs": 380,
   "shimmer": 0.1,

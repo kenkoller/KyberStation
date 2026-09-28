@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 120,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 140,
+    "r": 200
+  },
+  "ignition": "stab",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 180,
+    "r": 255
+  },
+  "name": "TridentOfPower",
+  "noiseLevel": 0.06,
+  "pulseSpeed": 0.6,
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.15,
+  "style": "pulse",
+  "swingFxIntensity": 0.4
+}

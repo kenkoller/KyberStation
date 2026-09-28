@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 200,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 255,
+    "r": 180
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 230,
+    "r": 100
+  },
+  "name": "GrassSword",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.08,
+  "style": "pulse",
+  "swingFxIntensity": 0.22
+}

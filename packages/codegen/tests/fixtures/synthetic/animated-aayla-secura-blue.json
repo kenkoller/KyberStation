@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 100,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 215,
+    "r": 170
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 80,
+    "g": 190,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 130
+  },
+  "name": "AaylaSecura",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.14,
+  "style": "photon",
+  "swingFxIntensity": 0.45
+}

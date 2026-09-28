@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 15,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 60,
+    "g": 90,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 210,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 130,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 255
+  },
+  "name": "JaesaDark",
+  "retraction": "fadeout",
+  "retractionMs": 320,
+  "shimmer": 0.22,
+  "style": "fire",
+  "swingFxIntensity": 0.55
+}

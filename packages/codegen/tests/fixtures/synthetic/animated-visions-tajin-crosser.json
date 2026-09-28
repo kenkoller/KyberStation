@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 100,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 180,
+    "r": 130
+  },
+  "name": "TajinCrosser",
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

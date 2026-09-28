@@ -27,6 +27,6 @@
   "retraction": "shatter",
   "retractionMs": 300,
   "rotationSpeed": 3,
-  "shimmer": 0.15,
+  "shimmer": 0.5,
   "style": "prism"
 }

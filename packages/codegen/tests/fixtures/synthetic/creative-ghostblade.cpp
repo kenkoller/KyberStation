@@ -1,13 +1,12 @@
 StylePtr<
   Layers<
-    Pulsing<
-      Rgb<30,40,60>,
-      Mix<
-        Int<8000>,
+    BrownNoiseFlicker<
+      Gradient<
         Rgb<30,40,60>,
-        White
+        Rgb<120,126,138>
       >,
-      3000
+      White,
+      30
     >,
     BlastL<
       Rgb<200,220,255>

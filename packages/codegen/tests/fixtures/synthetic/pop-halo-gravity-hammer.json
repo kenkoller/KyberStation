@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 30,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 120,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 150,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 10,
+    "g": 20,
+    "r": 160
+  },
+  "ignition": "stutter",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 230
+  },
+  "name": "GravityHammer",
+  "noiseLevel": 0.1,
+  "retraction": "drain",
+  "retractionMs": 500,
+  "shimmer": 0.35,
+  "style": "fire",
+  "swingFxIntensity": 0.7
+}

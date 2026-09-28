@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 90,
+    "g": 190,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 160,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 50,
+    "g": 140,
+    "r": 200
+  },
+  "ignition": "scroll",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 210,
+    "r": 255
+  },
+  "name": "HermioneVineWand",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

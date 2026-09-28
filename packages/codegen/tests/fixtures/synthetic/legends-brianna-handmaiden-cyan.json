@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 150
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 245,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 80,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 250,
+    "g": 220,
+    "r": 100
+  },
+  "name": "Brianna",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.45
+}

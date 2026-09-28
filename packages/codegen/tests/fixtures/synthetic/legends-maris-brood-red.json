@@ -14,7 +14,11 @@
     "g": 195,
     "r": 255
   },
-  "gradientSpeed": 1,
+  "dragColor": {
+    "b": 0,
+    "g": 120,
+    "r": 255
+  },
   "ignition": "wipe",
   "ignitionMs": 220,
   "ledCount": 100,
@@ -26,6 +30,6 @@
   "name": "MarisBrood",
   "retraction": "standard",
   "retractionMs": 280,
-  "shimmer": 0.18,
-  "style": "gradient"
+  "shimmer": 0.14,
+  "style": "stable"
 }

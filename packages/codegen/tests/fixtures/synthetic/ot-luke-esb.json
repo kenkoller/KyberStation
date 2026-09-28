@@ -28,9 +28,10 @@
     "r": 180
   },
   "name": "LukeESB",
+  "noiseLevel": 0.02,
   "retraction": "standard",
   "retractionMs": 400,
   "shimmer": 0.04,
-  "style": "stable",
-  "swingFxIntensity": 0.3
+  "style": "rotoscope",
+  "swingFxIntensity": 0.35
 }

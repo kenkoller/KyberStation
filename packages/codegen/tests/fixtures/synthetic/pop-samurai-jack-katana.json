@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 250,
+    "r": 255
+  },
+  "name": "KatanaRighteousness",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 560,
+  "shimmer": 0.12,
+  "style": "aurora",
+  "swingFxIntensity": 0.3
+}

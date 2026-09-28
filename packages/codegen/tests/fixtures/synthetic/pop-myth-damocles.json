@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 180,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 200,
+    "r": 255
+  },
+  "name": "Damocles",
+  "retraction": "drain",
+  "retractionMs": 1100,
+  "shimmer": 0.14,
+  "style": "gravity",
+  "swingFxIntensity": 0.5
+}

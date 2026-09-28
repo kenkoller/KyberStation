@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 105,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 210,
+    "r": 170
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 210
+  },
+  "dragColor": {
+    "b": 75,
+    "g": 195,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 135
+  },
+  "name": "AgenKolar",
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.42
+}

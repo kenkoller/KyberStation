@@ -1,7 +1,20 @@
 // ─── BladeCanvas ↔ bladeRenderMetrics alignment tests ──────────────────────
 //
-// Verifies that BladeCanvas's inline geometry formulas and the shared
-// `computeBladeRenderMetrics` helper produce identical blade start
+// WHAT THIS FILE ACTUALLY VERIFIES (read before counting it as coverage):
+// it checks `computeBladeRenderMetrics` (lib/bladeRenderMetrics.ts) against
+// a COPY of BladeCanvas's horizontal geometry formula that is pinned inside
+// this file (`bladeCanvasGeometry` below), across a 375-case input matrix.
+// BladeCanvas.tsx is never imported or rendered. The formula lives in
+// useCallback closures inside the component, and the component keeps its
+// own private BLADE_LEN / MAX_BLADE_INCHES constants, so an edit to either
+// in BladeCanvas.tsx would NOT fail these tests. They pin the helper's math
+// to the formula as it was written here — helper self-consistency, not
+// component coverage. Real coverage would need BladeCanvas to import its
+// geometry (constants plus a pure function) from lib/bladeRenderMetrics.ts
+// so this file could compare against the shared code instead of a copy.
+//
+// Original intent: BladeCanvas's inline geometry and the shared
+// `computeBladeRenderMetrics` helper should produce identical blade start
 // positions and blade widths for the same inputs. These two code paths
 // must stay in lock-step so the BLADE PREVIEW, PIXEL STRIP, and
 // ANALYSIS RAIL all render their per-LED content at the same horizontal

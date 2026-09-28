@@ -15,12 +15,11 @@
     "r": 220
   },
   "dragColor": {
-    "b": 200,
-    "g": 0,
-    "r": 120
+    "b": 80,
+    "g": 180,
+    "r": 255
   },
-  "flicker": 0.5,
-  "ignition": "flash-fill",
+  "ignition": "standard",
   "ignitionMs": 320,
   "ledCount": 144,
   "lockupColor": {
@@ -29,10 +28,9 @@
     "r": 180
   },
   "name": "DarthRevan",
-  "noiseLevel": 0.12,
-  "retraction": "dissolve",
+  "retraction": "standard",
   "retractionMs": 380,
-  "shimmer": 0.3,
-  "style": "unstable",
-  "swingFxIntensity": 0.45
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.4
 }

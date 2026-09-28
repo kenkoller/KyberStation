@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 180,
+    "r": 100
+  },
+  "ignition": "spark",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 220,
+    "r": 255
+  },
+  "name": "ThreeWishesSora",
+  "noiseLevel": 0.05,
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.12,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

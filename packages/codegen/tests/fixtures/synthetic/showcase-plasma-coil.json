@@ -1,0 +1,146 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 100,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 255
+  },
+  "colorHueShiftSpeed": 0.25,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 200,
+        "g": 0,
+        "r": 120
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 100,
+        "r": 200
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 220,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "glitch",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 240
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-plasma-binding-1",
+        "label": "sound → coil saturation bite",
+        "source": "sound",
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.0008
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.25
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.2
+            }
+          },
+          "source": "abs(sin(time * 0.0008)) * 0.25 + 0.2"
+        },
+        "id": "showcase-plasma-binding-2",
+        "label": "fx: 7.8s breath floor",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-plasma-binding-3",
+        "label": "swing → hue accelerate",
+        "source": "swing",
+        "target": "colorHueShiftSpeed"
+      },
+      {
+        "amount": 0.9,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-plasma-binding-4",
+        "label": "clash → coil discharge",
+        "source": "clash",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "PlasmaCoil",
+  "retraction": "flickerOut",
+  "retractionMs": 540,
+  "shimmer": 0.28,
+  "style": "plasma",
+  "swingFxIntensity": 0.6
+}

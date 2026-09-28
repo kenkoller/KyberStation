@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 20,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 130,
+    "g": 140,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 90,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 70,
+    "g": 60,
+    "r": 230
+  },
+  "name": "RealityStone",
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.4,
+  "style": "unstable",
+  "swingFxIntensity": 0.4
+}

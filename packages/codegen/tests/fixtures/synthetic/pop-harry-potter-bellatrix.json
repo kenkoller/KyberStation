@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 30,
+    "r": 160
+  },
+  "blastColor": {
+    "b": 160,
+    "g": 140,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 140,
+    "g": 100,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 60,
+    "g": 20,
+    "r": 120
+  },
+  "ignition": "crackle",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 110,
+    "g": 60,
+    "r": 200
+  },
+  "name": "BellatrixCruciatus",
+  "noiseLevel": 0.12,
+  "retraction": "flickerOut",
+  "retractionMs": 380,
+  "shimmer": 0.4,
+  "style": "unstable",
+  "swingFxIntensity": 0.65
+}

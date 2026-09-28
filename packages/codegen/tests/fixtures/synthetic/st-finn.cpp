@@ -12,7 +12,7 @@ StylePtr<
       Rgb<255,255,255>
     >,
     SimpleClashL<
-      Rgb<200,220,255>,
+      Rgb<190,215,255>,
       40
     >,
     LockupTrL<

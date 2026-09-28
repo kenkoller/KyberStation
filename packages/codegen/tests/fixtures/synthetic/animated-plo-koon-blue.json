@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 120,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 150
+  },
+  "name": "PloKoon",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

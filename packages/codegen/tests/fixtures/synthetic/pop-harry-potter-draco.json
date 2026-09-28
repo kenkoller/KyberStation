@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 150,
+    "g": 180,
+    "r": 140
+  },
+  "blastColor": {
+    "b": 210,
+    "g": 230,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 225,
+    "g": 240,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 110,
+    "g": 140,
+    "r": 100
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 175,
+    "g": 200,
+    "r": 170
+  },
+  "name": "DracoHawthornWand",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.18,
+  "style": "photon",
+  "swingFxIntensity": 0.35
+}

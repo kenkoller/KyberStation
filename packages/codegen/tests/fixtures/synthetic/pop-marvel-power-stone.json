@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 50,
+    "r": 170
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 150,
+    "r": 220
+  },
+  "name": "PowerStone",
+  "noiseLevel": 0.3,
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.55,
+  "style": "unstable",
+  "swingFxIntensity": 0.55
+}

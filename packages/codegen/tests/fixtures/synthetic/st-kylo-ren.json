@@ -20,6 +20,12 @@
     "g": 100,
     "r": 255
   },
+  "effects": [
+    {
+      "bind": "clash",
+      "type": "bifurcate"
+    }
+  ],
   "ignition": "crackle",
   "ignitionMs": 500,
   "ledCount": 144,
@@ -33,7 +39,7 @@
   "quillonLength": 48,
   "retraction": "flickerOut",
   "retractionMs": 400,
-  "shimmer": 0.4,
+  "shimmer": 0.6,
   "stutterCount": 4,
   "style": "unstable",
   "swingFxIntensity": 0.5,

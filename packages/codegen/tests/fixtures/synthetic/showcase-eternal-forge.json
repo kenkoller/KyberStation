@@ -1,0 +1,232 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 90,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "blastPosition": 0.18,
+  "blastRadius": 0.12,
+  "clashColor": {
+    "b": 220,
+    "g": 250,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 70,
+    "r": 255
+  },
+  "dragPosition": 0.82,
+  "dragRadius": 0.14,
+  "fireSize": 0.7,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 0,
+        "g": 50,
+        "r": 255
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 30,
+        "g": 130,
+        "r": 255
+      },
+      "position": 0.3
+    },
+    {
+      "color": {
+        "b": 80,
+        "g": 200,
+        "r": 255
+      },
+      "position": 0.6
+    },
+    {
+      "color": {
+        "b": 180,
+        "g": 240,
+        "r": 255
+      },
+      "position": 0.9
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 250,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "crackle",
+  "ignitionMs": 620,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 180,
+    "r": 255
+  },
+  "lockupPosition": 0.42,
+  "lockupRadius": 0.18,
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-forge-binding-1",
+        "label": "ignition → shimmer flare",
+        "source": "ignition",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-forge-binding-2",
+        "label": "retraction → shimmer cool",
+        "source": "retraction",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-forge-binding-3",
+        "label": "lockup → sustained intensity",
+        "source": "lockup",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-forge-binding-4",
+        "label": "clash → shimmer spike",
+        "source": "clash",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "args": [
+              {
+                "kind": "binary",
+                "lhs": {
+                  "kind": "literal",
+                  "value": 1
+                },
+                "op": "-",
+                "rhs": {
+                  "id": "battery",
+                  "kind": "var"
+                }
+              },
+              {
+                "kind": "literal",
+                "value": 0
+              },
+              {
+                "kind": "literal",
+                "value": 0.4
+              }
+            ],
+            "fn": "clamp",
+            "kind": "call"
+          },
+          "source": "clamp(1 - battery, 0, 0.4)"
+        },
+        "id": "showcase-forge-binding-5",
+        "label": "fx: battery dim",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.25,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.001
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.2
+            }
+          },
+          "source": "abs(sin(time * 0.001)) * 0.3 + 0.2"
+        },
+        "id": "showcase-forge-binding-6",
+        "label": "fx: 6.3s heartbeat floor",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-forge-binding-7",
+        "label": "sound → saturation pulse",
+        "source": "sound",
+        "target": "colorSaturationPulse"
+      }
+    ],
+    "version": 1
+  },
+  "name": "EternalForge",
+  "noiseLevel": 0.12,
+  "retraction": "unravel",
+  "retractionMs": 800,
+  "shimmer": 0.28,
+  "style": "fire",
+  "swingFxIntensity": 0.6
+}

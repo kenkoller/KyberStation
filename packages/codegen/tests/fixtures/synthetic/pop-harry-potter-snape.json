@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 150,
+    "g": 140,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 220,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 230,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 110,
+    "g": 100,
+    "r": 40
+  },
+  "ignition": "standard",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 190,
+    "g": 180,
+    "r": 120
+  },
+  "name": "SnapePatronus",
+  "retraction": "dissolve",
+  "retractionMs": 500,
+  "shimmer": 0.3,
+  "style": "aurora",
+  "swingFxIntensity": 0.3
+}

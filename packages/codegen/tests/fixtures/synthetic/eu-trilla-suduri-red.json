@@ -26,5 +26,5 @@
   "retraction": "center",
   "retractionMs": 280,
   "shimmer": 0.16,
-  "style": "stable"
+  "style": "unstable"
 }

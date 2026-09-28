@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 220,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 80,
+    "g": 220,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 60,
+    "g": 180,
+    "r": 220
+  },
+  "ignition": "summon",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 230,
+    "r": 255
+  },
+  "name": "KingdomKey",
+  "noiseLevel": 0.04,
+  "retraction": "fadeout",
+  "retractionMs": 500,
+  "shimmer": 0.12,
+  "style": "aurora",
+  "swingFxIntensity": 0.3
+}

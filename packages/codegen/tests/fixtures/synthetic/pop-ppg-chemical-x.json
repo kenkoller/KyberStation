@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 240,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 255
+  },
+  "name": "ChemicalX",
+  "noiseLevel": 0.06,
+  "retraction": "standard",
+  "retractionMs": 540,
+  "shimmer": 0.18,
+  "style": "aurora",
+  "swingFxIntensity": 0.3
+}

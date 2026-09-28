@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 220,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 250,
+    "g": 240,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 230,
+    "r": 255
+  },
+  "name": "MasterShake",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.18
+}

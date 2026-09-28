@@ -23,8 +23,9 @@
     "r": 255
   },
   "name": "SecondSister",
+  "noiseLevel": 0.05,
   "retraction": "center",
   "retractionMs": 280,
-  "shimmer": 0.18,
-  "style": "stable"
+  "shimmer": 0.25,
+  "style": "unstable"
 }

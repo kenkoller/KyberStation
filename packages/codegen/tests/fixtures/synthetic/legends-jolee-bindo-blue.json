@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 120,
+    "r": 50
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 250,
+    "g": 200,
+    "r": 160
+  },
+  "name": "JoleeBindo",
+  "retraction": "standard",
+  "retractionMs": 440,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

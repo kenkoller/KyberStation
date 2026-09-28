@@ -1,0 +1,58 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 210,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 80,
+    "g": 120,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 40,
+        "g": 60,
+        "r": 255
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 160,
+        "g": 180,
+        "r": 220
+      },
+      "position": 0.4
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 230,
+        "r": 220
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "flash-fill",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 80,
+    "r": 255
+  },
+  "name": "Gram",
+  "noiseLevel": 0.05,
+  "retraction": "standard",
+  "retractionMs": 480,
+  "shimmer": 0.12,
+  "style": "gradient",
+  "swingFxIntensity": 0.3
+}

@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 5
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 120,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 80,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 180,
+    "g": 40,
+    "r": 120
+  },
+  "ignition": "summon",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 60,
+    "r": 140
+  },
+  "name": "Oblivion",
+  "noiseLevel": 0.06,
+  "retraction": "dissolve",
+  "retractionMs": 600,
+  "shimmer": 0,
+  "style": "darksaber",
+  "swingFxIntensity": 0.35
+}

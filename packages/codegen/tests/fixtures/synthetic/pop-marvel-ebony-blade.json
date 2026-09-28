@@ -1,0 +1,56 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 60,
+    "g": 80,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 40,
+    "g": 40,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 5,
+        "g": 5,
+        "r": 30
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 20,
+        "g": 15,
+        "r": 120
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 40,
+        "g": 30,
+        "r": 220
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "standard",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 20,
+    "r": 180
+  },
+  "name": "EbonyBlade",
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.2,
+  "style": "gradient"
+}

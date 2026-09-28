@@ -1,0 +1,35 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 110,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 165,
+    "r": 110
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 180,
+    "r": 140
+  },
+  "name": "JacenSoloJedi",
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.08,
+  "style": "stable"
+}

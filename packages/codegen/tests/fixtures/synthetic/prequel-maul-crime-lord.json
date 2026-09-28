@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 0,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 120,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 70,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 130,
+    "r": 255
+  },
+  "name": "MaulCrimeLord",
+  "noise": 0.1,
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.16,
+  "style": "unstable",
+  "swingFxIntensity": 0.55
+}

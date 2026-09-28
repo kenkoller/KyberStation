@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 255,
+    "g": 220,
+    "r": 150
+  },
+  "ignition": "spark",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 200
+  },
+  "name": "WindWaker",
+  "noiseLevel": 0.1,
+  "retraction": "fadeout",
+  "retractionMs": 400,
+  "shimmer": 0.35,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

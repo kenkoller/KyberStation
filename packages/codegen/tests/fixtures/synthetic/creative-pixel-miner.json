@@ -10,17 +10,17 @@
     "r": 50
   },
   "clashColor": {
-    "b": 150,
-    "g": 150,
-    "r": 150
+    "b": 255,
+    "g": 255,
+    "r": 255
   },
   "ignition": "scroll",
   "ignitionMs": 600,
   "ledCount": 144,
   "lockupColor": {
-    "b": 150,
-    "g": 150,
-    "r": 0
+    "b": 255,
+    "g": 200,
+    "r": 100
   },
   "name": "PixelMiner",
   "retraction": "shatter",

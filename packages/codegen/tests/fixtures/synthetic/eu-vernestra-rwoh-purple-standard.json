@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 60,
+    "r": 170
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 180,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 230
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 100,
+    "r": 200
+  },
+  "name": "VernestraStd",
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 130,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 250,
+    "r": 220
+  },
+  "ignition": "wipe",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 190,
+    "r": 100
+  },
+  "name": "ZoraTideSpear",
+  "retraction": "drain",
+  "retractionMs": 600,
+  "shimmer": 0.18,
+  "style": "tidal",
+  "swingFxIntensity": 0.5
+}

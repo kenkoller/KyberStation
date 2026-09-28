@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 10,
+    "r": 235
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 110,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 90,
+    "r": 255
+  },
+  "name": "TavionAxmis",
+  "retraction": "fadeout",
+  "retractionMs": 300,
+  "shimmer": 0.16,
+  "style": "unstable",
+  "swingFxIntensity": 0.55
+}

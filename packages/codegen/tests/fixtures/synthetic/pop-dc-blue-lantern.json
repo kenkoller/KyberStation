@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 180,
+    "r": 50
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 340,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 180
+  },
+  "name": "Hope",
+  "retraction": "standard",
+  "retractionMs": 440,
+  "shimmer": 0.2,
+  "style": "aurora",
+  "swingFxIntensity": 0.25
+}

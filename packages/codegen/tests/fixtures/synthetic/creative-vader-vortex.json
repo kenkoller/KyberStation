@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 20,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 100,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 80,
+    "r": 255
+  },
+  "name": "VaderVortex",
+  "retraction": "drain",
+  "retractionMs": 350,
+  "shimmer": 0.22,
+  "style": "vortex",
+  "swingFxIntensity": 0.55
+}

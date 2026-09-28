@@ -1,0 +1,82 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 160,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 60,
+        "g": 200,
+        "r": 255
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 80,
+        "g": 80,
+        "r": 255
+      },
+      "position": 0.25
+    },
+    {
+      "color": {
+        "b": 40,
+        "g": 180,
+        "r": 255
+      },
+      "position": 0.45
+    },
+    {
+      "color": {
+        "b": 80,
+        "g": 220,
+        "r": 60
+      },
+      "position": 0.6
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 140,
+        "r": 40
+      },
+      "position": 0.8
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 80,
+        "r": 180
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "scroll",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 220,
+    "r": 255
+  },
+  "name": "LuckyLeprechaun",
+  "noiseLevel": 0.08,
+  "retraction": "standard",
+  "retractionMs": 600,
+  "shimmer": 0.25,
+  "style": "gradient",
+  "swingFxIntensity": 0.35
+}

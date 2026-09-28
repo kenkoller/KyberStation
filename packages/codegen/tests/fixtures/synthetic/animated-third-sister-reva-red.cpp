@@ -65,7 +65,10 @@ StylePtr<
     >,
     InOutTrL<
       TrWipeIn<180>,
-      TrWipeIn<300>
+      TrConcat<
+        TrFade<45>,
+        TrFade<255>
+      >
     >
   >
 >()

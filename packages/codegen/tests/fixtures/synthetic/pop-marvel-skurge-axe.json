@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 225,
+    "g": 215,
+    "r": 210
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 245,
+    "r": 240
+  },
+  "name": "SkurgeAxe",
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.12,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

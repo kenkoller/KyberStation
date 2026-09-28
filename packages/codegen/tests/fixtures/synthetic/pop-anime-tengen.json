@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 160,
+    "g": 235,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 215,
+    "r": 255
+  },
+  "name": "TengenSoundHelix",
+  "retraction": "unravel",
+  "retractionMs": 450,
+  "shimmer": 0.24,
+  "style": "helix",
+  "swingFxIntensity": 0.6
+}

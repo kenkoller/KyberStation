@@ -1,15 +1,12 @@
 StylePtr<
   Layers<
-    StyleFire<
+    AudioFlicker<
       Rgb<140,0,240>,
       Mix<
-        Int<10000>,
+        Int<16384>,
         Rgb<140,0,240>,
         White
-      >,
-      0,
-      4,
-      FireConfig<3,2000,5>
+      >
     >,
     BlastL<
       Rgb<170,60,255>
@@ -28,7 +25,7 @@ StylePtr<
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<120,0,200>
+        Rgb<255,180,80>
       >,
       TrInstant,
       TrFade<400>,

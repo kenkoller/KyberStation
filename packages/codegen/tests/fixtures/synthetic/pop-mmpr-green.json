@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 120,
+    "g": 255,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 255,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 340,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 160,
+    "g": 255,
+    "r": 100
+  },
+  "name": "GreenRanger",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 440,
+  "shimmer": 0.1,
+  "style": "pulse",
+  "swingFxIntensity": 0.26
+}

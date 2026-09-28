@@ -25,6 +25,6 @@
   "name": "PerpetualMotion",
   "retraction": "drain",
   "retractionMs": 900,
-  "shimmer": 0.15,
+  "shimmer": 0.3,
   "style": "helix"
 }

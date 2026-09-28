@@ -26,5 +26,5 @@
   "retraction": "fadeout",
   "retractionMs": 2000,
   "shimmer": 0.5,
-  "style": "cinder"
+  "style": "ember"
 }
