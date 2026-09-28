@@ -16,8 +16,8 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 180
+    "g": 120,
+    "r": 255
   },
   "flicker": 0.8,
   "ignition": "fracture",

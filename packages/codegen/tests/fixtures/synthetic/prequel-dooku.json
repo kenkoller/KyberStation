@@ -1,7 +1,7 @@
 {
   "baseColor": {
-    "b": 0,
-    "g": 0,
+    "b": 10,
+    "g": 20,
     "r": 255
   },
   "blastColor": {
@@ -19,7 +19,7 @@
     "g": 100,
     "r": 255
   },
-  "ignition": "summon",
+  "ignition": "standard",
   "ignitionMs": 300,
   "ledCount": 144,
   "lockupColor": {
@@ -29,8 +29,8 @@
   },
   "name": "Dooku",
   "noiseLevel": 0.02,
-  "retraction": "drain",
-  "retractionMs": 320,
+  "retraction": "standard",
+  "retractionMs": 300,
   "shimmer": 0.04,
   "style": "stable"
 }

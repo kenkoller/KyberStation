@@ -1,0 +1,58 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 40,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 150,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 100,
+        "g": 20,
+        "r": 120
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 80,
+        "g": 40,
+        "r": 200
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 140,
+        "g": 100,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 80,
+    "r": 220
+  },
+  "name": "Garnet",
+  "noiseLevel": 0.05,
+  "retraction": "standard",
+  "retractionMs": 460,
+  "shimmer": 0.12,
+  "style": "gradient",
+  "swingFxIntensity": 0.25
+}

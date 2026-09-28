@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 120,
+    "g": 20,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 150,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 220,
+    "g": 80,
+    "r": 180
+  },
+  "ignition": "glitch",
+  "ignitionMs": 550,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 80,
+    "r": 140
+  },
+  "name": "OmegaWeapon",
+  "noiseLevel": 0.12,
+  "retraction": "dissolve",
+  "retractionMs": 700,
+  "shimmer": 0.4,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

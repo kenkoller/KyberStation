@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 245,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "name": "Harpe",
+  "noiseLevel": 0.02,
+  "retraction": "fadeout",
+  "retractionMs": 500,
+  "shimmer": 0.06,
+  "style": "photon",
+  "swingFxIntensity": 0.25
+}

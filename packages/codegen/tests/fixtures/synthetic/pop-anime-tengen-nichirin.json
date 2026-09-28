@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 250,
+    "g": 240,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 220
+  },
+  "ignition": "spark",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "name": "TengenNichirin",
+  "noiseLevel": 0.08,
+  "retraction": "flickerOut",
+  "retractionMs": 320,
+  "shimmer": 0.22,
+  "style": "unstable",
+  "swingFxIntensity": 0.6
+}

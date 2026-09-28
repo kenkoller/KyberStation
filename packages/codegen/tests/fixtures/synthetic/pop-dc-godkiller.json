@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 235,
+    "g": 225,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 230,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 240,
+    "r": 245
+  },
+  "name": "Godkiller",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

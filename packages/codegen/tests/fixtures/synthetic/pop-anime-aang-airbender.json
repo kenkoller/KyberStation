@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 235,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "summon",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 245,
+    "r": 220
+  },
+  "name": "AangAirVortex",
+  "retraction": "unravel",
+  "retractionMs": 800,
+  "shimmer": 0.16,
+  "style": "vortex",
+  "swingFxIntensity": 0.65
+}

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 190,
+    "g": 180,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 230,
+    "g": 220,
+    "r": 220
+  },
+  "ignition": "stab",
+  "ignitionMs": 600,
+  "ledCount": 64,
+  "lockupColor": {
+    "b": 220,
+    "g": 200,
+    "r": 200
+  },
+  "name": "NarsilBroken",
+  "noiseLevel": 0.12,
+  "retraction": "flickerOut",
+  "retractionMs": 800,
+  "shimmer": 0.45,
+  "style": "unstable",
+  "swingFxIntensity": 0.15
+}

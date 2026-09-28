@@ -35,7 +35,7 @@ export {
   splicePresetsIntoConfig,
   validateFactoryConfig,
 } from './customConfigSplicer.js';
-export { validateAST } from './Validator.js';
+export { validateAST, validateStyleCode } from './Validator.js';
 export {
   lookupTemplate,
   isKnownTemplate,

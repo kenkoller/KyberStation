@@ -16,11 +16,11 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 200
+    "g": 150,
+    "r": 255
   },
   "flicker": 0.7,
-  "ignition": "glitch",
+  "ignition": "crackle",
   "ignitionMs": 150,
   "ledCount": 144,
   "lockupColor": {
@@ -32,7 +32,7 @@
   "noiseLevel": 0.18,
   "retraction": "shatter",
   "retractionMs": 250,
-  "shimmer": 0.35,
+  "shimmer": 0.5,
   "style": "unstable",
   "swingFxIntensity": 0.6
 }

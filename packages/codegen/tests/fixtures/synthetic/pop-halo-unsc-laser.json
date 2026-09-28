@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 80,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 120,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 220,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 10,
+    "g": 50,
+    "r": 200
+  },
+  "ignition": "pulse-wave",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 130,
+    "r": 255
+  },
+  "name": "UNSCSpartanLaser",
+  "retraction": "flickerOut",
+  "retractionMs": 350,
+  "shimmer": 0.15,
+  "style": "pulse",
+  "swingFxIntensity": 0.5
+}

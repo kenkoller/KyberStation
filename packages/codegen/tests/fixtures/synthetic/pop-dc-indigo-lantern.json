@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 30,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 170,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 110,
+    "r": 150
+  },
+  "name": "Compassion",
+  "retraction": "standard",
+  "retractionMs": 460,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.2
+}

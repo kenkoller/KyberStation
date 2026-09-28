@@ -1,8 +1,8 @@
 {
   "baseColor": {
-    "b": 255,
-    "g": 248,
-    "r": 245
+    "b": 5,
+    "g": 5,
+    "r": 5
   },
   "blastColor": {
     "b": 255,
@@ -14,12 +14,6 @@
     "g": 180,
     "r": 160
   },
-  "coreColor": {
-    "b": 20,
-    "g": 5,
-    "r": 10
-  },
-  "darkCore": true,
   "ignition": "wipe",
   "ignitionMs": 200,
   "ledCount": 144,
@@ -29,9 +23,8 @@
     "r": 100
   },
   "name": "Darksaber",
-  "noiseLevel": 0.1,
   "retraction": "standard",
   "retractionMs": 300,
-  "shimmer": 0.3,
-  "style": "unstable"
+  "shimmer": 0,
+  "style": "darksaber"
 }

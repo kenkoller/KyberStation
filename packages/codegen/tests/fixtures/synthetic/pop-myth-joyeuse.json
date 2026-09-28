@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 120,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "scroll",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 180
+  },
+  "name": "Joyeuse",
+  "noiseLevel": 0.06,
+  "retraction": "scroll",
+  "retractionMs": 520,
+  "shimmer": 0.2,
+  "style": "rotoscope",
+  "swingFxIntensity": 0.4
+}

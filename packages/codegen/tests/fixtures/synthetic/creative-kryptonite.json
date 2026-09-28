@@ -14,7 +14,7 @@
     "g": 255,
     "r": 150
   },
-  "ignition": "spark",
+  "ignition": "fracture",
   "ignitionMs": 500,
   "ledCount": 144,
   "lockupColor": {
@@ -25,6 +25,6 @@
   "name": "Kryptonite",
   "retraction": "fadeout",
   "retractionMs": 700,
-  "shimmer": 0.55,
+  "shimmer": 0.7,
   "style": "unstable"
 }

@@ -1,0 +1,58 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 140,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 0,
+        "g": 100,
+        "r": 255
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 40,
+        "g": 170,
+        "r": 255
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 0,
+        "g": 120,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 0,
+    "g": 180,
+    "r": 255
+  },
+  "name": "TonyTiger",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.12,
+  "style": "gradient",
+  "swingFxIntensity": 0.25
+}

@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 150,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "scroll",
+  "ignitionMs": 480,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 180,
+    "r": 255
+  },
+  "name": "Lowbacca",
+  "retraction": "scroll",
+  "retractionMs": 440,
+  "shimmer": 0.07,
+  "style": "stable",
+  "swingFxIntensity": 0.45
+}

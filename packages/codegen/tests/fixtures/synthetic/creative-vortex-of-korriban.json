@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 10,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 180,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 20,
+    "g": 60,
+    "r": 255
+  },
+  "name": "VortexKorriban",
+  "noiseLevel": 0.1,
+  "retraction": "implode",
+  "retractionMs": 400,
+  "shimmer": 0.3,
+  "style": "vortex",
+  "swingFxIntensity": 0.6
+}

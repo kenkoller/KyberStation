@@ -16,11 +16,10 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 180
+    "g": 120,
+    "r": 255
   },
-  "fireSize": 0.6,
-  "heatSpread": 0.7,
+  "flicker": 0.5,
   "ignition": "fracture",
   "ignitionMs": 280,
   "ledCount": 144,
@@ -34,7 +33,6 @@
   "retraction": "drain",
   "retractionMs": 350,
   "shimmer": 0.22,
-  "sparkRate": 0.5,
-  "style": "ember",
-  "swingFxIntensity": 0.35
+  "style": "unstable",
+  "swingFxIntensity": 0.45
 }

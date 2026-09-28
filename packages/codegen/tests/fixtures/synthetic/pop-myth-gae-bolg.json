@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 20,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 120,
+    "g": 150,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 80,
+    "g": 120,
+    "r": 255
+  },
+  "ignition": "stab",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 60,
+    "r": 255
+  },
+  "name": "GaeBolg",
+  "noiseLevel": 0.15,
+  "retraction": "shatter",
+  "retractionMs": 450,
+  "shimmer": 0.4,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

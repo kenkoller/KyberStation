@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 70,
+    "g": 110,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 200,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 60,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 90,
+    "r": 255
+  },
+  "name": "DarthMarr",
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.15,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

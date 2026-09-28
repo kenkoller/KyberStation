@@ -1,8 +1,8 @@
 {
   "baseColor": {
-    "b": 40,
-    "g": 180,
-    "r": 20
+    "b": 100,
+    "g": 255,
+    "r": 0
   },
   "blastColor": {
     "b": 255,
@@ -10,21 +10,22 @@
     "r": 255
   },
   "clashColor": {
-    "b": 180,
+    "b": 220,
     "g": 255,
-    "r": 180
+    "r": 200
   },
+  "crossguard": true,
   "ignition": "scroll",
   "ignitionMs": 600,
   "ledCount": 144,
   "lockupColor": {
-    "b": 150,
-    "g": 220,
+    "b": 185,
+    "g": 240,
     "r": 150
   },
   "name": "Burryaga",
   "retraction": "scroll",
   "retractionMs": 500,
-  "shimmer": 0.03,
+  "shimmer": 0.05,
   "style": "stable"
 }

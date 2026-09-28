@@ -1,13 +1,13 @@
 StylePtr<
   Layers<
-    Mix<
-      SwingSpeed<400>,
+    Pulsing<
       Rgb<200,180,0>,
       Mix<
-        Sin<Int<3>>,
+        Int<8000>,
         Rgb<200,180,0>,
-        Rgb<233,225,153>
-      >
+        White
+      >,
+      3000
     >,
     BlastL<
       Rgb<255,255,100>

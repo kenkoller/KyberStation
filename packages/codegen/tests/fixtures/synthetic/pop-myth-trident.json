@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 210,
+    "g": 200,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 220
+  },
+  "ignition": "crackle",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 230,
+    "g": 230,
+    "r": 140
+  },
+  "name": "Trident",
+  "noiseLevel": 0.1,
+  "retraction": "drain",
+  "retractionMs": 700,
+  "shimmer": 0.25,
+  "style": "pulse",
+  "swingFxIntensity": 0.45
+}

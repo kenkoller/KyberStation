@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 210,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 160,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 40,
+    "g": 160,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 230,
+    "r": 255
+  },
+  "name": "HarryHollyWand",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.15,
+  "style": "pulse",
+  "swingFxIntensity": 0.45
+}

@@ -16,11 +16,9 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 200
+    "g": 120,
+    "r": 255
   },
-  "fireSize": 0.7,
-  "heatSpread": 0.6,
   "ignition": "scroll",
   "ignitionMs": 280,
   "ledCount": 144,
@@ -32,8 +30,7 @@
   "name": "DarthMalak",
   "retraction": "standard",
   "retractionMs": 340,
-  "shimmer": 0.15,
-  "sparkRate": 0.4,
-  "style": "fire",
+  "shimmer": 0.12,
+  "style": "stable",
   "swingFxIntensity": 0.35
 }

@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 215,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 160,
+    "g": 245,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 250,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 170,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 230,
+    "r": 255
+  },
+  "name": "MasterChiefVisor",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

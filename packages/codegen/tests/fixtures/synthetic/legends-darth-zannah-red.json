@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 5,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 110,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 90,
+    "r": 255
+  },
+  "name": "DarthZannah",
+  "retraction": "center",
+  "retractionMs": 300,
+  "shimmer": 0.18,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

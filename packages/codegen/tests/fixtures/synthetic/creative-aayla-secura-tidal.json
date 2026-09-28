@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 130,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 245,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 200
+  },
+  "ignition": "wipe",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 180,
+    "r": 100
+  },
+  "name": "AaylaTidal",
+  "retraction": "drain",
+  "retractionMs": 600,
+  "shimmer": 0.18,
+  "style": "tidal",
+  "swingFxIntensity": 0.45
+}

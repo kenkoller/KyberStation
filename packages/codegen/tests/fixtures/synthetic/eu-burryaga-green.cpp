@@ -1,10 +1,10 @@
 StylePtr<
   Layers<
     AudioFlicker<
-      Rgb<20,180,40>,
+      Rgb<0,255,100>,
       Mix<
         Int<16384>,
-        Rgb<20,180,40>,
+        Rgb<0,255,100>,
         White
       >
     >,
@@ -12,12 +12,12 @@ StylePtr<
       Rgb<255,255,255>
     >,
     SimpleClashL<
-      Rgb<180,255,180>,
+      Rgb<200,255,220>,
       40
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<150,220,150>
+        Rgb<150,240,185>
       >,
       TrInstant,
       TrFade<300>,

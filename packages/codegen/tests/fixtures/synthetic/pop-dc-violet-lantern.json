@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 50,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 245,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 210,
+    "g": 150,
+    "r": 255
+  },
+  "name": "Love",
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.18,
+  "style": "pulse",
+  "swingFxIntensity": 0.3
+}

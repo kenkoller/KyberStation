@@ -1,8 +1,8 @@
 {
   "baseColor": {
-    "b": 10,
-    "g": 10,
-    "r": 10
+    "b": 60,
+    "g": 40,
+    "r": 40
   },
   "blastColor": {
     "b": 255,
@@ -22,7 +22,7 @@
     "g": 180,
     "r": 180
   },
-  "name": "DarksaberCrackling",
+  "name": "CracklingBlackBlade",
   "retraction": "shatter",
   "retractionMs": 400,
   "shimmer": 0.6,

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 180,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 250,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 230,
+    "g": 220,
+    "r": 255
+  },
+  "name": "HelloKitty",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.18
+}

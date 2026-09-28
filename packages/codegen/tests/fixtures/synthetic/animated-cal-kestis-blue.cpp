@@ -1,10 +1,10 @@
 StylePtr<
   Layers<
     AudioFlicker<
-      Rgb<0,160,255>,
+      Rgb<30,100,255>,
       Mix<
         Int<16384>,
-        Rgb<0,160,255>,
+        Rgb<30,100,255>,
         White
       >
     >,

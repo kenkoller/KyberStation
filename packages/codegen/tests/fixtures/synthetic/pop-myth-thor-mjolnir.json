@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 180,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 245,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "name": "ThorMjolnir",
+  "noiseLevel": 0.12,
+  "retraction": "drain",
+  "retractionMs": 500,
+  "shimmer": 0.3,
+  "style": "helix",
+  "swingFxIntensity": 0.6
+}

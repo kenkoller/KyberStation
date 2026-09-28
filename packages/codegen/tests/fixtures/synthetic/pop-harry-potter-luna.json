@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 150,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 200,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 210,
+    "r": 230
+  },
+  "dragColor": {
+    "b": 180,
+    "g": 110,
+    "r": 140
+  },
+  "ignition": "standard",
+  "ignitionMs": 450,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 175,
+    "r": 200
+  },
+  "name": "LunaPatronus",
+  "retraction": "dissolve",
+  "retractionMs": 550,
+  "shimmer": 0.2,
+  "style": "pulse",
+  "swingFxIntensity": 0.25
+}

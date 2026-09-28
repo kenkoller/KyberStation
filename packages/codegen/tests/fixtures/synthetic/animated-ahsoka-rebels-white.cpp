@@ -3,14 +3,14 @@ StylePtr<
     Stripes<
       5000,
       -1500,
-      Rgb<230,235,255>,
+      Rgb<240,240,250>,
       Mix<
         Int<14000>,
         Black,
-        Rgb<230,235,255>
+        Rgb<240,240,250>
       >,
       Pulsing<
-        Rgb<230,235,255>,
+        Rgb<240,240,250>,
         White,
         1200
       >
@@ -69,7 +69,7 @@ StylePtr<
     >,
     InOutTrL<
       TrWipeIn<280>,
-      TrWipeIn<450>
+      TrFade<450>
     >
   >
 >()

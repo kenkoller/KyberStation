@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 230,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 60,
+    "g": 255,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 240
+  },
+  "dragColor": {
+    "b": 80,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 245,
+    "r": 220
+  },
+  "name": "AttonRand",
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

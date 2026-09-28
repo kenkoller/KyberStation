@@ -16,11 +16,9 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 180
+    "g": 120,
+    "r": 255
   },
-  "fireSize": 0.55,
-  "heatSpread": 0.6,
   "ignition": "spark",
   "ignitionMs": 300,
   "ledCount": 144,
@@ -30,11 +28,9 @@
     "r": 255
   },
   "name": "RevanSith",
-  "noiseLevel": 0.1,
   "retraction": "standard",
   "retractionMs": 350,
-  "shimmer": 0.2,
-  "sparkRate": 0.5,
-  "style": "fire",
+  "shimmer": 0.12,
+  "style": "stable",
   "swingFxIntensity": 0.4
 }

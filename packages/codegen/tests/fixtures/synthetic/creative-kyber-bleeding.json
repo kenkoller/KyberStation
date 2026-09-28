@@ -14,7 +14,7 @@
     "g": 20,
     "r": 180
   },
-  "ignition": "stutter",
+  "ignition": "fracture",
   "ignitionMs": 1200,
   "ledCount": 144,
   "lockupColor": {

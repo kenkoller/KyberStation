@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 250,
+    "r": 250
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 210,
+    "g": 200,
+    "r": 200
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 230,
+    "r": 230
+  },
+  "name": "LumosMaxima",
+  "retraction": "dissolve",
+  "retractionMs": 300,
+  "shimmer": 0.35,
+  "style": "stable",
+  "swingFxIntensity": 0.5
+}

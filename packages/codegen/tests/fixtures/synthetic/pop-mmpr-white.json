@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 230
+  },
+  "name": "WhiteRanger",
+  "noiseLevel": 0.05,
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.12,
+  "style": "aurora",
+  "swingFxIntensity": 0.28
+}

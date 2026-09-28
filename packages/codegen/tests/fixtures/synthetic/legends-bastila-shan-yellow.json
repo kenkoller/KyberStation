@@ -15,9 +15,9 @@
     "r": 255
   },
   "dragColor": {
-    "b": 0,
-    "g": 170,
-    "r": 200
+    "b": 100,
+    "g": 200,
+    "r": 255
   },
   "ignition": "center",
   "ignitionMs": 300,
@@ -28,9 +28,9 @@
     "r": 255
   },
   "name": "BastilaYellow",
-  "retraction": "evaporate",
+  "retraction": "center",
   "retractionMs": 350,
   "shimmer": 0.1,
-  "style": "photon",
+  "style": "stable",
   "swingFxIntensity": 0.3
 }

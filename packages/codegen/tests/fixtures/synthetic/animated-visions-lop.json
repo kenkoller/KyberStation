@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 170,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 230
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 215,
+    "r": 180
+  },
+  "name": "Lop",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

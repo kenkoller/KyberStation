@@ -3,24 +3,24 @@ StylePtr<
     Stripes<
       3000,
       -2000,
-      Rgb<180,20,30>,
+      Rgb<255,215,0>,
       Mix<
         Sin<Int<5>>,
-        Rgb<180,20,30>,
+        Rgb<255,215,0>,
         White
       >,
-      Rgb<180,20,30>
+      Rgb<255,215,0>
     >,
     BlastL<
-      Rgb<255,150,100>
+      Rgb<255,235,160>
     >,
     SimpleClashL<
-      Rgb<255,100,100>,
+      Rgb<255,245,200>,
       40
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<200,50,50>
+        Rgb<255,225,120>
       >,
       TrInstant,
       TrFade<300>,
@@ -28,7 +28,7 @@ StylePtr<
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<150,0,0>
+        Rgb<200,160,0>
       >,
       TrInstant,
       TrFade<400>,

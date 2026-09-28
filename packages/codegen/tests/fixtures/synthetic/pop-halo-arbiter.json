@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 200,
+    "r": 140
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 240,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 250,
+    "g": 250,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 160,
+    "g": 160,
+    "r": 100
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 220,
+    "r": 170
+  },
+  "name": "ArbiterBlade",
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.15,
+  "style": "helix",
+  "swingFxIntensity": 0.45
+}

@@ -1,20 +1,6 @@
 StylePtr<
   Layers<
-    Stripes<
-      5000,
-      -1500,
-      Rgb<255,200,0>,
-      Mix<
-        Int<14000>,
-        Black,
-        Rgb<255,200,0>
-      >,
-      Pulsing<
-        Rgb<255,200,0>,
-        White,
-        1200
-      >
-    >,
+    Rainbow,
     BlastL<
       Rgb<255,255,220>
     >,

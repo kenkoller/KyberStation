@@ -1,8 +1,8 @@
 {
   "baseColor": {
-    "b": 255,
-    "g": 0,
-    "r": 130
+    "b": 240,
+    "g": 60,
+    "r": 170
   },
   "blastColor": {
     "b": 255,
@@ -19,8 +19,8 @@
     "g": 160,
     "r": 255
   },
-  "ignition": "seismic",
-  "ignitionMs": 260,
+  "ignition": "standard",
+  "ignitionMs": 300,
   "ledCount": 144,
   "lockupColor": {
     "b": 0,
@@ -28,12 +28,10 @@
     "r": 255
   },
   "name": "MaceWindu",
-  "noiseLevel": 0.05,
-  "pulseMinBright": 0.5,
-  "pulseSpeed": 1.2,
-  "retraction": "implode",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
   "retractionMs": 280,
-  "shimmer": 0.12,
-  "style": "pulse",
+  "shimmer": 0.05,
+  "style": "stable",
   "swingFxIntensity": 0.5
 }

@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 220,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 255,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "wipe",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 140,
+    "g": 240,
+    "r": 100
+  },
+  "name": "KitFistoTorrent",
+  "retraction": "drain",
+  "retractionMs": 500,
+  "shimmer": 0.16,
+  "style": "torrent",
+  "swingFxIntensity": 0.5
+}

@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 245,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 250
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "name": "Vajra",
+  "retraction": "unravel",
+  "retractionMs": 500,
+  "shimmer": 0.2,
+  "style": "vortex",
+  "swingFxIntensity": 0.55
+}

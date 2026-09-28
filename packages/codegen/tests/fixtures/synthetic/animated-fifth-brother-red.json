@@ -19,8 +19,6 @@
     "g": 100,
     "r": 255
   },
-  "fireSize": 0.5,
-  "heatSpread": 0.5,
   "ignition": "center",
   "ignitionMs": 260,
   "ledCount": 144,
@@ -30,10 +28,10 @@
     "r": 255
   },
   "name": "FifthBrother",
+  "noiseLevel": 0.04,
   "retraction": "center",
   "retractionMs": 300,
-  "shimmer": 0.15,
-  "sparkRate": 0.4,
-  "style": "fire",
+  "shimmer": 0.18,
+  "style": "unstable",
   "swingFxIntensity": 0.3
 }

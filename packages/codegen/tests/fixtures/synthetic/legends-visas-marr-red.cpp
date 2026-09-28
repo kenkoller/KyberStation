@@ -25,7 +25,7 @@ StylePtr<
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<255,150,0>
+        Rgb<255,120,0>
       >,
       TrInstant,
       TrFade<400>,

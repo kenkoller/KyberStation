@@ -1,0 +1,47 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 90,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 220,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 40,
+    "g": 160,
+    "r": 220
+  },
+  "gradientEnd": {
+    "b": 80,
+    "g": 200,
+    "r": 255
+  },
+  "gradientStart": {
+    "b": 200,
+    "g": 70,
+    "r": 30
+  },
+  "ignition": "standard",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 190,
+    "r": 230
+  },
+  "name": "Brotherhood",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 450,
+  "shimmer": 0.1,
+  "style": "gradient",
+  "swingFxIntensity": 0.35
+}

@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 0,
+    "r": 190
+  },
+  "blastColor": {
+    "b": 10,
+    "g": 30,
+    "r": 210
+  },
+  "clashColor": {
+    "b": 130,
+    "g": 170,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 110,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 30,
+    "g": 50,
+    "r": 230
+  },
+  "name": "DarthJadus",
+  "retraction": "fadeout",
+  "retractionMs": 400,
+  "shimmer": 0.18,
+  "style": "plasma",
+  "swingFxIntensity": 0.35
+}

@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 130,
+    "g": 240,
+    "r": 130
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 240
+  },
+  "dragColor": {
+    "b": 80,
+    "g": 200,
+    "r": 80
+  },
+  "ignition": "spark",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 250,
+    "r": 180
+  },
+  "name": "SanemiNichirin",
+  "noiseLevel": 0.1,
+  "retraction": "flickerOut",
+  "retractionMs": 300,
+  "shimmer": 0.28,
+  "style": "unstable",
+  "swingFxIntensity": 0.65
+}

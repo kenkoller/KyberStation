@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 180,
+    "r": 150
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 245,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 450,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "name": "TorrentOfStars",
+  "retraction": "unravel",
+  "retractionMs": 700,
+  "shimmer": 0.22,
+  "style": "torrent",
+  "swingFxIntensity": 0.5
+}

@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 130,
+    "g": 250,
+    "r": 170
+  },
+  "clashColor": {
+    "b": 210,
+    "g": 255,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 50,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 160,
+    "g": 240,
+    "r": 150
+  },
+  "name": "LuminaraUnduli",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

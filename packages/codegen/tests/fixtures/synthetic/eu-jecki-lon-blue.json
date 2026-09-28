@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 130,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 150
+  },
+  "name": "JeckiLon",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.07,
+  "style": "stable"
+}

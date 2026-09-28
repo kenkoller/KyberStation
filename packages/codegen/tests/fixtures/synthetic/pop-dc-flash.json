@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 245,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 220,
+    "r": 255
+  },
+  "name": "FlashStream",
+  "retraction": "unravel",
+  "retractionMs": 350,
+  "shimmer": 0.24,
+  "style": "torrent",
+  "swingFxIntensity": 0.7
+}

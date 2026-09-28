@@ -31,7 +31,7 @@
   "noiseLevel": 0.03,
   "retraction": "standard",
   "retractionMs": 300,
-  "shimmer": 0.06,
+  "shimmer": 0.05,
   "style": "stable",
   "swingFxIntensity": 0.4
 }

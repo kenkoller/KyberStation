@@ -1,6 +1,13 @@
 StylePtr<
   Layers<
-    Rainbow,
+    AudioFlicker<
+      Mix<
+        Int<16000>,
+        Rgb<120,0,180>,
+        Rgb<201,153,225>
+      >,
+      White
+    >,
     BlastL<
       Rgb<0,200,200>
     >,

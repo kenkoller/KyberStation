@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 130,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 150
+  },
+  "name": "SpaceStone",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.15,
+  "style": "pulse"
+}

@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 170,
+    "r": 160
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 140,
+    "g": 255,
+    "r": 80
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 60
+  },
+  "ignition": "standard",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 140,
+    "g": 220,
+    "r": 120
+  },
+  "name": "BusterSword",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

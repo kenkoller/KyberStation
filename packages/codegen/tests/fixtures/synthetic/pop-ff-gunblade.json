@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 160,
+    "r": 110
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 200,
+    "g": 140,
+    "r": 100
+  },
+  "ignition": "stab",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 210,
+    "r": 180
+  },
+  "name": "Gunblade",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

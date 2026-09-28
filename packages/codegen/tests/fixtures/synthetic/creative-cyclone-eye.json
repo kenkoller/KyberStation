@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 220,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "wipe",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 240,
+    "r": 180
+  },
+  "name": "CycloneEye",
+  "retraction": "unravel",
+  "retractionMs": 550,
+  "shimmer": 0.22,
+  "style": "vortex",
+  "swingFxIntensity": 0.65
+}

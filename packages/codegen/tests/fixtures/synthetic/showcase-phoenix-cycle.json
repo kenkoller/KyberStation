@@ -1,0 +1,110 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 100,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 130,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "fireSize": 0.65,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 0,
+        "g": 60,
+        "r": 255
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 30,
+        "g": 140,
+        "r": 255
+      },
+      "position": 0.4
+    },
+    {
+      "color": {
+        "b": 100,
+        "g": 220,
+        "r": 255
+      },
+      "position": 0.8
+    },
+    {
+      "color": {
+        "b": 200,
+        "g": 245,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "crackle",
+  "ignitionMs": 520,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 180,
+    "r": 255
+  },
+  "lockupPosition": 0.4,
+  "lockupRadius": 0.15,
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-phoenix-binding-1",
+        "label": "ignition progress → shimmer (flares as blade extends)",
+        "source": "ignition",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-phoenix-binding-2",
+        "label": "retraction progress → shimmer (cools as blade collapses)",
+        "source": "retraction",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-phoenix-binding-3",
+        "label": "lockup → shimmer (sustained-impact intensification)",
+        "source": "lockup",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "PhoenixCycle",
+  "noiseLevel": 0.08,
+  "retraction": "unravel",
+  "retractionMs": 680,
+  "shimmer": 0.22,
+  "style": "fire",
+  "swingFxIntensity": 0.55
+}

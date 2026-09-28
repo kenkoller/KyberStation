@@ -16,8 +16,8 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 120
+    "g": 120,
+    "r": 255
   },
   "ignition": "drip-up",
   "ignitionMs": 400,

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 255,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 255,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 255,
+    "r": 140
+  },
+  "name": "Buttercup",
+  "noiseLevel": 0.08,
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.25,
+  "style": "unstable",
+  "swingFxIntensity": 0.35
+}

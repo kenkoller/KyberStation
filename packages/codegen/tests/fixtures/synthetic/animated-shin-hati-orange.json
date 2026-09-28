@@ -19,8 +19,6 @@
     "g": 80,
     "r": 200
   },
-  "fireSize": 0.5,
-  "heatSpread": 0.4,
   "ignition": "scroll",
   "ignitionMs": 300,
   "ledCount": 144,
@@ -30,10 +28,10 @@
     "r": 255
   },
   "name": "ShinHatiAnimated",
+  "noiseLevel": 0.04,
   "retraction": "scroll",
   "retractionMs": 360,
-  "shimmer": 0.12,
-  "sparkRate": 0.6,
-  "style": "fire",
+  "shimmer": 0.15,
+  "style": "cinder",
   "swingFxIntensity": 0.4
 }

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 230,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 160,
+    "g": 220,
+    "r": 255
+  },
+  "name": "Anduril",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.12,
+  "style": "aurora",
+  "swingFxIntensity": 0.3
+}

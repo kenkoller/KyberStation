@@ -19,8 +19,8 @@
     "g": 180,
     "r": 255
   },
-  "ignition": "summon",
-  "ignitionMs": 320,
+  "ignition": "standard",
+  "ignitionMs": 290,
   "ledCount": 144,
   "lockupColor": {
     "b": 0,
@@ -29,7 +29,7 @@
   },
   "name": "QuiGon",
   "noiseLevel": 0.02,
-  "retraction": "fadeout",
+  "retraction": "standard",
   "retractionMs": 300,
   "shimmer": 0.04,
   "style": "stable",

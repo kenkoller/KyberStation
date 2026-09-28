@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 60,
+    "g": 200,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 140,
+    "g": 255,
+    "r": 160
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 255,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 40,
+    "g": 160,
+    "r": 30
+  },
+  "ignition": "stutter",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 220,
+    "r": 80
+  },
+  "name": "VoldemortKillingCurse",
+  "noiseLevel": 0.15,
+  "retraction": "flickerOut",
+  "retractionMs": 400,
+  "shimmer": 0.45,
+  "style": "unstable",
+  "swingFxIntensity": 0.6
+}

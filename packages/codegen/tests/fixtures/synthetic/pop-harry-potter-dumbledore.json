@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 235,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 120,
+    "g": 160,
+    "r": 180
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 195,
+    "r": 200
+  },
+  "name": "DumbledoreElderWand",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

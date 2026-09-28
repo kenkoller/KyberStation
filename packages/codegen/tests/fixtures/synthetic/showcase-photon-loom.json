@@ -1,0 +1,140 @@
+{
+  "baseColor": {
+    "b": 100,
+    "g": 230,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 255,
+    "r": 255
+  },
+  "colorHueShiftSpeed": 0.2,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 0,
+        "g": 100,
+        "r": 200
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 100,
+        "g": 220,
+        "r": 255
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 255,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "flash-fill",
+  "ignitionMs": 460,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.9,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0005
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.4
+            }
+          },
+          "source": "sin(time * 0.0005) * 0.3 + 0.4"
+        },
+        "id": "showcase-photon-binding-1",
+        "label": "fx: 12.6s tide swell",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.9,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-photon-binding-2",
+        "label": "clash → loom whiteout",
+        "source": "clash",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-photon-binding-3",
+        "label": "sound → saturation pulse",
+        "source": "sound",
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-photon-binding-4",
+        "label": "swing → hue cycle accelerate",
+        "source": "swing",
+        "target": "colorHueShiftSpeed"
+      }
+    ],
+    "version": 1
+  },
+  "name": "PhotonLoom",
+  "retraction": "unravel",
+  "retractionMs": 600,
+  "shimmer": 0.22,
+  "style": "photon",
+  "swingFxIntensity": 0.55
+}

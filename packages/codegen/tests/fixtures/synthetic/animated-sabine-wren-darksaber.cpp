@@ -1,15 +1,10 @@
 StylePtr<
   Layers<
-    StyleFire<
-      Rgb<240,245,255>,
-      Mix<
-        Int<10000>,
-        Rgb<240,245,255>,
-        White
-      >,
-      0,
-      4,
-      FireConfig<3,2000,5>
+    Gradient<
+      White,
+      Rgb<5,5,5>,
+      Rgb<5,5,5>,
+      White
     >,
     BlastL<
       Rgb<190,200,255>

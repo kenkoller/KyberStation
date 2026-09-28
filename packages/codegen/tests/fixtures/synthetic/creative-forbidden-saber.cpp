@@ -1,10 +1,10 @@
 StylePtr<
   Layers<
     StyleFire<
-      Rgb<0,0,0>,
+      Rgb<40,0,40>,
       Mix<
         Int<10000>,
-        Rgb<0,0,0>,
+        Rgb<40,0,40>,
         White
       >,
       0,
@@ -65,7 +65,10 @@ StylePtr<
     >,
     InOutTrL<
       TrWipeIn<50>,
-      TrWipeIn<3000>
+      TrConcat<
+        TrFade<2700>,
+        TrInstant
+      >
     >
   >
 >()
