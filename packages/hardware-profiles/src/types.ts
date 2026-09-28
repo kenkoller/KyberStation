@@ -50,6 +50,30 @@ export type Provenance =
   | 'community-submitted'
   | 'experimental';
 
+/**
+ * How a design should reach a chassis, based on bench results.
+ *
+ *   - `compile-flash`    export config.h, compile with arduino-cli, flash
+ *                        over DFU. The default for stock and DIY boards.
+ *   - `runtime-presets`  write presets.ini (+ an identical presets.tmp) to
+ *                        the SD card; the factory firmware loads them at
+ *                        boot. Used where custom firmware won't boot.
+ *   - `custom-paste`     compile + flash with the user's pasted factory
+ *                        config.h, so vendor-only hardware stays intact.
+ */
+export type DeliveryPath = 'compile-flash' | 'runtime-presets' | 'custom-paste';
+
+/**
+ * Bench status of KyberStation-built (custom) firmware on a chassis.
+ *
+ *   - `untested`  no bench data yet — flash only with a full backup.
+ *   - `fails`     custom builds are known not to boot. UIs should steer
+ *                 users away from flashing and require an explicit
+ *                 acknowledgement if they flash anyway.
+ *   - `works`     an unmodified KyberStation export has booted on it.
+ */
+export type CustomFirmwareStatus = 'untested' | 'fails' | 'works';
+
 /** Which physical role this blade plays in a multi-blade chassis. */
 export type BladeRole = 'main' | 'crystal' | 'accent' | 'pommel';
 
@@ -141,4 +165,10 @@ export interface HardwareProfile {
   validatedBy: string[];
   /** Free-form notes about hardware quirks, BT modules, pin mappings. */
   notes?: string;
+
+  // ─── Delivery ─────────────────────────────────────────────────
+  /** Recommended way to get a design onto this chassis. */
+  recommendedDelivery: DeliveryPath;
+  /** Bench status of custom (KyberStation-built) firmware on this chassis. */
+  customFirmware: CustomFirmwareStatus;
 }

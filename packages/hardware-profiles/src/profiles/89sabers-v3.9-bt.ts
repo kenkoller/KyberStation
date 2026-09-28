@@ -20,19 +20,20 @@ import type { HardwareProfile } from '../types.js';
  *   2. CCSabers' published OS 7.12 config pack for V3.9 (non-BT) —
  *      same vendor pin map, prop file, and Fett263 gesture suite.
  *
- * **Bench-validation status (2026-05-17):** the emitted `config.h` from
- * this profile matches the factory chassis shape per the recap. **Real-
- * hardware compile+flash is NOT yet bench-confirmed** — the 2026-05-14
- * and 2026-05-15 V3.9-BT bench sessions both failed to boot KyberStation-
- * emitted firmware. The 2026-05-15 session ([`SESSION_2026-05-15_V39BT_BENCH.md`](../../../../docs/archive/SESSION_2026-05-15_V39BT_BENCH.md))
- * disconfirmed all the obvious hypotheses (BLE defines, OLED, factory
- * non-BT config) — cracking the residual delta requires either ST-Link/
- * SWD boot logs or the source of `89sabers-config.h` from 89sabers
- * directly. Until that lands, **the recommended path for V3.9-BT users is
- * the runtime-presets export** (SD-card `presets.ini`), which is
- * bench-validated 2026-05-16 (PR #325 + #331) and sidesteps the
- * compile-flash workflow entirely. See [`docs/HARDWARE_COMPATIBILITY.md`](../../../../docs/HARDWARE_COMPATIBILITY.md)
- * for the matrix-level summary.
+ * **Bench status (2026-05-19): custom firmware does not boot.** Every
+ * custom build tried on this chassis — 11 across four bench sessions
+ * (2026-05-14 → 05-19), including this profile's emitted `config.h`,
+ * CCSabers' `89V3_allfont.h`, and 89sabers' own factory
+ * `89sabers-config.h` compiled with the standard toolchain — flashed
+ * cleanly and then left the saber dark with no USB enumeration, whether
+ * written to Bank 1, Bank 2 only, or Bank 1 with a 256K-constrained link.
+ * Only a byte-perfect dual-bank factory restore boots it again. See
+ * [`docs/research/SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md`](../../../../docs/research/SESSION_2026-05-19_DEEP_DIVE_V39BT_FLASH.md).
+ * Hence `customFirmware: 'fails'` and `recommendedDelivery:
+ * 'runtime-presets'` (SD-card `presets.ini`, bench-validated through
+ * 2026-05-19 — PR #325 + #331). The topology values below stay accurate
+ * and are kept as a reference, not a flash target. See
+ * [`docs/HARDWARE_COMPATIBILITY.md`](../../../../docs/HARDWARE_COMPATIBILITY.md).
  *
  * **Out of scope for this profile** (to track in the BT-specific work):
  *
@@ -44,12 +45,11 @@ import type { HardwareProfile } from '../types.js';
  *     users — leave them off the chassis profile and surface them at
  *     the Bluetooth-feature UI level once that ships.
  *
- * **Recovery procedure:** if a flash attempt fails to boot, restore via
- * the chassis-specific `dfu-util` workflow documented in
- * [`docs/FLASH_GUIDE.md`](../../../../docs/FLASH_GUIDE.md) §9
- * (boot-diagnostic capture) and §12 (recovery). The 89sabers V3.9-BT
- * factory firmware backs up reliably (~30 s, validated twice during
- * the 2026-05-14 bench) and restores cleanly to `Bank 1`.
+ * **Recovery procedure:** if a flash is attempted anyway, restore both
+ * flash banks from a full backup taken beforehand —
+ * `scripts/hardware-test/restore-factory.sh` does this SHA-gated from the
+ * 2026-05-14 factory dump. [`docs/FLASH_GUIDE.md`](../../../../docs/FLASH_GUIDE.md)
+ * covers boot-diagnostic capture and recovery.
  *
  * **MOTION_TIMEOUT note:** captured from the line-44 redefinition of
  * `89V3_allfont.h` (`60 * 3 * 800 = 144000 ms`), matching the non-BT
@@ -112,13 +112,14 @@ export const SABERS89_V3_9_BT: HardwareProfile = {
 
   source: 'community-validated',
   validatedBy: [],
+  recommendedDelivery: 'runtime-presets',
+  customFirmware: 'fails',
   notes:
     'Shares physical topology with 89sabers V3.9 (non-BT): 128 LED main + 30 LED crystal. ' +
     'Adds ENABLE_SERIAL for the on-board Feasycom FSC-BT909 BT module (UART3). ' +
-    'Real-hardware compile+flash boot NOT yet bench-confirmed — 2026-05-14/15 V3.9-BT ' +
-    'bench attempts boot-looped; emitted config.h matches the factory chassis shape but ' +
-    'a residual delta (likely in vendor 89sabers-config.h source not publicly available) ' +
-    'blocks boot. Recommended path for V3.9-BT users today: runtime-presets export ' +
-    '(SD card, bench-validated 2026-05-16 — PR #325 + #331). See FLASH_GUIDE.md §9 ' +
-    'for boot-diagnostic + recovery procedure if flash is attempted.',
+    'Custom firmware does not boot on this chassis: 11/11 builds failed on the bench ' +
+    "(2026-05-14 → 05-19), including 89sabers' own factory source, whichever flash bank " +
+    'was written. Use runtime presets (SD card; PR #325, bench-validated through 2026-05-19). ' +
+    'If a flash is attempted anyway, FLASH_GUIDE.md covers boot diagnostics and the ' +
+    'dual-bank factory restore.',
 };

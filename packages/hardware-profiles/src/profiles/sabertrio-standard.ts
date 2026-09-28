@@ -79,6 +79,8 @@ export const SABERTRIO_STANDARD: HardwareProfile = {
 
   source: 'experimental',
   validatedBy: [],
+  recommendedDelivery: 'custom-paste',
+  customFirmware: 'untested',
   notes:
     'Reference values from Ricapar/sabertrio-proffie (community-curated, not vendor-direct). ' +
     'Captures the primary 115-LED blade only — Sabertrio chassis also wire 2 side blades ' +

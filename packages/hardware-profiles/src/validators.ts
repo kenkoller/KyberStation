@@ -92,5 +92,12 @@ export function validateProfile(profile: HardwareProfile): string[] {
     );
   }
 
+  // A chassis that refuses custom firmware must not recommend flashing it.
+  if (profile.customFirmware === 'fails' && profile.recommendedDelivery !== 'runtime-presets') {
+    errors.push(
+      `recommendedDelivery must be 'runtime-presets' when customFirmware is 'fails' (got '${profile.recommendedDelivery}')`,
+    );
+  }
+
   return errors;
 }

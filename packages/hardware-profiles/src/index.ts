@@ -4,10 +4,16 @@ export type {
   BladeRole,
   BladeSpec,
   BoardId,
+  CustomFirmwareStatus,
+  DeliveryPath,
   HardwareProfile,
   Provenance,
   WS2811DataPin,
 } from './types.js';
+
+// ─── Delivery guidance ───
+export type { DeliveryGuidance } from './delivery.js';
+export { getDeliveryGuidance } from './delivery.js';
 
 // ─── Validators ───
 export {

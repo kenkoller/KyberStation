@@ -79,6 +79,8 @@ export const SABERS89_V3_9: HardwareProfile = {
 
   source: 'community-validated',
   validatedBy: [],
+  recommendedDelivery: 'compile-flash',
+  customFirmware: 'untested',
   notes:
     "Sourced from CCSabers' published OS 7.12 config pack (89V3_allfont.h). " +
     'Not boot-confirmed by KyberStation on real hardware as of 2026-05-15 ' +
