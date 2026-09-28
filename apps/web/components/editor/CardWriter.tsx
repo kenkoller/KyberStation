@@ -6,6 +6,7 @@ import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import {
   exportMultiPresetZip,
+  writeZipEntriesToDirectory,
   BOARDS,
   PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER,
   type BoardId,
@@ -13,16 +14,20 @@ import {
 } from '@/lib/zipExporter';
 import {
   detectBoardFromDirectory,
-  detectRuntimePresetSupport,
   listExistingPresets,
   backupConfig,
   writeFileToDirectory,
-  ensureDirectory,
   verifyFileContents,
   type DetectedBoard,
   type ExistingPreset,
 } from '@/lib/cardDetector';
-import { readExistingInstallTime } from '@/lib/runtimePresetIO';
+import {
+  inspectRuntimePresetFiles,
+  backupRuntimePresetFiles,
+  verifyRuntimePresetFiles,
+  RUNTIME_PRESETS_INI,
+  RUNTIME_PRESETS_TMP,
+} from '@/lib/runtimePresetIO';
 import {
   listAvailableFonts,
   findMissingFontReferences,
@@ -31,13 +36,15 @@ import {
 import { useSoundFontWarningStore } from '@/stores/soundFontWarningStore';
 import {
   getDeliverability,
+  getBundleDeliverability,
+  getRuntimeFidelityBadge,
   customizedKnobs,
   humanizeKnob,
   type DesignKnob,
+  type RuntimeFidelityBadge,
 } from '@/lib/deliverability';
 import { byId as hardwareProfileById } from '@kyberstation/hardware-profiles';
 import { generateStyleCode } from '@kyberstation/codegen';
-import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
 import { useCommitCeremony, phaseToStage } from '@/hooks/useCommitCeremony';
 
@@ -145,8 +152,10 @@ export function CardWriter() {
   // user switches away from `proffie_runtime` to keep behavior obvious.
   const [discoveredInstallTime, setDiscoveredInstallTime] = useState<string | null>(null);
 
-  // Phase C opt-in for the runtime path. Off by default; reset when user
-  // switches away from `proffie_runtime` to keep the toggle scoped.
+  // "Use my colors and blade style" opt-in for the runtime path
+  // (custom-styles mode, historically "Phase C"). Off by default = keep
+  // factory blade styles; reset when the user switches away from
+  // `proffie_runtime` to keep the toggle scoped. Local state only.
   const [useAdvancedRuntimeVerb, setUseAdvancedRuntimeVerb] = useState(false);
 
   // Reset discovered install_time when switching boards.
@@ -222,6 +231,21 @@ export function CardWriter() {
     return presets;
   }, [resolvedEntries, selectedPresets, config]);
 
+  // ─── Runtime style fidelity (custom-styles mode) ───
+  // Same mapping the export uses (mapBladeConfigToRuntimeStyle), so each
+  // label describes exactly what will be written for that preset.
+  const runtimeBadges = useMemo<RuntimeFidelityBadge[] | null>(() => {
+    if (boardId !== 'proffie_runtime' || !useAdvancedRuntimeVerb) return null;
+    return buildExportPresets().map((p) => getRuntimeFidelityBadge(p.config));
+  }, [boardId, useAdvancedRuntimeVerb, buildExportPresets]);
+
+  const runtimeFidelityTally = useMemo((): string | null => {
+    if (!runtimeBadges || runtimeBadges.length === 0) return null;
+    const count = (tone: RuntimeFidelityBadge['tone']) =>
+      runtimeBadges.filter((b) => b.tone === tone).length;
+    return `${count('ok')} faithful · ${count('partial')} approximate · ${count('warn')} colors only`;
+  }, [runtimeBadges]);
+
   // ─── Pre-export Validation ───
 
   const validationNotices = useMemo((): ValidationNotice[] => {
@@ -270,8 +294,10 @@ export function CardWriter() {
       // presets. `style=builtin N M` references an index in that bank;
       // out-of-range N returns null in ProffieOS. Most vendor sabers
       // ship with 16-28 factory presets. Warn above 16 as a sane
-      // default — users with bigger banks can ignore the warning.
-      if (presets.length > 16) {
+      // default — users with bigger banks can ignore the warning. Only
+      // applies to factory blade styles: custom-style presets don't
+      // reference the factory bank at all.
+      if (presets.length > 16 && !useAdvancedRuntimeVerb) {
         notices.push({
           type: 'warning',
           text: `${presets.length} presets requested. Most factory firmware compiles in 16-28 presets — presets beyond your firmware's built-in bank will show as blank. Check 'pli' output over USB serial for your firmware's preset count.`,
@@ -280,12 +306,12 @@ export function CardWriter() {
       if (outputMethod === 'zip') {
         notices.push({
           type: 'info',
-          text: `ZIP export uses an install_time placeholder. Open the resulting presets.ini and replace "${PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER}" with your firmware's install_time string (run "pli" over USB serial to find it). Direct "Write to Card" reads this automatically.`,
+          text: `ZIP export uses an install_time placeholder. In BOTH presets.ini and presets.tmp, replace "${PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER}" with your firmware's install_time (run "pli" over USB serial to find it), then copy both files to the SD card root. Direct "Write to Card" does all of this automatically.`,
         });
       } else if (outputMethod === 'card' && discoveredInstallTime) {
         notices.push({
           type: 'info',
-          text: `Detected install_time: ${discoveredInstallTime}. KyberStation will use this when writing presets.ini.`,
+          text: `Detected install_time: ${discoveredInstallTime}. KyberStation will use this when writing presets.ini and presets.tmp.`,
         });
       }
     }
@@ -480,28 +506,34 @@ export function CardWriter() {
 
     // Probe for runtime preset support up front so we can auto-discover
     // the firmware's install_time when the user is using proffie_runtime.
+    // Reads presets.ini first, then presets.tmp, and understands the
+    // binary header the saber puts on files it wrote itself.
     let runtimeInstallTimeToUse: string | undefined;
     if (boardId === 'proffie_runtime') {
-      const runtimeSupport = await detectRuntimePresetSupport(dirHandle);
-      if (runtimeSupport.hasPresetsIni) {
-        const existing = await readExistingInstallTime(dirHandle);
-        if (existing) {
-          runtimeInstallTimeToUse = existing;
-          setDiscoveredInstallTime(existing);
-          addStatus({
-            type: 'success',
-            text: `Found existing presets.ini. Using install_time: ${existing}`,
-          });
-        } else {
-          addStatus({
-            type: 'warning',
-            text: 'Existing presets.ini found but install_time could not be parsed. Placeholder will be used — ProffieOS may reject the file.',
-          });
-        }
+      const cardState = await inspectRuntimePresetFiles(dirHandle);
+      if (cardState.installTime) {
+        runtimeInstallTimeToUse = cardState.installTime;
+        setDiscoveredInstallTime(cardState.installTime);
+        const source = cardState.ini.installTime ? RUNTIME_PRESETS_INI : RUNTIME_PRESETS_TMP;
+        addStatus({
+          type: 'success',
+          text: `Found existing ${source}. Using install_time: ${cardState.installTime}`,
+        });
+      } else if (cardState.ini.exists || cardState.tmp.exists) {
+        addStatus({
+          type: 'warning',
+          text: 'Existing presets.ini / presets.tmp found but install_time could not be parsed. Placeholder will be used — ProffieOS may reject the file.',
+        });
       } else {
         addStatus({
           type: 'warning',
           text: 'No existing presets.ini on this card. Boot the saber once with its factory SD card so ProffieOS generates one, then retry. A placeholder install_time will be used otherwise.',
+        });
+      }
+      if (cardState.tmp.firmwareWritten) {
+        addStatus({
+          type: 'info',
+          text: 'Found a saber-written presets.tmp. ProffieOS would load it ahead of a new presets.ini, so it will be replaced with an identical copy of the new file.',
         });
       }
     }
@@ -539,14 +571,30 @@ export function CardWriter() {
       setProgress(25);
 
       // Step 3: Backup
+      const backupStamp = new Date().toISOString().replace(/[:.]/g, '-');
+      if (autoBackup && boardId === 'proffie_runtime') {
+        // The runtime write overwrites BOTH preset files, and presets.tmp
+        // may hold the saber's latest on-device edits — copy both,
+        // byte-for-byte (saber-written files are binary).
+        setPhase('backing_up');
+        addStatus({ type: 'info', text: 'Backing up existing presets.ini / presets.tmp...' });
+        const backups = await backupRuntimePresetFiles(dirHandle, backupStamp);
+        if (backups.length > 0) {
+          for (const b of backups) {
+            addStatus({ type: 'success', text: `Backed up ${b.from} as ${b.to}` });
+          }
+        } else {
+          addStatus({ type: 'info', text: 'No existing presets.ini / presets.tmp to back up.' });
+        }
+        setProgress(40);
+      }
       if (autoBackup && detected) {
         setPhase('backing_up');
         addStatus({ type: 'info', text: 'Backing up existing configuration...' });
 
         const existingConfig = await backupConfig(dirHandle);
         if (existingConfig) {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const backupName = `config_backup_${timestamp}.txt`;
+          const backupName = `config_backup_${backupStamp}.txt`;
           await writeFileToDirectory(dirHandle, backupName, existingConfig);
           addStatus({ type: 'success', text: `Backup saved as ${backupName}` });
         } else {
@@ -576,52 +624,19 @@ export function CardWriter() {
       const JSZip = (await import('jszip')).default;
       const zip = await JSZip.loadAsync(blob);
 
-      const entries = Object.keys(zip.files);
-      const totalEntries = entries.length;
-      let written = 0;
-
-      const SAFE_PATH_PART = /^[a-zA-Z0-9._-]+$/;
-      for (const path of entries) {
-        const entry = zip.files[path];
-
-        // Security: reject path traversal, absolute paths, and unsafe characters
-        if (path.includes('..') || path.startsWith('/') || path.startsWith('\\')) {
-          addStatus({ type: 'warning', text: `Skipped unsafe path: ${path}` });
-          continue;
-        }
-
-        if (entry.dir) {
-          // Create directory
-          const parts = path.replace(/\/$/, '').split('/');
-          if (!parts.every((p) => SAFE_PATH_PART.test(p))) {
-            addStatus({ type: 'warning', text: `Skipped directory with invalid name: ${path}` });
-            continue;
-          }
-          let current = dirHandle;
-          for (const part of parts) {
-            current = await ensureDirectory(current, part);
-          }
-        } else {
-          // Write file
-          const parts = path.split('/');
-          const fileName = parts.pop()!;
-          if (!parts.every((p) => SAFE_PATH_PART.test(p)) || !SAFE_PATH_PART.test(fileName)) {
-            addStatus({ type: 'warning', text: `Skipped file with invalid name: ${path}` });
-            continue;
-          }
-          let current = dirHandle;
-          for (const part of parts) {
-            current = await ensureDirectory(current, part);
-          }
-          const content = await entry.async('string');
-          await writeFileToDirectory(current, fileName, content);
-        }
-
-        written++;
-        setProgress(60 + Math.round((written / totalEntries) * 25));
+      // Same files as the ZIP path — for proffie_runtime that is
+      // presets.ini + the byte-identical presets.tmp + the README.
+      const writeResult = await writeZipEntriesToDirectory(zip, dirHandle, (done, total) => {
+        setProgress(60 + Math.round((done / total) * 25));
+      });
+      for (const skipped of writeResult.skipped) {
+        addStatus({ type: 'warning', text: `Skipped ${skipped.reason}: ${skipped.path}` });
       }
 
-      addStatus({ type: 'success', text: `Wrote ${written} file(s) to SD card.` });
+      addStatus({
+        type: 'success',
+        text: `Wrote ${writeResult.written.length} file(s) to SD card.`,
+      });
 
       // Step 5: Verify
       setPhase('verifying');
@@ -630,7 +645,22 @@ export function CardWriter() {
 
       const configFileName = BOARDS[boardId].configFileName;
       const configEntry = zip.files[configFileName];
-      if (configEntry) {
+      if (configEntry && boardId === 'proffie_runtime') {
+        // Both files must be byte-identical to the emitted deck — a stale
+        // presets.tmp is exactly the silent-reversion trap.
+        const expectedContent = await configEntry.async('string');
+        const verified = await verifyRuntimePresetFiles(dirHandle, expectedContent);
+        for (const name of [RUNTIME_PRESETS_INI, RUNTIME_PRESETS_TMP] as const) {
+          if (verified[name]) {
+            addStatus({ type: 'success', text: `Verified ${name} matches the new preset list.` });
+          } else {
+            addStatus({
+              type: 'warning',
+              text: `Verification warning: ${name} does not match the new preset list. Re-run Write to Card (or copy both files from a ZIP export) before booting the saber.`,
+            });
+          }
+        }
+      } else if (configEntry) {
         const expectedContent = await configEntry.async('string');
         const verified = await verifyFileContents(dirHandle, configFileName, expectedContent);
         if (verified) {
@@ -826,18 +856,30 @@ export function CardWriter() {
           ))}
         </select>
         <p className="text-ui-xs text-text-muted mt-1">
-          Config file: <span className="text-text-secondary">{BOARDS[boardId].configFileName}</span>
+          {boardId === 'proffie_runtime' ? (
+            <>
+              Config files:{' '}
+              <span className="text-text-secondary">
+                {RUNTIME_PRESETS_INI} + {RUNTIME_PRESETS_TMP}
+              </span>
+            </>
+          ) : (
+            <>
+              Config file: <span className="text-text-secondary">{BOARDS[boardId].configFileName}</span>
+            </>
+          )}
         </p>
       </div>
 
-      {/* Runtime-preset style mode toggle (Phase A vs Phase C). Only
-          surfaced when proffie_runtime is selected. Phase A is the safe
-          default. Phase C unlocks custom colors + timing but requires the
-          user's firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. */}
+      {/* Runtime-preset blade-style source. Only surfaced for
+          proffie_runtime. "Keep factory blade styles" (builtin N M) stays
+          the default; "Use my colors and blade style" maps each preset to
+          the closest ProffieOS runtime verb and requires firmware without
+          DISABLE_BASIC_PARSER_STYLES. */}
       {boardId === 'proffie_runtime' && (
         <div className="mb-4">
           <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
-            Style Mode
+            Blade Styles
           </label>
           <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1.5">
             <label className="touch-target flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
@@ -847,15 +889,17 @@ export function CardWriter() {
                 checked={!useAdvancedRuntimeVerb}
                 onChange={() => setUseAdvancedRuntimeVerb(false)}
                 disabled={isWorking}
-                aria-label="Phase A — factory presets (safe)"
+                aria-label="Keep factory blade styles"
                 className="accent-accent w-3.5 h-3.5 mt-0.5"
               />
               <div className="flex-1 min-w-0">
                 <span className="text-ui-xs text-text-primary block">
-                  Phase A — reference factory presets <span className="text-text-muted">(safe default)</span>
+                  Keep factory blade styles <span className="text-text-muted">(safe default)</span>
                 </span>
                 <span className="text-ui-xs text-text-muted">
-                  Emits <code>style=builtin N M</code>. Reorder, rename, duplicate, reassign fonts. Custom colors / timing do NOT transfer.
+                  Only preset names, order and sound fonts change — your colors and blade style stay on
+                  your computer. Each preset gets the factory style at the same list position (preset 1 →
+                  factory slot 1), so a name can land on a different factory blade.
                 </span>
               </div>
             </label>
@@ -866,15 +910,19 @@ export function CardWriter() {
                 checked={useAdvancedRuntimeVerb}
                 onChange={() => setUseAdvancedRuntimeVerb(true)}
                 disabled={isWorking}
-                aria-label="Phase C — custom styles (experimental)"
+                aria-label="Use my colors and blade style"
                 className="accent-accent w-3.5 h-3.5 mt-0.5"
               />
               <div className="flex-1 min-w-0">
                 <span className="text-ui-xs text-text-primary block">
-                  Phase C — custom styles <span style={{ color: 'rgb(var(--accent-warm))' }}>(experimental)</span>
+                  Use my colors and blade style{' '}
+                  <span style={{ color: 'rgb(var(--accent-warm))' }}>(experimental)</span>
                 </span>
                 <span className="text-ui-xs text-text-muted">
-                  Emits <code>style=advanced R,G,B …</code>. Custom base / clash / blast / lockup colors + ignition / retraction timing all transfer. Requires firmware without <code>DISABLE_BASIC_PARSER_STYLES</code> (true for stock ProffieOS + Fett263 prop; some vendor builds disable this).
+                  Builds each preset from the closest ProffieOS runtime style (solid, gradient, unstable,
+                  fire, audio-reactive or rainbow) in your colors and timing — each preset below shows how
+                  close it gets. Needs firmware without <code>DISABLE_BASIC_PARSER_STYLES</code> (true for
+                  stock ProffieOS + Fett263 builds; some vendor firmware disables it).
                 </span>
               </div>
             </label>
@@ -898,6 +946,12 @@ export function CardWriter() {
                   <div className="flex-1 min-w-0">
                     <span className="text-ui-xs text-text-primary truncate block">{entry.presetName}</span>
                     <span className="text-ui-xs text-text-muted font-mono">{entry.fontName}/</span>
+                    {boardId === 'proffie_runtime' && (
+                      <RuntimeStyleChip
+                        badge={runtimeBadges?.[i] ?? null}
+                        position={i}
+                      />
+                    )}
                   </div>
                   <span className="text-ui-xs text-text-muted shrink-0">
                     {STYLE_LABELS[entry.style] ?? entry.style}
@@ -908,6 +962,11 @@ export function CardWriter() {
             <p className="text-ui-xs text-accent mt-1 px-2">
               Using {resolvedEntries.length} preset(s) from {activeProfileId ? 'active card config' : 'Saber Preset List'} (in order)
             </p>
+            {runtimeFidelityTally && (
+              <p className="text-ui-xs text-text-muted px-2">
+                {runtimeFidelityTally} — hover a label for details
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1">
@@ -931,6 +990,9 @@ export function CardWriter() {
                 <span className="text-ui-xs text-text-muted">
                   {STYLE_LABELS[config.style] ?? config.style}
                 </span>
+                {boardId === 'proffie_runtime' && selectedPresets.has('current') && (
+                  <RuntimeStyleChip badge={runtimeBadges?.[0] ?? null} position={0} />
+                )}
               </div>
             </label>
             <p className="text-ui-xs text-text-muted mt-1 px-2">
@@ -949,7 +1011,8 @@ export function CardWriter() {
         runtimeUseAdvancedVerb={useAdvancedRuntimeVerb}
       />
 
-      {/* Output Files Preview — runtime path emits only presets.ini */}
+      {/* Output Files Preview — runtime path emits presets.ini + an
+          identical presets.tmp (never one without the other) */}
       <div className="mb-4">
         <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
           {boardId === 'proffie_runtime' ? 'Output Files' : 'Font Folders'}
@@ -959,8 +1022,13 @@ export function CardWriter() {
             <div className="space-y-1 text-ui-sm font-mono">
               <div className="flex items-center gap-2">
                 <span className="text-text-muted">/</span>
-                <span className="text-accent">presets.ini</span>
+                <span className="text-accent">{RUNTIME_PRESETS_INI}</span>
                 <span className="text-text-muted">runtime preset list</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-text-muted">/</span>
+                <span className="text-accent">{RUNTIME_PRESETS_TMP}</span>
+                <span className="text-text-muted">identical copy</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-text-muted">/</span>
@@ -968,6 +1036,12 @@ export function CardWriter() {
                 <span className="text-text-muted">install instructions</span>
               </div>
               <p className="text-ui-xs text-text-muted mt-2 px-1 font-sans">
+                Both preset files go on the SD card root. ProffieOS loads a
+                saber-written presets.tmp ahead of a plain presets.ini, so an old
+                on-saber save would silently override your deck — the identical
+                copy closes that gap.
+              </p>
+              <p className="text-ui-xs text-text-muted mt-1 px-1 font-sans">
                 No font folders emitted — your saber&apos;s factory firmware already
                 has the sound fonts. {runtimeNumBlades > 1 && `Each preset emits ${runtimeNumBlades} style lines (one per blade).`}
               </p>
@@ -1116,20 +1190,53 @@ export function CardWriter() {
                 </span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-text-muted">Edit Mode (Fett263)</span>
-              <span
-                className="font-medium"
-                style={{
-                  color: configSummary.editModeEnabled
-                    ? 'rgb(var(--status-ok))'
-                    : 'rgb(var(--text-muted))',
-                }}
-              >
-                {configSummary.editModeEnabled ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
-            {configSummary.fontFolders.length > 0 && (
+            {boardId === 'proffie_runtime' ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Blade styles</span>
+                  <span className="text-text-primary">
+                    {useAdvancedRuntimeVerb ? 'Your colors + style' : 'Factory styles'}
+                  </span>
+                </div>
+                {runtimeFidelityTally && (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-text-muted shrink-0">Style match</span>
+                    <span className="text-text-primary text-right">{runtimeFidelityTally}</span>
+                  </div>
+                )}
+                <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
+                  <span className="text-text-muted block mb-1">Files (SD card root):</span>
+                  <div className="flex flex-wrap gap-1">
+                    {[RUNTIME_PRESETS_INI, RUNTIME_PRESETS_TMP, 'KYBERSTATION_README.txt'].map((name) => (
+                      <span
+                        key={name}
+                        className="inline-block px-1.5 py-0.5 rounded bg-bg-primary/50 text-text-secondary font-mono text-ui-xs"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-text-muted block mt-1">
+                    No font folders — the saber already has its sound fonts.
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-text-muted">Edit Mode (Fett263)</span>
+                <span
+                  className="font-medium"
+                  style={{
+                    color: configSummary.editModeEnabled
+                      ? 'rgb(var(--status-ok))'
+                      : 'rgb(var(--text-muted))',
+                  }}
+                >
+                  {configSummary.editModeEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            )}
+            {boardId !== 'proffie_runtime' && configSummary.fontFolders.length > 0 && (
               <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
                 <span className="text-text-muted block mb-1">Font folders:</span>
                 <div className="flex flex-wrap gap-1">
@@ -1263,7 +1370,33 @@ export function CardWriter() {
           </button>
           <div className="px-3 pb-3">
             <ol className="list-decimal list-inside space-y-1.5 text-ui-xs text-text-secondary">
-              {outputMethod === 'zip' ? (
+              {boardId === 'proffie_runtime' && outputMethod === 'zip' ? (
+                <>
+                  <li>
+                    In both <span className="font-mono text-accent">{RUNTIME_PRESETS_INI}</span> and{' '}
+                    <span className="font-mono text-accent">{RUNTIME_PRESETS_TMP}</span>, replace the{' '}
+                    <span className="font-mono">installed=</span> placeholder (see KYBERSTATION_README.txt)
+                  </li>
+                  <li>Copy both files to the SD card root, replacing the existing ones</li>
+                  <li>Safely eject the SD card</li>
+                  <li>Power-cycle the saber</li>
+                </>
+              ) : boardId === 'proffie_runtime' ? (
+                <>
+                  <li>Safely eject the SD card</li>
+                  <li>
+                    Power-cycle the saber — it loads the new{' '}
+                    <span className="font-mono text-accent">{RUNTIME_PRESETS_INI}</span> (
+                    <span className="font-mono">{RUNTIME_PRESETS_TMP}</span> is an identical copy)
+                  </li>
+                  {autoBackup && (
+                    <li>
+                      To roll back, rename the <span className="font-mono">presets_backup_…</span> files on
+                      the card back to presets.ini / presets.tmp
+                    </li>
+                  )}
+                </>
+              ) : outputMethod === 'zip' ? (
                 <>
                   <li>Extract the ZIP to your SD card root</li>
                   <li>Copy your sound font files into each font folder</li>
@@ -1295,9 +1428,13 @@ export function CardWriter() {
 
       {/* Info Footer */}
       <p className="text-ui-xs text-text-muted mt-3">
-        {outputMethod === 'zip'
-          ? 'Downloads a ZIP file containing the board config and font folder structure. Extract to your SD card.'
-          : 'Writes files directly to your SD card using the File System Access API. Requires Chrome or Edge.'}
+        {boardId === 'proffie_runtime'
+          ? outputMethod === 'zip'
+            ? 'Downloads a ZIP with presets.ini and an identical presets.tmp. Copy both to your SD card root.'
+            : 'Writes presets.ini and an identical presets.tmp directly to your SD card using the File System Access API. Requires Chrome or Edge.'
+          : outputMethod === 'zip'
+            ? 'Downloads a ZIP file containing the board config and font folder structure. Extract to your SD card.'
+            : 'Writes files directly to your SD card using the File System Access API. Requires Chrome or Edge.'}
       </p>
     </div>
   );
@@ -1473,6 +1610,48 @@ function statusColorStyle(type: StatusMessage['type']): React.CSSProperties {
   };
 }
 
+// ─── Runtime style chip (proffie_runtime preset rows) ───
+//
+// Custom-styles mode: fidelity of the runtime verb this preset maps to,
+// color-coded like the deliverability chips (green faithful / amber
+// approximate / warn colors-only), with the mapping note as the tooltip.
+// Factory-styles mode: a muted reminder of which factory slot's style the
+// preset will actually play (style=builtin N M is position-indexed).
+
+function RuntimeStyleChip({
+  badge,
+  position,
+}: {
+  badge: RuntimeFidelityBadge | null;
+  position: number;
+}) {
+  if (!badge) {
+    return (
+      <span
+        className="block text-ui-xs text-text-muted mt-0.5"
+        title={`Your colors and blade style stay on your computer. On the saber this preset plays whatever blade style the firmware has in factory slot ${position + 1} (style=builtin ${position} …).`}
+      >
+        Plays factory slot {position + 1}&apos;s style
+      </span>
+    );
+  }
+  const token =
+    badge.tone === 'ok' ? '--status-ok' : badge.tone === 'partial' ? '--accent-warm' : '--status-warn';
+  return (
+    <span
+      className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-ui-xs"
+      title={badge.detail}
+      style={{
+        background: `rgb(var(${token}) / 0.12)`,
+        color: `rgb(var(${token}))`,
+        border: `1px solid rgb(var(${token}) / 0.3)`,
+      }}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
 // ─── Deliverability Panel ───
 //
 // "Honest export" — surfaces what will / won't transfer to the saber
@@ -1495,34 +1674,18 @@ interface DeliverabilityPanelProps {
 }
 
 function DeliverabilityPanel({ presets, boardId, runtimeUseAdvancedVerb }: DeliverabilityPanelProps) {
-  // Aggregate across all presets in the bundle. Even if user has a single
-  // preset selected, this resolves correctly.
-  const aggregated = useMemo(() => {
-    // Use the first preset's config as the canonical input. If user has
-    // multiple presets with different customizations, the knob TABLE is
-    // identical per target — what differs is only the "is this knob
-    // customized" detection used for the warning gate. The panel itself
-    // is target-driven and identical across presets, so first-preset is
-    // sufficient.
-    const fallbackConfig: BladeConfig = {
-      baseColor: { r: 0, g: 140, b: 255 },
-      clashColor: { r: 255, g: 255, b: 255 },
-      lockupColor: { r: 255, g: 220, b: 80 },
-      blastColor: { r: 255, g: 255, b: 255 },
-      style: 'stable',
-      ignition: 'standard',
-      retraction: 'standard',
-      ignitionMs: 300,
-      retractionMs: 800,
-      shimmer: 0,
-      ledCount: 144,
-    };
-    const sampleConfig = presets[0]?.config ?? fallbackConfig;
-    const report = getDeliverability(sampleConfig, boardId, {
-      runtimeUseAdvancedVerb,
-    });
-    return report;
-  }, [presets, boardId, runtimeUseAdvancedVerb]);
+  // Aggregate across every preset in the bundle: in custom-styles mode the
+  // runtime table follows each preset's verb, so a knob only shows as
+  // "Transfers" when it transfers for ALL presets (worst case wins).
+  const aggregated = useMemo(
+    () =>
+      getBundleDeliverability(
+        presets.map((p) => p.config),
+        boardId,
+        { runtimeUseAdvancedVerb },
+      ),
+    [presets, boardId, runtimeUseAdvancedVerb],
+  );
 
   const transfers = aggregated.knobs.filter((k) => k.capability === 'deliverable');
   const doesntTransfer = aggregated.knobs.filter(

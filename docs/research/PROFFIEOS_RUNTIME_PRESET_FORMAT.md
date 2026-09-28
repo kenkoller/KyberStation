@@ -15,7 +15,7 @@ Modern vendor lightsabers (89sabers V3.9-BT, Sabertrio with `SAVE_PRESET`, KR Sa
 ## File location
 
 - **Path:** SD card root, filename `presets.ini`.
-- ProffieOS also writes `presets.tmp` as a double-buffer for atomic saves. KyberStation only writes `presets.ini`; ProffieOS will handle subsequent swaps if the user uses the saber's on-device edit menu.
+- ProffieOS also writes `presets.tmp` as a double-buffer for atomic saves. KyberStation writes `presets.ini` **and a byte-identical `presets.tmp`** (ZIP export and "Write to Card" alike) — see [External writers MUST write both](#-external-writers-must-write-both-ini-and-tmp) below. ProffieOS handles subsequent swaps if the user edits presets on the saber.
 - Source: [`/Users/KK/ProffieOS/common/current_preset.h`](/Users/KK/ProffieOS/common/current_preset.h) — `CreateINI()` (L298), `SaveAtLocked()` (L347).
 
 ## Schema
@@ -44,7 +44,7 @@ end
 4. **File terminates with `end`** (case-insensitive on read, lowercase on write — L142, L311).
 5. **Keys on disk are lowercase:** `font`, `track`, `style`, `name`, `variation`. The `Print()` method that displays presets over USB CDC uses UPPERCASE — that's display-only, not the disk format.
 6. **Comments starting with `#`** are skipped (L123). Unknown variables are silently ignored — the parser is lenient.
-7. **No checksums on the plain-text format.** ProffieOS also supports a `SafeFileHeader` checksummed variant, but the plain-text path is sufficient and used by the on-device save logic.
+7. **External writers use plain text; the firmware does not.** Every file the firmware writes itself (`CreateINI()`, `SaveAtLocked()`) goes through `BufferedFileWriter` (`common/file_reader.h`): two identical 16-byte `SafeFileHeader` records `{ magic 0xFF1E5AFE, checksum, iteration, length }`, the install_time string at byte 32, zero padding to byte 512, the text payload from byte 512, zero padding to 256 KiB. (Confirmed byte-for-byte against the 89sabers factory SD card, 2026-09.) A plain-text file has no header, so `OpenPresets2()` only reaches it after every header-valid file has been tried — which is why the `.tmp` rule below exists. It also means a saber-written `presets.ini` does not start with `installed=`; `apps/web/lib/runtimePresetIO.ts` reads past the header to find it.
 
 ## Style strings
 
@@ -128,7 +128,7 @@ That's the in-memory representation displayed over serial. The on-disk format is
 
 ### ⚠ External writers MUST write both `.ini` and `.tmp`
 
-**Real bug observed 2026-05-17:** writing only `presets.ini` to the SD card from a host (via direct file write, KyberStation CardWriter ZIP, or any external tool) produced silent reversion to factory presets after the next power cycle. Root cause: `OpenPresets()` picks whichever of `presets.ini` / `presets.tmp` has the higher `iteration` counter in its `SafeFileHeader`. A stale `.tmp` from a prior on-device save can win against a fresh `.ini`.
+**Real bug observed 2026-05-17:** writing only `presets.ini` to the SD card from a host (via direct file write, KyberStation CardWriter ZIP, or any external tool) produced silent reversion to factory presets after the next power cycle. Root cause (`current_preset.h` `OpenPresets2()`, ~L272): the firmware tries `TryValidator(a)` / `TryValidator(b)` — files with a valid `SafeFileHeader`, higher `iteration` first — **before** `TryPlain(ini)` / `TryPlain(tmp)`. A stale saber-written `.tmp` has a valid header; a freshly copied plain `.ini` does not; the `.tmp` wins.
 
 **The rule for external writers:** when deploying a new preset set to the SD card from outside ProffieOS's own save logic, write **identical content** to both `presets.ini` AND `presets.tmp`. ProffieOS will then pick whichever it likes — both have the same content, so it doesn't matter.
 
@@ -141,8 +141,8 @@ diskutil eject "$SD"
 ```
 
 This applies to:
-- KyberStation's CardWriter "Write to SD" path (currently under audit — needs to be verified that both files are written)
-- KyberStation's ZIP export (the user extracts to SD)
+- KyberStation's CardWriter "Write to Card" path — writes both automatically, backs up the old pair byte-for-byte first (`presets_backup_<timestamp>.ini/.tmp`), and verifies both afterwards
+- KyberStation's ZIP export — the ZIP carries both files and the README tells the user to copy both
 - Hand-deploys via `cp` on the user's terminal
 - Any third-party script that drops a `presets.ini` on the card
 
@@ -156,12 +156,15 @@ Memory: [`reference_runtime_preset_double_buffer.md`](/Users/KK/.claude/projects
 
 Tests in [`packages/codegen/tests/proffieRuntimeEmitter.test.ts`](../../packages/codegen/tests/proffieRuntimeEmitter.test.ts) byte-pin the format. If you change the wire format, those tests must change with it — be explicit about it in the PR.
 
-## Out of scope (Phase A)
+## Custom styles (runtime verbs)
 
-- **Color override** via additional `builtin N M R,G,B ...` args. v0.18 work; needs per-chassis `RgbArg<N>` schema knowledge.
-- **`standard` / `advanced` / `fire` verbs** to build presets independent of the compiled-in bank. Later.
+The opt-in "Use my colors and blade style" mode emits each preset's closest 7.12 runtime verb (`advanced`, `unstable`, `fire`, `cycle`, `rainbow`, `strobe`) via `mapBladeConfigToRuntimeStyle()` in [`runtimeVerbs.ts`](../../packages/codegen/src/emitters/runtimeVerbs.ts), with byte-exact builders for all eight verbs. Gallery coverage + mapping decisions: [`RUNTIME_PRESET_COVERAGE_2026-09-24.md`](RUNTIME_PRESET_COVERAGE_2026-09-24.md).
+
+## Out of scope
+
+- **Color override** via additional `builtin N M R,G,B ...` args. Needs per-chassis `RgbArg<N>` schema knowledge.
 - **Importing existing `presets.ini`** back into KyberStation's editor for round-trip editing. Separate feature.
-- **Checksummed `SafeFileHeader` format.** Plain text is sufficient.
+- **Writing the checksummed `SafeFileHeader` format.** External writers stay plain text (with the identical `.tmp` copy); only the firmware writes headers.
 
 ## References
 

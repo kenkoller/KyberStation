@@ -77,6 +77,38 @@ export {
   clampRetractionSpeed,
 } from './emitters/index.js';
 
+// ─── ProffieOS runtime verbs (presets.ini `style=` values) ───
+// BladeConfig → closest ProffieOS 7.12 runtime verb + fidelity label, and
+// the byte-exact per-verb builders. Used by the proffie_runtime export.
+export {
+  mapBladeConfigToRuntimeStyle,
+  isValidRuntimeStyleString,
+  buildBuiltinStyleString,
+  buildStandardStyleString,
+  buildFireStyleString,
+  buildUnstableStyleString,
+  buildStrobeStyleString,
+  buildCycleStyleString,
+  buildRainbowStyleString,
+  rgbArg16,
+  toColor16Channel,
+  RUNTIME_VERB_SLOTS,
+} from './emitters/index.js';
+export type {
+  RuntimeVerb,
+  RuntimeFidelity,
+  RuntimeStyleMapping,
+  RuntimeStyleInput,
+  RuntimeRGB,
+  RuntimeVerbSlots,
+  StandardVerbParams,
+  FireVerbParams,
+  UnstableVerbParams,
+  StrobeVerbParams,
+  CycleVerbParams,
+  RainbowVerbParams,
+} from './emitters/index.js';
+
 // ─── C++ Style Parser ───
 
 export { parseStyleCode, tokenize, filterTokens, reconstructConfig } from './parser/index.js';

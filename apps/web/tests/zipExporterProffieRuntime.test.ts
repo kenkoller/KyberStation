@@ -3,7 +3,10 @@
 // Pins the SD-card-native export bundle:
 //
 //   1. presets.ini at ZIP root — the runtime preset file
-//   2. KYBERSTATION_README.txt at ZIP root — user-facing explainer
+//   2. presets.tmp at ZIP root — byte-identical copy (ProffieOS loads a
+//      saber-written presets.tmp ahead of a plain presets.ini, so a stale
+//      one silently reverts the deck unless it is replaced too)
+//   3. KYBERSTATION_README.txt at ZIP root — user-facing explainer
 //
 // Importantly, this bundle MUST NOT contain font folders. The user's
 // factory firmware already has the sound fonts on its SD card; emitting
@@ -20,6 +23,7 @@ import {
   type ExportPreset,
 } from '@/lib/zipExporter';
 import type { BladeConfig } from '@kyberstation/engine';
+import { mapBladeConfigToRuntimeStyle } from '@kyberstation/codegen';
 
 // ─── Fixture helpers ─────────────────────────────────────────────────
 
@@ -62,7 +66,7 @@ async function listZipPaths(blob: Blob): Promise<string[]> {
 
 describe('ProffieOS Runtime export (proffie_runtime)', () => {
   describe('ZIP structure', () => {
-    it('emits exactly presets.ini and KYBERSTATION_README.txt — no font folders', async () => {
+    it('emits exactly presets.ini, presets.tmp and KYBERSTATION_README.txt — no font folders', async () => {
       const blob = await exportMultiPresetZip({
         presets: [
           makePreset('Graflex', 'Graflex'),
@@ -72,7 +76,30 @@ describe('ProffieOS Runtime export (proffie_runtime)', () => {
       });
 
       const paths = await listZipPaths(blob);
-      expect(paths).toEqual(['KYBERSTATION_README.txt', 'presets.ini']);
+      expect(paths).toEqual(['KYBERSTATION_README.txt', 'presets.ini', 'presets.tmp']);
+    });
+
+    it('presets.tmp is byte-identical to presets.ini in both Phase A and Phase C', async () => {
+      for (const runtimeUseAdvancedVerb of [false, true]) {
+        const blob = await exportMultiPresetZip({
+          presets: [makePreset('Graflex', 'Graflex'), makePreset('Vader', 'Vader')],
+          boardId: 'proffie_runtime',
+          runtimeInstallTime: 'Apr 21 2026 08:44:54',
+          runtimeUseAdvancedVerb,
+        });
+        const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+        const ini = await zip.file('presets.ini')!.async('uint8array');
+        const tmp = await zip.file('presets.tmp')!.async('uint8array');
+        expect(Array.from(tmp)).toEqual(Array.from(ini));
+      }
+    });
+
+    it('README tells the user to put BOTH files on the card and explains why', () => {
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('presets.ini and presets.tmp');
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('WHY TWO IDENTICAL FILES?');
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('Copy BOTH presets.ini and presets.tmp');
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('In BOTH files from this ZIP');
+      expect(PROFFIE_RUNTIME_README_TEXT).not.toMatch(/contains a single file/i);
     });
 
     it('embeds the pinned README at the ZIP root', async () => {
@@ -189,6 +216,39 @@ describe('ProffieOS Runtime export (proffie_runtime)', () => {
       expect(content).toContain('65535,56540,20560');
       // No builtin line should be emitted in Phase C
       expect(content).not.toContain('style=builtin');
+    });
+
+    it('custom styles: each preset gets its mapped runtime verb', async () => {
+      const blob = await exportMultiPresetZip({
+        presets: [
+          makePreset('Kylo', 'kylo', { style: 'unstable', baseColor: { r: 200, g: 10, b: 0 } }),
+          makePreset('Forge', 'forge', { style: 'fire' }),
+          makePreset('Prism', 'prism', { style: 'prism' }),
+          makePreset('Grogu', 'grogu', { style: 'pulse' }),
+          makePreset('Helix', 'helix', { style: 'helix' }),
+        ],
+        boardId: 'proffie_runtime',
+        runtimeUseAdvancedVerb: true,
+        runtimeInstallTime: 'Apr 21 2026 08:44:54',
+      });
+      const content = (await readZipFile(blob, 'presets.ini'))!;
+      const verbs = content
+        .split('\n')
+        .filter((l) => l.startsWith('style='))
+        .map((l) => l.slice('style='.length).split(' ')[0]);
+      expect(verbs).toEqual(['unstable', 'fire', 'rainbow', 'cycle', 'advanced']);
+      expect(content).not.toContain('style=builtin');
+    });
+
+    it('custom styles: the ZIP carries exactly what mapBladeConfigToRuntimeStyle returns', async () => {
+      const preset = makePreset('Kylo', 'kylo', { style: 'unstable', baseColor: { r: 200, g: 10, b: 0 } });
+      const blob = await exportPresetZip({
+        preset,
+        boardId: 'proffie_runtime',
+        runtimeUseAdvancedVerb: true,
+      });
+      const content = (await readZipFile(blob, 'presets.ini'))!;
+      expect(content).toContain(`style=${mapBladeConfigToRuntimeStyle(preset.config).styleString}\n`);
     });
 
     it('Phase A default: builtin emitted when runtimeUseAdvancedVerb is omitted', async () => {

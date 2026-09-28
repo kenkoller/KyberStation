@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "description": "Known-good ProffieOS runtime-preset exports (board proffie_runtime). Each fixture pins the exact presets.ini text and requires presets.tmp to be byte-identical to it. The consumer is ProffieOS 7.12 CurrentPreset::Read() / ValidatePresets() on real sabers — if a fixture stops matching, the SD-card wire format changed: make that explicit in the PR (and add a v2/ folder) rather than editing these.",
+  "fixtures": [
+    {
+      "name": "phase-a-single-graflex",
+      "description": "Default Phase A path: one preset referencing factory slot 0 on a single-blade saber.",
+      "input": {
+        "runtimeInstallTime": "Apr 21 2026 08:44:54",
+        "runtimeNumBlades": 1,
+        "runtimeUseAdvancedVerb": false,
+        "presets": [
+          {
+            "name": "Graflex",
+            "fontName": "Graflex",
+            "config": {
+              "baseColor": { "r": 0, "g": 140, "b": 255 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          }
+        ]
+      },
+      "zipFiles": ["KYBERSTATION_README.txt", "presets.ini", "presets.tmp"],
+      "presetsIni": "installed=Apr 21 2026 08:44:54\nnew_preset\nfont=Graflex\ntrack=tracks/Graflex.wav\nstyle=builtin 0 1\nname=Graflex\nvariation=0\nend\n"
+    },
+    {
+      "name": "phase-a-three-presets-two-blades",
+      "description": "Phase A deck on a two-blade chassis: one style= line per blade, array index maps 1:1 to the factory slot, order preserved.",
+      "input": {
+        "runtimeInstallTime": "Apr 21 2026 08:44:54",
+        "runtimeNumBlades": 2,
+        "runtimeUseAdvancedVerb": false,
+        "presets": [
+          {
+            "name": "Vader",
+            "fontName": "Vader",
+            "config": {
+              "baseColor": { "r": 255, "g": 0, "b": 0 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "unstable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0.2,
+              "ledCount": 144
+            }
+          },
+          {
+            "name": "Luke",
+            "fontName": "luke",
+            "config": {
+              "baseColor": { "r": 0, "g": 255, "b": 0 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          },
+          {
+            "name": "Yoda",
+            "fontName": "Yoda",
+            "config": {
+              "baseColor": { "r": 60, "g": 255, "b": 40 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          }
+        ]
+      },
+      "zipFiles": ["KYBERSTATION_README.txt", "presets.ini", "presets.tmp"],
+      "presetsIni": "installed=Apr 21 2026 08:44:54\nnew_preset\nfont=Vader\ntrack=tracks/Vader.wav\nstyle=builtin 0 1\nstyle=builtin 0 2\nname=Vader\nvariation=0\nnew_preset\nfont=luke\ntrack=tracks/luke.wav\nstyle=builtin 1 1\nstyle=builtin 1 2\nname=Luke\nvariation=0\nnew_preset\nfont=Yoda\ntrack=tracks/Yoda.wav\nstyle=builtin 2 1\nstyle=builtin 2 2\nname=Yoda\nvariation=0\nend\n"
+    },
+    {
+      "name": "phase-a-date-macro-double-space",
+      "description": "__DATE__ pads single-digit days with a space (\"May  1\"). ValidatePresets() compares install_time byte-for-byte, so the internal double space must survive.",
+      "input": {
+        "runtimeInstallTime": "May  1 2026 09:05:07",
+        "runtimeNumBlades": 1,
+        "runtimeUseAdvancedVerb": false,
+        "presets": [
+          {
+            "name": "Obi-Wan",
+            "fontName": "OB4",
+            "config": {
+              "baseColor": { "r": 0, "g": 140, "b": 255 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          }
+        ]
+      },
+      "zipFiles": ["KYBERSTATION_README.txt", "presets.ini", "presets.tmp"],
+      "presetsIni": "installed=May  1 2026 09:05:07\nnew_preset\nfont=OB4\ntrack=tracks/OB4.wav\nstyle=builtin 0 1\nname=Obi-Wan\nvariation=0\nend\n"
+    },
+    {
+      "name": "phase-a-placeholder-install-time",
+      "description": "ZIP path with no discovered install_time: the placeholder the README tells users to replace in BOTH files.",
+      "input": {
+        "runtimeInstallTime": null,
+        "runtimeNumBlades": 1,
+        "runtimeUseAdvancedVerb": false,
+        "presets": [
+          {
+            "name": "Graflex",
+            "fontName": "Graflex",
+            "config": {
+              "baseColor": { "r": 0, "g": 140, "b": 255 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          }
+        ]
+      },
+      "zipFiles": ["KYBERSTATION_README.txt", "presets.ini", "presets.tmp"],
+      "presetsIni": "installed=<<REPLACE_WITH_YOUR_FIRMWARE_INSTALL_TIME>>\nnew_preset\nfont=Graflex\ntrack=tracks/Graflex.wav\nstyle=builtin 0 1\nname=Graflex\nvariation=0\nend\n"
+    },
+    {
+      "name": "phase-c-stable-magenta",
+      "description": "Custom-styles path, stable blade: the 11-slot advanced verb with 16-bit colors (x257) — the exact shape hardware-validated on the V3.9-BT 2026-05-18.",
+      "input": {
+        "runtimeInstallTime": "Apr 21 2026 08:44:54",
+        "runtimeNumBlades": 1,
+        "runtimeUseAdvancedVerb": true,
+        "presets": [
+          {
+            "name": "Custom",
+            "fontName": "custom",
+            "config": {
+              "baseColor": { "r": 255, "g": 0, "b": 128 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "stable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 250,
+              "retractionMs": 700,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          }
+        ]
+      },
+      "zipFiles": ["KYBERSTATION_README.txt", "presets.ini", "presets.tmp"],
+      "presetsIni": "installed=Apr 21 2026 08:44:54\nnew_preset\nfont=custom\ntrack=tracks/custom.wav\nstyle=advanced 65535,0,32896 65535,0,32896 65535,0,32896 65535,65535,65535 10 65535,65535,65535 65535,56540,20560 65535,65535,65535 250 700 65535,65535,65535\nname=Custom\nvariation=0\nend\n"
+    },
+    {
+      "name": "phase-c-mixed-runtime-verbs",
+      "description": "Custom-styles deck exercising each mapped verb family: unstable, fire, rainbow (prism), cycle (pulse) and a colors-only advanced fallback (helix).",
+      "input": {
+        "runtimeInstallTime": "Apr 21 2026 08:44:54",
+        "runtimeNumBlades": 1,
+        "runtimeUseAdvancedVerb": true,
+        "presets": [
+          {
+            "name": "Kylo",
+            "fontName": "Kylo",
+            "config": {
+              "baseColor": { "r": 200, "g": 10, "b": 0 },
+              "clashColor": { "r": 255, "g": 200, "b": 100 },
+              "lockupColor": { "r": 255, "g": 130, "b": 0 },
+              "blastColor": { "r": 255, "g": 220, "b": 180 },
+              "style": "unstable",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 500,
+              "retractionMs": 400,
+              "shimmer": 0.3,
+              "ledCount": 144
+            }
+          },
+          {
+            "name": "Forge",
+            "fontName": "Fire",
+            "config": {
+              "baseColor": { "r": 255, "g": 100, "b": 40 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "fire",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          },
+          {
+            "name": "Prism",
+            "fontName": "Rainbow",
+            "config": {
+              "baseColor": { "r": 230, "g": 235, "b": 250 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 200, "g": 210, "b": 240 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "prism",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 400,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          },
+          {
+            "name": "Grogu",
+            "fontName": "Yoda",
+            "config": {
+              "baseColor": { "r": 0, "g": 230, "b": 30 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "pulse",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          },
+          {
+            "name": "Helix",
+            "fontName": "Graflex",
+            "config": {
+              "baseColor": { "r": 0, "g": 140, "b": 255 },
+              "clashColor": { "r": 255, "g": 255, "b": 255 },
+              "lockupColor": { "r": 255, "g": 220, "b": 80 },
+              "blastColor": { "r": 255, "g": 255, "b": 255 },
+              "style": "helix",
+              "ignition": "standard",
+              "retraction": "standard",
+              "ignitionMs": 300,
+              "retractionMs": 800,
+              "shimmer": 0,
+              "ledCount": 144
+            }
+          }
+        ]
+      },
+      "zipFiles": ["KYBERSTATION_README.txt", "presets.ini", "presets.tmp"],
+      "presetsIni": "installed=Apr 21 2026 08:44:54\nnew_preset\nfont=Kylo\ntrack=tracks/Kylo.wav\nstyle=unstable 30235,1512,0 51400,2570,0 55714,21785,20000 59881,40349,39321 500 400\nname=Kylo\nvariation=0\nnew_preset\nfont=Fire\ntrack=tracks/Fire.wav\nstyle=fire 65535,25700,10280 65535,51400,12850\nname=Forge\nvariation=0\nnew_preset\nfont=Rainbow\ntrack=tracks/Rainbow.wav\nstyle=rainbow 300 400\nname=Prism\nvariation=0\nnew_preset\nfont=Yoda\ntrack=tracks/Yoda.wav\nstyle=cycle 0,59110,7710 16000,60679,21827 0,59110,7710 65535,65535,65535 65535,56540,20560\nname=Grogu\nvariation=0\nnew_preset\nfont=Graflex\ntrack=tracks/Graflex.wav\nstyle=advanced 0,35980,65535 0,35980,65535 0,35980,65535 65535,65535,65535 10 65535,65535,65535 65535,56540,20560 65535,65535,65535 300 800 65535,65535,65535\nname=Helix\nvariation=0\nend\n"
+    }
+  ]
+}
