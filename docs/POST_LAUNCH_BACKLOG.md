@@ -12,6 +12,25 @@ Single index of deferred work as of **2026-04-27 overnight** (post-overnight UI/
 
 ---
 
+## 🧭 Open now (2026-09-28)
+
+Sequencing and the decisions waiting on Ken live in [`DEVELOPMENT_PLAN_2026-09.md`](DEVELOPMENT_PLAN_2026-09.md) (Phase 2 and 3). Items found during the re-entry sprint, not yet fixed:
+
+| Item | Size | Notes |
+|---|---|---|
+| **config.h ignition runs tip → hilt** (`TrWipeIn` in `InOutTrL`'s ignition slot for `standard`) | M | In progress as plan Lane F; needs fixture regeneration and a bench check on a stock board. |
+| **Bench-validate runtime verbs + `.tmp` fix** on the V3.9-BT | S (Ken, ~1 h) | Only `advanced` + `builtin` are validated on the SD path. Checklist in [#369](https://github.com/kenkoller/KyberStation/pull/369). |
+| **Shimmer never reaches generated code** | M | `ASTBuilder` ignores `shimmer`; needs a ProffieOS construct choice, fixture regeneration, bench check. |
+| **Aurora / Prism emit plain `Rainbow`** in config.h codegen, ignoring the base color | S–M | Runtime mapper keeps Aurora's hue (#369), so the paths disagree. |
+| **Gradient stops ignored by config.h codegen** | S–M | Runtime `advanced` verb already uses them (#369). |
+| **Mobile header clips the Retract button** at 375px | S | ~26px overflow in `AppShell.tsx`. |
+| **Wire in `OLEDEditor` and `ThemePickerPanel`** — or delete them | S each | Both work but nothing mounts them (#367 kept them). Needs a product call. |
+| **Stock Proffieboard V3.9 reference run** | S + ~$80 | Plan Phase 2 item 2 — the only way to confirm or retract the compile + flash claim. |
+| **Web stack upgrade** (Next 14 → 16, React 19, R3F 9, Vitest) | L | Plan Phase 2 item 3; Next 14 is past end of life. |
+| **ESLint + Dependabot + CodeQL re-enable + strict status checks** | S | Plan Phase 2 item 4; needs Ken's OK for the lockfile + repo-setting changes. |
+
+---
+
 ## 🧭 What was open as of 2026-05-16 (superseded — see [`DEVELOPMENT_PLAN_2026-09.md`](DEVELOPMENT_PLAN_2026-09.md))
 
 ### Recommended next sequence
