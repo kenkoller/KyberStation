@@ -470,10 +470,11 @@ function unwrapToCore(node: StyleNode): StyleNode | null {
   return node;
 }
 
-// `detectIgnitionType` used to live here with an inverted map (TrWipe →
-// 'standard' but forward emits 'standard' → TrWipeIn). The canonical
-// ignition/retraction table now lives in transitionMap.ts; see the
-// `ignitionFromAST` / `retractionFromAST` helpers below.
+// `detectIgnitionType` used to live here. It mapped TrWipe → 'standard',
+// which matched ProffieOS; the forward side wrongly emitted TrWipeIn for
+// standard ignition until 2026-09. The canonical ignition/retraction table
+// now lives in transitionMap.ts; see the `ignitionFromAST` /
+// `retractionFromAST` helpers below.
 
 /**
  * Extract transition duration from a transition node.

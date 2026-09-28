@@ -413,8 +413,9 @@ describe('Cross-pattern integration — full Fett263 layer sandwich', () => {
     expect(result.preonColor).toEqual({ r: 255, g: 255, b: 128 });
     expect(result.preonMs).toBe(2000);
 
-    // Ignition / retraction from the trailing InOutTrL.
-    expect(result.ignition).toBe('scroll');
+    // Ignition / retraction from the trailing InOutTrL. TrWipe<300> is
+    // ProffieOS's canonical hilt → tip ignition, i.e. KyberStation 'standard'.
+    expect(result.ignition).toBe('standard');
     expect(result.retraction).toBe('standard');
     expect(result.ignitionMs).toBe(300);
     expect(result.retractionMs).toBe(800);

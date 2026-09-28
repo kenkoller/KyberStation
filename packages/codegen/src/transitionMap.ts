@@ -9,7 +9,7 @@
 // Coverage note: this sprint wires the 7 ID pairs ASTBuilder currently
 // emits. The 11 other ignition IDs listed in UI dropdowns (twist, swing,
 // stab, crackle, fracture, flash-fill, pulse-wave, drip-up, hyperspace,
-// summon, seismic) currently fall through to a `TrWipeIn` default in
+// summon, seismic) currently fall through to a `TrWipe` default in
 // ASTBuilder; extending codegen coverage is tracked for a follow-up sprint.
 
 import type { StyleNode } from './types.js';
@@ -48,6 +48,40 @@ function extractInt(node: StyleNode | undefined): number | null {
   return null;
 }
 
+// ─── Wipe-shape predicates ───
+//
+// ProffieOS 7.12 `transitions/wipe.h`: TrWipe grows color B from the hilt to
+// the tip; TrWipeIn runs tip → hilt. `transitions/center_wipe.h`:
+// TrCenterWipe grows from the center out; TrCenterWipeIn from both ends
+// toward the center. In `InOutTrL<IGNITION, RETRACTION>` the ignition runs
+// off → blade and the retraction blade → off, so a hilt-first ignition is
+// TrWipe and a tip-first retraction is TrWipeIn.
+//
+// Until 2026-09 KyberStation emitted TrWipeIn / TrCenterWipeIn in the
+// ignition slot, which ignites from the tip (or from both ends) on real
+// hardware. Ignition matchers accept both directions so configs exported
+// before the fix still import to the same ids.
+
+function isWipe(n?: StyleNode): boolean {
+  return !!n && (n.name === 'TrWipe' || n.name === 'TrWipeX');
+}
+
+function isWipeIn(n?: StyleNode): boolean {
+  return !!n && (n.name === 'TrWipeIn' || n.name === 'TrWipeInX');
+}
+
+function isAnyWipe(n?: StyleNode): boolean {
+  return isWipe(n) || isWipeIn(n);
+}
+
+function isCenterWipe(n?: StyleNode): boolean {
+  return !!n && (n.name === 'TrCenterWipe' || n.name === 'TrCenterWipeX');
+}
+
+function isCenterWipeIn(n?: StyleNode): boolean {
+  return !!n && (n.name === 'TrCenterWipeIn' || n.name === 'TrCenterWipeInX');
+}
+
 // ─── Map Entry Shape ───
 
 export type TransitionKind = 'ignition' | 'retraction' | 'both';
@@ -73,31 +107,55 @@ export interface TransitionMapping {
 
 // ─── Canonical Mappings ───
 //
-// Forward behaviour documented from ASTBuilder.ts as of Phase 0:
-//   standard (both)   → TrWipeIn<ms>
-//   scroll   (both)   → TrWipe<ms>
-//   wipe     (ign)    → TrWipe<ms>            -- alias of scroll
+// Forward behaviour (directions per the wipe-shape note above; every entry
+// matches the direction its engine class draws in the editor):
+//   standard (ign)    → TrWipe<ms>              hilt → tip
+//   standard (ret)    → TrWipeIn<ms>            tip → hilt
+//   scroll   (ign)    → TrWipe<ms>              engine draws it like standard
+//   scroll   (ret)    → TrWipeIn<ms>
+//   wipe     (ign)    → TrWipe<ms>              -- alias of standard
 //   spark    (ign)    → TrWipeSparkTip<White, ms>
-//   center   (both)   → TrCenterWipeIn<ms>
+//   center   (ign)    → TrCenterWipe<ms>        center → ends
+//   center   (ret)    → TrCenterWipeIn<ms>      ends → center
 //   fadeout  (ret)    → TrFade<ms>
-//   shatter  (ret)    → TrFade<ms>            -- alias of fadeout
+//   shatter  (ret)    → TrFade<ms>              -- alias of fadeout
 //   stutter  (ign)    → TrConcat<TrWipe<ms/3>, TrDelay<ms/6>, TrWipe<ms/2>>
-//   glitch   (ign)    → TrConcat<TrFade<ms/4>, TrDelay<ms/8>, TrWipeIn<ms/2>>
+//   glitch   (ign)    → TrConcat<TrFade<ms/4>, TrDelay<ms/8>, TrWipe<ms/2>>
 
 export const TRANSITION_MAPPINGS: TransitionMapping[] = [
   {
     id: 'standard',
-    kind: 'both',
+    kind: 'ignition',
+    buildAST: (ms) => tr('TrWipe', intNode(ms)),
+    matches: isAnyWipe,
+    extractMs: (n) => extractInt(n.args[0]),
+    preferForInverse: true,
+  },
+  {
+    id: 'standard',
+    kind: 'retraction',
     buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
-    matches: (n) => n.name === 'TrWipeIn' || n.name === 'TrWipeInX',
+    matches: isWipeIn,
     extractMs: (n) => extractInt(n.args[0]),
     preferForInverse: true,
   },
   {
     id: 'scroll',
-    kind: 'both',
+    kind: 'ignition',
     buildAST: (ms) => tr('TrWipe', intNode(ms)),
-    matches: (n) => n.name === 'TrWipe' || n.name === 'TrWipeX',
+    matches: isWipe,
+    extractMs: (n) => extractInt(n.args[0]),
+    // Same ProffieOS output as 'standard' (ScrollIgnition draws exactly
+    // like StandardIgnition), so the inverse resolves TrWipe to 'standard'.
+    preferForInverse: false,
+  },
+  {
+    id: 'scroll',
+    kind: 'retraction',
+    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    // Exports before 2026-09 emitted TrWipe for scroll retraction; keep
+    // importing that shape as 'scroll'. New exports import as 'standard'.
+    matches: isWipe,
     extractMs: (n) => extractInt(n.args[0]),
     preferForInverse: true,
   },
@@ -105,9 +163,9 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
     id: 'wipe',
     kind: 'ignition',
     buildAST: (ms) => tr('TrWipe', intNode(ms)),
-    matches: (n) => n.name === 'TrWipe' || n.name === 'TrWipeX',
+    matches: isWipe,
     extractMs: (n) => extractInt(n.args[0]),
-    preferForInverse: false, // alias — inverse lookup should pick 'scroll'
+    preferForInverse: false, // alias — inverse lookup picks 'standard'
   },
   {
     id: 'spark',
@@ -120,10 +178,17 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
   },
   {
     id: 'center',
-    kind: 'both',
+    kind: 'ignition',
+    buildAST: (ms) => tr('TrCenterWipe', intNode(ms)),
+    matches: (n) => isCenterWipe(n) || isCenterWipeIn(n),
+    extractMs: (n) => extractInt(n.args[0]),
+    preferForInverse: true,
+  },
+  {
+    id: 'center',
+    kind: 'retraction',
     buildAST: (ms) => tr('TrCenterWipeIn', intNode(ms)),
-    matches: (n) =>
-      n.name === 'TrCenterWipeIn' || n.name === 'TrCenterWipeInX',
+    matches: isCenterWipeIn,
     extractMs: (n) => extractInt(n.args[0]),
     preferForInverse: true,
   },
@@ -174,14 +239,14 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
         'TrConcat',
         tr('TrFade', intNode(Math.round(ms / 4))),
         tr('TrDelay', intNode(Math.round(ms / 8))),
-        tr('TrWipeIn', intNode(Math.round(ms / 2))),
+        tr('TrWipe', intNode(Math.round(ms / 2))),
       ),
     matches: (n) =>
       n.name === 'TrConcat' &&
       n.args.length === 3 &&
       n.args[0]?.name === 'TrFade' &&
       n.args[1]?.name === 'TrDelay' &&
-      n.args[2]?.name === 'TrWipeIn',
+      isAnyWipe(n.args[2]),
     extractMs: (n) => {
       const first = extractInt(n.args[0]?.args[0]);
       return first === null ? null : first * 4;
@@ -191,23 +256,22 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
 
   // ─── High-confidence additions (v0.2.1) ───
   //
-  // stab: center-out burst → direct TrCenterWipeIn.
+  // stab: center-out burst → TrCenterWipe.
   {
     id: 'stab',
     kind: 'ignition',
-    buildAST: (ms) => tr('TrCenterWipeIn', intNode(ms)),
-    // `center` also emits TrCenterWipeIn<ms>, so this entry has
+    buildAST: (ms) => tr('TrCenterWipe', intNode(ms)),
+    // `center` also emits TrCenterWipe<ms>, so this entry has
     // preferForInverse: false — the inverse picks 'center' as canonical.
     // To round-trip 'stab' cleanly we'd need a distinct AST shape; for now
     // stab→center on import is accepted lossy behaviour (documented).
-    matches: (n) =>
-      n.name === 'TrCenterWipeIn' || n.name === 'TrCenterWipeInX',
+    matches: (n) => isCenterWipe(n) || isCenterWipeIn(n),
     extractMs: (n) => extractInt(n.args[0]),
     preferForInverse: false,
   },
 
   // flash-fill: instant white flash, then color wipe.
-  //  → TrConcat<TrInstant, TrWipeIn<ms>>
+  //  → TrConcat<TrInstant, TrWipe<ms>>
   {
     id: 'flash-fill',
     kind: 'ignition',
@@ -215,13 +279,13 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
       tr(
         'TrConcat',
         raw('TrInstant'),
-        tr('TrWipeIn', intNode(ms)),
+        tr('TrWipe', intNode(ms)),
       ),
     matches: (n) =>
       n.name === 'TrConcat' &&
       n.args.length === 2 &&
       n.args[0]?.name === 'TrInstant' &&
-      n.args[1]?.name === 'TrWipeIn',
+      isAnyWipe(n.args[1]),
     extractMs: (n) => extractInt(n.args[1]?.args[0]),
     preferForInverse: true,
   },
@@ -242,7 +306,7 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
   // ─── Medium-confidence additions (v0.2.1) ───
   //
   // swing: speed-reactive acceleration fill.
-  //  → TrConcat<TrFade<ms/5>, TrWipeIn<ms*4/5>>
+  //  → TrConcat<TrFade<ms/5>, TrWipe<ms*4/5>>
   {
     id: 'swing',
     kind: 'ignition',
@@ -250,13 +314,13 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
       tr(
         'TrConcat',
         tr('TrFade', intNode(Math.round(ms / 5))),
-        tr('TrWipeIn', intNode(Math.round((ms * 4) / 5))),
+        tr('TrWipe', intNode(Math.round((ms * 4) / 5))),
       ),
     matches: (n) =>
       n.name === 'TrConcat' &&
       n.args.length === 2 &&
       n.args[0]?.name === 'TrFade' &&
-      n.args[1]?.name === 'TrWipeIn',
+      isAnyWipe(n.args[1]),
     extractMs: (n) => {
       const first = extractInt(n.args[0]?.args[0]);
       return first === null ? null : first * 5;
@@ -274,13 +338,13 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
       tr(
         'TrConcat',
         tr('TrFade', intNode(Math.round(ms / 5))),
-        tr('TrWipeIn', intNode(Math.round((ms * 4) / 5))),
+        tr('TrWipe', intNode(Math.round((ms * 4) / 5))),
       ),
     matches: (n) =>
       n.name === 'TrConcat' &&
       n.args.length === 2 &&
       n.args[0]?.name === 'TrFade' &&
-      n.args[1]?.name === 'TrWipeIn',
+      isAnyWipe(n.args[1]),
     extractMs: (n) => {
       const first = extractInt(n.args[0]?.args[0]);
       return first === null ? null : first * 5;
@@ -289,28 +353,28 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
   },
 
   // pulse-wave: multi-wave chained ignition.
-  //  → TrConcat<TrWipeIn<ms/4>, TrDelay<ms/8>, TrWipeIn<ms/4>,
-  //             TrDelay<ms/8>, TrWipeIn<ms/2>>
+  //  → TrConcat<TrWipe<ms/4>, TrDelay<ms/8>, TrWipe<ms/4>,
+  //             TrDelay<ms/8>, TrWipe<ms/2>>
   {
     id: 'pulse-wave',
     kind: 'ignition',
     buildAST: (ms) =>
       tr(
         'TrConcat',
-        tr('TrWipeIn', intNode(Math.round(ms / 4))),
+        tr('TrWipe', intNode(Math.round(ms / 4))),
         tr('TrDelay', intNode(Math.round(ms / 8))),
-        tr('TrWipeIn', intNode(Math.round(ms / 4))),
+        tr('TrWipe', intNode(Math.round(ms / 4))),
         tr('TrDelay', intNode(Math.round(ms / 8))),
-        tr('TrWipeIn', intNode(Math.round(ms / 2))),
+        tr('TrWipe', intNode(Math.round(ms / 2))),
       ),
     matches: (n) =>
       n.name === 'TrConcat' &&
       n.args.length === 5 &&
-      n.args[0]?.name === 'TrWipeIn' &&
+      isAnyWipe(n.args[0]) &&
       n.args[1]?.name === 'TrDelay' &&
-      n.args[2]?.name === 'TrWipeIn' &&
+      isAnyWipe(n.args[2]) &&
       n.args[3]?.name === 'TrDelay' &&
-      n.args[4]?.name === 'TrWipeIn',
+      isAnyWipe(n.args[4]),
     extractMs: (n) => {
       const first = extractInt(n.args[0]?.args[0]);
       return first === null ? null : first * 4;
@@ -326,7 +390,7 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
       tr(
         'TrConcat',
         tr('TrFade', intNode(Math.round(ms / 5))),
-        tr('TrWipeIn', intNode(Math.round((ms * 4) / 5))),
+        tr('TrWipe', intNode(Math.round((ms * 4) / 5))),
       ),
     matches: () => false, // handled by the swing pattern
     extractMs: () => null,
@@ -345,16 +409,16 @@ export const TRANSITION_MAPPINGS: TransitionMapping[] = [
     buildAST: (ms) => tr('TrWipe', intNode(ms)),
     matches: () => false, extractMs: () => null, preferForInverse: false },
   { id: 'fracture',   kind: 'ignition',
-    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    buildAST: (ms) => tr('TrWipe', intNode(ms)),
     matches: () => false, extractMs: () => null, preferForInverse: false },
   { id: 'drip-up',    kind: 'ignition',
     buildAST: (ms) => tr('TrFade', intNode(ms)),
     matches: () => false, extractMs: () => null, preferForInverse: false },
   { id: 'summon',     kind: 'ignition',
-    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    buildAST: (ms) => tr('TrWipe', intNode(ms)),
     matches: () => false, extractMs: () => null, preferForInverse: false },
   { id: 'seismic',    kind: 'ignition',
-    buildAST: (ms) => tr('TrWipeIn', intNode(ms)),
+    buildAST: (ms) => tr('TrWipe', intNode(ms)),
     matches: () => false, extractMs: () => null, preferForInverse: false },
 
   // Retractions: flickerOut / drain / spaghettify get medium-confidence
@@ -417,9 +481,8 @@ export function ignitionFromID(id: string, ms: number): StyleNode {
   const entry = TRANSITION_MAPPINGS.find(
     (m) => m.id === id && (m.kind === 'ignition' || m.kind === 'both'),
   );
-  // Fallback: unknown ID falls through to `standard` (TrWipeIn<ms>) — same
-  // behaviour as the old `default:` branch in ASTBuilder.buildIgnitionTransition.
-  return entry ? entry.buildAST(ms) : tr('TrWipeIn', intNode(ms));
+  // Fallback: unknown ID falls through to `standard` ignition (TrWipe<ms>).
+  return entry ? entry.buildAST(ms) : tr('TrWipe', intNode(ms));
 }
 
 /** Forward: Config.retraction string → AST transition node. */
