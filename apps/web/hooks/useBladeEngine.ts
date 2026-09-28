@@ -6,12 +6,40 @@ import { useBladeStore } from '@/stores/bladeStore';
 import { useUIStore } from '@/stores/uiStore';
 import { PARAMETER_DESCRIPTORS } from '@/lib/parameterGroups';
 import { useBoardProfile } from '@/hooks/useBoardProfile';
+import { applyEngineRenderPlan, planEngineRender } from '@/lib/engineRenderMode';
+
+/**
+ * Reconcile the editor's two animation-speed controls into ONE multiplier.
+ *
+ * `uiStore.timeScale` (Settings speed buttons, the PauseButton cycle) and
+ * `engine.timeScale` (the canvas TimeScaleControl, `[` / `]` keys) used to
+ * be multiplied together every frame — the tick passed `delta *
+ * uiStore.timeScale` into `engine.update()`, which scaled it again by
+ * `engine.timeScale` — so 0.5× in both places ran at 0.25×. Now only the
+ * engine's multiplier is applied (inside `update()`); whichever control
+ * changed since the last frame wins and the other is updated to match.
+ *
+ * @param engineScale  the engine's current `timeScale`
+ * @param storeScale   `uiStore.timeScale`
+ * @param lastApplied  the value both agreed on after the previous frame
+ * @returns the value to apply, and which side must be updated to it
+ */
+export function reconcileTimeScale(
+  engineScale: number,
+  storeScale: number,
+  lastApplied: number,
+): { value: number; update: 'engine' | 'store' | null } {
+  if (engineScale !== lastApplied) return { value: engineScale, update: 'store' };
+  if (storeScale !== lastApplied) return { value: storeScale, update: 'engine' };
+  return { value: lastApplied, update: null };
+}
 
 export function useBladeEngine() {
   const engineRef = useRef<BladeEngine | null>(null);
   const config = useBladeStore((s) => s.config);
   const topology = useBladeStore((s) => s.topology);
   const motionSim = useBladeStore((s) => s.motionSim);
+  const hardwarePreview = useUIStore((s) => s.hardwarePreview);
   const { boardId } = useBoardProfile();
 
   // Track previous ignition/retraction/style to detect changes
@@ -54,16 +82,22 @@ export function useBladeEngine() {
   useEffect(() => {
     let rafId = 0;
     let prevTime = performance.now();
+    let lastTimeScale = 1;
     const tick = (time: number) => {
       const engine = engineRef.current;
       if (engine) {
         const delta = time - prevTime;
         prevTime = time;
-        const { animationPaused, timeScale } = useUIStore.getState();
-        if (!animationPaused) {
+        const ui = useUIStore.getState();
+        // One time-scale multiplier, applied once, inside engine.update().
+        const scale = reconcileTimeScale(engine.timeScale, ui.timeScale, lastTimeScale);
+        if (scale.update === 'engine') engine.timeScale = scale.value;
+        else if (scale.update === 'store') ui.setTimeScale(scale.value);
+        lastTimeScale = engine.timeScale;
+        if (!ui.animationPaused) {
           // Read the current config from the store (not from closure) so
           // live updates (e.g. colour changes) are picked up immediately.
-          engine.update(delta * timeScale, useBladeStore.getState().config);
+          engine.update(delta, useBladeStore.getState().config);
         }
         // Mirror engine state into store. Zustand dedupes identical writes,
         // but we compare explicitly to skip work when state hasn't transitioned.
@@ -82,28 +116,20 @@ export function useBladeEngine() {
     };
   }, []);
 
-  // ── Sync engine render mode when board changes ──
+  // ── Render mode + Hardware Preview template (single source of truth) ──
   //
-  // Xenopixel V3 uses a simplified rendering pipeline: single-style per
-  // blade effect, no multi-layer compositing, no modulation routing, and a
-  // fixed set of 8 blade effects + 10 ignition styles. When the user
-  // switches to a Xenopixel board, the engine resolves styles/ignitions
-  // from the Xeno registries instead of the ProffieOS ones.
+  // `planEngineRender` derives BOTH the render mode and the generated
+  // ProffieOS template from the current board, the HW toggle and the
+  // config; `applyEngineRenderPlan` applies it idempotently. See
+  // `lib/engineRenderMode.ts` for the precedence rules and for the
+  // board-switch race this replaced (the old split between this hook and
+  // `useHardwarePreview` dropped the canvas to the approximation whenever
+  // the user switched between two Proffie boards).
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
-    // Template-eval mode takes priority when the config carries raw
-    // ProffieOS template code (from a Fett263 import or paste). The
-    // engine evaluates the real template per-LED for pixel-accurate
-    // rendering. Falls back to board-based mode when no raw code.
-    const hasRawTemplate = !!config.importedRawCode;
-    const mode = hasRawTemplate
-      ? 'template-eval'
-      : boardId === 'xenopixel'
-        ? 'xenopixel'
-        : 'proffie';
-    engine.setRenderMode(mode);
-  }, [boardId, config.importedRawCode]);
+    applyEngineRenderPlan(engine, planEngineRender(config, { boardId, hardwarePreview }));
+  }, [boardId, hardwarePreview, config]);
 
   // Sync engine topology when store topology changes (e.g. preset load with different ledCount)
   useEffect(() => {

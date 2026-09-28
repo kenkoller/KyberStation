@@ -68,9 +68,15 @@ export class InOutTrLTemplate extends BaseStyleTemplate {
     //   1. KyberStation's BladeEngine *never* calls template-eval when the
     //      saber is fully OFF — `update()` early-returns before reaching
     //      the template path (see `BladeEngine.update`, BladeState.OFF).
-    //   2. The BladeCanvas applies its own per-frame ignition / retraction
-    //      mask via `engine.extendProgress` — the visible "wipe" animation
-    //      is owned by the canvas, not the template-eval bridge.
+    //   2. When a template contains InOutTrL, BladeEngine scales the
+    //      evaluated LED buffer by the configured ignition / retraction
+    //      class's `getMask()` — the same mask the parameter engine uses
+    //      (see `BladeEngine.applyIgnitionMask` and
+    //      `TemplateEvalBridge.delegatesIgnitionMask`). The visible wipe
+    //      is owned by the engine, not by this layer. (An earlier version
+    //      of this comment said BladeCanvas owned it; it never did — the
+    //      canvas draws the per-LED buffer, so template-eval blades
+    //      showed no ignition or retraction at all until 2026-09.)
     //
     // So InOutTrL's contribution to the per-frame render is purely
     // decorative for our pixel buffer. The correct + safe behaviour is to
@@ -89,7 +95,7 @@ export class InOutTrLTemplate extends BaseStyleTemplate {
     // The internal `wasOn` / `isIgniting` / `isRetracting` bookkeeping
     // below stays — codegen round-trip parity tests rely on the state
     // tracking being consistent — but the visual mask is delegated to
-    // BladeCanvas.
+    // BladeEngine (see point 2 above).
 
     // Snapshot pre-mutation transition state so all LEDs in the same
     // getColor pass see a consistent view, even if the per-LED progress
@@ -107,7 +113,7 @@ export class InOutTrLTemplate extends BaseStyleTemplate {
     }
 
     // InOutTrL contributes nothing visible to the per-LED render — the
-    // ignition / retraction wipe is owned by BladeCanvas, and the engine
+    // ignition / retraction mask is applied by BladeEngine, and the engine
     // never invokes us when the blade is OFF. Returning BLACK gives
     // colorAlpha(c) = 0, which Layers treats as "skip this layer".
     return BLACK;

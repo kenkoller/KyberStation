@@ -30,8 +30,11 @@
 // The fix lives in
 // `packages/template-eval/src/templates/wrappers.ts` (`InOutTrLTemplate`):
 // the per-frame contribution is now BLACK (colorAlpha = 0 → Layers skips
-// the blend), since the visible ignition/retraction wipe is owned by
-// BladeCanvas via `engine.extendProgress`.
+// the blend). The visible ignition/retraction is drawn by BladeEngine,
+// which scales the evaluated buffer by the configured ignition class's
+// mask (`applyIgnitionMask`, 2026-09). The original note here said
+// BladeCanvas owned the wipe via `engine.extendProgress` — it never did,
+// so template-eval blades showed no ignition at all until that fix.
 //
 // This test exercises the same pipeline the live editor uses — generate
 // ProffieOS code for a normal config, set up Hardware Preview, ignite,
@@ -74,7 +77,7 @@ describe('BladeCanvas white-out regression — codegen → template-eval → pix
     const code = generateStyleCode(config, { comments: false });
 
     const engine = new BladeEngine();
-    // The web layer (useHardwarePreview + useBladeEngine) flips into
+    // The web layer (useBladeEngine via lib/engineRenderMode) flips into
     // template-eval mode and primes the preview template before the
     // first frame. Replicate that here.
     engine.setRenderMode('template-eval');

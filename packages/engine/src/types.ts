@@ -86,11 +86,33 @@ export interface EffectParams {
   color?: RGB;
   duration?: number; // ms
   segmentId?: string; // target segment for independent effect scoping
+  /**
+   * Simulated time (ms, on the engine's `update()` clock) at which the
+   * effect fires. `BladeEngine.triggerEffect` stamps this from its own
+   * clock; standalone callers may omit it (defaults to 0). Effects never
+   * read the wall clock — mixing `performance.now()` into the simulated
+   * timeline held a 400 ms clash for as long as the page had been open
+   * before the engine was created.
+   */
+  triggerTime?: number;
 }
 
 export interface EffectContext extends StyleContext {
   elapsed: number; // ms since effect triggered
   progress: number; // 0-1, elapsed / duration
+}
+
+/** Where an effect activation is on its timeline at a given engine time. */
+export interface EffectTiming {
+  /** ms since the effect was triggered (simulated clock), never negative. */
+  elapsed: number;
+  /**
+   * 0-1 animation progress. One-shots run elapsed / duration. A held
+   * sustained effect parks at the fade-out knee (0.7) so it stays at full
+   * strength for as long as it is held; after release it fades from the
+   * knee to 1 over the remaining 30% of its duration.
+   */
+  progress: number;
 }
 
 export interface BladeEffect {
@@ -100,12 +122,16 @@ export interface BladeEffect {
   apply(color: RGB, position: number, context: EffectContext): RGB;
   /** Whether this effect is currently active */
   isActive(): boolean;
+  /** Whether this is a sustained effect that is currently held (triggered, not released). */
+  isHeld(): boolean;
   /** Trigger the effect */
   trigger(params: EffectParams): void;
-  /** Release a sustained effect (lockup, drag, etc.) */
-  release(): void;
+  /** Release a sustained effect (lockup, drag, etc.) at simulated time `now`. */
+  release(now?: number): void;
   /** Reset the effect to inactive state */
   reset(): void;
+  /** Timing of the current activation at simulated time `now`. */
+  timing(now: number): EffectTiming;
 }
 
 // ─── Ignition System ───
@@ -115,6 +141,12 @@ export interface IgnitionContext {
   swingSpeed: number;   // 0-1
   twistAngle: number;   // -1 to 1
   config?: BladeConfig;
+  /**
+   * Simulated engine time in ms (the `update()` clock). Time-varying masks
+   * (e.g. crackle flicker) should read this instead of the wall clock so
+   * the engine stays deterministic under pause / time-scale / tests.
+   */
+  time?: number;
 }
 
 export interface IgnitionAnimation {

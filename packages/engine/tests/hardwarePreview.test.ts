@@ -8,7 +8,7 @@
 //   5. Setting preview template auto-creates the bridge
 //   6. Setting null preview with non-template-eval mode destroys bridge
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { BladeEngine } from '../src/BladeEngine';
 import type { BladeConfig } from '../src/types';
 
@@ -30,11 +30,6 @@ function makeTestConfig(overrides: Partial<BladeConfig> = {}): BladeConfig {
 }
 
 describe('BladeEngine hardware preview', () => {
-  beforeEach(() => {
-    let now = 0;
-    vi.spyOn(performance, 'now').mockImplementation(() => now++);
-  });
-
   // ─── hasPreviewTemplate ────────────────────────────────────────
 
   describe('hasPreviewTemplate', () => {

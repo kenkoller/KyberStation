@@ -46,6 +46,12 @@ export { BaseStyleTemplate, IntegerLiteral } from './BaseStyle.js';
 // Color templates (for variant cycling introspection)
 export { ColorChangeTemplate } from './templates/colors.js';
 
+// Wrapper templates (the engine detects InOutTrL to own the ignition mask)
+export { InOutTrLTemplate } from './templates/wrappers.js';
+
+// Transition helpers
+export { restartTransition } from './templates/transitions.js';
+
 // Function templates (for registry gap coverage)
 export {
   PulsingFTemplate,
