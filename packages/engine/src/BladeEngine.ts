@@ -57,6 +57,15 @@ function transformPosition(pos: number, direction: LayerDirection): number {
 }
 
 /**
+ * Normalized position of an LED within its segment (0 = segment start,
+ * 1 = segment end), flipped for reversed segments.
+ */
+function segmentPosition(segment: BladeSegment, led: number, segmentLength: number): number {
+  const pos = segmentLength > 1 ? (led - segment.startLED) / (segmentLength - 1) : 0;
+  return segment.direction === 'reverse' ? 1.0 - pos : pos;
+}
+
+/**
  * Blend an overlay color onto a base color. Only the `'normal'` mode
  * is supported per `docs/HARDWARE_FIDELITY_PRINCIPLE.md` — the visualizer
  * must match what ProffieOS actually emits, which is alpha-over via
@@ -627,11 +636,13 @@ export class BladeEngine {
 
     // (d.6) Template-eval render path — pixel-accurate ProffieOS rendering
     //
-    // When renderMode is 'template-eval' and the config carries an
-    // importedRawCode string, the TemplateEvalBridge evaluates the real
-    // ProffieOS template per-LED instead of the approximation pipeline.
-    // This bypasses modulation routing, segment topology, and layer
-    // compositing — the template IS the complete style definition.
+    // When renderMode is 'template-eval' and a template is available (the
+    // Hardware Preview template generated from the config, or the config's
+    // importedRawCode), the TemplateEvalBridge evaluates the real ProffieOS
+    // template per-LED instead of the approximation pipeline. This
+    // bypasses modulation routing and layer compositing — the template IS
+    // the complete style definition. Segment topology is only used for the
+    // ignition / retraction mask (applyIgnitionMask).
     const templateCode = this._previewTemplateCode || config.importedRawCode;
     if (this._renderMode === 'template-eval' && templateCode) {
       if (!this._templateEvalBridge) {
@@ -651,6 +662,12 @@ export class BladeEngine {
           1.0, // batteryLevel — simulated, always full
           0,   // variation — default 0
         );
+        // The template's InOutTrL is a per-frame no-op in the interpreter;
+        // draw its ignition / retraction with the same mask the parameter
+        // engine uses, so the configured ignition style is what you see.
+        if (this._templateEvalBridge.delegatesIgnitionMask) {
+          this.applyIgnitionMask(config);
+        }
         this._lastRenderPath = 'template-eval';
         this.cleanupEffects();
         return;
@@ -860,18 +877,22 @@ export class BladeEngine {
 
   // ─── Private: Segment rendering ───
 
-  private renderSegment(
+  /**
+   * Resolve this frame's ignition-or-retraction animation and eased
+   * progress for one segment. Shared by the parameter-engine pipeline
+   * (`renderSegment`) and the template-eval mask (`applyIgnitionMask`), so
+   * both render modes draw the same ignition / retraction shape — per
+   * segment delay, easing, dual-mode (angle-selected) ignition and custom
+   * curves included.
+   */
+  private resolveSegmentIgnition(
     segment: BladeSegment,
-    styleContext: StyleContext,
     config: BladeConfig,
-  ): void {
-    const segmentLength = segment.endLED - segment.startLED + 1;
-    if (segmentLength <= 0) return;
-
-    // Compute per-segment ignition progress, accounting for delay
+    bladeAngle: number,
+  ): { animation: IgnitionAnimation; progress: number } {
+    // Per-segment ignition progress, accounting for delay
     const segmentProgress = this.getSegmentExtendProgress(segment, config);
 
-    // Get the ignition and retraction animations for this segment.
     // Use config values (from the UI) rather than segment defaults,
     // so that changing ignition/retraction style in the UI is immediately visible.
     let ignitionId = config.ignition ?? segment.ignition;
@@ -880,7 +901,7 @@ export class BladeEngine {
     // Dual-mode ignition: select ignition/retraction based on blade angle
     if (config.dualModeIgnition) {
       const angleThreshold = config.ignitionAngleThreshold ?? 0.3;
-      const isUp = styleContext.bladeAngle > angleThreshold;
+      const isUp = bladeAngle > angleThreshold;
       if (isUp) {
         ignitionId = config.ignitionUp ?? ignitionId;
         retractionId = config.retractionUp ?? retractionId;
@@ -901,6 +922,60 @@ export class BladeEngine {
       (retraction as { setControlPoints(p: [number, number, number, number]): void }).setControlPoints(config.retractionCurve);
     }
 
+    return {
+      animation: this._state === BladeState.RETRACTING ? retraction : ignition,
+      progress: this.applyEasing(segmentProgress),
+    };
+  }
+
+  /**
+   * Template-eval counterpart of the mask step in `renderSegment`: scale
+   * the evaluated LED buffer by the configured ignition / retraction mask.
+   * Only called when the template's on/off behaviour is an `InOutTrL`
+   * layer (`TemplateEvalBridge.delegatesIgnitionMask`), which the
+   * interpreter renders as a no-op. Purely multiplicative — it can only
+   * darken pixels, so it cannot reintroduce the PR #357 white-out.
+   */
+  private applyIgnitionMask(config: BladeConfig): void {
+    const ignitionCtx: IgnitionContext = {
+      bladeAngle: this.motion.bladeAngle,
+      swingSpeed: this.motion.swingSpeed,
+      twistAngle: this.motion.twistAngle,
+      config,
+      time: this._elapsedTime,
+    };
+    const leds = this.leds;
+    for (const segment of this._topology.segments) {
+      const segmentLength = segment.endLED - segment.startLED + 1;
+      if (segmentLength <= 0) continue;
+      const { animation, progress } = this.resolveSegmentIgnition(
+        segment,
+        config,
+        ignitionCtx.bladeAngle,
+      );
+      const last = Math.min(segment.endLED, leds.count - 1);
+      for (let led = segment.startLED; led <= last; led++) {
+        const mask = animation.getMask(segmentPosition(segment, led, segmentLength), progress, ignitionCtx);
+        if (mask >= 1) continue;
+        const m = Math.max(0, mask);
+        leds.setPixel(led, leds.getR(led) * m, leds.getG(led) * m, leds.getB(led) * m);
+      }
+    }
+  }
+
+  private renderSegment(
+    segment: BladeSegment,
+    styleContext: StyleContext,
+    config: BladeConfig,
+  ): void {
+    const segmentLength = segment.endLED - segment.startLED + 1;
+    if (segmentLength <= 0) return;
+
+    // Ignition / retraction animation + eased progress (shared with the
+    // template-eval mask so both render modes draw the same shape).
+    const { animation: activeIgnition, progress: easedProgress } =
+      this.resolveSegmentIgnition(segment, config, styleContext.bladeAngle);
+
     // Build ignition context for motion-reactive ignition types
     const ignitionCtx: IgnitionContext = {
       bladeAngle: styleContext.bladeAngle,
@@ -909,13 +984,6 @@ export class BladeEngine {
       config,
       time: this._elapsedTime,
     };
-
-    // Choose the active ignition animation based on state
-    const activeIgnition =
-      this._state === BladeState.RETRACTING ? retraction : ignition;
-
-    // Apply eased progress for the ignition mask
-    const easedProgress = this.applyEasing(segmentProgress);
 
     // Resolve layers — if segment mirrors another, use that segment's layers
     const layers = this.resolveSegmentLayers(segment);
@@ -926,15 +994,9 @@ export class BladeEngine {
       : 0;
 
     for (let led = segment.startLED; led <= segment.endLED; led++) {
-      // Normalized position within this segment (0 = start, 1 = end)
-      let pos = segmentLength > 1
-        ? (led - segment.startLED) / (segmentLength - 1)
-        : 0;
-
-      // Flip for reversed segments
-      if (segment.direction === 'reverse') {
-        pos = 1.0 - pos;
-      }
+      // Normalized position within this segment (0 = start, 1 = end),
+      // flipped for reversed segments.
+      const pos = segmentPosition(segment, led, segmentLength);
 
       // Apply rotation offset for spinning segments (inquisitor ring)
       let stylePos = pos;

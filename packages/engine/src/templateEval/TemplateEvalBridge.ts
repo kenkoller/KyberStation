@@ -16,7 +16,7 @@ import type {
   EffectType as TemplateEffectType,
   LockupType as TemplateLockupType,
 } from '@kyberstation/template-eval';
-import { ColorChangeTemplate } from '@kyberstation/template-eval';
+import { ColorChangeTemplate, InOutTrLTemplate } from '@kyberstation/template-eval';
 import type { LEDArray } from '../LEDArray.js';
 import type { EffectType as EngineEffectType } from '../types.js';
 
@@ -97,6 +97,7 @@ export class TemplateEvalBridge {
   private effects = new EffectManager();
   private currentTemplateStr = '';
   private elapsedMs = 0;
+  private hasInOutTrL = false;
 
   /**
    * Compile a new template string. No-ops if the string hasn't changed.
@@ -107,16 +108,37 @@ export class TemplateEvalBridge {
     try {
       this.template = evaluateTemplateString(templateStr);
       this.currentTemplateStr = templateStr;
+      this.hasInOutTrL = findTemplate(this.template, (n) => n instanceof InOutTrLTemplate) !== null;
       return true;
     } catch {
       this.template = null;
       this.currentTemplateStr = '';
+      this.hasInOutTrL = false;
       return false;
     }
   }
 
   /**
+   * True when the active template expresses ignition / retraction through
+   * an `InOutTrL` layer. That layer is a per-frame no-op in the
+   * interpreter (see `InOutTrLTemplate` — returning its real ProffieOS
+   * colour whited out every blade, PR #357), so the BladeEngine stands in
+   * for it: it scales the evaluated buffer by the configured ignition /
+   * retraction class's mask, the same mask the parameter engine draws.
+   * Templates without InOutTrL (`InOutHelperL`, `StyleNormalPtr`, or no
+   * on/off wrapper at all) own their on/off behaviour and are not masked.
+   */
+  get delegatesIgnitionMask(): boolean {
+    return this.template !== null && this.hasInOutTrL;
+  }
+
+  /**
    * Run one frame of the template evaluator and write results into the LED buffer.
+   *
+   * `_extendProgress` is intentionally unused: the ignition / retraction
+   * mask is applied by the engine after evaluation (see
+   * `delegatesIgnitionMask`). The positional parameter is kept for the
+   * perf bench script, which calls this method directly.
    */
   renderFrame(
     leds: LEDArray,
@@ -213,6 +235,7 @@ export class TemplateEvalBridge {
   reset(): void {
     this.template = null;
     this.currentTemplateStr = '';
+    this.hasInOutTrL = false;
     this.effects.clear();
     this.elapsedMs = 0;
   }
@@ -248,14 +271,19 @@ export class TemplateEvalBridge {
 
   private findColorChange(): ColorChangeTemplate | null {
     if (!this.template) return null;
-    return walkForColorChange(this.template);
+    const found = findTemplate(this.template, (n) => n instanceof ColorChangeTemplate);
+    return found as ColorChangeTemplate | null;
   }
 }
 
-function walkForColorChange(node: StyleTemplate): ColorChangeTemplate | null {
-  if (node instanceof ColorChangeTemplate) return node;
+/** Depth-first search of a template tree. */
+function findTemplate(
+  node: StyleTemplate,
+  predicate: (n: StyleTemplate) => boolean,
+): StyleTemplate | null {
+  if (predicate(node)) return node;
   for (const child of node.getChildren()) {
-    const found = walkForColorChange(child);
+    const found = findTemplate(child, predicate);
     if (found) return found;
   }
   return null;
