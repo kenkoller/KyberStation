@@ -65,3 +65,57 @@ exports[`blade engine golden hashes > yoda-green-stable :: off 1`] = `"9e38d0b5"
 exports[`blade engine golden hashes > yoda-green-stable :: on 1`] = `"bf3b1a19"`;
 
 exports[`blade engine golden hashes > yoda-green-stable :: retracting-50 1`] = `"9e38d0b5"`;
+
+exports[`blade engine golden hashes — template-eval > animated-din-djarin-darksaber :: template-eval timeline 1`] = `
+{
+  "igniting-40": "cc9a7e91",
+  "lockup-held": "d39439ef",
+  "on": "f547ac6d",
+  "retracting-50": "cc9a7e91",
+}
+`;
+
+exports[`blade engine golden hashes — template-eval > animated-grand-inquisitor-red :: template-eval timeline 1`] = `
+{
+  "igniting-40": "c5cb4592",
+  "lockup-held": "a81c8615",
+  "on": "2f36dd3d",
+  "retracting-50": "249bacbc",
+}
+`;
+
+exports[`blade engine golden hashes — template-eval > animated-grogu :: template-eval timeline 1`] = `
+{
+  "igniting-40": "89bc352c",
+  "lockup-held": "e8f26769",
+  "on": "7e200371",
+  "retracting-50": "ee7c156f",
+}
+`;
+
+exports[`blade engine golden hashes — template-eval > prequel-obi-wan-ep3 :: template-eval timeline 1`] = `
+{
+  "igniting-40": "ad720f59",
+  "lockup-held": "bce5adb5",
+  "on": "3d915498",
+  "retracting-50": "96c82e8c",
+}
+`;
+
+exports[`blade engine golden hashes — template-eval > showcase-living-force :: template-eval timeline 1`] = `
+{
+  "igniting-40": "1b3c3855",
+  "lockup-held": "488c5e99",
+  "on": "ca2336c5",
+  "retracting-50": "6aaee934",
+}
+`;
+
+exports[`blade engine golden hashes — template-eval > st-kylo-ren :: template-eval timeline 1`] = `
+{
+  "igniting-40": "71f35750",
+  "lockup-held": "83e24a35",
+  "on": "eb92cb6f",
+  "retracting-50": "3bd24d73",
+}
+`;
