@@ -169,7 +169,7 @@ export function LandingBetaNotice() {
                 ✓
               </span>
               <span>
-                <strong className="text-text-primary font-semibold">Proffieboard V3 compile + flash</strong> — most knobs transfer (32 of 33 styles have codegen parity; modulation bindings partial).
+                <strong className="text-text-primary font-semibold">Proffieboard V3 compile + flash</strong> — most knobs transfer (32 of 33 styles have codegen parity; modulation bindings partial). Validated on the (now-retired) non-BT 89sabers V3.9; <strong>not currently reliable on the V3.9-BT</strong> — use Runtime Presets for those.
               </span>
             </li>
             <li className="flex gap-2">

@@ -1,0 +1,52 @@
+==> Target: Bank 1 @ 0x08000000 (standard ProffieOS workflow)
+==> Backup fingerprints match May 14 V3.9-BT factory dump ✓
+
+==> Checking dfu-util sees the chip...
+==> Stripped 16-byte DFU suffix from /tmp/proffie-build/ProffieOS.ino.iap → /tmp/safe-flash-stripped-92261.bin
+==> Firmware to flash: /tmp/safe-flash-stripped-92261.bin (219200 bytes)
+
+==> If this flash fails, recovery command (paste in another terminal):
+      scripts/hardware-test/restore-factory.sh "/Users/KK/Development/KyberStation/backups/89sabers-v39bt-factory-2026-05-14"
+
+==> Writing /tmp/safe-flash-stripped-92261.bin → 0x08000000:leave...
+dfu-util 0.11
+
+Copyright 2005-2009 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2021 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
+
+dfu-util: Warning: Invalid DFU suffix signature
+dfu-util: A valid DFU suffix will be required in a future dfu-util release
+Opening DFU capable USB device...
+Device ID 0483:df11
+Device DFU version 011a
+Claiming USB DFU Interface...
+Setting Alternate Interface #0 ...
+Determining device status...
+DFU state(10) = dfuERROR, status(10) = Device's firmware is corrupt. It cannot return to run-time (non-DFU) operations
+Clearing status
+Determining device status...
+DFU state(2) = dfuIDLE, status(0) = No error condition is present
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+DfuSe interface name: "Internal Flash  "
+Downloading element to address = 0x08000000, size = 219200
+Erase   	[                         ]   0%            0 bytesErase   	[=                        ]   4%        10240 bytesErase   	[=                        ]   5%        12288 bytesErase   	[==                       ]   8%        18432 bytesErase   	[===                      ]  12%        26624 bytesErase   	[====                     ]  16%        36864 bytesErase   	[=====                    ]  20%        45056 bytesErase   	[======                   ]  24%        53248 bytesErase   	[=======                  ]  28%        61440 bytesErase   	[========                 ]  32%        71680 bytesErase   	[=========                ]  36%        79872 bytesErase   	[==========               ]  40%        88064 bytesErase   	[===========              ]  44%        98304 bytesErase   	[============             ]  48%       106496 bytesErase   	[============             ]  50%       110592 bytesErase   	[=============            ]  52%       114688 bytesErase   	[==============           ]  56%       122880 bytesErase   	[===============          ]  60%       133120 bytesErase   	[================         ]  64%       141312 bytesErase   	[=================        ]  68%       149504 bytesErase   	[==================       ]  72%       159744 bytesErase   	[==================       ]  73%       161792 bytesErase   	[===================      ]  76%       167936 bytesErase   	[====================     ]  80%       176128 bytesErase   	[=====================    ]  84%       184320 bytesErase   	[======================   ]  88%       194560 bytesErase   	[=======================  ]  92%       202752 bytesErase   	[======================== ]  96%       210944 bytesErase   	[=========================] 100%       219200 bytes
+Erase    done.
+Download	[                         ]   0%            0 bytesDownload	[                         ]   1%         4096 bytesDownload	[                         ]   3%         8192 bytesDownload	[=                        ]   4%        10240 bytesDownload	[=                        ]   5%        12288 bytesDownload	[=                        ]   7%        16384 bytesDownload	[==                       ]   8%        18432 bytesDownload	[==                       ]   9%        20480 bytesDownload	[==                       ]  11%        24576 bytesDownload	[===                      ]  12%        26624 bytesDownload	[===                      ]  13%        28672 bytesDownload	[===                      ]  14%        32768 bytesDownload	[====                     ]  16%        36864 bytesDownload	[====                     ]  18%        40960 bytesDownload	[=====                    ]  20%        45056 bytesDownload	[=====                    ]  22%        49152 bytesDownload	[======                   ]  24%        53248 bytesDownload	[======                   ]  26%        57344 bytesDownload	[=======                  ]  28%        61440 bytesDownload	[=======                  ]  29%        65536 bytesDownload	[=======                  ]  31%        69632 bytesDownload	[========                 ]  32%        71680 bytesDownload	[========                 ]  33%        73728 bytesDownload	[========                 ]  34%        75776 bytesDownload	[=========                ]  36%        79872 bytesDownload	[=========                ]  38%        83968 bytesDownload	[==========               ]  40%        88064 bytesDownload	[==========               ]  42%        92160 bytesDownload	[==========               ]  43%        96256 bytesDownload	[===========              ]  44%        98304 bytesDownload	[===========              ]  45%       100352 bytesDownload	[===========              ]  47%       104448 bytesDownload	[============             ]  48%       106496 bytesDownload	[============             ]  49%       108544 bytesDownload	[============             ]  51%       112640 bytesDownload	[=============            ]  52%       114688 bytesDownload	[=============            ]  53%       116736 bytesDownload	[=============            ]  55%       120832 bytesDownload	[==============           ]  56%       122880 bytesDownload	[==============           ]  56%       124928 bytesDownload	[==============           ]  58%       129024 bytesDownload	[===============          ]  60%       133120 bytesDownload	[===============          ]  62%       137216 bytesDownload	[================         ]  64%       141312 bytesDownload	[================         ]  66%       145408 bytesDownload	[=================        ]  68%       149504 bytesDownload	[=================        ]  70%       153600 bytesDownload	[=================        ]  71%       157696 bytesDownload	[==================       ]  72%       159744 bytesDownload	[==================       ]  73%       161792 bytesDownload	[==================       ]  75%       165888 bytesDownload	[===================      ]  76%       167936 bytesDownload	[===================      ]  77%       169984 bytesDownload	[===================      ]  79%       174080 bytesDownload	[====================     ]  80%       176128 bytesDownload	[====================     ]  81%       178176 bytesDownload	[====================     ]  83%       182272 bytesDownload	[=====================    ]  84%       184320 bytesDownload	[=====================    ]  85%       186368 bytesDownload	[=====================    ]  86%       190464 bytesDownload	[======================   ]  88%       194560 bytesDownload	[======================   ]  89%       196608 bytesDownload	[======================   ]  91%       200704 bytesDownload	[=======================  ]  92%       202752 bytesDownload	[=======================  ]  93%       204800 bytesDownload	[=======================  ]  95%       208896 bytesDownload	[======================== ]  96%       210944 bytesDownload	[======================== ]  97%       212992 bytesDownload	[======================== ]  99%       217088 bytesDownload	[=========================] 100%       219200 bytes
+Download done.
+File downloaded successfully
+Submitting leave request...
+Transitioning to dfuMANIFEST state
+
+==> Flash + leave complete. The chip should now attempt to boot.
+
+    Within ~5 seconds, check:
+      ls /dev/cu.usbmodem*      (chip enumerated as USB CDC?)
+      tail -1 < /dev/cu.usbmodem*  (any output?)
+
+    If no enumeration in 30s and the saber's power button does
+    nothing: the flash did not boot. Run the recovery command
+    above to return to factory state, then revisit the audit
+    before retrying.

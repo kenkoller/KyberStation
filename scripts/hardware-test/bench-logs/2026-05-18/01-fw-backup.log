@@ -1,0 +1,116 @@
+==> Verifying dfu-util sees the saber...
+==> Writing to: /Users/KK/Development/KyberStation/.claude/worktrees/cool-bouman-2376e2/backups/89sabers-v39bt-factory-2026-05-18
+
+==> Dumping Bank 1 (256 KiB at 0x08000000)...
+dfu-util 0.11
+
+Copyright 2005-2009 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2021 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
+
+Opening DFU capable USB device...
+Device ID 0483:df11
+Device DFU version 011a
+Claiming USB DFU Interface...
+Setting Alternate Interface #0 ...
+Determining device status...
+DFU state(10) = dfuERROR, status(10) = Device's firmware is corrupt. It cannot return to run-time (non-DFU) operations
+Clearing status
+Determining device status...
+DFU state(2) = dfuIDLE, status(0) = No error condition is present
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+DfuSe interface name: "Internal Flash  "
+Upload	[                         ]   0%            0 bytesUpload	[=                        ]   4%        12288 bytesUpload	[==                       ]   8%        22528 bytesUpload	[===                      ]  12%        32768 bytesUpload	[====                     ]  16%        43008 bytesUpload	[=====                    ]  20%        53248 bytesUpload	[======                   ]  24%        63488 bytesUpload	[=======                  ]  28%        73728 bytesUpload	[========                 ]  32%        83968 bytesUpload	[=========                ]  36%        96256 bytesUpload	[==========               ]  40%       106496 bytesUpload	[===========              ]  44%       116736 bytesUpload	[============             ]  48%       126976 bytesUpload	[=============            ]  52%       137216 bytesUpload	[==============           ]  56%       147456 bytesUpload	[===============          ]  60%       157696 bytesUpload	[================         ]  64%       167936 bytesUpload	[=================        ]  68%       180224 bytesUpload	[==================       ]  72%       190464 bytesUpload	[===================      ]  76%       200704 bytesUpload	[====================     ]  80%       210944 bytesUpload	[=====================    ]  84%       221184 bytesUpload	[======================   ]  88%       231424 bytesUpload	[=======================  ]  92%       241664 bytesUpload	[======================== ]  96%       251904 bytesUpload	[=========================] 100%       262144 bytes
+Upload done.
+
+==> Dumping Bank 2 (256 KiB at 0x08040000)...
+dfu-util 0.11
+
+Copyright 2005-2009 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2021 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
+
+Opening DFU capable USB device...
+Device ID 0483:df11
+Device DFU version 011a
+Claiming USB DFU Interface...
+Setting Alternate Interface #0 ...
+Determining device status...
+DFU state(2) = dfuIDLE, status(0) = No error condition is present
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+DfuSe interface name: "Internal Flash  "
+Upload	[                         ]   0%            0 bytesUpload	[=                        ]   4%        12288 bytesUpload	[==                       ]   8%        22528 bytesUpload	[===                      ]  12%        32768 bytesUpload	[====                     ]  16%        43008 bytesUpload	[=====                    ]  20%        53248 bytesUpload	[======                   ]  24%        63488 bytesUpload	[=======                  ]  28%        73728 bytesUpload	[========                 ]  32%        83968 bytesUpload	[=========                ]  36%        96256 bytesUpload	[==========               ]  40%       106496 bytesUpload	[===========              ]  44%       116736 bytesUpload	[============             ]  48%       126976 bytesUpload	[=============            ]  52%       137216 bytesUpload	[==============           ]  56%       147456 bytesUpload	[===============          ]  60%       157696 bytesUpload	[================         ]  64%       167936 bytesUpload	[=================        ]  68%       180224 bytesUpload	[==================       ]  72%       190464 bytesUpload	[===================      ]  76%       200704 bytesUpload	[====================     ]  80%       210944 bytesUpload	[=====================    ]  84%       221184 bytesUpload	[======================   ]  88%       231424 bytesUpload	[=======================  ]  92%       241664 bytesUpload	[======================== ]  96%       251904 bytesUpload	[=========================] 100%       262144 bytes
+Upload done.
+
+==> Dumping Option Bytes (64 bytes at 0x1FFF7800)...
+dfu-util 0.11
+
+Copyright 2005-2009 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2021 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
+
+Opening DFU capable USB device...
+Device ID 0483:df11
+Device DFU version 011a
+Claiming USB DFU Interface...
+Setting Alternate Interface #1 ...
+Determining device status...
+DFU state(2) = dfuIDLE, status(0) = No error condition is present
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+DfuSe interface name: "Option Bytes  "
+dfu-util: Non-valid multiplier ' ', assuming bytes
+Upload	[                         ]   0%            0 bytesUpload	[=========================] 100%           64 bytes
+Upload done.
+
+==> Dumping OTP (1024 bytes at 0x1FFF7000)...
+dfu-util 0.11
+
+Copyright 2005-2009 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2021 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to http://sourceforge.net/p/dfu-util/tickets/
+
+Opening DFU capable USB device...
+Device ID 0483:df11
+Device DFU version 011a
+Claiming USB DFU Interface...
+Setting Alternate Interface #2 ...
+Determining device status...
+DFU state(2) = dfuIDLE, status(0) = No error condition is present
+DFU mode device DFU version 011a
+Device returned transfer size 2048
+DfuSe interface name: "OTP Memory "
+Upload	[                         ]   0%            0 bytesUpload	[=========================] 100%         1024 bytes
+Upload done.
+
+==> Computing SHA256 manifest...
+d881a8e781b6199e5894efacab1500b79a24cdfa1979c8ac0f9c22d2b62e1c85  bank1-pre.bin
+61d9f615a8320facd71df368229b9958214a3535637e2800f1584efb3e910185  bank2-pre.bin
+4c2b2194ca8148d12dc751e2cba1cf0039169b6d08f80fab6aa9c74b4c3a2112  option-bytes-pre.bin
+5f4ecdb7b71c3e403983fe405cddcdc2f2576b655fdb3e80d94a6f7c32e58bc2  otp-memory.bin
+
+==> Option Bytes fingerprint check (informational — see FLASH_GUIDE.md §10):
+  [INFO] Matches 89sabers V3.9-BT pristine fingerprint (4c2b2194...).
+         Expected state for the BT-enabled variant.
+
+  Reminder: fingerprint match alone does NOT prove the board is healthy;
+  the decisive test is whether the saber boots when DFU is exited.
+
+==> Bank 1 vector table sanity check...
+  Initial stack pointer: 0x2000c000
+  Reset handler:         0x08000041
+  [PASS] Vector table looks valid. Bank 1 likely contains bootable firmware.
+
+==> Backup complete: /Users/KK/Development/KyberStation/.claude/worktrees/cool-bouman-2376e2/backups/89sabers-v39bt-factory-2026-05-18
+==> Next: keep this folder somewhere safe. If anything goes wrong, you
+    can restore Bank 1 with:
+      dfu-util -d 0x0483:0xdf11 -a 0 -s 0x08000000:leave \
+        -D "/Users/KK/Development/KyberStation/.claude/worktrees/cool-bouman-2376e2/backups/89sabers-v39bt-factory-2026-05-18/bank1-pre.bin"
+
+    See docs/FLASH_GUIDE.md §11 for the full recovery procedure.

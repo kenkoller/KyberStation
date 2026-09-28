@@ -147,12 +147,13 @@ Parsed by
 
 ### Validated hardware configurations
 
-The flash flow relies on the STM32 DfuSe ROM bootloader, which is identical across all Proffieboard V3 / V3.9 / V3+OLED variants, and memory-layout-parameterised for V2. That means one validated configuration gives moderate confidence across the whole family — but only *real* hardware catches state-machine edge cases. (2026-04-20's validation session caught three real DFU-protocol bugs that 576 green mock tests had missed.)
+The flash flow relies on the STM32 DfuSe ROM bootloader, which is identical across all Proffieboard V3 / V3.9 / V3+OLED variants, and memory-layout-parameterised for V2. In principle one validated configuration gives moderate confidence across the whole family — but only *real* hardware catches state-machine edge cases (2026-04-20's session caught three real DFU-protocol bugs that 576 green mock tests had missed), and **vendor-customized variants have proven to behave very differently from stock at the boot-chain level** (see V3.9-BT row below).
 
 | Board | OS | Browser | Status | Last verified |
 |---|---|---|---|---|
-| Proffieboard V3.9 (89sabers) | macOS 15 (Sonoma) | Brave | ✅ full: connect → dry-run → flash → verify → re-flash | 2026-04-20 |
-| Proffieboard V3.9 | macOS | Chrome / Edge / Arc | 🟡 untested (same Chromium WebUSB impl as Brave) | — |
+| Proffieboard V3.9 (89sabers **non-BT, retired**) | macOS 15 (Sonoma) | Brave | ✅ historical full pass: connect → dry-run → flash → verify → re-flash. **Board retired 2026-05-01** after the 2026-04-29 Option Bytes incident; result is no longer reproducible against current bench hardware. | 2026-04-20 |
+| Proffieboard V3.9-BT (89sabers, current bench) | macOS | any Chromium | ❌ **custom-firmware flash does not produce a booting saber** — 8 attempts across 2 sessions (2026-05-15, 2026-05-17) all failed. Bank 1 contains vendor loader/data the boot chain depends on; we can't reproduce it from public sources. See [`docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md`](research/PROFFIE_V39BT_FLASH_FEASIBILITY.md). Runtime-preset path **is** validated on this chassis (2026-05-16). | 2026-05-17 |
+| Stock Proffieboard V3.9 (Fredrik direct) | any | any Chromium | 🟡 untested — would be the cleanest validation reference; no test board in hand | — |
 | Proffieboard V3.9 | Windows 10/11 | any Chromium | 🟡 untested (WinUSB driver path) | — |
 | Proffieboard V3.9 | Linux | Chrome / Brave | 🟡 untested (udev rule required) | — |
 | Proffieboard V2.2 | any | any Chromium | 🟡 untested (STM32L433CC, 256 KiB flash) | — |
