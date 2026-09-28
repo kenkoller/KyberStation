@@ -12,6 +12,8 @@
 //      documented canonical sibling when two IDs share one emission shape
 //   5. the validator reports no errors and no warnings, for the AST and for
 //      the generated code (generateStyleCode with and without comments)
+//   6. generateStyleCode() output matches the committed golden fixture
+//      byte for byte (see "Golden fixtures" below)
 //
 // Every style / ignition / retraction ID a preset uses must be classified in
 // the tables below. An unclassified ID fails the test instead of being
@@ -21,11 +23,20 @@
 // Also covered: lockup-position permutations, and buildConfigFile over a
 // representative multi-preset set.
 //
-// Fixture regeneration: when `KYBERSTATION_WRITE_FIXTURES=1` is set, each
-// preset's emitted `.cpp` and its source `.json` are written to
-// `tests/fixtures/synthetic/`:
+// ─── Golden fixtures ───
+//
+// tests/fixtures/synthetic/<preset-id>.cpp holds the exact
+// generateStyleCode() output for each preset — the single-style code the
+// editor shows, modulation comment block included. <preset-id>.json holds
+// the preset config that produced it. Both are compared exactly, so any
+// change to generated code, and any preset edit, fails here until the
+// fixtures are regenerated:
 //
 //   KYBERSTATION_WRITE_FIXTURES=1 pnpm --filter @kyberstation/codegen test
+//
+// Write mode rewrites every pair and deletes fixtures whose preset is gone.
+// Review the fixture diff before committing it: that diff IS the change to
+// the ProffieOS code users get.
 
 import { describe, it, expect } from 'vitest';
 import { ALL_PRESETS } from '@kyberstation/presets';
@@ -38,14 +49,29 @@ import {
 } from '../src/index.js';
 import type { BladeConfig, ConfigOptions, PresetEntry } from '../src/index.js';
 import { roundTrip } from './helpers/roundTrip.js';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import {
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  unlinkSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = join(thisDir, 'fixtures', 'synthetic');
+const FIXTURE_README = 'README.md';
 
 const SHOULD_WRITE = process.env.KYBERSTATION_WRITE_FIXTURES === '1';
+const REGENERATE_HINT =
+  'if the change is intentional, regenerate with `KYBERSTATION_WRITE_FIXTURES=1 pnpm --filter @kyberstation/codegen test` and review the fixture diff';
+
+/** Fixture file stem for a preset (kept identical to the original writer). */
+function fixtureName(presetId: string): string {
+  return presetId.replace(/[^a-z0-9-]/gi, '_');
+}
 
 // ms fields need a ±5ms tolerance because stutter/glitch split ms into
 // thirds/quarters and the simple inverse (first-part * 3) doesn't always
@@ -311,23 +337,56 @@ describe('synthetic fixtures — full preset round-trip', () => {
         }
       });
 
-      if (SHOULD_WRITE) {
-        it('writes fixture files', () => {
-          const safeId = preset.id.replace(/[^a-z0-9-]/gi, '_');
-          writeFileSync(
-            join(FIXTURE_DIR, `${safeId}.cpp`),
-            result.emittedCode + '\n',
-            'utf-8',
+      it('matches its golden fixture byte for byte', () => {
+        const name = fixtureName(preset.id);
+        const cppPath = join(FIXTURE_DIR, `${name}.cpp`);
+        const jsonPath = join(FIXTURE_DIR, `${name}.json`);
+        const cpp = generateStyleCode(config) + '\n';
+        const json = stableJson(config);
+
+        if (SHOULD_WRITE) {
+          writeFileSync(cppPath, cpp, 'utf-8');
+          writeFileSync(jsonPath, json, 'utf-8');
+        }
+
+        if (!existsSync(cppPath) || !existsSync(jsonPath)) {
+          expect.fail(
+            `${preset.id}: missing golden fixture tests/fixtures/synthetic/${name}.cpp/.json — ${REGENERATE_HINT}`,
           );
-          writeFileSync(
-            join(FIXTURE_DIR, `${safeId}.json`),
-            stableJson(config),
-            'utf-8',
-          );
-        });
-      }
+        }
+        expect(
+          readFileSync(cppPath, 'utf-8'),
+          `${preset.id}: generated code differs from tests/fixtures/synthetic/${name}.cpp — ${REGENERATE_HINT}`,
+        ).toBe(cpp);
+        expect(
+          readFileSync(jsonPath, 'utf-8'),
+          `${preset.id}: preset config differs from tests/fixtures/synthetic/${name}.json — ${REGENERATE_HINT}`,
+        ).toBe(json);
+      });
     });
   }
+});
+
+describe('synthetic fixtures — golden fixture directory', () => {
+  it('maps every preset to a distinct fixture name', () => {
+    const names = ALL_PRESETS.map((p) => fixtureName(p.id));
+    const duplicates = names.filter((n, i) => names.indexOf(n) !== i);
+    expect(duplicates, 'preset IDs that collide after sanitising').toEqual([]);
+  });
+
+  it('holds no fixtures for presets that no longer exist', () => {
+    const expected = new Set(
+      ALL_PRESETS.flatMap((p) => [`${fixtureName(p.id)}.cpp`, `${fixtureName(p.id)}.json`]),
+    );
+    const orphans = readdirSync(FIXTURE_DIR).filter(
+      (file) => file !== FIXTURE_README && !expected.has(file),
+    );
+    if (SHOULD_WRITE) {
+      for (const file of orphans) unlinkSync(join(FIXTURE_DIR, file));
+      return;
+    }
+    expect(orphans, `orphaned fixtures — ${REGENERATE_HINT}`).toEqual([]);
+  });
 });
 
 describe('synthetic fixtures — classification tables', () => {
