@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import {
   ALL_PROFILES,
   byId,
+  getDeliveryGuidance,
   type HardwareProfile,
 } from '@kyberstation/hardware-profiles';
 import { validateFactoryConfig } from '@kyberstation/codegen';
@@ -53,6 +54,18 @@ function ProvenanceBadge({ source }: { source: HardwareProfile['source'] }) {
   );
 }
 
+function DeliveryBadge({ label, warn }: { label: string; warn: boolean }) {
+  const color = warn ? 'rgb(var(--status-warn))' : 'rgb(var(--accent))';
+  return (
+    <span
+      className="text-ui-xs font-mono uppercase tracking-[0.12em]"
+      style={{ color, border: `1px solid ${color}`, padding: '2px 6px', borderRadius: '2px' }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function ProfileCard({
   profile,
   isSelected,
@@ -65,6 +78,7 @@ function ProfileCard({
   const ledSummary = profile.blades
     .map((b) => `${b.ledCount} LED ${b.role}`)
     .join(' + ');
+  const delivery = getDeliveryGuidance(profile);
 
   return (
     <button
@@ -94,13 +108,28 @@ function ProfileCard({
         >
           {profile.vendor.toUpperCase()} · {profile.model}
         </div>
-        <ProvenanceBadge source={profile.source} />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <DeliveryBadge label={delivery.badge} warn={delivery.flashKnownToFail} />
+          <ProvenanceBadge source={profile.source} />
+        </div>
       </div>
       <div
         className="text-ui-xs"
         style={{ color: 'rgb(var(--text-muted))', marginBottom: '4px' }}
       >
         {ledSummary} · {profile.numButtons}-button
+      </div>
+      <div
+        className="text-ui-xs"
+        style={{
+          color: delivery.flashKnownToFail
+            ? 'rgb(var(--status-warn))'
+            : 'rgb(var(--text-secondary))',
+          marginBottom: '4px',
+          lineHeight: 1.4,
+        }}
+      >
+        {delivery.summary}
       </div>
       {profile.notes && (
         <div
@@ -354,6 +383,7 @@ export function ChassisPicker() {
   const closeStore = useChassisPickerStore((s) => s.close);
   const activeProfile = useSaberProfileStore((s) => s.getActiveProfile());
   const updateProfile = useSaberProfileStore((s) => s.updateProfile);
+  const assignChassis = useSaberProfileStore((s) => s.assignChassis);
 
   const [view, setView] = useState<'list' | 'paste'>('list');
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -367,12 +397,9 @@ export function ChassisPicker() {
 
   if (!isOpen) return null;
   const onClose = closeStore;
+  const canSave = !!selectedId && selectedId !== CUSTOM_PASTE_PROFILE_ID;
 
   const handleConfirmList = () => {
-    if (!activeProfile) {
-      toast('Create a saber profile first', 'warning');
-      return;
-    }
     if (!selectedId) {
       toast('Pick a chassis to continue', 'warning');
       return;
@@ -383,21 +410,22 @@ export function ChassisPicker() {
       setView('paste');
       return;
     }
-    updateProfile(activeProfile.id, { hardwareProfileId: selectedId });
     const picked = byId(selectedId);
-    toast(`Chassis set: ${picked?.vendor ?? ''} ${picked?.model ?? selectedId}`, 'success');
+    const label = picked ? `${picked.vendor} ${picked.model}` : selectedId;
+    assignChassis(selectedId, label);
+    const viaSdCard = picked?.recommendedDelivery === 'runtime-presets';
+    toast(
+      viaSdCard
+        ? `Chassis set: ${label} — export with SD-card runtime presets`
+        : `Chassis set: ${label}`,
+      'success',
+    );
     onClose();
   };
 
   const handleSavePaste = (text: string) => {
-    if (!activeProfile) {
-      toast('Create a saber profile first', 'warning');
-      return;
-    }
-    updateProfile(activeProfile.id, {
-      hardwareProfileId: CUSTOM_PASTE_PROFILE_ID,
-      customPasteConfig: text,
-    });
+    const profile = assignChassis(CUSTOM_PASTE_PROFILE_ID, 'My saber');
+    updateProfile(profile.id, { customPasteConfig: text });
     toast('Custom chassis config saved', 'success');
     onClose();
   };
@@ -410,7 +438,7 @@ export function ChassisPicker() {
   const headerSubtitle =
     reason === 'export-block'
       ? "KyberStation needs to know your hardware before emitting a config — defaults won't boot on a vendor chassis."
-      : 'KyberStation will emit a config tailored to this hardware. You can change this anytime from the StatusBar chip.';
+      : 'KyberStation uses this to recommend how your designs reach the saber and to tailor exported configs. Change it anytime from the StatusBar chip.';
 
   return (
     <div
@@ -472,16 +500,15 @@ export function ChassisPicker() {
               <div
                 className="text-ui-xs"
                 style={{
-                  color: 'rgb(var(--warning, 220, 140, 60))',
-                  border: '1px solid rgb(var(--warning, 220, 140, 60) / 0.5)',
+                  color: 'rgb(var(--text-secondary))',
+                  border: '1px solid var(--border-subtle)',
                   padding: '10px 14px',
                   borderRadius: '4px',
                   marginBottom: '16px',
                 }}
-                role="alert"
               >
-                No active saber profile. Create one from the Saber Profile panel,
-                then come back here to pick a chassis.
+                No saber profile yet — saving creates one named after the chassis
+                you pick. You can rename it later in Saber Profiles.
               </div>
             )}
 
@@ -535,30 +562,26 @@ export function ChassisPicker() {
               <button
                 data-autofocus
                 onClick={handleConfirmList}
-                disabled={
-                  !activeProfile ||
-                  !selectedId ||
-                  selectedId === CUSTOM_PASTE_PROFILE_ID
-                }
+                disabled={!selectedId || selectedId === CUSTOM_PASTE_PROFILE_ID}
                 className="text-ui-sm font-mono btn-hum"
                 style={{
                   padding: '8px 18px',
                   background:
-                    activeProfile && selectedId && selectedId !== CUSTOM_PASTE_PROFILE_ID
+                    canSave
                       ? 'rgb(var(--accent))'
                       : 'rgb(var(--bg-surface))',
                   border: '1px solid rgb(var(--accent))',
                   color:
-                    activeProfile && selectedId && selectedId !== CUSTOM_PASTE_PROFILE_ID
+                    canSave
                       ? 'rgb(var(--bg-deep))'
                       : 'rgb(var(--text-muted))',
                   borderRadius: '2px',
                   cursor:
-                    activeProfile && selectedId && selectedId !== CUSTOM_PASTE_PROFILE_ID
+                    canSave
                       ? 'pointer'
                       : 'not-allowed',
                   opacity:
-                    activeProfile && selectedId && selectedId !== CUSTOM_PASTE_PROFILE_ID
+                    canSave
                       ? 1
                       : 0.6,
                   letterSpacing: '0.08em',

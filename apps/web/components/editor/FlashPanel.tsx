@@ -15,6 +15,8 @@ import {
 } from '@/lib/webusb';
 import { playUISound } from '@/lib/uiSounds';
 import { useWebusbStore } from '@/stores/webusbStore';
+import { useSaberProfileStore } from '@/stores/saberProfileStore';
+import { byId, getDeliveryGuidance } from '@kyberstation/hardware-profiles';
 
 // ─── Pre-built firmware variants ─────────────────────────────────────────────
 //
@@ -81,7 +83,26 @@ function storeDisclaimerAck(): void {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function FlashPanel() {
+export interface FlashPanelProps {
+  /**
+   * Switch to the Card Writer (SD-card export). Supplied by the modal host
+   * (DeliveryRail); when absent — e.g. the panel rendered inline in the
+   * Output column — the shortcut buttons are hidden.
+   */
+  onOpenCardWriter?: () => void;
+}
+
+export function FlashPanel({ onOpenCardWriter }: FlashPanelProps) {
+  // Chassis gate: when the active saber profile's chassis is known to
+  // reject custom firmware (e.g. 89sabers V3.9-BT, 11/11 failed), warn on
+  // every visit — the generic disclaimer below is acknowledged once per
+  // session — and require an explicit opt-in before connecting.
+  const activeChassisId = useSaberProfileStore((s) => s.getActiveProfile()?.hardwareProfileId);
+  const activeChassis = activeChassisId ? byId(activeChassisId) : undefined;
+  const chassisBlocksFlash = activeChassis
+    ? getDeliveryGuidance(activeChassis).flashKnownToFail
+    : false;
+  const [chassisRiskAcked, setChassisRiskAcked] = useState(false);
   const [state, setState] = useState<PanelState>(
     hasAckedDisclaimer() ? { kind: 'ready' } : { kind: 'needs-ack' },
   );
@@ -324,9 +345,9 @@ export function FlashPanel() {
         </span>
       </div>
       <p className="text-ui-xs text-text-muted mb-4 leading-relaxed">
-        One-click firmware flash over WebUSB. The <strong>config.h</strong> you build in
-        KyberStation still lives on the SD card — this panel only writes the ProffieOS
-        firmware itself.{' '}
+        One-click firmware flash over WebUSB. It writes a firmware binary: one of the
+        prebuilt ProffieOS builds below, or a <strong>.bin</strong> you compiled yourself
+        from an exported <strong>config.h</strong>.{' '}
         <strong>For v1.0 the recommended path is the dfu-util CLI workflow</strong> —
         see the{' '}
         <a
@@ -340,6 +361,15 @@ export function FlashPanel() {
         .
       </p>
 
+      {chassisBlocksFlash && activeChassis && (
+        <ChassisFlashWarning
+          chassisLabel={`${activeChassis.vendor} ${activeChassis.model}`}
+          acked={chassisRiskAcked}
+          onAckChange={setChassisRiskAcked}
+          onOpenCardWriter={onOpenCardWriter}
+        />
+      )}
+
       {!webUsbSupported && <UnsupportedNotice />}
 
       {webUsbSupported && state.kind === 'needs-ack' && (
@@ -350,6 +380,7 @@ export function FlashPanel() {
           }
           allChecked={allAcksChecked}
           onAck={handleAckDisclaimer}
+          onOpenCardWriter={onOpenCardWriter}
         />
       )}
 
@@ -367,7 +398,10 @@ export function FlashPanel() {
 
           <div className="mt-4">
             {state.kind === 'ready' && (
-              <ConnectButton onClick={handleConnect} />
+              <ConnectButton
+                onClick={handleConnect}
+                disabled={chassisBlocksFlash && !chassisRiskAcked}
+              />
             )}
             {state.kind === 'connecting' && <StatusLine>Waiting for device picker…</StatusLine>}
             {state.kind === 'connected' && (
@@ -400,6 +434,58 @@ export function FlashPanel() {
 
 // ─── Subcomponents ───────────────────────────────────────────────────────────
 
+function ChassisFlashWarning({
+  chassisLabel,
+  acked,
+  onAckChange,
+  onOpenCardWriter,
+}: {
+  chassisLabel: string;
+  acked: boolean;
+  onAckChange: (value: boolean) => void;
+  onOpenCardWriter?: () => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="rounded-panel border p-3 mb-4"
+      style={{
+        background: 'rgb(var(--status-error) / 0.10)',
+        borderColor: 'rgb(var(--status-error) / 0.45)',
+      }}
+    >
+      <p className="text-ui-xs font-semibold mb-1.5" style={{ color: 'rgb(var(--status-error))' }}>
+        Custom firmware doesn&apos;t boot on your saber&apos;s chassis ({chassisLabel})
+      </p>
+      <p className="text-ui-xs text-text-primary leading-relaxed mb-2">
+        Every custom build tried on this chassis has left the saber dark until both flash
+        banks were restored from a backup. Put your designs on it with SD-card runtime
+        presets instead.
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        {onOpenCardWriter && (
+          <button
+            type="button"
+            onClick={onOpenCardWriter}
+            className="px-3 py-1.5 rounded text-ui-xs font-medium bg-accent text-white hover:bg-accent/90"
+          >
+            Open Card Writer (SD card)
+          </button>
+        )}
+        <label className="flex items-start gap-2 text-ui-xs text-text-primary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acked}
+            onChange={(e) => onAckChange(e.target.checked)}
+            className="mt-0.5 accent-accent shrink-0"
+          />
+          <span>Flash anyway: I have a full backup of both flash banks and know how to restore it.</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function UnsupportedNotice() {
   return (
     <div
@@ -430,11 +516,13 @@ function DisclaimerCard({
   onToggle,
   allChecked,
   onAck,
+  onOpenCardWriter,
 }: {
   acks: DisclaimerAcks;
   onToggle: (key: keyof DisclaimerAcks, value: boolean) => void;
   allChecked: boolean;
   onAck: () => void;
+  onOpenCardWriter?: () => void;
 }) {
   return (
     <div
@@ -497,16 +585,16 @@ function DisclaimerCard({
           89sabers V3.9-BT owners — please read
         </p>
         <p className="text-ui-xs text-text-primary leading-relaxed mb-2">
-          Eight custom-firmware flash attempts across two bench sessions (2026-05-15,
-          2026-05-17) have all failed on the 89sabers V3.9-BT chassis. <code>dfu-util</code>
-          reports success, but the saber will not boot afterward and requires a full
-          dual-bank factory restore. <strong>We do not currently recommend flashing
-          custom firmware on the V3.9-BT.</strong>
+          Eleven custom firmware builds have failed on the 89sabers V3.9-BT across four
+          bench sessions (2026-05-14 to 05-19), including 89sabers&apos; own factory source.
+          The flash reports success, but the saber stays dark until both flash banks are
+          restored from a backup. <strong>We do not recommend flashing custom firmware on
+          the V3.9-BT.</strong>
         </p>
         <p className="text-ui-xs text-text-primary leading-relaxed">
-          Use the <strong>Card Writer</strong> panel instead — KyberStation emits a{' '}
-          <code>presets.ini</code> file you drop on the SD card. No firmware flash
-          required, bench-validated on V3.9-BT 2026-05-16. See the{' '}
+          Use the <strong>Card Writer</strong> instead — KyberStation writes your presets
+          to the SD card, no firmware flash needed. Bench-validated on the V3.9-BT
+          (2026-05-16 through 05-19). See the{' '}
           <a
             href="https://github.com/kenkoller/KyberStation/blob/main/docs/research/PROFFIE_V39BT_FLASH_FEASIBILITY.md"
             target="_blank"
@@ -517,6 +605,15 @@ function DisclaimerCard({
           </a>{' '}
           for the full story.
         </p>
+        {onOpenCardWriter && (
+          <button
+            type="button"
+            onClick={onOpenCardWriter}
+            className="mt-2 px-3 py-1.5 rounded text-ui-xs font-medium bg-accent text-white hover:bg-accent/90"
+          >
+            Open Card Writer (SD card)
+          </button>
+        )}
       </div>
 
       <div
@@ -702,13 +799,15 @@ function FirmwareSelector({
   );
 }
 
-function ConnectButton({ onClick }: { onClick: () => void }) {
+function ConnectButton({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className="w-full px-4 py-3 rounded text-ui-sm font-medium transition-colors
-        bg-accent text-white hover:bg-accent/90"
+        bg-accent text-white hover:bg-accent/90
+        disabled:bg-bg-surface disabled:text-text-muted disabled:cursor-not-allowed"
     >
       Connect Proffieboard (DFU mode)
     </button>

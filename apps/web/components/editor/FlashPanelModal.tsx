@@ -22,9 +22,11 @@ import { FlashPanel } from '@/components/editor/FlashPanel';
 export interface FlashPanelModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Switch from this modal to the Card Writer (SD-card export). */
+  onOpenCardWriter?: () => void;
 }
 
-export function FlashPanelModal({ isOpen, onClose }: FlashPanelModalProps) {
+export function FlashPanelModal({ isOpen, onClose, onOpenCardWriter }: FlashPanelModalProps) {
   const { dialogRef } = useModalDialog<HTMLDivElement>({ isOpen, onClose });
 
   const [mounted, setMounted] = useState(false);
@@ -89,7 +91,7 @@ export function FlashPanelModal({ isOpen, onClose }: FlashPanelModalProps) {
 
         {/* ── Body ── */}
         <div className="flex-1 overflow-y-auto p-4">
-          <FlashPanel />
+          <FlashPanel onOpenCardWriter={onOpenCardWriter} />
         </div>
       </div>
     </div>

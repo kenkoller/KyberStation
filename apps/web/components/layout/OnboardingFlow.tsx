@@ -18,6 +18,8 @@ import {
   getUISoundEngine,
 } from '../../lib/uiSounds';
 import { useModalDialog } from '../../hooks/useModalDialog';
+import { ALL_PROFILES, byId, getDeliveryGuidance } from '@kyberstation/hardware-profiles';
+import { useSaberProfileStore } from '../../stores/saberProfileStore';
 
 const ONBOARDING_KEY = 'kyberstation-onboarding-complete';
 
@@ -25,15 +27,19 @@ interface OnboardingFlowProps {
   onComplete: () => void;
 }
 
-type Step = 'welcome' | 'performance' | 'sound' | 'aurebesh' | 'done';
+type Step = 'welcome' | 'saber' | 'performance' | 'sound' | 'aurebesh' | 'done';
+
+const STEPS: Step[] = ['welcome', 'saber', 'performance', 'sound', 'aurebesh', 'done'];
 
 /**
  * First-use onboarding flow.
  *
- * Presents 3 setup screens for:
- *   1. Performance tier (auto-detected, user can override)
- *   2. Sound preference (Silent / Subtle / Full Immersion)
- *   3. Aurebesh mode (Off / Labels / Full)
+ * Presents 4 setup screens for:
+ *   1. Saber chassis — decides the export path (compile + flash vs SD-card
+ *      runtime presets); "just designing" leaves it unset
+ *   2. Performance tier (auto-detected, user can override)
+ *   3. Sound preference (Silent / Subtle / Full Immersion)
+ *   4. Aurebesh mode (Off / Labels / Full)
  *
  * Persists choices and marks onboarding as complete so it
  * doesn't show again. Can be re-triggered from settings.
@@ -47,6 +53,9 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   });
   const [selectedSound, setSelectedSound] = useState<UISoundPreset>('silent');
   const [selectedAurebesh, setSelectedAurebesh] = useState<AurebeshMode>('off');
+  // null = "just designing" — no chassis assigned.
+  const [selectedChassis, setSelectedChassis] = useState<string | null>(null);
+  const assignChassis = useSaberProfileStore((s) => s.assignChassis);
 
   const finish = useCallback(() => {
     // Apply all choices
@@ -64,10 +73,9 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   }, [selectedTier, selectedSound, selectedAurebesh, onComplete]);
 
   const next = useCallback(() => {
-    const steps: Step[] = ['welcome', 'performance', 'sound', 'aurebesh', 'done'];
-    const idx = steps.indexOf(step);
-    if (idx < steps.length - 1) {
-      const nextStep = steps[idx + 1];
+    const idx = STEPS.indexOf(step);
+    if (idx < STEPS.length - 1) {
+      const nextStep = STEPS[idx + 1];
       if (nextStep === 'done') {
         finish();
       } else {
@@ -75,6 +83,16 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       }
     }
   }, [step, finish]);
+
+  // Apply the chassis as soon as the user leaves the saber step, so a later
+  // "Skip setup" can't silently drop an explicit choice.
+  const confirmSaber = useCallback(() => {
+    if (selectedChassis) {
+      const hw = byId(selectedChassis);
+      assignChassis(selectedChassis, hw ? `${hw.vendor} ${hw.model}` : 'My saber');
+    }
+    next();
+  }, [selectedChassis, assignChassis, next]);
 
   const skip = useCallback(() => {
     localStorage.setItem(ONBOARDING_KEY, 'true');
@@ -92,11 +110,13 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const headingId =
     step === 'welcome'
       ? 'onboarding-title-welcome'
-      : step === 'performance'
-        ? 'onboarding-title-performance'
-        : step === 'sound'
-          ? 'onboarding-title-sound'
-          : 'onboarding-title-aurebesh';
+      : step === 'saber'
+        ? 'onboarding-title-saber'
+        : step === 'performance'
+          ? 'onboarding-title-performance'
+          : step === 'sound'
+            ? 'onboarding-title-sound'
+            : 'onboarding-title-aurebesh';
 
   return (
     <div
@@ -134,6 +154,13 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         {step === 'welcome' && (
           <WelcomeStep onNext={next} />
         )}
+        {step === 'saber' && (
+          <SaberStep
+            selected={selectedChassis}
+            onSelect={setSelectedChassis}
+            onNext={confirmSaber}
+          />
+        )}
         {step === 'performance' && (
           <PerformanceStep
             selected={selectedTier}
@@ -158,7 +185,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
         {/* Step indicator */}
         <div className="flex justify-center gap-2 mt-6">
-          {(['welcome', 'performance', 'sound', 'aurebesh'] as Step[]).map((s) => (
+          {STEPS.filter((s) => s !== 'done').map((s) => (
             <div
               key={s}
               style={{
@@ -217,6 +244,54 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       >
         GET STARTED
       </button>
+    </div>
+  );
+}
+
+function SaberStep({
+  selected,
+  onSelect,
+  onNext,
+}: {
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+  onNext: () => void;
+}) {
+  return (
+    <div>
+      <h2
+        id="onboarding-title-saber"
+        className="font-cinematic text-ui-lg mb-1 text-center"
+        style={{ color: 'rgb(var(--text-primary))', letterSpacing: '0.15em' }}
+      >
+        YOUR SABER
+      </h2>
+      <p className="text-ui-xs mb-4 text-center" style={{ color: 'rgb(var(--text-muted))' }}>
+        What will you put your designs on? This picks the right way to get them onto the
+        saber. Change it anytime from the CHASSIS chip in the status bar.
+      </p>
+
+      <div className="flex flex-col gap-2 mb-5">
+        {ALL_PROFILES.map((profile) => (
+          <OptionCard
+            key={profile.id}
+            label={`${profile.vendor.toUpperCase()} · ${profile.model}`}
+            description={getDeliveryGuidance(profile).summary}
+            isSelected={selected === profile.id}
+            onClick={() => onSelect(profile.id)}
+          />
+        ))}
+        <OptionCard
+          label="JUST DESIGNING / NOT SURE"
+          description="Skip for now. Other vendors: pick Custom from the CHASSIS chip later."
+          isSelected={selected === null}
+          onClick={() => onSelect(null)}
+        />
+      </div>
+
+      <div className="flex justify-end">
+        <NextButton onClick={onNext} />
+      </div>
     </div>
   );
 }
