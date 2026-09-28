@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createEffect } from '../../src/effects/index';
 import { UnstableKyloEffect } from '../../src/effects/UnstableKyloEffect';
 import type { BladeConfig, EffectContext, RGB } from '../../src/types';
@@ -38,13 +38,6 @@ function makeEffectContext(overrides?: Partial<EffectContext>): EffectContext {
 }
 
 describe('UnstableKyloEffect', () => {
-  let perfNowValue: number;
-
-  beforeEach(() => {
-    perfNowValue = 1000;
-    vi.spyOn(performance, 'now').mockImplementation(() => perfNowValue);
-  });
-
   it('is created via the factory under id "unstableKylo"', () => {
     const effect = createEffect('unstableKylo');
     expect(effect).toBeInstanceOf(UnstableKyloEffect);

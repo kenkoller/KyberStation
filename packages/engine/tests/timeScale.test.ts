@@ -10,7 +10,7 @@
 //   7. reset() restores timeScale to 1.0
 //   8. timeScale does not affect the update() call frequency (only delta)
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { BladeEngine } from '../src/BladeEngine.js';
 import { BladeState } from '../src/types.js';
 import type { BladeConfig } from '../src/types.js';
@@ -38,7 +38,6 @@ describe('BladeEngine timeScale', () => {
 
   beforeEach(() => {
     engine = new BladeEngine();
-    vi.spyOn(performance, 'now').mockImplementation(() => 0);
   });
 
   it('default timeScale is 1.0', () => {

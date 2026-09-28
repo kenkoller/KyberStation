@@ -36,8 +36,8 @@ export class ShockwaveEffect extends BaseEffect {
 
   constructor() {
     super();
-    // Duration is generous — getProgress() will deactivate once the wave
-    // has fully exited the blade regardless of this cap.
+    // Duration is generous — apply() deactivates the effect once both
+    // wavefronts have exited the blade, usually well before this cap.
     this.duration = 2000;
   }
 

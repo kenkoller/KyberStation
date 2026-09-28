@@ -37,6 +37,7 @@ export type {
   EffectType,
   EffectParams,
   EffectContext,
+  EffectTiming,
   BladeEffect,
   IgnitionAnimation,
   IgnitionContext,

@@ -387,7 +387,9 @@ export class BladeEngine {
     }
 
     const effect = this.getEffect(type, segmentId);
-    effect.trigger(params ?? { position: 0.5 });
+    // Stamp the activation with the engine's simulated clock — the same
+    // timeline `applyEffectsForSegment` measures elapsed time on.
+    effect.trigger({ ...(params ?? { position: 0.5 }), triggerTime: this._elapsedTime });
   }
 
   /**
@@ -401,7 +403,7 @@ export class BladeEngine {
     const key = `${segmentId ?? '_global'}-${type}`;
     const effect = this.effectPool.get(key);
     if (effect && effect.isActive()) {
-      effect.release();
+      effect.release(this._elapsedTime);
     }
   }
 
@@ -905,6 +907,7 @@ export class BladeEngine {
       swingSpeed: styleContext.swingSpeed,
       twistAngle: styleContext.twistAngle,
       config,
+      time: this._elapsedTime,
     };
 
     // Choose the active ignition animation based on state
@@ -1081,10 +1084,9 @@ export class BladeEngine {
         if (!key.startsWith(`${segment.id}-`)) continue;
       }
 
-      // Access BaseEffect internals to compute elapsed/progress for the context.
-      const baseEffect = effect as unknown as { startTime: number; duration: number };
-      const elapsed = this._elapsedTime - baseEffect.startTime;
-      const progress = Math.min(1, elapsed / Math.max(1, baseEffect.duration));
+      // Elapsed / progress on the engine's simulated clock (the same clock
+      // triggerEffect stamped the activation with).
+      const { elapsed, progress } = effect.timing(this._elapsedTime);
 
       const effectContext: EffectContext = {
         ...styleContext,

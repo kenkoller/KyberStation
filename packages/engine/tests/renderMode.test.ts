@@ -11,7 +11,7 @@
 //   8. State machine (ignite/retract) works identically in both modes
 //   9. Mode switch mid-ignition doesn't crash
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { BladeEngine } from '../src/BladeEngine';
 import { BladeState } from '../src/types';
 import type { BladeConfig } from '../src/types';
@@ -40,11 +40,6 @@ function runFrames(engine: BladeEngine, config: BladeConfig, count: number, delt
 }
 
 describe('BladeEngine renderMode', () => {
-  beforeEach(() => {
-    let now = 0;
-    vi.spyOn(performance, 'now').mockImplementation(() => now++);
-  });
-
   // ─── Default mode ──────────────────────────────────────────────
 
   describe('default mode', () => {
