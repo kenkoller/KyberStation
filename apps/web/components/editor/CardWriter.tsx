@@ -43,7 +43,11 @@ import {
   type DesignKnob,
   type RuntimeFidelityBadge,
 } from '@/lib/deliverability';
-import { byId as hardwareProfileById } from '@kyberstation/hardware-profiles';
+import {
+  byId as hardwareProfileById,
+  getDeliveryGuidance,
+  type HardwareProfile,
+} from '@kyberstation/hardware-profiles';
 import { generateStyleCode } from '@kyberstation/codegen';
 import { playUISound } from '@/lib/uiSounds';
 import { useCommitCeremony, phaseToStage } from '@/hooks/useCommitCeremony';
@@ -103,13 +107,35 @@ interface ValidationNotice {
   text: string;
 }
 
+/**
+ * Chassis profile of the active saber profile, read once for initial state.
+ * Undefined when no chassis is set or the profile uses a pasted config.
+ */
+function initialChassis(): HardwareProfile | undefined {
+  const hpId = useSaberProfileStore.getState().getActiveProfile()?.hardwareProfileId;
+  if (!hpId || hpId === 'custom-paste') return undefined;
+  return hardwareProfileById(hpId);
+}
+
+/**
+ * A chassis tagged `recommendedDelivery: 'runtime-presets'` (e.g. 89sabers
+ * V3.9-BT, where custom firmware doesn't boot) opens the Card Writer on
+ * that board with the user's colors + style on: the tag is only applied
+ * where the runtime path, `advanced` verb included, is bench-validated.
+ */
+function chassisPrefersRuntime(): boolean {
+  return initialChassis()?.recommendedDelivery === 'runtime-presets';
+}
+
 // ─── Component ───
 
 export function CardWriter() {
   const config = useBladeStore((s) => s.config);
 
-  // Board selection
-  const [boardId, setBoardId] = useState<BoardId>('proffie');
+  // Board selection — chassis-aware default (see chassisPrefersRuntime)
+  const [boardId, setBoardId] = useState<BoardId>(() =>
+    chassisPrefersRuntime() ? 'proffie_runtime' : 'proffie',
+  );
 
   // Preset selection — the current config is always an option
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set(['current']));
@@ -154,9 +180,10 @@ export function CardWriter() {
 
   // "Use my colors and blade style" opt-in for the runtime path
   // (custom-styles mode, historically "Phase C"). Off by default = keep
-  // factory blade styles; reset when the user switches away from
+  // factory blade styles, except on a chassis that prefers runtime presets
+  // (see chassisPrefersRuntime); reset when the user switches away from
   // `proffie_runtime` to keep the toggle scoped. Local state only.
-  const [useAdvancedRuntimeVerb, setUseAdvancedRuntimeVerb] = useState(false);
+  const [useAdvancedRuntimeVerb, setUseAdvancedRuntimeVerb] = useState(chassisPrefersRuntime);
 
   // Reset discovered install_time when switching boards.
   useEffect(() => {
@@ -170,15 +197,16 @@ export function CardWriter() {
   // runtime preset file. Falls back to 1 when no profile is selected or
   // the profile uses `custom-paste` (we have no way to know NUM_BLADES
   // without parsing the pasted config).
-  const runtimeNumBlades = useMemo<1 | 2 | 3 | 4>(() => {
+  const chassis = useMemo<HardwareProfile | undefined>(() => {
     const profile = activeProfileId
       ? profiles.find((p) => p.id === activeProfileId)
       : undefined;
     const hpId = profile?.hardwareProfileId;
-    if (!hpId || hpId === 'custom-paste') return 1;
-    const hp = hardwareProfileById(hpId);
-    return hp?.numBlades ?? 1;
+    if (!hpId || hpId === 'custom-paste') return undefined;
+    return hardwareProfileById(hpId);
   }, [activeProfileId, profiles]);
+  const chassisGuidance = chassis ? getDeliveryGuidance(chassis) : null;
+  const runtimeNumBlades: 1 | 2 | 3 | 4 = chassis?.numBlades ?? 1;
 
   // Resolve which entries to use: active card config > preset list > current editor config
   const resolvedEntries = useMemo(() => {
@@ -869,11 +897,24 @@ export function CardWriter() {
             </>
           )}
         </p>
+        {chassis && chassisGuidance && boardId === 'proffie_runtime' &&
+          chassis.recommendedDelivery === 'runtime-presets' && (
+            <p className="text-ui-xs text-text-secondary mt-1">
+              Picked for your {chassis.vendor} {chassis.model}. {chassisGuidance.summary}
+            </p>
+          )}
+        {chassis && chassisGuidance?.flashKnownToFail && boardId === 'proffie' && (
+          <p role="alert" className="text-ui-xs mt-1" style={{ color: 'rgb(var(--status-error))' }}>
+            Your {chassis.vendor} {chassis.model} doesn&apos;t boot custom firmware, so a
+            config.h export won&apos;t run on it. Use ProffieOS Runtime (SD card).
+          </p>
+        )}
       </div>
 
       {/* Runtime-preset blade-style source. Only surfaced for
-          proffie_runtime. "Keep factory blade styles" (builtin N M) stays
-          the default; "Use my colors and blade style" maps each preset to
+          proffie_runtime. "Keep factory blade styles" (builtin N M) is the
+          default unless the chassis prefers runtime presets; "Use my colors
+          and blade style" maps each preset to
           the closest ProffieOS runtime verb and requires firmware without
           DISABLE_BASIC_PARSER_STYLES. */}
       {boardId === 'proffie_runtime' && (
