@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 5,
+    "r": 240
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 110,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 210,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 90,
+    "r": 255
+  },
+  "name": "Jerec",
+  "noiseLevel": 0.08,
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.22,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

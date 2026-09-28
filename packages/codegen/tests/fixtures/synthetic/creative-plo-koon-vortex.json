@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 80,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "ignition": "spark",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 140,
+    "r": 80
+  },
+  "name": "PloKoonVortex",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.22,
+  "style": "vortex",
+  "swingFxIntensity": 0.5
+}

@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 110,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 220,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 200,
+    "r": 200
+  },
+  "dragColor": {
+    "b": 60,
+    "g": 170,
+    "r": 200
+  },
+  "ignition": "standard",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 140,
+    "g": 180,
+    "r": 190
+  },
+  "name": "MasterSwordDormant",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 600,
+  "shimmer": 0.04,
+  "style": "aurora",
+  "swingFxIntensity": 0.2
+}

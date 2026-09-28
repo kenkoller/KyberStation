@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 120,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 140,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 210,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 170,
+    "r": 255
+  },
+  "name": "SoulStone",
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.15
+}

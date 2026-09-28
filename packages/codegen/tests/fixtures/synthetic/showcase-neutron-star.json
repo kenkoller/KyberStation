@@ -1,0 +1,173 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 140,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 200,
+        "g": 60,
+        "r": 0
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 160,
+        "r": 80
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 240,
+        "r": 220
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "flash-fill",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.0006
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.25
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.15
+            }
+          },
+          "source": "abs(sin(time * 0.0006)) * 0.25 + 0.15"
+        },
+        "id": "showcase-neutron-binding-1",
+        "label": "fx: 10.5s pulsar floor",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-neutron-binding-2",
+        "label": "sound → core glow",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.9,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-neutron-binding-3",
+        "label": "clash → magnetar flare",
+        "source": "clash",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "args": [
+              {
+                "kind": "binary",
+                "lhs": {
+                  "kind": "literal",
+                  "value": 1
+                },
+                "op": "-",
+                "rhs": {
+                  "id": "battery",
+                  "kind": "var"
+                }
+              },
+              {
+                "kind": "literal",
+                "value": 0
+              },
+              {
+                "kind": "literal",
+                "value": 0.4
+              }
+            ],
+            "fn": "clamp",
+            "kind": "call"
+          },
+          "source": "clamp(1 - battery, 0, 0.4)"
+        },
+        "id": "showcase-neutron-binding-4",
+        "label": "fx: battery dim (dying pulsar)",
+        "source": null,
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "NeutronStar",
+  "retraction": "fadeout",
+  "retractionMs": 540,
+  "shimmer": 0.18,
+  "style": "neutron",
+  "swingFxIntensity": 0.45
+}

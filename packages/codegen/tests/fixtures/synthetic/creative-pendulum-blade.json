@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 160,
+    "r": 230
+  },
+  "blastColor": {
+    "b": 130,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 230,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 600,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 180,
+    "r": 240
+  },
+  "name": "PendulumBlade",
+  "retraction": "standard",
+  "retractionMs": 800,
+  "shimmer": 0.12,
+  "style": "gravity",
+  "swingFxIntensity": 0.55
+}

@@ -1,9 +1,20 @@
 StylePtr<
   Layers<
-    AudioFlicker<
-      Rgb<0,60,90>,
-      Mix<
-        Int<16384>,
+    Mix<
+      SwingSpeed<500>,
+      Stripes<
+        6000,
+        2500,
+        Rgb<0,60,90>,
+        Mix<
+          Int<24000>,
+          Rgb<0,60,90>,
+          White
+        >
+      >,
+      Stripes<
+        2500,
+        4000,
         Rgb<0,60,90>,
         White
       >
@@ -61,8 +72,11 @@ StylePtr<
       SaberBase::LOCKUP_MELT
     >,
     InOutTrL<
-      TrWipeIn<1200>,
-      TrWipeIn<1500>
+      TrFade<1200>,
+      TrConcat<
+        TrFade<1050>,
+        TrFade<450>
+      >
     >
   >
 >()

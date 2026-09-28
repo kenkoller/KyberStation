@@ -1,12 +1,12 @@
 StylePtr<
   Layers<
-    AudioFlicker<
-      Rgb<255,20,147>,
-      Mix<
-        Int<16384>,
+    BrownNoiseFlicker<
+      Gradient<
         Rgb<255,20,147>,
-        White
-      >
+        Rgb<255,114,190>
+      >,
+      White,
+      30
     >,
     BlastL<
       Rgb<0,150,255>

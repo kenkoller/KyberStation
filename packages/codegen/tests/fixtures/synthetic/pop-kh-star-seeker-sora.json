@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 150,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 230,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "name": "StarSeekerSora",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

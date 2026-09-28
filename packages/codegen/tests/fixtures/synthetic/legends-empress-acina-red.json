@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 10,
+    "r": 210
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 60,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 190,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 10,
+    "g": 120,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 70,
+    "r": 245
+  },
+  "name": "EmpressAcina",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.1,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

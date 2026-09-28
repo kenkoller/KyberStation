@@ -15,12 +15,12 @@ StylePtr<
       Rgb<50,255,50>
     >,
     SimpleClashL<
-      Rgb<150,150,150>,
+      Rgb<255,255,255>,
       40
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<0,150,150>
+        Rgb<100,200,255>
       >,
       TrInstant,
       TrFade<300>,

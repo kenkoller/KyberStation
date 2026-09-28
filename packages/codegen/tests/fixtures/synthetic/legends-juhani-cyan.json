@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 245,
+    "r": 220
+  },
+  "ignition": "spark",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 130
+  },
+  "name": "Juhani",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.45
+}

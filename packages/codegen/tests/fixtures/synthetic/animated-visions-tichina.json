@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 150,
+    "r": 60
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 230
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 210,
+    "r": 160
+  },
+  "name": "Tichina",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.07,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 100,
+    "g": 255,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 255,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 340,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 160,
+    "g": 255,
+    "r": 160
+  },
+  "name": "Omnitrix",
+  "noiseLevel": 0.1,
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.3,
+  "style": "unstable",
+  "swingFxIntensity": 0.35
+}

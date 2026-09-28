@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 180,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 140,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 20,
+    "g": 130,
+    "r": 200
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 200,
+    "r": 255
+  },
+  "name": "ProphetsBlade",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.2,
+  "style": "aurora",
+  "swingFxIntensity": 0.45
+}

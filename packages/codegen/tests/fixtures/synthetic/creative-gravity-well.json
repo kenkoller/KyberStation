@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 160,
+    "g": 30,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 160,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 180,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 180,
+    "g": 40,
+    "r": 100
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 1200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 60,
+    "r": 120
+  },
+  "name": "GravityWell",
+  "noiseLevel": 0.06,
+  "retraction": "drain",
+  "retractionMs": 1500,
+  "shimmer": 0.18,
+  "style": "gravity",
+  "swingFxIntensity": 0.7
+}

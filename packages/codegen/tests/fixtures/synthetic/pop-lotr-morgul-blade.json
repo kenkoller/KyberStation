@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 50,
+    "r": 120
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 100,
+    "g": 255,
+    "r": 180
+  },
+  "ignition": "crackle",
+  "ignitionMs": 500,
+  "ledCount": 72,
+  "lockupColor": {
+    "b": 80,
+    "g": 200,
+    "r": 140
+  },
+  "name": "MorgulBlade",
+  "noiseLevel": 0.18,
+  "retraction": "dissolve",
+  "retractionMs": 700,
+  "shimmer": 0.55,
+  "style": "unstable",
+  "swingFxIntensity": 0.35
+}

@@ -1,0 +1,137 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 130,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 240,
+    "r": 255
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 200,
+        "g": 60,
+        "r": 0
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 250,
+        "g": 160,
+        "r": 80
+      },
+      "position": 0.4
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 230,
+        "r": 200
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "spark",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 200,
+    "r": 255
+  },
+  "lockupPosition": 0.5,
+  "lockupRadius": 0.18,
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.0008
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.4
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.3
+            }
+          },
+          "source": "abs(sin(time * 0.0008)) * 0.4 + 0.3"
+        },
+        "id": "showcase-living-force-binding-1",
+        "label": "fx: heartbeat (sub-second)",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-living-force-binding-2",
+        "label": "swing → shimmer (motion-reactive)",
+        "source": "swing",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-living-force-binding-3",
+        "label": "clash → shimmer (impact spike)",
+        "source": "clash",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "LivingForce",
+  "retraction": "fadeout",
+  "retractionMs": 460,
+  "shimmer": 0.3,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

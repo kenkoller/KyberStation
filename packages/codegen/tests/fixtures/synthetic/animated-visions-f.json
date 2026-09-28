@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 130,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 140
+  },
+  "name": "F",
+  "retraction": "fadeout",
+  "retractionMs": 480,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

@@ -1,0 +1,38 @@
+{
+  "baseColor": {
+    "b": 20,
+    "g": 100,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "fireSize": 0.8,
+  "ignition": "crackle",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 160,
+    "r": 255
+  },
+  "name": "RengokuNichirin",
+  "noiseLevel": 0.1,
+  "retraction": "drain",
+  "retractionMs": 450,
+  "shimmer": 0.25,
+  "style": "fire",
+  "swingFxIntensity": 0.55
+}

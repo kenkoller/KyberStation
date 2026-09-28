@@ -1,10 +1,10 @@
 StylePtr<
   Layers<
     StyleFire<
-      Rgb<10,10,10>,
+      Rgb<40,40,60>,
       Mix<
         Int<10000>,
-        Rgb<10,10,10>,
+        Rgb<40,40,60>,
         White
       >,
       0,

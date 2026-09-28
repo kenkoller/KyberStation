@@ -1,13 +1,12 @@
 StylePtr<
   Layers<
-    Pulsing<
-      Rgb<130,0,255>,
+    AudioFlicker<
+      Rgb<170,60,240>,
       Mix<
-        Int<8000>,
-        Rgb<130,0,255>,
+        Int<16384>,
+        Rgb<170,60,240>,
         White
-      >,
-      3000
+      >
     >,
     BlastL<
       Rgb<200,150,255>
@@ -62,7 +61,7 @@ StylePtr<
       SaberBase::LOCKUP_MELT
     >,
     InOutTrL<
-      TrWipeIn<260>,
+      TrWipeIn<300>,
       TrWipeIn<280>
     >
   >

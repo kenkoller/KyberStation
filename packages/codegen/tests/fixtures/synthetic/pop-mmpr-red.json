@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 30,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 80,
+    "r": 255
+  },
+  "name": "RedRanger",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.22
+}

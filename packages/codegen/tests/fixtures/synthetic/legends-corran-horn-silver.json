@@ -14,7 +14,11 @@
     "g": 255,
     "r": 255
   },
-  "dualPhase": true,
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
   "ignition": "scroll",
   "ignitionMs": 350,
   "ledCount": 144,

@@ -16,8 +16,8 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 180
+    "g": 120,
+    "r": 255
   },
   "ignition": "fracture",
   "ignitionMs": 220,
@@ -28,10 +28,9 @@
     "r": 245
   },
   "name": "DarthKrayt",
-  "noiseLevel": 0.12,
   "retraction": "dissolve",
   "retractionMs": 300,
-  "shimmer": 0.3,
-  "style": "cinder",
+  "shimmer": 0.14,
+  "style": "stable",
   "swingFxIntensity": 0.45
 }

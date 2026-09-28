@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 220,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 170,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 250,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 230,
+    "r": 255
+  },
+  "name": "KaraNinthJedi",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.07,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

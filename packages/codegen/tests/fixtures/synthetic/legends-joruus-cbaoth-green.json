@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 230,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 255,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 220
+  },
+  "ignition": "crackle",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 250,
+    "r": 140
+  },
+  "name": "JoruusCbaoth",
+  "noiseLevel": 0.1,
+  "retraction": "fadeout",
+  "retractionMs": 480,
+  "shimmer": 0.28,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

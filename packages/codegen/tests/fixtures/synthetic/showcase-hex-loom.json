@@ -1,0 +1,146 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 60,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 255
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 220,
+        "g": 0,
+        "r": 80
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 60,
+        "r": 220
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 200,
+        "g": 100,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "glitch",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 240
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.0009
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.2
+            }
+          },
+          "source": "abs(sin(time * 0.0009)) * 0.3 + 0.2"
+        },
+        "id": "showcase-hex-binding-1",
+        "label": "fx: 7s cell-pattern pulse",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-hex-binding-2",
+        "label": "sound → automaton overlay",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-hex-binding-3",
+        "label": "clash → full-cell flash",
+        "source": "clash",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-hex-binding-4",
+        "label": "swing → saturation boost",
+        "source": "swing",
+        "target": "colorSaturationPulse"
+      }
+    ],
+    "version": 1
+  },
+  "name": "HexLoom",
+  "noiseLevel": 0.08,
+  "retraction": "shatter",
+  "retractionMs": 580,
+  "shimmer": 0.26,
+  "style": "automata",
+  "swingFxIntensity": 0.55
+}

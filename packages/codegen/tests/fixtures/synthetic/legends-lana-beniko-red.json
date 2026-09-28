@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 5,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 70,
+    "g": 100,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 170,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 50,
+    "g": 80,
+    "r": 255
+  },
+  "name": "LanaBeniko",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.14,
+  "style": "unstable",
+  "swingFxIntensity": 0.4
+}

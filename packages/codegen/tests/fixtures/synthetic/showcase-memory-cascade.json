@@ -1,0 +1,147 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 200,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 240
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 200,
+        "g": 80,
+        "r": 0
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 180,
+        "r": 60
+      },
+      "position": 0.4
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 240,
+        "r": 200
+      },
+      "position": 0.8
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 100,
+        "r": 100
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "pulse-wave",
+  "ignitionMs": 440,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 220,
+    "r": 180
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-cascade-binding-1",
+        "label": "sound → packet emission rate",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0002
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.5
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.5
+            }
+          },
+          "source": "sin(time * 0.0002) * 0.5 + 0.5"
+        },
+        "id": "showcase-cascade-binding-2",
+        "label": "fx: 31s violet drift",
+        "source": null,
+        "target": "baseColor.b"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-cascade-binding-3",
+        "label": "swing → packet kick",
+        "source": "swing",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-cascade-binding-4",
+        "label": "clash → full-blade saturation",
+        "source": "clash",
+        "target": "colorSaturationPulse"
+      }
+    ],
+    "version": 1
+  },
+  "name": "MemoryCascade",
+  "retraction": "dissolve",
+  "retractionMs": 620,
+  "shimmer": 0.2,
+  "style": "dataStream",
+  "swingFxIntensity": 0.5
+}

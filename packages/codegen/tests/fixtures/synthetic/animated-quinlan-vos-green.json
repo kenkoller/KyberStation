@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 200,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 245,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 190,
+    "g": 255,
+    "r": 230
+  },
+  "dragColor": {
+    "b": 40,
+    "g": 210,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 130,
+    "g": 240,
+    "r": 160
+  },
+  "name": "QuinlanVos",
+  "retraction": "standard",
+  "retractionMs": 350,
+  "shimmer": 0.2,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

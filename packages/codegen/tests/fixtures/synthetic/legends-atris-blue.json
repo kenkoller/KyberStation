@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 226,
+    "g": 43,
+    "r": 138
+  },
+  "blastColor": {
+    "b": 250,
+    "g": 160,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 240,
+    "g": 130,
+    "r": 180
+  },
+  "name": "Atris",
+  "retraction": "fadeout",
+  "retractionMs": 440,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.3
+}

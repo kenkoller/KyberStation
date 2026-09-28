@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 200,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 240,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 220,
+    "g": 150,
+    "r": 60
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 200,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 160
+  },
+  "name": "EnergySword",
+  "retraction": "dissolve",
+  "retractionMs": 250,
+  "shimmer": 0.25,
+  "style": "photon",
+  "swingFxIntensity": 0.55
+}

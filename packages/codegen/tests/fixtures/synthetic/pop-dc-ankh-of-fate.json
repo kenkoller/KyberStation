@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 195,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 170,
+    "g": 235,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 245,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 220,
+    "r": 255
+  },
+  "name": "AnkhOfFate",
+  "retraction": "standard",
+  "retractionMs": 460,
+  "shimmer": 0.18,
+  "style": "aurora",
+  "swingFxIntensity": 0.25
+}

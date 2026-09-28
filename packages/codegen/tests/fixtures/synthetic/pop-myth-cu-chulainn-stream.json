@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 130,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 130,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 250,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 160,
+    "r": 255
+  },
+  "name": "CuChulainnStream",
+  "noiseLevel": 0.1,
+  "retraction": "fadeout",
+  "retractionMs": 400,
+  "shimmer": 0.22,
+  "style": "neutron",
+  "swingFxIntensity": 0.65
+}

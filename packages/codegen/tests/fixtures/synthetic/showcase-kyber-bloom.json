@@ -1,0 +1,141 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 240,
+    "r": 200
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 240,
+        "g": 180,
+        "r": 100
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 240,
+        "r": 220
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 255,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "fracture",
+  "ignitionMs": 540,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "lockupPosition": 0.5,
+  "lockupRadius": 0.16,
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0004
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.4
+            }
+          },
+          "source": "sin(time * 0.0004) * 0.3 + 0.4"
+        },
+        "id": "showcase-bloom-binding-1",
+        "label": "fx: 15.7s lattice density",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.9,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-bloom-binding-2",
+        "label": "clash → full-field shatter",
+        "source": "clash",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-bloom-binding-3",
+        "label": "sound → crystal hum",
+        "source": "sound",
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-bloom-binding-4",
+        "label": "swing → lattice flare",
+        "source": "swing",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "KyberBloom",
+  "retraction": "shatter",
+  "retractionMs": 700,
+  "shimmer": 0.24,
+  "style": "crystalShatter",
+  "swingFxIntensity": 0.55
+}

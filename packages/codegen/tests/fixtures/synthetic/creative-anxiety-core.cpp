@@ -1,9 +1,20 @@
 StylePtr<
   Layers<
-    AudioFlicker<
-      Rgb<180,200,0>,
-      Mix<
-        Int<16384>,
+    Mix<
+      SwingSpeed<500>,
+      Stripes<
+        6000,
+        2500,
+        Rgb<180,200,0>,
+        Mix<
+          Int<24000>,
+          Rgb<180,200,0>,
+          White
+        >
+      >,
+      Stripes<
+        2500,
+        4000,
         Rgb<180,200,0>,
         White
       >
@@ -66,7 +77,10 @@ StylePtr<
         TrDelay<250>,
         TrWipe<750>
       >,
-      TrWipeIn<2000>
+      TrConcat<
+        TrFade<300>,
+        TrFade<1700>
+      >
     >
   >
 >()

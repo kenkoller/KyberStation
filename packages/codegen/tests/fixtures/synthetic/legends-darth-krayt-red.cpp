@@ -1,14 +1,12 @@
 StylePtr<
   Layers<
-    Mix<
-      SwingSpeed<300>,
-      StyleFire<
+    AudioFlicker<
+      Rgb<210,5,0>,
+      Mix<
+        Int<16384>,
         Rgb<210,5,0>,
-        Rgb<255,100,0>,
-        0,
-        2
-      >,
-      Rgb<210,5,0>
+        White
+      >
     >,
     BlastL<
       Rgb<235,50,20>
@@ -27,7 +25,7 @@ StylePtr<
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<180,0,0>
+        Rgb<255,120,0>
       >,
       TrInstant,
       TrFade<400>,
@@ -64,7 +62,7 @@ StylePtr<
     >,
     InOutTrL<
       TrWipeIn<220>,
-      TrWipeIn<300>
+      TrFade<300>
     >
   >
 >()

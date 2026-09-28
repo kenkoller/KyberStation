@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 210,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 255,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 230
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 210,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 140,
+    "g": 255,
+    "r": 160
+  },
+  "name": "KitFisto",
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.18,
+  "style": "pulse",
+  "swingFxIntensity": 0.45
+}

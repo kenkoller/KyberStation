@@ -14,7 +14,7 @@
     "g": 225,
     "r": 210
   },
-  "ignition": "scroll",
+  "ignition": "standard",
   "ignitionMs": 350,
   "ledCount": 144,
   "lockupColor": {
@@ -23,8 +23,8 @@
     "r": 160
   },
   "name": "CereJunda",
-  "retraction": "scroll",
+  "retraction": "standard",
   "retractionMs": 420,
   "shimmer": 0.08,
-  "style": "rotoscope"
+  "style": "stable"
 }

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 140,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 120,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 70,
+    "g": 160,
+    "r": 255
+  },
+  "name": "ChesterCheetah",
+  "noiseLevel": 0.18,
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.3,
+  "style": "unstable",
+  "swingFxIntensity": 0.4
+}

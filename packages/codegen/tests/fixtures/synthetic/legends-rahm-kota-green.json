@@ -14,6 +14,11 @@
     "g": 255,
     "r": 190
   },
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
   "ignition": "scroll",
   "ignitionMs": 360,
   "ledCount": 144,

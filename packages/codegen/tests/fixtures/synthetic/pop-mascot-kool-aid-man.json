@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 20,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 80,
+    "g": 120,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 150,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 20,
+    "g": 60,
+    "r": 255
+  },
+  "name": "KoolAid",
+  "noiseLevel": 0.1,
+  "retraction": "standard",
+  "retractionMs": 300,
+  "shimmer": 0.28,
+  "style": "fire",
+  "swingFxIntensity": 0.4
+}

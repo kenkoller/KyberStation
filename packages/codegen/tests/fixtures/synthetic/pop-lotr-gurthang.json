@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 5,
+    "r": 5
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 80,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 20,
+    "g": 40,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 15,
+    "g": 30,
+    "r": 200
+  },
+  "name": "Gurthang",
+  "noiseLevel": 0.05,
+  "retraction": "standard",
+  "retractionMs": 500,
+  "shimmer": 0,
+  "style": "darksaber",
+  "swingFxIntensity": 0.25
+}

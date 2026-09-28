@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 220,
+    "g": 130,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 250,
+    "r": 220
+  },
+  "ignition": "drip-up",
+  "ignitionMs": 800,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 180,
+    "r": 100
+  },
+  "name": "TidalForce",
+  "retraction": "drain",
+  "retractionMs": 1000,
+  "shimmer": 0.2,
+  "style": "tidal",
+  "swingFxIntensity": 0.55
+}

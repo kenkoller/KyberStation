@@ -62,7 +62,7 @@ StylePtr<
         TrDelay<250>,
         TrWipe<750>
       >,
-      TrWipeIn<2000>
+      TrFade<2000>
     >
   >
 >()

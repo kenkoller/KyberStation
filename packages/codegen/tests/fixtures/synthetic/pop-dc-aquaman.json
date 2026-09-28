@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 160,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 250,
+    "r": 220
+  },
+  "ignition": "wipe",
+  "ignitionMs": 450,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 100
+  },
+  "name": "AquamanTidal",
+  "retraction": "drain",
+  "retractionMs": 700,
+  "shimmer": 0.22,
+  "style": "tidal",
+  "swingFxIntensity": 0.6
+}

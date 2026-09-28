@@ -16,11 +16,10 @@
   },
   "dragColor": {
     "b": 0,
-    "g": 0,
-    "r": 100
+    "g": 120,
+    "r": 255
   },
-  "fireSize": 0.8,
-  "heatSpread": 0.9,
+  "flicker": 0.6,
   "ignition": "pulse-wave",
   "ignitionMs": 200,
   "ledCount": 144,
@@ -34,8 +33,6 @@
   "retraction": "spaghettify",
   "retractionMs": 500,
   "shimmer": 0.35,
-  "sparkRate": 0.7,
-  "style": "automata",
-  "swingFxIntensity": 0.2,
-  "voidEffect": true
+  "style": "unstable",
+  "swingFxIntensity": 0.2
 }

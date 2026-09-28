@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 80,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 120,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 140,
+    "r": 255
+  },
+  "name": "Narya",
+  "noiseLevel": 0.08,
+  "retraction": "drain",
+  "retractionMs": 600,
+  "shimmer": 0.22,
+  "style": "fire",
+  "swingFxIntensity": 0.3
+}

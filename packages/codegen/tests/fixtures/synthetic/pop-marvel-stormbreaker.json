@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 200,
+    "r": 140
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 230,
+    "r": 200
+  },
+  "name": "Stormbreaker",
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.45,
+  "style": "aurora",
+  "swingFxIntensity": 0.5
+}

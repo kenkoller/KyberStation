@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 0,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 230,
+    "g": 240,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 40,
+    "g": 80,
+    "r": 255
+  },
+  "ignition": "spark",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 200,
+    "r": 255
+  },
+  "name": "Ronin",
+  "noiseLevel": 0.08,
+  "retraction": "fadeout",
+  "retractionMs": 420,
+  "shimmer": 0.18,
+  "style": "unstable",
+  "swingFxIntensity": 0.5
+}

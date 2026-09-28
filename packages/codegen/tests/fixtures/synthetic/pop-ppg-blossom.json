@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 150,
+    "g": 100,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 230,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 180,
+    "r": 255
+  },
+  "name": "Blossom",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.08,
+  "style": "aurora",
+  "swingFxIntensity": 0.2
+}

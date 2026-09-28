@@ -1,0 +1,182 @@
+{
+  "baseColor": {
+    "b": 80,
+    "g": 180,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 240,
+    "r": 255
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 0,
+        "g": 60,
+        "r": 200
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 40,
+        "g": 140,
+        "r": 255
+      },
+      "position": 0.4
+    },
+    {
+      "color": {
+        "b": 140,
+        "g": 220,
+        "r": 255
+      },
+      "position": 0.8
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 250,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "crackle",
+  "ignitionMs": 580,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.0011
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.25
+            }
+          },
+          "source": "abs(sin(time * 0.0011)) * 0.3 + 0.25"
+        },
+        "id": "showcase-hearth-binding-1",
+        "label": "fx: 5.7s flicker base",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-hearth-binding-2",
+        "label": "sound → wind gust",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-hearth-binding-3",
+        "label": "clash → log pop",
+        "source": "clash",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "args": [
+              {
+                "kind": "binary",
+                "lhs": {
+                  "kind": "literal",
+                  "value": 1
+                },
+                "op": "-",
+                "rhs": {
+                  "id": "battery",
+                  "kind": "var"
+                }
+              },
+              {
+                "kind": "literal",
+                "value": 0
+              },
+              {
+                "kind": "literal",
+                "value": 0.5
+              }
+            ],
+            "fn": "clamp",
+            "kind": "call"
+          },
+          "source": "clamp(1 - battery, 0, 0.5)"
+        },
+        "id": "showcase-hearth-binding-4",
+        "label": "fx: battery dim (wick burning)",
+        "source": null,
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "HearthWatch",
+  "noiseLevel": 0.14,
+  "retraction": "fadeout",
+  "retractionMs": 720,
+  "shimmer": 0.32,
+  "style": "candle",
+  "swingFxIntensity": 0.5
+}

@@ -1,8 +1,12 @@
 StylePtr<
   Layers<
-    Gradient<
+    AudioFlicker<
       Rgb<240,10,20>,
-      Rgb<246,108,114>
+      Mix<
+        Int<16384>,
+        Rgb<240,10,20>,
+        White
+      >
     >,
     BlastL<
       Rgb<255,70,40>
@@ -21,7 +25,7 @@ StylePtr<
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<255,150,0>
+        Rgb<255,120,0>
       >,
       TrInstant,
       TrFade<400>,

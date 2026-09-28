@@ -25,6 +25,6 @@
   "name": "Grievous",
   "retraction": "standard",
   "retractionMs": 300,
-  "shimmer": 0.08,
+  "shimmer": 0.05,
   "style": "stable"
 }

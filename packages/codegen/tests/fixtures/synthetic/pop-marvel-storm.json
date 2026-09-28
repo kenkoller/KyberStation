@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 220,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "crackle",
+  "ignitionMs": 350,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "name": "StormTempest",
+  "noiseLevel": 0.12,
+  "retraction": "unravel",
+  "retractionMs": 500,
+  "shimmer": 0.28,
+  "style": "helix",
+  "swingFxIntensity": 0.6
+}

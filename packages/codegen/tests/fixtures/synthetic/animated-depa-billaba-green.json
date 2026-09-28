@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 45,
+    "g": 210,
+    "r": 0
+  },
+  "blastColor": {
+    "b": 110,
+    "g": 250,
+    "r": 175
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 225
+  },
+  "dragColor": {
+    "b": 50,
+    "g": 210,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 290,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 245,
+    "r": 155
+  },
+  "name": "DepaBillaba",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.16,
+  "style": "pulse",
+  "swingFxIntensity": 0.45
+}

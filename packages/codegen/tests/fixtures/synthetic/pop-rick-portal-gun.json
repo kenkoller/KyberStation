@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 50,
+    "g": 255,
+    "r": 150
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 240
+  },
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 255,
+    "r": 200
+  },
+  "name": "PortalGun",
+  "noiseLevel": 0.22,
+  "retraction": "standard",
+  "retractionMs": 480,
+  "shimmer": 0.6,
+  "style": "unstable",
+  "swingFxIntensity": 0.4
+}

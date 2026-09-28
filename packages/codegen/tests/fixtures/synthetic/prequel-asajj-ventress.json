@@ -19,9 +19,8 @@
     "g": 120,
     "r": 255
   },
-  "flicker": 0.5,
-  "ignition": "crackle",
-  "ignitionMs": 260,
+  "ignition": "standard",
+  "ignitionMs": 270,
   "ledCount": 144,
   "lockupColor": {
     "b": 0,
@@ -29,11 +28,9 @@
     "r": 255
   },
   "name": "Ventress",
-  "noiseLevel": 0.1,
-  "retraction": "flickerOut",
+  "retraction": "standard",
   "retractionMs": 280,
-  "shimmer": 0.3,
-  "stutterCount": 3,
-  "style": "unstable",
+  "shimmer": 0.06,
+  "style": "stable",
   "swingFxIntensity": 0.4
 }

@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 15,
+    "g": 5,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 40,
+    "g": 70,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 190,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 80,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 220,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 90,
+    "r": 255
+  },
+  "name": "InquisitorBarriss",
+  "retraction": "center",
+  "retractionMs": 280,
+  "shimmer": 0.22,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

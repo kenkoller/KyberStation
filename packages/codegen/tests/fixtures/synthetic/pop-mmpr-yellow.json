@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 220,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 250,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 120,
+    "g": 240,
+    "r": 255
+  },
+  "name": "YellowRanger",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.22
+}

@@ -1,24 +1,24 @@
 StylePtr<
   Layers<
     Pulsing<
-      Rgb<255,120,0>,
+      Rgb<180,180,190>,
       Mix<
         Int<8000>,
-        Rgb<255,120,0>,
+        Rgb<180,180,190>,
         White
       >,
       3000
     >,
     BlastL<
-      Rgb<0,150,255>
+      Rgb<255,150,180>
     >,
     SimpleClashL<
-      Rgb<0,100,255>,
+      Rgb<255,100,150>,
       40
     >,
     LockupTrL<
       AudioFlickerL<
-        Rgb<255,80,0>
+        Rgb<220,80,130>
       >,
       TrInstant,
       TrFade<300>,

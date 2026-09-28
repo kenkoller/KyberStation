@@ -15,9 +15,9 @@
     "r": 255
   },
   "dragColor": {
-    "b": 50,
-    "g": 0,
-    "r": 100
+    "b": 0,
+    "g": 120,
+    "r": 255
   },
   "ignition": "pulse-wave",
   "ignitionMs": 300,
@@ -28,10 +28,9 @@
     "r": 220
   },
   "name": "DarthVitiate",
-  "noiseLevel": 0.15,
   "retraction": "spaghettify",
   "retractionMs": 600,
-  "shimmer": 0.28,
-  "style": "cinder",
+  "shimmer": 0.14,
+  "style": "stable",
   "swingFxIntensity": 0.3
 }

@@ -1,11 +1,14 @@
 StylePtr<
   Layers<
-    StyleFire<
-      Rgb<255,120,0>,
-      Rgb<255,200,50>,
-      0,
-      3,
-      FireConfig<2,1500,5>
+    Mix<
+      SwingSpeed<300>,
+      StyleFire<
+        Rgb<255,120,0>,
+        Rgb<255,100,0>,
+        0,
+        2
+      >,
+      Rgb<255,120,0>
     >,
     BlastL<
       Rgb<255,150,30>

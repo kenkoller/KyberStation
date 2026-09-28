@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 140,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 230,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 180,
+    "r": 255
+  },
+  "name": "DrStrangeVortex",
+  "retraction": "unravel",
+  "retractionMs": 700,
+  "shimmer": 0.2,
+  "style": "vortex",
+  "swingFxIntensity": 0.55
+}

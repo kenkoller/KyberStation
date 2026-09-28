@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 70,
+    "g": 230,
+    "r": 50
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 255,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 230,
+    "g": 255,
+    "r": 230
+  },
+  "ignition": "spark",
+  "ignitionMs": 350,
+  "ledCount": 73,
+  "lockupColor": {
+    "b": 140,
+    "g": 250,
+    "r": 120
+  },
+  "name": "YodaHelix",
+  "retraction": "standard",
+  "retractionMs": 380,
+  "shimmer": 0.14,
+  "style": "helix",
+  "swingFxIntensity": 0.4
+}

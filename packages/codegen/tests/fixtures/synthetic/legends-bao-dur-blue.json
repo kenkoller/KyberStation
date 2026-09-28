@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 120,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 225,
+    "r": 180
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 235,
+    "r": 210
+  },
+  "dragColor": {
+    "b": 60,
+    "g": 180,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 250,
+    "g": 190,
+    "r": 130
+  },
+  "name": "BaoDur",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.05,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

@@ -1,0 +1,37 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 80,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 30,
+    "r": 60
+  },
+  "ignition": "summon",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 220,
+    "g": 130,
+    "r": 100
+  },
+  "name": "WayToTheDawn",
+  "noiseLevel": 0.06,
+  "retraction": "fadeout",
+  "retractionMs": 520,
+  "shimmer": 0.18,
+  "style": "unstable",
+  "swingFxIntensity": 0.45
+}

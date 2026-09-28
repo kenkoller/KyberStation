@@ -25,7 +25,6 @@
     "r": 200
   },
   "name": "PROXY",
-  "rainbow": true,
   "retraction": "shatter",
   "retractionMs": 250,
   "rotationSpeed": 2.5,

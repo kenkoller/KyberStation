@@ -1,0 +1,139 @@
+{
+  "baseColor": {
+    "b": 200,
+    "g": 220,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 250,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 230,
+    "g": 250,
+    "r": 255
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 220,
+        "g": 200,
+        "r": 60
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 200,
+        "g": 240,
+        "r": 220
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 100,
+        "g": 200,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "pulse-wave",
+  "ignitionMs": 520,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 160,
+    "g": 230,
+    "r": 255
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0008
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.4
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.5
+            }
+          },
+          "source": "sin(time * 0.0008) * 0.4 + 0.5"
+        },
+        "id": "showcase-helix-binding-1",
+        "label": "fx: 7.8s saturation breath",
+        "source": null,
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-helix-binding-2",
+        "label": "sound → shimmer flare",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-helix-binding-3",
+        "label": "swing → coil tighten",
+        "source": "swing",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-helix-binding-4",
+        "label": "clash → helix flash",
+        "source": "clash",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "GenesisHelix",
+  "retraction": "unravel",
+  "retractionMs": 640,
+  "shimmer": 0.22,
+  "style": "helix",
+  "swingFxIntensity": 0.5
+}

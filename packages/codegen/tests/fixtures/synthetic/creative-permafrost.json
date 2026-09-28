@@ -14,7 +14,7 @@
     "g": 255,
     "r": 255
   },
-  "ignition": "wipe",
+  "ignition": "fracture",
   "ignitionMs": 700,
   "ledCount": 144,
   "lockupColor": {

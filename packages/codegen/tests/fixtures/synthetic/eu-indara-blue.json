@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 120,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 235,
+    "r": 220
+  },
+  "ignition": "standard",
+  "ignitionMs": 280,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 140
+  },
+  "name": "Indara",
+  "retraction": "standard",
+  "retractionMs": 340,
+  "shimmer": 0.08,
+  "style": "stable"
+}

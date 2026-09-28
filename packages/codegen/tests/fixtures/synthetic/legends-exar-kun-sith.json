@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 10,
+    "g": 10,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 25,
+    "g": 55,
+    "r": 230
+  },
+  "clashColor": {
+    "b": 140,
+    "g": 190,
+    "r": 255
+  },
+  "dragColor": {
+    "b": 0,
+    "g": 120,
+    "r": 255
+  },
+  "ignition": "center",
+  "ignitionMs": 260,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 40,
+    "g": 75,
+    "r": 245
+  },
+  "name": "ExarKunSith",
+  "retraction": "center",
+  "retractionMs": 320,
+  "shimmer": 0.14,
+  "style": "stable",
+  "swingFxIntensity": 0.4
+}

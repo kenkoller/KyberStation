@@ -1,0 +1,30 @@
+{
+  "baseColor": {
+    "b": 0,
+    "g": 191,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 150,
+    "g": 225,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 180,
+    "g": 235,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 110,
+    "g": 215,
+    "r": 255
+  },
+  "name": "MindStone",
+  "retraction": "standard",
+  "retractionMs": 400,
+  "shimmer": 0.06,
+  "style": "stable"
+}

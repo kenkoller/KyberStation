@@ -64,7 +64,7 @@ StylePtr<
       SaberBase::LOCKUP_MELT
     >,
     InOutTrL<
-      TrWipeSparkTip<White,500>,
+      TrWipeIn<500>,
       TrFade<700>
     >
   >

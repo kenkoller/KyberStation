@@ -1,15 +1,12 @@
 StylePtr<
   Layers<
-    Stripes<
-      3000,
-      -2000,
+    AudioFlicker<
       Rgb<0,200,0>,
       Mix<
-        Sin<Int<5>>,
+        Int<16384>,
         Rgb<0,200,0>,
         White
-      >,
-      Rgb<0,200,0>
+      >
     >,
     BlastL<
       Rgb<255,255,0>

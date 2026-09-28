@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 140,
+    "g": 190,
+    "r": 220
+  },
+  "blastColor": {
+    "b": 200,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 160,
+    "g": 230,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 380,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 150,
+    "g": 210,
+    "r": 240
+  },
+  "name": "MrPeanut",
+  "noiseLevel": 0.02,
+  "retraction": "standard",
+  "retractionMs": 480,
+  "shimmer": 0.06,
+  "style": "stable",
+  "swingFxIntensity": 0.18
+}

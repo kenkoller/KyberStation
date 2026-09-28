@@ -1,0 +1,58 @@
+{
+  "baseColor": {
+    "b": 5,
+    "g": 8,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 30,
+    "g": 140,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 40,
+    "g": 180,
+    "r": 255
+  },
+  "gradientStops": [
+    {
+      "color": {
+        "b": 5,
+        "g": 10,
+        "r": 30
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 10,
+        "g": 40,
+        "r": 180
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 20,
+        "g": 120,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "crackle",
+  "ignitionMs": 700,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 10,
+    "g": 60,
+    "r": 255
+  },
+  "name": "OneRing",
+  "noiseLevel": 0.14,
+  "retraction": "drain",
+  "retractionMs": 900,
+  "shimmer": 0.3,
+  "style": "gradient",
+  "swingFxIntensity": 0.15
+}

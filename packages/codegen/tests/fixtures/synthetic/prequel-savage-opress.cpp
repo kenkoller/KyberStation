@@ -1,15 +1,12 @@
 StylePtr<
   Layers<
-    StyleFire<
-      Rgb<180,255,0>,
+    AudioFlicker<
+      Rgb<210,235,0>,
       Mix<
-        Int<10000>,
-        Rgb<180,255,0>,
+        Int<16384>,
+        Rgb<210,235,0>,
         White
-      >,
-      0,
-      4,
-      FireConfig<3,2000,5>
+      >
     >,
     BlastL<
       Rgb<220,255,150>
@@ -64,8 +61,8 @@ StylePtr<
       SaberBase::LOCKUP_MELT
     >,
     InOutTrL<
-      TrWipeIn<380>,
-      TrWipeIn<350>
+      TrWipeIn<300>,
+      TrWipeIn<300>
     >
   >
 >()

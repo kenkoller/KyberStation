@@ -1,0 +1,36 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 80,
+    "r": 30
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 140,
+    "r": 90
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 200,
+    "r": 180
+  },
+  "dragColor": {
+    "b": 100,
+    "g": 200,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 300,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 155,
+    "r": 120
+  },
+  "name": "ExarKunJedi",
+  "retraction": "standard",
+  "retractionMs": 360,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.35
+}

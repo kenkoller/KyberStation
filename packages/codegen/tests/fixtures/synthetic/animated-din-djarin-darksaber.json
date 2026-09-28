@@ -1,8 +1,8 @@
 {
   "baseColor": {
-    "b": 210,
-    "g": 200,
-    "r": 200
+    "b": 5,
+    "g": 5,
+    "r": 5
   },
   "blastColor": {
     "b": 255,
@@ -14,7 +14,6 @@
     "g": 255,
     "r": 255
   },
-  "flicker": 0.6,
   "ignition": "stutter",
   "ignitionMs": 500,
   "ledCount": 144,
@@ -24,10 +23,8 @@
     "r": 180
   },
   "name": "DinDarksaber",
-  "noiseLevel": 0.15,
   "retraction": "standard",
   "retractionMs": 400,
-  "shimmer": 0.35,
-  "stutterCount": 5,
-  "style": "unstable"
+  "shimmer": 0,
+  "style": "darksaber"
 }

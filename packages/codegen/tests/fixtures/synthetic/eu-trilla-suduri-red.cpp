@@ -1,12 +1,15 @@
 StylePtr<
   Layers<
-    AudioFlicker<
+    StyleFire<
       Rgb<220,5,15>,
       Mix<
-        Int<16384>,
+        Int<10000>,
         Rgb<220,5,15>,
         White
-      >
+      >,
+      0,
+      4,
+      FireConfig<3,2000,5>
     >,
     BlastL<
       Rgb<255,65,40>

@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 255,
+    "g": 220,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 320,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 240,
+    "r": 220
+  },
+  "name": "Glamdring",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 420,
+  "shimmer": 0.08,
+  "style": "pulse",
+  "swingFxIntensity": 0.2
+}

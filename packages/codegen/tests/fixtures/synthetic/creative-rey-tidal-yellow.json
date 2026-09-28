@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 200,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 220,
+    "g": 245,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 255,
+    "r": 255
+  },
+  "ignition": "flash-fill",
+  "ignitionMs": 450,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 100,
+    "g": 220,
+    "r": 255
+  },
+  "name": "ReyTidalYellow",
+  "retraction": "unravel",
+  "retractionMs": 600,
+  "shimmer": 0.16,
+  "style": "tidal",
+  "swingFxIntensity": 0.45
+}

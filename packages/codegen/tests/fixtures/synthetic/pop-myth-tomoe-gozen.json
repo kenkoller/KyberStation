@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 180,
+    "g": 220,
+    "r": 100
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 250,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 240,
+    "g": 255,
+    "r": 230
+  },
+  "ignition": "wipe",
+  "ignitionMs": 400,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 240,
+    "r": 160
+  },
+  "name": "TomoeNaginata",
+  "retraction": "drain",
+  "retractionMs": 600,
+  "shimmer": 0.18,
+  "style": "tidal",
+  "swingFxIntensity": 0.55
+}

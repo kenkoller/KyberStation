@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 160,
+    "g": 40,
+    "r": 20
+  },
+  "blastColor": {
+    "b": 180,
+    "g": 240,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 80,
+    "g": 220,
+    "r": 255
+  },
+  "ignition": "standard",
+  "ignitionMs": 360,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 100,
+    "r": 60
+  },
+  "name": "CapnCrunch",
+  "noiseLevel": 0.03,
+  "retraction": "standard",
+  "retractionMs": 460,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.2
+}

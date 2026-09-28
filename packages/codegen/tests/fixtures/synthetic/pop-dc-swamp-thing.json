@@ -1,0 +1,31 @@
+{
+  "baseColor": {
+    "b": 40,
+    "g": 120,
+    "r": 40
+  },
+  "blastColor": {
+    "b": 170,
+    "g": 240,
+    "r": 200
+  },
+  "clashColor": {
+    "b": 150,
+    "g": 230,
+    "r": 180
+  },
+  "ignition": "standard",
+  "ignitionMs": 500,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 80,
+    "g": 180,
+    "r": 100
+  },
+  "name": "SwampThing",
+  "retraction": "standard",
+  "retractionMs": 600,
+  "shimmer": 0.1,
+  "style": "pulse",
+  "swingFxIntensity": 0.15
+}

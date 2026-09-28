@@ -1,0 +1,32 @@
+{
+  "baseColor": {
+    "b": 130,
+    "g": 230,
+    "r": 130
+  },
+  "blastColor": {
+    "b": 230,
+    "g": 255,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 220,
+    "g": 255,
+    "r": 230
+  },
+  "ignition": "spark",
+  "ignitionMs": 240,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 180,
+    "g": 250,
+    "r": 180
+  },
+  "name": "WaywardWindVentus",
+  "noiseLevel": 0.04,
+  "retraction": "standard",
+  "retractionMs": 320,
+  "shimmer": 0.08,
+  "style": "stable",
+  "swingFxIntensity": 0.5
+}

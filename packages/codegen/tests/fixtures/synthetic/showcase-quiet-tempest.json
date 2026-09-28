@@ -1,0 +1,145 @@
+{
+  "baseColor": {
+    "b": 160,
+    "g": 200,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 240,
+    "g": 250,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 230,
+    "g": 250,
+    "r": 220
+  },
+  "dragColor": {
+    "b": 140,
+    "g": 180,
+    "r": 60
+  },
+  "dragPosition": 0.7,
+  "dragRadius": 0.2,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 110,
+        "g": 130,
+        "r": 30
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 180,
+        "g": 220,
+        "r": 100
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 150,
+        "g": 180,
+        "r": 60
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "standard",
+  "ignitionMs": 580,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 200,
+    "g": 230,
+    "r": 160
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 1,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "args": [
+                      {
+                        "kind": "binary",
+                        "lhs": {
+                          "id": "time",
+                          "kind": "var"
+                        },
+                        "op": "*",
+                        "rhs": {
+                          "kind": "literal",
+                          "value": 0.0005
+                        }
+                      }
+                    ],
+                    "fn": "sin",
+                    "kind": "call"
+                  }
+                ],
+                "fn": "abs",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.6
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.2
+            }
+          },
+          "source": "abs(sin(time * 0.0005)) * 0.6 + 0.2"
+        },
+        "id": "showcase-quiet-tempest-binding-1",
+        "label": "fx: 12-second contemplative breath",
+        "source": null,
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-quiet-tempest-binding-2",
+        "label": "sound → saturation pulse (audio-reactive vividness)",
+        "source": "sound",
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-quiet-tempest-binding-3",
+        "label": "swing → shimmer (motion-aware rim brightening)",
+        "source": "swing",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "QuietTempest",
+  "noiseLevel": 0.04,
+  "pulseMinBright": 0.55,
+  "pulseSpeed": 0.4,
+  "retraction": "fadeout",
+  "retractionMs": 720,
+  "shimmer": 0.25,
+  "style": "pulse",
+  "swingFxIntensity": 0.35
+}

@@ -1,14 +1,12 @@
 StylePtr<
   Layers<
-    Mix<
-      SwingSpeed<300>,
-      StyleFire<
-        Rgb<200,150,50>,
-        Rgb<255,100,0>,
-        0,
-        2
+    BrownNoiseFlicker<
+      Gradient<
+        Rgb<255,140,40>,
+        Rgb<255,80,10>
       >,
-      Rgb<200,150,50>
+      White,
+      50
     >,
     BlastL<
       Rgb<255,180,80>

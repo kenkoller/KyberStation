@@ -32,6 +32,6 @@
   "retraction": "fadeout",
   "retractionMs": 400,
   "shimmer": 0.25,
-  "style": "fire",
+  "style": "unstable",
   "swingFxIntensity": 0.35
 }

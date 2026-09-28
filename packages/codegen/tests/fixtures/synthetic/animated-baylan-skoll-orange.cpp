@@ -3,12 +3,12 @@ StylePtr<
     Mix<
       SwingSpeed<300>,
       StyleFire<
-        Rgb<255,90,10>,
+        Rgb<255,110,20>,
         Rgb<255,100,0>,
         0,
         2
       >,
-      Rgb<255,90,10>
+      Rgb<255,110,20>
     >,
     BlastL<
       Rgb<255,130,50>

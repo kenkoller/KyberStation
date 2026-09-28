@@ -1,0 +1,147 @@
+{
+  "baseColor": {
+    "b": 30,
+    "g": 80,
+    "r": 255
+  },
+  "blastColor": {
+    "b": 130,
+    "g": 220,
+    "r": 255
+  },
+  "clashColor": {
+    "b": 200,
+    "g": 240,
+    "r": 255
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 0,
+        "g": 30,
+        "r": 180
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 0,
+        "g": 80,
+        "r": 255
+      },
+      "position": 0.4
+    },
+    {
+      "color": {
+        "b": 60,
+        "g": 180,
+        "r": 255
+      },
+      "position": 0.8
+    },
+    {
+      "color": {
+        "b": 180,
+        "g": 240,
+        "r": 255
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "spark",
+  "ignitionMs": 460,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 60,
+    "g": 160,
+    "r": 255
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.6,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-ember-binding-1",
+        "label": "swing → ember lift rate",
+        "source": "swing",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-ember-binding-2",
+        "label": "sound → brighter sparks",
+        "source": "sound",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.0007
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.3
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.5
+            }
+          },
+          "source": "sin(time * 0.0007) * 0.3 + 0.5"
+        },
+        "id": "showcase-ember-binding-3",
+        "label": "fx: 9s crimson↔amber breath",
+        "source": null,
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.8,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-ember-binding-4",
+        "label": "clash → forge-strike",
+        "source": "clash",
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "EmberDrift",
+  "retraction": "fadeout",
+  "retractionMs": 620,
+  "shimmer": 0.3,
+  "style": "ember",
+  "swingFxIntensity": 0.62
+}

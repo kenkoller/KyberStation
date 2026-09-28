@@ -1,0 +1,139 @@
+{
+  "baseColor": {
+    "b": 240,
+    "g": 120,
+    "r": 80
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 230,
+    "r": 220
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 240,
+    "r": 240
+  },
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 200,
+        "g": 60,
+        "r": 40
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 140,
+        "r": 100
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 255,
+        "g": 220,
+        "r": 200
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "drip-up",
+  "ignitionMs": 580,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 200,
+    "r": 200
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-gravitas-binding-1",
+        "label": "angle → pool brightness",
+        "source": "angle",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-gravitas-binding-2",
+        "label": "swing → turbulence",
+        "source": "swing",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "kind": "binary",
+            "lhs": {
+              "kind": "binary",
+              "lhs": {
+                "args": [
+                  {
+                    "kind": "binary",
+                    "lhs": {
+                      "id": "time",
+                      "kind": "var"
+                    },
+                    "op": "*",
+                    "rhs": {
+                      "kind": "literal",
+                      "value": 0.00025
+                    }
+                  }
+                ],
+                "fn": "sin",
+                "kind": "call"
+              },
+              "op": "*",
+              "rhs": {
+                "kind": "literal",
+                "value": 0.4
+              }
+            },
+            "op": "+",
+            "rhs": {
+              "kind": "literal",
+              "value": 0.4
+            }
+          },
+          "source": "sin(time * 0.00025) * 0.4 + 0.4"
+        },
+        "id": "showcase-gravitas-binding-3",
+        "label": "fx: 25s magenta drift",
+        "source": null,
+        "target": "baseColor.r"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-gravitas-binding-4",
+        "label": "clash → pool detonation",
+        "source": "clash",
+        "target": "colorSaturationPulse"
+      }
+    ],
+    "version": 1
+  },
+  "name": "Gravitas",
+  "retraction": "drain",
+  "retractionMs": 720,
+  "shimmer": 0.2,
+  "style": "gravity",
+  "swingFxIntensity": 0.5
+}

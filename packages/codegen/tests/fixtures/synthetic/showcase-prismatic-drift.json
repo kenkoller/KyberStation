@@ -1,0 +1,148 @@
+{
+  "baseColor": {
+    "b": 230,
+    "g": 100,
+    "r": 180
+  },
+  "blastColor": {
+    "b": 255,
+    "g": 220,
+    "r": 240
+  },
+  "clashColor": {
+    "b": 255,
+    "g": 230,
+    "r": 255
+  },
+  "colorHueShiftSpeed": 0.5,
+  "gradientInterpolation": "smooth",
+  "gradientStops": [
+    {
+      "color": {
+        "b": 220,
+        "g": 30,
+        "r": 60
+      },
+      "position": 0
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 80,
+        "r": 200
+      },
+      "position": 0.25
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 150,
+        "r": 240
+      },
+      "position": 0.5
+    },
+    {
+      "color": {
+        "b": 240,
+        "g": 80,
+        "r": 200
+      },
+      "position": 0.75
+    },
+    {
+      "color": {
+        "b": 220,
+        "g": 30,
+        "r": 60
+      },
+      "position": 1
+    }
+  ],
+  "ignition": "flash-fill",
+  "ignitionMs": 420,
+  "ledCount": 144,
+  "lockupColor": {
+    "b": 255,
+    "g": 180,
+    "r": 230
+  },
+  "modulation": {
+    "bindings": [
+      {
+        "amount": 0.5,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-prismatic-binding-1",
+        "label": "time → hue (continuous rainbow)",
+        "source": "time",
+        "target": "colorHueShiftSpeed"
+      },
+      {
+        "amount": 0.4,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": null,
+        "id": "showcase-prismatic-binding-2",
+        "label": "angle → shimmer (point-sky brightens)",
+        "source": "angle",
+        "target": "shimmer"
+      },
+      {
+        "amount": 0.7,
+        "bypassed": false,
+        "combinator": "replace",
+        "expression": null,
+        "id": "showcase-prismatic-binding-3",
+        "label": "twist → saturation pulse",
+        "source": "twist",
+        "target": "colorSaturationPulse"
+      },
+      {
+        "amount": 0.3,
+        "bypassed": false,
+        "combinator": "add",
+        "expression": {
+          "ast": {
+            "args": [
+              {
+                "kind": "binary",
+                "lhs": {
+                  "kind": "literal",
+                  "value": 1
+                },
+                "op": "-",
+                "rhs": {
+                  "id": "battery",
+                  "kind": "var"
+                }
+              },
+              {
+                "kind": "literal",
+                "value": 0
+              },
+              {
+                "kind": "literal",
+                "value": 0.5
+              }
+            ],
+            "fn": "clamp",
+            "kind": "call"
+          },
+          "source": "clamp(1 - battery, 0, 0.5)"
+        },
+        "id": "showcase-prismatic-binding-4",
+        "label": "fx: battery-saver (dims as charge drops)",
+        "source": null,
+        "target": "shimmer"
+      }
+    ],
+    "version": 1
+  },
+  "name": "PrismaticDrift",
+  "retraction": "dissolve",
+  "retractionMs": 540,
+  "shimmer": 0.16,
+  "style": "prism",
+  "swingFxIntensity": 0.45
+}

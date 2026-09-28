@@ -14,7 +14,7 @@
     "g": 255,
     "r": 255
   },
-  "ignition": "spark",
+  "ignition": "crackle",
   "ignitionMs": 300,
   "ledCount": 144,
   "lockupColor": {
