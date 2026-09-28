@@ -180,22 +180,26 @@ function TabletShell({
   );
 }
 
-export function AppShell() {
+// ─── Compact (mobile + tablet) shell ─────────────────────────────────────────
+// Owns the BladeEngine for the touch layouts. Split out of AppShell so the
+// desktop branch never constructs one: WorkbenchLayout owns the desktop
+// engine, and AppShell used to call useBladeEngine() as well — on every
+// desktop session that meant two engines with two rAF ticks writing
+// `bladeState` over each other, plus doubled keyboard shortcuts (Space /
+// L toggled twice, on different engines) and doubled timeline playback.
+
+interface CompactShellProps {
+  isMobile: boolean;
+  audio: ReturnType<typeof useAudioEngine>;
+  showA11yPanel: boolean;
+  setShowA11yPanel: (v: boolean) => void;
+}
+
+function CompactShell({ isMobile, audio, showA11yPanel, setShowA11yPanel }: CompactShellProps) {
   const { engineRef, toggle, triggerEffect, releaseEffect } = useBladeEngine();
-  const audio = useAudioEngine();
-  useAudioSync(audio);
-  useThemeApplier();
-  useAccessibilityApplier();
-  useCrystalAccent();
-  usePerformanceTier();
-  useAurebesh();
-  usePauseSystem();
-  usePresetListSync();
   const renderMode = useUIStore((s) => s.renderMode);
-  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const isOn = useBladeStore((s) => s.isOn);
   const ledCount = useBladeStore((s) => s.config.ledCount);
-  const setMotionSim = useBladeStore((s) => s.setMotionSim);
 
   // Wrap toggle with audio
   const toggleWithAudio = useCallback(() => {
@@ -224,9 +228,6 @@ export function AppShell() {
     audioMap[type]?.();
   }, [triggerEffect, audio]);
 
-  const { isMobile, isTablet } = useBreakpoint();
-  const [showA11yPanel, setShowA11yPanel] = useState(false);
-
   // ── Pixel buffer for VisualizationStack (tablet layout) ──
   // Same pattern as WorkbenchLayout: capture the engine's live Uint8Array once after
   // mount. getPixels() returns the same buffer reference every call (mutated in place
@@ -235,6 +236,64 @@ export function AppShell() {
   useEffect(() => {
     pixelBufRef.current = engineRef.current?.getPixels() ?? null;
   }, [engineRef]);
+
+  const handlers = useMemo(
+    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
+    [toggleWithAudio, triggerEffectWithAudio, releaseEffect],
+  );
+
+  useKeyboardShortcuts(handlers);
+  useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
+
+  // ─── Mobile Layout ───
+  if (isMobile) {
+    return (
+      <MobileShell
+        showA11yPanel={showA11yPanel}
+        setShowA11yPanel={setShowA11yPanel}
+        engineRef={engineRef}
+        isOn={isOn}
+        toggleWithAudio={toggleWithAudio}
+        triggerEffectWithAudio={triggerEffectWithAudio}
+        releaseEffect={releaseEffect}
+        audio={audio}
+      />
+    );
+  }
+
+  // ─── Tablet Layout (600-1023px) ───
+  return (
+    <TabletShell
+      showA11yPanel={showA11yPanel}
+      setShowA11yPanel={setShowA11yPanel}
+      engineRef={engineRef}
+      isOn={isOn}
+      toggleWithAudio={toggleWithAudio}
+      triggerEffectWithAudio={triggerEffectWithAudio}
+      renderMode={renderMode}
+      pixelBufRef={pixelBufRef}
+      ledCount={ledCount}
+      audio={audio}
+    />
+  );
+}
+
+export function AppShell() {
+  // Layout-independent side effects — run once, whatever the breakpoint.
+  const audio = useAudioEngine();
+  useAudioSync(audio);
+  useThemeApplier();
+  useAccessibilityApplier();
+  useCrystalAccent();
+  usePerformanceTier();
+  useAurebesh();
+  usePauseSystem();
+  usePresetListSync();
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
+  const setMotionSim = useBladeStore((s) => s.setMotionSim);
+
+  const { isMobile, isTablet } = useBreakpoint();
+  const [showA11yPanel, setShowA11yPanel] = useState(false);
 
   // ── Sidebar resize handling ──
   const sidebarDragRef = useRef<{ startX: number; startWidth: number } | null>(null);
@@ -287,48 +346,20 @@ export function AppShell() {
     return unsub;
   }, [audio]);
 
-  const handlers = useMemo(
-    () => ({ toggle: toggleWithAudio, triggerEffect: triggerEffectWithAudio, releaseEffect }),
-    [toggleWithAudio, triggerEffectWithAudio, releaseEffect],
-  );
-
-  useKeyboardShortcuts(handlers);
-  useTimelinePlayback(toggleWithAudio, triggerEffectWithAudio);
-
-  // ─── Mobile Layout ───
-  if (isMobile) {
-    return (
-      <MobileShell
-        showA11yPanel={showA11yPanel}
-        setShowA11yPanel={setShowA11yPanel}
-        engineRef={engineRef}
-        isOn={isOn}
-        toggleWithAudio={toggleWithAudio}
-        triggerEffectWithAudio={triggerEffectWithAudio}
-        releaseEffect={releaseEffect}
-        audio={audio}
-      />
-    );
-  }
-
-  // ─── Tablet Layout (600-1023px) ───
-  if (isTablet) {
-    return (
-      <TabletShell
-        showA11yPanel={showA11yPanel}
-        setShowA11yPanel={setShowA11yPanel}
-        engineRef={engineRef}
-        isOn={isOn}
-        toggleWithAudio={toggleWithAudio}
-        triggerEffectWithAudio={triggerEffectWithAudio}
-        renderMode={renderMode}
-        pixelBufRef={pixelBufRef}
-        ledCount={ledCount}
-        audio={audio}
-      />
-    );
-  }
-
   // ─── Desktop Layout ───
-  return <WorkbenchLayout />;
+  // WorkbenchLayout owns the desktop BladeEngine — one simulation, one rAF
+  // tick — together with its keyboard shortcuts and timeline playback.
+  if (!isMobile && !isTablet) {
+    return <WorkbenchLayout />;
+  }
+
+  // ─── Mobile / Tablet ───
+  return (
+    <CompactShell
+      isMobile={isMobile}
+      audio={audio}
+      showA11yPanel={showA11yPanel}
+      setShowA11yPanel={setShowA11yPanel}
+    />
+  );
 }
