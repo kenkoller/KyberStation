@@ -64,7 +64,7 @@ StylePtr<
       SaberBase::LOCKUP_MELT
     >,
     InOutTrL<
-      TrWipeIn<280>,
+      TrWipe<280>,
       TrWipeIn<340>
     >
   >

@@ -62,7 +62,7 @@ StylePtr<
     InOutTrL<
       TrConcat<
         TrFade<160>,
-        TrWipeIn<640>
+        TrWipe<640>
       >,
       TrFade<1000>
     >
