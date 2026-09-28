@@ -147,8 +147,17 @@ export class BladeEngine {
   /** Parameter clamp ranges — populated by the web layer via setParameterClampRanges().
    *  When empty (default), applyBindings falls back to permissive sanitization. */
   private _parameterClampRanges: ParameterClampRanges = new Map();
-  /** Set of effect types currently active (for clash/lockup modulator latching). */
+  /**
+   * Effect types reported to the modulation sampler (`lockup` / `clash`
+   * modulators). Sustained effects are present while held — trigger to
+   * release. One-shots are a single-frame pulse: present on the first
+   * frame after their trigger, because the sampler latches `clash` on that
+   * rising edge (a 400 ms presence would re-latch every time the decayed
+   * value dropped below 0.5).
+   */
   private _activeEffectTypes: Set<EffectType> = new Set();
+  /** One-shot types added to `_activeEffectTypes` that retire after this frame. */
+  private _oneShotPulses: Set<EffectType> = new Set();
 
   // ─── Template-eval bridge (pixel-accurate ProffieOS rendering) ───
   private _templateEvalBridge: TemplateEvalBridge | null = null;
@@ -399,6 +408,10 @@ export class BladeEngine {
     // Stamp the activation with the engine's simulated clock — the same
     // timeline `applyEffectsForSegment` measures elapsed time on.
     effect.trigger({ ...(params ?? { position: 0.5 }), triggerTime: this._elapsedTime });
+
+    // Report it to the modulation sampler (see `_activeEffectTypes`).
+    this._activeEffectTypes.add(type);
+    if (!effect.isHeld()) this._oneShotPulses.add(type);
   }
 
   /**
@@ -414,6 +427,17 @@ export class BladeEngine {
     if (effect && effect.isActive()) {
       effect.release(this._elapsedTime);
     }
+    if (!this.isEffectHeldAnywhere(type)) {
+      this._activeEffectTypes.delete(type);
+    }
+  }
+
+  /** Whether any segment scope still holds a sustained effect of `type`. */
+  private isEffectHeldAnywhere(type: EffectType): boolean {
+    for (const [key, effect] of this.effectPool) {
+      if (key.endsWith(`-${type}`) && effect.isHeld()) return true;
+    }
+    return false;
   }
 
   // ─── Modulation routing (v1.0 Preview) ───
@@ -617,6 +641,7 @@ export class BladeEngine {
         // Skip the normal render pipeline — blade is "off" electrically
         // but showing the preon tint.
         this._lastRenderPath = 'preon';
+        this.cleanupEffects();
         return;
       }
     }
@@ -631,6 +656,7 @@ export class BladeEngine {
     if (this._state === BladeState.OFF) {
       this.leds.clear();
       this._lastRenderPath = 'off';
+      this.cleanupEffects();
       return;
     }
 
@@ -830,6 +856,8 @@ export class BladeEngine {
     for (const effect of this.effectPool.values()) {
       effect.reset();
     }
+    this._activeEffectTypes.clear();
+    this._oneShotPulses.clear();
   }
 
   // ─── Private: Easing ───
@@ -1161,10 +1189,28 @@ export class BladeEngine {
     return result;
   }
 
+  /**
+   * End-of-frame effect bookkeeping, independent of the render path:
+   *
+   * - Retire finished activations on the engine clock. Effects used to
+   *   deactivate only inside their own `apply()`, which only the
+   *   parameter engine calls — under template-eval every one-shot (and
+   *   every released lockup) stayed "active" forever.
+   * - Retire this frame's one-shot pulses from the modulation set.
+   *
+   * Inactive effects stay pooled and are reused on the next trigger.
+   */
   private cleanupEffects(): void {
-    // Effects self-deactivate via isActive() returning false.
-    // No explicit cleanup needed — inactive effects stay in the pool
-    // and are reused on the next trigger. This avoids GC churn.
+    const now = this._elapsedTime;
+    for (const effect of this.effectPool.values()) {
+      if (effect.isActive() && !effect.isHeld() && effect.timing(now).progress >= 1) {
+        effect.reset();
+      }
+    }
+    for (const type of this._oneShotPulses) {
+      if (!this.isEffectHeldAnywhere(type)) this._activeEffectTypes.delete(type);
+    }
+    this._oneShotPulses.clear();
   }
 
   // ─── Private: Lazy instance caches ───
