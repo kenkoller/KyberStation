@@ -30,13 +30,25 @@
 //
 // Naming: 8 configs × 4 states = 32 tests. Each test name is
 // `<configId>::<stateId>`.
+//
+// NOTE: those 32 hashes cover the parameter engine only (see the
+// template-eval section at the bottom, added 2026-09, for the default
+// codegen → template-eval render path).
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   BladeEngine,
   BladeState,
   type BladeConfig,
 } from '@kyberstation/engine';
+import { ALL_PRESETS } from '@kyberstation/presets';
+import { generateStyleCode } from '@kyberstation/codegen';
+import {
+  installSeededRandom,
+  presetBladeConfig,
+  singleBladeTopology,
+  type SeededRandom,
+} from './presetRenderHarness';
 
 // ─── Hash helper ──────────────────────────────────────────────────────
 //
@@ -136,4 +148,93 @@ describe('blade engine golden hashes', () => {
     const input = new Uint8Array([0, 140, 255, 255, 30, 20]);
     expect(fnv1a(input)).toMatchSnapshot();
   });
+});
+
+// ─── Template-eval golden hashes ──────────────────────────────────────
+//
+// Everything above goes through `captureStateFrame`, whose scratch engine
+// carries no template — so it only ever pins the PARAMETER-ENGINE path,
+// never the codegen → template-eval path the editor renders by default.
+// These pin a handful of gallery presets end to end at fixed points of a
+// scripted timeline (seeded Math.random, fixed 20 ms frames):
+// mid-ignition, steady ON, lockup held, mid-retraction.
+//
+// A mismatch here means the pixels a user sees for that preset changed —
+// either the codegen output, the template interpreter, the engine's
+// ignition mask or its effect forwarding. Same triage as above.
+
+const TEMPLATE_EVAL_GOLDEN_PRESETS = [
+  'prequel-obi-wan-ep3', // stable · standard / standard
+  'st-kylo-ren', // unstable (StyleFire) · crackle / flickerOut
+  'animated-din-djarin-darksaber', // darksaber gradient · stutter / standard
+  'animated-grogu', // pulse · spark / scroll
+  'animated-grand-inquisitor-red', // unstable · center / dissolve
+  'showcase-living-force', // spatial ResponsiveLockupL + modulation · spark / fadeout
+];
+
+const TE_DT = 20;
+const TE_MAX_FRAMES = 500;
+
+describe('blade engine golden hashes — template-eval', () => {
+  let rng: SeededRandom;
+  let restore: () => void;
+  beforeAll(() => {
+    ({ rng, restore } = installSeededRandom());
+  });
+  afterAll(() => restore());
+
+  for (const id of TEMPLATE_EVAL_GOLDEN_PRESETS) {
+    it(`${id} :: template-eval timeline`, () => {
+      const preset = ALL_PRESETS.find((p) => p.id === id);
+      expect(preset, `preset ${id} missing from ALL_PRESETS`).toBeDefined();
+      const config = presetBladeConfig(preset!);
+      const engine = new BladeEngine(singleBladeTopology(config.ledCount ?? 144));
+      engine.setPreviewTemplate(generateStyleCode(config, { comments: false }));
+      rng.seed(1);
+
+      const hashes: Record<string, string> = {};
+      let frames = 0;
+      const step = () => {
+        engine.update(TE_DT, config);
+        frames++;
+      };
+
+      engine.ignite(config);
+      while (!(engine.getState() === BladeState.IGNITING && engine.extendProgress >= 0.4)) {
+        step();
+        expect(frames).toBeLessThan(TE_MAX_FRAMES);
+      }
+      hashes['igniting-40'] = fnv1a(engine.getPixels());
+
+      while (engine.getState() !== BladeState.ON) {
+        step();
+        expect(frames).toBeLessThan(TE_MAX_FRAMES);
+      }
+      for (let i = 0; i < 10; i++) step();
+      expect(engine.lastRenderPath).toBe('template-eval');
+      hashes.on = fnv1a(engine.getPixels());
+
+      engine.triggerEffect('lockup', { position: 0.5 });
+      for (let i = 0; i < 5; i++) step();
+      hashes['lockup-held'] = fnv1a(engine.getPixels());
+
+      engine.releaseEffect('lockup');
+      for (let i = 0; i < 20; i++) step();
+      engine.retract();
+      while (!(engine.getState() === BladeState.RETRACTING && engine.extendProgress <= 0.5)) {
+        step();
+        expect(frames).toBeLessThan(TE_MAX_FRAMES);
+      }
+      hashes['retracting-50'] = fnv1a(engine.getPixels());
+
+      // Each transient checkpoint must differ from steady ON — dropping the
+      // ignition / retraction mask or the lockup would collapse it onto ON.
+      // (Two transients may legitimately coincide on a static style, e.g.
+      // the darksaber gradient mid-stutter vs mid-standard-retraction.)
+      expect(hashes['igniting-40']).not.toBe(hashes.on);
+      expect(hashes['lockup-held']).not.toBe(hashes.on);
+      expect(hashes['retracting-50']).not.toBe(hashes.on);
+      expect(hashes).toMatchSnapshot();
+    });
+  }
 });

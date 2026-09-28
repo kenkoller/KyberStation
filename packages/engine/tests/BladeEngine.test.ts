@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { BladeEngine } from '../src/BladeEngine';
 import { BladeState } from '../src/types';
 import type { BladeConfig, BladeTopology } from '../src/types';
@@ -30,12 +30,6 @@ function runFrames(engine: BladeEngine, config: BladeConfig, count: number, delt
 }
 
 describe('BladeEngine', () => {
-  beforeEach(() => {
-    // Mock performance.now for deterministic effect timing
-    let now = 0;
-    vi.spyOn(performance, 'now').mockImplementation(() => now++);
-  });
-
   describe('construction', () => {
     it('creates with default topology', () => {
       const engine = new BladeEngine();

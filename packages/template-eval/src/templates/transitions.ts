@@ -12,6 +12,30 @@ import type { BladeState, Color, EffectSystem, StyleTemplate } from '../types.js
 import { BLACK, clamp, PROFFIE_MAX } from '../types.js';
 import { hashPair } from '../utils.js';
 
+// ─── Restarting a transition ───
+//
+// ProffieOS transitions are restartable: the owning layer calls `begin()`
+// every time its trigger fires (lockup begin / lockup end, an effect,
+// ignition), and the transition animates from that moment. The clean-room
+// transitions in this module latch their clock into a numeric `startTime`
+// field on their first `run()` — so without a restart, a transition only
+// ever animates once, on the first frame the style runs.
+//
+// `restartTransition` re-arms a transition subtree: every node carrying a
+// numeric `startTime` clock (all transition classes in this module, and
+// only those) restarts from `timeMs`. Nested transitions (TrConcat,
+// TrJoin, TrSelect, …) are restarted through `getChildren()`.
+
+export function restartTransition(node: StyleTemplate, timeMs: number): void {
+  const clock = node as unknown as { startTime?: unknown };
+  if (typeof clock.startTime === 'number') {
+    clock.startTime = timeMs;
+  }
+  for (const child of node.getChildren()) {
+    restartTransition(child, timeMs);
+  }
+}
+
 // ─── TrInstant ───
 // Instant transition — jumps from old to new immediately.
 

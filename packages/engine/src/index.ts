@@ -1,5 +1,5 @@
 // ─── Core engine ───
-export { BladeEngine } from './BladeEngine.js';
+export { BladeEngine, type EngineRenderPath } from './BladeEngine.js';
 export {
   captureSequence,
   captureSequenceWithStates,
@@ -37,6 +37,7 @@ export type {
   EffectType,
   EffectParams,
   EffectContext,
+  EffectTiming,
   BladeEffect,
   IgnitionAnimation,
   IgnitionContext,
@@ -137,7 +138,11 @@ export {
 } from './modulation/index.js';
 
 // ─── Template Eval Bridge (pixel-accurate ProffieOS rendering) ───
-export { TemplateEvalBridge } from './templateEval/TemplateEvalBridge.js';
+export {
+  TemplateEvalBridge,
+  ENGINE_EFFECT_TO_TEMPLATE,
+  type TemplateEffectBinding,
+} from './templateEval/TemplateEvalBridge.js';
 
 // ─── Xenopixel Style Registry ───
 export {

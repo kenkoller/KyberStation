@@ -32,7 +32,7 @@ export class CrackleIgnition extends BaseIgnition {
     return (h >>> 0) / 0xffffffff;
   }
 
-  getMask(position: number, progress: number, _context?: IgnitionContext): number {
+  getMask(position: number, progress: number, context?: IgnitionContext): number {
     // Lock everything on above 80% so the blade is guaranteed solid at the end
     if (progress >= 0.8) return 1;
 
@@ -50,10 +50,12 @@ export class CrackleIgnition extends BaseIgnition {
     if (!ignited) return 0;
 
     // Once ignited, the LED can still flicker off with decreasing probability
-    // as progress increases.  Use a time-varying seed so flicker looks live.
-    // We use Math.floor(performance.now() / 16) as a frame counter proxy
-    // (16 ms ≈ 60 fps); this gives a new flicker pattern every frame.
-    const frameSeed = Math.floor(performance.now() / 16);
+    // as progress increases.  Use a time-varying seed so flicker looks live:
+    // floor(time / 16) is a frame-counter proxy (16 ms ≈ 60 fps). The engine
+    // passes its simulated clock; standalone callers (picker thumbnails /
+    // GIF scripts) that omit it fall back to the wall clock.
+    const now = context?.time ?? performance.now();
+    const frameSeed = Math.floor(now / 16);
     const flickerChance = 0.45 * (1 - progress / 0.8); // maxes out at 45%, drops to 0 at 80%
     const flickerRoll   = CrackleIgnition.hash(ledIndex, frameSeed);
 
