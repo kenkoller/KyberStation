@@ -6,6 +6,7 @@ import { usePresetListStore } from '@/stores/presetListStore';
 import { useSaberProfileStore } from '@/stores/saberProfileStore';
 import {
   exportMultiPresetZip,
+  writeZipEntriesToDirectory,
   BOARDS,
   PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER,
   type BoardId,
@@ -13,16 +14,20 @@ import {
 } from '@/lib/zipExporter';
 import {
   detectBoardFromDirectory,
-  detectRuntimePresetSupport,
   listExistingPresets,
   backupConfig,
   writeFileToDirectory,
-  ensureDirectory,
   verifyFileContents,
   type DetectedBoard,
   type ExistingPreset,
 } from '@/lib/cardDetector';
-import { readExistingInstallTime } from '@/lib/runtimePresetIO';
+import {
+  inspectRuntimePresetFiles,
+  backupRuntimePresetFiles,
+  verifyRuntimePresetFiles,
+  RUNTIME_PRESETS_INI,
+  RUNTIME_PRESETS_TMP,
+} from '@/lib/runtimePresetIO';
 import {
   listAvailableFonts,
   findMissingFontReferences,
@@ -280,12 +285,12 @@ export function CardWriter() {
       if (outputMethod === 'zip') {
         notices.push({
           type: 'info',
-          text: `ZIP export uses an install_time placeholder. Open the resulting presets.ini and replace "${PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER}" with your firmware's install_time string (run "pli" over USB serial to find it). Direct "Write to Card" reads this automatically.`,
+          text: `ZIP export uses an install_time placeholder. In BOTH presets.ini and presets.tmp, replace "${PROFFIE_RUNTIME_INSTALL_TIME_PLACEHOLDER}" with your firmware's install_time (run "pli" over USB serial to find it), then copy both files to the SD card root. Direct "Write to Card" does all of this automatically.`,
         });
       } else if (outputMethod === 'card' && discoveredInstallTime) {
         notices.push({
           type: 'info',
-          text: `Detected install_time: ${discoveredInstallTime}. KyberStation will use this when writing presets.ini.`,
+          text: `Detected install_time: ${discoveredInstallTime}. KyberStation will use this when writing presets.ini and presets.tmp.`,
         });
       }
     }
@@ -480,28 +485,34 @@ export function CardWriter() {
 
     // Probe for runtime preset support up front so we can auto-discover
     // the firmware's install_time when the user is using proffie_runtime.
+    // Reads presets.ini first, then presets.tmp, and understands the
+    // binary header the saber puts on files it wrote itself.
     let runtimeInstallTimeToUse: string | undefined;
     if (boardId === 'proffie_runtime') {
-      const runtimeSupport = await detectRuntimePresetSupport(dirHandle);
-      if (runtimeSupport.hasPresetsIni) {
-        const existing = await readExistingInstallTime(dirHandle);
-        if (existing) {
-          runtimeInstallTimeToUse = existing;
-          setDiscoveredInstallTime(existing);
-          addStatus({
-            type: 'success',
-            text: `Found existing presets.ini. Using install_time: ${existing}`,
-          });
-        } else {
-          addStatus({
-            type: 'warning',
-            text: 'Existing presets.ini found but install_time could not be parsed. Placeholder will be used — ProffieOS may reject the file.',
-          });
-        }
+      const cardState = await inspectRuntimePresetFiles(dirHandle);
+      if (cardState.installTime) {
+        runtimeInstallTimeToUse = cardState.installTime;
+        setDiscoveredInstallTime(cardState.installTime);
+        const source = cardState.ini.installTime ? RUNTIME_PRESETS_INI : RUNTIME_PRESETS_TMP;
+        addStatus({
+          type: 'success',
+          text: `Found existing ${source}. Using install_time: ${cardState.installTime}`,
+        });
+      } else if (cardState.ini.exists || cardState.tmp.exists) {
+        addStatus({
+          type: 'warning',
+          text: 'Existing presets.ini / presets.tmp found but install_time could not be parsed. Placeholder will be used — ProffieOS may reject the file.',
+        });
       } else {
         addStatus({
           type: 'warning',
           text: 'No existing presets.ini on this card. Boot the saber once with its factory SD card so ProffieOS generates one, then retry. A placeholder install_time will be used otherwise.',
+        });
+      }
+      if (cardState.tmp.firmwareWritten) {
+        addStatus({
+          type: 'info',
+          text: 'Found a saber-written presets.tmp. ProffieOS would load it ahead of a new presets.ini, so it will be replaced with an identical copy of the new file.',
         });
       }
     }
@@ -539,14 +550,30 @@ export function CardWriter() {
       setProgress(25);
 
       // Step 3: Backup
+      const backupStamp = new Date().toISOString().replace(/[:.]/g, '-');
+      if (autoBackup && boardId === 'proffie_runtime') {
+        // The runtime write overwrites BOTH preset files, and presets.tmp
+        // may hold the saber's latest on-device edits — copy both,
+        // byte-for-byte (saber-written files are binary).
+        setPhase('backing_up');
+        addStatus({ type: 'info', text: 'Backing up existing presets.ini / presets.tmp...' });
+        const backups = await backupRuntimePresetFiles(dirHandle, backupStamp);
+        if (backups.length > 0) {
+          for (const b of backups) {
+            addStatus({ type: 'success', text: `Backed up ${b.from} as ${b.to}` });
+          }
+        } else {
+          addStatus({ type: 'info', text: 'No existing presets.ini / presets.tmp to back up.' });
+        }
+        setProgress(40);
+      }
       if (autoBackup && detected) {
         setPhase('backing_up');
         addStatus({ type: 'info', text: 'Backing up existing configuration...' });
 
         const existingConfig = await backupConfig(dirHandle);
         if (existingConfig) {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const backupName = `config_backup_${timestamp}.txt`;
+          const backupName = `config_backup_${backupStamp}.txt`;
           await writeFileToDirectory(dirHandle, backupName, existingConfig);
           addStatus({ type: 'success', text: `Backup saved as ${backupName}` });
         } else {
@@ -576,52 +603,19 @@ export function CardWriter() {
       const JSZip = (await import('jszip')).default;
       const zip = await JSZip.loadAsync(blob);
 
-      const entries = Object.keys(zip.files);
-      const totalEntries = entries.length;
-      let written = 0;
-
-      const SAFE_PATH_PART = /^[a-zA-Z0-9._-]+$/;
-      for (const path of entries) {
-        const entry = zip.files[path];
-
-        // Security: reject path traversal, absolute paths, and unsafe characters
-        if (path.includes('..') || path.startsWith('/') || path.startsWith('\\')) {
-          addStatus({ type: 'warning', text: `Skipped unsafe path: ${path}` });
-          continue;
-        }
-
-        if (entry.dir) {
-          // Create directory
-          const parts = path.replace(/\/$/, '').split('/');
-          if (!parts.every((p) => SAFE_PATH_PART.test(p))) {
-            addStatus({ type: 'warning', text: `Skipped directory with invalid name: ${path}` });
-            continue;
-          }
-          let current = dirHandle;
-          for (const part of parts) {
-            current = await ensureDirectory(current, part);
-          }
-        } else {
-          // Write file
-          const parts = path.split('/');
-          const fileName = parts.pop()!;
-          if (!parts.every((p) => SAFE_PATH_PART.test(p)) || !SAFE_PATH_PART.test(fileName)) {
-            addStatus({ type: 'warning', text: `Skipped file with invalid name: ${path}` });
-            continue;
-          }
-          let current = dirHandle;
-          for (const part of parts) {
-            current = await ensureDirectory(current, part);
-          }
-          const content = await entry.async('string');
-          await writeFileToDirectory(current, fileName, content);
-        }
-
-        written++;
-        setProgress(60 + Math.round((written / totalEntries) * 25));
+      // Same files as the ZIP path — for proffie_runtime that is
+      // presets.ini + the byte-identical presets.tmp + the README.
+      const writeResult = await writeZipEntriesToDirectory(zip, dirHandle, (done, total) => {
+        setProgress(60 + Math.round((done / total) * 25));
+      });
+      for (const skipped of writeResult.skipped) {
+        addStatus({ type: 'warning', text: `Skipped ${skipped.reason}: ${skipped.path}` });
       }
 
-      addStatus({ type: 'success', text: `Wrote ${written} file(s) to SD card.` });
+      addStatus({
+        type: 'success',
+        text: `Wrote ${writeResult.written.length} file(s) to SD card.`,
+      });
 
       // Step 5: Verify
       setPhase('verifying');
@@ -630,7 +624,22 @@ export function CardWriter() {
 
       const configFileName = BOARDS[boardId].configFileName;
       const configEntry = zip.files[configFileName];
-      if (configEntry) {
+      if (configEntry && boardId === 'proffie_runtime') {
+        // Both files must be byte-identical to the emitted deck — a stale
+        // presets.tmp is exactly the silent-reversion trap.
+        const expectedContent = await configEntry.async('string');
+        const verified = await verifyRuntimePresetFiles(dirHandle, expectedContent);
+        for (const name of [RUNTIME_PRESETS_INI, RUNTIME_PRESETS_TMP] as const) {
+          if (verified[name]) {
+            addStatus({ type: 'success', text: `Verified ${name} matches the new preset list.` });
+          } else {
+            addStatus({
+              type: 'warning',
+              text: `Verification warning: ${name} does not match the new preset list. Re-run Write to Card (or copy both files from a ZIP export) before booting the saber.`,
+            });
+          }
+        }
+      } else if (configEntry) {
         const expectedContent = await configEntry.async('string');
         const verified = await verifyFileContents(dirHandle, configFileName, expectedContent);
         if (verified) {
@@ -826,7 +835,18 @@ export function CardWriter() {
           ))}
         </select>
         <p className="text-ui-xs text-text-muted mt-1">
-          Config file: <span className="text-text-secondary">{BOARDS[boardId].configFileName}</span>
+          {boardId === 'proffie_runtime' ? (
+            <>
+              Config files:{' '}
+              <span className="text-text-secondary">
+                {RUNTIME_PRESETS_INI} + {RUNTIME_PRESETS_TMP}
+              </span>
+            </>
+          ) : (
+            <>
+              Config file: <span className="text-text-secondary">{BOARDS[boardId].configFileName}</span>
+            </>
+          )}
         </p>
       </div>
 
@@ -949,7 +969,8 @@ export function CardWriter() {
         runtimeUseAdvancedVerb={useAdvancedRuntimeVerb}
       />
 
-      {/* Output Files Preview — runtime path emits only presets.ini */}
+      {/* Output Files Preview — runtime path emits presets.ini + an
+          identical presets.tmp (never one without the other) */}
       <div className="mb-4">
         <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
           {boardId === 'proffie_runtime' ? 'Output Files' : 'Font Folders'}
@@ -959,8 +980,13 @@ export function CardWriter() {
             <div className="space-y-1 text-ui-sm font-mono">
               <div className="flex items-center gap-2">
                 <span className="text-text-muted">/</span>
-                <span className="text-accent">presets.ini</span>
+                <span className="text-accent">{RUNTIME_PRESETS_INI}</span>
                 <span className="text-text-muted">runtime preset list</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-text-muted">/</span>
+                <span className="text-accent">{RUNTIME_PRESETS_TMP}</span>
+                <span className="text-text-muted">identical copy</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-text-muted">/</span>
@@ -968,6 +994,12 @@ export function CardWriter() {
                 <span className="text-text-muted">install instructions</span>
               </div>
               <p className="text-ui-xs text-text-muted mt-2 px-1 font-sans">
+                Both preset files go on the SD card root. ProffieOS loads a
+                saber-written presets.tmp ahead of a plain presets.ini, so an old
+                on-saber save would silently override your deck — the identical
+                copy closes that gap.
+              </p>
+              <p className="text-ui-xs text-text-muted mt-1 px-1 font-sans">
                 No font folders emitted — your saber&apos;s factory firmware already
                 has the sound fonts. {runtimeNumBlades > 1 && `Each preset emits ${runtimeNumBlades} style lines (one per blade).`}
               </p>
@@ -1263,7 +1295,33 @@ export function CardWriter() {
           </button>
           <div className="px-3 pb-3">
             <ol className="list-decimal list-inside space-y-1.5 text-ui-xs text-text-secondary">
-              {outputMethod === 'zip' ? (
+              {boardId === 'proffie_runtime' && outputMethod === 'zip' ? (
+                <>
+                  <li>
+                    In both <span className="font-mono text-accent">{RUNTIME_PRESETS_INI}</span> and{' '}
+                    <span className="font-mono text-accent">{RUNTIME_PRESETS_TMP}</span>, replace the{' '}
+                    <span className="font-mono">installed=</span> placeholder (see KYBERSTATION_README.txt)
+                  </li>
+                  <li>Copy both files to the SD card root, replacing the existing ones</li>
+                  <li>Safely eject the SD card</li>
+                  <li>Power-cycle the saber</li>
+                </>
+              ) : boardId === 'proffie_runtime' ? (
+                <>
+                  <li>Safely eject the SD card</li>
+                  <li>
+                    Power-cycle the saber — it loads the new{' '}
+                    <span className="font-mono text-accent">{RUNTIME_PRESETS_INI}</span> (
+                    <span className="font-mono">{RUNTIME_PRESETS_TMP}</span> is an identical copy)
+                  </li>
+                  {autoBackup && (
+                    <li>
+                      To roll back, rename the <span className="font-mono">presets_backup_…</span> files on
+                      the card back to presets.ini / presets.tmp
+                    </li>
+                  )}
+                </>
+              ) : outputMethod === 'zip' ? (
                 <>
                   <li>Extract the ZIP to your SD card root</li>
                   <li>Copy your sound font files into each font folder</li>
@@ -1295,9 +1353,13 @@ export function CardWriter() {
 
       {/* Info Footer */}
       <p className="text-ui-xs text-text-muted mt-3">
-        {outputMethod === 'zip'
-          ? 'Downloads a ZIP file containing the board config and font folder structure. Extract to your SD card.'
-          : 'Writes files directly to your SD card using the File System Access API. Requires Chrome or Edge.'}
+        {boardId === 'proffie_runtime'
+          ? outputMethod === 'zip'
+            ? 'Downloads a ZIP with presets.ini and an identical presets.tmp. Copy both to your SD card root.'
+            : 'Writes presets.ini and an identical presets.tmp directly to your SD card using the File System Access API. Requires Chrome or Edge.'
+          : outputMethod === 'zip'
+            ? 'Downloads a ZIP file containing the board config and font folder structure. Extract to your SD card.'
+            : 'Writes files directly to your SD card using the File System Access API. Requires Chrome or Edge.'}
       </p>
     </div>
   );

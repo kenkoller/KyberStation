@@ -3,7 +3,10 @@
 // Pins the SD-card-native export bundle:
 //
 //   1. presets.ini at ZIP root — the runtime preset file
-//   2. KYBERSTATION_README.txt at ZIP root — user-facing explainer
+//   2. presets.tmp at ZIP root — byte-identical copy (ProffieOS loads a
+//      saber-written presets.tmp ahead of a plain presets.ini, so a stale
+//      one silently reverts the deck unless it is replaced too)
+//   3. KYBERSTATION_README.txt at ZIP root — user-facing explainer
 //
 // Importantly, this bundle MUST NOT contain font folders. The user's
 // factory firmware already has the sound fonts on its SD card; emitting
@@ -62,7 +65,7 @@ async function listZipPaths(blob: Blob): Promise<string[]> {
 
 describe('ProffieOS Runtime export (proffie_runtime)', () => {
   describe('ZIP structure', () => {
-    it('emits exactly presets.ini and KYBERSTATION_README.txt — no font folders', async () => {
+    it('emits exactly presets.ini, presets.tmp and KYBERSTATION_README.txt — no font folders', async () => {
       const blob = await exportMultiPresetZip({
         presets: [
           makePreset('Graflex', 'Graflex'),
@@ -72,7 +75,30 @@ describe('ProffieOS Runtime export (proffie_runtime)', () => {
       });
 
       const paths = await listZipPaths(blob);
-      expect(paths).toEqual(['KYBERSTATION_README.txt', 'presets.ini']);
+      expect(paths).toEqual(['KYBERSTATION_README.txt', 'presets.ini', 'presets.tmp']);
+    });
+
+    it('presets.tmp is byte-identical to presets.ini in both Phase A and Phase C', async () => {
+      for (const runtimeUseAdvancedVerb of [false, true]) {
+        const blob = await exportMultiPresetZip({
+          presets: [makePreset('Graflex', 'Graflex'), makePreset('Vader', 'Vader')],
+          boardId: 'proffie_runtime',
+          runtimeInstallTime: 'Apr 21 2026 08:44:54',
+          runtimeUseAdvancedVerb,
+        });
+        const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+        const ini = await zip.file('presets.ini')!.async('uint8array');
+        const tmp = await zip.file('presets.tmp')!.async('uint8array');
+        expect(Array.from(tmp)).toEqual(Array.from(ini));
+      }
+    });
+
+    it('README tells the user to put BOTH files on the card and explains why', () => {
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('presets.ini and presets.tmp');
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('WHY TWO IDENTICAL FILES?');
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('Copy BOTH presets.ini and presets.tmp');
+      expect(PROFFIE_RUNTIME_README_TEXT).toContain('In BOTH files from this ZIP');
+      expect(PROFFIE_RUNTIME_README_TEXT).not.toMatch(/contains a single file/i);
     });
 
     it('embeds the pinned README at the ZIP root', async () => {
