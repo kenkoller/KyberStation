@@ -1085,8 +1085,8 @@ function buildEffectLayers(config: BladeConfig): StyleNode[] {
 
 // ─── Ignition / Retraction Transitions ───
 // Delegates to the canonical table in transitionMap.ts so forward and inverse
-// paths stay collocated. Unknown IDs fall through to `TrWipeIn<ms>` (same
-// behaviour as the previous default branches).
+// paths stay collocated. Unknown IDs fall through to `TrWipe<ms>` for
+// ignition (hilt → tip) and `TrWipeIn<ms>` for retraction (tip → hilt).
 
 import { ignitionFromID, retractionFromID } from './transitionMap.js';
 import { positionToProffie, clamp01 } from './astBinding.js';

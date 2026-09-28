@@ -64,7 +64,7 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
 
   describe('Phase 2 field set', () => {
     it('preserves ignition ID through round-trip', () => {
-      for (const id of ['standard', 'scroll', 'spark', 'center', 'stutter', 'glitch']) {
+      for (const id of ['standard', 'spark', 'center', 'stutter', 'glitch']) {
         const config = makeConfig({ ignition: id });
         const result = roundTrip(config);
         expect(result.parseErrors).toEqual([]);
@@ -76,7 +76,7 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
     });
 
     it('preserves retraction ID through round-trip', () => {
-      for (const id of ['standard', 'scroll', 'fadeout', 'center']) {
+      for (const id of ['standard', 'fadeout', 'center']) {
         const config = makeConfig({ retraction: id });
         const result = roundTrip(config);
         expect(result.parseErrors).toEqual([]);
@@ -85,6 +85,15 @@ describe('round-trip: Config → AST → Code → AST → Config', () => {
           `retraction=${id} round-tripped as ${result.reconstructedConfig?.retraction}`,
         ).toBe(id);
       }
+    });
+
+    it('scroll comes back as standard — same ProffieOS output in both slots', () => {
+      // ScrollIgnition draws exactly like StandardIgnition, so both emit
+      // TrWipe (ignition) / TrWipeIn (retraction) and import as 'standard'.
+      const result = roundTrip(makeConfig({ ignition: 'scroll', retraction: 'scroll' }));
+      expect(result.parseErrors).toEqual([]);
+      expect(result.reconstructedConfig?.ignition).toBe('standard');
+      expect(result.reconstructedConfig?.retraction).toBe('standard');
     });
 
     it('preserves ignitionMs and retractionMs through a sweep', () => {

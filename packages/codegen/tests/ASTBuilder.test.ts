@@ -275,10 +275,9 @@ describe('buildAST', () => {
       expect(code).toContain('Gradient<White,Rgb<5,5,5>,Rgb<5,5,5>,White>');
       // Ignition + retraction are wrapped by InOutTrL (standard pipeline).
       expect(code).toContain('InOutTrL<');
-      // TrWipeIn<300> for ignition (default 'standard'); retraction default
-      // 'standard' also maps to TrWipeIn<400>. Both must be present.
-      expect(code).toContain('TrWipeIn<300>');
-      expect(code).toContain('TrWipeIn<400>');
+      // Default 'standard': TrWipe<300> ignition (hilt → tip), TrWipeIn<400>
+      // retraction (tip → hilt) — ProffieOS's canonical InOutTrL pairing.
+      expect(code).toContain('InOutTrL<TrWipe<300>,TrWipeIn<400>');
     });
 
     it('photon produces Stripes', () => {
@@ -315,12 +314,14 @@ describe('buildAST', () => {
   });
 
   describe('ignition transitions', () => {
-    it('standard ignition maps to TrWipeIn', () => {
+    // ProffieOS transitions/wipe.h: TrWipe runs hilt → tip, TrWipeIn tip → hilt.
+    // InOutTrL's first argument is the ignition, so standard must be TrWipe.
+    it('standard ignition maps to TrWipe (hilt → tip)', () => {
       const ast = buildAST(makeConfig({ ignition: 'standard', ignitionMs: 500 }));
       const inOut = findByName(ast, 'InOutTrL');
       expect(inOut).toBeDefined();
       const ignitionTr = inOut!.args[0];
-      expect(ignitionTr.name).toBe('TrWipeIn');
+      expect(ignitionTr.name).toBe('TrWipe');
       expect(ignitionTr.args[0].name).toBe('500');
     });
 
@@ -339,11 +340,11 @@ describe('buildAST', () => {
       expect(ignitionTr.name).toBe('TrWipeSparkTip');
     });
 
-    it('center ignition maps to TrCenterWipeIn', () => {
+    it('center ignition maps to TrCenterWipe (center → ends)', () => {
       const ast = buildAST(makeConfig({ ignition: 'center' }));
       const inOut = findByName(ast, 'InOutTrL');
       const ignitionTr = inOut!.args[0];
-      expect(ignitionTr.name).toBe('TrCenterWipeIn');
+      expect(ignitionTr.name).toBe('TrCenterWipe');
     });
 
     it('wipe ignition maps to TrWipe', () => {
@@ -369,11 +370,11 @@ describe('buildAST', () => {
       expect(ignitionTr.args.length).toBe(3);
     });
 
-    it('unknown ignition falls back to TrWipeIn', () => {
+    it('unknown ignition falls back to TrWipe', () => {
       const ast = buildAST(makeConfig({ ignition: 'nonexistent' }));
       const inOut = findByName(ast, 'InOutTrL');
       const ignitionTr = inOut!.args[0];
-      expect(ignitionTr.name).toBe('TrWipeIn');
+      expect(ignitionTr.name).toBe('TrWipe');
     });
   });
 
@@ -386,11 +387,11 @@ describe('buildAST', () => {
       expect(retractionTr.args[0].name).toBe('400');
     });
 
-    it('scroll retraction maps to TrWipe', () => {
+    it('scroll retraction maps to TrWipeIn, like standard (tip → hilt)', () => {
       const ast = buildAST(makeConfig({ retraction: 'scroll' }));
       const inOut = findByName(ast, 'InOutTrL');
       const retractionTr = inOut!.args[1];
-      expect(retractionTr.name).toBe('TrWipe');
+      expect(retractionTr.name).toBe('TrWipeIn');
     });
 
     it('fadeout retraction maps to TrFade', () => {

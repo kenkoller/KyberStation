@@ -58,7 +58,7 @@ StylePtr<
     >,
     InOutTrL<
       TrWipe<800>,
-      TrWipe<800>
+      TrWipeIn<800>
     >
   >
 >()

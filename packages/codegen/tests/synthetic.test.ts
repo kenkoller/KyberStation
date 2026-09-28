@@ -168,7 +168,6 @@ const STYLE_RECONSTRUCTED_AS: Readonly<Record<string, Reconstruction>> = {
 /** Ignition IDs that come back unchanged. */
 const IGNITIONS_THAT_ROUND_TRIP: ReadonlySet<string> = new Set([
   'standard',
-  'scroll',
   'spark',
   'center',
   'stutter',
@@ -183,20 +182,20 @@ const IGNITIONS_THAT_ROUND_TRIP: ReadonlySet<string> = new Set([
  * See the `preferForInverse: false` entries in transitionMap.ts.
  */
 const IGNITION_RECONSTRUCTED_AS: Readonly<Record<string, Reconstruction>> = {
-  wipe: { as: 'scroll', why: 'both emit TrWipe<ms>' },
-  stab: { as: 'center', why: 'both emit TrCenterWipeIn<ms>' },
-  crackle: { as: 'swing', why: 'both emit TrConcat<TrFade<ms/5>, TrWipeIn<4ms/5>>' },
-  hyperspace: { as: 'swing', why: "approximated with swing's TrConcat<TrFade, TrWipeIn>" },
-  fracture: { as: 'standard', why: 'low-confidence fallback emits TrWipeIn<ms>, the standard shape' },
-  summon: { as: 'standard', why: 'low-confidence fallback emits TrWipeIn<ms>, the standard shape' },
-  seismic: { as: 'standard', why: 'low-confidence fallback emits TrWipeIn<ms>, the standard shape' },
+  scroll: { as: 'standard', why: 'both emit TrWipe<ms>; ScrollIgnition draws exactly like standard' },
+  wipe: { as: 'standard', why: 'both emit TrWipe<ms>' },
+  stab: { as: 'center', why: 'both emit TrCenterWipe<ms>' },
+  crackle: { as: 'swing', why: 'both emit TrConcat<TrFade<ms/5>, TrWipe<4ms/5>>' },
+  hyperspace: { as: 'swing', why: "approximated with swing's TrConcat<TrFade, TrWipe>" },
+  fracture: { as: 'standard', why: 'low-confidence fallback emits TrWipe<ms>, the standard ignition shape' },
+  summon: { as: 'standard', why: 'low-confidence fallback emits TrWipe<ms>, the standard ignition shape' },
+  seismic: { as: 'standard', why: 'low-confidence fallback emits TrWipe<ms>, the standard ignition shape' },
   'drip-up': { as: undefined, why: 'low-confidence fallback emits TrFade<ms>; no ignition maps back from TrFade' },
 };
 
 /** Retraction IDs that come back unchanged. */
 const RETRACTIONS_THAT_ROUND_TRIP: ReadonlySet<string> = new Set([
   'standard',
-  'scroll',
   'fadeout',
   'center',
   'flickerOut',
@@ -205,6 +204,7 @@ const RETRACTIONS_THAT_ROUND_TRIP: ReadonlySet<string> = new Set([
 
 /** Retraction IDs whose emission is shared with (or falls back to) another ID. */
 const RETRACTION_RECONSTRUCTED_AS: Readonly<Record<string, Reconstruction>> = {
+  scroll: { as: 'standard', why: 'both emit TrWipeIn<ms>; ScrollIgnition retracts exactly like standard' },
   drain: { as: 'flickerOut', why: 'both emit TrConcat<TrFade, TrFade> (70/30 vs 15/85 split)' },
   implode: { as: 'center', why: 'both emit TrCenterWipeIn<ms>' },
   shatter: { as: 'fadeout', why: 'both emit TrFade<ms>' },

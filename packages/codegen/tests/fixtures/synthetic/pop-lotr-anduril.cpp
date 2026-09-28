@@ -56,7 +56,7 @@ StylePtr<
     InOutTrL<
       TrConcat<
         TrInstant,
-        TrWipeIn<500>
+        TrWipe<500>
       >,
       TrWipeIn<500>
     >

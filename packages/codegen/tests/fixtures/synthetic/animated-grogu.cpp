@@ -63,7 +63,7 @@ StylePtr<
     >,
     InOutTrL<
       TrWipeSparkTip<White,250>,
-      TrWipe<300>
+      TrWipeIn<300>
     >
   >
 >()
