@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `scripts/hardware-test/restore-factory.sh` — verified dual-bank factory restore from the 2026-05-14 backup; SHA256 gate refuses to write unverified data.
   - `scripts/hardware-test/safe-flash.sh` — guarded custom-flash wrapper that refuses to run without `--i-know-this-is-experimental`, requires a fingerprint-matched backup, defaults to Bank 1 (matching standard ProffieOS workflow per the 2026-05-18 audit reconciliation), and prints the recovery command before touching anything.
 
+### Fixed
+
+- **`scripts/hardware-test/backup-proffieboard-sdcard.sh` aborted silently on macOS SDs with Spotlight metadata** — `du -sh "$SD_MOUNT" | sed …` exited non-zero (via `set -o pipefail`) when `du` hit permission-denied on `.Spotlight-V100/`, terminating the script after the source-size summary and before rsync ever ran. Output looked like a normal start; no error was printed. Fixed by tolerating non-zero exits on the two informational `| sed` pipelines that walk `$SD_MOUNT` (the `du -sh` summary and the `find -maxdepth 1` top-level listing). The rsync, SHA256 manifest, and tree generation are unaffected.
+
 ---
 
 ## [0.23.1] — 2026-05-17
