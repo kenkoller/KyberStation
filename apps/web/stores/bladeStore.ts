@@ -53,14 +53,9 @@ export interface BladeStore {
   // Effect log
   effectLog: string[];
 
-  // A/B comparison
-  candidateConfig: BladeConfigPlusModulation | null;
-
   // Actions
   updateConfig: (partial: Partial<BladeConfigPlusModulation>) => void;
   setConfig: (config: BladeConfigPlusModulation) => void;
-  setCandidateConfig: (config: BladeConfigPlusModulation | null) => void;
-  applyCandidateConfig: () => void;
   setStyle: (styleId: string) => void;
   setColor: (key: string, color: { r: number; g: number; b: number }) => void;
   setIgnition: (id: string) => void;
@@ -117,15 +112,6 @@ export const useBladeStore = create<BladeStore>((set) => ({
     autoDuel: false,
   },
   effectLog: [],
-  candidateConfig: null,
-
-  setCandidateConfig: (config) => set({ candidateConfig: config }),
-
-  applyCandidateConfig: () =>
-    set((state) => {
-      if (!state.candidateConfig) return state;
-      return { config: { ...state.candidateConfig }, candidateConfig: null };
-    }),
 
   updateConfig: (partial) =>
     set((state) => ({ config: { ...state.config, ...partial } })),
