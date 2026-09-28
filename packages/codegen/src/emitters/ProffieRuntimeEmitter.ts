@@ -32,16 +32,30 @@
 //   - Style strings must pass IsValidStyleString(): lowercase verb, then
 //     digits/spaces/commas only.
 //
-// Phase A scope (this emitter):
-//   - `style=builtin N M` only — references factory firmware's preset
-//     bank by index. Phase A delivers reorder/rename/duplicate/font-
-//     reassignment, no color overrides.
-//   - Phase B (color override via `builtin N M R,G,B ...` args) and
-//     Phase C (parameterized verbs like `standard`/`advanced`) are
-//     deferred until per-chassis schema work + hardware validation.
+// Scope:
+//   - Phase A (default): `style=builtin N M` — references the factory
+//     firmware's preset bank by index. Reorder / rename / duplicate /
+//     font reassignment; the design's colors and style do not transfer.
+//   - Phase C (opt-in "custom styles"): a per-preset runtime verb string —
+//     `advanced` / `unstable` / `fire` / `cycle` / `rainbow` / `strobe` —
+//     chosen by `mapBladeConfigToRuntimeStyle()` in `runtimeVerbs.ts`,
+//     which also owns the byte-exact verb builders.
+//   - Phase B (color overrides via `builtin N M R,G,B …`) stays deferred:
+//     it needs per-chassis RgbArg schema knowledge.
+//
+// External writers must put a byte-identical copy of this file at
+// `presets.tmp` too — see apps/web/lib/runtimePresetIO.ts.
 
 import type { StyleNode } from '../types.js';
 import type { BoardEmitter, BoardEmitOptions, EmitterOutput } from './BaseEmitter.js';
+import {
+  buildAdvancedStyleString,
+  buildBuiltinStyleString,
+  isValidRuntimeStyleString,
+  type AdvancedVerbParams,
+} from './runtimeVerbs.js';
+
+export type { AdvancedVerbParams };
 
 // ─── Public Types ───
 
@@ -57,12 +71,18 @@ export interface ProffieRuntimePresetInput {
   /** ProffieOS variation seed for the preset. Defaults to 0. */
   variation?: number;
   /**
-   * Optional Phase C / "advanced verb" parameters. When present AND the
-   * caller sets `useAdvancedVerb: true` on the emit options, the emitter
-   * outputs `style=advanced R,G,B …` (custom preset independent of the
-   * factory bank) instead of `style=builtin N M`. Maps directly to the
-   * 11-slot signature of the ProffieOS `advanced` named style declared
-   * in `~/ProffieOS/styles/style_parser.h`.
+   * Phase C: a pre-built runtime style string (normally
+   * `mapBladeConfigToRuntimeStyle(config).styleString`). Emitted instead of
+   * `builtin N M` when the caller sets `useAdvancedVerb: true`, and takes
+   * precedence over `advanced`. Must pass `isValidRuntimeStyleString()` —
+   * `buildRuntimePresetsFile` throws otherwise rather than write a line
+   * ProffieOS would misparse.
+   */
+  styleString?: string;
+  /**
+   * Optional Phase C `advanced`-verb parameters (the 11-slot signature
+   * of the ProffieOS `advanced` named style). Used when `useAdvancedVerb`
+   * is on and no `styleString` is given.
    *
    * Phase C is opt-in and experimental: it requires the user's firmware
    * NOT to have `DISABLE_BASIC_PARSER_STYLES` defined (the default for
@@ -72,41 +92,6 @@ export interface ProffieRuntimePresetInput {
    * experimental warning at the UI level.
    */
   advanced?: AdvancedVerbParams;
-}
-
-/**
- * 11-slot signature for the ProffieOS `advanced` named style:
- *
- *   advanced color1 color2 color3 onSparkColor onSparkTimeMs
- *            blastColor lockupColor clashColor extensionMs retractionMs
- *            sparkTipColor
- *
- * Slot semantics (from `~/ProffieOS/styles/style_parser.h` named_styles[]
- * `"advanced"` description):
- *   1. color at hilt (gradient start)
- *   2. middle color
- *   3. tip color (gradient end)
- *   4. onspark color (briefly flashed on ignition events)
- *   5. onspark time (ms)
- *   6. blast color
- *   7. lockup color (audioflicker partner)
- *   8. clash color
- *   9. extension time (ms) — ignition duration
- *  10. retraction time (ms)
- *  11. spark-tip color (tip-of-blade ignition spark)
- */
-export interface AdvancedVerbParams {
-  color1: { r: number; g: number; b: number };
-  color2: { r: number; g: number; b: number };
-  color3: { r: number; g: number; b: number };
-  onSparkColor: { r: number; g: number; b: number };
-  onSparkTimeMs: number;
-  blastColor: { r: number; g: number; b: number };
-  lockupColor: { r: number; g: number; b: number };
-  clashColor: { r: number; g: number; b: number };
-  extensionMs: number;
-  retractionMs: number;
-  sparkTipColor: { r: number; g: number; b: number };
 }
 
 export interface ProffieRuntimeEmitOptions {
@@ -126,11 +111,13 @@ export interface ProffieRuntimeEmitOptions {
   numBlades: 1 | 2 | 3 | 4;
   presets: ProffieRuntimePresetInput[];
   /**
-   * Phase C opt-in: when true, presets with an `advanced` field on their
-   * input emit `style=advanced R,G,B …` (custom style independent of
-   * factory bank) instead of `style=builtin N M`. Presets without an
-   * `advanced` field still emit `builtin N M` regardless. Defaults to
-   * false (Phase A behavior).
+   * Phase C opt-in ("custom styles"): when true, presets with a
+   * `styleString` (or `advanced` params) emit that runtime verb line —
+   * a custom style independent of the factory bank — instead of
+   * `style=builtin N M`. Presets with neither still emit `builtin N M`.
+   * Defaults to false (Phase A behavior). The name is historical: the
+   * mapped verb can be any of advanced / unstable / fire / cycle /
+   * rainbow / strobe.
    *
    * The platform UI should label this "experimental" because it requires
    * the user's firmware NOT to have `DISABLE_BASIC_PARSER_STYLES`
@@ -158,86 +145,13 @@ function sanitizeValue(value: string): string {
   return value.replace(/[\r\n]/g, ' ').trim();
 }
 
-/**
- * Build a `style=builtin N M` line. Validates against
- * `IsValidStyleString()`: verb must be lowercase letters, then digits/
- * spaces/commas only. `builtin <int> <int>` always satisfies this.
- */
-function buildBuiltinStyleString(presetIndex: number, bladeNumber: number): string {
-  const safeIndex = Math.max(0, Math.floor(presetIndex));
-  const safeBlade = Math.max(1, Math.floor(bladeNumber));
-  return `builtin ${safeIndex} ${safeBlade}`;
-}
-
-/**
- * Format an RGB color as CSV in ProffieOS's runtime arg format.
- *
- * CRITICAL: ProffieOS's `RgbArg<>` parser in `styles/rgb_arg.h:41` reads
- * runtime args via `Color16(r, g, b)` — i.e. it treats the parsed
- * integers as Color16 16-bit values (0-65535 per channel), NOT 0-255.
- *
- * The compile-time `Rgb<R,G,B>` template applies an 8→16 bit scaling
- * (× 0x101) automatically via the `Color16(Color8)` constructor in
- * `common/color.h:191`:
- *
- *   constexpr Color16(const Color8& c) : r(c.r * 0x101), ...
- *
- * The runtime arg parser does NOT apply this scaling. So if KyberStation
- * emits a magenta color as `235,18,142` (the natural 8-bit form), the
- * firmware stores it as Color16(235, 18, 142) — about 1/257 of the
- * intended brightness (~0.4% photon output per channel). That's
- * exactly what caused the v0.17 "Phase C is dim" bench finding: it
- * wasn't the verb template, it was emitting wrong-scale colors.
- *
- * Empirically verified on 89sabers V3.9-BT 2026-05-16: emitting
- * `60395,4626,36494` (= 235,18,142 × 257) produced a vibrantly-bright
- * magenta blade matching factory preset brightness. Emitting
- * `235,18,142` produced a barely-visible blade.
- *
- * BladeConfig stores colors as 0-255 (browser/CSS convention). This
- * function scales each channel by 257 to produce the 0-65535 format
- * ProffieOS expects. Clamps to [0, 65535].
- */
-function rgbCsv16(c: { r: number; g: number; b: number }): string {
-  const scale = (v: number): number => {
-    if (!Number.isFinite(v)) return 0;
-    const scaled = Math.round(v * 257);
-    return Math.max(0, Math.min(65535, scaled));
-  };
-  return `${scale(c.r)},${scale(c.g)},${scale(c.b)}`;
-}
-
-/**
- * Build a `style=advanced ...` line using the 11-slot ProffieOS named-
- * style signature. The verb must pass `IsValidStyleString()`: lowercase
- * letters → space → digits/spaces/commas only. `advanced` + space-
- * separated comma-delimited RGB triples + integers satisfies this.
- *
- * Layout (from style_parser.h named_styles[] `"advanced"`):
- *   advanced  R1,G1,B1  R2,G2,B2  R3,G3,B3  R4,G4,B4
- *             onSparkTimeMs
- *             R6,G6,B6  R7,G7,B7  R8,G8,B8
- *             extensionMs  retractionMs
- *             R11,G11,B11
- *
- * Total 11 args following the verb.
- */
-function buildAdvancedStyleString(p: AdvancedVerbParams): string {
-  const slots = [
-    rgbCsv16(p.color1),
-    rgbCsv16(p.color2),
-    rgbCsv16(p.color3),
-    rgbCsv16(p.onSparkColor),
-    String(Math.max(0, Math.floor(p.onSparkTimeMs))),
-    rgbCsv16(p.blastColor),
-    rgbCsv16(p.lockupColor),
-    rgbCsv16(p.clashColor),
-    String(Math.max(0, Math.floor(p.extensionMs))),
-    String(Math.max(0, Math.floor(p.retractionMs))),
-    rgbCsv16(p.sparkTipColor),
-  ];
-  return `advanced ${slots.join(' ')}`;
-}
+// Verb builders (`buildBuiltinStyleString`, `buildAdvancedStyleString`, …)
+// live in `runtimeVerbs.ts`. CRITICAL encoding note kept here because it
+// cost a bench session: ProffieOS's runtime `RgbArg<>` (`styles/rgb_arg.h`)
+// stores parsed integers straight into `Color16` — 0-65535 per channel, NO
+// 8→16 scaling — so every color is emitted ×257. Emitting 8-bit values
+// rendered Phase C blades at ~0.4% brightness until PR #325 fixed it
+// (bench-verified on the 89sabers V3.9-BT 2026-05-16).
 
 // ─── Public emitter function ───
 
@@ -265,14 +179,25 @@ export function buildRuntimePresetsFile(opts: ProffieRuntimeEmitOptions): string
     lines.push(`track=${trackFile}`);
 
     // Per-preset style emission:
-    // - Phase C opt-in AND this preset has `advanced` params → emit
-    //   `advanced R,G,B …` (one identical line per blade; the advanced
-    //   verb doesn't take a blade index).
+    // - Phase C opt-in AND this preset carries a `styleString` (or legacy
+    //   `advanced` params) → emit that verb line once per blade (the
+    //   runtime verbs don't take a blade index).
     // - Otherwise → emit `builtin N M` per blade (Phase A).
-    if (useAdvanced && p.advanced) {
-      const advancedLine = buildAdvancedStyleString(p.advanced);
+    const customLine =
+      useAdvanced && p.styleString !== undefined
+        ? p.styleString
+        : useAdvanced && p.advanced
+          ? buildAdvancedStyleString(p.advanced)
+          : undefined;
+    if (customLine !== undefined) {
+      if (!isValidRuntimeStyleString(customLine)) {
+        throw new Error(
+          `Invalid ProffieOS runtime style string for preset "${presetName}": "${customLine}" ` +
+            '(IsValidStyleString requires a lowercase verb, then digits, spaces and commas only).',
+        );
+      }
       for (let blade = 1; blade <= opts.numBlades; blade++) {
-        lines.push(`style=${advancedLine}`);
+        lines.push(`style=${customLine}`);
       }
     } else {
       for (let blade = 1; blade <= opts.numBlades; blade++) {
@@ -288,8 +213,7 @@ export function buildRuntimePresetsFile(opts: ProffieRuntimeEmitOptions): string
   return lines.join('\n') + '\n';
 }
 
-// Export for tests + caller code that wants to build the style string
-// independently (e.g. for showing a preview to the user).
+// Re-exported for backward compatibility (the builder moved to runtimeVerbs.ts).
 export { buildAdvancedStyleString };
 
 // ─── BoardEmitter conformance ───

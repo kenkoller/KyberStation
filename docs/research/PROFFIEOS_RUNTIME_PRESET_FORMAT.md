@@ -156,12 +156,15 @@ Memory: [`reference_runtime_preset_double_buffer.md`](/Users/KK/.claude/projects
 
 Tests in [`packages/codegen/tests/proffieRuntimeEmitter.test.ts`](../../packages/codegen/tests/proffieRuntimeEmitter.test.ts) byte-pin the format. If you change the wire format, those tests must change with it — be explicit about it in the PR.
 
-## Out of scope (Phase A)
+## Custom styles (runtime verbs)
 
-- **Color override** via additional `builtin N M R,G,B ...` args. v0.18 work; needs per-chassis `RgbArg<N>` schema knowledge.
-- **`standard` / `advanced` / `fire` verbs** to build presets independent of the compiled-in bank. Later.
+The opt-in "Use my colors and blade style" mode emits each preset's closest 7.12 runtime verb (`advanced`, `unstable`, `fire`, `cycle`, `rainbow`, `strobe`) via `mapBladeConfigToRuntimeStyle()` in [`runtimeVerbs.ts`](../../packages/codegen/src/emitters/runtimeVerbs.ts), with byte-exact builders for all eight verbs. Gallery coverage + mapping decisions: [`RUNTIME_PRESET_COVERAGE_2026-09-24.md`](RUNTIME_PRESET_COVERAGE_2026-09-24.md).
+
+## Out of scope
+
+- **Color override** via additional `builtin N M R,G,B ...` args. Needs per-chassis `RgbArg<N>` schema knowledge.
 - **Importing existing `presets.ini`** back into KyberStation's editor for round-trip editing. Separate feature.
-- **Checksummed `SafeFileHeader` format.** Plain text is sufficient.
+- **Writing the checksummed `SafeFileHeader` format.** External writers stay plain text (with the identical `.tmp` copy); only the firmware writes headers.
 
 ## References
 

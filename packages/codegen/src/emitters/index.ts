@@ -27,6 +27,34 @@ export type {
   ProffieRuntimeEmitOptions,
   AdvancedVerbParams,
 } from './ProffieRuntimeEmitter.js';
+export {
+  mapBladeConfigToRuntimeStyle,
+  isValidRuntimeStyleString,
+  buildBuiltinStyleString,
+  buildStandardStyleString,
+  buildFireStyleString,
+  buildUnstableStyleString,
+  buildStrobeStyleString,
+  buildCycleStyleString,
+  buildRainbowStyleString,
+  rgbArg16,
+  toColor16Channel,
+  RUNTIME_VERB_SLOTS,
+} from './runtimeVerbs.js';
+export type {
+  RuntimeVerb,
+  RuntimeFidelity,
+  RuntimeStyleMapping,
+  RuntimeStyleInput,
+  RuntimeRGB,
+  RuntimeVerbSlots,
+  StandardVerbParams,
+  FireVerbParams,
+  UnstableVerbParams,
+  StrobeVerbParams,
+  CycleVerbParams,
+  RainbowVerbParams,
+} from './runtimeVerbs.js';
 
 import type { BoardEmitter } from './BaseEmitter.js';
 import { CFXEmitter } from './CFXEmitter.js';

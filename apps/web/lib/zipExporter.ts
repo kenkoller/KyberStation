@@ -1,7 +1,11 @@
 import JSZip from 'jszip';
 import type { BladeConfig } from '@kyberstation/engine';
 import { generateStyleCode } from '@kyberstation/codegen';
-import { buildConfigFile, buildRuntimePresetsFile } from '@kyberstation/codegen';
+import {
+  buildConfigFile,
+  buildRuntimePresetsFile,
+  mapBladeConfigToRuntimeStyle,
+} from '@kyberstation/codegen';
 import {
   // Xenopixel V3 — shared mapping + clamping helpers. Adopted from
   // `XenopixelEmitter` (packages/codegen/src/emitters/XenopixelEmitter.ts)
@@ -18,11 +22,7 @@ import {
   XENO_RETRACTION_SPEED_MIN,
   XENO_RETRACTION_SPEED_MAX,
 } from '@kyberstation/codegen';
-import type {
-  ConfigOptions,
-  PresetEntry,
-  AdvancedVerbParams,
-} from '@kyberstation/codegen';
+import type { ConfigOptions, PresetEntry } from '@kyberstation/codegen';
 import { useXenopixelSettingsStore } from '@/stores/xenopixelSettingsStore';
 import { ensureDirectory, writeFileToDirectory } from './cardDetector';
 import { RUNTIME_PRESETS_INI, RUNTIME_PRESETS_TMP } from './runtimePresetIO';
@@ -87,10 +87,12 @@ export interface ExportOptions {
   runtimeInstallTime?: string;
   runtimeNumBlades?: 1 | 2 | 3 | 4;
   /**
-   * Phase C opt-in for proffie_runtime: emit `style=advanced …` (custom
-   * preset with explicit colors + timing) instead of `style=builtin N M`
-   * (factory bank reference). Defaults to false. Requires the user's
-   * firmware NOT to have DISABLE_BASIC_PARSER_STYLES defined.
+   * Phase C ("Custom styles") opt-in for proffie_runtime: emit each
+   * preset's closest ProffieOS runtime verb (advanced / unstable / fire /
+   * cycle / rainbow / strobe — see `mapBladeConfigToRuntimeStyle`) instead
+   * of `style=builtin N M` (factory bank reference). Defaults to false.
+   * Requires the user's firmware NOT to have DISABLE_BASIC_PARSER_STYLES
+   * defined. (Name kept for compatibility with existing callers.)
    */
   runtimeUseAdvancedVerb?: boolean;
 }
@@ -721,15 +723,28 @@ Two modes, picked at export time:
     preset index.
 
   Phase C (experimental - "Custom styles" toggle in CardWriter):
-    emits style=advanced R,G,B ... lines that build a fully custom
-    preset independent of the factory bank. CAN customize base
-    color, blast color, lockup color, clash color, ignition and
-    retraction timing. REQUIRES your firmware to NOT have
-    DISABLE_BASIC_PARSER_STYLES defined (true for stock ProffieOS +
-    standard Fett263 prop builds; some vendor firmware disables
-    these parser styles and would reject the file).
+    builds each preset from the closest ProffieOS runtime style for
+    its blade style, independent of the factory bank:
+      advanced  - solid / gradient blades (your colors, clash, blast,
+                  lockup colors, ignition and retraction timing)
+      unstable  - unstable / crackling blades
+      fire      - fire-family blades (fire, plasma, cinder, ember,
+                  candle)
+      cycle     - pulse / aurora / nebula (AUDIO-REACTIVE flicker -
+                  brightness follows the saber's sound, not a clock)
+      rainbow   - prism
+      strobe    - flicker / tempo styles
+    Styles no runtime verb can animate (helix, photon, vortex, tidal,
+    gravity, ...) arrive as a solid blade in your colors - they need a
+    firmware flash to look right. CardWriter labels every preset
+    "Faithful", "Approximate" or "Colors only" before you export.
+    Some verbs have fixed effect colors (e.g. unstable flashes white on
+    clash; fire has no ignition timing). REQUIRES your firmware to NOT
+    have DISABLE_BASIC_PARSER_STYLES defined (true for stock ProffieOS +
+    standard Fett263 prop builds; some vendor firmware disables these
+    parser styles and would reject the file).
 
-If Phase C runs and your saber doesn't show your custom colors,
+If Phase C runs and your saber doesn't show your custom styles,
 your firmware probably has the basic parser styles disabled. Back
 out to Phase A and use the default factory preset bank.
 
@@ -751,33 +766,6 @@ function addFontFolder(zip: JSZip, folderName: string, soundFiles?: File[]): voi
     // Create an empty placeholder so the folder exists in the ZIP
     folder.file('.kyberstation', 'KyberStation sound font placeholder\n');
   }
-}
-
-/**
- * Map a BladeConfig to the 11-slot ProffieOS `advanced` verb shape.
- * Used by the proffie_runtime export path when Phase C "Custom styles"
- * is enabled. All 11 slots are filled from BladeConfig values, with
- * sensible ProffieOS-default fallbacks for slots KyberStation doesn't
- * model (onspark, sparkTip).
- *
- * Single-color blade: gradient slots 1/2/3 all = baseColor (uniform
- * color blade). The advanced verb gradient interpolates hilt→mid→tip,
- * so setting all three to the same color gives a uniform blade.
- */
-function bladeConfigToAdvancedParams(c: BladeConfig): AdvancedVerbParams {
-  return {
-    color1: c.baseColor,
-    color2: c.baseColor,
-    color3: c.baseColor,
-    onSparkColor: { r: 255, g: 255, b: 255 },
-    onSparkTimeMs: 10,
-    blastColor: c.blastColor,
-    lockupColor: c.lockupColor,
-    clashColor: c.clashColor,
-    extensionMs: c.ignitionMs ?? 300,
-    retractionMs: c.retractionMs ?? 800,
-    sparkTipColor: { r: 255, g: 255, b: 255 },
-  };
 }
 
 /**
@@ -843,12 +831,12 @@ export async function exportMultiPresetZip(options: MultiExportOptions): Promise
           presetName: p.name,
           fontName: p.fontName ?? `font${i + 1}`,
           builtinPresetIndex: i,
-          // Phase C: when advanced mode is on, derive 11-slot params from
-          // the user's BladeConfig so custom colors + timing actually
-          // transfer to the saber instead of silently falling back to
-          // the factory bank.
-          advanced: useAdvancedVerb
-            ? bladeConfigToAdvancedParams(p.config)
+          // Phase C ("Custom styles"): map the design's style to the
+          // closest ProffieOS 7.12 runtime verb so the blade animation —
+          // not just its colors — reaches the saber where a verb exists.
+          // CardWriter shows the same mapping's fidelity label per preset.
+          styleString: useAdvancedVerb
+            ? mapBladeConfigToRuntimeStyle(p.config).styleString
             : undefined,
         })),
       });

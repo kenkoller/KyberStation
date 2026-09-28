@@ -13,6 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
 import { exportMultiPresetZip, type ExportPreset } from '@/lib/zipExporter';
+import { isValidRuntimeStyleString } from '@kyberstation/codegen';
 import type { BladeConfig } from '@kyberstation/engine';
 import v1Fixtures from './fixtures/runtimePresets/v1/fixtures.json';
 
@@ -70,6 +71,16 @@ describe('runtime preset wire format — v1 fixtures', () => {
       const tmp = await zip.file('presets.tmp')!.async('uint8array');
       expect(tmp.length).toBe(ini.length);
       expect(Array.from(tmp)).toEqual(Array.from(ini));
+    });
+
+    it(`fixture "${fixture.name}" only emits style strings that pass IsValidStyleString`, async () => {
+      const zip = await exportFixture(fixture);
+      const styles = (await zip.file('presets.ini')!.async('string'))
+        .split('\n')
+        .filter((l) => l.startsWith('style='))
+        .map((l) => l.slice('style='.length));
+      expect(styles.length).toBeGreaterThan(0);
+      for (const s of styles) expect(isValidRuntimeStyleString(s)).toBe(true);
     });
 
     it(`fixture "${fixture.name}" is plain text a firmware header can't be mistaken for`, async () => {

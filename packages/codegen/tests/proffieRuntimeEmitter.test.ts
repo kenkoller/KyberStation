@@ -453,6 +453,87 @@ describe('buildRuntimePresetsFile — Phase C opt-in', () => {
   });
 });
 
+describe('buildRuntimePresetsFile — mapped runtime verbs (styleString)', () => {
+  const UNSTABLE = 'unstable 30235,1512,0 51400,2570,0 55714,21785,20000 59881,40349,39321 500 400';
+
+  it('emits the preset styleString once per blade when custom styles are on', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'Apr 21 2026 08:44:54',
+      numBlades: 2,
+      useAdvancedVerb: true,
+      presets: [{ presetName: 'Kylo', fontName: 'Kylo', builtinPresetIndex: 4, styleString: UNSTABLE }],
+    });
+    expect(out).toBe(
+      [
+        'installed=Apr 21 2026 08:44:54',
+        'new_preset',
+        'font=Kylo',
+        'track=tracks/Kylo.wav',
+        `style=${UNSTABLE}`,
+        `style=${UNSTABLE}`,
+        'name=Kylo',
+        'variation=0',
+        'end',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('styleString takes precedence over advanced params', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'X',
+      numBlades: 1,
+      useAdvancedVerb: true,
+      presets: [
+        {
+          presetName: 'p',
+          fontName: 'f',
+          builtinPresetIndex: 0,
+          styleString: 'rainbow 300 800',
+          advanced: {
+            color1: { r: 1, g: 2, b: 3 },
+            color2: { r: 1, g: 2, b: 3 },
+            color3: { r: 1, g: 2, b: 3 },
+            onSparkColor: { r: 0, g: 0, b: 0 },
+            onSparkTimeMs: 0,
+            blastColor: { r: 0, g: 0, b: 0 },
+            lockupColor: { r: 0, g: 0, b: 0 },
+            clashColor: { r: 0, g: 0, b: 0 },
+            extensionMs: 0,
+            retractionMs: 0,
+            sparkTipColor: { r: 0, g: 0, b: 0 },
+          },
+        },
+      ],
+    });
+    expect(out).toContain('style=rainbow 300 800');
+    expect(out).not.toContain('style=advanced');
+  });
+
+  it('Phase A ignores styleString and keeps builtin N M', () => {
+    const out = buildRuntimePresetsFile({
+      installTime: 'X',
+      numBlades: 1,
+      presets: [{ presetName: 'p', fontName: 'f', builtinPresetIndex: 3, styleString: UNSTABLE }],
+    });
+    expect(out).toContain('style=builtin 3 1');
+    expect(out).not.toContain('unstable');
+  });
+
+  it('refuses to write a style string ProffieOS would misparse', () => {
+    for (const bad of ['advanced ~ 1', 'Fire 1,2,3 4,5,6', 'standard -1 0 0 0', 'rainbow']) {
+      expect(() =>
+        buildRuntimePresetsFile({
+          installTime: 'X',
+          numBlades: 1,
+          useAdvancedVerb: true,
+          presets: [{ presetName: 'p', fontName: 'f', builtinPresetIndex: 0, styleString: bad }],
+        }),
+      ).toThrow(/Invalid ProffieOS runtime style string/);
+    }
+  });
+});
+
 describe('ProffieRuntimeEmitter', () => {
   function makeOptions(overrides: Partial<BoardEmitOptions> = {}): BoardEmitOptions {
     return {

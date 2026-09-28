@@ -20,6 +20,12 @@
 //     out fully.
 
 import type { BladeConfig } from '@kyberstation/engine';
+import {
+  mapBladeConfigToRuntimeStyle,
+  RUNTIME_VERB_SLOTS,
+  type RuntimeStyleMapping,
+  type RuntimeVerb,
+} from '@kyberstation/codegen';
 import type { BoardId } from './zipExporter';
 
 // ─── Public types ───
@@ -173,7 +179,8 @@ interface KnobTable {
 }
 
 /**
- * ProffieOS Runtime Presets Phase A — emits `style=builtin N M` only.
+ * ProffieOS Runtime Presets, factory-style mode (historically "Phase A") —
+ * emits `style=builtin N M` only.
  * EVERY BladeConfig design choice beyond name/font/track/variation/order
  * is silently dropped.
  */
@@ -185,39 +192,39 @@ const PROFFIE_RUNTIME_PHASE_A_TABLE: KnobTable = {
   variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
   baseColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index (`style=builtin N M`); custom colors do not transfer. Switch to Phase C — custom styles to lift this.',
+    reason: 'Factory-style mode gives each preset the factory blade style at the same list position (`style=builtin N M`); your custom colors do not transfer. Switch to "Use my colors and blade style" to lift this.',
   },
   clashColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; custom clash colors do not transfer. Switch to Phase C to lift this.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; your custom clash colors do not transfer. Switch to "Use my colors and blade style" to lift this.',
   },
   lockupColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; custom lockup colors do not transfer. Switch to Phase C to lift this.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; your custom lockup colors do not transfer. Switch to "Use my colors and blade style" to lift this.',
   },
   blastColor: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; custom blast colors do not transfer. Switch to Phase C to lift this.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; your custom blast colors do not transfer. Switch to "Use my colors and blade style" to lift this.',
   },
   style: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; the actual blade style on the saber is whatever your firmware compiled at that index.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position — whatever your firmware compiled into that slot, not the style you designed.',
   },
   ignition: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; ignition animation is whatever your firmware compiled.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; the ignition animation is whatever your firmware compiled.',
   },
   ignitionMs: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; ignition timing does not transfer. Switch to Phase C to lift this.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; your ignition timing does not transfer. Switch to "Use my colors and blade style" to lift this.',
   },
   retraction: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; retraction animation is whatever your firmware compiled.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; the retraction animation is whatever your firmware compiled.',
   },
   retractionMs: {
     capability: 'dropped-silently',
-    reason: 'Phase A references factory presets by index; retraction timing does not transfer. Switch to Phase C to lift this.',
+    reason: 'Factory-style mode uses the factory blade style at the same list position; your retraction timing does not transfer. Switch to "Use my colors and blade style" to lift this.',
   },
   shimmer: {
     capability: 'dropped-silently',
@@ -230,68 +237,157 @@ const PROFFIE_RUNTIME_PHASE_A_TABLE: KnobTable = {
 };
 
 /**
- * ProffieOS Runtime Presets Phase C — emits `style=advanced R,G,B …` so
- * colors + timing transfer to the saber without firmware flash. The
- * 11-slot `advanced` named verb covers base / blast / lockup / clash
- * colors plus extension + retraction timing. Style algorithm and
- * shimmer + modulation remain firmware-compiled.
- *
- * Phase C is opt-in and experimental: depends on the user's firmware
- * NOT having `DISABLE_BASIC_PARSER_STYLES` defined. Most stock
- * ProffieOS + Fett263 prop builds satisfy this; some vendor builds
- * may not.
+ * What each runtime verb does with the effects it has NO slot for — the
+ * fixed behavior baked into its ProffieOS 7.12 `named_styles[]` template.
+ * Only read for knobs where `RUNTIME_VERB_SLOTS[verb]` is false.
  */
-const PROFFIE_RUNTIME_PHASE_C_TABLE: KnobTable = {
-  presetName: { capability: 'deliverable', reason: 'Transfers via `name=` line.' },
-  fontName: { capability: 'deliverable', reason: 'Transfers via `font=` line.' },
-  trackFile: { capability: 'deliverable', reason: 'Transfers via `track=` line.' },
-  presetOrder: { capability: 'deliverable', reason: 'Transfers via the order of preset blocks in `presets.ini`.' },
-  variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
-  baseColor: {
-    capability: 'deliverable',
-    reason: 'Phase C emits `advanced R,G,B …` with the base color in slots 1/2/3. Single-color blade renders correctly. Empirically verified on 89sabers V3.9-BT 2026-05-16 (hilt-mounted): with proper 16-bit color scaling (each RGB channel × 257 = 0-65535 range matching ProffieOS\'s Color16 RgbArg parser in styles/rgb_arg.h:41), the blade renders at factory-equivalent brightness. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined (true for stock ProffieOS + standard Fett263 prop builds).',
+const RUNTIME_VERB_FIXED: Record<
+  RuntimeVerb,
+  { clash: string; blast: string; lockup: string; timing: string }
+> = {
+  builtin: {
+    clash: 'the factory style decides the clash',
+    blast: 'the factory style decides the blast',
+    lockup: 'the factory style decides the lockup',
+    timing: 'the factory style decides the timing',
   },
-  clashColor: {
-    capability: 'deliverable',
-    reason: 'Phase C emits `advanced` slot 8 (clash color), 16-bit-scaled to match ProffieOS\'s RgbArg parser. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  standard: {
+    clash: '',
+    blast: 'blasts flash white',
+    lockup: 'lockup flickers toward white',
+    timing: '',
   },
-  lockupColor: {
-    capability: 'deliverable',
-    reason: 'Phase C emits `advanced` slot 7 (lockup AudioFlicker partner), 16-bit-scaled. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  advanced: { clash: '', blast: '', lockup: '', timing: '' },
+  fire: {
+    clash: 'a clash stokes the flames instead of flashing a color',
+    blast: 'there is no blast layer',
+    lockup: 'lockup stokes the flames instead of showing a color',
+    timing: 'the flame heats up on its own — there are no ignition/retraction time slots',
   },
-  blastColor: {
-    capability: 'deliverable',
-    reason: 'Phase C emits `advanced` slot 6 (blast color), 16-bit-scaled. Requires firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined.',
+  unstable: {
+    clash: 'clashes flash white',
+    blast: 'blasts flash white',
+    lockup: 'lockup is a fixed yellow/red flicker',
+    timing: '',
   },
-  style: {
-    capability: 'dropped-silently',
-    reason: 'Phase C uses the `advanced` named verb which is a fixed Layers<InOutSparkTipX<...>> template. The specific KyberStation style algorithm (Crystal Shatter, Aurora, etc.) is not represented; only its colors are.',
+  strobe: {
+    clash: 'clashes flash a rainbow',
+    blast: 'blasts flash white',
+    lockup: 'lockup flickers toward white',
+    timing: '',
   },
-  ignition: {
-    capability: 'dropped-silently',
-    reason: 'Phase C uses the `advanced` named verb which has a fixed InOutSparkTipX ignition; KyberStation ignition animation type is not modeled.',
+  cycle: {
+    clash: 'clashes flash white',
+    blast: '',
+    lockup: '',
+    timing: 'the blade spins up over a fixed ~1 s — there are no ignition/retraction time slots',
   },
-  ignitionMs: {
-    capability: 'deliverable',
-    reason: 'Phase C emits `advanced` slot 9 (extension time). Transfers as a raw millisecond value.',
-  },
-  retraction: {
-    capability: 'dropped-silently',
-    reason: 'Phase C uses the `advanced` named verb which has a fixed retraction shape.',
-  },
-  retractionMs: {
-    capability: 'deliverable',
-    reason: 'Phase C emits `advanced` slot 10 (retraction time). Transfers as a raw millisecond value.',
-  },
-  shimmer: {
-    capability: 'dropped-silently',
-    reason: 'Runtime preset format has no shimmer slot.',
-  },
-  modulation: {
-    capability: 'dropped-silently',
-    reason: 'Runtime preset format does not carry modulation bindings — those need compiled-in style templates (compile+flash path).',
+  rainbow: {
+    clash: 'clashes flash white',
+    blast: 'there is no blast layer',
+    lockup: 'lockup flickers toward white',
+    timing: '',
   },
 };
+
+const REQUIRES_PARSER_STYLES =
+  'Requires firmware without DISABLE_BASIC_PARSER_STYLES (true for stock ProffieOS + standard Fett263 prop builds).';
+
+/**
+ * ProffieOS Runtime Presets, custom-styles mode ("Phase C"). Each preset is
+ * emitted as its closest ProffieOS 7.12 runtime verb
+ * (`mapBladeConfigToRuntimeStyle` in @kyberstation/codegen), so the table is
+ * per preset: which knobs transfer depends on the verb its style maps to.
+ * Colors are 16-bit scaled (×257) to match ProffieOS's Color16 `RgbArg`
+ * parser — bench-verified at factory brightness on the 89sabers V3.9-BT.
+ *
+ * Opt-in and experimental: depends on the user's firmware NOT having
+ * `DISABLE_BASIC_PARSER_STYLES` defined.
+ */
+function buildProffieRuntimeCustomTable(config: BladeConfig): KnobTable {
+  const mapping = mapBladeConfigToRuntimeStyle(config);
+  const verb = mapping.verb;
+  const slots = RUNTIME_VERB_SLOTS[verb];
+  const fixed = RUNTIME_VERB_FIXED[verb];
+  const via = `\`${verb}\` runtime verb`;
+  const slot = (
+    has: boolean,
+    carried: string,
+    dropped: string,
+  ): { capability: DeliverabilityCapability; reason: string } =>
+    has
+      ? { capability: 'deliverable', reason: carried }
+      : { capability: 'dropped-silently', reason: dropped };
+
+  return {
+    presetName: { capability: 'deliverable', reason: 'Transfers via `name=` line.' },
+    fontName: { capability: 'deliverable', reason: 'Transfers via `font=` line.' },
+    trackFile: { capability: 'deliverable', reason: 'Transfers via `track=` line.' },
+    presetOrder: { capability: 'deliverable', reason: 'Transfers via the order of preset blocks in `presets.ini`.' },
+    variation: { capability: 'deliverable', reason: 'Transfers via `variation=` line.' },
+    baseColor:
+      verb === 'rainbow'
+        ? {
+            capability: 'partial',
+            reason: 'The rainbow verb has no color slots — the blade cycles the full spectrum (the Prism style ignores the base color in the editor too).',
+          }
+        : slot(
+            slots.baseColor,
+            `Carried by the ${via} as 16-bit (×257) RgbArg colors. ${REQUIRES_PARSER_STYLES}`,
+            `The ${via} has no slot for the blade color.`,
+          ),
+    clashColor: slot(
+      slots.clashColor,
+      `Carried by the ${via} (clash color slot), 16-bit scaled. ${REQUIRES_PARSER_STYLES}`,
+      `The ${via} has no clash-color slot — ${fixed.clash}.`,
+    ),
+    lockupColor: slot(
+      slots.lockupColor,
+      `Carried by the ${via} (lockup color slot), 16-bit scaled. ${REQUIRES_PARSER_STYLES}`,
+      `The ${via} has no lockup-color slot — ${fixed.lockup}.`,
+    ),
+    blastColor: slot(
+      slots.blastColor,
+      `Carried by the ${via} (blast color slot), 16-bit scaled. ${REQUIRES_PARSER_STYLES}`,
+      `The ${via} has no blast-color slot — ${fixed.blast}.`,
+    ),
+    style: {
+      capability:
+        mapping.fidelity === 'faithful'
+          ? 'deliverable'
+          : mapping.fidelity === 'approximate'
+            ? 'partial'
+            : 'dropped-silently',
+      reason: mapping.note,
+    },
+    ignition: {
+      capability: 'dropped-silently',
+      reason: `Runtime verbs have fixed ignition shapes (the ${via} can't pick one); your ignition animation type is not carried.`,
+    },
+    ignitionMs: slot(
+      slots.ignitionMs,
+      `Carried by the ${via} (extension time), as raw milliseconds.`,
+      `Not carried: ${fixed.timing}.`,
+    ),
+    retraction: {
+      capability: 'dropped-silently',
+      reason: `Runtime verbs have fixed retraction shapes (the ${via} can't pick one); your retraction animation type is not carried.`,
+    },
+    retractionMs: slot(
+      slots.retractionMs,
+      `Carried by the ${via} (retraction time), as raw milliseconds.`,
+      `Not carried: ${fixed.timing}.`,
+    ),
+    shimmer: {
+      capability: 'dropped-silently',
+      reason: 'Runtime preset format has no shimmer slot.',
+    },
+    modulation: {
+      capability: 'dropped-silently',
+      reason: 'Runtime preset format does not carry modulation bindings — those need compiled-in style templates (compile+flash path).',
+    },
+  };
+}
 
 /**
  * CFX / Golden Harvest are design-reference paths today: the ZIP carries
@@ -332,7 +428,10 @@ const PROFFIE_COMPILE_FLASH_TABLE: KnobTable = {
   ignitionMs: { capability: 'deliverable', reason: 'Emitted as Int<N> argument to the ignition template.' },
   retraction: { capability: 'deliverable', reason: 'Emitted as the retraction half of InOutTrL<>/InOutFunc<>.' },
   retractionMs: { capability: 'deliverable', reason: 'Emitted as Int<N> argument to the retraction template.' },
-  shimmer: { capability: 'deliverable', reason: 'Emitted as AudioFlicker<>/HumpFlicker<> intensity.' },
+  shimmer: {
+    capability: 'dropped-silently',
+    reason: 'The compile+flash codegen does not read the shimmer value: each style\'s flicker is fixed by its template (e.g. Stable\'s AudioFlicker at 50% white), so shimmer only changes the non-Hardware-Preview editor view. A modulation binding that targets shimmer is handled separately (see modulation bindings).',
+  },
   modulation: {
     capability: 'partial',
     reason: 'Mappable bindings become live ProffieOS templates via the v1.1 composer; unmappable bindings are snapshotted into the AST (the live blade does not respond to that input).',
@@ -370,15 +469,22 @@ const XENOPIXEL_TABLE: KnobTable = {
  * chassis flip to `unknown` capability.
  */
 export interface DeliverabilityContext {
-  /** Phase C "Custom styles" toggle for proffie_runtime. Default false. */
+  /**
+   * proffie_runtime "Use my colors and blade style" toggle (custom-styles
+   * mode, historically "Phase C"). Default false = factory blade styles.
+   */
   runtimeUseAdvancedVerb?: boolean;
 }
 
-function getKnobTable(target: BoardId, ctx?: DeliverabilityContext): KnobTable {
+function getKnobTable(
+  target: BoardId,
+  config: BladeConfig,
+  ctx?: DeliverabilityContext,
+): KnobTable {
   switch (target) {
     case 'proffie_runtime':
       return ctx?.runtimeUseAdvancedVerb
-        ? PROFFIE_RUNTIME_PHASE_C_TABLE
+        ? buildProffieRuntimeCustomTable(config)
         : PROFFIE_RUNTIME_PHASE_A_TABLE;
     case 'cfx':
     case 'golden_harvest': return DESIGN_REFERENCE_TABLE;
@@ -421,7 +527,7 @@ export function getDeliverability(
   target: BoardId,
   ctx?: DeliverabilityContext,
 ): DeliverabilityReport {
-  const table = getKnobTable(target, ctx);
+  const table = getKnobTable(target, config, ctx);
   const knobs: KnobDeliverability[] = ALL_KNOBS.map((knob) => ({
     knob,
     capability: table[knob].capability,
@@ -429,7 +535,7 @@ export function getDeliverability(
   }));
 
   const overall = computeOverall(target, knobs);
-  const summary = formatSummary(target, overall, knobs, config);
+  const summary = formatSummary(target, overall, knobs, customizedKnobs(config));
 
   return { target, overall, knobs, summary };
 }
@@ -453,7 +559,7 @@ function formatSummary(
   _target: BoardId,
   overall: DeliverabilityReport['overall'],
   knobs: KnobDeliverability[],
-  config: BladeConfig,
+  customized: Set<DesignKnob>,
 ): string {
   if (overall === 'design-only') {
     return 'Design-reference only — KyberStation cannot write flashable firmware for this target. The ZIP documents your intended values for manual configuration via the vendor app.';
@@ -462,7 +568,6 @@ function formatSummary(
     return 'This chassis has not been validated to boot KyberStation firmware. Flash at your own risk; have your factory backup ready.';
   }
 
-  const customized = customizedKnobs(config);
   const droppedCustomized = knobs.filter(
     (k) =>
       k.capability === 'dropped-silently' && customized.has(k.knob),
@@ -500,4 +605,102 @@ const KNOB_LABELS: Record<DesignKnob, string> = {
 
 export function humanizeKnob(knob: DesignKnob): string {
   return KNOB_LABELS[knob];
+}
+
+// ─── Multi-preset bundles ───
+
+/** Higher = worse for the user. `design-reference` is its own overall mode. */
+const CAPABILITY_SEVERITY: Record<DeliverabilityCapability, number> = {
+  deliverable: 0,
+  unknown: 1,
+  partial: 2,
+  'design-reference': 3,
+  'dropped-silently': 4,
+};
+
+const BUNDLE_FALLBACK_CONFIG: BladeConfig = {
+  baseColor: { ...DEFAULT_BASELINE.baseColor },
+  clashColor: { ...DEFAULT_BASELINE.clashColor },
+  lockupColor: { ...DEFAULT_BASELINE.lockupColor },
+  blastColor: { ...DEFAULT_BASELINE.blastColor },
+  style: DEFAULT_BASELINE.style,
+  ignition: DEFAULT_BASELINE.ignition,
+  retraction: DEFAULT_BASELINE.retraction,
+  ignitionMs: DEFAULT_BASELINE.ignitionMs,
+  retractionMs: DEFAULT_BASELINE.retractionMs,
+  shimmer: DEFAULT_BASELINE.shimmer,
+  ledCount: 144,
+};
+
+/**
+ * Deliverability for a whole export bundle. In custom-styles mode the
+ * runtime table differs per preset (it follows each preset's runtime verb),
+ * so every knob reports its WORST capability across the bundle — the panel
+ * never claims "transfers" for a knob that some preset drops. When presets
+ * disagree, the reason is prefixed with how many presets it applies to.
+ */
+export function getBundleDeliverability(
+  configs: BladeConfig[],
+  target: BoardId,
+  ctx?: DeliverabilityContext,
+): DeliverabilityReport {
+  if (configs.length <= 1) {
+    return getDeliverability(configs[0] ?? BUNDLE_FALLBACK_CONFIG, target, ctx);
+  }
+  const reports = configs.map((c) => getDeliverability(c, target, ctx));
+  const knobs: KnobDeliverability[] = ALL_KNOBS.map((knob, i) => {
+    const entries = reports.map((r) => r.knobs[i]!);
+    const worst = entries.reduce((a, b) =>
+      CAPABILITY_SEVERITY[b.capability] > CAPABILITY_SEVERITY[a.capability] ? b : a,
+    );
+    const matching = entries.filter((e) => e.capability === worst.capability).length;
+    const reason =
+      matching === entries.length
+        ? worst.reason
+        : `${matching} of ${entries.length} presets: ${worst.reason}`;
+    return { knob, capability: worst.capability, reason };
+  });
+
+  const customized = new Set<DesignKnob>();
+  for (const c of configs) {
+    for (const k of customizedKnobs(c)) customized.add(k);
+  }
+  const overall = computeOverall(target, knobs);
+  return { target, overall, knobs, summary: formatSummary(target, overall, knobs, customized) };
+}
+
+// ─── Runtime-preset fidelity badge (CardWriter, custom-styles mode) ───
+
+export interface RuntimeFidelityBadge {
+  /** Compact chip text, e.g. "Faithful · unstable verb". */
+  label: string;
+  /** ok = faithful, partial = approximate, warn = colors only. */
+  tone: 'ok' | 'partial' | 'warn';
+  /** Longer explanation for the chip's tooltip. */
+  detail: string;
+}
+
+/** Plain-language badge for one preset's runtime-verb mapping. */
+export function describeRuntimeFidelity(mapping: RuntimeStyleMapping): RuntimeFidelityBadge {
+  switch (mapping.fidelity) {
+    case 'faithful':
+      return { label: `Faithful · ${mapping.verb} verb`, tone: 'ok', detail: mapping.note };
+    case 'approximate':
+      return {
+        label: `Approximate · ${mapping.verb} verb${mapping.verb === 'cycle' ? ' (audio-reactive)' : ''}`,
+        tone: 'partial',
+        detail: mapping.note,
+      };
+    case 'colors-only':
+      return {
+        label: 'Colors only — this style needs a firmware flash',
+        tone: 'warn',
+        detail: mapping.note,
+      };
+  }
+}
+
+/** Convenience: map a preset's config and describe the result. */
+export function getRuntimeFidelityBadge(config: BladeConfig): RuntimeFidelityBadge {
+  return describeRuntimeFidelity(mapBladeConfigToRuntimeStyle(config));
 }

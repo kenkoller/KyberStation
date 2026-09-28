@@ -36,13 +36,15 @@ import {
 import { useSoundFontWarningStore } from '@/stores/soundFontWarningStore';
 import {
   getDeliverability,
+  getBundleDeliverability,
+  getRuntimeFidelityBadge,
   customizedKnobs,
   humanizeKnob,
   type DesignKnob,
+  type RuntimeFidelityBadge,
 } from '@/lib/deliverability';
 import { byId as hardwareProfileById } from '@kyberstation/hardware-profiles';
 import { generateStyleCode } from '@kyberstation/codegen';
-import type { BladeConfig } from '@kyberstation/engine';
 import { playUISound } from '@/lib/uiSounds';
 import { useCommitCeremony, phaseToStage } from '@/hooks/useCommitCeremony';
 
@@ -150,8 +152,10 @@ export function CardWriter() {
   // user switches away from `proffie_runtime` to keep behavior obvious.
   const [discoveredInstallTime, setDiscoveredInstallTime] = useState<string | null>(null);
 
-  // Phase C opt-in for the runtime path. Off by default; reset when user
-  // switches away from `proffie_runtime` to keep the toggle scoped.
+  // "Use my colors and blade style" opt-in for the runtime path
+  // (custom-styles mode, historically "Phase C"). Off by default = keep
+  // factory blade styles; reset when the user switches away from
+  // `proffie_runtime` to keep the toggle scoped. Local state only.
   const [useAdvancedRuntimeVerb, setUseAdvancedRuntimeVerb] = useState(false);
 
   // Reset discovered install_time when switching boards.
@@ -227,6 +231,21 @@ export function CardWriter() {
     return presets;
   }, [resolvedEntries, selectedPresets, config]);
 
+  // ─── Runtime style fidelity (custom-styles mode) ───
+  // Same mapping the export uses (mapBladeConfigToRuntimeStyle), so each
+  // label describes exactly what will be written for that preset.
+  const runtimeBadges = useMemo<RuntimeFidelityBadge[] | null>(() => {
+    if (boardId !== 'proffie_runtime' || !useAdvancedRuntimeVerb) return null;
+    return buildExportPresets().map((p) => getRuntimeFidelityBadge(p.config));
+  }, [boardId, useAdvancedRuntimeVerb, buildExportPresets]);
+
+  const runtimeFidelityTally = useMemo((): string | null => {
+    if (!runtimeBadges || runtimeBadges.length === 0) return null;
+    const count = (tone: RuntimeFidelityBadge['tone']) =>
+      runtimeBadges.filter((b) => b.tone === tone).length;
+    return `${count('ok')} faithful · ${count('partial')} approximate · ${count('warn')} colors only`;
+  }, [runtimeBadges]);
+
   // ─── Pre-export Validation ───
 
   const validationNotices = useMemo((): ValidationNotice[] => {
@@ -275,8 +294,10 @@ export function CardWriter() {
       // presets. `style=builtin N M` references an index in that bank;
       // out-of-range N returns null in ProffieOS. Most vendor sabers
       // ship with 16-28 factory presets. Warn above 16 as a sane
-      // default — users with bigger banks can ignore the warning.
-      if (presets.length > 16) {
+      // default — users with bigger banks can ignore the warning. Only
+      // applies to factory blade styles: custom-style presets don't
+      // reference the factory bank at all.
+      if (presets.length > 16 && !useAdvancedRuntimeVerb) {
         notices.push({
           type: 'warning',
           text: `${presets.length} presets requested. Most factory firmware compiles in 16-28 presets — presets beyond your firmware's built-in bank will show as blank. Check 'pli' output over USB serial for your firmware's preset count.`,
@@ -850,14 +871,15 @@ export function CardWriter() {
         </p>
       </div>
 
-      {/* Runtime-preset style mode toggle (Phase A vs Phase C). Only
-          surfaced when proffie_runtime is selected. Phase A is the safe
-          default. Phase C unlocks custom colors + timing but requires the
-          user's firmware to NOT have DISABLE_BASIC_PARSER_STYLES defined. */}
+      {/* Runtime-preset blade-style source. Only surfaced for
+          proffie_runtime. "Keep factory blade styles" (builtin N M) stays
+          the default; "Use my colors and blade style" maps each preset to
+          the closest ProffieOS runtime verb and requires firmware without
+          DISABLE_BASIC_PARSER_STYLES. */}
       {boardId === 'proffie_runtime' && (
         <div className="mb-4">
           <label className="block text-ui-sm text-text-muted uppercase tracking-wider mb-1.5">
-            Style Mode
+            Blade Styles
           </label>
           <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1.5">
             <label className="touch-target flex items-start gap-2.5 px-2 py-1.5 rounded hover:bg-bg-primary/50 cursor-pointer transition-colors">
@@ -867,15 +889,17 @@ export function CardWriter() {
                 checked={!useAdvancedRuntimeVerb}
                 onChange={() => setUseAdvancedRuntimeVerb(false)}
                 disabled={isWorking}
-                aria-label="Phase A — factory presets (safe)"
+                aria-label="Keep factory blade styles"
                 className="accent-accent w-3.5 h-3.5 mt-0.5"
               />
               <div className="flex-1 min-w-0">
                 <span className="text-ui-xs text-text-primary block">
-                  Phase A — reference factory presets <span className="text-text-muted">(safe default)</span>
+                  Keep factory blade styles <span className="text-text-muted">(safe default)</span>
                 </span>
                 <span className="text-ui-xs text-text-muted">
-                  Emits <code>style=builtin N M</code>. Reorder, rename, duplicate, reassign fonts. Custom colors / timing do NOT transfer.
+                  Only preset names, order and sound fonts change — your colors and blade style stay on
+                  your computer. Each preset gets the factory style at the same list position (preset 1 →
+                  factory slot 1), so a name can land on a different factory blade.
                 </span>
               </div>
             </label>
@@ -886,15 +910,19 @@ export function CardWriter() {
                 checked={useAdvancedRuntimeVerb}
                 onChange={() => setUseAdvancedRuntimeVerb(true)}
                 disabled={isWorking}
-                aria-label="Phase C — custom styles (experimental)"
+                aria-label="Use my colors and blade style"
                 className="accent-accent w-3.5 h-3.5 mt-0.5"
               />
               <div className="flex-1 min-w-0">
                 <span className="text-ui-xs text-text-primary block">
-                  Phase C — custom styles <span style={{ color: 'rgb(var(--accent-warm))' }}>(experimental)</span>
+                  Use my colors and blade style{' '}
+                  <span style={{ color: 'rgb(var(--accent-warm))' }}>(experimental)</span>
                 </span>
                 <span className="text-ui-xs text-text-muted">
-                  Emits <code>style=advanced R,G,B …</code>. Custom base / clash / blast / lockup colors + ignition / retraction timing all transfer. Requires firmware without <code>DISABLE_BASIC_PARSER_STYLES</code> (true for stock ProffieOS + Fett263 prop; some vendor builds disable this).
+                  Builds each preset from the closest ProffieOS runtime style (solid, gradient, unstable,
+                  fire, audio-reactive or rainbow) in your colors and timing — each preset below shows how
+                  close it gets. Needs firmware without <code>DISABLE_BASIC_PARSER_STYLES</code> (true for
+                  stock ProffieOS + Fett263 builds; some vendor firmware disables it).
                 </span>
               </div>
             </label>
@@ -918,6 +946,12 @@ export function CardWriter() {
                   <div className="flex-1 min-w-0">
                     <span className="text-ui-xs text-text-primary truncate block">{entry.presetName}</span>
                     <span className="text-ui-xs text-text-muted font-mono">{entry.fontName}/</span>
+                    {boardId === 'proffie_runtime' && (
+                      <RuntimeStyleChip
+                        badge={runtimeBadges?.[i] ?? null}
+                        position={i}
+                      />
+                    )}
                   </div>
                   <span className="text-ui-xs text-text-muted shrink-0">
                     {STYLE_LABELS[entry.style] ?? entry.style}
@@ -928,6 +962,11 @@ export function CardWriter() {
             <p className="text-ui-xs text-accent mt-1 px-2">
               Using {resolvedEntries.length} preset(s) from {activeProfileId ? 'active card config' : 'Saber Preset List'} (in order)
             </p>
+            {runtimeFidelityTally && (
+              <p className="text-ui-xs text-text-muted px-2">
+                {runtimeFidelityTally} — hover a label for details
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-bg-surface rounded-panel border border-border-subtle p-2 space-y-1">
@@ -951,6 +990,9 @@ export function CardWriter() {
                 <span className="text-ui-xs text-text-muted">
                   {STYLE_LABELS[config.style] ?? config.style}
                 </span>
+                {boardId === 'proffie_runtime' && selectedPresets.has('current') && (
+                  <RuntimeStyleChip badge={runtimeBadges?.[0] ?? null} position={0} />
+                )}
               </div>
             </label>
             <p className="text-ui-xs text-text-muted mt-1 px-2">
@@ -1148,20 +1190,53 @@ export function CardWriter() {
                 </span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-text-muted">Edit Mode (Fett263)</span>
-              <span
-                className="font-medium"
-                style={{
-                  color: configSummary.editModeEnabled
-                    ? 'rgb(var(--status-ok))'
-                    : 'rgb(var(--text-muted))',
-                }}
-              >
-                {configSummary.editModeEnabled ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
-            {configSummary.fontFolders.length > 0 && (
+            {boardId === 'proffie_runtime' ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Blade styles</span>
+                  <span className="text-text-primary">
+                    {useAdvancedRuntimeVerb ? 'Your colors + style' : 'Factory styles'}
+                  </span>
+                </div>
+                {runtimeFidelityTally && (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-text-muted shrink-0">Style match</span>
+                    <span className="text-text-primary text-right">{runtimeFidelityTally}</span>
+                  </div>
+                )}
+                <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
+                  <span className="text-text-muted block mb-1">Files (SD card root):</span>
+                  <div className="flex flex-wrap gap-1">
+                    {[RUNTIME_PRESETS_INI, RUNTIME_PRESETS_TMP, 'KYBERSTATION_README.txt'].map((name) => (
+                      <span
+                        key={name}
+                        className="inline-block px-1.5 py-0.5 rounded bg-bg-primary/50 text-text-secondary font-mono text-ui-xs"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-text-muted block mt-1">
+                    No font folders — the saber already has its sound fonts.
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-text-muted">Edit Mode (Fett263)</span>
+                <span
+                  className="font-medium"
+                  style={{
+                    color: configSummary.editModeEnabled
+                      ? 'rgb(var(--status-ok))'
+                      : 'rgb(var(--text-muted))',
+                  }}
+                >
+                  {configSummary.editModeEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            )}
+            {boardId !== 'proffie_runtime' && configSummary.fontFolders.length > 0 && (
               <div className="mt-1.5 pt-1.5 border-t border-border-subtle">
                 <span className="text-text-muted block mb-1">Font folders:</span>
                 <div className="flex flex-wrap gap-1">
@@ -1535,6 +1610,48 @@ function statusColorStyle(type: StatusMessage['type']): React.CSSProperties {
   };
 }
 
+// ─── Runtime style chip (proffie_runtime preset rows) ───
+//
+// Custom-styles mode: fidelity of the runtime verb this preset maps to,
+// color-coded like the deliverability chips (green faithful / amber
+// approximate / warn colors-only), with the mapping note as the tooltip.
+// Factory-styles mode: a muted reminder of which factory slot's style the
+// preset will actually play (style=builtin N M is position-indexed).
+
+function RuntimeStyleChip({
+  badge,
+  position,
+}: {
+  badge: RuntimeFidelityBadge | null;
+  position: number;
+}) {
+  if (!badge) {
+    return (
+      <span
+        className="block text-ui-xs text-text-muted mt-0.5"
+        title={`Your colors and blade style stay on your computer. On the saber this preset plays whatever blade style the firmware has in factory slot ${position + 1} (style=builtin ${position} …).`}
+      >
+        Plays factory slot {position + 1}&apos;s style
+      </span>
+    );
+  }
+  const token =
+    badge.tone === 'ok' ? '--status-ok' : badge.tone === 'partial' ? '--accent-warm' : '--status-warn';
+  return (
+    <span
+      className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-ui-xs"
+      title={badge.detail}
+      style={{
+        background: `rgb(var(${token}) / 0.12)`,
+        color: `rgb(var(${token}))`,
+        border: `1px solid rgb(var(${token}) / 0.3)`,
+      }}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
 // ─── Deliverability Panel ───
 //
 // "Honest export" — surfaces what will / won't transfer to the saber
@@ -1557,34 +1674,18 @@ interface DeliverabilityPanelProps {
 }
 
 function DeliverabilityPanel({ presets, boardId, runtimeUseAdvancedVerb }: DeliverabilityPanelProps) {
-  // Aggregate across all presets in the bundle. Even if user has a single
-  // preset selected, this resolves correctly.
-  const aggregated = useMemo(() => {
-    // Use the first preset's config as the canonical input. If user has
-    // multiple presets with different customizations, the knob TABLE is
-    // identical per target — what differs is only the "is this knob
-    // customized" detection used for the warning gate. The panel itself
-    // is target-driven and identical across presets, so first-preset is
-    // sufficient.
-    const fallbackConfig: BladeConfig = {
-      baseColor: { r: 0, g: 140, b: 255 },
-      clashColor: { r: 255, g: 255, b: 255 },
-      lockupColor: { r: 255, g: 220, b: 80 },
-      blastColor: { r: 255, g: 255, b: 255 },
-      style: 'stable',
-      ignition: 'standard',
-      retraction: 'standard',
-      ignitionMs: 300,
-      retractionMs: 800,
-      shimmer: 0,
-      ledCount: 144,
-    };
-    const sampleConfig = presets[0]?.config ?? fallbackConfig;
-    const report = getDeliverability(sampleConfig, boardId, {
-      runtimeUseAdvancedVerb,
-    });
-    return report;
-  }, [presets, boardId, runtimeUseAdvancedVerb]);
+  // Aggregate across every preset in the bundle: in custom-styles mode the
+  // runtime table follows each preset's verb, so a knob only shows as
+  // "Transfers" when it transfers for ALL presets (worst case wins).
+  const aggregated = useMemo(
+    () =>
+      getBundleDeliverability(
+        presets.map((p) => p.config),
+        boardId,
+        { runtimeUseAdvancedVerb },
+      ),
+    [presets, boardId, runtimeUseAdvancedVerb],
+  );
 
   const transfers = aggregated.knobs.filter((k) => k.capability === 'deliverable');
   const doesntTransfer = aggregated.knobs.filter(

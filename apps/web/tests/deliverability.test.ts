@@ -9,6 +9,8 @@ import { describe, it, expect } from 'vitest';
 import {
   customizedKnobs,
   getDeliverability,
+  getBundleDeliverability,
+  getRuntimeFidelityBadge,
   humanizeKnob,
 } from '@/lib/deliverability';
 import type { BladeConfig } from '@kyberstation/engine';
@@ -99,10 +101,17 @@ describe('getDeliverability — proffie_runtime (Phase A)', () => {
     expect(report.summary).toMatch(/not customized any of the dropped knobs/i);
   });
 
-  it('reason text references Phase C as the lift path for color knobs', () => {
+  it('reason text names the custom-styles option (in plain language) as the lift path for color knobs', () => {
     const report = getDeliverability(defaultConfig(), 'proffie_runtime');
     const baseColor = report.knobs.find((k) => k.knob === 'baseColor');
-    expect(baseColor?.reason).toMatch(/phase c|custom styles/i);
+    expect(baseColor?.reason).toMatch(/Use my colors and blade style/);
+    expect(baseColor?.reason).not.toMatch(/phase [ac]/i);
+  });
+
+  it('explains the factory-slot position indexing', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime');
+    const style = report.knobs.find((k) => k.knob === 'style');
+    expect(style?.reason).toMatch(/same list position/);
   });
 });
 
@@ -130,14 +139,22 @@ describe('getDeliverability — proffie_runtime Phase C (advanced verb)', () => 
     expect(retractionMs?.capability).toBe('deliverable');
   });
 
-  it('keeps style + ignition + retraction animation type dropped (advanced verb has fixed template)', () => {
+  it('keeps ignition + retraction animation type dropped (runtime verbs have fixed shapes)', () => {
     const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
       runtimeUseAdvancedVerb: true,
     });
-    for (const knob of ['style', 'ignition', 'retraction'] as const) {
+    for (const knob of ['ignition', 'retraction'] as const) {
       const entry = report.knobs.find((k) => k.knob === knob);
       expect(entry?.capability).toBe('dropped-silently');
     }
+  });
+
+  it('a stable blade maps faithfully, so blade style transfers', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    const style = report.knobs.find((k) => k.knob === 'style');
+    expect(style?.capability).toBe('deliverable');
   });
 
   it('rationale mentions DISABLE_BASIC_PARSER_STYLES caveat for color knobs', () => {
@@ -195,10 +212,24 @@ describe('getDeliverability — proffie (compile+flash)', () => {
 
   it('colors + timing are deliverable', () => {
     const report = getDeliverability(defaultConfig(), 'proffie');
-    for (const knob of ['baseColor', 'clashColor', 'lockupColor', 'blastColor', 'ignitionMs', 'retractionMs', 'shimmer'] as const) {
+    for (const knob of ['baseColor', 'clashColor', 'lockupColor', 'blastColor', 'ignitionMs', 'retractionMs'] as const) {
       const entry = report.knobs.find((k) => k.knob === knob);
       expect(entry?.capability).toBe('deliverable');
     }
+  });
+
+  it('shimmer is honestly reported as dropped (ASTBuilder never reads config.shimmer)', () => {
+    const report = getDeliverability(defaultConfig(), 'proffie');
+    const shimmer = report.knobs.find((k) => k.knob === 'shimmer');
+    expect(shimmer?.capability).toBe('dropped-silently');
+    expect(shimmer?.reason).toMatch(/does not read the shimmer value/);
+    expect(shimmer?.reason).not.toMatch(/emitted as AudioFlicker/i);
+  });
+
+  it('a customized shimmer shows up in the summary as not transferring', () => {
+    const c = defaultConfig();
+    c.shimmer = 0.3;
+    expect(getDeliverability(c, 'proffie').summary).toMatch(/shimmer will NOT transfer/);
   });
 
   it('style is "partial" (engine parity gap)', () => {
@@ -234,6 +265,104 @@ describe('getDeliverability — xenopixel', () => {
       const entry = report.knobs.find((k) => k.knob === knob);
       expect(entry?.capability).toBe('dropped-silently');
     }
+  });
+});
+
+describe('getDeliverability — proffie_runtime custom styles follow the mapped verb', () => {
+  const custom = { runtimeUseAdvancedVerb: true };
+  const knob = (c: BladeConfig, k: string) =>
+    getDeliverability(c, 'proffie_runtime', custom).knobs.find((e) => e.knob === k)!;
+
+  it('unstable verb: style faithful, effect colors fixed (white clash/blast, fixed lockup)', () => {
+    const c = { ...defaultConfig(), style: 'unstable' };
+    expect(knob(c, 'style').capability).toBe('deliverable');
+    for (const k of ['clashColor', 'blastColor', 'lockupColor']) {
+      expect(knob(c, k).capability).toBe('dropped-silently');
+    }
+    expect(knob(c, 'clashColor').reason).toMatch(/clashes flash white/);
+    expect(knob(c, 'ignitionMs').capability).toBe('deliverable');
+  });
+
+  it('fire verb: no ignition/retraction timing slots', () => {
+    const c = { ...defaultConfig(), style: 'fire' };
+    expect(knob(c, 'ignitionMs').capability).toBe('dropped-silently');
+    expect(knob(c, 'retractionMs').reason).toMatch(/heats up/);
+  });
+
+  it('cycle verb (pulse): style partial, blast + lockup carried, clash fixed white', () => {
+    const c = { ...defaultConfig(), style: 'pulse' };
+    expect(knob(c, 'style').capability).toBe('partial');
+    expect(knob(c, 'style').reason).toMatch(/audio-reactive/i);
+    expect(knob(c, 'blastColor').capability).toBe('deliverable');
+    expect(knob(c, 'lockupColor').capability).toBe('deliverable');
+    expect(knob(c, 'clashColor').capability).toBe('dropped-silently');
+    expect(knob(c, 'ignitionMs').capability).toBe('dropped-silently');
+  });
+
+  it('rainbow verb (prism): base color is partial, not a false "dropped" warning', () => {
+    const c = { ...defaultConfig(), style: 'prism' };
+    expect(knob(c, 'baseColor').capability).toBe('partial');
+    expect(knob(c, 'style').capability).toBe('deliverable');
+  });
+
+  it('colors-only styles drop the blade style and say it needs a firmware flash', () => {
+    const c = { ...defaultConfig(), style: 'helix' };
+    expect(knob(c, 'style').capability).toBe('dropped-silently');
+    expect(knob(c, 'style').reason).toMatch(/firmware flash/);
+    expect(knob(c, 'baseColor').capability).toBe('deliverable');
+  });
+});
+
+describe('getBundleDeliverability', () => {
+  it('single preset matches getDeliverability', () => {
+    const c = defaultConfig();
+    expect(getBundleDeliverability([c], 'proffie')).toEqual(getDeliverability(c, 'proffie'));
+  });
+
+  it('empty bundle falls back to a default config instead of throwing', () => {
+    const report = getBundleDeliverability([], 'proffie_runtime');
+    expect(report.knobs).toHaveLength(16);
+  });
+
+  it('reports the worst capability per knob and says how many presets it applies to', () => {
+    const stable = defaultConfig();
+    const unstable = { ...defaultConfig(), style: 'unstable' };
+    const report = getBundleDeliverability([stable, unstable], 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    const clash = report.knobs.find((k) => k.knob === 'clashColor')!;
+    expect(clash.capability).toBe('dropped-silently');
+    expect(clash.reason).toMatch(/^1 of 2 presets: /);
+    const base = report.knobs.find((k) => k.knob === 'baseColor')!;
+    expect(base.capability).toBe('deliverable');
+    expect(base.reason).not.toMatch(/of 2 presets/);
+  });
+
+  it('summary lists knobs customized in any preset that some preset drops', () => {
+    const plain = defaultConfig();
+    const customClash = { ...defaultConfig(), style: 'unstable', clashColor: { r: 255, g: 0, b: 0 } };
+    const report = getBundleDeliverability([plain, customClash], 'proffie_runtime', {
+      runtimeUseAdvancedVerb: true,
+    });
+    expect(report.summary).toMatch(/clash color/);
+  });
+});
+
+describe('describeRuntimeFidelity / getRuntimeFidelityBadge', () => {
+  it('faithful → "Faithful · <verb> verb"', () => {
+    const badge = getRuntimeFidelityBadge({ ...defaultConfig(), style: 'unstable' });
+    expect(badge).toMatchObject({ label: 'Faithful · unstable verb', tone: 'ok' });
+    expect(badge.detail.length).toBeGreaterThan(0);
+  });
+
+  it('approximate cycle → flags it as audio-reactive', () => {
+    const badge = getRuntimeFidelityBadge({ ...defaultConfig(), style: 'aurora' });
+    expect(badge).toMatchObject({ label: 'Approximate · cycle verb (audio-reactive)', tone: 'partial' });
+  });
+
+  it('colors-only → says the style needs a firmware flash', () => {
+    const badge = getRuntimeFidelityBadge({ ...defaultConfig(), style: 'photon' });
+    expect(badge).toMatchObject({ label: 'Colors only — this style needs a firmware flash', tone: 'warn' });
   });
 });
 

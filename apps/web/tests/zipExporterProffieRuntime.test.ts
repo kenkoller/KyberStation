@@ -23,6 +23,7 @@ import {
   type ExportPreset,
 } from '@/lib/zipExporter';
 import type { BladeConfig } from '@kyberstation/engine';
+import { mapBladeConfigToRuntimeStyle } from '@kyberstation/codegen';
 
 // ─── Fixture helpers ─────────────────────────────────────────────────
 
@@ -215,6 +216,39 @@ describe('ProffieOS Runtime export (proffie_runtime)', () => {
       expect(content).toContain('65535,56540,20560');
       // No builtin line should be emitted in Phase C
       expect(content).not.toContain('style=builtin');
+    });
+
+    it('custom styles: each preset gets its mapped runtime verb', async () => {
+      const blob = await exportMultiPresetZip({
+        presets: [
+          makePreset('Kylo', 'kylo', { style: 'unstable', baseColor: { r: 200, g: 10, b: 0 } }),
+          makePreset('Forge', 'forge', { style: 'fire' }),
+          makePreset('Prism', 'prism', { style: 'prism' }),
+          makePreset('Grogu', 'grogu', { style: 'pulse' }),
+          makePreset('Helix', 'helix', { style: 'helix' }),
+        ],
+        boardId: 'proffie_runtime',
+        runtimeUseAdvancedVerb: true,
+        runtimeInstallTime: 'Apr 21 2026 08:44:54',
+      });
+      const content = (await readZipFile(blob, 'presets.ini'))!;
+      const verbs = content
+        .split('\n')
+        .filter((l) => l.startsWith('style='))
+        .map((l) => l.slice('style='.length).split(' ')[0]);
+      expect(verbs).toEqual(['unstable', 'fire', 'rainbow', 'cycle', 'advanced']);
+      expect(content).not.toContain('style=builtin');
+    });
+
+    it('custom styles: the ZIP carries exactly what mapBladeConfigToRuntimeStyle returns', async () => {
+      const preset = makePreset('Kylo', 'kylo', { style: 'unstable', baseColor: { r: 200, g: 10, b: 0 } });
+      const blob = await exportPresetZip({
+        preset,
+        boardId: 'proffie_runtime',
+        runtimeUseAdvancedVerb: true,
+      });
+      const content = (await readZipFile(blob, 'presets.ini'))!;
+      expect(content).toContain(`style=${mapBladeConfigToRuntimeStyle(preset.config).styleString}\n`);
     });
 
     it('Phase A default: builtin emitted when runtimeUseAdvancedVerb is omitted', async () => {
