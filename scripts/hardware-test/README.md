@@ -42,8 +42,9 @@ Override the voice with `TTS_VOICE=Samantha scripts/.../generate-tts-prompts.sh`
 macOS-only. With the saber's SD mounted via USB SD reader, performs:
 
 1. **Backup** — `ditto` snapshot of the entire SD to `backups/89sabers-v39bt-<date>/sdcard/`.
-   (Note: must use `ditto` not `rsync --info=progress2` because macOS
-   ships rsync 2.x which silently fails on the 3.x flag.)
+   (Note: uses `ditto`, not `rsync --info=progress2`: macOS's
+   `/usr/bin/rsync` — rsync 2.6.9, now Apple's openrsync — rejects that
+   rsync 3.x flag and exits without copying anything.)
 2. **Font content upgrades** — `rsync -a --delete` overlays high-quality
    Kyberphonic fonts from `~/SaberFonts/` onto saber-side folder names
    where a match exists (Vader_KP_R1 → Vader, Ben_KP → Ben, etc.).
@@ -51,6 +52,32 @@ macOS-only. With the saber's SD mounted via USB SD reader, performs:
 4. **Verification** — counts + sizes.
 
 Idempotent. Re-running creates a fresh dated backup each time.
+
+## `backup-proffieboard-sdcard.sh`
+
+File-level backup of a saber's SD card (fonts, tracks, `presets.ini`,
+`common/`) to take before changing it. Pairs with
+`backup-proffieboard-v3.sh`, which backs up the board's flash.
+
+```bash
+scripts/hardware-test/backup-proffieboard-sdcard.sh "/Volumes/<SD_NAME>" \
+  backups/89sabers-v39bt-$(date +%F)/sdcard
+```
+
+- **Works with either rsync.** Current macOS ships Apple's openrsync as
+  `/usr/bin/rsync`, which rejects rsync 3.x's `--info=progress2`. The
+  script test-runs that flag and falls back to per-file `--progress`.
+  To choose an rsync, e.g. Homebrew's: `RSYNC=/opt/homebrew/bin/rsync …`
+- **Skips the macOS system folders** at the card root: `.Spotlight-V100`,
+  `.fseventsd`, `.Trashes`, `.TemporaryItems`. They aren't saber data,
+  and they're often unreadable, which made rsync fail the whole copy.
+- **Checks the copy.** Compares the number of files on the card with the
+  backup (both without those folders) and exits non-zero, naming the
+  files that differ, if they don't match. Re-running into an existing
+  backup folder is fine, but if it holds files the card doesn't (another
+  card, or files deleted since), the check fails — use a fresh folder.
+- Writes `SHA256SUMS.txt` (every file's hash) and `TREE.txt` (every path)
+  into the backup, only once the check passes.
 
 ## `build-bench-validation-presets.mjs`
 
